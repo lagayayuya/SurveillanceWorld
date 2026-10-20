@@ -3263,7 +3263,8 @@ try {
   pageB.on("pageerror", (e) => pageErrors.push(`${e.message} ${e.stack?.split("\n")[1] ?? ""}`));
   await pageB.goto(`${APP}?add=${++loads}#18.50/${ADD.alone[1]}/${ADD.alone[0]}`);
   await pageB.waitForFunction(
-    () => window.__map.querySourceFeatures("proposal-moves").some((f) => f.properties.a === 1),
+    // Right after goto: the map may not exist yet (a slower machine), not a failure.
+    () => window.__map?.querySourceFeatures("proposal-moves").some((f) => f.properties.a === 1),
     null,
     { timeout: 30000 },
   );
@@ -4181,7 +4182,7 @@ try {
     proposals9.features.find((f) => f.properties.k === "add")?.properties.bands?.features ?? [];
   await page9.goto(`${APP}?load9=1#18.50/${MOUNT_AT[1]}/${MOUNT_AT[0]}`);
   await page9.waitForFunction(
-    (c) => window.__map.querySourceFeatures("proposal-moves").some((f) => f.properties.c === c),
+    (c) => window.__map?.querySourceFeatures("proposal-moves").some((f) => f.properties.c === c),
     add9.camera,
     { timeout: 30000 },
   );
