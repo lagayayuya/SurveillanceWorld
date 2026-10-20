@@ -110,8 +110,11 @@ jobs:
       - uses: ./.github/actions/smoke-setup
         with:
           engines: ${{ contains(matrix.name, 'webkit') && 'webkit' || 'chromium' }}
+      # Durations measured and printed, never failing on these shared machines (the local
+      # gate keeps their limits).
       - env:
           NAME: ${{ matrix.name }}
+          BENCH_TIMING: report
         run: |
           case "$NAME" in
             desktop) script="smoke.mjs --region ci" ;;
@@ -165,6 +168,8 @@ jobs:
         with:
           engines: ${{ matrix.engine }}
       - run: cd web && node bench/smoke-participate.mjs --browser ${{ matrix.engine }} --ui ${{ matrix.ui }}
+        env:
+          BENCH_TIMING: report
       # A failed run's screenshot and report (the panel's state, the last clicks, the map's
       # camera calls, the API requests unanswered): what its log cannot show.
       - if: failure()

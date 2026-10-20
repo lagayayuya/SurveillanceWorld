@@ -29,6 +29,18 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "ok  " : "FAIL"} [${engine}] ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
+// A duration's limit: binding here and in the local gate; with BENCH_TIMING=report (CI's
+// shared machines, whose timings vary) measured and printed, over the limit a warning in
+// the run's annotations, never a failure. What happened is checked either way.
+const TIMING_REPORT = process.env.BENCH_TIMING === "report";
+function within(name, ms, limit) {
+  const ok = ms !== null && ms <= limit;
+  if (!TIMING_REPORT) return ok;
+  console.log(`time [${engine}] ${name}: ${ms} ms, limit ${limit} ms${ok ? "" : " (over)"}`);
+  if (!ok) console.log(`::warning::${engine}: ${name} took ${ms} ms (limit ${limit} ms)`);
+  return ms !== null;
+}
+
 async function idle(page) {
   await page.evaluate(
     () =>
@@ -716,8 +728,7 @@ try {
       "tap a camera under the sheet's place: one move, <= 400 ms, the camera above the sheet, same zoom",
       raised.focus &&
         raised.starts === 1 &&
-        raised.ms !== null &&
-        raised.ms <= 400 &&
+        within("tap a camera under the sheet's place", raised.ms, 400) &&
         raised.zoom === low.zoom &&
         raised.y >= raised.bar + 20 &&
         raised.sheetTop !== null &&
