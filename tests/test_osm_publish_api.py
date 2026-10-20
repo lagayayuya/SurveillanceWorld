@@ -469,6 +469,15 @@ def test_nothing_identifying_in_the_logs(client, fake, pg_dsn, caplog):
 
 DAY = date(2026, 10, 9)
 AT = (2.2400, 48.8920)  # La Défense, in the CI build's region
+
+
+def sent_at(item) -> tuple[float, float]:
+    """Where an item's node goes, as the OsmChange writes it (publish.fmt: OSM keeps 7
+    decimals): the position read back from the database (stored in Lambert-93, turned back
+    into degrees) may differ beyond them with the PROJ version."""
+    return (float(publish.fmt(item.lon)), float(publish.fmt(item.lat)))
+
+
 CONSENT = date(2026, 10, 1)  # before every DAY of this file
 
 
@@ -626,7 +635,7 @@ def test_an_add_and_its_answers_go_as_one_new_node(client, fake, pg_dsn, clean):
     who = on_add(pg_dsn, aid, add, "operator", answer="business", name="Monoprix")
     tilt = on_add(pg_dsn, aid, add, "tilt", answer="steep")  # never leaves
     (item,) = items(pg_dsn, aid)
-    assert (item.camera, item.node, item.action, (item.lon, item.lat)) == (cam, None, "create", AT)
+    assert (item.camera, item.node, item.action, sent_at(item)) == (cam, None, "create", AT)
     assert [c.uuid for c in item.contributions] == [add, shape, aim, who]
     assert (item.kind, item.operator) == ("fixed", "Monoprix")
 
@@ -1188,7 +1197,7 @@ def test_an_osm_camera_is_modified_with_all_its_tags(client, fake, pg_dsn, clean
     shape = put(pg_dsn, aid, "shape", cam, answer="multi", osm=ref, tags=tags, at=at)
     move = put(pg_dsn, aid, "move", cam, osm=ref, tags=tags, at=to, old=list(at))
     (item,) = items(pg_dsn, aid, "live")
-    assert (item.action, item.node, (item.lon, item.lat)) == ("modify", ref[1], to)
+    assert (item.action, item.node, sent_at(item)) == ("modify", ref[1], to)
     assert tags_of(item) == {"camera:type": "panorama"}
     out = sync_pass(fake, pg_dsn)
     assert out["published"] == sorted([shape, move]) and out["conflicts"] == []
