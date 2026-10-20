@@ -111,7 +111,12 @@ export async function mockApi(context, { signed = false, osm = null, me = ME } =
     }
     if (path === "/api/proposals") return json(200, { type: "FeatureCollection", features: [] });
     if (path === "/api/contributions" && method === "POST") {
-      if (api.send === "offline") return route.abort("internetdisconnected");
+      if (api.send === "offline") {
+        // A phone's request may hang a while before it fails (api.offlineMs): the "online"
+        // event can come meanwhile, while that send is still being tried.
+        if (api.offlineMs) await new Promise((r) => setTimeout(r, api.offlineMs));
+        return route.abort("internetdisconnected");
+      }
       if (!api.signed || api.send === 401) return json(401, { error: "session" });
       const body = req.postDataJSON();
       api.posts.push(body);
@@ -440,6 +445,7 @@ export async function accountSmoke(browser, o) {
     const cam = await streetCamera(page, app, street);
     await sheetOf(page, cam);
     api.send = "offline";
+    api.offlineMs = 1500; // the network comes back before this send has failed
     await press(page.locator("#sheet .part-verify"));
     await press(page.locator("#sheet button", { hasText: "Elle est là" }));
     // In the sheet, or (punk, board 8a) in the tickets over the map, the sheet gone.

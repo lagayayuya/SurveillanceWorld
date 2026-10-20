@@ -122,6 +122,8 @@ export class Queue {
    * that account's sends only (and those of no one), the others wait for their own. */
   owner: string | null = null;
   private flushing: Promise<void> | null = null;
+  /** Why a flush was asked while one ran (it runs once more), or null. */
+  private again: string | null = null;
   private timer = 0;
   /** Being withdrawn: never sent meanwhile (nor, for an add, the answers on its camera). */
   private withheld = new Set<string>();
@@ -285,10 +287,23 @@ export class Queue {
     return false;
   }
 
-  /** Send what waits, one at a time; concurrent calls share the same run. */
+  /** Send what waits, one at a time; concurrent calls share the same run, which goes once
+   * more when one came meanwhile (an "online" event while a send is still failing: else
+   * lost, the next try waited for the timer). Never again after a 401: a login resumes. */
   flush(why: string): Promise<void> {
-    this.flushing ??= this.run(why).finally(() => {
+    if (this.flushing) {
+      this.again ??= why;
+      return this.flushing;
+    }
+    this.flushing = (async () => {
+      for (let reason: string | null = why; reason !== null; ) {
+        this.again = null;
+        await this.run(reason);
+        reason = this.needsLogin ? null : this.again;
+      }
+    })().finally(() => {
       this.flushing = null;
+      this.again = null;
     });
     return this.flushing;
   }
