@@ -63,10 +63,12 @@ jobs:
 
   check:
     runs-on: ubuntu-24.04
-    # PostGIS for the participation database tests (Docker in CI only, never on the server).
+    # PostGIS for the participation database tests (Docker in CI only, never on the server):
+    # the server's majors (Debian 13: PostgreSQL 17, PostGIS 3.5), the image pinned by its
+    # digest, so that a moving tag never changes them under the tests; the job prints them.
     services:
       postgis:
-        image: postgis/postgis:17-3.5
+        image: postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
@@ -80,6 +82,10 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           caddy: "true"
+      - name: The service's versions
+        run: psql "$TEST_DSN" -Atc "SELECT version()" -c "SELECT postgis_full_version()"
+        env:
+          TEST_DSN: postgresql://test:test@localhost:5432/lacarte
       - run: make check
         env:
           REQUIRE_CADDY: "1"
@@ -138,7 +144,7 @@ jobs:
     name: smoke (participate-${{ matrix.engine }}-${{ matrix.ui }})
     services:
       postgis:
-        image: postgis/postgis:17-3.5
+        image: postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
