@@ -111,7 +111,9 @@ jobs:
         with:
           engines: ${{ contains(matrix.name, 'webkit') && 'webkit' || 'chromium' }}
       # Durations measured and printed, never failing on these shared machines (the local
-      # gate keeps their limits).
+      # gate keeps their limits). WebKit reports the fetches a closing page cancels as page
+      # errors (« access control checks »): a run whose only failures are those goes again,
+      # once, said in the run's annotations; any other failure fails at once.
       - env:
           NAME: ${{ matrix.name }}
           BENCH_TIMING: report
@@ -131,7 +133,27 @@ jobs:
             profile-chromium) script="smoke-profile.mjs --browser chromium" ;;
             *) echo "unknown smoke test $NAME"; exit 1 ;;
           esac
-          cd web && node bench/$script
+          cd web
+          log="$(mktemp)"
+          set +e # the bench's own exit, whatever the shell's pipefail
+          node bench/$script 2>&1 | tee "$log"
+          code=${PIPESTATUS[0]}
+          set -e
+          only_access_control() {
+            awk '/^FAIL/ { n++; d = $0; p = index(d, " — "); d = p ? substr(d, p + length(" — ")) : "";
+                   if ($0 !~ /no page error/) bad = 1;
+                   k = split(d, parts, / \| /);
+                   for (i = 1; i <= k; i++) if (parts[i] !~ /due to access control checks\.?$/) bad = 1 }
+                 END { exit !(n > 0 && !bad) }' "$1"
+          }
+          if [ "$code" != 0 ] && [[ "$NAME" == *webkit* ]] && only_access_control "$log"; then
+            echo "::warning::$NAME: only WebKit's « access control checks » page errors failed; running it again, once"
+            set +e
+            node bench/$script
+            code=$?
+            set -e
+          fi
+          exit "$code"
 
   # Participation on the phone, behind the real site file (Caddy), with PostGIS, one engine
   # per job (both in one job made it the longest one: 447 s); the engines and interfaces of
