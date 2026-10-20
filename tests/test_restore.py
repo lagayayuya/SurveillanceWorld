@@ -7,6 +7,7 @@ deploy role, migrated; then the test accounts listed, and deleted only with --de
 import subprocess
 
 import pytest
+from psycopg.conninfo import make_conninfo
 from test_accounts_db import at, at_013, row
 from test_db import other_database, sql
 from test_purge import database_in_service
@@ -15,6 +16,7 @@ from lacarte import regions
 
 RESTORE = regions.ROOT / "db" / "restore.sh"
 DEPLOY = "deployer"
+DEPLOY_PASSWORD = "deployer-test-only"
 
 
 @pytest.fixture(scope="module")
@@ -46,17 +48,21 @@ def in_service(pg_dsn, pg_loaded):
 
 def fresh(pg_dsn, name) -> str:
     """As bootstrap.sh: the deploy role owns the database, postgis made by the superuser,
-    the API's role reads what the deploy role creates. The deploy role's DSN."""
+    the API's role reads what the deploy role creates. The deploy role's DSN, built from the
+    superuser's whatever its form (keywords here, a URL in CI), with the role's password: the
+    server's deploy role signs in over the local socket, CI's service asks a password over
+    TCP."""
     sql(pg_dsn, f"DROP DATABASE IF EXISTS {name}")
     for role in (f"{DEPLOY} LOGIN", "preview_api"):
         sql(pg_dsn, f"DO $$ BEGIN IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname ="
                     f" '{role.split()[0]}') THEN CREATE ROLE {role}; END IF; END $$")  # fmt: skip
+    sql(pg_dsn, f"ALTER ROLE {DEPLOY} PASSWORD '{DEPLOY_PASSWORD}'")
     sql(pg_dsn, f"CREATE DATABASE {name} OWNER {DEPLOY}")
     su = other_database(pg_dsn, name)
     sql(su, "CREATE EXTENSION IF NOT EXISTS postgis")
     sql(su, f"ALTER DEFAULT PRIVILEGES FOR ROLE {DEPLOY} IN SCHEMA public"
             " GRANT SELECT ON TABLES TO preview_api")  # fmt: skip
-    return " ".join(p for p in su.split() if not p.startswith("user=")) + f" user={DEPLOY}"
+    return make_conninfo(su, user=DEPLOY, password=DEPLOY_PASSWORD)
 
 
 def dump(dsn, path, *tables) -> str:
