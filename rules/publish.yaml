@@ -1,0 +1,190 @@
+# Publishing to OpenStreetMap (OSM lot 2; the synchronisation of 16/10): what a person's
+# accepted, on-site contributions become on OSM, under her OSM name, once she chose
+# « Publier aussi sur OpenStreetMap en mon nom » (accepted and applied by a build: the
+# build's duplicate check passed, 2026-10-11), sent by the API's job. Read by the API
+# (pipeline/lacarte/api/publish.py and sync.py). Not in buildinfo's hashed rules: no build
+# depends on it. It supersedes the prepared `osm:` block of rules/questions.yaml and
+# `add.export_tags` of rules/contributions.yaml, which stay as they are (questions.yaml is
+# hashed into the build id). Values read on the OSM wiki on 2026-10-10 (the contract's
+# « Facts read ») and 2026-10-16 (the synchronisation's plan). Values marked
+# [TO ADJUST] / [TO CONFIRM] are first guesses.
+# Version 2 (lot of 2026-10-12): no height answer leaves any more (« sur un poteau » is gone
+# from the questions, rules/questions.yaml height); an operator name leaves only once the
+# review accepted it (a name proposed: migration 017).
+# Version 3 (the synchronisation, migration 022): one changeset per person per pass of the
+# job, its comment written by the job; only what was observed from the consent day; nothing
+# the review changed; an OSM camera near an add stops its creation; the job's pace.
+version: 3
+
+add_tags:
+  id: rule:publish@3:add_tags
+  rationale: >-
+    An added camera becomes a node man_made=surveillance, surveillance:type=camera, and
+    surveillance=outdoor: it was placed on site, seen from the street (Key:surveillance:
+    outdoor is the equipment's location, outdoor areas), never indoor — the user's
+    decision of 2026-10-10. The answers on it published with it are merged in; its
+    position is the add's final position (or the person's own move of it). An existing
+    camera's `surveillance` is never touched.
+  tags: {man_made: surveillance, "surveillance:type": camera, surveillance: outdoor}
+
+answers:
+  id: rule:publish@3:answers
+  rationale: >-
+    Only these answers leave, each as its tag; everything else never does: a tilt or a
+    height (a class, not a measure: height and camera:angle are measured values; since
+    version 2 no height answer says the mount either, « sur un poteau » is stored as
+    « ~4 m »), a household operator, « introuvable », « Je ne sais pas », « Je ne vois
+    pas », opinions. Key:camera:type documents fixed, panning, dome, panorama. « Public »
+    spans government (a town hall, the police) and public (a transport operator): the
+    class alone cannot choose, so a public answer sends the operator's name only when one
+    was chosen — from the list, or proposed and accepted by the review (operator_name; a
+    name waiting or refused is never sent) —, and no operator:type. A business answer is operator:type=private (documented; `business` is
+    only a value in use). « Toujours là : oui » is check_date=YYYY-MM-DD, the day of the
+    observation (Key:check_date admits only that format): the person is told before she
+    chooses to publish and on the line itself.
+  # Answer -> the tags it sets.
+  shape:
+    dome: {"camera:type": dome}
+    bullet: {"camera:type": fixed}
+    ptz: {"camera:type": panning}
+    multi: {"camera:type": panorama}
+  direction: camera:direction  # the bearing, a whole number 0-359
+  height: {}  # no class sends anything (version 2)
+  operator:  # plus operator=<name> when one was chosen or accepted; household: nothing, ever
+    public: {}
+    business: {"operator:type": private}
+  operator_name: operator
+  verify:  # the key that takes the day of the observation; not_found: nothing
+    present: check_date
+
+held:
+  id: rule:publish@3:held
+  rationale: >-
+    Before anything is sent, each existing node is read again. A move or « Toujours là »
+    is held against the node's version (the one it was made on, or the one the deploy
+    settled it on, or the one we left after our own last upload): another version is a
+    conflict, osm_version. A shape, a direction or an operator on an OSM camera is held
+    against the tags it concerns, as the build holds it (rules/contributions.yaml
+    fine_conflict: another value is osm_tags). On a node we created, the version rule. A
+    node deleted or unknown is osm_deleted. Each conflict goes to the review; nothing else
+    of the camera waits for it.
+  keys: {}
+
+household:
+  id: rule:publish@3:household
+  rationale: >-
+    A camera with any « Particulier » answer (anyone's) that is neither rejected nor
+    withdrawn is a private individual's: nothing about it ever leaves, nor is it listed —
+    the project's rule since the operator question (no CNIL signal, no complaint link, no
+    public photo).
+
+latest:
+  id: rule:publish@3:latest
+  rationale: >-
+    Per camera and per question, only the person's own latest accepted answer counts (the
+    day of observation, then the review's decision order, as the build ranks them); it is
+    listed only when it was made on site and has not gone to that server yet. The latest
+    is taken before those filters: a later answer that says otherwise (another shape,
+    « introuvable », a public operator without a name, one made away from the camera)
+    keeps an older one from leaving. « Je ne sais pas » and « Je ne vois pas » say
+    nothing and are not counted.
+
+never_overwrite:
+  id: rule:publish@3:never_overwrite
+  rationale: >-
+    A tag is set only when the node lacks it: an equal value means nothing to send (the
+    contribution counts as published, with no changeset), a different one is a conflict
+    (osm_value) the review sees — never an overwrite of what a mapper wrote. check_date is
+    the exception: set when absent or older than the observation's day; a check_date that
+    is not a date (YYYY, YYYY-MM or YYYY-MM-DD) is a conflict too.
+
+changeset:
+  id: rule:publish@3:changeset
+  rationale: >-
+    One changeset per person and per pass of the job (the Automated Edits code of conduct:
+    one changeset per edit is « extremely hard to read »), at most max_cameras cameras.
+    Its comment says in plain words what it holds, counts by kind in this order — as
+    StreetComplete's « Add street surfaces », the wiki's example of an editor that writes
+    its comment —, then the project's hashtag and page (the Organised Editing Guidelines:
+    « Changeset comments should include the unique hashtag … and link to that page »), at
+    most 255 characters (the API's limit on a tag value). source=survey (everything was
+    seen on site), created_by the application and its release, hashtags
+    (semicolon-delimited), and the project's page as `description`, the tag the Automated
+    Edits code of conduct proposes for that link. Never mechanical=yes: each value is the
+    person's own answer, reviewed one by one, not an automated edit. The page is the
+    activity page the Organised Editing Guidelines name (« Organised Editing/Activities/Name
+    of the Activity »).
+  tags:
+    source: survey
+    hashtags: "#SurveillanceWorld"
+    description: https://wiki.openstreetmap.org/wiki/Organised_Editing/Activities/Surveillance_World
+  created_by: Surveillance World {release}
+  comment_max: 255
+  # « Caméras de surveillance relevées sur place : 1 ajout, 2 directions, 1 vérification
+  # #SurveillanceWorld https://… », counts by kind in this order, [singular, plural].
+  comment_prefix: "Caméras de surveillance relevées sur place : "
+  comment_suffix: " #SurveillanceWorld https://wiki.openstreetmap.org/wiki/Organised_Editing/Activities/Surveillance_World"
+  comment_words:
+    add: [ajout, ajouts]
+    move: [déplacement, déplacements]
+    shape: [forme, formes]
+    direction: [direction, directions]
+    operator: [exploitant, exploitants]
+    verify: [vérification, vérifications]
+
+max_cameras:
+  id: rule:publish@3:max_cameras
+  rationale: >-
+    At most this many cameras per changeset: a changeset stays small enough to review on
+    OSM, and one pass's checks (one node read per camera) stay short. Beyond it, the
+    cameras with the oldest observation go first; the rest waits for the next pass.
+    [TO ADJUST]
+  value: 50
+
+consent:
+  id: rule:publish@3:consent
+  rationale: >-
+    The choice in « Compte » is the consent (the owner's condition 1): only what the
+    person observed on or after the day she chose « Publier aussi sur OpenStreetMap en mon
+    nom » leaves (the contribution's day >= osm_write.consent_day); nothing retroactive.
+    Choosing it again after « Rester sur Surveillance World », or after OSM refused her
+    token, starts a new consent day; renewing a token she still has keeps hers.
+
+exact:
+  id: rule:publish@3:exact
+  rationale: >-
+    Exactly what the person sent (the owner's condition 2): the reviewer accepts or
+    rejects, never edits. A decision that changed a value — a proposed operator name
+    replaced by a listed one or dropped (operator_choice listed or none, migration 017) —
+    keeps the contribution on Surveillance World (« modifiée à la relecture, non
+    publiée »); a name kept as typed (proposed) leaves.
+
+duplicate:
+  id: rule:publish@3:duplicate
+  rationale: >-
+    Before a node is created, OSM is read around it (GET /map, a box twice this distance):
+    an OSM camera within duplicate_m — man_made=surveillance unless every surveillance:type
+    is one of not_cameras, as the build counts cameras (lacarte.normalize.is_camera) — may
+    be the same camera, mapped since the build's extract: nothing is created, the add and
+    its answers are a conflict osm_duplicate the review sees (the owner's condition 3). The
+    same distance as the build's (rules/contributions.yaml duplicate.duplicate_m).
+  duplicate_m: 5
+  not_cameras: [guard, gunshot_detector, sensor, radar, microphone]
+
+sync:
+  id: rule:publish@3:sync
+  rationale: >-
+    The API's job (lacarte.api.sync, in the API's process) passes every every_minutes, and
+    once first_pass_s after the API starts (a deploy restarts it after the settle). At
+    most max_changesets_per_day changesets a day per person (the owner's condition 4), a
+    day counted in the database (osm_write.sent_day). After OSM refused a pass for her —
+    rate limited (429), down or no answer — the next try waits the backoff's next step in
+    minutes (the last one repeats); kept in memory, the wait starts again from its step
+    after a restart. A token OSM refused (401, or permissions without allow_write_api) is
+    deleted and her choice goes back to « Rester » (said in « Compte »); a 403 while OSM
+    lists the right to write is a block by OSM: no more tries until she authorises again.
+    [TO ADJUST]
+  every_minutes: 15
+  first_pass_s: 60
+  max_changesets_per_day: 4
+  backoff_minutes: [15, 60, 360, 1440]

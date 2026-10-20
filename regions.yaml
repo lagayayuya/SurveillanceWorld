@@ -1,0 +1,26 @@
+# Processing regions. A region is built from one .osm.pbf, either downloaded or cut from a
+# parent region. `crs` is the metric projection used for all geometric computation.
+# `admin`: the IGN ADMIN EXPRESS COG CARTO layers (see README) and the départements kept.
+
+idf:
+  url: https://download.geofabrik.de/europe/france/ile-de-france-latest.osm.pbf
+  pbf: data/src/ile-de-france-latest.osm.pbf
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["75", "77", "78", "91", "92", "93", "94", "95"]
+
+puteaux:
+  parent: idf
+  communes: ["Puteaux", "Courbevoie"]
+  buffer_m: 300
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["92"]
+
+ci:
+  pbf: tests/fixtures/ci.osm.pbf
+  crs: EPSG:2154
+  admin:
+    source: tests/fixtures/ci-admin

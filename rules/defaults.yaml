@@ -1,0 +1,27 @@
+# Default capabilities, used when neither a catalogue model nor an OSM tag gives a value.
+# Every value here has certainty `default`. All numbers are [TO ADJUST]: they are generic
+# assumptions, not measurements. Resolution, field of view and reach: see optics.yaml.
+version: 2
+
+kinds:
+  dome:     {night_vision: probable}
+  fixed:    {night_vision: probable}
+  ptz:      {night_vision: probable}
+  panorama: {night_vision: probable}
+  alpr:     {night_vision: probable}
+  doorbell: {night_vision: unknown}
+  unknown:  {night_vision: unknown}
+
+# Per mount group: default height. Provisional; replaced by IDF medians where the sample
+# is large enough.
+mounts:
+  wall:            {height_m: 3}
+  pole:            {height_m: 5}
+  street_lamp:     {height_m: 5}
+  ceiling:         {height_m: 3}
+  traffic_signals: {height_m: 5}
+  gantry:          {height_m: 6}
+  roof:            {height_m: 10}
+  doorbell:        {height_m: 1.4}
+  other:           {height_m: 4}
+  unknown:         {height_m: 4}

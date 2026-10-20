@@ -1,0 +1,49 @@
+# Downloaded and generated data never goes into git (except tests/fixtures).
+/data/
+/build/
+/qa/out/
+*.osm.pbf
+!/tests/fixtures/*.osm.pbf
+*.pmtiles
+!/tests/fixtures/*.pmtiles
+*.mbtiles
+*.parquet
+
+# Archives dropped at the repository's root are never versioned.
+/*.zip
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+
+# Node
+node_modules/
+dist/
+playwright-report/
+test-results/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Web runtime assets fetched by web/scripts/fetch-assets.sh
+/web/public/basemap/
+/web/public/tiles
+
+# Local agent tooling
+/.claude/
+/CLAUDE.local.md
+
+# Preview server settings (deploy/caddy.env.example is the template)
+/deploy/caddy.env
+

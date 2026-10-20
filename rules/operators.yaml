@@ -1,0 +1,84 @@
+# Who operates a camera. Matched case-insensitively; first match wins.
+version: 1
+operator_type:
+  public: [public, government, local_authority, council, "public/government", ville, military, police]
+  private: [private, business, private_for_profit, private_non_profit, privé, corporation, private_individual, association, cooperative, religious, community, ngo]
+# Regular expressions on the `operator` name that identify a public authority.
+public_operator_patterns:
+  - "\\b(ville|mairie|commune|municipal|police|gendarmerie|préfecture|prefecture)\\b"
+  - "\\b(département|departement|conseil départemental|région|region|état|etat)\\b"
+  - "\\b(ratp|sncf|dirif|cd ?\\d{2}|idfm|île-de-france mobilités)\\b"
+
+# Normalised operator names, starting with the most frequent in Île-de-France (OSM
+# `operator`, counted on the 2026-09-27 extract; every spelling with >= 10 cameras, plus
+# their variants). `match` lists spellings compared after lower-casing, removing accents
+# and replacing punctuation by spaces. `class` is used when no tag says who films
+# (certainty "estimated"): public = public authorities and public bodies (State, local
+# authorities, public transport and hospitals, public establishments, foreign states and
+# international organisations); private = companies, associations, individuals.
+names:
+  - {name: SNCF, class: public, match: [sncf]}
+  - {name: Préfecture de police, class: public, match: [prefecture de police de paris, prefecture de police, prefecture de paris]}
+  - {name: Police municipale de Saint-Maur-des-Fossés, class: public, match: [police municipale de saint maur des fosses, police municipale de saint maur]}
+  - {name: La Banque Postale, class: private, match: [la banque postale]}
+  - {name: BNP Paribas, class: private, match: [bnp paribas]}
+  - {name: DiRIF, class: public, match: [dirif]}
+  - {name: RATP, class: public, match: [ratp, r a t p]}
+  - {name: Caisse d'Épargne, class: private, match: [caisse d epargne]}
+  - {name: Société Générale, class: private, match: [societe generale]}
+  - {name: OCDE, class: public, match: [ocde]}
+  - {name: Ville de Montrouge, class: public, match: [mairie de montrouge, ville de montrouge]}
+  - {name: Banque Populaire, class: private, match: [banque populaire]}
+  - {name: CIC, class: private, match: [cic]}
+  - {name: Particulier, class: private, match: [particulier]}
+  - {name: Ville de Vincennes, class: public, match: [ville de vincennes, mairie de vincennes]}
+  - {name: Ville de Nogent-sur-Marne, class: public, match: [ville de nogent sur marne, mairie de nogent sur marne]}
+  - {name: Ville de Courbevoie, class: public, match: [ville de courbevoie, mairie de courbevoie]}
+  - {name: La Poste, class: private, match: [la poste]}
+  - {name: Ville de Paris, class: public, match: [mairie de paris, ville de paris]}
+  - {name: Crédit Agricole, class: private, match: [credit agricole, credit agricole cib]}
+  - {name: Ville de Carrières-sur-Seine, class: public, match: [secretariat de la mairie de carrieres sur seine, mairie de carrieres sur seine]}
+  - {name: Vinci, class: private, match: [vinci, vinci immeuble le neptune]}
+  - {name: CSU du Valparisis, class: public, match: [csu du valparisis]}
+  - {name: Crédit Mutuel, class: private, match: [credit mutuel]}
+  - {name: Police municipale de Rueil-Malmaison, class: public, match: [police municipale de rueil malmaison]}
+  - {name: Ministère de l'Intérieur, class: public, match: [ministere de l interieur]}
+  - {name: AP-HP Hôpital Cochin, class: public, match: [hopital cochin a p h p]}
+  - {name: Franprix, class: private, match: [franprix]}
+  - {name: Ville de Montigny-le-Bretonneux, class: public, match: [mairie de montigny le bretonneux]}
+  - {name: Pôle universitaire Léonard de Vinci, class: private, match: [pole universitaire leonard de vinci]}
+  - {name: Assemblée nationale, class: public, match: [assemblee nationale, assemblee national]}
+  - {name: Humanis, class: private, match: [humanis]}
+  - {name: Le Bon Marché, class: private, match: [le bon marche]}
+  - {name: Ministère des Affaires étrangères, class: public, match: [ministere des affaires etrangeres]}
+  - {name: Opéra Bastille, class: public, match: [opera bastille]}
+  - {name: Airbus, class: private, match: [airbus]}
+  - {name: Western Union, class: private, match: [western union]}
+  - {name: BHV, class: private, match: [bhv]}
+  - {name: SANEF, class: private, match: [sanef]}
+  - {name: Crèche Israélite de France, class: private, match: [creche israelite de france]}
+  - {name: CNFPT, class: public, match: [cnfpt]}
+  - {name: Cité de la musique, class: public, match: [cite de la musique]}
+  - {name: DGSE, class: public, match: [dgse]}
+  - {name: Ville d'Asnières-sur-Seine, class: public, match: [ville d asnieres sur seine, ville de asnieres sur seine]}
+  - {name: Syndic d'immeuble, class: private, match: [syndic d immeuble]}
+  - {name: Air France, class: private, match: [air france]}
+  - {name: Darty, class: private, match: [darty]}
+  - {name: Ville de Saint-Denis, class: public, match: [ville de saint denis]}
+  - {name: Esso, class: private, match: [esso]}
+  - {name: Police nationale, class: public, match: [police nationale, commissariat]}
+  - {name: Ville (sans précision), class: public, match: [municipal, intercommunalite]}
+
+# Municipal operators in the communes' top operators (admin.py), spellings compared after
+# lower-casing, removing accents and punctuation. `generic`: the town is not named ("Mairie",
+# "Ville", "Ville (sans précision)"): "Ville de <commune where the camera stands>" (the
+# city for a municipal arrondissement); `police`: "Police municipale de <commune>".
+# `prefixes`: "Mairie de X", "ville de x", "Villes de Paris" and the bare town name become
+# "Ville de <X>" with the official name when X is a commune of the region.
+municipal:
+  generic: [mairie, ville, villes, commune, municipalite, ville sans precision, hotel de ville]
+  police: [police municipale]
+  prefixes: [mairie, ville, villes, commune, hotel de ville]
+# Operator values that say nothing about who films: left out of the top operators and
+# counted apart ("dont N sans exploitant précis"). "yes" quoted: YAML reads it as a boolean.
+no_information: [private, prive, inconnu, unknown, "yes", oui, public, none, "n a"]

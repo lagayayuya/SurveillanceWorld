@@ -1,0 +1,884 @@
+/* The map's screen (lot 3.1, after mockups 20a on a wide screen, 18a on a phone and 17a's
+   map side): the header ticket « Surveillance World » with its links, the round Standard /
+   Prudent pastilles, the floating buttons, MapLibre's zoom buttons and attribution. The
+   filters machine is in machine.css, the camera list in camlist.css. Every tilt and shift
+   sits in the motion query (web/tests/theme.test.ts): under reduced motion the screen is
+   straight, its states shown by colour, frame and ✓. */
+
+/* --- the header ticket (20a's closed ticket, with 17a's two links) ----------------------- */
+:root[data-ui="punk"] #ticket {
+  position: absolute;
+  left: 30px;
+  top: 18px;
+  z-index: 3;
+  width: 272px;
+  filter: var(--ticket-drop);
+}
+/* The machine open, the ticket drops 25 px (20a: 18 → 43 px), the machine rising under its
+   title; printing the legend, it goes up to the top (20a: 0), the machine under it
+   (machine.ts place). */
+:root[data-ui="punk"] body.machine-open #ticket {
+  top: 43px;
+  /* Centred over the machine's slot (its handle: machine.css #filters.machine at 18 px,
+     .case-handle 22 px from its left and 38 px from its right, so 262 px wide, centred at
+     171 px) and no wider, as the ticket comes out of it (20a). */
+  left: 46px;
+  width: 250px;
+}
+:root[data-ui="punk"] body.machine-legend #ticket {
+  top: 0;
+  /* Printing the legend, it takes its own width again (the levels' three names in a row). */
+  left: 30px;
+  width: 272px;
+}
+:root[data-ui="punk"] .ticket-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px 14px;
+  background: var(--bg);
+  color: var(--fg);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 8px),
+    93% 100%,
+    85% calc(100% - 6px),
+    76% 100%,
+    68% calc(100% - 7px),
+    59% 100%,
+    50% calc(100% - 5px),
+    41% 100%,
+    33% calc(100% - 7px),
+    24% 100%,
+    16% calc(100% - 5px),
+    8% 100%,
+    0 calc(100% - 6px)
+  );
+}
+:root[data-ui="punk"] .ticket-title {
+  margin: 0;
+  font: 900 24px / 0.95 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: var(--shadow-title);
+}
+:root[data-ui="punk"] .ticket-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+/* 17a's links: the typewriter face, a wavy underline. « Filtres et légende » is the page's
+   own button (#fab-filters, a phone's floating button in the current interface). */
+:root[data-ui="punk"] .ticket-link,
+:root[data-ui="punk"] #fab-filters.ticket-link {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--fg);
+  font: 400 13.5px var(--font-text);
+  text-transform: none;
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+:root[data-ui="punk"] .ticket-link .icon {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* 25a's squares under the link: the sun / moon (DECISIONS 2026-10-09) and the account's
+   (account/index.ts), keys as the machine's (machine.css #filters .key): released on their
+   offset shadow, pressed (the account's sheet open) sunk onto it in pink. 44 px, 8 px
+   apart, each with 4 px of room for its shadow; their tilts and sinking under the motion
+   query (below). */
+:root[data-ui="punk"] .ticket-squares {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+:root[data-ui="punk"] .ticket-square {
+  appearance: none;
+  flex: none;
+  position: relative;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  margin: 0 4px 4px 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--key-off);
+  box-shadow: var(--key-shadow);
+  color: var(--fg);
+  cursor: pointer;
+}
+:root[data-ui="punk"] .ticket-square:not(:disabled):active,
+:root[data-ui="punk"] .ticket-square[aria-expanded="true"] {
+  box-shadow: var(--key-shadow-on);
+}
+:root[data-ui="punk"] .ticket-square[aria-expanded="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+/* Signed in (25b): the pseudonym's initials on the ink's paper, inverted. */
+:root[data-ui="punk"] .ticket-square[data-signed] {
+  background: var(--fg);
+  color: var(--bg);
+}
+:root[data-ui="punk"] .account-initials {
+  font: 900 20px / 1 var(--font-display);
+  font-stretch: 68%;
+}
+:root[data-ui="punk"] .ticket-square .account-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .ticket-square {
+    rotate: -2deg;
+    transition:
+      translate var(--dur-press) ease-out,
+      rotate var(--dur-press) ease-out,
+      box-shadow var(--dur-press) ease-out;
+  }
+  :root[data-ui="punk"] .ticket-square + .ticket-square {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] .ticket-square:not(:disabled):active,
+  :root[data-ui="punk"] .ticket-square[aria-expanded="true"] {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] .ticket-square[aria-expanded="true"] {
+    rotate: 1.5deg;
+  }
+}
+:root[data-ui="punk"] .mode-toggle .mode-icon {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* « Tout réafficher » as a link: the panel's « N filtres actifs en vue rue » and the map's
+   message when the filters hide everything (machine.ts resetLink), 28 px with a mouse, 44
+   under a finger (below). */
+:root[data-ui="punk"] .reset-link {
+  appearance: none;
+  min-height: 28px;
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-transform: none;
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* The filters hide every camera or every filmed street of the view: a short ticket under
+   the header one, on the paper, never under the open machine (which says it). */
+:root[data-ui="punk"] .filters-empty {
+  position: absolute;
+  left: 30px;
+  top: calc(var(--ticket-bottom, 120px) + 12px);
+  z-index: 3;
+  max-width: 272px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 8px;
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 13px / 1.3 var(--font-text);
+  box-shadow: var(--shadow-ticket);
+}
+:root[data-ui="punk"] .filters-empty[hidden],
+:root[data-ui="punk"] body.machine-open .filters-empty {
+  display: none;
+}
+
+/* The machine open: the ticket keeps its title (the machine rises under it) and prints the
+   legend (« Légende »); its links give way to « Calcul ? ». */
+:root[data-ui="punk"] .ticket-legend {
+  display: none;
+}
+:root[data-ui="punk"] body.machine-open .ticket-links {
+  display: none;
+}
+:root[data-ui="punk"] body.machine-open .ticket-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+:root[data-ui="punk"] .legend-calc-row {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+}
+:root[data-ui="punk"] .legend-calc {
+  font-size: 12.5px;
+}
+:root[data-ui="punk"] .legend-calc-text p,
+:root[data-ui="punk"] .legend-line {
+  margin: 0;
+  font: 400 12.5px / 1.25 var(--font-text);
+}
+:root[data-ui="punk"] .legend-calc-text:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-ui="punk"] .legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Each column as wide as its name, the free width between them: at 272 px « reconnaître »
+   and « détecter » no longer touch (product owner, 2026-10-08; three equal columns cut
+   the typewriter's longest name). */
+:root[data-ui="punk"] .legend-levels {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, auto);
+  justify-content: space-between;
+  gap: 6px 10px;
+}
+:root[data-ui="punk"] .legend-levels dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font: 400 12.5px var(--font-text);
+}
+/* The named sample of the bands stacked (DECISIONS 2026-10-06), framed as 20a's swatches. */
+:root[data-ui="punk"] .legend-levels .sample.level {
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+}
+:root[data-ui="punk"] .legend-levels .level-name {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+:root[data-ui="punk"] #ticket .sw {
+  flex: none;
+  display: inline-block;
+  width: 22px;
+  height: 7px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+}
+:root[data-ui="punk"] #ticket .sw.street {
+  width: 24px;
+}
+:root[data-ui="punk"] #ticket .sw.none {
+  border-style: dashed;
+}
+:root[data-ui="punk"] #ticket .sw.hatch {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--legend-hatch) 0 2px,
+    var(--legend-hatch-bg) 2px 5px
+  );
+}
+:root[data-ui="punk"] .legend-rule {
+  border-top: 1.5px dashed var(--line);
+  margin: 2px 0;
+}
+:root[data-ui="punk"] .legend-items,
+:root[data-ui="punk"] .legend-areas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 4px;
+  font: 400 12px / 1.15 var(--font-text);
+}
+:root[data-ui="punk"] .legend-areas {
+  grid-template-columns: 1fr;
+}
+:root[data-ui="punk"] .legend-items li,
+:root[data-ui="punk"] .legend-areas li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+}
+:root[data-ui="punk"] .legend-items li.wide {
+  grid-column: 1 / -1;
+}
+/* The legend's marks: a field (its nested bands), the hatching of an unknown direction, the
+   « maybe gone » ring with its « ? », a camera verified gone, the tape of a pending
+   correction, a proposed position's pale camera. */
+:root[data-ui="punk"] .legend-items .mark {
+  flex: none;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root[data-ui="punk"] .legend-items .mark canvas {
+  width: 20px;
+  height: 20px;
+}
+/* The field (20a's quarter disc): its three levels nested from the camera's corner, each
+   on its ground (the one palette's classes 1 to 3), the halftone over them, the outline. */
+:root[data-ui="punk"] .legend-items .mark.field span {
+  width: 20px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid var(--map-field-line);
+  border-radius: 0 100% 0 0;
+  background:
+    radial-gradient(var(--map-dots) 0.8px, transparent 1.2px) 0 0 / 4px 4px,
+    radial-gradient(
+      circle at 0 100%,
+      var(--map-field-3) 0 40%,
+      var(--map-field-2) 40% 75%,
+      var(--map-field-1) 75%
+    );
+}
+:root[data-ui="punk"] .legend-items .mark.gone canvas {
+  width: 26px;
+  height: 26px;
+}
+:root[data-ui="punk"] :is(.mark, .state-sample).maybe > span:first-child,
+:root[data-ui="punk"] .state-sample.maybe_gone > span:first-child {
+  width: 17px;
+  height: 17px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px dashed var(--line);
+}
+:root[data-ui="punk"] :is(.mark.maybe, .state-sample.maybe_gone) > span:last-child {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--map-maybe-disc);
+  color: var(--map-maybe-mark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font: 900 9px / 1 var(--font-display);
+}
+:root[data-ui="punk"] :is(.mark.maybe, .state-sample.maybe_gone) > span:last-child::after {
+  content: "?";
+}
+:root[data-ui="punk"] :is(.mark.pending, .mark.ghost, .state-sample.pending) > span:first-child {
+  width: 17px;
+  height: 17px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--key-off);
+}
+:root[data-ui="punk"] .mark.ghost > span:first-child {
+  border-style: dotted;
+}
+:root[data-ui="punk"] :is(.mark.pending, .mark.ghost, .state-sample.pending) > span:last-child {
+  position: absolute;
+  left: -1px;
+  top: 8px;
+  width: 26px;
+  height: 8px;
+  background: var(--tape);
+  clip-path: polygon(4% 0, 96% 10%, 100% 90%, 0 100%, 2% 45%);
+}
+
+/* --- Standard / Prudent: 17a's round pastilles ------------------------------------------- */
+/* 76 px on a wide screen beside the ticket (20a: further right while the machine is open),
+   64 px on a phone at the top right (18a); the chosen one solid, pink, with its ✓; the other
+   dashed and smaller. The estimate bar has nothing left to clip: its focus outline shows
+   whole (audit 2026-10-05). */
+:root[data-ui="punk"] #estimate {
+  left: 314px;
+  top: 16px;
+  gap: 6px;
+  align-items: center;
+  overflow: visible;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+:root[data-ui="punk"] body.machine-open #estimate {
+  left: 384px;
+}
+:root[data-ui="punk"] #estimate button {
+  appearance: none;
+  box-sizing: border-box;
+  width: 76px;
+  height: 76px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  border: 2.5px dashed var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--fg);
+  font: 800 15px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+:root[data-ui="punk"] #estimate button[aria-pressed="true"] {
+  border-style: solid;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+:root[data-ui="punk"] .pastille-check {
+  display: none;
+}
+:root[data-ui="punk"] [aria-pressed="true"] > .pastille-check {
+  display: block;
+}
+:root[data-ui="punk"] .pastille-check svg,
+:root[data-ui="punk"] .key-check svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #ticket {
+    rotate: -0.8deg;
+  }
+  :root[data-ui="punk"] #estimate {
+    transition: left var(--dur-button) var(--ease-spring);
+  }
+  /* The state's own tilt and size (17a): Standard -8° when chosen, -3° and 0.86 when not;
+     Prudent +6° and +3°. A hover sets its own (buttons.css). */
+  :root[data-ui="punk"] #estimate button {
+    scale: 0.86;
+    rotate: -3deg;
+  }
+  :root[data-ui="punk"] #estimate button:last-child {
+    rotate: 3deg;
+  }
+  :root[data-ui="punk"] #estimate button[aria-pressed="true"] {
+    scale: 1;
+    rotate: -8deg;
+  }
+  :root[data-ui="punk"] #estimate button[aria-pressed="true"]:last-child {
+    rotate: 6deg;
+  }
+  :root[data-ui="punk"] .legend-levels div:nth-child(1) .sw {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] .legend-levels div:nth-child(2) .sw {
+    rotate: 1.5deg;
+  }
+  :root[data-ui="punk"] .legend-levels div:nth-child(3) .sw {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] :is(.mark.pending, .mark.ghost, .state-sample.pending) > span:last-child {
+    rotate: -30deg;
+  }
+}
+
+/* --- the floating buttons (20a): « ＋ Ajouter » yellow, « Me localiser » the primary ink --- */
+/* 10 px apart, as 18a and 20a draw them (the shared styles' 8 px, with the two tilts
+   toward each other, read as touching: lot M's report of 2026-10-17). */
+:root[data-ui="punk"] #fabs {
+  gap: 10px;
+}
+:root[data-ui="punk"] #fab-add {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--line);
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 900 16px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  box-shadow: none;
+}
+:root[data-ui="punk"] #fab-add[aria-disabled="true"] {
+  background: var(--bg);
+  color: var(--muted);
+  border-style: dashed;
+}
+:root[data-ui="punk"] #fab-locate {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 900 17px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  box-shadow: var(--shadow-accent-2);
+}
+/* « Recentrer » says it in words (and its outlined arrow): no colour of its own on the ink. */
+:root[data-ui="punk"] #fab-locate[data-locate="free"] {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+}
+:root[data-ui="punk"] #fab-locate.failed {
+  background: var(--bg);
+  color: var(--warn);
+  border: 2px solid var(--line);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #fab-add {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] #fab-locate {
+    rotate: -1.5deg;
+  }
+}
+
+/* --- MapLibre's zoom buttons (20a): ink squares, the light blue « + » and « − » --------- */
+:root[data-ui="punk"] .maplibregl-ctrl-top-right .maplibregl-ctrl-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  background: none;
+  border: 0;
+  box-shadow: none;
+}
+:root[data-ui="punk"] .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-in,
+:root[data-ui="punk"] .maplibregl-ctrl-group button.maplibregl-ctrl-zoom-out {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  box-shadow: var(--shadow-accent-2);
+}
+:root[data-ui="punk"] .maplibregl-ctrl-group button + button {
+  border-top: 0;
+}
+:root[data-ui="punk"]
+  :is(.maplibregl-ctrl-zoom-in, .maplibregl-ctrl-zoom-out)
+  .maplibregl-ctrl-icon {
+  background-image: none;
+  filter: none;
+}
+:root[data-ui="punk"]
+  :is(.maplibregl-ctrl-zoom-in, .maplibregl-ctrl-zoom-out)
+  .maplibregl-ctrl-icon::before {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 22px / 1 var(--font-display);
+}
+:root[data-ui="punk"] .maplibregl-ctrl-zoom-in .maplibregl-ctrl-icon::before {
+  content: "+";
+}
+:root[data-ui="punk"] .maplibregl-ctrl-zoom-out .maplibregl-ctrl-icon::before {
+  content: "−";
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .maplibregl-ctrl-zoom-in {
+    rotate: 3deg;
+  }
+  :root[data-ui="punk"] .maplibregl-ctrl-zoom-out {
+    rotate: -2deg;
+  }
+}
+
+/* The attribution (ODbL), 20a's ink strip and typewriter face. */
+:root[data-ui="punk"] .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: var(--line);
+  color: var(--bg);
+  font: 400 11px / 18px var(--font-text);
+  padding: 1px 8px;
+}
+:root[data-ui="punk"] .maplibregl-ctrl-attrib a {
+  color: var(--bg);
+}
+/* The « ⓘ » that folds it, a phone's only (below; main.ts). */
+:root[data-ui="punk"] .attrib-toggle {
+  display: none;
+}
+
+/* The map's canvas fills the screen: its focus outline goes inside. */
+:root[data-ui="punk"] .maplibregl-canvas:focus-visible {
+  outline-offset: -6px;
+}
+
+/* A touch screen, a tablet's wide one included: the ticket's links at 44 px, what a finger
+   touches (DECISIONS 2026-10-07, « Fidelity to the mockup comes first… »); with a mouse
+   17a's 28 px (WCAG 2.5.8: 24 px). */
+@media (pointer: coarse) {
+  :root[data-ui="punk"] :is(.ticket-link, #fab-filters.ticket-link, .reset-link) {
+    min-height: 44px;
+  }
+}
+
+/* --- phone (18a) ----------------------------------------------------------------------- */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #ticket {
+    left: 18px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    width: 200px;
+  }
+  /* Open, the ticket takes the pastilles' place (they come back when it closes), 44 px from
+     the left; it drops 21 px (18a: 58 → 79 px under its 44 px status bar) and, printing the
+     legend, goes up (18a: 50 px), the machine under its title or under it (machine.ts place). */
+  :root[data-ui="punk"] body.machine-open #ticket {
+    /* Centred over the machine's slot at every width, as it comes out of it (18a, 390 px
+       wide, draws it 44 px from the left): the handle runs from the machine's left + 22 px
+       to its right − 38 px (machine.css .case-handle, the phone's machine 12 px from the
+       left and 26 px from the right), so from 34 px to the screen's width − 64 px. */
+    left: calc(
+      34px +
+      env(safe-area-inset-left, 0px) +
+      max(
+        0px,
+        100% -
+        98px -
+        env(safe-area-inset-left, 0px) -
+        env(safe-area-inset-right, 0px) -
+        272px
+      ) /
+      2
+    );
+    top: calc(35px + env(safe-area-inset-top, 0px));
+    width: min(
+      272px,
+      calc(100% - 98px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
+    );
+  }
+  :root[data-ui="punk"] body.machine-legend #ticket {
+    top: calc(6px + env(safe-area-inset-top, 0px));
+  }
+  :root[data-ui="punk"] .filters-empty {
+    left: calc(18px + env(safe-area-inset-left, 0px));
+    max-width: calc(100% - 36px);
+  }
+  /* What a finger touches: 44 px (« Filtres et légende » is held by an id rule above). */
+  :root[data-ui="punk"] :is(.ticket-link, #fab-filters.ticket-link, .reset-link) {
+    min-height: 44px;
+  }
+  /* At the top right, 14 px from the edge: the shared styles centre the bar by half its
+     width (translateX(-50%), kept: a transform outside the motion query would be one more
+     movement to hold, theme.test.ts), so its left is the edge less its 14 px less half its
+     136 px (two pastilles and their gap). */
+  :root[data-ui="punk"] #estimate {
+    left: calc(100% - 82px - env(safe-area-inset-right, 0px));
+    top: calc(18px + env(safe-area-inset-top, 0px));
+    width: auto;
+    gap: 8px;
+  }
+  :root[data-ui="punk"] body.machine-open #estimate {
+    left: calc(100% - 82px - env(safe-area-inset-right, 0px));
+    visibility: hidden;
+  }
+  :root[data-ui="punk"] #estimate button {
+    flex: none;
+    width: 64px;
+    height: 64px;
+    padding: 0;
+    font-size: 13px;
+  }
+  /* The attribution (ODbL), 18a's: an ink inset at the bottom left, 22 px from the edges
+     (above the home indicator), its text 170 px wide (182 with its padding), lines of 11 px
+     typewriter (18a's 9.5 px raised: the licence's credit stays readable, DECISIONS
+     2026-10-08 « Punk, until further notice… »), three where 18a has two; under an open
+     sheet's paper it rides above it (sheet.css), left all the same. */
+  :root[data-ui="punk"] .maplibregl-ctrl-bottom-right {
+    left: calc(22px + env(safe-area-inset-left, 0px));
+    right: auto;
+    padding-bottom: 0;
+  }
+  :root[data-ui="punk"] body:not([data-sheet]) .maplibregl-ctrl-bottom-right {
+    bottom: max(22px, env(safe-area-inset-bottom, 0px));
+  }
+  :root[data-ui="punk"] .maplibregl-ctrl.maplibregl-ctrl-attrib {
+    max-width: 170px;
+    box-sizing: content-box;
+    padding: 1px 6px;
+    background: var(--attrib-inset);
+    color: var(--on-attrib-inset);
+    font: 400 11px / 15px var(--font-text);
+  }
+  :root[data-ui="punk"] .maplibregl-ctrl-attrib a {
+    color: var(--on-attrib-inset);
+  }
+  /* Folded to a compact « ⓘ » (DECISIONS 2026-10-09), always shown (the licence): an ink
+     disc in a 44 px target; a tap unfolds the credit under it, 11 px as above (the control
+     is MapLibre's <details>, which takes no flex layout: the « ⓘ » stays a block above). */
+  :root[data-ui="punk"] .maplibregl-ctrl.maplibregl-ctrl-attrib:has(.attrib-toggle) {
+    max-width: none;
+    padding: 0 6px 3px;
+  }
+  :root[data-ui="punk"]
+    .maplibregl-ctrl.maplibregl-ctrl-attrib:not(.attrib-open):has(.attrib-toggle) {
+    padding: 0;
+    background: none;
+  }
+  :root[data-ui="punk"] .maplibregl-ctrl-attrib .maplibregl-ctrl-attrib-inner {
+    max-width: 170px;
+  }
+  /* Unfolded, the credit is on top: on a phone held sideways (320 px high) it reaches the
+     header ticket, which would cover it and its « ⓘ » (lot M, 2026-10-17); a tap folds it. */
+  :root[data-ui="punk"]
+    body:not([data-sheet])
+    .maplibregl-ctrl-bottom-right:has(.maplibregl-ctrl-attrib.attrib-open) {
+    z-index: 4;
+  }
+  :root[data-ui="punk"] .maplibregl-ctrl-attrib:not(.attrib-open) .maplibregl-ctrl-attrib-inner {
+    display: none;
+  }
+  :root[data-ui="punk"] .attrib-toggle {
+    appearance: none;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    cursor: pointer;
+  }
+  :root[data-ui="punk"] .attrib-i {
+    box-sizing: border-box;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--on-attrib-inset);
+    border-radius: 50%;
+    background: var(--attrib-inset);
+    color: var(--on-attrib-inset);
+    font:
+      700 16px / 1 Georgia,
+      serif;
+    font-style: italic;
+  }
+  /* A sheet open: the header ticket slides away to the left, « ＋ Ajouter » and « Me
+     localiser » to the right (motion below), back when it closes; gone meanwhile, out of
+     the keyboard's reach (DECISIONS 2026-10-09). */
+  :root[data-ui="punk"] body[data-sheet] :is(#ticket, #fabs) {
+    visibility: hidden;
+  }
+  /* The floating buttons beside it, as 18a's (16 px from the right, 34 px from the bottom);
+     the queue's counter, at the left, above it. */
+  :root[data-ui="punk"] #fabs {
+    right: calc(16px + env(safe-area-inset-right, 0px));
+  }
+  :root[data-ui="punk"] body:not([data-sheet]) #fabs {
+    bottom: max(34px, calc(env(safe-area-inset-bottom, 0px) + 12px));
+  }
+  /* The machine or the camera list open, they cover the floating buttons (18a's machine
+     hides them) but for their foot, which stops above the attribution: the buttons go
+     meanwhile, never half covered nor reached by the keyboard under a panel (WCAG 2.4.11). */
+  :root[data-ui="punk"] body:is(.machine-open, .list-open) #fabs {
+    visibility: hidden;
+  }
+  :root[data-ui="punk"] body:not([data-sheet]) #queue-count {
+    bottom: calc(max(22px, env(safe-area-inset-bottom, 0px)) + var(--attrib-h, 0px) + 10px);
+  }
+}
+/* The slide (300 ms, --dur-button): out, the buttons keep their place until they are gone
+   (their `bottom` above the sheet comes after), then hidden; in, shown at once and sliding
+   back. None under reduced motion: they go and come back at once (above). */
+@media (prefers-reduced-motion: no-preference) {
+  @media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+    :root[data-ui="punk"] :is(#ticket, #fabs) {
+      transition:
+        translate var(--dur-button) ease-out,
+        visibility 0s;
+    }
+    :root[data-ui="punk"] body[data-sheet] #ticket {
+      translate: calc(-100% - 40px) 0;
+      transition:
+        translate var(--dur-button) ease-in,
+        visibility 0s linear var(--dur-button);
+    }
+    :root[data-ui="punk"] body[data-sheet] #fabs {
+      translate: calc(100% + 40px) 0;
+      transition:
+        translate var(--dur-button) ease-in,
+        visibility 0s linear var(--dur-button),
+        bottom 0s linear var(--dur-button);
+    }
+  }
+}
+/* Narrower than 18a's 390 px, « Me localiser » would meet the attribution unfolded (182 px):
+   the floating buttons rise above it while it is open. Folded to its 44 px « ⓘ », it leaves
+   them 18a's place at the bottom at every width (lot M, 2026-10-17: at 360 px they rose
+   74 px above the bottom for nothing). */
+@media (max-width: 389px) {
+  :root[data-ui="punk"] body:not([data-sheet]):has(.maplibregl-ctrl-attrib.attrib-open) #fabs {
+    bottom: calc(max(22px, env(safe-area-inset-bottom, 0px)) + var(--attrib-h, 0px) + 10px);
+  }
+}
+/* Narrower than 375 px, 18a's line (the 200 px ticket, then Standard and Prudent at its
+   right) no longer fits: the pastilles stack at the top right, beside the ticket, which
+   keeps its size (lot M, 2026-10-17: at 360 px the ticket covered « Standard »). Centred on
+   their own 64 px (the shared translateX(-50%)), 14 px from the edge as on the line. */
+@media (max-width: 374px) {
+  :root[data-ui="punk"] #estimate,
+  :root[data-ui="punk"] body.machine-open #estimate {
+    flex-direction: column;
+    left: calc(100% - 46px - env(safe-area-inset-right, 0px));
+  }
+}
+
+/* While adding, modifying or moving, the filters' message leaves the map as the panel does
+   (style.css body.moving): « Tout réafficher » would change the paint the editor restores. */
+:root[data-ui="punk"] body.moving #filters-empty {
+  display: none;
+}

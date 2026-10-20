@@ -1,0 +1,101 @@
+/* The camera sheet's rows (lot 3.2, mockup 17a; chips.ts draws them): compact lines on the
+   paper, not cards — the label (typewriter), its source tag cut as an arrow and tilted
+   (17a: « OSM » yellow, « sur place » pink; here also « réponse » and « contribution » in
+   pale pink, « supposé » and « en attente de revue »), a dotted leader, the value in
+   Archivo capitals with its offset. The certainty in 17a's language: « ~ » before an
+   estimated value, the box « Supposé · à compléter » and a pink « ? » after a default one
+   (sheet.css), the word said in hidden text; nothing by colour alone. Rows are not
+   buttons: no state, no touch target, nothing that moves. Text 4.5:1 and graphics 3:1 on
+   their backgrounds in light and dark (web/tests/chips.test.ts reads this file). */
+
+:root[data-ui="punk"] #sheet .facts {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+:root[data-ui="punk"] #sheet .fact {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 25px;
+}
+:root[data-ui="punk"] #sheet .fact dt {
+  order: 0;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--fg);
+  font: 400 13px / 1.3 var(--font-text);
+}
+/* The leader joins the label to the value (17a: 1.5 px dotted, 4 px under the middle). */
+:root[data-ui="punk"] #sheet .fact::after {
+  content: "";
+  order: 1;
+  flex: 1 1 12px;
+  position: relative;
+  top: 4px;
+  border-bottom: 1.5px dotted var(--line);
+}
+:root[data-ui="punk"] #sheet .fact dd {
+  order: 2;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--fg);
+  font: 800 16px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-align: end;
+  text-shadow: var(--shadow-value);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The source tag, cut as an arrow pointing at its label (17a), its text on its own fill. */
+:root[data-ui="punk"] #sheet .chip-tag {
+  padding: 1px 6px 0;
+  font: 400 12.5px / 17px var(--font-text);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+}
+:root[data-ui="punk"] #sheet .chip-tag.osm {
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+:root[data-ui="punk"] #sheet .chip-tag.site {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .chip-tag.answer,
+:root[data-ui="punk"] #sheet .chip-tag.contrib {
+  background: var(--pick-bg);
+  color: var(--fg);
+}
+/* In light the mockup's light blue is 1.4:1 on paper: the ink instead (--accent-2-fill),
+   the light blue in dark. */
+:root[data-ui="punk"] #sheet .chip-tag.assumed {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+}
+:root[data-ui="punk"] #sheet .chip-tag.pending {
+  background: var(--proposal-bg);
+  color: var(--fg);
+}
+
+/* The default value's « ? » (17a: 17 px, pink, tilted). */
+:root[data-ui="punk"] #sheet .fact .q {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 17px;
+  height: 17px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 900 12px / 1 var(--font-display);
+  text-shadow: none;
+  vertical-align: middle;
+  transform: rotate(-8deg);
+}

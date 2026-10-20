@@ -1,0 +1,1252 @@
+:root {
+  font: var(--font-size) / var(--line-height) var(--font-text);
+  color: var(--fg);
+}
+/* The page itself never scrolls (an iPhone report, after phase D3: a drag from a bottom
+   panel scrolled the document — the map, the pin and the target moved, Safari's toolbar
+   shrank, and the page background showed as a grey gap under the panel). The map and
+   every panel live in a body pinned to the viewport; panels scroll inside themselves. */
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--page);
+}
+body {
+  position: fixed;
+  inset: 0;
+}
+#map {
+  position: absolute;
+  inset: 0;
+}
+#filters {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  width: 250px;
+  max-height: calc(100vh - 60px);
+  overflow: auto;
+  background: var(--bg);
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  font-size: 13px;
+  box-shadow: var(--shadow-panel);
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  border: 0;
+  background: none;
+  padding: 8px 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.panel-body {
+  padding: 0 10px 8px;
+}
+#filters.collapsed .panel-body {
+  display: none;
+}
+#filters.collapsed .chevron {
+  transform: rotate(-90deg);
+}
+#filters h4 {
+  margin: 8px 0 4px;
+  font-size: var(--size-s);
+  color: var(--muted);
+  font-weight: 600;
+}
+#filters .row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 24px;
+}
+#filters .toggle {
+  cursor: pointer;
+}
+#filters .toggle .label {
+  flex: 1;
+}
+#filters .count {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+#filters .sample {
+  width: 28px;
+  height: 28px;
+}
+#filters .small {
+  font-size: var(--size-xs);
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.sw {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-swatch);
+  flex: none;
+}
+/* "Maybe gone": the grey badge drawn on the map (layers.ts GONE_GREY). */
+.sw.gone {
+  background: radial-gradient(
+    circle,
+    var(--map-gone) 0 4px,
+    var(--map-halo) 4px 5.5px,
+    transparent 5.5px
+  );
+}
+.sw.hatch {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--legend-hatch) 0 2px,
+    var(--legend-hatch-bg) 2px 5px
+  );
+}
+#sheet {
+  position: absolute;
+  right: 10px;
+  top: 80px;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100vh - 100px);
+  overflow: auto;
+  background: var(--bg);
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: 12px 14px;
+  box-shadow: var(--shadow-sheet);
+}
+#sheet h2 {
+  font-size: 16px;
+  margin: 0 24px 8px 0;
+}
+#sheet .close {
+  position: absolute;
+  right: 8px;
+  top: 6px;
+  border: 0;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+.note,
+.stale {
+  font-size: var(--size-s);
+  color: var(--muted);
+  margin: 6px 0;
+}
+.stale {
+  color: var(--warn);
+}
+.cnil {
+  border-left: 4px solid var(--cnil-line);
+  background: var(--cnil-bg);
+  padding: 6px 8px;
+  margin: 8px 0;
+  font-size: 13px;
+}
+.cnil p {
+  margin: 4px 0;
+}
+/* A camera's history (lot U, history.ts): lines as the chips write a month; nothing at all
+   while it is not in (or empty), not even a flex line's gap. */
+.sheet-history-slot:empty {
+  display: none;
+}
+.sheet-history h3 {
+  margin: 10px 0 2px;
+  font-size: var(--size-s);
+}
+.history-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+/* Two lines an entry (lot U2): the change and the month, then who, smaller, on one line (a
+   long pseudonym cut short with « … », whole for a screen reader). */
+.history-entry > span {
+  display: block;
+}
+.history-who {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* --- estimate bar, floating buttons ------------------------------------------------ */
+#estimate {
+  position: absolute;
+  top: 10px;
+  left: 272px;
+  z-index: 3;
+  display: flex;
+  background: var(--bg);
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+#estimate button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+#estimate button[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+#fabs {
+  position: absolute;
+  right: 10px;
+  bottom: calc(var(--attrib-h, 0px) + 12px);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.fab {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 18px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  font: inherit;
+  font-weight: 600;
+  box-shadow: var(--shadow-fab);
+  cursor: pointer;
+}
+.fab.failed {
+  color: var(--warn);
+  border-color: var(--warn-line);
+}
+.fab[aria-pressed="true"] {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+/* "Me localiser": an arrow, outlined when off or free, filled while the map follows. */
+#fab-locate {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.locate-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+#fab-locate[data-locate="free"] {
+  color: var(--blue);
+}
+#fab-locate[data-locate="follow"] .locate-icon {
+  fill: currentColor;
+}
+#fab-filters {
+  display: none;
+}
+#fabs .fab[hidden] {
+  display: none;
+}
+/* --- sheet frame -------------------------------------------------------------------- */
+#sheet {
+  z-index: 4;
+}
+#filters {
+  z-index: 2;
+}
+.sheet-top {
+  position: relative;
+}
+.sheet-grab {
+  display: none;
+}
+#sheet .close {
+  width: 44px;
+  height: 44px;
+  right: 0;
+  top: 0;
+}
+.links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-right: 16px;
+}
+/* --- camera sheet content --------------------------------------------------------- */
+.sheet-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 44px 2px 0;
+  color: var(--muted);
+  font-weight: 600;
+}
+/* Area sheet: the name first, then "Commune · Hauts-de-Seine (92)". */
+.sheet-top.area .sheet-line {
+  flex-wrap: wrap;
+  gap: 2px 8px;
+}
+.area-name {
+  color: var(--fg);
+  font-size: 17px;
+}
+.area-figures p {
+  margin: 4px 0;
+}
+.area-operators {
+  margin: 4px 0;
+  padding-left: 22px;
+}
+.area-operators li {
+  margin: 2px 0;
+}
+.sheet-picto {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+#sheet h2.headline {
+  font-size: 20px;
+  line-height: 1.25;
+  margin: 2px 44px 6px 0;
+}
+.ruler {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+.ruler-m {
+  font-size: var(--size-xs);
+  fill: var(--fg);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.chip-label {
+  color: var(--muted);
+}
+.chip .cert {
+  color: var(--accent);
+  font-size: 14px;
+}
+.chip.warn {
+  color: var(--warn);
+  border-color: var(--warn-line);
+}
+.chip[aria-expanded="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.chip-help {
+  font-size: 13px;
+  background: var(--bg-2);
+  border-radius: var(--radius-panel);
+  padding: 8px 10px;
+  margin: 8px 0;
+}
+.share {
+  min-height: 44px;
+  padding: 0 18px;
+  margin: 8px 0 0;
+  border: var(--border-w) solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.osm-edit {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+#debug {
+  position: fixed;
+  left: calc(4px + env(safe-area-inset-left, 0px));
+  right: calc(4px + env(safe-area-inset-right, 0px));
+  top: calc(64px + env(safe-area-inset-top, 0px));
+  z-index: 9;
+  margin: 0;
+  padding: 4px 6px;
+  font: 11px / 1.3 var(--font-mono);
+  background: var(--debug-bg);
+  color: var(--debug-fg);
+  border-radius: var(--radius-box);
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+.how summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.how p {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 6px 0;
+}
+.panel-head {
+  box-sizing: border-box;
+}
+.legend summary,
+.advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  list-style: none;
+}
+.legend summary::-webkit-details-marker,
+.advanced summary::-webkit-details-marker {
+  display: none;
+}
+/* A flex summary loses its marker: draw it. */
+.legend summary::before,
+.advanced summary::before {
+  content: "▸";
+  color: var(--muted);
+}
+.legend[open] > summary::before,
+.advanced details[open] > summary::before {
+  content: "▾";
+}
+/* Phone layout (layout.ts PHONE_QUERY): narrow screens, and touch screens in landscape. */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  /* Home indicator and notch (viewport-fit=cover): controls and bar stay clear of them. */
+  .maplibregl-ctrl-bottom-right,
+  .maplibregl-ctrl-bottom-left {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root {
+    font-size: 15px;
+  }
+  #estimate {
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(
+      360px,
+      calc(100% - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px))
+    );
+  }
+  #estimate button {
+    flex: 1;
+    padding: 0 6px;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+  #fab-filters {
+    display: block;
+  }
+  /* Landscape: the notch is on a side (viewport-fit=cover lets content under it). */
+  #fabs {
+    right: calc(10px + env(safe-area-inset-right, 0px));
+  }
+  #filters {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  /* The floating buttons ride above the sheet; hidden when it takes the whole screen. */
+  #fabs {
+    bottom: calc(var(--sheet-covered, var(--attrib-h, 0px)) + 12px);
+    z-index: 4;
+  }
+  body[data-sheet="full"] #fabs {
+    display: none;
+  }
+  /* Filters: a full-screen layer, big targets, changes apply at once. */
+  #filters {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    font-size: 15px;
+    display: none;
+    z-index: 5;
+  }
+  #filters.open {
+    display: block;
+  }
+  #filters .panel-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    align-items: center;
+    background: var(--bg);
+    border-bottom: var(--border-w) solid var(--line);
+    padding: 4px 8px 4px 14px;
+    font-size: 17px;
+    cursor: default;
+  }
+  .panel-close {
+    min-height: 44px;
+    min-width: 88px;
+    border: var(--border-w) solid var(--line);
+    border-radius: var(--radius-pill);
+    background: var(--bg);
+    font: inherit;
+    font-weight: 600;
+  }
+  #filters .panel-body {
+    padding: 0 14px 24px;
+  }
+  #filters .row {
+    min-height: 44px;
+  }
+  #filters input[type="checkbox"],
+  #filters input[type="radio"] {
+    width: 22px;
+    height: 22px;
+  }
+  #filters h4 {
+    font-size: 14px;
+    margin-top: 14px;
+  }
+  .legend summary,
+  .advanced summary {
+    min-height: 44px;
+  }
+  /* 16 px: iOS zooms into smaller text fields. */
+  #adv-operator {
+    min-height: 44px;
+    font-size: 16px;
+    flex: 1;
+  }
+  /* Camera sheet: bottom panel above the attribution, three positions (bottomsheet.ts). */
+  #sheet {
+    position: fixed;
+    left: env(safe-area-inset-left, 0px);
+    right: env(safe-area-inset-right, 0px);
+    top: auto;
+    /* Down to the screen's edge: its background runs under Safari's bar, its content
+       stays above the home indicator (padding of .sheet-body). */
+    bottom: 0;
+    /* The height set by bottomsheet.ts includes the border: what it covers is exact. */
+    box-sizing: border-box;
+    width: auto;
+    max-height: none;
+    padding: 0 14px;
+    border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+    overflow: hidden;
+    transition: height var(--dur-sheet) ease-out;
+  }
+  #sheet.dragging {
+    transition: none;
+  }
+  .sheet-top {
+    touch-action: none;
+    padding-bottom: 8px;
+  }
+  .sheet-grab {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 44px;
+    border: 0;
+    background: none;
+    cursor: grab;
+  }
+  .sheet-grab .handle {
+    width: 40px;
+    height: 5px;
+    border-radius: var(--radius-handle);
+    background: var(--handle);
+  }
+  #sheet h2 {
+    margin-right: 44px;
+  }
+  .sheet-body {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  /* Sheet open: the attribution (ODbL) rides above it, the floating buttons above that. */
+  body[data-sheet] .maplibregl-ctrl-bottom-right {
+    bottom: var(--sheet-covered, 0px);
+    padding-bottom: 0;
+  }
+  body[data-sheet] #fabs {
+    bottom: calc(var(--sheet-covered, 0px) + var(--attrib-h, 0px) + 8px);
+  }
+  .maplibregl-popup-close-button {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+  }
+}
+/* --- participation (phase D1) ------------------------------------------------------ */
+.participate {
+  margin: 4px 0 12px;
+}
+.part-question {
+  margin: 4px 0 8px;
+  font-weight: 600;
+}
+.part-answers,
+.part-nearby,
+.part-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.part-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  border: var(--border-w) solid var(--accent);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.part-btn.primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+.part-btn.quiet {
+  border-color: var(--line);
+  color: var(--fg);
+  font-weight: 400;
+}
+.part-btn.armed {
+  background: var(--warn-fill);
+  border-color: var(--warn-fill);
+  color: var(--on-warn);
+}
+.part-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.part-link {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.part-done {
+  margin: 8px 0;
+  font-weight: 600;
+}
+#queue-count {
+  position: absolute;
+  left: 10px;
+  bottom: calc(var(--attrib-h, 0px) + 12px);
+  z-index: 3;
+  min-height: 32px;
+  padding: 0 12px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-pill-small);
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: var(--size-s);
+  box-shadow: var(--shadow-small);
+}
+#queue-count[hidden] {
+  display: none;
+}
+body.moving #fabs,
+body.moving #estimate,
+body.moving #filters,
+body.moving #fab-filters,
+body.moving #queue-count {
+  display: none;
+}
+/* Move mode: the camera as a pin. The element's origin is the tip (translated to the
+   position every frame); the pictogram stands above a thin stem, clear of the point. */
+#move-pin {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+#move-pin .pin-stem {
+  position: absolute;
+  left: -1.5px;
+  bottom: 0;
+  width: 3px;
+  height: 34px;
+  background: var(--fg);
+  box-shadow: 0 0 0 1.5px var(--halo);
+}
+#move-pin .pin-picto {
+  position: absolute;
+  bottom: 32px;
+  left: 0;
+  transform: translateX(-50%);
+  width: 40px;
+  height: auto;
+  padding: 5px;
+  box-sizing: content-box;
+  background: var(--halo);
+  border-radius: 50%;
+  box-shadow: var(--shadow-pin);
+}
+#move-pin .pin-tip {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fg);
+  box-shadow: 0 0 0 2px var(--halo);
+}
+#move-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: var(--border-w) solid var(--line);
+  box-shadow: var(--shadow-bottom);
+}
+#move-panel h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+.part-hint,
+.part-status {
+  margin: 4px 0;
+  font-size: 13px;
+}
+.part-status {
+  color: var(--muted);
+  /* Room for its longest line: a taller panel moves the map (move.ts padding). */
+  min-height: var(--status-min-height);
+}
+.part-mount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0;
+}
+.part-choice {
+  min-height: 44px;
+  padding: 0 12px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  font: inherit;
+  cursor: pointer;
+}
+.part-choice[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent) inset;
+}
+.part-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+.part-toggle input {
+  width: 22px;
+  height: 22px;
+}
+.part-actions {
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+@media (min-width: 601px) {
+  #move-panel {
+    left: auto;
+    right: 10px;
+    bottom: 40px;
+    width: 360px;
+    border: var(--border-w) solid var(--line);
+    border-radius: var(--radius-panel);
+  }
+}
+#mine {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  overflow: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+}
+#mine .close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 24px;
+  cursor: pointer;
+}
+#mine h2 {
+  margin: 4px 48px 12px 0;
+}
+.mine-list {
+  padding-left: 18px;
+}
+.mine-list li {
+  margin: 6px 0;
+}
+/* Punk, the OSM synchronisation: what became of it on OSM, a line of its own. */
+.mine-osm {
+  display: block;
+  font-size: 0.92em;
+}
+/* A line that can be withdrawn: its text, then "Retirer" as a button a finger can hit. */
+.mine-list li:has(.mine-withdraw) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mine-withdraw {
+  flex: none;
+  min-height: 44px;
+}
+.part-answers.stack {
+  flex-direction: column;
+}
+.part-answers.stack .part-btn {
+  width: 100%;
+}
+/* Move mode: the placement, one control with two exclusive positions. */
+.part-placement {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  margin: 8px 0;
+  border: var(--border-w) solid var(--accent);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.part-placement .part-choice {
+  border: 0;
+  border-radius: 0;
+  min-height: 44px;
+  color: var(--accent);
+  font-weight: 600;
+}
+.part-placement .part-choice[aria-checked="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: none;
+}
+/* Proposals (participation): legend swatches and the block in the camera sheet. */
+.sw.proposal {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--map-proposal);
+  box-shadow:
+    0 0 0 1.5px var(--map-halo),
+    0 0 0 2.5px var(--handle);
+}
+.sw.ghost {
+  width: 14px;
+  height: 10px;
+  border-radius: var(--radius-swatch);
+  background: var(--map-picto);
+  opacity: 0.4;
+}
+.part-proposal {
+  margin: 4px 0 12px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--map-proposal);
+  background: var(--proposal-bg);
+  border-radius: var(--radius-note);
+}
+.part-proposal[hidden] {
+  display: none;
+}
+.proposal-line {
+  margin: 0 0 4px;
+  font-weight: 600;
+}
+.proposal-counts {
+  margin: 4px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.part-proposal .part-answers {
+  margin-top: 6px;
+}
+/* The review account: this camera has contributions in conflict with OpenStreetMap. */
+.part-conflict {
+  margin: 0 0 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-box);
+  background: var(--conflict-bg);
+  font-size: 0.9em;
+}
+/* "Compléter" (phase D2): one question per screen in a bottom panel, as move mode. */
+#complete-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  max-height: 72%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: var(--bg);
+  border-top: var(--border-w) solid var(--line);
+  box-shadow: var(--shadow-bottom);
+}
+#complete-panel h3 {
+  margin: 0 0 4px;
+  font-size: 17px;
+}
+@media (min-width: 601px) {
+  #complete-panel {
+    left: auto;
+    right: 10px;
+    bottom: 40px;
+    width: 380px;
+    border: var(--border-w) solid var(--line);
+    border-radius: var(--radius-panel);
+  }
+}
+.part-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -8px -8px -4px 0;
+}
+.part-step {
+  font-size: var(--size-s);
+  color: var(--muted);
+}
+.part-close {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.part-hint.muted {
+  color: var(--muted);
+}
+.part-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+#complete-panel .part-title-row h3 {
+  margin: 0;
+}
+/* "Compléter": the camera the questions are about, its pictogram enlarged on a white disc
+   (every other pictogram is hidden). The element's origin is the camera's position. */
+#complete-camera {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+/* The disc clips the canvas's own margin (its halo room): the pictogram fills it. */
+#complete-camera .complete-disc {
+  position: absolute;
+  left: -26px;
+  top: -26px;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  background: var(--halo);
+  border-radius: 50%;
+  box-shadow: var(--shadow-disc);
+}
+#complete-camera .complete-picto {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 84px;
+  height: 84px;
+  transform: translate(-50%, -50%);
+}
+/* An add's "‹ Retour", left of the step line. */
+.part-back {
+  min-height: 44px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* The add's last screen: what was answered. */
+.part-recap {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 4px 0 10px;
+}
+.part-recap dt {
+  color: var(--muted);
+}
+.part-recap dd {
+  margin: 0;
+  font-weight: 600;
+}
+.part-given {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--accent);
+}
+.part-shape[aria-pressed="true"],
+.part-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.part-shape-unknown {
+  justify-content: center;
+}
+/* "Abandonner cet ajout ?": the second step of the cross, above the current screen. */
+.part-abandon {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: var(--border-w) solid var(--warn-line);
+  border-radius: var(--radius-card);
+  background: var(--warn-bg);
+}
+.part-abandon .part-question {
+  margin: 0 0 6px;
+}
+.part-onsite-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 0;
+  font-size: var(--size-s);
+  color: var(--muted);
+}
+.part-onsite-help[hidden] {
+  display: none;
+}
+.part-onsite-help .part-onsite-locate {
+  flex: none;
+}
+.part-onsite {
+  margin: 6px 0 0;
+  padding-top: 6px;
+  border-top: var(--border-w) solid var(--line);
+  font-size: var(--size-s);
+  color: var(--muted);
+}
+.part-shapes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 4px 0 6px;
+}
+/* Phase D3: the three tilt profiles on one row. */
+.part-shapes.three {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.part-shape {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: 44px;
+  padding: 2px 4px 5px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.part-shape svg {
+  width: 40px;
+  height: 40px;
+  color: var(--accent);
+}
+.part-shape-name {
+  font-size: 15px;
+  font-weight: 600;
+}
+.part-shape-hint,
+.part-btn-hint {
+  font-size: var(--size-s);
+  line-height: 1.15;
+  font-weight: 400;
+  color: var(--muted);
+}
+.part-shape:active,
+.part-btn:active {
+  background: var(--accent-press);
+}
+.part-two-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+/* Direction: a fixed target at the map's centre; the map slides under it. */
+#aim-target {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+#aim-target::before,
+#aim-target::after {
+  content: "";
+  position: absolute;
+  background: var(--map-me);
+  box-shadow: 0 0 0 1.5px var(--halo);
+}
+#aim-target::before {
+  left: -14px;
+  top: -1.5px;
+  width: 28px;
+  height: 3px;
+}
+#aim-target::after {
+  left: -1.5px;
+  top: -14px;
+  width: 3px;
+  height: 28px;
+}
+/* --- "Ajouter une caméra" (phase "Ajouter") ---------------------------------------- */
+#fab-add[aria-disabled="true"] {
+  color: var(--muted);
+  box-shadow: var(--shadow-fab-off);
+  cursor: default;
+}
+/* "Est-ce l'une de celles-ci ?": each camera with its pictogram and its distance. */
+.part-duplicate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.part-duplicate-picto {
+  width: 28px;
+  height: auto;
+  flex: none;
+}
+.part-duplicate-text {
+  display: flex;
+  flex-direction: column;
+}
+/* A pending add's sheet: the pale pictogram of the map. */
+.sheet-picto.pending {
+  opacity: 0.45;
+}
+/* --- theme: display text (buttons, labels that act, titles) in the theme's display face;
+   the classic tokens keep today's face and weights (theme/classic.css). ---------------- */
+.panel-head,
+.panel-close,
+#estimate button,
+.fab,
+.share,
+.how summary,
+.legend summary,
+.advanced summary,
+/* biome-ignore lint/style/noDescendingSpecificity: face only */
+.part-btn,
+.part-back,
+.part-placement .part-choice,
+.part-shape-name {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-spacing);
+  font-weight: var(--display-weight);
+}
+#sheet h2,
+/* biome-ignore lint/style/noDescendingSpecificity: face only */
+#move-panel h3,
+/* biome-ignore lint/style/noDescendingSpecificity: face only */
+#complete-panel h3,
+#mine h2 {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-spacing);
+  font-weight: var(--heading-weight);
+}
+/* The area's name is a <strong>: its weight stays the browser's "bolder". */
+.area-name {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-spacing);
+}
+/* The sheet's headline is a sentence: never in capitals. */
+#sheet h2.headline {
+  text-transform: none;
+}

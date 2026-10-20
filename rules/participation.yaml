@@ -1,0 +1,112 @@
+# Participation prototype (phase D1): verify and move a camera. Read by the API
+# (pipeline/lacarte/api) and served to the front through /api/config. Values marked
+# [TO ADJUST] are first guesses, to revisit with the review page's figures.
+version: 1
+
+magnet:
+  # A point dropped this close to a facade is pulled onto it, then pipeline's snap_origin
+  # puts it 0.5 m outside (buildings.SNAP_OFFSET_M). The pipeline's own snap only moves a
+  # point inside a building or within 0.5 m, which a finger rarely hits; 3 m is about a
+  # finger's error at z19 on a phone plus the width of a pavement-side facade detail.
+  # [TO ADJUST]
+  capture_m: 3
+  # Move mode loads the buildings around the camera once and pulls the pin onto a facade
+  # on the phone, frame by frame, with the server's rule: they must cover the 50 m move
+  # limit plus the capture and the offset. [TO ADJUST]
+  facades_m: 60
+
+# Move mode has two placements, exclusive: "Sur une façade" (the magnet) and "Libre" (no
+# magnet; a free position inside a building footprint is an awning or an arcade, found by
+# the server as inside_footprint). Preselected by the camera's mount group
+# (rules/mounts.yaml); unknown or `other` mounts preselect nothing and the tester chooses:
+# pole and lamp cameras outnumber wall ones in France (taginfo) and a kerb pole is often
+# within 3 m of a facade. The mount itself is asked in phase D2.
+placement:
+  facade: [wall, doorbell, ceiling, roof]
+  free: [pole, street_lamp, traffic_signals, gantry]
+  choose: [unknown, other]
+
+move:
+  # Farther than this from the camera's served position is refused: a tester corrects a
+  # position, a camera 50 m away is another camera. [TO ADJUST]
+  max_m: 50
+  # Cameras within this distance of the tapped one are offered in a list before moving:
+  # 20 px tap targets overlap at street zoom. [TO ADJUST]
+  nearby_m: 2
+
+# "Ajouter une caméra" (phase "Ajouter"): a camera the map does not have. The duplicate
+# distance is rules/contributions.yaml duplicate.duplicate_m (the build's conflict too).
+add:
+  # The button works from this zoom; below it says "Zoomez pour ajouter". [TO ADJUST]
+  min_zoom: 17
+  # The position screen opens at move mode's zoom (19) on the map's centre; the buildings
+  # around the pin are fetched again once it is this far from where they were fetched
+  # (facades_m is 60: the magnet's 3 m always find theirs). [TO ADJUST]
+  refetch_m: 40
+  # /revue shows an add with the cameras within this distance. [TO ADJUST]
+  review_near_m: 10
+
+# /revue (lot 1 « Modérer »): how a camera is named in the queue.
+review:
+  # A camera's street is the name of the nearest named way (a `highway` with a `name`)
+  # within this distance, else none. A label to find the camera, not an address: a
+  # camera on a facade set back from its street (a forecourt, a square, a courtyard
+  # gate) still gets the street it faces; farther, the nearest name is as likely another
+  # street's, and no name says less than a wrong one. [TO ADJUST]
+  street_within_m: 60
+  # The privileged entry (lot 2 « Administrer », plan-revue §5): a reviewer or an
+  # administrator signs in to /revue with a password (POST /api/review/session), and the
+  # session is marked privileged for this long, in the API's memory (a restart: sign in
+  # again). A working day of review: long enough not to ask the password again between
+  # two sittings, short enough that a session left open on a shared or lost device
+  # stops opening /revue the same evening. [TO ADJUST]
+  privileged_hours: 8
+  # A destructive or wholesale administrator action (a role, disabling, cutting access,
+  # a reset, a deletion, an export for someone, the CSV, showing a hidden camera again,
+  # a setting) asks for the password again, which then holds this long: enough for a
+  # few actions in a row on one account, too short for a stolen privileged session to
+  # use it later. [TO ADJUST]
+  reauth_minutes: 10
+
+# Proposals (moves, "not found") are shown to every account from this zoom: a dot up to
+# z15, then a badge on the pictogram and, for a move, a pale pictogram at the proposed
+# position. [TO ADJUST]
+proposals_min_zoom: 13
+
+# Who validates a contribution: `review` (the prototype) — the review account alone, in
+# /revue and in the camera sheet; other contributors' agreement is counted and shown as a
+# signal. `peer` (for the launch) — another author's agreement validates.
+validation: review
+
+confirm:
+  # Two moves of the same camera by distinct authors confirm each other within this
+  # distance: about the magnet's capture and a finger's error. [TO ADJUST]
+  move_within_m: 3
+  # "Compléter" (phase D2): two accounts' answers agree on the same shape, the same
+  # operator (class, and name when both give one), or directions this close. A signal for
+  # the review; validation stays manual. [TO ADJUST]
+  direction_within_deg: 20
+
+on_site:
+  # The phone says "on site" when its own position is within this distance of the camera;
+  # it sends only true / false / unknown, never the position. [TO ADJUST]
+  within_m: 100
+  # The position is the last one "Me localiser" tracks (watchPosition), kept in memory only.
+  # Older than this, it says nothing (unknown): a walker covers ~80 m a minute, about
+  # within_m, and iOS keeps delivering positions while the page is shown. [TO ADJUST]
+  max_age_s: 60
+  # Less precise than this (the radius the phone reports), it says nothing (unknown): a
+  # Wi-Fi or cell position 500 m wide said "on site" for any camera of the district; 50 m
+  # is half of within_m, which a GPS fix outdoors meets (5-20 m). [TO ADJUST]
+  max_accuracy_m: 50
+
+limits:
+  # Contributions accepted per author and per minute (one API process, in memory).
+  writes_per_minute: 30
+  # Field previews per author and per minute: 150 ms debounce while the map slides gives
+  # at most ~7 per second, bursts included.
+  previews_per_minute: 600
+  # Review decisions per reviewer and per minute (decide, decide-on-site, undo): a careful
+  # reviewer decides a few a minute, a burst of « Valider » on a send's cards stays well
+  # under; it caps what a stolen reviewer session can change. [TO ADJUST]
+  review_per_minute: 60

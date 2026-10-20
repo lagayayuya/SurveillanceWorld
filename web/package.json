@@ -1,0 +1,27 @@
+{
+  "name": "la-carte-web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "lint": "biome check .",
+    "bench": "node bench/zoom.mjs",
+    "smoke": "node bench/smoke.mjs"
+  },
+  "dependencies": {
+    "@protomaps/basemaps": "^5.7.2",
+    "maplibre-gl": "^6.11.2",
+    "pmtiles": "^4.5.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "axe-core": "^4.14.0",
+    "playwright": "^1.63.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.1"
+  }
+}

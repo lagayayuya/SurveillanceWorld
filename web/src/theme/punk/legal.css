@@ -1,0 +1,107 @@
+/* The legal pages (legal/index.ts, the launch lot). No board draws them: they are the welcome
+   panel's ticket as ported (welcome.css: backdrop, torn paper, ×, foot, « Voir la
+   carte »; dark as 28a, light on the paper, its --welcome-* inks), above it when it is open, with its labels for the headings and its typewriter
+   for the text, on a measure kept readable. Their four links, here and in the welcome's
+   body, are the typewriter's underlined words, the page shown on 28a's yellow. In the
+   account's sheets the links are the sheet's own (account.css .account-link). */
+
+:root[data-ui="punk"] .legal-backdrop {
+  z-index: 61;
+}
+:root[data-ui="punk"] .legal-head {
+  align-items: center;
+}
+:root[data-ui="punk"] .legal-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: 900 34px / 0.95 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: 3px 2px 0 #7fd4ff;
+  text-wrap: balance;
+  outline: none;
+}
+:root[data-ui="punk"] .legal-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+:root[data-ui="punk"] .legal-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 4px;
+  color: var(--welcome-ink);
+  font: 400 14.5px / 1.2 var(--font-text);
+  text-decoration: underline wavy var(--welcome-link-line);
+  text-underline-offset: 4px;
+}
+:root[data-ui="punk"] .legal-nav a[aria-current="page"] {
+  background: #ffe800;
+  color: #111111;
+  text-decoration: none;
+}
+:root[data-ui="punk"] .welcome-legal {
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--welcome-rule);
+}
+:root[data-ui="punk"] .legal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1.5px dashed var(--welcome-rule);
+}
+:root[data-ui="punk"] .legal-section:nth-of-type(3n + 2) .legal-label {
+  color: var(--welcome-letter);
+}
+:root[data-ui="punk"] .legal-section:nth-of-type(3n) .legal-label {
+  color: var(--welcome-yellow);
+}
+:root[data-ui="punk"] .legal-p {
+  margin: 0;
+  max-width: 64ch;
+  font: 400 15px / 1.5 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] .legal-link {
+  color: var(--welcome-blue);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
+/* In « Compte » and the account's screen: the four links on one wrapped line. */
+:root[data-ui="punk"] #sheet .account-legal ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+}
+:root[data-ui="punk"] #sheet .account-legal .account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+}
+
+/* A finger's targets: 44 px, as the account's own links (account.css). The links inside a
+   sentence, the pages' and the acceptance line's, stay inline (WCAG 2.5.8's exception for a
+   link in a sentence): a box of their own broke the line before them. */
+@media (pointer: coarse), (max-width: 600px) {
+  :root[data-ui="punk"] .legal-nav a,
+  :root[data-ui="punk"] #sheet .account-legal .account-link {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .legal-nav a[aria-current="page"] {
+    rotate: -1.5deg;
+  }
+}

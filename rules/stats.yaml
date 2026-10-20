@@ -1,0 +1,116 @@
+# The site's counters and /revue's « Statistiques » (lot 4, plan-revue §6 bis). Read by the
+# API (pipeline/lacarte/api/stats.py). Values marked [TO ADJUST] are first guesses, to
+# revisit with the first months of figures.
+version: 1
+
+# POST /api/hit adds nothing when the request's User-Agent holds one of these (any case).
+# The header is read for this test only, never kept nor logged. Only the page's script
+# sends a hit, after the map became visible, and never under navigator.webdriver: these
+# catch what runs the script anyway and says what it is. Plain substrings, no regex:
+# nothing to backtrack on, each one readable.
+bots:
+  # Declared crawlers: they name themselves Somethingbot/1.0, Somethingbot; or a spider.
+  - "bot/"
+  - "bot;"
+  - "bot-"          # DuckDuckBot-Https, Slackbot-LinkExpanding
+  - "crawler"
+  - "spider"        # Baiduspider, Bytespider
+  - "slurp"         # Yahoo's
+  # Link-preview fetchers (a link shared in a chat or a post): one fetch, nobody looking.
+  - "facebookexternalhit"
+  - "facebot"
+  - "whatsapp/"
+  - "telegrambot"
+  - "skypeuripreview"
+  - "vkshare"
+  - "embedly"
+  - "iframely"
+  - "mastodon/"     # each instance fetches the card of a link posted there
+  - "cardyb"        # Bluesky's card fetcher
+  # Headless browsers and page testers: a script, a screenshot, an audit.
+  - "headless"      # HeadlessChrome, and any self-declared headless browser
+  - "phantomjs"
+  - "lighthouse"    # Chrome-Lighthouse, PageSpeed Insights
+  - "google-inspectiontool"
+  # HTTP tools and libraries: no person behind them.
+  - "curl/"
+  - "wget/"
+  - "python-"       # python-requests, python-urllib, python-httpx
+  - "aiohttp"
+  - "go-http-client"
+  - "node-fetch"
+  - "undici"
+  - "axios/"
+  - "libwww-perl"
+  - "java/"
+  - "scrapy"
+  # Uptime monitors.
+  - "pingdom"
+  - "uptimerobot"
+
+# A request without a User-Agent: not counted. Every browser sends one; only a tool
+# leaves it out.
+count_without_user_agent: false
+
+# At most this many an hour for each counter (map, welcome, signin); beyond, the hit is
+# answered the same and adds nothing (a session is opened all the same). It bounds what a
+# script could add to an hour (there is no address to tell one client from another, by
+# design), and stays far above what a site of a region's cameras can expect in its busiest
+# hour (a press article, a link on a front page). [TO ADJUST]
+hourly_cap: 10000
+
+# How long each thing is kept (lacarte_retention(), migration 023, which writes the same
+# numbers: tests/test_retention.py checks they agree). The API runs it once shortly after
+# it starts, then at each new Paris day; the deploy runs it too (db/retention.sql).
+# Hours: the current Paris day and this many before, then added to their Paris day.
+hour_retention_days: 7
+# Days: this many whole months before the current one, then folded into monthly totals kept
+# without limit: a month compares with the same month a year before, and nothing personal
+# is in a total (plan-revue Q5).
+retention_months: 13
+# The journal (migration 020): this many months, the CNIL's recommendation n° 2021-122 on
+# logging (6 months to a year); older lines deleted.
+journal_retention_months: 12
+# The API's thread (lacarte.api.retention): its first run this long after the start, then a
+# look every check_minutes for a new Paris day.
+retention_thread:
+  first_pass_s: 60
+  check_minutes: 60
+
+# « Statistiques » (an administrators' screen of totals): every count is shown from the
+# first one, whatever its size. Only a computed value that means nothing on too few
+# figures — the queue's median wait, a share in % — has a threshold here: below it the
+# value is still shown, marked « peu de données (n = …) » (lot M, 2026-10-17). [TO ADJUST]
+blocks:
+  # The site's use (map loads, welcomes, sessions opened: visits and sign-ins, never
+  # people). Each window is shown whole; the last 24 hours have nothing to set.
+  days:
+    # The last days shown, today included.
+    window_days: 30
+  weeks:
+    # The weeks of the last 13 months (the current one included): the same month a year
+    # before is in view.
+    months: 13
+  months:
+    # Sign-ups by month over the last 13 months (the current one included).
+    months: 13
+  queue:
+    # Weeks shown (in vs decided) and days of « en attente » : the same quarter.
+    window_days: 90
+    # The median wait: at least four weeks since the first contribution (a wait shows over
+    # a month, not a week)…
+    weeks: 4
+    # … and at least this many sends (a « Modifier » send counted once): fewer, a median
+    # wait is one person's afternoon.
+    contributions: 30
+  contributors:
+    # « Qui contribue ? » looks at the last 30 days: who is active now, not who once was.
+    window_days: 30
+    # The share of the three first accounts: at least five accounts active over that
+    # window; under it, a share names individuals rather than describe a community.
+    active: 5
+    # How many accounts the top lists.
+    top: 5
+  osm:
+    # The share that goes to OpenStreetMap: at least twenty accepted sends.
+    accepted: 20

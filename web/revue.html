@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%t:review.title% · %t:app.name%</title>
+    <!-- The logo L3, as the map's page (index.html); no share tags: behind its password. -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon-32-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
+    <!-- Before the first paint (public/revue-prepaint.js): no inline script, the page's
+         Content-Security-Policy is script-src 'self'. -->
+    <script src="/revue-prepaint.js"></script>
+  </head>
+  <body class="review">
+    <!-- The views (review/main.ts): « File » or a camera, each with its h1. -->
+    <div id="review-app"></div>
+    <!-- What the page says (a decision, its undo, an error): read aloud, not only shown. -->
+    <p id="review-live" class="review-sr" role="status"></p>
+    <p id="review-alert" class="review-sr" role="alert"></p>
+    <script type="module" src="/src/review/main.ts"></script>
+  </body>
+</html>

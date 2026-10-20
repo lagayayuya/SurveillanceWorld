@@ -1,0 +1,13 @@
+# camera:mount raw value (lower-cased, trimmed) -> mount group.
+# Built from the values actually used in France (taginfo, 2026-09-27). Unknown values
+# fall into `other`; a missing tag gives `unknown`.
+version: 1
+groups:
+  wall: [wall, building, wall_mounted, facade, façade, balcony, "wall/ceiling"]
+  pole: [pole, post, mast, catenary_mast, utility_pole, pillar, tower, arm]
+  street_lamp: [street_lamp, street_light, lighting_pole, lamp, lap]
+  ceiling: [ceiling]
+  traffic_signals: [traffic_signals, traffic_signal]
+  gantry: [gantry, bridge]
+  roof: [roof]
+  doorbell: [doorbell]

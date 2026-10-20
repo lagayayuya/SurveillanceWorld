@@ -1,0 +1,196 @@
+# Validated contributions applied by the build (stage `apply`, pipeline/lacarte/apply.py).
+# The build reads data/contrib/<region>.jsonl, written by `lacarte contrib export` from the
+# participation database: every contribution the review account accepted and has not
+# rejected (validated, applied, superseded), replayed at every build — the pipeline keeps
+# nothing from one build to the next. The export holds no author, no day, no time.
+# Version 2 (phase D2): the "Compléter" answers (rules/questions.yaml) — shape, direction,
+# who films — and a finer OSM conflict for them, from the tags each contribution keeps.
+# Version 3 (phase "Ajouter"): a camera the map does not have, placed on site.
+# Version 4 (phase D3): height and tilt answers.
+# Version 5 (the punk add and « Modifier »): a participant's placement under a roof.
+version: 5
+
+order:
+  id: rule:contributions@1:order
+  rationale: >-
+    Contributions of one camera are ordered by the day of observation (the gesture's day),
+    then, on the same day, by the order of the review's decisions (a counter set by the
+    review action, no time: it says nothing of the contributors). The export carries that
+    rank, computed in SQL, and the month of observation, never the day. A decision taken
+    later on an older observation does not win over a newer one.
+
+same_day:
+  id: rule:contributions@1:same_day
+  rationale: >-
+    When the rank does not tell two winners apart (decisions taken before the counter
+    existed), neither is applied: both are marked conflict, reason same_day, and the
+    review rejects one. Two moves always disagree; for presence, a tie disagrees only
+    between "not found" and a camera seen (present or moved). An older contribution under
+    such a tie is superseded, the camera keeps its OSM state until the review decides.
+
+move:
+  id: rule:contributions@1:move
+  rationale: >-
+    A validated move puts the camera at the contribution's final position (after the
+    magnet and the placement chosen, exact metres from the database, not the rounded
+    longitude and latitude); its position certainty becomes identified, source
+    contribution. With several validated moves of a camera, the latest observation wins;
+    the others are superseded. The field, streets, communes and tiles follow from the new
+    position; the move limit of the live preview is then measured from it.
+
+seen:
+  id: rule:contributions@2:seen
+  rationale: >-
+    A validated "Elle est là", a validated move and a validated "Compléter" answer (a
+    shape, a direction, who films; not "Je ne sais pas" nor "Je ne vois pas", which are
+    not exported) all say the camera was seen: the
+    latest of them sets the on-site check, which the freshness (filters "À jour ?" and
+    reliability) takes as the maximum of check_date, survey:date and the first day of the
+    month of observation (the day never leaves the database).
+  # The check's day within its month: the first day, never later than the observation.
+  day_of_month: 1
+
+not_found:
+  id: rule:contributions@1:not_found
+  rationale: >-
+    A validated "Introuvable" newer than every validated sighting (present or move) marks
+    the camera gone (verified): it leaves the fields, the streets and the statistics, and
+    stays on the map as a grey pictogram behind a filter; a newer validated sighting brings
+    it back. Distinct from "maybe gone" (an OSM fixme), which changes nothing computed.
+
+osm_conflict:
+  id: rule:contributions@1:osm_conflict
+  rationale: >-
+    A contribution is applied only when the camera's OSM version in the build's extract
+    is the one it is held against: the version recorded with the contribution, or the one
+    the deploy wrote when it last settled it (a conflict revalidated by the review accepts
+    the version the deploy found). Another version, or an element no longer in the extract
+    (deleted, or no longer a camera), makes it a conflict: nothing is merged
+    automatically, the review sees the old and new versions and revalidates or rejects.
+
+public_month:
+  id: rule:contributions@1:public_month
+  rationale: >-
+    Dates shown on the map ("Position corrigée sur place", "Vérifiée sur place",
+    "Disparue (vérifiée)") are months of observation (YYYY-MM); the day stays in /revue.
+    No author's name anywhere on the map.
+
+shape:
+  id: rule:contributions@2:shape
+  rationale: >-
+    The latest validated shape answer sets the camera's kind (rules/questions.yaml
+    shape.kinds), certainty estimated, source contribution; its optics, reach and the
+    direction rule follow. Two different shapes the rank cannot tell apart: same_day
+    conflict, the OSM kind stays.
+
+direction:
+  id: rule:contributions@2:direction
+  rationale: >-
+    The latest validated direction becomes the camera's (certainty estimated, source
+    contribution): its field becomes a sector, it counts in "X" (filmed with a surveyed
+    direction). Not applied, a conflict, when the camera's final kind (a validated shape,
+    else OSM's) is outside the direction rule (reason kind), or when its final position
+    (OSM's or a validated move's) lies more than questions.direction.moved_max_m from where
+    it was aimed (reason moved): the bearing was taken from there. Two different bearings
+    the rank cannot tell apart: same_day conflict.
+
+operator:
+  id: rule:contributions@2:operator
+  rationale: >-
+    Every validated answer to "who films" counts, whatever its date (the review rejects an
+    outdated one): the same answer sets the class (public; business and household are
+    private, outdoor unless the tags say indoor; household also marks a private
+    individual: no CNIL signal, no complaint link) and the chosen name when there is one;
+    different answers leave the operator unknown (class unknown, no name); the same answer
+    with different names keeps the class and drops the name. Applied, reason diverge, when
+    they disagree. An unknown operator carries no CNIL signal.
+
+height:
+  id: rule:contributions@4:height
+  rationale: >-
+    The latest validated height answer sets the camera's height (rules/questions.yaml
+    height.classes), certainty estimated, source contribution. Two different classes the
+    rank cannot tell apart: same_day conflict, the OSM height stays.
+
+tilt:
+  id: rule:contributions@4:tilt
+  rationale: >-
+    The latest validated tilt answer sets the camera's tilt (questions.yaml
+    tilt.classes), certainty estimated, source contribution, when the camera's final
+    kind (a validated shape, else OSM's) is a tilt kind — else a conflict, reason kind,
+    as for a direction — and its final height (a validated answer, else OSM's height) is
+    at least estimated. Without such a height it is not applied and not a conflict: it
+    stays validated, reason no_height, and applies at the first build that has one.
+    Two different classes the rank cannot tell apart: same_day conflict.
+
+fine_conflict:
+  id: rule:contributions@2:fine_conflict
+  rationale: >-
+    A "Compléter" answer is held against the tags it concerns, copied with it from the
+    served build, not the whole element: another OSM version conflicts only when one of
+    these tags changed (reason osm_tags) or the element is gone (osm_deleted). The keys
+    are every tag the derived value reads: the kind also reads surveillance:type (ALPR)
+    and camera:mount (doorbell); a direction loses its meaning if the camera becomes a
+    PTZ, a panorama or a doorbell. A move or "Elle est là" keeps the version rule. A
+    conflict revalidated by the review accepts the version the deploy found: held
+    against that version, the answer applies while it does not change again.
+  keys:
+    shape: [camera:type, surveillance:type, camera:mount]
+    direction: [camera:direction, direction, camera:type, surveillance:type, camera:mount]
+    operator: [operator, operator:type, surveillance]
+    # Phase D3 (rules@4). camera:height has no wiki page and is not read, but a mapper
+    # writing it says something about the height.
+    height: [height, camera:height]
+    tilt: [camera:angle, camera:type, surveillance:type]
+
+under_roof:
+  id: rule:contributions@5:under_roof
+  rationale: >-
+    A position a participant placed (an add, a move) inside a building's footprint is
+    under a roof: an awning, a porch, a garage entrance (DECISIONS 2026-10-08). The camera
+    stays where it was placed (no snap out of the footprint) and that building is no
+    obstacle within under_roof_m around it, an obstacle again beyond: a porch or a garage
+    entrance is a few metres deep, while a prepared footprint is a whole merged block, so
+    a camera in a porch of a deep block does not see through the block. The same rule
+    in the build and in the live preview (camerafield.field). OSM positions keep the snap
+    out of the footprint. [TO ADJUST]
+  under_roof_m: 10
+
+add:
+  id: rule:contributions@3:add
+  rationale: >-
+    A validated add creates a camera with no OSM element and no tag: normalize_row on no
+    tag gives every value by default (kind, direction, operator, height), each at
+    certainty default, until a validated "Compléter" answer on it says otherwise (the D2
+    rules above, held against no OSM version: there is none). Its position is the add's
+    exact final position (after the magnet and the placement chosen), certainty
+    identified, source contribution; a later validated move of it wins as for any camera.
+    The add is a sighting (rules: seen), its month the month it was added (shown "Ajoutée
+    sur place (mois)"). Its id is `c` + the first 12 hex digits of the add's uuid, stable
+    from one build to the next. A rejected add is not exported: the camera and every
+    answer on it leave the next build.
+  # Feeds the future OSM export (prepared, unused): an on_site add becomes a node with
+  # these tags plus the D2 answers' (rules/questions.yaml export).
+  export_tags: {man_made: surveillance, "surveillance:type": camera}
+
+on_site:
+  id: rule:contributions@3:on_site
+  rationale: >-
+    "Sur place" is said only when it is true: a month shown on the map ("Position corrigée
+    sur place", "Vérifiée sur place", "Disparue : introuvable sur place", "Ajoutée sur
+    place") keeps the words when at least one contribution of that kind and that month was
+    made on site (the phone within on_site_m: on_site true; false and unknown are not);
+    otherwise the month alone ("corrigée (septembre 2026)"). The sighting an add makes, with
+    the answers on it, is not shown again as "Vérifiée": the position already says it.
+
+duplicate:
+  id: rule:contributions@3:duplicate
+  rationale: >-
+    An OSM camera of the build's extract closer than duplicate_m to an added camera may be
+    the same camera, mapped since: the add is then not applied, a conflict, reason
+    duplicate, with those cameras' ids; the review keeps both (revalidates: those ids are
+    accepted from then on) or rejects the add. Cameras the contributor was shown within
+    duplicate_m when adding (the server's list at receipt, "Non, c'en est une autre") are
+    accepted from the start. The same distance gives the phone's list "Est-ce l'une de
+    celles-ci ?" before an add is sent. [TO ADJUST]
+  duplicate_m: 5

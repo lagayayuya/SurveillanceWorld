@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stands for `ss -H -4 -tn state established '( sport = :22 )'` in tests/test_deploy.py:
+# one established ssh connection per local address of FAKE_SSH_SESSIONS.
+for a in $FAKE_SSH_SESSIONS; do
+  printf '0      0      %s:22    203.0.113.5:51234\n' "$a"
+done

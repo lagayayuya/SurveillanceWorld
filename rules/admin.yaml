@@ -1,0 +1,20 @@
+# Communes and départements (IGN ADMIN EXPRESS COG CARTO), pipeline/lacarte/admin.py.
+version: 1
+# COG CARTO limits are generalised (medium scale): a stretch of street or a camera just
+# outside every commune goes to the nearest one within this distance; farther away it is
+# outside the region's communes (a neighbouring département in the OSM extract).
+# Measured on IDF (2026-09-28): stretches 0-10 m from a commune lie inside the union of the
+# IDF départements for 98 % of their 35.6 km (slivers between communes); from 10 m on, 0 %
+# (neighbouring départements). 100 m would have given ~49 km of their streets to border
+# communes. [TO ADJUST]
+rescue_max_m: 10
+
+# Colour classes of the communes and départements on the punk map: fixed breaks, in % of
+# the streets in range, on the high end Y of the sheet's "between X % and Y %" (every
+# camera, the least certain estimate), the same for both kinds of area and for
+# « Publiques ». The classique keeps its quantiles (tiles.share_breaks) until the switch.
+# Why fixed: with quantiles Paris and its inner ring fell almost all in the top class
+# (77 of their 133 communes with a camera at >= 18.9 %, IDF build dcde7c74) and the map
+# said only "everything is filmed"; with these, 14 / 30 / 32 / 31 / 26 of them in each
+# class, and a class reads the same everywhere. User decision 2026-10-09. [TO ADJUST]
+area_class_breaks_pct: [5, 15, 30, 50]

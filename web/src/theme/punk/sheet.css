@@ -1,0 +1,947 @@
+/* The camera sheet (lot 3.2), ported from mockup 17a on a wide screen and 4b on a phone
+   (chips.ts draws it; its rows are chips.css's): paper with a torn edge and a hard offset
+   shadow, the title in cut-out letters, the operator, the dates, the distance
+   tickets, the rows, the gridded « Supposé · à compléter » box,
+   « Compléter » / « Toujours là ? », the links. Sizes, fonts, tilts and colours are 17a's
+   (its rendered DOM, export of 2026-10-06) unless docs/interface.md §3 « Camera sheet
+   (lot 3.2) » says why not. Every rule here is the camera's sheet's (`.sheet-frame`, its
+   `.sheet-paper`): the commune sheet keeps its own. Tilts that never move are named in web/tests/theme.test.ts
+   (FIXED_DECOR); those of what moves are under the motion query. */
+
+/* Said, not seen. */
+:root[data-ui="punk"] #sheet .sheet-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- the frame ---------------------------------------------------------------------- */
+/* A wide screen: 17a's 372 px, 18 px from the top (from 960 px wide, 17a's board: below,
+   80 px, under the map's zoom buttons, which beside it would sit on the estimate bar) down
+   to 14 px above the bottom, tilted 1°, its paper torn at the bottom and its offset shadow
+   the same shape (light blue in light, pink in dark); the paper scrolls when its content is
+   longer. The sheet itself is transparent: the paper is its child. */
+:root[data-ui="punk"] #sheet:has(> .sheet-frame) {
+  top: 80px;
+  bottom: 14px;
+  right: 22px;
+  width: min(372px, calc(100vw - 32px));
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  overflow: visible;
+  transform: rotate(1deg);
+}
+:root[data-ui="punk"] #sheet .sheet-frame {
+  height: 100%;
+  filter: drop-shadow(var(--shadow-sheet));
+}
+:root[data-ui="punk"] #sheet .sheet-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 18px 18px 24px;
+  /* Never sideways (DECISIONS 2026-10-09, « Punk sheets on a phone… »): nothing is wider
+     than the paper (the title shrinks, the area's cursor stays over its ramp), and what a
+     tilt pushes out by a pixel does not make it scroll. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 13px / 1.3 var(--font-text);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 10px),
+    96% 100%,
+    91% calc(100% - 7px),
+    85% 100%,
+    79% calc(100% - 9px),
+    72% calc(100% - 2px),
+    66% calc(100% - 8px),
+    59% 100%,
+    53% calc(100% - 6px),
+    46% calc(100% - 1px),
+    40% calc(100% - 9px),
+    33% 100%,
+    27% calc(100% - 7px),
+    20% calc(100% - 1px),
+    14% calc(100% - 8px),
+    7% 100%,
+    0 calc(100% - 6px)
+  );
+}
+/* No tape over the corners: 17a's two and 4b's were decoration, removed after the iPhone
+   test (DECISIONS 2026-10-09, « Punk map after the iPhone test… »); the only tape left
+   means « correction en attente » (.sheet-band.tape, a proposal's line, below). */
+:root[data-ui="punk"] #sheet .sheet-top,
+:root[data-ui="punk"] #sheet .sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* --- the head: title in cut-out letters, close -------------------------------------- */
+/* The head's room in the top, for a phone's pinned head (below; chips.ts pinHead). */
+:root[data-ui="punk"] #sheet .sheet-head-room {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .sheet-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+:root[data-ui="punk"] #sheet .sheet-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+:root[data-ui="punk"] #sheet .sheet-head .headline {
+  margin: 0;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: auto;
+}
+:root[data-ui="punk"] #sheet .cutout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+/* A word longer than its line: chips.ts fitTitle shrinks the letters until it holds, and
+   only below its smallest size does the word wrap inside (never under ↑ and ×: DECISIONS
+   2026-10-09, « Punk sheets on a phone… »); while measured, each word on one line. */
+:root[data-ui="punk"] #sheet .cut-word {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .cutout.fitting .cut-word {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+:root[data-ui="punk"] #sheet .cut {
+  display: inline-flex;
+  padding: 2px 4px 1px;
+}
+:root[data-ui="punk"] #sheet .cut.c0 {
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 800 29px / 1 var(--font-display);
+  font-stretch: 62%;
+}
+:root[data-ui="punk"] #sheet .cut.c1 {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 900 24px / 1 var(--font-display);
+  font-stretch: 125%;
+}
+:root[data-ui="punk"] #sheet .cut.c2 {
+  background: var(--cut-blue);
+  color: var(--on-accent);
+  font: 400 26px / 1 var(--font-text);
+}
+/* 17a draws this letter in Bricolage Grotesque, which is not self-hosted: Archivo. */
+:root[data-ui="punk"] #sheet .cut.c3 {
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font: 800 26px / 1 var(--font-display);
+  font-stretch: 100%;
+}
+:root[data-ui="punk"] #sheet .cut.c4 {
+  color: var(--cut-serif);
+  font: italic 700 30px / 1 var(--font-serif);
+}
+/* The close button: an ink square with a light blue × in light (17a), cream with an ink ×
+   in dark; 17a's 36 px with a mouse, 44 px under a finger (below, and on a phone). */
+:root[data-ui="punk"] #sheet .sheet-head .close {
+  position: static;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 22px / 1 var(--font-display);
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet .sheet-head .close {
+  background: var(--fg);
+  color: var(--on-accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #sheet .sheet-head .close {
+    rotate: 6deg;
+  }
+}
+/* The sticker before the title is 4b's (a phone): 17a has none. */
+:root[data-ui="punk"] #sheet .sheet-head .sheet-picto {
+  display: none;
+}
+/* « ← Mes caméras » (profile/cameras.ts, lot U2): a button of the head's top row, the close's
+   ink square stretched to its words, as high as ↑ and × and beside them; the sticker and
+   the title wrap to the next row (an empty item as wide as the head breaks it), at the
+   left edge they have in every sheet. */
+:root[data-ui="punk"] #sheet .sheet-head.has-return {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+:root[data-ui="punk"] #sheet .sheet-head.has-return::before {
+  content: "";
+  order: -1;
+  flex: 0 0 100%;
+}
+:root[data-ui="punk"] #sheet .sheet-head.has-return > :is(.sheet-grab, .close) {
+  order: -2;
+}
+:root[data-ui="punk"] #sheet .sheet-head .sheet-return {
+  order: -3;
+  flex: none;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  margin-right: auto;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 16px / 1 var(--font-display);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet .sheet-head .sheet-return {
+  background: var(--fg);
+  color: var(--on-accent);
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-return {
+    rotate: -2deg;
+  }
+}
+
+/* --- the operator, the dates -------------------------------------------------------- */
+:root[data-ui="punk"] #sheet .sheet-operator {
+  margin: 0;
+  font: 400 14px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .sheet-dates {
+  margin: 0;
+  color: var(--accent);
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+
+/* --- the distance tickets (tilts inline, as 17a: chips.ts) -------------------------- */
+:root[data-ui="punk"] #sheet .tickets {
+  display: flex;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .ticket {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 6px 8px;
+  border: 2px solid var(--line);
+  border-left-style: dashed;
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: var(--shadow-ticket-off);
+}
+:root[data-ui="punk"] #sheet .ticket.on {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+/* A choice (DECISIONS 2026-10-08, « Punk focus… »): the chosen one pink, lifted (inline) and
+   ticked with 17a's round ✓ (20 px, ink in light, cream in dark), not by colour alone. */
+:root[data-ui="punk"] #sheet .ticket[role="radio"] {
+  position: relative;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .ticket[aria-disabled="true"] {
+  cursor: default;
+}
+:root[data-ui="punk"] #sheet .ticket-check {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  display: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--bg);
+  font: 700 12px / 20px var(--font-text);
+  text-align: center;
+}
+:root[data-ui="punk"] #sheet .ticket.on .ticket-check {
+  display: block;
+}
+:root[data-ui="punk"] #sheet .ticket-v {
+  font: 900 30px / 0.95 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: var(--shadow-title);
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .ticket.on .ticket-v {
+  text-shadow: var(--shadow-ticket-value-on);
+}
+:root[data-ui="punk"] #sheet .ticket-k {
+  font: 400 13px / 1.3 var(--font-text);
+}
+/* Under the tickets: « Prudent : … » (4b). */
+:root[data-ui="punk"] #sheet .sheet-note {
+  margin: -4px 0 0;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .sheet-note:empty {
+  display: none;
+}
+
+/* --- bands, stamps ------------------------------------------------------------------ */
+/* A band: 17a's yellow label (« identification ~6 m » on its map), cut as an arrow, for a
+   state the mockup does not draw: no field, an OSM warning, the CNIL signal, a review
+   conflict. */
+:root[data-ui="punk"] #sheet .sheet-band {
+  margin: 0;
+}
+:root[data-ui="punk"] #sheet .sheet-band .band {
+  display: inline-block;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 3px 10px 2px 16px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 17px var(--font-text);
+  clip-path: polygon(9px 0, 100% 0, 100% 100%, 9px 100%, 0 50%);
+}
+:root[data-ui="punk"] #sheet .sheet-band .chip-tag {
+  margin-left: 4px;
+  background: var(--on-warn);
+  color: var(--warn-fill);
+}
+/* A tape (17a's scotch, 20a's « correction en attente »): what waits for the review. Ink
+   on it in both modes (on the dark paper the half-clear yellow is too light for cream). */
+:root[data-ui="punk"] #sheet .sheet-band.tape .band,
+:root[data-ui="punk"] #sheet .part-proposal .proposal-line {
+  padding: 3px 12px 2px;
+  background: var(--sheet-tape);
+  color: var(--on-warn);
+  mix-blend-mode: var(--sheet-tape-blend);
+  clip-path: polygon(1% 0, 99% 8%, 100% 92%, 1% 100%, 0 40%);
+}
+/* A stamp (17a's « Toujours là »: « Disparue »), its second line in small type, as 17a's
+   has its date. */
+:root[data-ui="punk"] #sheet .sheet-stamp {
+  align-self: flex-start;
+  margin: 0 0 8px 2px;
+  padding: 1px 9px;
+  border: 3px double var(--stamp-line);
+  color: var(--accent);
+  font: 900 17px / 1.15 var(--font-display);
+  font-stretch: 75%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+}
+:root[data-ui="punk"] #sheet .stamp-sub {
+  display: block;
+  font: 400 12.5px / 1.2 var(--font-text);
+  letter-spacing: normal;
+  text-transform: none;
+}
+/* « Disparue »: the « Toujours là » stamp (17a), on the paper where the tickets were. */
+:root[data-ui="punk"] #sheet .sheet-stamp.gone {
+  margin: 8px 0 6px 10px;
+  padding: 6px 14px 4px;
+  border: 4px solid var(--accent);
+  font: 900 30px / 1 var(--font-display);
+  font-stretch: 70%;
+  letter-spacing: normal;
+  text-align: center;
+  transform: rotate(-6deg);
+}
+:root[data-ui="punk"] #sheet .sheet-stamp.gone .stamp-sub {
+  font-size: 14px;
+}
+
+/* --- the facts ---------------------------------------------------------------------- */
+:root[data-ui="punk"] #sheet .sheet-facts {
+  display: flex;
+  flex-direction: column;
+  padding-top: 2px;
+}
+/* « Supposé · à compléter » (17a): white (dark: grey) paper ruled in light blue. */
+:root[data-ui="punk"] #sheet .sheet-assumed {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 10px 7px;
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 12px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 12px 100%,
+    var(--bg-2);
+  box-shadow: var(--shadow-box);
+  transform: rotate(-0.8deg);
+}
+/* The camera's history (lot U, history.ts): under the box's title tile, on the paper itself
+   (nothing in it is assumed); last in the body, under the links. Two lines an entry at most,
+   even 320 px wide (lot U2): the change and the month in the rows' letters, words never cut;
+   then who, smaller and muted, on one line, a long pseudonym cut short with « … ». */
+:root[data-ui="punk"] #sheet .sheet-history {
+  display: flex;
+  flex-direction: column;
+  padding-top: 4px;
+}
+:root[data-ui="punk"] #sheet .sheet-history .history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .history-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+:root[data-ui="punk"] #sheet .history-what {
+  font: 400 14px / 1.3 var(--font-text);
+  overflow-wrap: normal;
+  hyphens: none;
+}
+:root[data-ui="punk"] #sheet .history-who {
+  overflow: hidden;
+  color: var(--muted);
+  font: 400 12.5px / 1.3 var(--font-text);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+:root[data-ui="punk"] #sheet .sheet-history .history-osm {
+  margin-top: 4px;
+}
+:root[data-ui="punk"] #sheet .sheet-assumed h3,
+:root[data-ui="punk"] #sheet .sheet-history h3 {
+  align-self: flex-start;
+  margin: 0 0 2px;
+  padding: 0 6px;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 800 13px / 19px var(--font-display);
+  font-stretch: 75%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* --- the CNIL box: a band, its words, its link --------------------------------------- */
+:root[data-ui="punk"] #sheet .sheet-paper .cnil {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .sheet-paper .cnil p {
+  margin: 4px 0;
+}
+
+/* --- the proposals, the review's conflict (participate/index.ts) --------------------- */
+/* No frame: the line on 20a's tape, the rest on the paper. */
+:root[data-ui="punk"] #sheet .sheet-paper .part-proposal {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .part-proposal .proposal-line {
+  display: inline-block;
+  margin: 0 0 4px;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .sheet-paper.pending .part-proposal .proposal-line {
+  display: block;
+  padding: 0;
+  background: none;
+  color: var(--fg);
+  mix-blend-mode: normal;
+  clip-path: none;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .part-conflict {
+  margin: 0;
+  padding: 3px 10px 2px 16px;
+  border-radius: 0;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 17px var(--font-text);
+  clip-path: polygon(9px 0, 100% 0, 100% 100%, 9px 100%, 0 50%);
+}
+:root[data-ui="punk"] #sheet .sheet-paper .part-conflict a {
+  color: var(--on-warn);
+}
+
+/* « Revenir à la caméra »: in the camera sheet while the map is below the street level
+   with a camera in focus (main.ts markFar), as a tap on its marker; a link of 17a with its
+   arrow. First in the sheet's body. */
+:root[data-ui="punk"] .sheet-back {
+  display: none;
+  margin: 6px 0 12px;
+}
+:root[data-ui="punk"] body.focus-far .sheet-back {
+  display: block;
+}
+
+/* --- the body: what 17a puts under the tickets, then its buttons and links ------------- */
+/* chips.ts builds the body in the order it is seen (WCAG 1.3.2, 2.4.3): « Revenir à la
+   caméra », OpenStreetMap's warnings, the review's conflict and the proposal (the
+   participation's head slot), the facts, the « Supposé » box, the CNIL box, the
+   participation's buttons, then the links: « Partager », « Déplacer » (its slot),
+   « OpenStreetMap ↗ », « Calcul ? », « Vos contributions » (its slot), and what « Calcul ? »
+   opens. The body is a wrapping row so that the buttons share a line, and the links
+   theirs; every other part takes a line of its own. The participation's box, its row and
+   the slots take no box here (display: contents): their children are the row's items. */
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-body {
+  flex-flow: row wrap;
+  align-items: center;
+  align-content: flex-start;
+  gap: 9px 8px;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-body > *,
+:root[data-ui="punk"] #sheet .sheet-paper .participate > *,
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot > * {
+  flex: 0 0 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .participate:not([hidden]),
+:root[data-ui="punk"] #sheet .sheet-paper .participate > .part-answers:not(.stack, [hidden]),
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot {
+  display: contents;
+}
+/* The participation's row (« Déplacer » first and filled when the position is to check,
+   « Compléter » when a question remains, « Toujours là ? »): side by side, each half the
+   line as 17a's two, whether one, two or three (a third on a line of its own: three on one
+   line wrapped « TOUJOURS LÀ ? »). */
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > .part-btn {
+  flex: 0 0 calc(50% - 4px);
+  min-height: 44px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  font: 900 18px / 1 var(--font-display);
+  font-stretch: 68%;
+  letter-spacing: normal;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > .part-btn.primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > #part-complete {
+  position: relative;
+  border: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  box-shadow: var(--shadow-accent-2);
+}
+/* Its « ? »: something is left to complete (it is shown only then). */
+:root[data-ui="punk"] #sheet #part-complete::after {
+  content: "?";
+  /* biome-ignore lint/suspicious/noDuplicateProperties: its alternative text, where the
+     browser has the syntax (the « ? » is drawn, not said: the button says « Compléter ») */
+  content: "?" / "";
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 900 13px / 1 var(--font-display);
+  text-shadow: none;
+  transform: rotate(-8deg);
+}
+/* « Toujours là ? »: yellow (17a). */
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > .part-verify {
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+/* Where the buttons' line ends: a line of no height (a flex line is never shorter). */
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-break {
+  height: 0;
+}
+/* The links (17a): a typewriter word with a wavy underline; 28 px high with a mouse (17a's
+   are 17 px; WCAG 2.5.8: 24 px), 44 px wherever the pointer is coarse (a phone, a tablet),
+   the rule of the map's ticket links (theme/punk/map.css). */
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-link,
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-back,
+:root[data-ui="punk"] #sheet .sheet-paper .osm-edit,
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-link,
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-move:not(.primary) {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 28px;
+  margin: 0 6px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--fg);
+  font: 400 13px / 1.3 var(--font-text);
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* The links under the buttons: their touch area starts where the buttons end (they take
+   back the two gaps of the break's line; with a mouse their text is then 6 px under the
+   buttons, as 17a writes them), a second line of them one link's height under the first,
+   the touch areas side by side, never over each other. */
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-body > .sheet-link,
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-link,
+:root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-move:not(.primary) {
+  margin-top: -18px;
+  margin-bottom: 9px;
+}
+@media (pointer: coarse) {
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-link,
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-back,
+  :root[data-ui="punk"] #sheet .sheet-paper .osm-edit,
+  :root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-link,
+  :root[data-ui="punk"] #sheet .sheet-paper .part-slot > .part-move:not(.primary) {
+    min-height: 44px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .close {
+    width: 44px;
+    height: 44px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-return {
+    height: 44px;
+  }
+}
+:root[data-ui="punk"] #sheet .sheet-paper .how[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .how p,
+:root[data-ui="punk"] #sheet .sheet-paper .how-facts {
+  margin: 0 0 8px;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .how-facts dt {
+  font-family: var(--font-display);
+  font-weight: var(--display-weight);
+  font-stretch: var(--display-stretch);
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .how-facts dd {
+  margin: 0 0 6px;
+}
+:root[data-ui="punk"] body:not(.focus-far) #sheet .sheet-paper .sheet-back {
+  display: none;
+}
+/* --- beside the sheet ---------------------------------------------------------------- */
+/* A wide screen: the floating buttons (« Me localiser », « ＋ Ajouter ») and the map's
+   attribution at the bottom right, and its zoom buttons at the top right, ride beside the
+   open camera sheet as on a phone they ride above it: 17a's sheet takes the whole height,
+   they stay seen and touched. */
+@media (min-width: 601px) and (min-height: 501px), (min-width: 601px) and (pointer: fine),
+  (min-width: 601px) and (pointer: none) {
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet > .sheet-frame) #fabs,
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet > .sheet-frame) .maplibregl-ctrl-bottom-right {
+    right: calc(min(372px, 100vw - 32px) + 34px);
+  }
+}
+@media (min-width: 960px) {
+  :root[data-ui="punk"] #sheet:has(> .sheet-frame) {
+    top: 18px;
+  }
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet > .sheet-frame) .maplibregl-ctrl-top-right {
+    right: calc(372px + 34px);
+  }
+}
+
+/* --- a phone: 4b's bottom sheet ----------------------------------------------------- */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  /* Full width at the bottom, its top waved over a light blue (pink in dark) edge; no
+     tilt. The paper is the sheet's height (bottomsheet.ts), its top what
+     a phone shows at its lowest (peek: the title, the tickets and their note, as 4b's
+     « réduite »). Higher, the paper scrolls under its head, which alone stays (DECISIONS
+     2026-10-09, « Punk sheets on a phone… »): the head is pinned to the frame, out of the
+     scrolling flow, and the top keeps its place (chips.ts pinHead: a block as high
+     as the head in its place), so that the peek and the handle's drag (bottomsheet.ts, `.sheet-top`)
+     are as they were; the body's height bottomsheet.ts sets then only bounds its box, its
+     content scrolling with the paper. */
+  :root[data-ui="punk"] #sheet:has(> .sheet-frame) {
+    top: auto;
+    bottom: 0;
+    right: env(safe-area-inset-right, 0px);
+    width: auto;
+    max-height: none;
+    transform: none;
+  }
+  :root[data-ui="punk"] #sheet .sheet-frame {
+    position: relative;
+    height: 100%;
+    filter: drop-shadow(var(--shadow-sheet-top));
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper {
+    height: 100%;
+    max-height: none;
+    gap: 0;
+    padding: 0 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    clip-path: polygon(
+      0 6px,
+      7% 0,
+      14% 8px,
+      20% 1px,
+      27% 7px,
+      33% 0,
+      40% 9px,
+      46% 1px,
+      53% 6px,
+      59% 0,
+      66% 8px,
+      72% 2px,
+      79% 9px,
+      85% 0,
+      91% 7px,
+      96% 0,
+      100% 10px,
+      100% 100%,
+      0 100%
+    );
+  }
+  /* At its lowest it shows its top, nothing scrolled (chips.ts pinHead brings it back). */
+  :root[data-ui="punk"] #sheet[data-state="peek"] .sheet-paper {
+    overflow-y: hidden;
+  }
+  /* The head pinned to the frame (its containing block: neither the top nor the paper is
+     positioned), over what scrolls; 14 px under it at rest, where the lifted ticket's ✓
+     shows, then passes under it. */
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-top {
+    position: static;
+    gap: 14px;
+    padding: 0 0 8px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-head-room {
+    display: block;
+    flex: none;
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-head {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* 6 px under it: what the letters' tilts and lifts push out stays on its paper. */
+    padding: 20px 18px 6px;
+    background: var(--bg);
+    touch-action: none;
+  }
+  /* The body scrolls with the paper: room at its sides and top for the focus outlines
+     (3 px, 3 px off), and at its end for the home indicator (its own padding would stay
+     at the end of the box bottomsheet.ts bounds). */
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-body {
+    margin: 0 -18px;
+    padding: 6px 18px 0;
+    overflow: visible;
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-body::after {
+    content: "";
+    flex: 0 0 100%;
+    height: env(safe-area-inset-bottom, 0px);
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-picto {
+    display: block;
+    width: 50px;
+    height: 50px;
+    margin: -6px -6px 0 -8px;
+  }
+  /* The paper scrolled (chips.ts pinHead): the pinned head folds to one bar, ↑ and × as
+     they were, the title in the bar's letters on one line, cut short with « … » (its whole
+     text is still the heading's), an ink rule under it; what scrolls goes under the bar,
+     never under a title of three lines (lot U2). */
+  :root[data-ui="punk"] #sheet .sheet-paper .sheet-head.compact {
+    align-items: center;
+    padding-top: 12px;
+    padding-bottom: 8px;
+    box-shadow: 0 2px 0 var(--line);
+  }
+  :root[data-ui="punk"] #sheet .sheet-head.compact .sheet-picto {
+    width: 36px;
+    height: 36px;
+    margin: 0 -2px 0 -6px;
+  }
+  :root[data-ui="punk"]
+    #sheet
+    .sheet-head.compact
+    :is(.cutout, .sheet-operator, .area-line, .profile-since) {
+    display: none;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head.compact .headline > .sheet-sr {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin: 0;
+    clip-path: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font: 800 20px / 1.2 var(--font-display);
+    font-stretch: 62%;
+    text-transform: uppercase;
+    color: var(--fg);
+  }
+  /* With « ← Mes caméras », the bar is that button, ↑ and × (the title said only). */
+  :root[data-ui="punk"] #sheet .sheet-head.compact.has-return::before,
+  :root[data-ui="punk"] #sheet .sheet-head.compact.has-return .sheet-picto {
+    display: none;
+  }
+  /* The title's column, emptied, out of the row (neither room nor gap): ↑ and × stay at the
+     right edge (the column stays in the page, its heading still said). */
+  :root[data-ui="punk"] #sheet .sheet-head.compact.has-return .sheet-title {
+    position: absolute;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head.compact.has-return .headline > .sheet-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+  }
+  /* What a finger touches: 44 px, whatever the pointer reports. */
+  :root[data-ui="punk"] #sheet .sheet-head .close {
+    width: 44px;
+    height: 44px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-return {
+    height: 44px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper :is(.sheet-link, .sheet-back, .osm-edit),
+  :root[data-ui="punk"] #sheet .sheet-paper .part-slot > :is(.part-link, .part-move:not(.primary)) {
+    min-height: 44px;
+  }
+  /* The handle is 4b's « ↑ » (« ↓ » at full height): an ink square beside the close. */
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-grab {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    background: var(--accent-2-fill);
+    color: var(--on-accent-2);
+    font: 800 22px / 1 var(--font-display);
+  }
+  :root[data-ui="punk"][data-mode="dark"] #sheet .sheet-head .sheet-grab {
+    background: var(--fg);
+    color: var(--on-accent);
+  }
+  /* A drawn arrow, as thick as the close's × and in its colour (a font's arrow was a thin
+     line, and the classique's handle bar pushed it aside in the account's sheets). */
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-grab::before {
+    content: "";
+    width: 22px;
+    height: 22px;
+    background: currentColor;
+    mask:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M11 19V4M4 10.5 11 3.5l7 7' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='square'/%3E%3C/svg%3E")
+      center / contain no-repeat;
+  }
+  :root[data-ui="punk"] #sheet[data-state="full"] .sheet-head .sheet-grab::before {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 22 22'%3E%3Cpath d='M11 3v15M4 11.5l7 7 7-7' fill='none' stroke='%23000' stroke-width='3.6' stroke-linecap='square'/%3E%3C/svg%3E");
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-grab .handle {
+    display: none;
+  }
+  /* Forced colours (Windows contrast themes): the mask keeps the system's button text. */
+  @media (forced-colors: active) {
+    :root[data-ui="punk"] #sheet .sheet-head .sheet-grab::before {
+      forced-color-adjust: none;
+      background: ButtonText;
+    }
+  }
+  /* The attribution and the floating buttons ride above the sheet's waved edge (its top
+     10 px over the map), not on them. */
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet > .sheet-frame) .maplibregl-ctrl-bottom-right {
+    bottom: calc(var(--sheet-covered, 0px) + 10px);
+  }
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet > .sheet-frame) #fabs {
+    bottom: calc(var(--sheet-covered, 0px) + var(--attrib-h, 0px) + 18px);
+  }
+  /* 4b: the operator 5 px under the title, in its column. */
+  :root[data-ui="punk"] #sheet .sheet-title {
+    gap: 5px;
+  }
+  :root[data-ui="punk"] #sheet .sheet-operator {
+    font-size: 13px;
+  }
+  /* 4b's « réduite » shows no dates, its « étendue » does: they come when the sheet rises
+     (bottomsheet.ts measures the top after setting the state). */
+  :root[data-ui="punk"] #sheet[data-state="peek"] .sheet-dates {
+    display: none;
+  }
+  /* A word longer than « PUBLIC » (« PROPOSÉE », « PANORAMIQUE »): smaller letters, so that
+     it holds on its line beside the sticker and the two buttons. */
+  :root[data-ui="punk"] #sheet .cutout.long {
+    zoom: 0.8;
+  }
+}
+@media (max-width: 600px) and (prefers-reduced-motion: no-preference),
+  (pointer: coarse) and (max-height: 500px) and (prefers-reduced-motion: no-preference) {
+  /* Standing on a keyboard (bottomsheet.ts: its margin-bottom) on the curve of its height
+     (style.css): both change together, so the sheet's top stays where it is while the
+     keyboard comes or goes; the lift alone at once threw it off the screen and back (the
+     author's point 3 of 2026-10-15). Not while it is dragged. */
+  :root[data-ui="punk"] #sheet:not(.dragging) {
+    transition:
+      height var(--dur-sheet) ease-out,
+      margin-bottom var(--dur-sheet) ease-out;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .sheet-grab {
+    rotate: -4deg;
+  }
+  :root[data-ui="punk"] #sheet .sheet-head .close {
+    rotate: 5deg;
+  }
+}

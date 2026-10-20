@@ -1,0 +1,517 @@
+/* The welcome panel (welcome.ts), board 28a of « Accueil Surveillance World »: its sizes,
+   faces and colours as the mockup draws them. 28a draws the dark ticket only: in dark its
+   inks are the mockup's own (the pink offset, the cream text, the light blue, pink and
+   yellow labels, the light blue « Voir la carte » with its cream shadow, the yellow focus);
+   in light (the owner's request of 2026-10-15) the same ticket on the paper, its inks the
+   theme's tokens (--welcome-*, tokens.css). The legal pages share it (legal.css). Its sizes follow its width (container
+   units, as 28a), so that the title holds on a phone. Every tilt and move sits in the
+   motion query: under reduced motion the panel is straight. The « ? » square under the
+   ticket's link is a .ticket-square (map.css), its states its neighbours'. */
+
+:root[data-ui="punk"] .welcome-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  box-sizing: border-box;
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.55);
+}
+:root[data-ui="punk"] .welcome {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  height: 100%;
+  max-height: 650px;
+  display: flex;
+  flex-direction: column;
+  container-type: inline-size;
+  outline: none;
+}
+:root[data-ui="punk"] .welcome-drop {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(6px 6px 0 #ff48b0);
+}
+:root[data-ui="punk"] .welcome-paper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--welcome-paper);
+  color: var(--welcome-ink);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 10px),
+    96% 100%,
+    91% calc(100% - 7px),
+    85% 100%,
+    79% calc(100% - 9px),
+    72% calc(100% - 2px),
+    66% calc(100% - 8px),
+    59% 100%,
+    53% calc(100% - 6px),
+    46% calc(100% - 1px),
+    40% calc(100% - 9px),
+    33% 100%,
+    27% calc(100% - 7px),
+    20% calc(100% - 1px),
+    14% calc(100% - 8px),
+    7% 100%,
+    0 calc(100% - 6px)
+  );
+}
+:root[data-ui="punk"] .welcome-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--welcome-ink) transparent;
+  box-sizing: border-box;
+  padding: 18px 22px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+:root[data-ui="punk"] .welcome :focus-visible {
+  outline-color: var(--welcome-focus);
+}
+
+/* --- the title: « SURVEILLANCE » and WORLD's cut-out letters, beside the × --------------- */
+:root[data-ui="punk"] .welcome-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+:root[data-ui="punk"] .welcome-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  display: flex;
+  /* 28a holds the title on one line; where it does not hold left of the × (a phone), WORLD
+     goes under it rather than under the × (WCAG 2.5.8, 1.4.10). */
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] .welcome-big {
+  font: 900 44px / 0.86 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: 3px 2px 0 #7fd4ff;
+}
+:root[data-ui="punk"] .welcome-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+:root[data-ui="punk"] .welcome-world {
+  display: flex;
+  gap: 2px;
+}
+:root[data-ui="punk"] .welcome-world > span {
+  display: inline-flex;
+  padding: 3px 5px 1px;
+}
+:root[data-ui="punk"] .welcome-world > :nth-child(1) {
+  background: var(--welcome-tile);
+  color: var(--welcome-on-tile);
+  font: 800 36px / 1 var(--font-display);
+  font-stretch: 62%;
+}
+:root[data-ui="punk"] .welcome-world > :nth-child(2) {
+  background: #ff48b0;
+  color: #111111;
+  font: 900 30px / 1 var(--font-display);
+  font-stretch: 100%;
+}
+:root[data-ui="punk"] .welcome-world > :nth-child(3) {
+  background: #7fd4ff;
+  color: #111111;
+  font: 400 33px / 1 var(--font-text);
+}
+:root[data-ui="punk"] .welcome-world > :nth-child(4) {
+  border: 2px solid var(--welcome-ink);
+  color: var(--welcome-ink);
+  font: 800 32px / 1 var(--font-display);
+  font-stretch: 100%;
+}
+:root[data-ui="punk"] .welcome-world > :nth-child(5) {
+  color: var(--welcome-letter);
+  font: italic 700 38px / 1 var(--font-serif);
+}
+:root[data-ui="punk"] .welcome-close {
+  appearance: none;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: var(--welcome-tile);
+  box-shadow: none;
+  color: var(--welcome-on-tile);
+  font: 800 26px / 1 var(--font-display);
+  cursor: pointer;
+}
+:root[data-ui="punk"] .welcome-close:focus-visible {
+  outline-offset: 4px;
+}
+
+/* 28a's title follows the panel's width (container units); an engine without them keeps
+   the fixed sizes above. */
+@supports (width: 1cqi) {
+  :root[data-ui="punk"] .welcome-title {
+    gap: 4px min(14px, 2cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > span {
+    padding: 3px min(6px, 0.8cqi) 1px;
+  }
+  :root[data-ui="punk"] .welcome-big {
+    font-size: min(58px, 7.4cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(1) {
+    font-size: min(48px, 6.2cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(2) {
+    font-size: min(40px, 5.1cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(3) {
+    font-size: min(44px, 5.6cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(4) {
+    font-size: min(42px, 5.4cqi);
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(5) {
+    font-size: min(50px, 6.4cqi);
+  }
+}
+
+/* --- the pitch and the labels ----------------------------------------------------------- */
+:root[data-ui="punk"] .welcome-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+:root[data-ui="punk"] .welcome-shout {
+  margin: 0;
+  font: 800 25px / 1.02 var(--font-display);
+  font-stretch: 70%;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+:root[data-ui="punk"] .welcome-pitch {
+  margin: 0;
+  font: 400 15px / 1.45 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] .welcome-credit {
+  margin: 0;
+  color: var(--welcome-muted);
+  font: 400 13px / 1.4 var(--font-text);
+}
+:root[data-ui="punk"] .welcome-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:root[data-ui="punk"] .welcome-label {
+  margin: 0;
+  font: 800 14px var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--welcome-blue);
+}
+:root[data-ui="punk"] .welcome-label.join {
+  margin-top: 4px;
+  color: var(--welcome-pink);
+}
+:root[data-ui="punk"] .welcome-label.promises {
+  margin-top: 4px;
+  color: var(--welcome-yellow);
+}
+:root[data-ui="punk"] .welcome-label.faq {
+  padding-bottom: 6px;
+}
+:root[data-ui="punk"] .welcome-tags {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+:root[data-ui="punk"] .welcome-tag {
+  padding: 5px 10px 4px;
+  color: #111111;
+  font: 800 16px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-transform: uppercase;
+}
+/* The typewriter labels, outlined (28a: « Répartition par commune », « Leaderboard… »). */
+:root[data-ui="punk"] .discover > .welcome-tag:nth-child(3),
+:root[data-ui="punk"] .join > .welcome-tag:nth-child(3) {
+  border: 1.5px solid var(--welcome-ink);
+  color: inherit;
+  font: 400 15px / 1 var(--font-text);
+  text-transform: none;
+}
+:root[data-ui="punk"] .discover > .welcome-tag:nth-child(1) {
+  background: var(--welcome-tile);
+  color: var(--welcome-on-tile);
+}
+:root[data-ui="punk"] .discover > .welcome-tag:nth-child(2),
+:root[data-ui="punk"] .join > .welcome-tag:nth-child(1) {
+  background: #ff48b0;
+}
+:root[data-ui="punk"] .discover > .welcome-tag:nth-child(4),
+:root[data-ui="punk"] .join > .welcome-tag:nth-child(2) {
+  background: #7fd4ff;
+}
+:root[data-ui="punk"] .discover > .welcome-tag:nth-child(5) {
+  background: #ffe800;
+}
+:root[data-ui="punk"] .promises > .welcome-tag {
+  display: inline-flex;
+  gap: 6px;
+  border: 1.5px dashed var(--welcome-ink);
+  color: inherit;
+  font: 400 15px / 1 var(--font-text);
+  text-transform: none;
+}
+:root[data-ui="punk"] .welcome-tick {
+  color: var(--welcome-yellow);
+}
+
+/* --- the questions -------------------------------------------------------------------------- */
+:root[data-ui="punk"] .welcome-faq {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] .welcome-questions {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] .welcome-question {
+  border-top: 1.5px dashed var(--welcome-rule);
+}
+:root[data-ui="punk"] .welcome-ask {
+  appearance: none;
+  width: 100%;
+  min-height: 50px;
+  margin: 0;
+  padding: 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--welcome-ink);
+  text-align: left;
+  font: 800 19px / 1.08 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+:root[data-ui="punk"] .welcome-ask:focus-visible {
+  outline-offset: 2px;
+}
+:root[data-ui="punk"] .welcome-q-text {
+  flex: 1;
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] .welcome-sign {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--welcome-ink);
+  font: 900 20px / 1 var(--font-display);
+}
+:root[data-ui="punk"] .welcome-answer {
+  margin: 0 40px 14px 0;
+  font: 400 14.5px / 1.45 var(--font-text);
+  text-wrap: pretty;
+}
+
+/* --- the foot: « Voir la carte → », always in view -------------------------------------- */
+:root[data-ui="punk"] .welcome-foot {
+  flex: none;
+  box-sizing: border-box;
+  padding: 12px 22px 28px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  border-top: 1.5px dashed var(--welcome-rule);
+}
+:root[data-ui="punk"] .welcome-go {
+  appearance: none;
+  margin: 0 4px 4px 0;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 0;
+  background: #7fd4ff;
+  box-shadow: 4px 4px 0 var(--welcome-go-shadow);
+  color: #111111;
+  font: 900 21px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+:root[data-ui="punk"] .welcome-go:is(:active):not(:disabled) {
+  box-shadow: 1px 1px 0 var(--welcome-go-shadow);
+}
+/* The credit and the contact address right of « Voir la carte » (2026-10-17), in the muted
+   typewriter, no frame; the foot wraps them under the button, from the left, where the
+   line does not hold (a phone), the button keeping its size. The address is a link of
+   24 px at least (WCAG 2.5.8), underlined, in the muted colour (AA on the paper, light
+   and dark). */
+:root[data-ui="punk"] .welcome-go {
+  flex: none;
+}
+:root[data-ui="punk"] .welcome-byline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px; /* the address's focus outline clear of the credit */
+}
+:root[data-ui="punk"] .welcome-contact {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--welcome-muted);
+  font: 400 13px / 1.4 var(--font-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* --- the « ? » square (28a: Archivo's « ? », tilted the other way from the account's) ---- */
+:root[data-ui="punk"] .welcome-q {
+  font: 900 24px / 1 var(--font-display);
+  font-stretch: 70%;
+}
+
+/* --- a phone: the panel nearly to the edges (28a's phone frame: 10 px) -------------------- */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] .welcome-backdrop {
+    padding: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .welcome {
+    rotate: -0.5deg;
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(1) {
+    rotate: -4deg;
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(2) {
+    rotate: 3deg;
+    translate: 0 4px;
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(3) {
+    rotate: -2deg;
+    translate: 0 -2px;
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(4) {
+    rotate: 5deg;
+    translate: 0 2px;
+  }
+  :root[data-ui="punk"] .welcome-world > :nth-child(5) {
+    rotate: -3deg;
+    translate: 0 3px;
+  }
+  :root[data-ui="punk"] .welcome-close {
+    rotate: 6deg;
+    transition:
+      rotate var(--dur-button) ease-out,
+      scale var(--dur-button) ease-out;
+  }
+  :root[data-ui="punk"] .discover > .welcome-tag:nth-child(1) {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] .discover > .welcome-tag:nth-child(2) {
+    rotate: 1.5deg;
+  }
+  :root[data-ui="punk"] .discover > .welcome-tag:nth-child(3) {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] .discover > .welcome-tag:nth-child(4) {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] .discover > .welcome-tag:nth-child(5) {
+    rotate: -1.5deg;
+  }
+  :root[data-ui="punk"] .join > .welcome-tag:nth-child(1) {
+    rotate: -1.5deg;
+  }
+  :root[data-ui="punk"] .join > .welcome-tag:nth-child(2) {
+    rotate: 1.5deg;
+  }
+  :root[data-ui="punk"] .join > .welcome-tag:nth-child(3) {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] .promises > .welcome-tag:nth-child(1) {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] .promises > .welcome-tag:nth-child(2) {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] .promises > .welcome-tag:nth-child(3) {
+    rotate: -1.5deg;
+  }
+  :root[data-ui="punk"] .promises > .welcome-tag:nth-child(4) {
+    rotate: 1.5deg;
+  }
+  :root[data-ui="punk"] .promises > .welcome-tag:nth-child(5) {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] .welcome-sign {
+    rotate: 4deg;
+  }
+  :root[data-ui="punk"] .welcome-go {
+    rotate: -1deg;
+    transition:
+      translate 90ms ease-out,
+      box-shadow 80ms ease-out;
+  }
+  /* :is(:active), not a trailing :active: theme.test.ts reads the first moving rule ending
+     in :active as buttons.css's norm. */
+  :root[data-ui="punk"] .welcome-go:is(:active):not(:disabled) {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] .ticket-square.welcome-square {
+    rotate: -1deg;
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .welcome-contact:hover {
+    color: var(--welcome-ink);
+  }
+  :root[data-ui="punk"] .welcome-close:not(:disabled):hover {
+    rotate: -12deg;
+    scale: 1.1;
+  }
+}

@@ -1,0 +1,172 @@
+/* « Liste des caméras » (lot 3.1; 17a's map side draws the link, no board draws the list):
+   the cameras in view as a paper sheet under the header ticket, in the camera sheet's
+   vocabulary (paper, the light blue offset, a torn bottom edge, the title in condensed
+   capitals, 17a's ×), each camera a row: its sticker, its type and operator, its distance
+   to the map's centre. A row is a button (44 px), opening the camera's sheet. */
+
+:root[data-ui="punk"] .camlist {
+  position: absolute;
+  left: 18px;
+  top: calc(var(--ticket-bottom, 130px) + 12px);
+  bottom: 14px;
+  width: 322px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  filter: var(--ticket-drop);
+}
+:root[data-ui="punk"] .camlist[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] .camlist-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 22px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--bg);
+  color: var(--fg);
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 8px),
+    93% 100%,
+    85% calc(100% - 6px),
+    76% 100%,
+    68% calc(100% - 7px),
+    59% 100%,
+    50% calc(100% - 5px),
+    41% 100%,
+    33% calc(100% - 7px),
+    24% 100%,
+    16% calc(100% - 5px),
+    8% 100%,
+    0 calc(100% - 6px)
+  );
+}
+:root[data-ui="punk"] .camlist-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+:root[data-ui="punk"] .camlist-title {
+  margin: 0;
+  font: 900 22px / 1 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: var(--shadow-title);
+}
+:root[data-ui="punk"] .camlist-close {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 22px / 1 var(--font-display);
+  cursor: pointer;
+}
+:root[data-ui="punk"] .camlist-count,
+:root[data-ui="punk"] .camlist-zoom-box p,
+:root[data-ui="punk"] .camlist-more {
+  margin: 0;
+  font: 400 12.5px / 1.35 var(--font-text);
+}
+:root[data-ui="punk"] .camlist-zoom-box {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+:root[data-ui="punk"] .camlist-zoom-box[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] .camlist-zoom {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 900 16px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+:root[data-ui="punk"] .camlist-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] .camlist-item {
+  appearance: none;
+  width: 100%;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: 30px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 1.5px dotted var(--line);
+  border-radius: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+:root[data-ui="punk"] .camlist-item:focus-visible {
+  outline-offset: -3px;
+}
+:root[data-ui="punk"] .camlist-pic {
+  width: 30px;
+  height: 30px;
+}
+:root[data-ui="punk"] .camlist-label {
+  font: 800 15px / 1.1 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] .camlist-dist {
+  font: 400 12.5px var(--font-text);
+  white-space: nowrap;
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] .camlist {
+    rotate: -0.8deg;
+  }
+  :root[data-ui="punk"] .camlist-close {
+    rotate: 6deg;
+  }
+}
+/* Above the attribution where it would run under the list (machine.css says why). */
+@media (min-width: 601px) and (max-width: 760px) {
+  :root[data-ui="punk"] .camlist {
+    bottom: calc(var(--attrib-h, 0px) + 8px);
+  }
+}
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] .camlist {
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(12px + env(safe-area-inset-right, 0px));
+    width: auto;
+    /* Its torn edge above the attribution (ODbL: always readable; map.css). */
+    bottom: calc(max(22px, env(safe-area-inset-bottom, 0px)) + var(--attrib-h, 0px) + 8px);
+    z-index: 5;
+  }
+}

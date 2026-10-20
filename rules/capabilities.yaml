@@ -1,0 +1,19 @@
+# Capabilities read from OSM tags, for the "what can it do?" filters. Only what a tag says
+# counts here (certainty "estimated"); defaults.yaml assumptions are not evidence.
+# Values of camera:features are split on ";" and ",", lower-cased and trimmed. Values seen
+# worldwide on taginfo (key/values of camera:features, 2026-09-27): nightvision 396,
+# infrared 16, zoom and "recording;zoom;panning" 78, face_detection 10, facedetection 6,
+# motion 3, LPR 3.
+version: 1
+features:
+  night_vision: [nightvision, night_vision, infrared, ir]
+  zoom: [zoom, panning, ptz]
+  plate_reading: [lpr, alpr, anpr]
+  # Algorithmic analysis of the image (face or person detection, recognition). Plain motion
+  # detection is left out: it triggers recording and does not analyse who is filmed.
+  analytics: [face_detection, facedetection, face_recognition, facerecognition,
+              person_detection, people_counting, object_detection]
+
+# "Can identify beyond" filter: identification reach (IEC 62676-4:2014, 250 px/m) of the
+# chosen estimate, along the camera axis, above this distance [TO ADJUST].
+identify_beyond_m: 20

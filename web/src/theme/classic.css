@@ -1,0 +1,117 @@
+/* Tokens of the current interface ("classique"), with today's values. Every colour, font,
+   radius, shadow and duration of the interface goes through these variables (style.css,
+   review/review.css) and every map colour through the --map-* and --basemap* ones (read by
+   theme.ts), so that a theme is one file redefining them (theme/punk/tokens.css). Colours
+   read by theme.ts for blending are #rrggbb. */
+:root {
+  /* surfaces and text */
+  --page: #eee;
+  --bg: #ffffff;
+  --bg-2: #f6f6f6;
+  --fg: #1d1d1d;
+  --muted: #666;
+  --line: #ddd;
+  --handle: #bbb;
+  --accent: #a3195b;
+  --accent-fill: #a3195b;
+  --on-accent: #fff;
+  --accent-press: #fbeef4;
+  --warn: #9a4b00;
+  --warn-fill: #9a4b00;
+  --on-warn: #fff;
+  --warn-line: #e3b77a;
+  --warn-bg: #fff8ee;
+  --conflict-bg: #fff6e5;
+  --cnil-line: #e69f00;
+  --cnil-bg: #fff7e6;
+  --blue: #1f6fd1;
+  --proposal-bg: #f3f7fd;
+  --halo: #fff;
+  --legend-hatch: #6f6f6f;
+  --legend-hatch-bg: #e6e6e6;
+  --debug-bg: rgba(0, 0, 0, 0.72);
+  --debug-fg: #fff;
+  /* the review page */
+  --ok: #2d6f46;
+  --ok-line: #3a8f5a;
+  --bad: #a22;
+  --bad-line: #c44;
+  --pick-bg: #f6e7ee;
+  --tag-bg: #eee;
+  --chart-line: #bbb;
+  --chart-other: #8c8c8c;
+
+  /* type */
+  --font-text: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: var(--font-text);
+  --font-mono: ui-monospace, monospace;
+  /* /revue's body text (review/review.css): a readable sans in both interfaces. */
+  --font-review: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-size: 14px;
+  --line-height: 1.4;
+  --size-xxs: 10px;
+  --size-xs: 11px;
+  --size-s: 12px;
+  --status-min-height: 2.8em;
+  --display-case: none;
+  --display-stretch: normal;
+  --display-spacing: normal;
+  --display-weight: 600;
+  --heading-weight: 700;
+
+  /* shapes */
+  --border-w: 1px;
+  --radius-panel: 8px;
+  --radius-pill: 22px;
+  --radius-pill-small: 16px;
+  --radius-sheet: 14px;
+  --radius-card: 10px;
+  --radius-box: 6px;
+  --radius-note: 4px;
+  --radius-swatch: 2px;
+  --radius-handle: 3px;
+  --radius-button-small: 14px;
+  --radius-review-chip: 18px;
+  --radius-review-card: 12px;
+  --shadow-panel: 0 2px 10px rgba(0, 0, 0, 0.12);
+  --shadow-sheet: 0 4px 16px rgba(0, 0, 0, 0.15);
+  --shadow-fab: 0 2px 10px rgba(0, 0, 0, 0.18);
+  --shadow-fab-off: 0 1px 6px rgba(0, 0, 0, 0.12);
+  --shadow-small: 0 1px 6px rgba(0, 0, 0, 0.15);
+  --shadow-bottom: 0 -2px 12px rgba(0, 0, 0, 0.15);
+  --shadow-pin: 0 1px 4px rgba(0, 0, 0, 0.4);
+  --shadow-disc: 0 1px 5px rgba(0, 0, 0, 0.45);
+
+  /* motion */
+  --dur-sheet: 0.22s;
+
+  /* the map (theme.ts) */
+  --map-area-1: #f6d5e3;
+  --map-area-2: #e9a3c3;
+  --map-area-3: #d3689b;
+  --map-area-4: #b93076;
+  --map-area-5: #8a0f4f;
+  --map-area-line: #8a0f4f;
+  --map-level-1: #d3689b;
+  --map-level-2: #b93076;
+  --map-level-3: #8a0f4f;
+  --map-kept: #b93076;
+  --map-focus-street: #8a0f4f;
+  --map-label: #8a0f4f;
+  --map-field: #a3195b;
+  --map-field-line: #a3195b;
+  --map-hatch-view: #a3195bcc;
+  --map-picto: #a3195b;
+  --map-street-none: #bdbdbd;
+  --map-gone: #5f5f5f;
+  --map-halo: #ffffff;
+  --map-ink: #1d1d1d;
+  --map-me: #1f6fd1;
+  --map-proposal: #1f6fd1;
+  --map-guide: #1f6fd1;
+  --map-hatch-none: #6f6f6fb0;
+  --map-near: #9a9a9a;
+  /* the basemap: a Protomaps flavour and its sprites, then --basemap-<key> overrides */
+  --basemap: grayscale;
+  --basemap-sprite: grayscale;
+}

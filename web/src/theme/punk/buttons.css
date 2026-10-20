@@ -1,0 +1,204 @@
+/* Buttons and their states, the norm for every punk button (mockup 17a; analysis of the
+   mockup v2, §2.2), on the buttons there are: the estimate bar, the floating buttons and
+   the queue's counter, the sheets' close button, the panels' (the filters' head and
+   close, the participation's). /revue has its own (review/review.css). The camera
+   sheet's rows are not buttons and its links (« Partager », « Calcul ? », « Revenir à la
+   caméra ») do not move, as 17a's (lot 3.2, theme/punk/sheet.css).
+
+   - Hover moves, never selects: three moves of 17a, only where a pointer hovers
+     (hover: hover) and motion is welcome; colours never change on hover.
+       lift    17a « Compléter » / « Toujours là ? »: up 2 px, tilted -2° (+2° every
+               second button); a pressed or checked button (aria-pressed, aria-checked)
+               lifts without tilting, so that a tilt its state sets is never overridden;
+               the filters' head, as wide as its panel (a tilt would lift its end by
+               about 12 px), and the move's placement segments, clipped by their frame,
+               only lift
+       toggle  17a's Standard / Prudent: ×1.06, tilted 8° unless pressed (the estimate bar)
+       close   17a's ×: ×1.1, tilted -12°
+   - Press (:active; 17a has none, the mockup's press() of its filter keys): the button
+     sinks 3 px down and right (the filters' head, as wide as its panel, straight down); the floating
+     buttons and the queue's counter sink onto their offset shadow, which shrinks.
+   - Focus: base.css, :focus-visible only (a dashed outline), never on a mouse click.
+   - Motion: individual translate, rotate and scale (a state's own transform stays), the
+     transitioned properties listed, 300 ms on 17a's spring (11 % past the end, then back)
+     and 90 ms for the press; none of it when less motion is asked, where a press only
+     shrinks the shadow. Disabled buttons do not move.
+   - Touch targets: nothing scales a button down; the queue's counter, 32 px high in the
+     shared styles, takes 44 px here. */
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    :is(
+      #estimate button,
+      .fab,
+      #queue-count,
+      #sheet .close,
+      button.panel-head,
+      .panel-close,
+      .part-btn,
+      .part-choice,
+      .part-shape,
+      .part-back,
+      .part-close,
+      #mine .close,
+      #filters .reset
+    ) {
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      rotate var(--dur-button) var(--ease-spring),
+      scale var(--dur-button) var(--ease-spring);
+  }
+  /* Their shadow shrinks with the press, in step. */
+  :root[data-ui="punk"] :is(.fab, #queue-count) {
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      rotate var(--dur-button) var(--ease-spring),
+      scale var(--dur-button) var(--ease-spring),
+      box-shadow var(--dur-button) var(--ease-spring);
+  }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  /* lift */
+  :root[data-ui="punk"]
+  :is(
+    .fab,
+    #queue-count,
+    button.panel-head,
+    .panel-close:not(.machine-close, .camlist-close),
+    .part-btn,
+    .part-choice,
+    .part-shape,
+    .part-back
+  ):not(:disabled, [aria-disabled="true"]):hover {
+    translate: 0 -2px;
+  }
+  :root[data-ui="punk"]
+    :is(
+      .fab,
+      #queue-count,
+      .panel-close:not(.machine-close, .camlist-close),
+      .part-btn,
+      .part-shape,
+      .part-back
+    ):not(:disabled, [aria-disabled="true"], [aria-pressed="true"], [aria-checked="true"]):hover {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"]
+    :is(
+      .fab,
+      #queue-count,
+      .panel-close:not(.machine-close, .camlist-close),
+      .part-btn,
+      .part-shape,
+      .part-back
+    ):nth-child(even):not(
+      :disabled,
+      [aria-disabled="true"],
+      [aria-pressed="true"],
+      [aria-checked="true"]
+    ):hover {
+    rotate: 2deg;
+  }
+  /* toggle */
+  :root[data-ui="punk"] #estimate button:not(:disabled, [aria-disabled="true"]):hover {
+    scale: 1.06;
+  }
+  :root[data-ui="punk"]
+    #estimate
+    button:not(:disabled, [aria-disabled="true"], [aria-pressed="true"]):hover {
+    rotate: 8deg;
+  }
+  /* close */
+  :root[data-ui="punk"]
+  :is(#sheet .close, .part-close, #mine .close, #filters .machine-close, .camlist-close):not(
+    :disabled,
+    [aria-disabled="true"]
+  ):hover {
+    rotate: -12deg;
+    scale: 1.1;
+  }
+}
+
+/* Press: after the hover, which it overrides while a mouse button is down. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    :is(
+      #estimate button,
+      .fab,
+      #queue-count,
+      #sheet .close,
+      button.panel-head,
+      .panel-close,
+      .part-btn,
+      .part-choice,
+      .part-shape,
+      .part-back,
+      .part-close,
+      #mine .close,
+      #filters .reset
+    ):not(:disabled, [aria-disabled="true"]):active {
+    translate: var(--press-shift) var(--press-shift);
+    transition-duration: var(--dur-press);
+    transition-timing-function: ease-out;
+  }
+  /* A row as wide as its panel sinks straight down: sideways it would overflow it. */
+  :root[data-ui="punk"] button.panel-head:not(:disabled, [aria-disabled="true"]):active {
+    translate: 0 var(--press-shift);
+  }
+}
+:root[data-ui="punk"] .fab:not([aria-disabled="true"]):active {
+  box-shadow: var(--shadow-fab-press);
+}
+/* « Me localiser » carries 20a's offset shadow by an id rule (map.css): its press too. */
+:root[data-ui="punk"] #fab-locate:not([aria-disabled="true"]):active {
+  box-shadow: var(--shadow-fab-press);
+}
+:root[data-ui="punk"] #queue-count:active {
+  box-shadow: var(--shadow-small-press);
+}
+
+/* Touch target: the queue's counter at 44 px, as every other button. */
+:root[data-ui="punk"] #queue-count {
+  min-height: 44px;
+}
+
+/* The camera sheet's « Déplacer » is a link there (17a, theme/punk/sheet.css): links never
+   move, as 17a's. */
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    .part-slot
+    > .part-move:not(.primary):not(:disabled, [aria-disabled="true"]):hover {
+    translate: none;
+    rotate: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    .part-slot
+    > .part-move:not(.primary):not(:disabled, [aria-disabled="true"]):active {
+    translate: none;
+  }
+}
+
+/* The camera sheet signed out (the author's request of 2026-10-11, point 3): « Modifier » and
+   « Toujours là ? » greyed as « ＋ Ajouter » is below its zoom (theme/punk/map.css: the
+   paper, the muted ink, a dashed edge, no shadow), still pressable (aria-disabled: a tap
+   opens « Compte »); « Connectez-vous pour participer » under them, plain text. 17a draws no
+   disabled state. */
+:root[data-ui="punk"]
+  #sheet
+  .participate
+  > .part-answers:not(.stack)
+  > :is(#part-modify, .part-verify)[aria-disabled="true"] {
+  border: 2px dashed var(--line);
+  background: var(--bg);
+  color: var(--muted);
+  box-shadow: none;
+}
+:root[data-ui="punk"] #sheet .participate > .part-signin {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+}

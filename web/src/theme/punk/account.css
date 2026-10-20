@@ -1,0 +1,433 @@
+/* The account's sheets (lot « comptes », boards 25a and 28a; account/index.ts draws them), in the
+   camera sheet's frame (sheet.css: its paper, torn edge, shadow, head and ×, a phone's
+   bottom sheet): « Compte » signed out (the « Inscriptions fermées » stamp, « La carte se
+   lit sans compte. », « Me contacter » and « Me connecter », the line on OpenStreetMap)
+   and « Entrer », the login form (identifiant, mot de passe, its error, « Entrer », the
+   forgotten password's mail and OpenStreetMap's link, « ← Retour »). Sizes, fonts and
+   colours are 25a's rendered DOM (dark, wide screen) unless docs/interface.md §3 « Account
+   (lot comptes) » says why not; light mode, which 25a does not draw, takes the same
+   tokens. « Compte » with OpenStreetMap's sign-in on is 28a's (`[data-osm]`, below), its
+   three frames: light, « retour d'OSM en échec », dark. Tilts sit under the motion query. */
+
+/* The paper: 25a's 12 px between its parts (the camera sheet's 9), its body a column whose
+   last part goes to the bottom of a wide screen's paper. */
+:root[data-ui="punk"] #sheet .account-paper {
+  gap: 12px;
+}
+:root[data-ui="punk"] #sheet .account-paper .account-body {
+  flex: 1 0 auto;
+  flex-flow: column nowrap;
+  align-items: stretch;
+  gap: 12px;
+}
+:root[data-ui="punk"] #sheet .account-paper .account-body > * {
+  flex: none;
+}
+
+/* « Inscriptions fermées · pour l'instant »: a stamp in the accent, framed twice. */
+:root[data-ui="punk"] #sheet .account-stamp-row {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 8px;
+}
+:root[data-ui="punk"] #sheet .account-stamp {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px 8px;
+  border: 4px solid var(--accent);
+  outline: 1.5px solid var(--accent);
+  outline-offset: 3px;
+  color: var(--accent);
+  text-align: center;
+}
+/* 25a's pink is the fill's in dark (5.6:1 on the paper); in light it is under 3:1 on the
+   cream, so the stamp takes the accent's ink there. */
+:root[data-ui="punk"][data-mode="dark"] #sheet .account-stamp {
+  border-color: var(--accent-fill);
+  outline-color: var(--accent-fill);
+  color: var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .account-stamp-word {
+  /* One word a line, as 25a breaks « Inscriptions / fermées ». */
+  inline-size: min-content;
+  font: 900 40px / 0.9 var(--font-display);
+  font-stretch: 62%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .account-stamp-sub {
+  color: var(--fg);
+  font: 400 13px var(--font-text);
+}
+:root[data-ui="punk"] #sheet .account-lead {
+  margin: 0;
+  text-align: center;
+  font: 400 14px / 1.35 var(--font-text);
+}
+
+/* « Me contacter » / « Me connecter » / « Entrer »: 25a's keys, 52 px, on their shadow. */
+:root[data-ui="punk"] #sheet .account-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+}
+:root[data-ui="punk"] #sheet .account-key {
+  appearance: none;
+  box-sizing: border-box;
+  width: calc(100% - 4px);
+  min-height: 52px;
+  margin: 0 4px 4px 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg);
+  box-shadow: var(--key-shadow);
+  color: var(--fg);
+  font: 900 21px / 1 var(--font-display);
+  font-stretch: 68%;
+  letter-spacing: normal;
+  text-align: left;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .account-key.primary {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+}
+:root[data-ui="punk"] #sheet .account-key:not([aria-disabled="true"]):active,
+:root[data-ui="punk"] #sheet .account-key[aria-disabled="true"] {
+  box-shadow: var(--key-shadow-on);
+}
+:root[data-ui="punk"] #sheet .account-key[aria-disabled="true"] {
+  cursor: progress;
+}
+:root[data-ui="punk"] #sheet .account-key-sub {
+  font: 400 13px var(--font-text);
+  text-transform: none;
+}
+
+/* The line on OpenStreetMap, the form's links: under a dashed rule. */
+:root[data-ui="punk"] #sheet .account-foot {
+  margin: 2px 0 4px;
+  padding-top: 10px;
+  border-top: 1.5px dashed var(--rule-dashed);
+  font: 400 13px / 1.35 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet .account-foot.account-links {
+  margin: auto 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+:root[data-ui="punk"] #sheet .account-link,
+:root[data-ui="punk"] #sheet .account-back {
+  color: var(--fg);
+  font: 400 13px var(--font-text);
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+}
+:root[data-ui="punk"] #sheet .account-links .account-link,
+:root[data-ui="punk"] #sheet .account-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+}
+:root[data-ui="punk"] #sheet .account-back {
+  appearance: none;
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  letter-spacing: normal;
+  text-transform: none;
+  cursor: pointer;
+}
+
+/* Sign-in with OpenStreetMap on (OSM lot 1; docs/interface.md §3 « Account »): the key in
+   the stamp's place and room (the stamp row's padding), the line on what is kept under it;
+   the key's long word may take two lines. */
+:root[data-ui="punk"] #sheet .account-osm-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0 8px;
+}
+:root[data-ui="punk"] #sheet .account-key.account-osm {
+  padding-block: 8px;
+}
+:root[data-ui="punk"] #sheet .account-kept,
+:root[data-ui="punk"] #sheet .account-hint {
+  margin: 0;
+  font: 400 13px / 1.35 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet .account-kept {
+  text-align: center;
+}
+/* Back from OpenStreetMap: a line at the top; what did not go through on the error's band. */
+:root[data-ui="punk"] #sheet .account-notice {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .account-notice.warn {
+  padding: 6px 9px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+:root[data-ui="punk"] #sheet .account-notice:empty {
+  display: none;
+}
+/* Board 28a, « Compte : une seule entrée, OpenStreetMap » (the lot of 2026-10-11), its
+   rendered DOM: the paper's 14 px, a block in the middle of the paper (the title, the
+   lead, the key, what is published), the foot at the bottom. */
+:root[data-ui="punk"] #sheet .account-paper[data-osm] {
+  gap: 14px;
+}
+:root[data-ui="punk"] #sheet .account-paper[data-osm] .account-body {
+  gap: 14px;
+}
+:root[data-ui="punk"] #sheet .account-osm {
+  margin: auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+:root[data-ui="punk"] #sheet .account-osm-title {
+  margin: 0;
+  font: 900 36px / 0.94 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+/* « OpenStreetMap » on 28a's light blue paper in light, its pink in dark, the ink on it. */
+:root[data-ui="punk"] #sheet .account-osm-mark {
+  padding: 0 5px;
+  background: var(--paper-blue);
+  color: var(--on-tag);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet .account-osm-mark {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .account-osm-lead {
+  margin: 0;
+  font: 400 14px / 1.35 var(--font-text);
+  text-wrap: pretty;
+}
+/* The key: 17a's primary (ink, light blue words, the pink shadow; dark: light blue, ink
+   words, the cream shadow), 76 px, its « serveur de test » label on 17a's yellow tag. */
+:root[data-ui="punk"] #sheet .account-osm-key {
+  position: relative;
+  box-sizing: border-box;
+  width: calc(100% - 5px);
+  min-height: 76px;
+  margin: 10px 5px 5px 0;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 900 27px / 0.95 var(--font-display);
+  font-stretch: 68%;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 5px 5px 0 var(--accent-fill);
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet .account-osm-key {
+  box-shadow: 5px 5px 0 var(--line);
+}
+:root[data-ui="punk"] #sheet .account-osm-key:active:not([aria-disabled="true"], :disabled) {
+  box-shadow: 1px 1px 0 var(--accent-fill);
+}
+:root[data-ui="punk"][data-mode="dark"]
+  #sheet
+  .account-osm-key:active:not([aria-disabled="true"], :disabled) {
+  box-shadow: 1px 1px 0 var(--line);
+}
+:root[data-ui="punk"] #sheet .account-osm-key:focus-visible {
+  outline-offset: 5px;
+}
+:root[data-ui="punk"] #sheet .account-osm-arrow {
+  font: 900 30px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet .account-osm-test {
+  position: absolute;
+  right: -6px;
+  top: -13px;
+  padding: 3px 8px 2px;
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 400 12px / 1 var(--font-text);
+  text-transform: none;
+}
+:root[data-ui="punk"] #sheet .account-paper[data-osm] .account-kept {
+  text-align: start;
+}
+/* The foot: « La carte se lit sans compte. » and « Me contacter », a link, on one line. */
+:root[data-ui="punk"] #sheet .account-foot.account-osm-foot {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px 12px;
+}
+:root[data-ui="punk"] #sheet .account-osm-foot .account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+/* 28a's failure band: 7 × 10 px, 14 px type. */
+:root[data-ui="punk"] #sheet .account-paper[data-osm] .account-notice.warn {
+  padding: 7px 10px;
+  font: 400 14px / 1.3 var(--font-text);
+}
+/* `?debug=1` only: the server's reason, short, in a monospace face. */
+:root[data-ui="punk"] #sheet .account-why {
+  margin: 0;
+  font:
+    400 12px / 1.3 ui-monospace,
+    "SF Mono",
+    Menlo,
+    monospace;
+}
+
+/* « Votre nom sur OSM : … », an information line. */
+:root[data-ui="punk"] #sheet .account-osm-name {
+  margin: 0;
+  font: 400 14px / 1.35 var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+/* The form: labels in Archivo capitals over 44 px fields; the error on the yellow band. */
+:root[data-ui="punk"] #sheet .account-form {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+:root[data-ui="punk"] #sheet .account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 800 13px / 1 var(--font-display);
+  font-stretch: 75%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .account-input {
+  box-sizing: border-box;
+  height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 400 15px var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+}
+:root[data-ui="punk"] #sheet .account-input:focus-visible {
+  outline-offset: 2px;
+}
+:root[data-ui="punk"] #sheet .account-error {
+  margin: 0;
+  padding: 6px 9px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .account-error[hidden] {
+  display: none;
+}
+
+/* A finger's targets: 44 px, the OpenStreetMap link inside its sentence too (its line
+   grows), as the camera sheet's links. */
+@media (pointer: coarse) {
+  :root[data-ui="punk"] #sheet .account-foot .account-link,
+  :root[data-ui="punk"] #sheet .account-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #sheet .account-foot .account-link,
+  :root[data-ui="punk"] #sheet .account-back {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  /* 28a's block in the middle, its foot at the bottom: the body's room for the home
+     indicator (sheet.css, a 100 % basis made for a row) keeps its own height only. */
+  :root[data-ui="punk"] #sheet .account-paper[data-osm] .account-body::after {
+    flex: none;
+  }
+  /* The phone's paper scrolls: room at the end of its body. */
+  :root[data-ui="punk"] #sheet .account-paper .account-body {
+    padding-bottom: 14px;
+  }
+  /* 16 px where 25a writes 15: under 16, an iPhone zooms the whole page on the field
+     (docs/interface.md §3). */
+  :root[data-ui="punk"] #sheet .account-input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #sheet .account-stamp {
+    rotate: -7deg;
+  }
+  :root[data-ui="punk"] #sheet .account-key {
+    rotate: 0.8deg;
+    transition:
+      translate var(--dur-press) ease-out,
+      box-shadow var(--dur-press) ease-out;
+  }
+  :root[data-ui="punk"] #sheet .account-key.primary {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] #sheet .account-key:not([aria-disabled="true"], :disabled):active,
+  :root[data-ui="punk"] #sheet .account-key[aria-disabled="true"] {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] #sheet .account-error,
+  :root[data-ui="punk"] #sheet .account-notice.warn {
+    rotate: -0.8deg;
+  }
+  :root[data-ui="punk"] #sheet .account-osm-key {
+    rotate: -1deg;
+    transition:
+      translate 90ms ease-out,
+      box-shadow 80ms;
+  }
+  :root[data-ui="punk"] #sheet .account-osm-key:active:not([aria-disabled="true"], :disabled) {
+    translate: 4px 4px;
+  }
+  :root[data-ui="punk"] #sheet .account-osm-test {
+    rotate: 4deg;
+  }
+}

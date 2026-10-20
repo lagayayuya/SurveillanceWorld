@@ -1,0 +1,47 @@
+/* The punk theme (redesign "Carte punk", Claude Design mockup of 2026-10-05), one file per
+   screen so that each lot of the redesign edits its own. Loaded only by the punk interface:
+   theme.ts imports this file dynamically (the build inlines the files below into one
+   stylesheet, one request); the current interface downloads none of it. Its fonts are
+   loaded by theme/fonts.ts. The order below is the cascade's: tokens first, then the rules
+   every screen shares, then the screens.
+
+   tokens.css   every token, light then dark (:root[data-ui="punk"], [data-mode="dark"]);
+                it redefines every token of theme/classic.css (web/tests/theme.test.ts)
+   base.css     every screen: less motion, the keyboard focus, MapLibre's own controls
+   map.css      the map (lot 3.1): the header ticket and its legend, the Standard /
+                Prudent pastilles, the floating buttons, MapLibre's controls
+   machine.css  the filters machine (lot 3.1, mockups 20a and 18a)
+   camlist.css  the list of the cameras in view (lot 3.1, the map's alternative)
+   sheet.css    the camera sheet (lot 3.2)
+   chips.css    the camera sheet's chips: source tag and certainty (lot 3.0)
+   account.css  the account's sheets in the camera sheet's frame (lot « comptes », 25a)
+   cannon.css   the confetti cannon: 28a's party poppers, 8a's cannon (cannon.ts)
+   welcome.css  the welcome panel of a first visit and its « ? » (28a, welcome.ts)
+   legal.css    the legal pages over the map, in the welcome's ticket (legal/index.ts)
+   score.css    the points scored at the send (8a, participate/score.ts)
+   buttons.css  every button's states, the norm of lot 3.0 (hover, press, motion), after
+                the screens so that it applies to their buttons whatever they set
+
+   Screens with no rule of their own yet take a file when their lot gives them one, imported
+   here after chips.css and before buttons.css: the commune and département sheets (lot
+   3.3, area.css), the participation (lot 3.4, participate.css), settings and about (lot
+   3.6, settings.css); /revue keeps its one file for both interfaces on the tokens
+   (review/review.css, lot 1 « Modérer » of its redesign). web/tests/theme.test.ts checks
+   that every file of this folder is imported here once, tokens.css first. */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./map.css";
+@import "./machine.css";
+@import "./camlist.css";
+@import "./sheet.css";
+@import "./chips.css";
+@import "./area.css";
+@import "./participate.css";
+@import "./account.css";
+@import "./profile.css";
+@import "./cannon.css";
+@import "./welcome.css";
+@import "./legal.css";
+@import "./score.css";
+@import "./buttons.css";

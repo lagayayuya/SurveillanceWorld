@@ -1,0 +1,108 @@
+# Site file of the site, imported by the server's Caddyfile (`import sites.d/*.caddy`); it
+# adds one site and touches nothing else, no global options (bootstrap.sh writes those).
+# Rendered at deploy time by deploy/site.py, in one of two modes (SITE_MODE):
+#   preview  the private preview: every path behind the password, never indexed;
+#   public   the site open to all and indexable; /revue and its API alone keep a password.
+# ${...} come from the environment or from site.py's choice of mode, never from the
+# repository. Nothing answered without the password may name the project: the 401 is
+# Caddy's own (empty body, generic realm), no Server header, no access log (no `log`).
+${PREVIEW_HOST} {
+	root * ${PREVIEW_ROOT}
+
+	# Never referred; no Server header. Headers that break no screen: no MIME sniffing, no
+	# framing by another site (nothing embeds the page), the location for « Me localiser »
+	# from this origin only, no camera or microphone (unused). Preview: never indexed.
+	# Public: HTTPS remembered (HSTS, this host only: no includeSubDomains, no preload).
+	header {
+		Referrer-Policy "no-referrer"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Permissions-Policy "geolocation=(self), camera=(), microphone=()"
+		-Server
+${MODE_HEADERS}
+	}
+
+	# No request the site expects is larger (the biggest, a publication of 1000 ids, is
+	# about 50 kB): anything over is refused (413) before the API reads it.
+	request_body {
+		max_size 256KB
+	}
+
+	# The password: preview, every path, tiles and API included; public, only /revue and
+	# its API (`/api/review/*`), the privileged sign-in (POST /api/review/session, lot 2)
+	# included; the map's sign-in (POST /api/session, which refuses reviewers and
+	# administrators) staying outside.
+	# basic_auth runs after the rewrite of /revue below (Caddy's directive order), so its
+	# page is matched as /revue.html too. bcrypt hashes from `caddy hash-password`, one
+	# "name hash" per line. Who contributes or reviews is the API's own account (its
+	# session cookie), never this user.
+	@gated path ${GATED_PATHS}
+	basic_auth @gated bcrypt restricted {
+${GATE_ACCOUNTS}
+	}
+
+	# Participation API on 127.0.0.1: no client address reaches it (Caddy's own
+	# X-Forwarded-* dropped, incoming Forwarded / X-Real-IP too), nor any X-Author a
+	# client sends (the author was this header before accounts), nor the gate's own
+	# credentials (Authorization: the basic-auth name and password).
+	handle /api/* {
+		reverse_proxy 127.0.0.1:${API_PORT} {
+			header_up -X-Author
+			header_up -Authorization
+			header_up -X-Forwarded-For
+			header_up -X-Forwarded-Proto
+			header_up -X-Forwarded-Host
+			header_up -X-Real-IP
+			header_up -Forwarded
+		}
+	}
+
+	# The review page: its API answers a session opened by its privileged entry only (401
+	# privileged otherwise), the page then shows its own sign-in. It alone gets a Content-Security-Policy (both modes):
+	# its own scripts, fonts and API only, inline styles (the theme's), images and workers
+	# from data: and blob: (the map), never framed, no <base>, no plugin, forms to itself.
+	# Set before basic_auth, it rides on the 401 too (site.py check reads it there).
+	@review path /revue /revue.html
+	header @review Content-Security-Policy "${REVIEW_CSP}"
+	rewrite @review /revue.html
+
+	# PMTiles are read with HTTP Range requests (file_server answers 206): they must be sent
+	# as stored, never re-encoded. Everything else may be compressed.
+	@compressible not path *.pmtiles
+	encode @compressible zstd gzip
+	@tiles path *.pmtiles
+	header @tiles Cache-Control "private, max-age=86400"
+	# The build names its scripts and styles by their content: never changed under a name.
+	@assets path /assets/*
+	header @assets Cache-Control "private, max-age=31536000, immutable"
+	# The pages and the build's small files are asked again each time (a 304 while
+	# unchanged): a deploy shows at once, and a page never names scripts a deploy removed.
+	@fresh path / /index.html /revue /revue.html /revue-prepaint.js /tiles/*.json
+	header @fresh Cache-Control "no-cache"
+
+	file_server
+
+	# Errors (the 401 first) bypass the handlers above, so their Server header survives
+	# `-Server`: answer them again here, empty, with the same status; without the cache
+	# headers set above (a 401 kept a year would hide an asset once the password is given).
+	handle_errors {
+		header -Server
+		header -Cache-Control
+		respond "" {err.status_code}
+	}
+}
+
+#public
+# Public mode only (site.py drops the block in preview): www.<host> (its own A record, on
+# the same address) answers a permanent redirect to the bare host, path and query kept
+# ({uri}: the path and the query). 308 rather than 301 (`permanent`): a request keeps its
+# method and body (RFC 9110, 15.4.9). Caddy's automatic HTTPS gets this name its own
+# certificate. Bare as the site's answers: no Server header; HTTPS remembered.
+${WWW_SITE} {
+	header {
+		-Server
+		Strict-Transport-Security "max-age=31536000"
+	}
+	redir ${BARE_URL}{uri} 308
+}
+#/public

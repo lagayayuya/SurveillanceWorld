@@ -1,0 +1,85 @@
+# Points and leaderboard (lot « comptes », the user's decision of 2026-10-09, « Points »).
+# Read by the API (pipeline/lacarte/api/
+# leaderboard.py): GET /api/me/score (the person's own points) and GET /api/leaderboard
+# (the accounts that chose to appear). The scale is the one the page shows under « Comment
+# on compte ? ».
+version: 1
+
+points:
+  add:
+    id: rule:leaderboard@1:points.add
+    value: 50
+    rationale: >-
+      Adding a camera the map does not have is the contribution that changes the map
+      most, and the one that takes a walk to the place: it weighs five infos.
+  info:
+    id: rule:leaderboard@1:points.info
+    value: 10
+    rationale: >-
+      One info answered — its shape, its direction, its height, its tilt or who films —,
+      with an add (each answer the add's author sends with it, cumulative with the add)
+      or on a camera that had no surveyed value for it. « Je ne sais pas » and « Je ne
+      vois pas » are no answer: nothing.
+  all_infos:
+    id: rule:leaderboard@1:points.all_infos
+    value: 10
+    rationale: >-
+      A bonus for an add with every info its shape asks answered by its author: the
+      shape and who films always; the direction when the shape's kind falls under the
+      direction rule (rules/direction.yaml unknown_direction.kinds); the height for every
+      kind but rules/questions.yaml height.modify_excludes; the tilt for a kind of
+      tilt.kinds — what the add's sheet offers (web/src/participate/questions.ts
+      editorParts). Without a shape answered nothing tells which infos it asks: no bonus.
+      Earned in the month the last of them (or the add) is accepted.
+  correction:
+    id: rule:leaderboard@1:points.correction
+    value: 20
+    rationale: >-
+      Correcting an info the camera had (one that replaces a known value, see `known`), or
+      moving a camera: it says the map was wrong, which an info on an empty line does
+      not; twice an info.
+  verification:
+    id: rule:leaderboard@1:points.verification
+    value: 10
+    rationale: >-
+      « Toujours là ? » answered on site only (on_site true: the phone was within reach of
+      the camera): from a sofa it proves nothing. Present or not found; « je ne suis pas
+      sûr » (unsure) says nothing the build applies (the export leaves it out): nothing.
+
+# What counts and when.
+accepted:
+  id: rule:leaderboard@1:accepted
+  statuses: [validated, applied, superseded]
+  rationale: >-
+    Only what the review accepted counts: validated, and what the deploy made of it since
+    (applied, superseded: the deploy rewrites validated). Counted in the month of the
+    decision (decided_on; a contribution validated by `peer` mode has no decision day: the
+    month of its own day). A contribution still pending is « en attente de revue »: its
+    points are shown to its author only, never ranked. Opinions on a proposal (agree,
+    disagree), rejected, withdrawn and conflicting contributions: nothing.
+
+# A « known value » (an info worth a correction, not an info): what the camera had when
+# the contribution was made, read in the OSM tags the API copied into the contribution at
+# receipt (contributions.osm_tags, migration 006: the served build's tags of that camera
+# then). A tag present and readable as the pipeline reads it (pipeline/lacarte/osmtags.py,
+# as normalize does) is a known value; a default, an assumption or nothing is not. A value
+# set by an earlier contribution is not in those tags: answering again after it counts as
+# an info. An added camera has no tags: every info on it is an info. A contribution made
+# before migration 006 has no tags: an info.
+known:
+  id: rule:leaderboard@1:known
+  shape: camera:type, surveillance:type alpr or camera:mount doorbell giving a kind (osmtags.classify_kind)
+  direction: camera:direction or direction giving a bearing (osmtags.parse_direction)
+  height: height giving metres (osmtags.parse_height)
+  tilt: camera:angle giving a plausible tilt (osmtags.parse_tilt)
+  operator: operator or operator:type, not empty
+
+leaderboard:
+  id: rule:leaderboard@1:leaderboard
+  top: 10
+  rationale: >-
+    Shown to signed-in accounts only. Who appears: the accounts that chose to (off by
+    default), neither test accounts nor disabled ones nor placeholders, with points above
+    zero; the top `top`, then the caller's own row when it is below. Points first, then
+    the pseudonym; equal points share a rank (1, 1, 3). Each row is a pseudonym, a period
+    (a month or « depuis le début ») and points: never a place, a camera nor a day.

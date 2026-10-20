@@ -1,0 +1,27 @@
+# Reliability index v0 of a commune or département (0..1). It is NOT completeness: without an official
+# reference, the share of cameras actually mapped cannot be measured.
+# All numbers are [TO ADJUST].
+version: 2
+weights: {freshness: 0.34, direction_known: 0.33, type_known: 0.33}
+freshness:
+  full_until_years: 2     # a survey younger than this counts fully
+  zero_after_years: 10    # older than this counts for nothing
+  edit_date_weight: 0.5   # last OSM edit used when no check_date / survey:date
+  stale_weight: 0.0       # "fixme: may no longer exist", old sous-surveillance.net import
+  # Last check (max of check_date and survey:date) for the filters and the sheet:
+  # < 1 y / 1-3 y / > 3 y / never. The last OSM edit is not a check.
+  bucket_years: [1, 3]
+# Word shown for the score (first floor reached, from the top).
+words: {good: 0.67, medium: 0.34, low: 0.0}
+# A camera whose drawn field (its view cut by buildings, at its computed range) is smaller
+# than this is flagged "Position ou direction à vérifier": the sheet gives no reach and
+# puts "Déplacer" first; so is a camera drawn more than 10 m inside a building (no field).
+position_check:
+  id: rule:reliability@2:position_check
+  min_field_m2: 10
+  rationale: >-
+    IDF, 2026-09-30: 151 cameras have a drawn field under 10 m2; 86 are drawn more than
+    10 m inside a building, 65 have a surveyed direction that points into their own
+    building once moved 0.5 m out of it (quai Branly: two PTZ on the wall of way 29406049,
+    directions 150 and 220 degrees). Only a survey can tell whether the position or the
+    direction is wrong: the map says so and guesses nothing (author's decision).

@@ -1,0 +1,1272 @@
+/* The account's screen, the leaderboard (board 26a) of the lot « comptes »
+   (src/profile/leaderboard.ts): the camera sheet's paper (sheet.css: its frame, torn edge,
+   head, links and a phone's bottom sheet), then 26a's filters, podium, « Vous », list,
+   switch, scale and forms. (25b's profile is not shipped: of its .profile-* rules below,
+   the paper, the title's month, the links, the errors, and since lot U the grid paper, the
+   numbers, the cameras by commune and their journal, « Mes caméras », are used.) Sizes, fonts
+   and colours are the boards' (their rendered DOM, export of 2026-10-09; they draw dark
+   only), on the punk tokens in light and dark: the boards' cream surfaces on the dark paper
+   are the ink tile (--ink-tile-bg: cream in dark, ink in light) for the small ones (a
+   chosen ticket or sort, a heading, a tag) and a slip of white paper in light for the large
+   ones (« Vous », the scale), unless docs/interface.md §3 « Profile and leaderboard (lot
+   comptes) » says why not. Fixed tilts are set by the code (inline), as the camera sheet's
+   tickets: what moves here is under the motion query. Each sort of points has its colour
+   (26a): add pink, info sky, correction yellow, verification cream. */
+
+/* --- the head and the numbers (25b) ----------------------------------------------------- */
+:root[data-ui="punk"] #sheet .profile-paper .sheet-title {
+  gap: 4px;
+}
+:root[data-ui="punk"] #sheet .profile-since {
+  margin: 0;
+  font: 400 14px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-numbers {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 12px;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-numbers:empty {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .profile-numbers b {
+  font: 900 21px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+}
+
+/* --- the tickets: two tabs and the leaderboard's button (25b) ---------------------------- */
+:root[data-ui="punk"] #sheet .profile-tickets,
+:root[data-ui="punk"] #sheet .profile-tabs {
+  display: flex;
+  gap: 6px;
+}
+:root[data-ui="punk"] #sheet .profile-tickets {
+  padding-top: 6px;
+}
+:root[data-ui="punk"] #sheet .profile-tabs {
+  flex: 2 1 0;
+  min-width: 0;
+}
+:root[data-ui="punk"] #sheet .profile-ticket {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  border: 2px solid var(--line);
+  border-left-style: dashed;
+  border-radius: 0;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: none;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .profile-ticket.on {
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  box-shadow: var(--shadow-pink);
+}
+:root[data-ui="punk"] #sheet .profile-ticket-check {
+  position: absolute;
+  right: -7px;
+  top: -8px;
+  width: 20px;
+  height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 900 12px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet .profile-ticket.on .profile-ticket-check {
+  display: flex;
+}
+:root[data-ui="punk"] #sheet .profile-ticket-v {
+  max-width: 100%;
+  font: 900 30px / 0.95 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: var(--shadow-ticket-value-on);
+}
+:root[data-ui="punk"] #sheet .profile-ticket-k {
+  max-width: 100%;
+  font: 400 12px / 1.15 var(--font-text);
+}
+
+/* --- the panel: 25b's grid paper ------------------------------------------------------- */
+:root[data-ui="punk"] #sheet .profile-panel {
+  flex: none;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 10px;
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 12px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 12px 100%,
+    var(--bg-2);
+  box-shadow: var(--shadow-box);
+}
+:root[data-ui="punk"] #sheet .profile-panel[aria-busy="true"] {
+  min-height: 120px;
+}
+:root[data-ui="punk"] #sheet .profile-note,
+:root[data-ui="punk"] #sheet .profile-far {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-error,
+:root[data-ui="punk"] #sheet .board-note,
+:root[data-ui="punk"] #sheet :is(.board-delete-error, .board-form-error) {
+  margin: 0;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-note:empty,
+:root[data-ui="punk"] #sheet :is(.board-delete-error, .board-form-error):empty {
+  display: none;
+}
+/* « Depuis votre visite de septembre : … » (25b: the yellow band). */
+:root[data-ui="punk"] #sheet .profile-since-visit {
+  margin: 0;
+  padding: 5px 8px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-since-visit b {
+  font: 900 16px / 1 var(--font-display);
+  font-stretch: 68%;
+}
+/* A heading on the paper (25b's commune, 26a's « Total en octobre »). */
+:root[data-ui="punk"] #sheet :is(.profile-label, .board-title) {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0 6px;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 800 13px / 19px var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* --- « À suivre »: its things, their tag, their sentence, their button ------------------ */
+:root[data-ui="punk"] #sheet :is(.profile-follow, .profile-cams, .profile-journal) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] #sheet .profile-follow-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 0;
+  border-top: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .profile-follow-item > * {
+  align-self: flex-start;
+}
+:root[data-ui="punk"] #sheet .profile-follow-text {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet :is(.profile-tag, .profile-state) {
+  padding: 0 6px;
+  border: 0;
+  font: 800 12px / 18px var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+:root[data-ui="punk"] #sheet .profile-tag.contested,
+:root[data-ui="punk"] #sheet .profile-state.conflict {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .profile-tag.conflict,
+:root[data-ui="punk"] #sheet .profile-state.validated {
+  border: 1.5px solid var(--accent-fill);
+  color: var(--accent);
+}
+:root[data-ui="punk"] #sheet :is(.profile-tag.queued, .profile-state.queued) {
+  border: 1.5px dashed var(--line);
+  color: var(--fg);
+}
+:root[data-ui="punk"] #sheet .profile-state.pending {
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+:root[data-ui="punk"] #sheet .profile-state:is(.applied, .map) {
+  background: var(--cut-blue);
+  color: var(--on-accent);
+}
+/* « publiée sur OSM » (lot U, « Mes caméras »): the ink tile, as the paper's headings. */
+:root[data-ui="punk"] #sheet .profile-state.osm {
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+}
+:root[data-ui="punk"]
+  #sheet
+  .profile-state:is(.superseded, .withdrawn, .rejected, .recorded, .refused) {
+  border: 1.5px dashed var(--muted);
+  color: var(--muted);
+}
+:root[data-ui="punk"] #sheet .profile-state:is(.superseded, .withdrawn) {
+  text-decoration: line-through;
+}
+/* « Voir la fiche → » (25b): 17a's primary button, small. */
+:root[data-ui="punk"] #sheet .profile-open {
+  min-height: 30px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 900 15px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+/* « Retirer » (25b): an outlined typewriter word; « Retirer : confirmer » in pink. */
+:root[data-ui="punk"] #sheet .profile-withdraw {
+  flex: none;
+  min-height: 26px;
+  margin: 0;
+  padding: 0 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 400 12px / 1 var(--font-text);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .profile-follow .profile-withdraw {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12.5px;
+}
+:root[data-ui="punk"] #sheet .profile-withdraw.armed {
+  border-color: var(--on-accent);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+
+/* --- the cameras and their journal (25b) ---------------------------------------------- */
+:root[data-ui="punk"] #sheet .profile-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:root[data-ui="punk"] #sheet .profile-cam-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 6px 0 8px;
+  border-bottom: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .profile-cam {
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .profile-sticker {
+  flex: none;
+  display: flex;
+  width: 38px;
+  height: 38px;
+}
+:root[data-ui="punk"] #sheet .profile-sticker canvas {
+  width: 38px;
+  height: 38px;
+}
+:root[data-ui="punk"] #sheet .profile-cam-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+:root[data-ui="punk"] #sheet .profile-cam-title {
+  font: 800 16px / 1.05 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+:root[data-ui="punk"] #sheet .profile-arrow {
+  font: 900 18px / 1 var(--font-display);
+}
+/* 25b's street under the camera's name. */
+:root[data-ui="punk"] #sheet .profile-cam-sub {
+  font: 400 12.5px / 1.2 var(--font-text);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+:root[data-ui="punk"] #sheet div.profile-cam {
+  cursor: default;
+}
+
+/* --- « Mes caméras » (lot U): the toggle, the collection, the little map --------------- */
+:root[data-ui="punk"] #sheet .board-cameras[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-cameras-panel {
+  margin-top: 0;
+}
+/* Its title: 26a's « Barème » on the paper. */
+:root[data-ui="punk"] #sheet .board-cameras-title {
+  margin: 0;
+  font: 900 20px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+}
+/* The collection: each kind's sticker and its count, side by side. */
+:root[data-ui="punk"] #sheet .board-cameras-kinds {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+:root[data-ui="punk"] #sheet .board-cameras-kind {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+:root[data-ui="punk"] #sheet .board-cameras-n {
+  font: 900 21px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+}
+/* The little map: the paper's grid, a dot per camera, the communes' names. */
+:root[data-ui="punk"] #sheet .board-minimap {
+  display: block;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+}
+:root[data-ui="punk"] #sheet .board-minimap svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+:root[data-ui="punk"] #sheet .board-minimap circle {
+  fill: var(--accent-fill);
+  stroke: var(--line);
+  stroke-width: 1.5px;
+}
+:root[data-ui="punk"] #sheet .board-minimap-name {
+  fill: var(--fg);
+  font: 400 11px var(--font-text);
+  text-anchor: middle;
+  stroke: var(--bg);
+  stroke-width: 3px;
+  paint-order: stroke;
+}
+:root[data-ui="punk"] #sheet .profile-journal {
+  gap: 3px;
+}
+:root[data-ui="punk"] #sheet .profile-journal > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 8px;
+  min-height: 26px;
+  font: 400 12.5px / 1.25 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-month {
+  flex: none;
+  width: 36px;
+  color: var(--muted);
+}
+:root[data-ui="punk"] #sheet .profile-what {
+  flex: 1;
+  min-width: 110px;
+}
+:root[data-ui="punk"] #sheet .profile-journal .profile-error {
+  flex: 0 0 100%;
+}
+
+/* --- the links at the foot, what is stored -------------------------------------------- */
+:root[data-ui="punk"] #sheet .profile-links {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  margin-top: 4px;
+}
+:root[data-ui="punk"] #sheet .profile-links .sheet-link {
+  margin: 0;
+}
+:root[data-ui="punk"] #sheet .profile-stored {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 2px 0 6px;
+  font: 400 12.5px / 1.35 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .profile-stored[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .profile-stored p {
+  margin: 0;
+}
+:root[data-ui="punk"] #sheet .profile-stored b {
+  font: 800 13px / 1.2 var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+/* --- the leaderboard (26a): the filters ----------------------------------------------- */
+:root[data-ui="punk"] #sheet .board-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+}
+:root[data-ui="punk"] #sheet .board-periods {
+  display: flex;
+  gap: 8px;
+}
+:root[data-ui="punk"] #sheet .board-period {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 40px;
+  margin: 0 4px 4px 0;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 4px 4px 0 var(--line);
+  font: 900 17px / 1.1 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .board-period[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: 1px 1px 0 var(--line);
+}
+:root[data-ui="punk"] #sheet .board-check {
+  position: absolute;
+  right: -8px;
+  top: -9px;
+  width: 20px;
+  height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 900 12px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet .board-period[aria-pressed="true"] .board-check {
+  display: flex;
+}
+:root[data-ui="punk"] #sheet .board-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+:root[data-ui="punk"] #sheet .board-count {
+  min-height: 32px;
+  margin: 0;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  box-shadow: none;
+  font: 400 13px / 1.1 var(--font-text);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .board-count[aria-pressed="true"] {
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  box-shadow: 2px 2px 0 var(--accent-fill);
+}
+/* A sort's colour: its dot, its bars, its value in the scale. */
+:root[data-ui="punk"] #sheet .board-dot {
+  flex: none;
+  box-sizing: border-box;
+  width: 10px;
+  height: 10px;
+  margin-left: -2px;
+  border: 1.5px solid var(--on-accent);
+  border-radius: 50%;
+}
+:root[data-ui="punk"] #sheet .board-count.k-total .board-dot {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .k-add:is(.board-dot, .board-seg, .board-scale-v),
+:root[data-ui="punk"] #sheet .board-count.k-add .board-dot {
+  background: var(--k-add);
+}
+:root[data-ui="punk"] #sheet .k-info:is(.board-dot, .board-seg, .board-scale-v),
+:root[data-ui="punk"] #sheet .board-count.k-info .board-dot {
+  background: var(--k-info);
+}
+:root[data-ui="punk"] #sheet .k-correction:is(.board-dot, .board-seg, .board-scale-v),
+:root[data-ui="punk"] #sheet .board-count.k-correction .board-dot {
+  background: var(--k-correction);
+}
+:root[data-ui="punk"] #sheet .k-verification:is(.board-dot, .board-seg, .board-scale-v),
+:root[data-ui="punk"] #sheet .board-count.k-verification .board-dot {
+  background: var(--k-verification);
+}
+/* The others' bars in Total: one colour, the paper's ink (the API gives their points, not
+   their sorts). */
+:root[data-ui="punk"] #sheet .board-seg.k-all {
+  background: var(--line);
+}
+
+/* --- the podium (26a) ------------------------------------------------------------------ */
+:root[data-ui="punk"] #sheet .board-podium {
+  position: relative;
+  flex: none;
+  height: 250px;
+  margin: 2px -18px 0;
+  overflow: hidden;
+}
+:root[data-ui="punk"] #sheet .board-podium[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-rays {
+  position: absolute;
+  left: calc(50% - 260px);
+  bottom: -244px;
+  width: 520px;
+  height: 520px;
+  border-radius: 50%;
+  background: repeating-conic-gradient(
+    color-mix(in srgb, var(--accent-fill) 30%, transparent) 0deg 6deg,
+    transparent 6deg 15deg
+  );
+}
+:root[data-ui="punk"] #sheet .board-dots {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  background: radial-gradient(var(--grid-line) 1px, transparent 1.5px) 0 0 / 5px 5px;
+}
+:root[data-ui="punk"] #sheet .board-pod {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .board-place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+:root[data-ui="punk"] #sheet .board-place.p2 {
+  grid-column: 1;
+}
+:root[data-ui="punk"] #sheet .board-place.p1 {
+  grid-column: 2;
+}
+:root[data-ui="punk"] #sheet .board-place.p3 {
+  grid-column: 3;
+}
+:root[data-ui="punk"] #sheet .board-tag {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 1px 5px;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 400 12px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-place.me .board-tag {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-pts {
+  font: 900 18px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .board-step {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  padding-top: 3px;
+  overflow: hidden;
+  border: 2.5px solid var(--on-accent);
+  color: var(--on-accent);
+  box-shadow: 3px 3px 0 var(--line);
+  transform-origin: 50% 100%;
+}
+:root[data-ui="punk"] #sheet .p1 .board-step {
+  background: var(--warn-fill);
+}
+:root[data-ui="punk"] #sheet .p2 .board-step {
+  background: var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .p3 .board-step {
+  background: var(--cut-blue);
+}
+:root[data-ui="punk"] #sheet .board-step-n {
+  font: 900 46px / 1 var(--font-display);
+  font-stretch: 62%;
+}
+:root[data-ui="punk"] #sheet .board-floor {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  background: var(--boom-bg);
+  border-top: 2.5px solid var(--on-attrib-inset);
+}
+
+/* --- « Vous · 4e » (26a): a slip of paper ---------------------------------------------- */
+:root[data-ui="punk"] #sheet :is(.board-you, .board-scale-paper) {
+  background: var(--bg-2);
+  color: var(--fg);
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet :is(.board-you, .board-scale-paper) {
+  background: var(--fg);
+  color: var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-you {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+  padding: 10px 12px 12px;
+  box-shadow: 4px 4px 0 var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .board-you[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-you-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+:root[data-ui="punk"] #sheet .board-you-who {
+  font: 900 30px / 0.95 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .board-you-pts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+:root[data-ui="punk"] #sheet .board-you-total {
+  font: 900 22px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .board-you-sub,
+:root[data-ui="punk"] #sheet .board-you-hidden {
+  margin: 0;
+  font: 400 11.5px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-you-bar {
+  display: flex;
+  height: 14px;
+  box-sizing: border-box;
+  border: 2px solid var(--on-accent);
+  background: var(--bg-2);
+}
+:root[data-ui="punk"] #sheet .board-you-bar .board-seg {
+  box-shadow: inset -1.5px 0 0 var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 10px;
+  font: 400 12px / 1.25 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+:root[data-ui="punk"] #sheet .board-you .board-legend .board-dot {
+  margin-left: 0;
+}
+:root[data-ui="punk"] #sheet .board-legend-what {
+  flex: 1;
+  min-width: 0;
+}
+:root[data-ui="punk"] #sheet .board-legend-pts {
+  font: 800 13px / 1 var(--font-display);
+  font-stretch: 75%;
+}
+:root[data-ui="punk"] #sheet .board-pending {
+  margin: 0;
+  align-self: flex-start;
+  padding: 1px 7px;
+  background: var(--boom-bg);
+  color: var(--boom-ink);
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+
+/* --- the list (26a) -------------------------------------------------------------------- */
+:root[data-ui="punk"] #sheet .board-title {
+  margin-top: 8px;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .sheet-body > .board-title {
+  flex: none;
+}
+:root[data-ui="punk"] #sheet .board-title[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:root[data-ui="punk"] #sheet .board-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 8px;
+  padding: 4px 6px;
+  color: var(--fg);
+}
+:root[data-ui="punk"] #sheet .board-row.me {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  border: 2px solid var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-gap {
+  padding: 0 6px;
+  font: 900 17px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet .board-rank {
+  font: 900 17px / 1 var(--font-display);
+  font-stretch: 68%;
+}
+:root[data-ui="punk"] #sheet .board-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+:root[data-ui="punk"] #sheet .board-pseudo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: 400 13px / 1.2 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-bar {
+  display: flex;
+  height: 6px;
+}
+:root[data-ui="punk"] #sheet .board-bar .board-seg {
+  box-shadow: inset 0 0 0 1px var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-row-pts {
+  font: 900 16px / 1 var(--font-display);
+  font-stretch: 68%;
+  white-space: nowrap;
+}
+
+/* --- « Apparaître dans le classement des autres », « Comment on compte ? » ------------- */
+:root[data-ui="punk"] #sheet :is(.board-switch, .board-signed) {
+  margin: 2px 0 0;
+  padding: 0;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--fg);
+  font: 400 13px / 1.3 var(--font-text);
+  text-align: left;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .board-box {
+  flex: none;
+  box-sizing: border-box;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--line);
+  background: transparent;
+  color: var(--on-accent);
+  font: 900 14px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet :is(.board-switch, .board-signed)[aria-checked="true"] .board-box {
+  background: var(--accent-fill);
+}
+/* What « Afficher mon pseudonyme… » reveals (lot U): under the switch, aligned on its words. */
+:root[data-ui="punk"] #sheet .board-signed-help {
+  margin-top: -4px;
+  padding-left: 30px;
+}
+:root[data-ui="punk"] #sheet :is(.board-scale-toggle, .board-cameras-toggle) {
+  align-self: flex-start;
+  min-height: 40px;
+  margin: 2px 0 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 2px solid var(--on-accent);
+  border-radius: 0;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 900 16px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+:root[data-ui="punk"]
+  #sheet
+  .sheet-paper
+  .sheet-body
+  > :is(.board-scale-toggle, .board-cameras-toggle) {
+  flex: none;
+}
+
+/* --- the scale (26a): a torn slip ------------------------------------------------------ */
+:root[data-ui="punk"] #sheet .board-scale {
+  flex: none;
+  filter: drop-shadow(4px 4px 0 var(--cut-blue));
+}
+:root[data-ui="punk"] #sheet .board-scale[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-scale-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 18px;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 8px),
+    93% 100%,
+    85% calc(100% - 6px),
+    76% 100%,
+    68% calc(100% - 7px),
+    59% 100%,
+    50% calc(100% - 5px),
+    41% 100%,
+    33% calc(100% - 7px),
+    24% 100%,
+    16% calc(100% - 5px),
+    8% 100%,
+    0 calc(100% - 6px)
+  );
+}
+:root[data-ui="punk"] #sheet .board-scale h3 {
+  margin: 0 0 4px;
+  font: 900 22px / 1 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .board-scale ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] #sheet .board-scale li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1.5px dashed var(--on-accent);
+}
+:root[data-ui="punk"] #sheet .board-scale-v {
+  flex: none;
+  min-width: 52px;
+  box-sizing: border-box;
+  padding: 2px 4px 0;
+  text-align: center;
+  border: 2px solid var(--on-accent);
+  color: var(--on-accent);
+  font: 900 22px / 1 var(--font-display);
+  font-stretch: 62%;
+}
+:root[data-ui="punk"] #sheet .board-scale-v.k-bonus {
+  background: var(--k-bonus);
+  color: var(--k-bonus-ink);
+}
+:root[data-ui="punk"] #sheet .board-scale-text {
+  font: 400 12.5px / 1.3 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet .board-scale-text b {
+  font: 800 14px / 1.1 var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .board-scale-example {
+  margin: 4px 0 0;
+  padding: 4px 7px;
+  background: var(--boom-bg);
+  color: var(--on-attrib-inset);
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .board-scale-example b {
+  color: var(--boom-ink);
+}
+:root[data-ui="punk"] #sheet .board-scale-note {
+  margin: 6px 0 0;
+  font: 400 12px / 1.3 var(--font-text);
+  text-wrap: pretty;
+}
+
+/* --- se déconnecter, supprimer le compte (26a) ---------------------------------------- */
+:root[data-ui="punk"] #sheet .board-links {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1.5px dashed var(--muted);
+}
+/* OSM lot 1: « Relier à OpenStreetMap » (a link as the others), or « ✓ Relié à
+   OpenStreetMap » (an information line, not a target) and « Délier » beside it. */
+:root[data-ui="punk"] #sheet .board-osm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 14px;
+}
+:root[data-ui="punk"] #sheet .board-osm[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-osm-linked {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+}
+/* The OSM synchronisation (16/10): « Publier sur OpenStreetMap » (src/profile/sync.ts). No
+   board draws it: 26a's vocabulary as ported (docs/interface.md §3): its heading as the
+   scale's, under the foot's dashed rule; the two choices the opt-in's box (a real radio
+   over the whole row, unseen); the states 26a's yellow tag (`warn`) or a plain line; the
+   text in the scale's small type, the list of what leaves with the tags in the typewriter's
+   words; 25a's field and key; the history the scale's dashed rows. */
+:root[data-ui="punk"] #sheet .board-publish {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .board-publish[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-publish-title {
+  margin: 0;
+  font: 900 22px / 1 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  text-shadow: 1.5px 1px 0 var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .board-publish-body {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+:root[data-ui="punk"] #sheet :is(.board-publish-info, .board-publish-line) {
+  margin: 0;
+  font: 400 12.5px / 1.35 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet .board-sync-state {
+  margin: 0;
+  font: 400 13px / 1.3 var(--font-text);
+  text-wrap: pretty;
+}
+:root[data-ui="punk"] #sheet .board-sync-state.warn {
+  padding: 3px 6px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+:root[data-ui="punk"] #sheet .board-sync-choices {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] #sheet .board-sync-choice {
+  position: relative;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 13px / 1.3 var(--font-text);
+  cursor: pointer;
+}
+/* The box is the opt-in's (26a): the real radio over the whole row, unseen. */
+:root[data-ui="punk"] #sheet .board-sync-choice input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .board-sync-choice:has(input:checked) .board-box {
+  background: var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .board-sync-choice:has(input:checked) .board-box::before {
+  content: "✓";
+}
+:root[data-ui="punk"] #sheet .board-sync-choice:has(input:checked) {
+  font-weight: 700;
+}
+:root[data-ui="punk"] #sheet .board-sync-choice:has(input:focus-visible) .board-box {
+  outline: 3px dashed var(--focus);
+  outline-offset: 3px;
+}
+:root[data-ui="punk"] #sheet .board-sync-since,
+:root[data-ui="punk"] #sheet .board-sync-wiki {
+  margin: 0 0 0 30px;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+/* Its link in the line's own type (the sheet's links are 13 px). */
+:root[data-ui="punk"] #sheet .board-sync-wiki .account-link {
+  font-size: inherit;
+}
+:root[data-ui="punk"] #sheet .board-sync-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-ui="punk"] #sheet :is(.board-sync-leaves, .board-sync-history) {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .board-sync-leaves li {
+  padding-left: 12px;
+  font: 400 12.5px / 1.35 var(--font-text);
+  text-indent: -12px;
+}
+:root[data-ui="punk"] #sheet .board-sync-leaves li::before {
+  content: "– ";
+}
+:root[data-ui="punk"] #sheet .board-sync-history-title {
+  margin-top: 4px;
+}
+:root[data-ui="punk"] #sheet .board-sync-history {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] #sheet .board-sync-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0 7px;
+  border-top: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .board-publish-name {
+  font: 800 14px / 1.1 var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .sync-changeset {
+  color: var(--fg);
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+}
+:root[data-ui="punk"] #sheet :is(.board-sync-enable, .board-sync-stop)[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .sheet-paper .board-delete {
+  color: var(--accent);
+  text-decoration-color: var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet :is(.board-delete-form, .board-password-form) {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 6px 0 4px;
+}
+:root[data-ui="punk"] #sheet :is(.board-delete-form, .board-password-form)[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #sheet .board-delete-warn {
+  margin: 0;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+/* 25a's field: its label in capitals over a 44 px box. */
+:root[data-ui="punk"] #sheet .board-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 800 13px / 1 var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+:root[data-ui="punk"] #sheet .board-field input {
+  box-sizing: border-box;
+  height: 44px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 400 15px var(--font-text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* 25a's « Entrer », in pink: what it does cannot be undone. */
+:root[data-ui="punk"] #sheet .board-delete-confirm {
+  box-sizing: border-box;
+  width: calc(100% - 4px);
+  min-height: 52px;
+  margin: 0 4px 4px 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 2px solid var(--line);
+  border-radius: 5px;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: 4px 4px 0 var(--line);
+  font: 900 17px / 1 var(--font-display);
+  font-stretch: 68%;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* --- touch: what a finger touches is 44 px high ---------------------------------------- */
+@media (pointer: coarse) {
+  :root[data-ui="punk"]
+    #sheet
+    :is(
+      .profile-withdraw,
+      .profile-open,
+      .board-count,
+      .board-switch,
+      .board-signed,
+      .board-sync-choice
+    ) {
+    min-height: 44px;
+  }
+}
+
+/* --- motion: 17a's spring, the press, the podium ---------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    :is(
+      .profile-ticket,
+      .profile-open,
+      .profile-withdraw,
+      .board-period,
+      .board-count,
+      .board-scale-toggle,
+      .board-cameras-toggle,
+      .board-delete-confirm
+    ) {
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      rotate var(--dur-button) var(--ease-spring),
+      transform var(--dur-button) var(--ease-spring);
+  }
+  :root[data-ui="punk"]
+    #sheet
+    :is(
+      .profile-ticket,
+      .profile-open,
+      .profile-withdraw,
+      .board-period,
+      .board-count,
+      .board-scale-toggle,
+      .board-cameras-toggle,
+      .board-delete-confirm
+    ):active:not(:disabled) {
+    translate: var(--press-shift) var(--press-shift);
+    transition-duration: var(--dur-press);
+    transition-timing-function: ease-out;
+  }
+  /* 26a: the podium rises to the scores' height (550 ms, decoration: the names and points
+     are there from the start, nothing waits for it); the bars follow. */
+  :root[data-ui="punk"] #sheet .board-step {
+    transition: height 0.55s cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+  :root[data-ui="punk"] #sheet .board-seg {
+    transition: width 0.4s;
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    :is(
+      .profile-open,
+      .profile-withdraw,
+      .board-scale-toggle,
+      .board-cameras-toggle,
+      .board-delete-confirm
+    ):not(:disabled):hover {
+    translate: 0 -2px;
+  }
+}

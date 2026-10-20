@@ -1,0 +1,603 @@
+/* The punk theme's tokens, light then dark (:root[data-ui="punk"], then [data-mode="dark"]):
+   they redefine every token of theme/classic.css and add the punk-only ones. Text colours
+   meet 4.5:1 and graphics 3:1 on their backgrounds in both modes (web/tests/theme.test.ts,
+   which reads this file). */
+
+:root[data-ui="punk"] {
+  color-scheme: light;
+  /* Special Elite has one weight: no faked bold. */
+  font-synthesis: none;
+  /* surfaces and text: paper, ink, riso pink, sky */
+  --page: #e6eef0;
+  --bg: #f2efe6;
+  --bg-2: #ffffff;
+  --fg: #111111;
+  --muted: #5a5650;
+  --line: #111111;
+  /* 25a's dashed rule over a sheet's foot (decoration; the light one is the muted ink) */
+  --rule-dashed: #5a5650;
+  --handle: #111111;
+  --accent: #b8005f;
+  --accent-fill: #ff48b0;
+  --on-accent: #111111;
+  --accent-press: #ffd6ec;
+  --warn: #8a4500;
+  --warn-fill: #ffe800;
+  --on-warn: #111111;
+  --warn-line: #111111;
+  --warn-bg: #fff6bf;
+  --conflict-bg: #fff6bf;
+  --cnil-line: #ffe800;
+  --cnil-bg: #fff6bf;
+  --blue: #0060a0;
+  --proposal-bg: #e3f5ff;
+  --halo: #f2efe6;
+  --legend-hatch: #0078bf;
+  --legend-hatch-bg: #f2efe6;
+  --debug-bg: rgba(17, 17, 17, 0.85);
+  --debug-fg: #f2efe6;
+  --focus: #111111;
+  --ok: #1d6b3d;
+  --ok-line: #1d6b3d;
+  --bad: #b00020;
+  --bad-line: #b00020;
+  --pick-bg: #ffd6ec;
+  --tag-bg: #e6e2d6;
+  --chart-line: #111111;
+  --chart-other: #6b6b6b;
+
+  /* type: condensed capitals for what acts and titles, typewriter for the rest */
+  --font-text: "Special Elite", "Courier New", Courier, ui-monospace, monospace;
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  /* /revue, a tool (lot 1 « Modérer », plan-revue): its body text in the system's sans, never
+     the typewriter face; its titles, tabs and buttons in the display face above. */
+  --font-review: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-size: 14px;
+  --line-height: 1.45;
+  --size-xxs: 12.5px;
+  --size-xs: 12.5px;
+  --size-s: 12.5px;
+  /* The typewriter face is wider: the move's status takes three lines. */
+  --status-min-height: 4.35em;
+  --display-case: uppercase;
+  --display-stretch: 70%;
+  --display-spacing: 0.01em;
+  --display-weight: 800;
+  --heading-weight: 900;
+
+  /* shapes: square paper, hard offset shadows */
+  --border-w: 2px;
+  --radius-panel: 0;
+  --radius-pill: 0;
+  --radius-pill-small: 0;
+  --radius-sheet: 0;
+  --radius-card: 0;
+  --radius-box: 0;
+  --radius-note: 0;
+  --radius-swatch: 0;
+  --radius-handle: 0;
+  --radius-button-small: 0;
+  --radius-review-chip: 0;
+  --radius-review-card: 0;
+  --shadow-panel: 3px 3px 0 #7fd4ff;
+  --shadow-sheet: 6px 6px 0 #7fd4ff;
+  --shadow-fab: 3px 3px 0 #ff48b0;
+  --shadow-fab-off: 2px 2px 0 #7fd4ff;
+  --shadow-small: 2px 2px 0 #7fd4ff;
+  --shadow-bottom: 0 -4px 0 #7fd4ff;
+  --shadow-pin: 2px 2px 0 #111111;
+  --shadow-disc: 2px 2px 0 #111111;
+
+  /* The second accent (mockup 17a): a light blue, near the pink's complement. On paper it is
+     1.4:1, so in light it decorates (offset shadows, the grid) and is a text only on the
+     ink of the primary button (theme.test.ts keeps it out of every other use); in dark it
+     is the second accent, and the pink goes under the surfaces (--shadow-panel,
+     --shadow-sheet above). */
+  /* The primary button (17a « Compléter »): ink, its text the light blue as 17a writes it
+     (11.5:1 on the ink; product owner, 2026-10-07), its shadow the pink. */
+  --accent-2-fill: #111111;
+  --on-accent-2: #7fd4ff;
+  --shadow-accent-2: 3px 3px 0 #ff48b0;
+  /* Links' wavy underline: what tells a link, so 3:1 at least (17a's #ff48b0 is 2.7:1 on
+     paper): the text pink. */
+  --link-line: #b8005f;
+  /* Offsets of titles and values (text-shadow), and the tickets' offset shadows (pressed,
+     then not): decoration. */
+  --shadow-title: 1.5px 1px 0 #ff48b0;
+  --shadow-value: 1px 0.7px 0 #ff48b0;
+  --shadow-ticket: 3px 3px 0 #111111;
+  --shadow-ticket-off: 1.5px 1.5px 0 #7fd4ff;
+  /* The grid of a box of guessed values (17a « Supposé · à compléter »): decoration. */
+  --grid-line: rgba(127, 212, 255, 0.18);
+
+  /* motion: short, and none when the phone asks for less (below) */
+  --dur-sheet: 0.22s;
+  /* Buttons (punk/buttons.css): hover and release on 17a's spring (11 % past the end, then
+     back), the press quicker; a press sinks a button 3 px onto its offset shadow, which
+     shrinks to nothing, in its colour (the floating buttons' is 3 px: it stays where it
+     was; the queue counter's, 2 px, is passed by 1 px). */
+  --dur-button: 0.3s;
+  --dur-press: 0.09s;
+  --ease-spring: cubic-bezier(0.3, 1.6, 0.5, 1);
+  --press-shift: 3px;
+  --shadow-fab-press: 0 0 0 #ff48b0;
+  --shadow-small-press: 0 0 0 #7fd4ff;
+
+  /* the map */
+  /* One palette for communes, départements, streets and fields (DECISIONS 2026-10-08, « The
+     more vivid, the more filmed… »), anchored on 17a's electric pink: pale = little filmed,
+     vivid = much filmed, never pushed towards black. The ramp, five classes spread evenly
+     from a pale pink to a deep vivid one, 1.49:1 to 1.50:1 apart (the first round's 1.31 at
+     least; OKLab distances 14.7 / 13.4 / 11.0 / 10.5): the communes' and départements'
+     quantile classes, opaque, cut apart by a thin light-blue border (--map-area-border,
+     17a's sky; the area whose sheet is open is outlined in the text pink #b8005f,
+     --map-area-line). The filmed streets are one pink stroke, classes 3, 4, 5 for detect,
+     recognise, identify (no casing: « plus de rue blanche avec un liseré rose »): 2.5,
+     3.7 and 5.6:1 on the roads, 2.1, 3.2 and 4.8:1 on the earth. */
+  --map-area-opacity: 1;
+  --map-area-1: #ffeef6;
+  --map-area-2: #ffb0dd;
+  --map-area-3: #ff71c1;
+  --map-area-4: #ee329c;
+  --map-area-5: #c9006e;
+  --map-area-line: #b8005f;
+  --map-area-border: #7fd4ff;
+  /* The open area's outline: the borders' light blue, thicker (layers.ts; one step off the
+     border so that a change of mode maps one colour to one), on a dark edge so that it
+     stands out on the vivid classes (DECISIONS 2026-10-09, « Punk map after the iPhone
+     test »): near black in both modes, one step off the inks for the same reason. */
+  --map-area-selected: #7ed4ff;
+  --map-area-selected-edge: #101010;
+  --map-level-1: #ff71c1;
+  --map-level-2: #ee329c;
+  --map-level-3: #c9006e;
+  --map-kept: #ee329c;
+  --map-focus-street: #c9006e;
+  --map-label: #111111;
+  --map-field: #ff48b0;
+  --map-field-line: #b8005f;
+  --map-hatch-view: #b8005fcc;
+  --map-picto: #111111;
+  /* An unfilmed street close to the roads' white (DECISIONS 2026-10-08, « The palette of the
+     second round is validated »): « détecter » 2.0:1 from it as drawn on the roads (1.1:1
+     before; « détecter » itself is 2.5:1 on the roads, so 3:1 needs a darker detect
+     stroke, a change of the palette); as wide as the pink stroke since 2026-10-16
+     (streetwidth.ts: the basemap's road width of its class). Since lot U2 the roads' own
+     white (the owner's « B », 2026-10-19): an unfilmed street reads as the road it is, its
+     edge (--map-road-edge) beside it; « détecter » 2.45:1 from it (1.96 before). */
+  --map-street-none: #fbfdfd;
+  --map-gone: #5f5f5f;
+  --map-halo: #f2efe6;
+  --map-ink: #111111;
+  --map-me: #0060a0;
+  --map-proposal: #0060a0;
+  --map-guide: #0060a0;
+  --map-hatch-none: #0078bfb0;
+  --map-near: #8a8a8a;
+  /* The roads' and paths' edge (lot U2, the owner's « B », 2026-10-19; basemap.ts): every
+     casing above ground and the paths' own, 4.5:1 on the earth, 4.2:1 on the parks (the
+     white roads were 1.1:1 on them). --chart-other's grey. */
+  --map-road-edge: #6b6b6b;
+  /* 20a's dot screen on the map's earth, lighter than the machine's paper (--paper-dots
+     0.22): the owner's « A2 » (2026-10-19), the streets read through it. */
+  --map-paper-dots: rgba(127, 212, 255, 0.08);
+  --basemap: light;
+  /* Without points of interest the basemap needs only arrows and town dots: the small
+     grayscale sprite (6 KB) has them. */
+  --basemap-sprite: grayscale;
+  --basemap-pois: none;
+  /* No road number shields (D50, A1…): they read like the map's own labels. Set here only,
+     so that dark hides the same layers (a change of mode keeps the layer set). */
+  --basemap-hide: roads_shields;
+  --basemap-background: #e6eef0;
+  --basemap-earth: #e6eef0;
+  --basemap-park_a: #cfe8ef;
+  --basemap-park_b: #cfe8ef;
+  --basemap-wood_a: #d6eaee;
+  --basemap-wood_b: #d6eaee;
+  --basemap-scrub_a: #dcecef;
+  --basemap-scrub_b: #dcecef;
+  --basemap-water: #7fd4ff;
+  /* From the street level the water is drawn again over the fields, see-through (the
+     halftone guessable under it; 0.6 turned it lavender over the pale pink), edged by a
+     shore a little darker (layers.ts drawnBasemap; product owner, 2026-10-15). */
+  --map-water-opacity: 0.7;
+  --map-water-shore: #4cb8eb;
+  --basemap-buildings: #d8e4e8;
+  --basemap-highway: #fbfdfd;
+  --basemap-major: #fbfdfd;
+  --basemap-link: #fbfdfd;
+  --basemap-minor_a: #fbfdfd;
+  --basemap-minor_b: #fbfdfd;
+  --basemap-minor_service: #eef4f5;
+  --basemap-other: #eef4f5;
+  --basemap-pedestrian: #eef4f5;
+  --basemap-railway: #ff48b0;
+  /* Names, one colour everywhere (product owner, 2026-10-06): every label of the basemap
+     (places, quarters, streets, water, addresses) and the reach labels in the ink
+     (--map-label = --map-ink) on an opaque halo of the map's paper (--map-halo), 2 px wide,
+     unblurred, the most MapLibre draws around the smallest of them (8 px quarter names at
+     z11; the halo is at most a quarter of the size). The glyph sits on its halo, at 4.5:1
+     there whatever lies under it, the communes and filmed streets included
+     (theme.test.ts). basemap.ts applies it to every text layer (the flavour gives country
+     names the earth's colour as a halo and water names the water's); the label tokens
+     below say the same, for the flavour's own use. Both modes. */
+  --map-label-halo-width: 2;
+  --basemap-city_label: #111111;
+  --basemap-city_label_halo: #f2efe6;
+  --basemap-subplace_label: #111111;
+  --basemap-subplace_label_halo: #f2efe6;
+  --basemap-state_label: #111111;
+  --basemap-state_label_halo: #f2efe6;
+  --basemap-country_label: #111111;
+  --basemap-address_label: #111111;
+  --basemap-address_label_halo: #f2efe6;
+  --basemap-ocean_label: #111111;
+  --basemap-roads_label_minor: #111111;
+  --basemap-roads_label_major: #111111;
+  --basemap-roads_label_minor_halo: #f2efe6;
+  --basemap-roads_label_major_halo: #f2efe6;
+  --basemap-landcover-grassland: #d6eaee;
+  --basemap-landcover-farmland: #dcecef;
+  --basemap-landcover-forest: #cfe8ef;
+  --basemap-landcover-scrub: #dcecef;
+  --basemap-landcover-barren: #e6eef0;
+  --basemap-landcover-urban_area: #e6eef0;
+  --basemap-landcover-glacier: #f2efe6;
+
+  /* lot 3.2 */
+  /* The camera sheet after mockup 17a (theme/punk/sheet.css, chips.css). Its title's
+     cut-out letters: an ink tile (also the « Supposé » box's title), a light blue tile
+     under an ink letter (11.5:1; the tile decorates), an italic serif letter in pink
+     (17a #c2006b, large text). Georgia is a system face: nothing downloaded. */
+  --font-serif: Georgia, "Times New Roman", serif;
+  --ink-tile-bg: #111111;
+  --ink-tile-fg: #f2efe6;
+  --cut-blue: #7fd4ff;
+  --cut-serif: #c2006b;
+  /* The « Vérifié ✓ » stamp's double border (17a #0078bf, 4.1:1 on paper). */
+  --stamp-line: #0078bf;
+  /* The pink ticket's value offset (17a: light blue in both modes): decoration. */
+  --shadow-ticket-value-on: 1.5px 1px 0 #7fd4ff;
+  /* The « Supposé · à compléter » box's offset shadow. */
+  --shadow-box: 2px 2px 0 #111111;
+  /* The phone's sheet: its waved top edge over the map (4b), as --shadow-sheet is a wide
+     screen's torn bottom edge. Decoration. */
+  --shadow-sheet-top: 0 -6px 0 #7fd4ff;
+  /* 17a's yellow scotch: tapes, a pending proposal's line, a pending add's status. */
+  --sheet-tape: rgba(255, 232, 0, 0.62);
+  --sheet-tape-blend: multiply;
+  /* lot 3.1 */
+  /* The map's screen after mockup 20a (wide screen), 18a (phone) and 17a's map side: the
+     header ticket, the filters machine, the list of cameras (theme/punk/map.css,
+     machine.css, camlist.css; the map's own marks are drawn by stickers.ts from the
+     --map-tag*, --map-tape and --map-maybe-* tokens). The machine is the ink in light and
+     the cream in dark (--line), its inner paper the mockup's #f2efe6 / #111. */
+  --machine-paper: #f2efe6;
+  /* 20a's dot screen, the light blue a dot every 5 px: on the machine's paper; the map's
+     earth has its lighter own since lot U2 (--map-paper-dots, stickers.ts paperDots). */
+  --paper-dots: rgba(127, 212, 255, 0.22);
+  --machine-drop: drop-shadow(6px 6px 0 #7fd4ff);
+  --ticket-drop: drop-shadow(4px 4px 0 #7fd4ff);
+  /* 20a's keys: released, white and raised on a 4 px ink shadow; pressed, pink, sunk onto a
+     1 px one. The drawer's chips: released on the light blue's 1.5 px offset (decoration). */
+  --key-off: #ffffff;
+  --key-shadow: 4px 4px 0 #111111;
+  --key-shadow-on: 1px 1px 0 #111111;
+  --key-shadow-mid: 3px 3px 0 #111111;
+  --chip-shadow-off: 1.5px 1.5px 0 #7fd4ff;
+  --chip-shadow-on: 2px 2px 0 #111111;
+  /* The keys' count, offset in the light blue when pressed (on pink), in pink when not. */
+  --count-ghost-on: 1.5px 1px 0 #7fd4ff;
+  --count-ghost-off: 1.5px 1px 0 #ff48b0;
+  /* Pink under the counter, the « Plus de filtres » key and the reset, in both modes. */
+  --shadow-pink: 3px 3px 0 #ff48b0;
+  /* The cut-out title's light blue piece of paper (17a « M », 20a « L »). */
+  --paper-blue: #7fd4ff;
+  /* « BOUM ! » (20a): yellow on ink, in both modes. */
+  --boom-bg: #111111;
+  --boom-ink: #ffe800;
+  /* A phone's attribution (18a): an ink inset, cream type, in both modes. */
+  --attrib-inset: #111111;
+  --on-attrib-inset: #f2efe6;
+  /* The leaderboard's categories (26a's legend: its dots, bars and scale) and the send's
+     tickets (8a): one colour and one ink per category, read by both screens, the same in
+     both modes (17a's pink, light blue and yellow, the paper, « BOUM ! »'s yellow on ink).
+     --k-none: a ticket the server gave no points. */
+  --k-add: #ff48b0;
+  --k-add-ink: #111111;
+  --k-info: #7fd4ff;
+  --k-info-ink: #111111;
+  --k-correction: #ffe800;
+  --k-correction-ink: #111111;
+  --k-verification: #f2efe6;
+  --k-verification-ink: #111111;
+  --k-bonus: #111111;
+  --k-bonus-ink: #ffe800;
+  --k-none: #ffffff;
+  --k-none-ink: #111111;
+  /* The count label and the map's level label: 17a's yellow arrow tag, ink text. */
+  --tag: #ffe800;
+  --on-tag: #111111;
+  /* The tape of « correction en attente » (20a), the same yellow in both modes. */
+  --tape: rgba(255, 232, 0, 0.88);
+  /* On the map (stickers.ts reads them): the level's label, the tape, the « maybe gone »
+     marker's dashed ring and its « ? » disc (the mockup's yellow « ? » on ink). */
+  --map-tag: #ffe800;
+  --map-tag-ink: #111111;
+  --map-tape: #ffe800;
+  /* The fields' halftone (20a): fine pink dots, closer from detect to identify
+     (stickers.ts fieldPattern), on a pale pink ground, never white, a little deeper from
+     detect to identify. While a camera is in focus the other fields take one opaque dimmed
+     colour, their outline too (16a's « version atténuée » of the stickers). */
+  --map-dots: #ff48b0;
+  --map-field-1: #ffd6eb;
+  --map-field-2: #ffc2e3;
+  --map-field-3: #ffaed9;
+  --map-field-dim: #ece1e8;
+  --map-field-dim-line: #d6b9c8;
+  --map-maybe-ring: #111111;
+  --map-maybe-disc: #111111;
+  --map-maybe-mark: #ffe800;
+
+  /* The welcome panel's ticket (welcome.css, and the legal pages': legal.css). 28a draws it
+     dark only, its own inks (the dark values); in light (the owner's request of 2026-10-15)
+     the same ticket on the paper: text, rules and labels from the light inks above (the
+     light blue, the pink and the yellow labels as --blue, --accent and --warn, readable on
+     paper), the cut-out letter, the × and the first tag on the ink. */
+  --welcome-paper: #f2efe6;
+  --welcome-ink: #111111;
+  --welcome-muted: #5a5650;
+  --welcome-rule: #5a5650;
+  --welcome-focus: #111111;
+  --welcome-tile: #111111;
+  --welcome-on-tile: #f2efe6;
+  --welcome-blue: #0060a0;
+  --welcome-pink: #b8005f;
+  --welcome-yellow: #8a4500;
+  --welcome-go-shadow: #111111;
+  --welcome-letter: #b8005f;
+  --welcome-link-line: #b8005f;
+}
+
+:root[data-ui="punk"][data-mode="dark"] {
+  color-scheme: dark;
+  /* dark paper, cream ink, pink and sky inverted (not the map's ramps: below) */
+  --page: #141216;
+  --bg: #1c1a1f;
+  --bg-2: #26232a;
+  --fg: #f2efe6;
+  --muted: #a8a29a;
+  --line: #f2efe6;
+  --rule-dashed: #6d6874;
+  --handle: #f2efe6;
+  --accent: #ff7cc6;
+  --accent-fill: #ff48b0;
+  --on-accent: #111111;
+  --accent-press: #3a1029;
+  --warn: #ffcf4d;
+  --warn-fill: #ffe800;
+  --on-warn: #111111;
+  --warn-line: #ffe800;
+  --warn-bg: #2b2610;
+  --conflict-bg: #2b2610;
+  --cnil-line: #ffe800;
+  --cnil-bg: #2b2610;
+  --blue: #7fd4ff;
+  --proposal-bg: #0f2a36;
+  --halo: #141216;
+  --legend-hatch: #7fd4ff;
+  --legend-hatch-bg: #1c1a1f;
+  --debug-bg: rgba(242, 239, 230, 0.9);
+  --debug-fg: #111111;
+  --focus: #ffe800;
+  --ok: #6fdc9a;
+  --ok-line: #6fdc9a;
+  --bad: #ff8a8a;
+  --bad-line: #ff8a8a;
+  --pick-bg: #3a1029;
+  --tag-bg: #26232a;
+  --chart-line: #f2efe6;
+  --chart-other: #8a8591;
+  --shadow-panel: 3px 3px 0 #ff48b0;
+  --shadow-sheet: 6px 6px 0 #ff48b0;
+  --shadow-fab: 3px 3px 0 #7fd4ff;
+  --shadow-fab-off: 2px 2px 0 #ff48b0;
+  --shadow-small: 2px 2px 0 #ff48b0;
+  --shadow-bottom: 0 -4px 0 #ff48b0;
+  --shadow-pin: 2px 2px 0 #ff48b0;
+  --shadow-disc: 2px 2px 0 #ff48b0;
+  --shadow-fab-press: 0 0 0 #7fd4ff;
+  --shadow-small-press: 0 0 0 #ff48b0;
+  /* The second accent (17a, dark): the primary button in the light blue with ink text, the
+     links' underline, the titles' and values' offsets, the tickets' shadows. */
+  --accent-2-fill: #7fd4ff;
+  --on-accent-2: #111111;
+  --shadow-accent-2: 3px 3px 0 #ff48b0;
+  --link-line: #7fd4ff;
+  --shadow-title: 1.5px 1px 0 #7fd4ff;
+  --shadow-value: 1px 0.7px 0 #7fd4ff;
+  --shadow-ticket: 3px 3px 0 #7fd4ff;
+  --shadow-ticket-off: 1.5px 1.5px 0 #7fd4ff;
+  --grid-line: rgba(127, 212, 255, 0.18);
+
+  /* One palette, as in light (DECISIONS 2026-10-08, « The more vivid, the more filmed… »):
+     from a dull wine close to the night's earth (little filmed) up to 17a's electric pink
+     (much filmed), never towards black; five classes spread evenly, 1.42 / 1.50 / 1.50 /
+     1.50:1 apart (OKLab 12.4 / 11.6 / 10.8 / 11.4; the first round's 1.35 at least). The thin border is 17a's sky one step off
+     #7fd4ff, which is --map-me here and must stay one colour in light (theme.colourMap; one
+     for one, tested); the open area's outline the text pink #ff7cc6. The street levels are
+     classes 3, 4, 5: 2.1, 3.1 and 4.7:1 on the main roads, 2.7, 4.0 and 6.0:1 on the earth; the
+     "no camera" hatching lighter (0.6 of its 0.6) to stand 2:1 from the vivid end. */
+  --map-area-1: #36202d;
+  --map-area-2: #682750;
+  --map-area-3: #992e73;
+  --map-area-4: #c93a91;
+  --map-area-5: #fe48b0;
+  --map-area-line: #ff7cc6;
+  --map-area-border: #80d4ff;
+  --map-area-selected: #81d4ff;
+  --map-area-selected-edge: #0c0b0d;
+  --map-level-1: #992e73;
+  --map-level-2: #c93a91;
+  --map-level-3: #fe48b0;
+  --map-kept: #c93a91;
+  --map-focus-street: #fe48b0;
+  --map-label: #f2efe6;
+  --map-field: #ff48b0;
+  --map-field-line: #ff7cc6;
+  --map-hatch-view: #ff7cc6cc;
+  --map-picto: #f2efe6;
+  /* Unfilmed streets close to the roads (as in light): « détecter » 2.1:1 from them as drawn
+     on the main roads (1.0:1 before); it is itself 2.1:1 on them. */
+  --map-street-none: #2a2630;
+  --map-gone: #8a8590;
+  --map-halo: #141216;
+  --map-ink: #f2efe6;
+  --map-me: #7fd4ff;
+  --map-proposal: #7fd4ff;
+  --map-guide: #7fd4ff;
+  --map-hatch-none: #7fd4ff99;
+  /* The second round's unfilmed grey, one blue step off it (and --chart-other one off
+     --map-gone): the same colour twice would make the switch to light ambiguous
+     (theme.colourMap; one for one, tested). */
+  --map-near: #6b6671;
+  /* The roads' and paths' edge (lot U2, « B »): 4.0:1 on the earth, 3.4:1 on the parks and
+     woods, 3.2:1 on the palest field (--map-near, 2.9:1 on the parks, did not hold). */
+  --map-road-edge: #77727d;
+  /* The map's dot screen, lighter than the machine's paper (lot U2, « A2 »). */
+  --map-paper-dots: rgba(127, 212, 255, 0.05);
+  --basemap: dark;
+  --basemap-background: #141216;
+  --basemap-earth: #141216;
+  --basemap-park_a: #14232a;
+  --basemap-park_b: #14232a;
+  --basemap-wood_a: #15212a;
+  --basemap-wood_b: #15212a;
+  --basemap-scrub_a: #171d24;
+  --basemap-scrub_b: #171d24;
+  --basemap-water: #0d3a52;
+  --map-water-opacity: 0.7;
+  --map-water-shore: #0a2b3d;
+  --basemap-buildings: #1f1c22;
+  --basemap-highway: #2c2832;
+  --basemap-major: #2c2832;
+  --basemap-link: #2c2832;
+  --basemap-minor_a: #221f26;
+  --basemap-minor_b: #221f26;
+  --basemap-minor_service: #1e1b21;
+  --basemap-other: #1e1b21;
+  --basemap-pedestrian: #1e1b21;
+  --basemap-bridges_highway: #2c2832;
+  --basemap-bridges_major: #2c2832;
+  --basemap-bridges_link: #2c2832;
+  --basemap-bridges_minor: #221f26;
+  --basemap-bridges_other: #1e1b21;
+  --basemap-railway: #ff48b0;
+  --basemap-city_label: #f2efe6;
+  --basemap-city_label_halo: #141216;
+  --basemap-subplace_label: #f2efe6;
+  --basemap-subplace_label_halo: #141216;
+  --basemap-state_label: #f2efe6;
+  --basemap-state_label_halo: #141216;
+  --basemap-country_label: #f2efe6;
+  --basemap-address_label: #f2efe6;
+  --basemap-address_label_halo: #141216;
+  --basemap-ocean_label: #f2efe6;
+  --basemap-roads_label_minor: #f2efe6;
+  --basemap-roads_label_major: #f2efe6;
+  --basemap-roads_label_minor_halo: #141216;
+  --basemap-roads_label_major_halo: #141216;
+  --basemap-landcover-grassland: #15212a;
+  --basemap-landcover-farmland: #171d24;
+  --basemap-landcover-forest: #14232a;
+  --basemap-landcover-scrub: #171d24;
+  --basemap-landcover-barren: #141216;
+  --basemap-landcover-urban_area: #141216;
+  --basemap-landcover-glacier: #1c1a1f;
+
+  /* lot 3.2 */
+  /* The camera sheet in dark (17a): cream tiles with ink letters, the italic letters and
+     the « Vérifié » stamp's text in the dark pink, its border and the box's shadow in the
+     light blue, the phone sheet's edge in pink, the tapes lighter and not multiplied. */
+  --ink-tile-bg: #f2efe6;
+  --ink-tile-fg: #111111;
+  --cut-blue: #7fd4ff;
+  --cut-serif: #ff7cc6;
+  --shadow-ticket-value-on: 1.5px 1px 0 #7fd4ff;
+  --stamp-line: #7fd4ff;
+  --shadow-box: 2px 2px 0 #7fd4ff;
+  --shadow-sheet-top: 0 -6px 0 #ff48b0;
+  --sheet-tape: rgba(255, 232, 0, 0.5);
+  --sheet-tape-blend: normal;
+  /* lot 3.1 */
+  /* Dark as 20a draws it (ink and cream swap: the machine cream, its paper #111) but for
+     the shadows under the surfaces, pink as 17a's dark (DECISIONS 2026-10-07, « Second
+     accent after 17a »: 20a and 18a keep them blue). The « ? » of the « maybe gone »
+     marker is ink on its cream disc: the mockup's yellow on cream is 1.2:1. */
+  --machine-paper: #111111;
+  --paper-dots: rgba(127, 212, 255, 0.12);
+  --machine-drop: drop-shadow(6px 6px 0 #ff48b0);
+  --ticket-drop: drop-shadow(4px 4px 0 #ff48b0);
+  --key-off: #1c1a1f;
+  --key-shadow: 4px 4px 0 #f2efe6;
+  --key-shadow-on: 1px 1px 0 #f2efe6;
+  --key-shadow-mid: 3px 3px 0 #f2efe6;
+  --chip-shadow-off: 1.5px 1.5px 0 #7fd4ff;
+  --chip-shadow-on: 2px 2px 0 #f2efe6;
+  --count-ghost-on: 1.5px 1px 0 #7fd4ff;
+  --count-ghost-off: 1.5px 1px 0 #ff48b0;
+  --shadow-pink: 3px 3px 0 #ff48b0;
+  --paper-blue: #7fd4ff;
+  --boom-bg: #111111;
+  --boom-ink: #ffe800;
+  --attrib-inset: #111111;
+  --on-attrib-inset: #f2efe6;
+  /* The leaderboard's categories and the send's tickets: as in light. */
+  --k-add: #ff48b0;
+  --k-add-ink: #111111;
+  --k-info: #7fd4ff;
+  --k-info-ink: #111111;
+  --k-correction: #ffe800;
+  --k-correction-ink: #111111;
+  --k-verification: #f2efe6;
+  --k-verification-ink: #111111;
+  --k-bonus: #111111;
+  --k-bonus-ink: #ffe800;
+  --k-none: #ffffff;
+  --k-none-ink: #111111;
+  --tag: #ffe800;
+  --on-tag: #111111;
+  --tape: rgba(255, 232, 0, 0.88);
+  --map-tag: #ffe800;
+  --map-tag-ink: #111111;
+  --map-tape: #ffe800;
+  /* The same pink halftone in dark, on grounds of dull wine (DECISIONS 2026-10-08, « The
+     more vivid… »), the first round's: between the ramp's classes, where the gone and dim
+     stickers keep 3:1 on them (their dark outline on the lighter, their body on the
+     darker; tests/stickers.test.ts); the dimmed fields close to the night's earth. */
+  --map-dots: #ff48b0;
+  --map-field-1: #36202d;
+  --map-field-2: #62284c;
+  --map-field-3: #ab347a;
+  --map-field-dim: #241c23;
+  --map-field-dim-line: #4a3443;
+  --map-maybe-ring: #f2efe6;
+  --map-maybe-disc: #f2efe6;
+  --map-maybe-mark: #111111;
+
+  /* The welcome panel's ticket: 28a's own inks. */
+  --welcome-paper: #1c1a1f;
+  --welcome-ink: #f2efe6;
+  --welcome-muted: #a9a4ae;
+  --welcome-rule: #6d6874;
+  --welcome-focus: #ffe800;
+  --welcome-tile: #f2efe6;
+  --welcome-on-tile: #111111;
+  --welcome-blue: #7fd4ff;
+  --welcome-pink: #ff48b0;
+  --welcome-yellow: #ffe800;
+  --welcome-go-shadow: #f2efe6;
+  --welcome-letter: #ff7cc6;
+  --welcome-link-line: #ff48b0;
+}

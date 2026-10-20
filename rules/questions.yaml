@@ -1,0 +1,214 @@
+# "Compléter" (phase D2): the questions a contributor may answer on a camera — its
+# shape, its direction, its height and tilt (phase D3) and who operates it. Read by the API (accepted answers, the
+# operator list), the phone (through tiles/meta.json: which questions to ask), the
+# `apply` stage (what a validated answer changes) and, later, the export to OpenStreetMap
+# (`osm`, prepared and not used yet). Values marked [TO ADJUST] are first guesses.
+# Version 2 (phase D3): height and tilt, one screen between the direction and who films.
+# Version 3: the height's modify_excludes (the punk add and « Modifier », id questions@3).
+# Version 4 (lot of 2026-10-12): the height in metres without « Poteau », and a name the
+# contributor proposes for the operator (ids questions@4).
+# Version 5 (return on Temps 1, 2026-10-13): the tilt for the small dome too (tilt.kinds,
+# ids questions@5 of height and tilt).
+version: 5
+
+shape:
+  id: rule:questions@1:shape
+  rationale: >-
+    Asked only for a camera of unknown type (kind certainty default). Four drawings a
+    passer-by tells apart in ten seconds; the optical model distinguishes exactly these
+    kinds. No fisheye, plate reader, doorbell nor short or long tube: the model does not
+    tell them apart or a non-expert does not recognise them. A validated answer sets the
+    camera's kind at certainty estimated, source contribution; "unknown" changes nothing.
+  # Answer -> kind of the model (rules/optics.yaml, rules/defaults.yaml).
+  kinds:
+    dome: dome
+    bullet: fixed
+    ptz: ptz
+    multi: panorama
+
+direction:
+  id: rule:questions@1:direction
+  rationale: >-
+    Asked only when the direction is not surveyed and the camera's kind (from OSM, or the
+    shape answer given just before) falls under the direction rule (rules/direction.yaml
+    unknown_direction: not PTZ, panoramas nor doorbells). The contributor slides the map
+    under a fixed target; the direction is the bearing from the camera to the target, a
+    whole number of degrees from 0 to 359, one per contribution. A validated direction
+    becomes the camera's at certainty estimated, source contribution. "Je ne vois pas"
+    (the lens cannot be seen, e.g. through a dark dome) is stored and counted, and changes
+    nothing. A direction validated on a camera finally of a kind outside the rule, or
+    placed farther than moved_max_m from where it was aimed, is a conflict.
+  # A target this close to the camera gives a bearing a finger's error swings widely:
+  # "Valider" waits. [TO ADJUST]
+  min_target_m: 5
+  # The punk add and « Modifier » (the author's point 4 of 2026-10-12): the same minimum on
+  # the screen, in CSS pixels between the camera and the target, whatever the zoom. Only the
+  # bearing matters, and a finger's error is a matter of pixels: about 8 px (a tap's
+  # tolerance) at 48 px swings it by 10° at most. 48 px is min_target_m at the aim's
+  # opening zoom (z19, about 0.1 m per pixel in Paris); at z21 it is 1.2 m, where 5 m
+  # refused a target clearly away on the screen. No metric floor: pixels bound the error
+  # at every zoom. min_target_m stays for the classique. [TO ADJUST]
+  min_target_px: 48
+  # The bearing was taken from the position served at the gesture; a camera finally placed
+  # farther than this (OSM edit or validated move) makes the direction a conflict, reason
+  # `moved`. [TO ADJUST]
+  moved_max_m: 5
+
+operator:
+  id: rule:questions@4:operator
+  rationale: >-
+    Asked only when the operator is unknown or private (not public). Three answers and
+    "Je ne sais pas". After "Public" or "Commerce ou entreprise", the classique offers a
+    short optional list of operators to tap: the normalised names of rules/operators.yaml
+    of the same class carried by cameras near this one, plus "Ville de <commune>" for
+    Public (the parent commune for a municipal arrondissement), alphabetical — no
+    frequency, the answer is not prompted. The punk editor (lot of 2026-10-12: RATP could
+    not be chosen) searches every normalised name of rules/operators.yaml but list_excludes,
+    the nearby ones first, a chosen name setting the class by its own; and after "Public"
+    or "Commerce ou entreprise" only, a name absent from the list may be proposed
+    (`proposed`). A proposed name is shown nowhere before a reviewer accepts it in /revue
+    — as typed, replaced by a listed name, or without a name (the class answer stands) —
+    and only an accepted name is applied or published. Never a list nor a name after
+    "Particulier": a private individual has neither CNIL signal nor complaint link nor
+    public photo, and no person's name enters the database. Validated answers that
+    disagree (different classes, or different names) leave the operator unknown for what
+    differs; an unknown operator carries no CNIL signal (exposure.py).
+  # Answer -> operator class of the model, and the kind of private operator.
+  classes:
+    public: {class: public}
+    business: {class: private_outdoor, operator_kind: business}
+    household: {class: private_outdoor, operator_kind: household}
+  # Operator classes asked (tile codes, camerafilters.OP_CODE): unknown, private outdoor,
+  # private indoor. A private camera only while its category is unknown: no validated
+  # answer says it, and its OSM operator name is empty or tells nothing (a name says a
+  # business, "Particulier" a private individual; rules/operators.yaml no_information and
+  # the names below say neither). Public: never.
+  asked: [unk, pro, pri]
+  category_unknown: [Syndic d'immeuble]
+  # The list: names carried by cameras within this distance, at most this many (the
+  # nearest distinct names, then shown alphabetically). [TO ADJUST]
+  list_m: 300
+  list_max: 6
+  # Normalised names never offered: they name no one ("Particulier" is the third answer,
+  # never a list entry; a syndic or an unnamed town says nothing a passer-by can check).
+  list_excludes: [Particulier, "Syndic d'immeuble", Ville (sans précision)]
+  # A proposed name, after Unicode NFC, trimming and collapsing inner spaces: a length an
+  # organisation's name fits in (OSM's operator values are short; a sentence is not a
+  # name), its first character a letter or digit, then letters, digits, spaces and the
+  # punctuation names carry (« L'Oréal », « Saint-Denis », « S.N.C.F. », « Marks &
+  # Spencer », « Ville (sans précision) », « 3, rue », « A/B »). No other symbol: no link,
+  # no markup, no emoji. A name equal to a listed one of the same class once folded is
+  # that listed name. [TO ADJUST]
+  proposed:
+    min_chars: 2
+    max_chars: 60
+    punctuation: " '’-.&(),/"
+height:
+  id: rule:questions@5:height
+  rationale: >-
+    Height and tilt together give a camera its blind zone and cap its reach on the ground
+    (camerafield.mount); either alone changes nothing computed, and there is no default
+    tilt. So the screen "Hauteur et inclinaison" is shown only when the answer can change
+    the field: for a camera finally of a tilt kind (a tube or a small dome: OSM's kind, or
+    the shape just answered) whose height or tilt is missing — height first when it is by
+    default, then the tilt once a height is chosen or known — and for a camera of any kind
+    with an OSM tilt (camera:angle) its default height keeps unused: height alone. Never
+    for a PTZ, a panorama, a doorbell or an unknown kind otherwise (an unknown kind goes
+    through the shape first). Three heights and "Je ne sais pas" (lot of 2026-10-12: « ~2 m »,
+    « ~4 m », « 6 m et + »; « Poteau » is gone, it did not say the height); the answer is
+    a class, never metres typed. A validated answer sets the height of its class, certainty
+    estimated, source contribution. "Je ne sais pas" changes nothing. That is « Compléter »
+    (the current interface). The punk interface's add and « Modifier » (one component,
+    DECISIONS 2026-10-08) offer the height for every final kind but `modify_excludes`:
+    the big motorised ball hangs from its pipe wherever it is, and an unknown camera's
+    height is stored for when its tilt is known (alone it changes nothing computed, as
+    above).
+  # Answer -> metres, the class's middle as the punk editor labels it; the keys are the
+  # buckets stored since phase D3 (rez-de-chaussée, 1er étage, 2e et +). [TO ADJUST]
+  classes:
+    ground: 2   # « ~2 m »
+    first: 4    # « ~4 m »
+    upper: 7    # « 6 m et + »
+    # The classique only (frozen, it still offers « sur un poteau »): its hint reads the
+    # metres here (tiles meta height_m); the API stores the answer as legacy says.
+    pole: 4
+  # An answer the classique still sends, stored as this class (migration 017 moved the
+  # stored ones): a street lamp's camera hangs at about a first floor's height, and « ~4 m »
+  # is the author's own mapping (lot of 2026-10-12).
+  legacy: {pole: first}
+  # The punk add and « Modifier »: the final kinds never offered a height.
+  modify_excludes: [ptz]
+
+tilt:
+  id: rule:questions@5:tilt
+  rationale: >-
+    Asked for a tube and, since version 5, a small dome (the author's decision on the
+    return on Temps 1; a class is a passer-by's estimate, not a measure), never for a PTZ
+    (it moves), a panorama or an unknown kind, when no tilt is known and a height is (at
+    least estimated, or chosen on the same screen). The model is the same for both kinds
+    (optics.sample_extent): the image's lower edge, tilt plus half the vertical field of
+    view below the horizon, sets the blind zone at the foot, h / tan(tilt + vfov / 2); its
+    upper edge, once below the horizon, caps the reach on the ground, h / tan(tilt - vfov /
+    2); the vertical field of view is the kind's own samples' (rules/optics.yaml, 16:9). Three
+    profile drawings and "Je ne sais pas"; the answer is a class. A validated answer sets
+    the tilt of its class, certainty estimated, source contribution — applied only when
+    the camera's final height is at least estimated (else it stays in the database
+    without effect, and /revue says so) and its final kind is a tilt kind (a camera that
+    becomes a PTZ or a panorama makes it a conflict, reason kind). The sheet never shows a
+    tilt in degrees: an OSM camera:angle is shown by the class its value falls in.
+  kinds: [fixed, dome]
+  # The frozen classique's « Compléter »: the tube only, its tilt screen drawing a tube's
+  # profiles; its reference build (the gate's pixel comparison) reads it as `tilt_kinds`.
+  classique_kinds: [fixed]
+  # Answer -> degrees below the horizon. [TO ADJUST]
+  classes:
+    horizon: 10  # vers l'horizon
+    slight: 25   # un peu vers le bas
+    steep: 45    # fortement vers le sol
+  # Class of a tilt in degrees (an OSM camera:angle): under the first bound horizon, under
+  # the second slight, else steep — midway between the answers' values.
+  bounds: [17.5, 35]
+
+# "Je ne sais pas" and "Je ne vois pas" are stored answers that move to the next question;
+# they change nothing on the map and wait for no review decision: they feed the review's
+# statistics only (not exported). There is no "Passer". Every other answer also says the
+# camera was seen, like a move: rules/contributions.yaml `seen`.
+
+# What a validated answer would write to OpenStreetMap. Prepared, not used: nothing is
+# sent to OpenStreetMap yet. Only answers given on site (on_site = true) will be
+# exportable. Values read on the OSM wiki on 2026-10-01:
+# - Key:camera:type documents fixed ("normally incapable of moving or rotating"),
+#   panning ("capable of rotating"), dome, panorama ("wide field of view with no movement
+#   necessary"), panorama_with_ptz and doorbell.
+# - Key:operator:type documents private, public ("a public organisation ... which has its
+#   own director and management structure"), government ("operated directly by a local,
+#   regional or country government"), community, consortium, cooperative, military, ngo,
+#   religious, charitable. "Public" here spans government (town hall, police) and public
+#   (transport operators): the class alone cannot choose, so a bare "Public" exports no
+#   operator:type; with a name from the list, the name's own type (`osm_operator_type` in
+#   rules/operators.yaml, to be filled when the export is built).
+# Values read on the OSM wiki on 2026-10-04 (phase D3):
+# - Key:height: "Height is the measurement of vertical distance"; "The default unit is
+#   metres"; a range "should be a number, not a range" (est_height exists, rarely used).
+#   On a man_made=surveillance node this project reads it as the camera's height above
+#   the ground (normalize.parse_height), as the pipeline already did.
+# - Key:camera:angle: "Camera tilt angle from the horizon plane in degrees". taginfo
+#   (2026-10-04): 16,640 elements, signs used both ways (normalize.parse_tilt).
+# - camera:height: no wiki page; 299 nodes worldwide on taginfo (20 in IDF): not used.
+# A class is an estimate: the exported value is the class's, to be marked as such
+# (source:height=survey or est_height is to be decided when the export is built).
+osm:
+  only_on_site: true
+  direction: {key: camera:direction}
+  shape:
+    dome: {camera:type: dome}
+    bullet: {camera:type: fixed}
+    ptz: {camera:type: panning}
+    multi: {camera:type: panorama}
+  operator:
+    public: {}
+    business: {operator:type: private}
+    # A private individual: nothing is exported, ever.
+    household: null
+  height: {key: height}  # the class's metres
+  tilt: {key: camera:angle}  # the class's degrees

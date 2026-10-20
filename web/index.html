@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%t:app.name%</title>
+    <!-- The logo L3 (2026-10-15), its 16 and 32 px drawn as variant C: the SVG changes its
+         ink with the system's mode; PNG for the browsers without SVG icons, both sizes in
+         light and dark; the home screen's from the manifest (vite.config.ts). -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon-32-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon-16-dark.png" type="image/png" sizes="16x16" media="(prefers-color-scheme: dark)" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Share metadata, from the catalogue at build time (vite.config.ts); the absolute
+         addresses from the deploy's host (VITE_SITE_URL), never written here. The preview
+         image is the site's own file (/og.jpg, A2 of 2026-10-15): nothing from a third party. -->
+    <meta name="description" content="%t:app.description%" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="fr_FR" />
+    <meta property="og:site_name" content="%t:app.name%" />
+    <meta property="og:title" content="%t:share.title%" />
+    <meta property="og:description" content="%t:share.description%" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- site -->
+    <meta property="og:url" content="%site%/" />
+    <meta property="og:image" content="%site%/og.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="%t:share.image_alt%" />
+    <!-- /site -->
+    <script>
+      // The punk interface (the default; theme.ts chosenUi) in dark mode: until its tokens
+      // arrive with the code, the empty page takes the system's own dark background (no
+      // colour written here).
+      try {
+        const q = new URLSearchParams(location.search);
+        const asked = q.get("ui");
+        const classique =
+          asked === "classique" ||
+          asked === "classic" ||
+          (asked !== "punk" && localStorage.getItem("lacarte.ui") === "classique");
+        const mode = q.get("mode") || localStorage.getItem("lacarte.mode") || "auto";
+        const dark =
+          mode === "sombre" ||
+          (mode !== "clair" && matchMedia("(prefers-color-scheme: dark)").matches);
+        if (!classique && dark) {
+          document.documentElement.style.colorScheme = "dark";
+          document.documentElement.style.setProperty("--page", "Canvas");
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="estimate" role="group"></div>
+    <aside id="filters"></aside>
+    <div id="fabs">
+      <button id="fab-filters" class="fab"></button>
+      <button id="fab-locate" class="fab"></button>
+    </div>
+    <aside id="sheet" hidden></aside>
+    <!-- « Chargement » (board 2c of « Chargement punk »: src/loading.ts, src/loading.css),
+         inert until the punk interface clones it; its words from the catalogue. -->
+    <template
+      id="loading-template"
+      data-word="%t:loading.word%"
+      data-map="%t:loading.line.map%"
+      data-account="%t:loading.line.account%"
+      data-said-map="%t:loading.said.map%"
+      data-said-account="%t:loading.said.account%"
+    >
+      <div class="loading" role="status">
+        <span class="loading-said"></span>
+        <div class="loading-stage" aria-hidden="true">
+          <div class="loading-hook">
+            <div class="loading-arm loading-arm-a">
+              <div class="loading-joint"></div>
+              <div class="loading-arm loading-arm-b">
+                <div class="loading-joint"></div>
+                <div class="loading-head">
+                  <div class="loading-front">
+                    <div class="loading-top"></div>
+                    <div class="loading-collar"></div>
+                    <div class="loading-stem"></div>
+                    <div class="loading-nut"></div>
+                    <div class="loading-body"></div>
+                    <div class="loading-window">
+                      <div class="loading-band"></div>
+                      <div class="loading-led"></div>
+                      <div class="loading-cheek"></div>
+                      <div class="loading-cheek"></div>
+                      <div class="loading-lens">
+                        <div class="loading-glass">
+                          <div class="loading-pupil">
+                            <div class="loading-iris"></div>
+                            <div class="loading-glint"></div>
+                            <div class="loading-glint"></div>
+                          </div>
+                          <div class="loading-lid"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="loading-joint"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="loading-mount"></div>
+        </div>
+        <div class="loading-label" aria-hidden="true">
+          <span class="loading-word"></span>
+          <span class="loading-line"><span class="loading-line-text"></span><span class="loading-caret">▌</span></span>
+        </div>
+      </div>
+    </template>
+    <script>
+      // « Chargement » (src/loading.ts): window.__loading(line) builds one from the template
+      // above, « de la carte » (`map`) or « de votre compte » (`account`). The punk
+      // interface's first load shows it over the page until the map's first display
+      // (main.ts), from here: the page is blank until the scripts have arrived and run
+      // (measured: 0.7 to 3.5 s on a slow phone, bench/loading-timeline.mjs). Only when the
+      // wait passes 300 ms from the navigation (no flash); at once on a return from
+      // OpenStreetMap or to the account's address, whose sheet then takes over. The
+      // classique never shows it.
+      (() => {
+        const root = document.documentElement;
+        const template = document.getElementById("loading-template");
+        const said = { map: template.dataset.saidMap, account: template.dataset.saidAccount };
+        window.__loading = (line) => {
+          const el = template.content.firstElementChild.cloneNode(true);
+          el.dataset.line = line;
+          const word = el.querySelector(".loading-word");
+          for (const ch of template.dataset.word) {
+            const tilt = document.createElement("span");
+            tilt.className = "loading-tilt";
+            const letter = document.createElement("span");
+            letter.className = "loading-letter";
+            letter.textContent = ch;
+            tilt.append(letter);
+            word.append(tilt);
+          }
+          el.querySelector(".loading-line-text").textContent = template.dataset[line];
+          // Its own faces once the device has the punk fonts (theme/fonts.ts): from the
+          // cache; a first visit keeps the fallbacks, not to slow the map.
+          try {
+            if (localStorage.getItem("lacarte.fonts") === "1") el.dataset.fonts = "";
+          } catch {}
+          // A live region says a change, not what it held when it appeared.
+          setTimeout(() => {
+            el.querySelector(".loading-said").textContent = said[line];
+          }, 150);
+          return el;
+        };
+        try {
+          const q = new URLSearchParams(location.search);
+          // Punk by default; the classique never shows it (theme.ts chosenUi).
+          const asked = q.get("ui");
+          if (
+            asked === "classique" ||
+            asked === "classic" ||
+            (asked !== "punk" && localStorage.getItem("lacarte.ui") === "classique")
+          )
+            return;
+          const mode = q.get("mode") || localStorage.getItem("lacarte.mode") || "auto";
+          const dark =
+            mode === "sombre" ||
+            (mode !== "clair" && matchMedia("(prefers-color-scheme: dark)").matches);
+          const line = q.has("osm") || q.get("compte") === "motdepasse" ? "account" : "map";
+          // Waiting: main.ts removes this mark (and the screen) at the end.
+          root.dataset.loading = line;
+          const wait = line === "account" ? 0 : Math.max(0, 300 - performance.now());
+          setTimeout(() => {
+            if (!root.dataset.loading) return;
+            const el = window.__loading(line);
+            el.id = "loading";
+            el.classList.add("loading-first");
+            if (dark) el.dataset.dark = "";
+            document.body.append(el);
+          }, wait);
+        } catch {}
+      })();
+    </script>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

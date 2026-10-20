@@ -1,0 +1,171 @@
+name: ci
+
+# Documentation alone (*.md) runs nothing. A push (or a pull request) runs the light CI:
+# `check` and two smoke tests, the phone and participation in WebKit on the main interface.
+# workflow_dispatch runs the full matrix (every smoke test, both engines, both interfaces);
+# locally `make smoke` runs the same. A new run cancels the one in progress on the same
+# branch and event (a push never cancels a manual full run). `prepare` builds the CI extract
+# once for the smoke jobs, which run in parallel, and says which of them run. No secret is
+# used and nothing is deployed from here.
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["**.md"]
+  pull_request:
+    paths-ignore: ["**.md"]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The CI extract's pipeline once (artifact for the smoke jobs), and which smoke tests run
+  # (the light set or the full matrix).
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      smoke: ${{ steps.matrix.outputs.smoke }}
+      engines: ${{ steps.matrix.outputs.engines }}
+      uis: ${{ steps.matrix.outputs.uis }}
+    steps:
+      - uses: actions/checkout@v4
+      # Names of the `smoke` job's entries, and the participation job's engines and interfaces.
+      - id: matrix
+        env:
+          EVENT: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT" = workflow_dispatch ]; then
+            echo 'smoke=["desktop","phone-webkit","phone-chromium","desktop-punk","phone-webkit-punk","phone-chromium-punk","theme-webkit","theme-chromium","chips-webkit","chips-chromium","profile-webkit","profile-chromium"]' >> "$GITHUB_OUTPUT"
+            echo 'engines=["webkit","chromium"]' >> "$GITHUB_OUTPUT"
+            echo 'uis=["classique","punk"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'smoke=["phone-webkit-punk"]' >> "$GITHUB_OUTPUT"
+            echo 'engines=["webkit"]' >> "$GITHUB_OUTPUT"
+            echo 'uis=["punk"]' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: ./.github/actions/setup
+      # With the synthetic validated contributions (moved, gone, conflicts): the smoke tests
+      # read their sheets; a build without them is checked byte for byte by pytest.
+      - name: Pipeline on the frozen mini extract (La Défense, 92 cameras)
+        run: |
+          mkdir -p data/contrib
+          cp tests/fixtures/contrib-ci.jsonl data/contrib/ci.jsonl
+          make build REGION=ci
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-build
+          path: data/build/ci
+          retention-days: 1
+
+  check:
+    runs-on: ubuntu-24.04
+    # PostGIS for the participation database tests (Docker in CI only, never on the server).
+    services:
+      postgis:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: lacarte
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U test" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          caddy: "true"
+      - run: make check
+        env:
+          REQUIRE_CADDY: "1"
+          REQUIRE_PG: "1"
+          TEST_DSN: postgresql://test:test@localhost:5432/lacarte
+
+  # The map's smoke tests on the mini extract and its versioned basemap: desktop and the
+  # phone test in each engine, one browser per job (the phone test also runs in halves with
+  # --part 1|2, for a longer test later), on the main interface (punk) and the old one
+  # (classique); and the themes' own test. Which ones: the
+  # `prepare` job's list (a push: the phone in WebKit on the punk interface).
+  smoke:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        name: ${{ fromJSON(needs.prepare.outputs.smoke) }}
+    name: smoke (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/smoke-setup
+        with:
+          engines: ${{ contains(matrix.name, 'webkit') && 'webkit' || 'chromium' }}
+      - env:
+          NAME: ${{ matrix.name }}
+        run: |
+          case "$NAME" in
+            desktop) script="smoke.mjs --region ci" ;;
+            desktop-punk) script="smoke.mjs --region ci --ui punk" ;;
+            phone-webkit) script="smoke-mobile.mjs --region ci --browser webkit" ;;
+            phone-chromium) script="smoke-mobile.mjs --region ci --browser chromium" ;;
+            phone-webkit-punk) script="smoke-mobile.mjs --region ci --browser webkit --ui punk" ;;
+            phone-chromium-punk) script="smoke-mobile.mjs --region ci --browser chromium --ui punk" ;;
+            theme-webkit) script="smoke-theme.mjs --region ci --browser webkit" ;;
+            theme-chromium) script="smoke-theme.mjs --region ci --browser chromium" ;;
+            chips-webkit) script="smoke-chips.mjs --browser webkit" ;;
+            chips-chromium) script="smoke-chips.mjs --browser chromium" ;;
+            profile-webkit) script="smoke-profile.mjs --browser webkit" ;;
+            profile-chromium) script="smoke-profile.mjs --browser chromium" ;;
+            *) echo "unknown smoke test $NAME"; exit 1 ;;
+          esac
+          cd web && node bench/$script
+
+  # Participation on the phone, behind the real site file (Caddy), with PostGIS, one engine
+  # per job (both in one job made it the longest one: 447 s); the engines and interfaces of
+  # the `prepare` job (a push: WebKit, punk).
+  smoke-participate:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        engine: ${{ fromJSON(needs.prepare.outputs.engines) }}
+        ui: ${{ fromJSON(needs.prepare.outputs.uis) }}
+    name: smoke (participate-${{ matrix.engine }}-${{ matrix.ui }})
+    services:
+      postgis:
+        image: postgis/postgis:17-3.5
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: lacarte
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U test" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DSN: postgresql://test:test@localhost:5432/lacarte
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          geo: "false"
+          caddy: "true"
+      - uses: ./.github/actions/smoke-setup
+        with:
+          engines: ${{ matrix.engine }}
+      - run: cd web && node bench/smoke-participate.mjs --browser ${{ matrix.engine }} --ui ${{ matrix.ui }}
+      # A failed run's screenshot and report (the panel's state, the last clicks, the map's
+      # camera calls, the API requests unanswered): what its log cannot show.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: participate-${{ matrix.engine }}-${{ matrix.ui }}-failure
+          path: /tmp/smoke-part-*/failure.*
+          if-no-files-found: ignore
+          overwrite: true # a re-run attempt that fails again
+          retention-days: 7

@@ -1,0 +1,74 @@
+name: setup
+description: >-
+  Python side of a job: uv (cached) and the Python dependencies; with `geo`, Node 22 (npm
+  cached), osmium, tippecanoe 2.79.0 (built once, cached by version) and the web
+  dependencies, else the PostgreSQL client only; optionally Caddy.
+inputs:
+  geo:
+    description: The pipeline's tools (prepare, check); false for the participation smoke
+    default: "true"
+  caddy:
+    description: Install Caddy (the site file's tests and the participation smoke)
+    default: "false"
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: true
+    - uses: actions/setup-node@v4
+      if: inputs.geo == 'true'
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+    - name: Geo tools
+      if: inputs.geo == 'true'
+      shell: bash
+      run: sudo apt-get update && sudo apt-get install -y osmium-tool libsqlite3-dev zlib1g-dev postgresql-client
+    # The service is PostgreSQL 17 (postgis/postgis:17-3.5) and pg_dump refuses a newer
+    # server (db/reset_contributions.sh dumps before it deletes): the runner's PGDG client 17.
+    - name: PostgreSQL client 17
+      shell: bash
+      run: |
+        sudo apt-get update
+        if ! apt-cache show postgresql-client-17 >/dev/null 2>&1; then
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+        fi
+        sudo apt-get install -y postgresql-client-17
+        # pg_wrapper still picked 16 (the runner's own cluster): the 17 binaries first.
+        echo /usr/lib/postgresql/17/bin >> "$GITHUB_PATH"
+        /usr/lib/postgresql/17/bin/pg_dump --version
+    # Ubuntu's tippecanoe is 2.49, which loses features that set an explicit minzoom
+    # (fixed in 2.52.0, tippecanoe CHANGELOG); build the version used locally.
+    - name: tippecanoe from source (cached)
+      if: inputs.geo == 'true'
+      id: tippecanoe
+      uses: actions/cache@v4
+      with:
+        path: ~/tippecanoe
+        key: tippecanoe-2.79.0-${{ runner.os }}-noble
+    - if: inputs.geo == 'true' && steps.tippecanoe.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        git clone --depth 1 --branch 2.79.0 https://github.com/felt/tippecanoe /tmp/tippecanoe-src
+        make -C /tmp/tippecanoe-src -j4
+        make -C /tmp/tippecanoe-src install PREFIX="$HOME/tippecanoe"
+    - if: inputs.geo == 'true'
+      shell: bash
+      run: echo "$HOME/tippecanoe/bin" >> "$GITHUB_PATH" && "$HOME/tippecanoe/bin/tippecanoe" --version
+    - name: Caddy (official release, checksum)
+      if: inputs.caddy == 'true'
+      shell: bash
+      run: |
+        v=2.11.4
+        f=caddy_${v}_linux_amd64.tar.gz
+        curl -fsSLO https://github.com/caddyserver/caddy/releases/download/v$v/$f
+        echo "8220d1f013b6f27510247b2360c9e0ca9f018feebd82515f07635318b34ff9777ccc8fd0b6e6f2486ce3a33fe389fbb7db12d05baa474f4587509fb4f5ebf1c9  $f" | sha512sum -c
+        tar -xzf $f caddy && sudo mv caddy /usr/local/bin/ && caddy version
+    - shell: bash
+      run: uv sync --locked
+    - if: inputs.geo == 'true'
+      shell: bash
+      run: npm --prefix web ci

@@ -1,0 +1,372 @@
+/* Points scored at the send (participate/score.ts), board 8a: the tickets fallen on the map
+   one on the other, the total « +N pts » with « en attente de revue », « Voir le
+   classement ». The tickets' riso inks, the total's yellow and the badge's ink are 8a's in
+   both modes (on the map, not on a paper of the theme); « Voir le classement » is a paper
+   key of the theme. The column sits at the bottom left, 8a's 22 px from the edges (its
+   tickets 18 px); on a wide screen, in the column of the sheet that just slid away
+   (score.ts sets its left and width: the author's request of 2026-10-12, point 2). The
+   scene lets every touch through to the map but on its button. Every tilt and fall sits in the motion query: under reduced motion it is
+   all there at once, straight. */
+
+:root[data-ui="punk"] .score {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+:root[data-ui="punk"] .score-col {
+  position: absolute;
+  left: 22px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  width: min(346px, calc(100% - 44px));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+:root[data-ui="punk"] .score-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: -4px;
+}
+/* On a phone the column, its stack and its total are centred, a margin on each side, every
+   ticket on the screen with its tilt (the author's request of 2026-10-13, map point 2: the
+   stack ran off the left of an iPhone). Keep the query in sync with layout.ts PHONE_QUERY. */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] .score-col {
+    left: 0;
+    right: 0;
+    margin-inline: auto;
+    align-items: center;
+  }
+  :root[data-ui="punk"] .score-stack {
+    margin-left: 0;
+  }
+  :root[data-ui="punk"] .score-total {
+    align-items: center;
+  }
+  /* No room beside the centred total: the cannon (drawn only when motion is welcome)
+     smaller, at the screen's edge (score.ts placeCannon); `transform`, as its recoil
+     animates `scale`. */
+  @media (prefers-reduced-motion: no-preference) {
+    :root[data-ui="punk"] .score-col > .cannon {
+      transform: scale(0.65);
+    }
+  }
+}
+
+/* --- a ticket: its stub (the points), the dashed tear, what and how; its category's colour
+   and ink, the leaderboard's (tokens.css --k-*) from the first frame; white: none earned - */
+:root[data-ui="punk"] .score-ticket {
+  filter: drop-shadow(1.5px 0 0 #111111) drop-shadow(-1.5px 0 0 #111111)
+    drop-shadow(0 1.5px 0 #111111) drop-shadow(0 -1.5px 0 #111111) drop-shadow(4px 4px 0 #111111);
+}
+:root[data-ui="punk"] .score-ticket + .score-ticket {
+  margin-top: -14px;
+}
+:root[data-ui="punk"] .score-ticket[data-i="1"] {
+  margin-left: 30px;
+}
+:root[data-ui="punk"] .score-ticket[data-i="2"] {
+  margin-left: 10px;
+}
+:root[data-ui="punk"] .score-ticket-paper {
+  display: flex;
+  width: 262px;
+  /* 8a's 74 px, taller when the legend's word and the value need two lines. */
+  min-height: 74px;
+  background: var(--k-none);
+  color: var(--k-none-ink);
+  -webkit-mask:
+    radial-gradient(circle 8px at 80px 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle 8px at 80px 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+  mask:
+    radial-gradient(circle 8px at 80px 0, #0000 97%, #000) top / 100% 51% no-repeat,
+    radial-gradient(circle 8px at 80px 100%, #0000 97%, #000) bottom / 100% 51% no-repeat;
+}
+:root[data-ui="punk"] .score-ticket.k-add .score-ticket-paper {
+  background: var(--k-add);
+  color: var(--k-add-ink);
+}
+:root[data-ui="punk"] .score-ticket.k-info .score-ticket-paper {
+  background: var(--k-info);
+  color: var(--k-info-ink);
+}
+:root[data-ui="punk"] .score-ticket.k-correction .score-ticket-paper {
+  background: var(--k-correction);
+  color: var(--k-correction-ink);
+}
+:root[data-ui="punk"] .score-ticket.k-verification .score-ticket-paper {
+  background: var(--k-verification);
+  color: var(--k-verification-ink);
+}
+:root[data-ui="punk"] .score-ticket.k-bonus .score-ticket-paper {
+  background: var(--k-bonus);
+  color: var(--k-bonus-ink);
+}
+:root[data-ui="punk"] .score-ticket-pts {
+  flex: none;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The next ticket covers the stub's bottom (8a's 14 px, up to 30 more at its left with the
+     tilts): the number above it, as the text (the author's iPhone capture of 2026-10-13:
+     « +50 » cut by the ticket under it). */
+  padding-bottom: 22px;
+  font: 900 46px / 1 var(--font-display);
+  font-stretch: 62%;
+  letter-spacing: -1px;
+}
+:root[data-ui="punk"] .score-ticket-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  /* The next ticket covers the last 14 px (8a's stack): the text stays above them. */
+  padding: 6px 12px 20px 14px;
+  border-left: 2px dashed currentColor;
+}
+:root[data-ui="punk"] .score-ticket-what {
+  font: 900 25px / 0.95 var(--font-display);
+  font-stretch: 66%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] .score-ticket-det {
+  font: 400 13px / 1.15 var(--font-text);
+  overflow-wrap: anywhere;
+}
+
+/* --- the total and what it waits for ------------------------------------------------------ */
+:root[data-ui="punk"] .score-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 2px;
+  transform-origin: 30% 60%;
+}
+:root[data-ui="punk"] .score-total-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+:root[data-ui="punk"] .score-total-row[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] .score-total-n {
+  font: 900 118px / 0.82 var(--font-display);
+  font-stretch: 62%;
+  letter-spacing: -2px;
+  color: #ffe800;
+  -webkit-text-stroke: 3px #111111;
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 #ff48b0;
+}
+:root[data-ui="punk"] .score-total-pts {
+  font: 900 40px / 1 var(--font-display);
+  font-stretch: 62%;
+  text-transform: uppercase;
+  color: #111111;
+  -webkit-text-stroke: 6px #f2efe6;
+  paint-order: stroke fill;
+}
+:root[data-ui="punk"] .score .score-status {
+  margin: 0;
+  font-weight: 400;
+}
+:root[data-ui="punk"] .score-status:focus {
+  outline: none;
+}
+:root[data-ui="punk"] .score-said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+:root[data-ui="punk"] .score-status,
+:root[data-ui="punk"] .score-badge {
+  display: inline-block;
+}
+:root[data-ui="punk"] .score-badge {
+  padding: 2px 8px 1px;
+  background: #111111;
+  color: #f2efe6;
+  font: 400 13px / 1.3 var(--font-text);
+}
+/* The OSM synchronisation: « Sera publiée sur OSM en votre nom après relecture. », the
+   badge's strip on a line of its own under it, as legible over the map. */
+:root[data-ui="punk"] .score-osm {
+  display: block;
+  width: fit-content;
+  max-width: 300px;
+  margin-top: 6px;
+  padding: 2px 8px 1px;
+  background: #111111;
+  color: #f2efe6;
+  font: 400 13px / 1.3 var(--font-text);
+}
+/* Offline: the queued wording in the badge's place, on its lines. */
+:root[data-ui="punk"] .score-badge.queued {
+  max-width: 300px;
+}
+
+/* --- « Voir le classement » -------------------------------------------------------------- */
+:root[data-ui="punk"] .score-board {
+  appearance: none;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-height: 48px;
+  margin: 37px 0 0;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: 3px 3px 0 var(--accent-fill);
+  color: var(--fg);
+  font: 900 19px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+}
+:root[data-ui="punk"] .score-board[hidden] {
+  display: none;
+}
+
+/* The map's floating buttons under the scene's column and cannon (« Toujours là ? », where
+   no editor hides them): out of the way while the tickets are shown, as they slide away
+   while a sheet is open (DECISIONS 2026-10-09, « Punk sheets on a phone… »). */
+:root[data-ui="punk"] body.scoring #fabs {
+  visibility: hidden;
+}
+
+/* The « Modifier » / add sheet once sent (8a: it slides down out of the way). */
+:root[data-ui="punk"] #modify-panel.sent {
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="punk"] #modify-panel.sent {
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #modify-panel.sent {
+    translate: 0 105%;
+    rotate: 5deg;
+    transition:
+      translate 400ms cubic-bezier(0.55, -0.25, 0.8, 0.4),
+      rotate 400ms cubic-bezier(0.55, -0.25, 0.8, 0.4);
+  }
+  :root[data-ui="punk"] .score-ticket[data-i="0"] {
+    rotate: -5deg;
+    animation:
+      score-appear 1ms linear both,
+      score-fall-0 420ms cubic-bezier(0.3, 1.45, 0.55, 1) both;
+  }
+  :root[data-ui="punk"] .score-ticket[data-i="1"] {
+    rotate: 3.5deg;
+    animation:
+      score-appear 1ms linear both,
+      score-fall-1 420ms cubic-bezier(0.3, 1.45, 0.55, 1) both;
+  }
+  :root[data-ui="punk"] .score-ticket[data-i="2"] {
+    rotate: -2deg;
+    animation:
+      score-appear 1ms linear both,
+      score-fall-2 420ms cubic-bezier(0.3, 1.45, 0.55, 1) both;
+  }
+  :root[data-ui="punk"] .score-total {
+    rotate: -4deg;
+    animation:
+      score-appear 1ms linear both,
+      score-drop 260ms cubic-bezier(0.6, 0, 0.9, 0.5) both;
+  }
+  :root[data-ui="punk"] .score-badge {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] .score-board {
+    animation:
+      score-show 300ms ease-out both,
+      score-rise 400ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+  @keyframes score-appear {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes score-show {
+    from {
+      visibility: hidden;
+      opacity: 0;
+    }
+    to {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+  @keyframes score-fall-0 {
+    from {
+      translate: 0 -330px;
+      rotate: 17deg;
+      scale: 1.25;
+    }
+    to {
+      translate: 0 0;
+      rotate: -5deg;
+      scale: 1;
+    }
+  }
+  @keyframes score-fall-1 {
+    from {
+      translate: 0 -330px;
+      rotate: -20.5deg;
+      scale: 1.25;
+    }
+    to {
+      translate: 0 0;
+      rotate: 3.5deg;
+      scale: 1;
+    }
+  }
+  @keyframes score-fall-2 {
+    from {
+      translate: 0 -330px;
+      rotate: 20deg;
+      scale: 1.25;
+    }
+    to {
+      translate: 0 0;
+      rotate: -2deg;
+      scale: 1;
+    }
+  }
+  @keyframes score-drop {
+    from {
+      scale: 2.6;
+    }
+    to {
+      scale: 1;
+    }
+  }
+  @keyframes score-rise {
+    from {
+      translate: 0 14px;
+    }
+    to {
+      translate: 0 0;
+    }
+  }
+}

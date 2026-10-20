@@ -1,0 +1,182 @@
+# Values are quoted: unquoted yes/no are booleans in YAML.
+# Which OSM ways the map measures and colours, which of them count as "voirie" in the
+# filmed-street percentages, and how wide they are when testing whether a camera films the
+# public street. Widths are [TO ADJUST].
+version: 3.1
+drawn_highways:
+  id: rule:streets@3.1:drawn_highways
+  highways:
+    [motorway, motorway_link, trunk, trunk_link, primary, primary_link, secondary,
+     secondary_link, tertiary, tertiary_link, unclassified, residential, living_street,
+     pedestrian, footway, service, cycleway, path, steps, track, bridleway, busway]
+  rationale: >-
+    Every way the map measures, splits into segments and colours where a field covers it:
+    what is drawn is coherent, a way visible inside a field takes the colour of that field's
+    level there (product owner, 2026-10-15 [TO VALIDATE]: a camera that films the
+    périphérique films it). Until version 2 the map measured the counted ways only, and the
+    basemap's roads, drawn above the fields from the street level, stayed white wherever they
+    were of another type: in three 1280 x 800 views at z16.4 under "Prudent" (Bercy,
+    Châtelet - Les Halles, Noisy-le-Grand; IDF build 15876013), 8.2 of the 10.0 km of white
+    road inside a field were motorway, motorway_link, trunk, trunk_link, cycleway, path or
+    steps. Lengths of these ways in that build's extract, before the access rules: track
+    24,365 km, path 10,665, cycleway 1,988, motorway 1,339, trunk 868, motorway_link 432,
+    trunk_link 311, steps 253, bridleway 252.
+counted_highways:
+  id: rule:streets@3.1:counted_highways
+  highways:
+    [trunk, trunk_link, primary, primary_link, secondary, secondary_link, tertiary,
+     tertiary_link, unclassified, residential, living_street, pedestrian, footway, service,
+     cycleway, steps, busway]
+  rationale: >-
+    The drawn ways that count in the published shares (communes, départements, "between
+    X % and Y %"): a share is the filmed part of the streets. Version 2 counted primary to
+    living_street, pedestrian, footway and service only; version 3 added trunk, trunk_link
+    (urban expressways such as the périphérique, with pavements and crossings), cycleway,
+    path, steps and bridleway, a path beside a road staying out as its side
+    (parallel_path). Version 3.1 takes path and bridleway out again and adds busway (a
+    street): in IDF build f5365d14 path added 9,556 counted km for 263 filmed, and the
+    shares of Fontainebleau (6.72 -> 2.91 % in "Prudent") and Paris 12e (43.5 -> 35.7 %,
+    the bois de Vincennes) measured the size of their forests, not how their streets are
+    filmed; the paths of town parks are mostly footways, still counted (user decision,
+    2026-10-16). motorway, motorway_link, track, path and bridleway are drawn only:
+    nobody walks along a motorway, and forest and farm ways would turn a share into a
+    share of the woods and fields.
+street_space:
+  id: rule:streets@3.1:street_space
+  highways:
+    [motorway, motorway_link, trunk, trunk_link, primary, primary_link, secondary,
+     secondary_link, tertiary, tertiary_link, unclassified, residential, living_street,
+     pedestrian, footway, service, cycleway, path, steps, bridleway, busway]
+  rationale: >-
+    The ways whose space tells whether a camera films the public street (films_street, and
+    so the CNIL signal of a private camera): the counted ways and the motorways (a public
+    road: a camera that films the périphérique films the public street), not the tracks
+    (farm and forest tracks, often private ways: a private camera seeing one does not film
+    the public street). Until version 2 these were the counted ways, then the only ways
+    measured; version 3's drawn tracks would otherwise have reached the signal (the review
+    of lot 15/10 b). Version 3.1 leaves path and bridleway here (public ways, even out of
+    the shares) and adds busway.
+excluded_service: [driveway, parking_aisle, drive-through]
+# Ways that are not street axes (hidden below z16 on the map, out of the shares): per
+# highway, the tags and values that make one a sidewalk or a crossing.
+not_axis:
+  id: rule:streets@3.1:not_axis
+  highways:
+    footway: {footway: [sidewalk, crossing]}
+    cycleway: {cycleway: [crossing], footway: [crossing]}
+  rationale: >-
+    A sidewalk or a crossing drawn as its own way is a side or a piece of a street, not a
+    street. Version 3.1 adds the cycle crossings (highway=cycleway with cycleway=crossing,
+    or footway=crossing on a cycleway, as mapped at Châtelet): counted since version 3,
+    each one added a street of a few metres across every filmed junction (user decision,
+    2026-10-16).
+# Paths mapped beside a road are not street axes either: drawn from z16 only, and out of the
+# published shares (communes, départements, "between X % and Y %"). Their segments stay in
+# the data (the future routing graph).
+parallel_path:
+  id: rule:streets@3.1:parallel_path
+  paths: [footway, pedestrian, service, cycleway, path, steps, bridleway]
+  roads: [trunk, trunk_link, primary, primary_link, secondary, secondary_link, tertiary,
+          tertiary_link, residential, unclassified, living_street]
+  within_m: 15
+  max_angle_deg: 20
+  min_share: 0.5
+  sample_m: 1.0
+  rationale: >-
+    A sidewalk, a path or a service lane mapped as its own way beside a road is a side of
+    that road, not a street of its own: counted, it adds the road's filmed length a second
+    or third time, and a commune shares more or less of its streets depending on how its
+    sidewalks happen to be mapped (IDF build 9a9852a6, sums over segments: Prudent 15.2 %
+    of the assessed length, 11.8 % without sidewalks and crossings, 11.1 % without these
+    paths either: 1,265 km of footways, 325 of pedestrian ways, 440 of service). A path is
+    beside a road when at least min_share of its length lies within within_m of a road of
+    another way, in a direction differing by less than max_angle_deg (measured every
+    sample_m). Motorways are not roads here (a path along a motorway is not its sidewalk),
+    nor service or pedestrian ways (a lane beside a lane is kept), nor roads in a tunnel,
+    covered or indoors (not seen from the path). Separate carriageways of one road are
+    roads, each kept. Author's decision, phase "tronçons" (version 2: footway, pedestrian
+    and service). Version 3 adds cycleway and path, counted since then: a cycle track or a
+    path beside a road is a side of that road too (product owner, 2026-10-15 [TO
+    VALIDATE]); a path along a motorway is still kept, a motorway not being a road here.
+    Version 3.1 adds steps and bridleway beside a road (user decision, 2026-10-16).
+closed_access: [private, "no"]
+open_foot: ["yes", designated, permissive]
+# Ways that cannot be seen from outside: kept as edges but excluded from percentages.
+not_assessed:
+  tunnel: ["yes", building_passage, culvert, covered]
+  covered: ["yes"]
+  indoor: ["yes"]
+# Version 3: the paths drawn since then take the footway's width, a track a service lane's,
+# rather than the default's 5 m (a cycle track or a path is no wider than a footway).
+half_width_m:
+  footway: 1.5
+  cycleway: 1.5
+  path: 1.5
+  steps: 1.5
+  bridleway: 1.5
+  track: 2.5
+  pedestrian: 3
+  service: 2.5
+  living_street: 3
+  residential: 3.5
+  unclassified: 3.5
+  busway: 3.5
+  default: 5
+# How wide the punk map draws a way, by the basemap's class for its type (Protomaps: the
+# `kind`, `kind_detail` and `is_link` of its roads, read in the IDF basemap's tiles at
+# z13 - z15): the filmed and the unfilmed stroke take the width of the basemap's road
+# drawn above the fields (web/src/layers.ts streetWidth), so that no white is left on its
+# sides. Tile attribute `c` (tiles.py), the name of the basemap's line layer `roads_<c>`;
+# a type not listed is `other` (the basemap's paths and living streets), written as no `c`:
+# roads_other is never wider than the old stroke, the floor (6.9 MB on IDF's tiles with it
+# on every segment).
+tile_class:
+  id: rule:streets@3.1:tile_class
+  default: other
+  highways:
+    motorway: highway
+    motorway_link: link
+    trunk: major
+    trunk_link: major
+    primary: major
+    primary_link: major
+    secondary: major
+    secondary_link: major
+    tertiary: major
+    tertiary_link: major
+    residential: minor
+    unclassified: minor
+    # highway=service without a service=* value; with one (alley, emergency_access...) the
+    # basemap draws it as a minor road.
+    service: minor_service
+  rationale: >-
+    Read in the basemap's tiles (data/basemap/idf.pmtiles, Protomaps 4.15.2) at z13 - z15
+    around Châtelet, Bercy, Noisy-le-Grand, Vincennes and Fontainebleau: motorway is
+    `highway`; trunk, primary, secondary, tertiary are `major_road`, their links too
+    (drawn by roads_major, wider than roads_link); motorway_link is the link alone;
+    residential, unclassified, service are `minor_road` (kind_detail `service` drawn
+    narrower: roads_minor_service); living_street and busway are `other`, footway,
+    cycleway, path, pedestrian, steps, track and bridleway `path` (both roads_other).
+    Product owner, 2026-10-16: 1 to 2 px of white were left on each side of a filmed
+    boulevard.
+# Ways the tiles keep only where filmed (under some shown estimate): the basemap draws them
+# above the fields already, and their unfilmed segments, a large part of the streets
+# tiles' weight, change nothing but our grey on them. Their segments stay in the data.
+unfilmed_not_drawn:
+  id: rule:streets@3.1:unfilmed_not_drawn
+  highways: [track, path, bridleway, motorway, motorway_link]
+  rationale: >-
+    IDF build f5365d14: 23,522 km of tracks drawn for 103 km filmed, the main cause of
+    streets.pmtiles going from 88.5 to 112.3 MB with version 3 (user decision, 2026-10-16,
+    for track). path, motorway and motorway_link measured, then kept by the same rule
+    since the basemap draws them as well (user decision, 2026-10-16, on that condition):
+    in three zones (Fontainebleau forest, bois de Vincennes, A4 - A86) the basemap's lines
+    cover 99.7 to 100 % of their unfilmed length at z14 and z15, so leaving them out leaves
+    no hole. Streets tiles of IDF build 73b60e9b (rules 3.1, the width class on every
+    segment): 119.2 MB keeping every segment, 109.7 without the unfilmed tracks, 103.5
+    without the unfilmed paths too, 103.0 without the motorways and their links too.
+    bridleway since 2026-10-17, as path (user decision: the same rule by coherence).
+# Camera "films the public street" threshold (share of the view area on street space).
+films_street_share: 0.20
+# Doorbells: any street length inside the view is enough.
+doorbell_street_min_m: 1.0

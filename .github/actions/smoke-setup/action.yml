@@ -1,0 +1,42 @@
+name: smoke-setup
+description: >-
+  What a smoke job needs: Node 22 (npm cached) and the web dependencies, the CI extract's
+  build made once by the `prepare` job (artifact), the basemap's fonts and sprites
+  (cached), the Playwright browsers (cached by the lockfile) with their system libraries,
+  and the production web build.
+inputs:
+  engines:
+    description: Playwright browsers, space-separated (chromium, webkit)
+    required: true
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: npm
+        cache-dependency-path: web/package-lock.json
+    - shell: bash
+      run: npm --prefix web ci
+    - uses: actions/download-artifact@v4
+      with:
+        name: ci-build
+        path: data/build/ci
+    - name: Basemap fonts and sprites (cached)
+      uses: actions/cache@v4
+      with:
+        path: |
+          web/public/basemap/fonts
+          web/public/basemap/sprites
+        key: basemap-assets-${{ hashFiles('web/scripts/fetch-assets.sh') }}
+    - shell: bash
+      run: web/scripts/fetch-assets.sh ci
+    - name: Playwright browsers (cached)
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ inputs.engines }}-${{ hashFiles('web/package-lock.json') }}
+    - shell: bash
+      run: cd web && npx playwright install --with-deps ${{ inputs.engines }}
+    - shell: bash
+      run: npm --prefix web run build

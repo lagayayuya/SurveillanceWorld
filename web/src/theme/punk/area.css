@@ -1,0 +1,451 @@
+/* The commune and département sheets (lot 3.3), ported from mockup 24a (areapunk.ts draws
+   them): the camera sheet's paper (theme/punk/sheet.css: its frame, tapes, torn edge, head,
+   links and a phone's bottom sheet) at 24a's size, the three tickets that are tabs, the
+   gridded panel of the chosen one (the 100 m street, the cameras, who films them), the
+   map's ramp with the area's cursor. Sizes, fonts and colours are 24a's (its rendered DOM,
+   export of 2026-10-06; 24a draws dark only), on the punk tokens in light and dark, unless
+   docs/interface.md §3 « Commune and département sheets (lot 3.3) » says why not. Fixed
+   tilts are set by areapunk.ts (inline), as the camera sheet's tickets: what moves here is
+   under the motion query. */
+
+/* --- the paper: 24a's 400 px, 16 px from the top, 7 px between its parts --------------- */
+@media (min-width: 601px) and (min-height: 501px), (min-width: 601px) and (pointer: fine),
+  (min-width: 601px) and (pointer: none) {
+  :root[data-ui="punk"] #sheet:has(.area-paper) {
+    width: min(400px, calc(100vw - 32px));
+  }
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet .area-paper) #fabs,
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet .area-paper) .maplibregl-ctrl-bottom-right {
+    right: calc(min(400px, 100vw - 32px) + 34px);
+  }
+  :root[data-ui="punk"] #sheet .sheet-paper.area-paper {
+    gap: 7px;
+    padding: 16px 18px 24px;
+  }
+  :root[data-ui="punk"] #sheet .area-paper :is(.sheet-top, .sheet-body) {
+    gap: 7px;
+  }
+}
+@media (min-width: 960px) {
+  :root[data-ui="punk"] #sheet:has(.area-paper) {
+    top: 16px;
+  }
+  :root[data-ui="punk"] body[data-sheet]:has(#sheet .area-paper) .maplibregl-ctrl-top-right {
+    right: calc(400px + 34px);
+  }
+}
+:root[data-ui="punk"] #sheet .area-paper .sheet-title {
+  gap: 7px;
+}
+/* « Commune · Seine-Saint-Denis (93) » (24a: 14 px, the typewriter). */
+:root[data-ui="punk"] #sheet .area-line {
+  margin: 0;
+  font: 400 14px / 1.3 var(--font-text);
+}
+
+/* --- the tickets, tabs ----------------------------------------------------------------- */
+:root[data-ui="punk"] #sheet .area-tabs {
+  display: flex;
+  gap: 6px;
+  padding-top: 6px;
+}
+:root[data-ui="punk"] #sheet .area-tab {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  border: 2px solid var(--line);
+  border-left-style: dashed;
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: var(--shadow-ticket-off);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .area-tab.on {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+:root[data-ui="punk"] #sheet .area-tab-check {
+  position: absolute;
+  right: -7px;
+  top: -8px;
+  width: 20px;
+  height: 20px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 900 12px / 1 var(--font-display);
+}
+:root[data-ui="punk"] #sheet .area-tab.on .area-tab-check {
+  display: flex;
+}
+:root[data-ui="punk"] #sheet .area-tab-v {
+  max-width: 100%;
+  font: 900 30px / 0.95 var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: var(--shadow-title);
+}
+:root[data-ui="punk"] #sheet .area-tab.on .area-tab-v {
+  text-shadow: var(--shadow-ticket-value-on);
+}
+/* A name longer than 24a's « DIRIF »: smaller, on two lines at most. */
+:root[data-ui="punk"] #sheet .area-tab-v.long {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 16px;
+  line-height: 1;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* 24a's second lines are short (« rues, au plus »); a longer one (« des rues, au plus »,
+   « exploitant nommé ») wraps inside its ticket rather than run out of it. */
+:root[data-ui="punk"] #sheet .area-tab-k {
+  max-width: 100%;
+  font: 400 12.5px / 1.15 var(--font-text);
+}
+
+/* --- the panel: 24a's grid paper (17a's « Supposé » box) ------------------------------ */
+:root[data-ui="punk"] #sheet .area-panel {
+  flex: none;
+  min-height: 176px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 10px;
+  background:
+    linear-gradient(var(--grid-line) 1px, transparent 1px) 0 0 / 100% 12px,
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px) 0 0 / 12px 100%,
+    var(--bg-2);
+  box-shadow: var(--shadow-box);
+}
+:root[data-ui="punk"] #sheet .area-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 8px;
+}
+:root[data-ui="punk"] #sheet .area-label {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0 6px;
+  background: var(--ink-tile-bg);
+  color: var(--ink-tile-fg);
+  font: 800 13px / 19px var(--font-display);
+  font-stretch: 75%;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .area-panel-head .area-label {
+  align-self: auto;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .area-sub,
+:root[data-ui="punk"] #sheet .area-row-sub {
+  color: var(--muted);
+  font: 400 12.5px / 1.2 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .area-empty,
+:root[data-ui="punk"] #sheet .area-note {
+  margin: 0;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+
+/* « Toutes / Publiques »: 24a's two keys, 26 px with a mouse, 44 px under a finger. */
+:root[data-ui="punk"] #sheet .area-counted {
+  display: flex;
+}
+:root[data-ui="punk"] #sheet .area-toggle {
+  margin: 0 0 0 -1.5px;
+  min-height: 26px;
+  padding: 0 8px;
+  border: 1.5px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--fg);
+  font: 400 12.5px var(--font-text);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #sheet .area-toggle[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* The 100 m street: an ink road (dark: the night's) with its dashed middle, what may be
+   filmed in the light blue (11.5:1 on the ink: on the paper it would be 1.4:1). */
+:root[data-ui="punk"] #sheet .area-road {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
+}
+:root[data-ui="punk"] #sheet .area-track {
+  position: relative;
+  display: flex;
+  height: 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1.5px solid var(--line);
+  background: var(--ink-tile-bg);
+}
+:root[data-ui="punk"][data-mode="dark"] #sheet .area-track {
+  background: var(--page);
+}
+:root[data-ui="punk"] #sheet .area-mid {
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  top: 50%;
+  border-top: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .area-fill {
+  position: relative;
+  flex: none;
+  height: 100%;
+  background: var(--cut-blue);
+}
+:root[data-ui="punk"] #sheet .area-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font: 400 12.5px var(--font-text);
+}
+
+/* The rows: information, not buttons (24a's « Montrer sur la rue »: nothing to isolate). */
+:root[data-ui="punk"] #sheet .area-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .area-row {
+  display: grid;
+  grid-template-columns: 12px 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0 7px;
+  min-height: 26px;
+  padding: 1px 6px;
+  border: 1.5px solid transparent;
+}
+:root[data-ui="punk"] #sheet .area-sw {
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--line);
+}
+:root[data-ui="punk"] #sheet .area-row.max .area-sw {
+  background: var(--cut-blue);
+}
+:root[data-ui="punk"] #sheet .area-row.off .area-sw {
+  border-color: var(--muted);
+}
+:root[data-ui="punk"] #sheet .area-num {
+  font: 900 21px / 1 var(--font-display);
+  font-stretch: 66%;
+  text-align: right;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .area-row.max .area-num {
+  color: var(--blue);
+}
+:root[data-ui="punk"] #sheet .area-row-label {
+  font: 400 12.5px / 1.1 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .area-row-sub {
+  white-space: nowrap;
+}
+
+/* « La liste des caméras »: 16a's sticker, label, dotted leader, count (24a's list by
+   type); the operator classes of « Qui filme ? » the same without sticker. */
+:root[data-ui="punk"] #sheet .area-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .area-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 25px;
+  font: 400 13px var(--font-text);
+}
+:root[data-ui="punk"] #sheet .area-sticker {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 25px;
+}
+:root[data-ui="punk"] #sheet .area-sticker canvas {
+  width: 30px;
+  height: 30px;
+}
+:root[data-ui="punk"] #sheet .area-leader {
+  flex: 1;
+  align-self: center;
+  margin-top: 8px;
+  border-bottom: 1.5px dotted var(--line);
+}
+:root[data-ui="punk"] #sheet .area-count {
+  font: 800 17px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-shadow: var(--shadow-value);
+}
+
+/* « Qui filme ? »: name and count, a bar its share of the cameras; those without a name
+   apart under a dashed rule, their bar grey. */
+:root[data-ui="punk"] #sheet .area-ops {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+:root[data-ui="punk"] #sheet .area-ops li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:root[data-ui="punk"] #sheet .area-ops li.unnamed {
+  margin-top: 3px;
+  padding-top: 6px;
+  border-top: 1.5px dashed var(--muted);
+}
+:root[data-ui="punk"] #sheet .area-op {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font: 400 12.5px var(--font-text);
+}
+:root[data-ui="punk"] #sheet .area-op .area-count {
+  font-size: 15px;
+  text-shadow: none;
+}
+:root[data-ui="punk"] #sheet .area-bar {
+  display: block;
+  height: 9px;
+  min-width: 5px;
+  box-sizing: border-box;
+  background: var(--accent-fill);
+}
+:root[data-ui="punk"] #sheet .area-ops li.unnamed .area-bar {
+  background: var(--muted);
+}
+:root[data-ui="punk"] #sheet .area-classes-head {
+  margin: 6px 0 0;
+}
+
+/* --- the place on the map: the legend's ramp, the area's yellow cursor ------------------ */
+:root[data-ui="punk"] #sheet .area-place {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+:root[data-ui="punk"] #sheet .area-ramp-wrap {
+  position: relative;
+  display: block;
+  padding-top: 26px;
+}
+:root[data-ui="punk"] #sheet .area-ramp {
+  display: flex;
+  height: 12px;
+  border: 1.5px solid var(--line);
+}
+:root[data-ui="punk"] #sheet .area-ramp span {
+  flex: 1;
+}
+/* The name, never wider than the ramp (« … » when longer), placed by areapunk.ts so that it
+   stays over it; the ▾ under it on the class's middle. */
+:root[data-ui="punk"] #sheet .area-cursor {
+  position: absolute;
+  top: 0;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 1px 6px;
+  overflow: hidden;
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 400 12.5px / 16px var(--font-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #sheet .area-pin {
+  position: absolute;
+  top: 16px;
+  color: var(--fg);
+  font: 900 12px / 10px var(--font-display);
+}
+:root[data-ui="punk"] #sheet .area-place-text {
+  margin: 0;
+  font: 400 12.5px / 1.35 var(--font-text);
+}
+
+/* --- what a finger touches: 44 px ------------------------------------------------------ */
+@media (pointer: coarse) {
+  :root[data-ui="punk"] #sheet .area-toggle {
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #sheet .area-toggle {
+    min-height: 44px;
+  }
+  :root[data-ui="punk"] #sheet .area-tabs {
+    padding: 6px 0 2px;
+  }
+  /* The body scrolls: room for the panel's offset shadow and its tilt. */
+  :root[data-ui="punk"] #sheet .area-paper .sheet-body {
+    gap: 9px 8px;
+  }
+}
+
+/* --- motion: the tickets' and keys' spring, hover lifts, a press sinks (buttons.css) ---- */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #sheet :is(.area-tab, .area-toggle) {
+    transition:
+      transform var(--dur-button) var(--ease-spring),
+      translate var(--dur-button) var(--ease-spring),
+      box-shadow var(--dur-button) var(--ease-spring);
+  }
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    :is(.area-tab, .area-toggle):not(:disabled, [aria-disabled="true"]):hover {
+    translate: 0 -2px;
+  }
+}
+/* Press: after the hover, which it overrides while a mouse button is down. (Written
+   :active:not(…): theme.test.ts takes the first rule ending in :active for buttons.css's.) */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"]
+    #sheet
+    :is(.area-tab, .area-toggle):active:not(:disabled, [aria-disabled="true"]) {
+    translate: var(--press-shift) var(--press-shift);
+    transition-duration: var(--dur-press);
+    transition-timing-function: ease-out;
+  }
+}

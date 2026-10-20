@@ -1,0 +1,79 @@
+/* Rules every punk screen shares: less motion, the keyboard focus, MapLibre's own controls,
+   no pinch-zoom of the interface. */
+
+/* Less motion asked for: nothing moves (the sheet jumps to its height). */
+@media (prefers-reduced-motion: reduce) {
+  :root[data-ui="punk"] {
+    --dur-sheet: 0s;
+  }
+}
+
+/* The page pinned to the visible screen (style.css: a fixed body, 100 % high): its height
+   the dynamic viewport's, where a browser has it, so that what sits at its bottom (the
+   floating buttons, the attribution, the sheets) follows a phone's bars as they come and go
+   (lot M, 2026-10-17). A browser without `dvh` drops the line and keeps style.css's 100 %,
+   not `100vh`, which an older Safari takes as the screen with its toolbar hidden (the
+   bottom under the toolbar). */
+:root[data-ui="punk"] body {
+  height: 100dvh;
+}
+
+/* Focus: a dashed outline, as the mockup's accessible sheet (7b), on every control. */
+:root[data-ui="punk"] :focus-visible {
+  outline: 3px dashed var(--focus);
+  outline-offset: 3px;
+}
+/* A heading the code focuses to say where the page is (tabindex -1: « Compte » back from
+   OpenStreetMap, the browser counting a focus at load as visible): no frame, as the mockup
+   (28a). Tab never reaches it, so no keyboard focus is hidden. */
+:root[data-ui="punk"] :is(h1, h2, h3)[tabindex="-1"]:focus-visible {
+  outline: none;
+}
+
+/* MapLibre's own controls (attribution, zoom buttons) in the theme's paper and ink. */
+:root[data-ui="punk"] .maplibregl-ctrl.maplibregl-ctrl-attrib {
+  background: var(--bg);
+  color: var(--fg);
+}
+:root[data-ui="punk"] .maplibregl-ctrl-attrib a {
+  color: var(--fg);
+}
+:root[data-ui="punk"] .maplibregl-ctrl-group {
+  background: var(--bg);
+  border: var(--border-w) solid var(--line);
+  border-radius: 0;
+  box-shadow: var(--shadow-fab);
+}
+:root[data-ui="punk"] .maplibregl-ctrl-group button + button {
+  border-top: var(--border-w) solid var(--line);
+}
+:root[data-ui="punk"][data-mode="dark"] .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+
+/* No pinch-zoom of the interface (the author's request of 2026-10-11, point 7; gestures.ts
+   lists the same elements and cancels WebKit's gesture events on them): over a panel,
+   a sheet, the ticket or a button, a finger scrolls and taps, two fingers do nothing.
+   `pan-x pan-y`, not `manipulation`, which is « pan-x pan-y pinch-zoom » (MDN, touch-action)
+   and keeps the pinch; a gesture takes the intersection of its element's value and its
+   ancestors' up to the scroller (MDN), so the containers suffice. Lowest specificity
+   (:where): a part that says less (`pan-y`, `none`: a phone sheet's head, the panels
+   style.css gives `pan-y`) keeps its own. Never the map: MapLibre sets its canvas's (`none`). */
+:root[data-ui="punk"]
+:where(
+  #estimate,
+  #ticket,
+  #filters,
+  #fabs,
+  #sheet,
+  #camlist,
+  #filters-empty,
+  #queue-count,
+  #modify-panel,
+  #complete-panel,
+  #move-panel,
+  #mine,
+  .maplibregl-ctrl
+) {
+  touch-action: pan-x pan-y;
+}

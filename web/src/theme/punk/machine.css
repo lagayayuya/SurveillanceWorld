@@ -1,0 +1,1070 @@
+/* The filters machine (lot 3.1, mockup 20a on a wide screen, 18a on a phone): a case on
+   feet with its handle, tray, crank and screws, its paper inside: the cut-out title and
+   « Légende », the counter's drums and « Tout réafficher », the keys of « Qui filme », the
+   round types with their count labels, « État de la fiche », « Plus de filtres » and its
+   drawer. Ported from the boards' rendered styles; the keys keep the current panel's
+   structure (a label holding its hidden input, machine.ts). It rises under the ticket in
+   300 ms (20a's took 1.7 s: DECISIONS 2026-10-06, « Animations: at most 400 ms… »), its
+   keys usable from the first frame; nothing moves under reduced motion. */
+
+:root[data-ui="punk"] .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- the case ----------------------------------------------------------------------- */
+:root[data-ui="punk"] #filters.machine {
+  position: absolute;
+  left: 18px;
+  top: var(--machine-top, 60px);
+  bottom: 14px;
+  width: 322px;
+  max-height: none;
+  display: block;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 13px;
+  z-index: 4;
+  visibility: hidden;
+}
+:root[data-ui="punk"] body.machine-open #filters.machine {
+  visibility: visible;
+}
+:root[data-ui="punk"] .machine-frame {
+  position: absolute;
+  inset: 0;
+}
+:root[data-ui="punk"] .machine-case {
+  position: absolute;
+  inset: 0;
+  filter: var(--machine-drop);
+  pointer-events: none;
+}
+:root[data-ui="punk"] .case-body {
+  position: absolute;
+  inset: 26px 0 12px;
+  border-radius: 16px;
+  background: var(--line);
+}
+:root[data-ui="punk"] .case-handle {
+  position: absolute;
+  left: 22px;
+  right: 38px;
+  top: 20px;
+  height: 12px;
+  border-radius: 6px;
+  background: var(--line);
+}
+:root[data-ui="punk"] .case-handle span {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  top: 5px;
+  height: 2px;
+  background: var(--machine-paper);
+}
+:root[data-ui="punk"] .case-tray {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 20px;
+  height: 30px;
+  box-sizing: border-box;
+  border: 2px solid var(--machine-paper);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+:root[data-ui="punk"] .case-tray span:first-child {
+  width: 70px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--machine-paper);
+}
+:root[data-ui="punk"] .case-tray span:last-child {
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2px solid var(--machine-paper);
+}
+:root[data-ui="punk"] .case-foot {
+  position: absolute;
+  bottom: 0;
+  width: 40px;
+  height: 16px;
+  border-radius: 0 0 5px 5px;
+  background: var(--line);
+}
+:root[data-ui="punk"] .case-foot.left {
+  left: 30px;
+}
+:root[data-ui="punk"] .case-foot.right {
+  right: 30px;
+}
+:root[data-ui="punk"] .case-crank {
+  position: absolute;
+  right: -1px;
+  top: 160px;
+  width: 0;
+  height: 0;
+}
+:root[data-ui="punk"] .crank-arm {
+  position: absolute;
+  left: -3px;
+  bottom: 0;
+  width: 6px;
+  height: 46px;
+  background: var(--line);
+  transform-origin: 50% 100%;
+}
+:root[data-ui="punk"] .crank-arm span {
+  position: absolute;
+  left: -7px;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  background: var(--accent-fill);
+}
+:root[data-ui="punk"] .crank-hub {
+  position: absolute;
+  left: -14px;
+  top: -14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--line);
+}
+:root[data-ui="punk"] .crank-pin {
+  position: absolute;
+  left: -4px;
+  top: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--machine-paper);
+}
+:root[data-ui="punk"] .screw {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background:
+    linear-gradient(45deg, transparent 38%, var(--line) 38%, var(--line) 62%, transparent 62%),
+    var(--machine-paper);
+}
+:root[data-ui="punk"] .screw.tl {
+  left: 3px;
+  top: 31px;
+}
+:root[data-ui="punk"] .screw.tr {
+  right: 3px;
+  top: 31px;
+}
+:root[data-ui="punk"] .screw.bl {
+  left: 3px;
+  bottom: 56px;
+}
+:root[data-ui="punk"] .screw.br {
+  right: 3px;
+  bottom: 56px;
+}
+
+/* --- its paper -------------------------------------------------------------------- */
+:root[data-ui="punk"] .machine-paper {
+  position: absolute;
+  inset: 38px 12px 56px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 7px;
+  overflow: hidden;
+  background:
+    radial-gradient(var(--paper-dots) 1px, transparent 1.5px) 0 0 / 5px 5px,
+    var(--machine-paper);
+  color: var(--fg);
+}
+:root[data-ui="punk"] .machine-head {
+  position: relative;
+  flex: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 14px 10px;
+}
+:root[data-ui="punk"] .machine-title {
+  flex: 1;
+  margin: 0;
+  font: inherit;
+}
+/* 17a's cut-out letters: one piece of paper each, in turn ink, pink, light blue, paper,
+   a pink italic, ink, pink. */
+:root[data-ui="punk"] .cut {
+  display: flex;
+  gap: 1px;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] .cut span {
+  display: inline-flex;
+  padding: 2px 4px 1px;
+  line-height: 1;
+}
+:root[data-ui="punk"] .cut :is(.cut-0, .cut-5) {
+  background: var(--line);
+  color: var(--machine-paper);
+  font: 800 31px / 1 var(--font-display);
+  font-stretch: 62%;
+}
+:root[data-ui="punk"] .cut :is(.cut-1, .cut-6) {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 900 25px / 1 var(--font-display);
+  font-stretch: 100%;
+}
+:root[data-ui="punk"] .cut .cut-2 {
+  background: var(--paper-blue);
+  color: var(--on-tag);
+  font: 400 28px / 1 var(--font-text);
+}
+:root[data-ui="punk"] .cut .cut-3 {
+  background: var(--machine-paper);
+  border: 1.5px solid var(--line);
+  color: var(--fg);
+  font:
+    700 27px / 1 system-ui,
+    sans-serif;
+}
+:root[data-ui="punk"] .cut .cut-4 {
+  color: var(--accent);
+  font:
+    italic 700 32px / 1 Georgia,
+    serif;
+}
+/* « Légende ↑ / Ranger ↓ »: 20a's yellow key, sunk while the legend is out. */
+:root[data-ui="punk"] .legend-key {
+  appearance: none;
+  flex: none;
+  margin: 2px 0 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 11px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 900 16px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: var(--key-shadow-mid);
+}
+:root[data-ui="punk"] .legend-key[aria-expanded="true"] {
+  box-shadow: none;
+}
+:root[data-ui="punk"] .machine-rule {
+  flex: none;
+  height: 3px;
+  margin: 0 10px;
+  background: var(--line);
+}
+:root[data-ui="punk"] .machine-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  padding: 14px 16px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* --- the counter: drums, its sentence, « Tout réafficher » ------------------------------ */
+:root[data-ui="punk"] .counter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  background: var(--line);
+  color: var(--machine-paper);
+  box-shadow: var(--shadow-pink);
+}
+:root[data-ui="punk"] .drums {
+  flex: none;
+  display: flex;
+  gap: 4px;
+}
+:root[data-ui="punk"] .drum {
+  position: relative;
+  width: 30px;
+  height: 44px;
+  overflow: hidden;
+  background: var(--machine-paper);
+}
+:root[data-ui="punk"] .drum-roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--digit, 0) * -42px);
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] .drum-roll span {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg);
+  font: 900 34px / 1 var(--font-display);
+  font-stretch: 68%;
+}
+:root[data-ui="punk"] .counter-text {
+  flex: 1;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 400 13.5px / 1.2 var(--font-text);
+}
+:root[data-ui="punk"] .reset {
+  position: relative;
+  overflow: visible;
+  appearance: none;
+  flex: none;
+  width: 52px;
+  height: 52px;
+  margin: 0 3px 3px 0;
+  padding: 0;
+  border: 2.5px solid var(--machine-paper);
+  border-radius: 50%;
+  background: var(--tag);
+  color: var(--on-tag);
+  box-shadow: var(--shadow-pink);
+  cursor: pointer;
+}
+:root[data-ui="punk"] .reset[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: default;
+}
+:root[data-ui="punk"] .boom-icon {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: auto;
+  fill: var(--on-tag);
+}
+:root[data-ui="punk"] .boom-icon .boom-spot {
+  fill: var(--accent-fill);
+}
+/* « BOUM ! » (20a): a decoration once the filters are reset; none under reduced motion. */
+:root[data-ui="punk"] .boom {
+  display: none;
+}
+:root[data-ui="punk"] .streets-count {
+  margin: -6px 0 0;
+  font: 400 12.5px / 1.3 var(--font-text);
+}
+/* « N filtres actifs en vue rue · Tout réafficher » (DECISIONS 2026-10-09), at every zoom:
+   a typewriter line on the paper, the reset a link as the ticket's. */
+:root[data-ui="punk"] .street-active {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 2px;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] .street-active[hidden] {
+  display: none;
+}
+
+/* --- the sections and their keys ----------------------------------------------------- */
+:root[data-ui="punk"] .machine-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+:root[data-ui="punk"] .machine-section[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] .tag-title {
+  align-self: flex-start;
+  margin: 0;
+  padding: 0 6px;
+  background: var(--line);
+  color: var(--machine-paper);
+  font: 800 13px / 19px var(--font-display);
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+:root[data-ui="punk"] .keys {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 4px 4px 0;
+}
+:root[data-ui="punk"] .keys[hidden] {
+  display: none;
+}
+/* A key: its input hidden but focusable, the label drawn as 20a's key. */
+/* Its input over the whole key, invisible: a tap or a click anywhere on the key is on it. */
+:root[data-ui="punk"] #filters .toggle input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+:root[data-ui="punk"] #filters .key {
+  position: relative;
+  min-height: 58px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 2px;
+  padding: 6px 9px 7px;
+  border: 2px solid var(--line);
+  background: var(--key-off);
+  color: var(--fg);
+  box-shadow: var(--key-shadow);
+  cursor: pointer;
+  text-align: left;
+}
+:root[data-ui="punk"] #filters .key.on {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--key-shadow-on);
+}
+:root[data-ui="punk"] #filters .key .count {
+  color: inherit;
+  font: 900 26px / 0.95 var(--font-display);
+  font-stretch: 68%;
+  text-shadow: var(--count-ghost-off);
+}
+:root[data-ui="punk"] #filters .key.on .count {
+  text-shadow: var(--count-ghost-on);
+}
+:root[data-ui="punk"] #filters .key .label {
+  flex: none;
+  font: 400 13px var(--font-text);
+}
+:root[data-ui="punk"] .key-check {
+  position: absolute;
+  right: -8px;
+  top: -9px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--machine-paper);
+  opacity: 0;
+}
+:root[data-ui="punk"] .on > .key-check {
+  opacity: 1;
+}
+:root[data-ui="punk"] .key-check svg {
+  width: 12px;
+  height: 12px;
+}
+/* The keyboard on a key, a type or a chip: the dashed outline on what is drawn. */
+:root[data-ui="punk"] #filters .toggle:has(input:focus-visible) {
+  outline: 3px dashed var(--focus);
+  outline-offset: 3px;
+}
+:root[data-ui="punk"] #filters .kind:has(input:focus-visible) {
+  outline: none;
+}
+:root[data-ui="punk"] #filters .kind:has(input:focus-visible) .kind-disc {
+  outline: 3px dashed var(--focus);
+  outline-offset: 3px;
+}
+/* « État de la fiche »: a key with its sample, the sheet's mark as on the map. */
+:root[data-ui="punk"] #filters .key.state {
+  min-height: 52px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 6px 9px;
+  box-shadow: var(--chip-shadow-off);
+}
+:root[data-ui="punk"] #filters .key.state.on {
+  box-shadow: var(--key-shadow-mid);
+}
+:root[data-ui="punk"] #filters .key.state .label {
+  flex: 1;
+  font: 400 13px / 1.15 var(--font-text);
+}
+:root[data-ui="punk"] .state-sample {
+  flex: none;
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Type de caméra: round buttons, the stickers, a yellow count label -------------------- */
+:root[data-ui="punk"] .kinds {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 6px;
+}
+:root[data-ui="punk"] #filters .kind {
+  position: relative;
+  width: 88px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 0 2px;
+  color: var(--fg);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #filters .kind[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] .kind-disc {
+  position: relative;
+  width: 62px;
+  height: 62px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 2.5px solid var(--line);
+  background: var(--key-off);
+  box-shadow: var(--key-shadow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+:root[data-ui="punk"] .on > .kind-disc {
+  background: var(--accent-fill);
+  box-shadow: var(--key-shadow-on);
+}
+:root[data-ui="punk"] #filters .kind-disc .sample {
+  width: 46px;
+  height: 46px;
+  opacity: 0.4;
+}
+:root[data-ui="punk"] #filters .on .kind-disc .sample {
+  opacity: 1;
+}
+:root[data-ui="punk"] #filters .kind .label {
+  flex: none;
+  font: 800 13px / 1 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+/* The count label (20a, as « OSM » is cut): yellow, an arrow on its left. */
+:root[data-ui="punk"] #filters :is(.kind, .chip-adv) .count,
+:root[data-ui="punk"] #filters .operator .count:not(:empty) {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  padding: 1px 6px 0 11px;
+  background: var(--tag);
+  color: var(--on-tag);
+  font: 400 13px / 18px var(--font-text);
+  white-space: nowrap;
+  clip-path: polygon(7px 0, 100% 0, 100% 100%, 7px 100%, 0 50%);
+}
+
+/* --- Plus de filtres: the drawer and its chips ----------------------------------------- */
+:root[data-ui="punk"] #filters .advanced {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 3px 3px 0;
+}
+:root[data-ui="punk"] #filters .advanced summary.more {
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 900 17px var(--font-display);
+  font-stretch: 68%;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-pink);
+}
+:root[data-ui="punk"] #filters .advanced summary.more::before {
+  content: none;
+}
+:root[data-ui="punk"] #filters .advanced details[open] > summary.more {
+  box-shadow: none;
+}
+:root[data-ui="punk"] .drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 2px 4px;
+  border-top: 2px dashed var(--line);
+}
+:root[data-ui="punk"] .adv-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+:root[data-ui="punk"] .adv-title {
+  font: 400 13.5px var(--font-text);
+}
+:root[data-ui="punk"] .chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 7px;
+  padding: 6px 4px 2px 0;
+}
+:root[data-ui="punk"] #filters .chip-adv {
+  position: relative;
+  min-height: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0 11px;
+  border: 2px solid var(--line);
+  background: var(--key-off);
+  color: var(--fg);
+  box-shadow: var(--chip-shadow-off);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #filters .chip-adv[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #filters .chip-adv.on {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--chip-shadow-on);
+}
+:root[data-ui="punk"] #filters .chip-adv .label {
+  flex: none;
+  font: 800 15px / 1 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+:root[data-ui="punk"] #filters .chip-adv .count {
+  right: -10px;
+  top: -10px;
+  padding: 0 5px 0 9px;
+  font-size: 11px;
+  line-height: 15px;
+}
+:root[data-ui="punk"] #filters .operator-row {
+  position: relative;
+  display: flex;
+  min-height: 0;
+}
+:root[data-ui="punk"] #adv-operator {
+  flex: 1;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--key-off);
+  color: var(--fg);
+  font: 400 14px var(--font-text);
+}
+:root[data-ui="punk"] #filters .small {
+  margin: 0;
+  color: var(--fg);
+  font: 400 12.5px / 1.35 var(--font-text);
+}
+:root[data-ui="punk"] .notes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --- the close button (20a's ×) ------------------------------------------------------ */
+:root[data-ui="punk"] #filters .machine-close {
+  position: absolute;
+  right: -12px;
+  top: -2px;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 22px / 1 var(--font-display);
+  box-shadow: none;
+  cursor: pointer;
+}
+
+/* --- motion: the tilts, the presses, the rise ------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* It rises from under the screen in 300 ms on 20a's spring; usable from its first frame. */
+  :root[data-ui="punk"] #filters.machine {
+    rotate: -0.8deg;
+    transform-origin: 0 0;
+    translate: 0 110vh;
+    transition:
+      translate var(--dur-button) cubic-bezier(0.3, 1.15, 0.5, 1),
+      top var(--dur-button) cubic-bezier(0.3, 1.15, 0.5, 1),
+      visibility 0s linear var(--dur-button);
+  }
+  :root[data-ui="punk"] body.machine-open #filters.machine {
+    translate: 0 0;
+    transition:
+      translate var(--dur-button) cubic-bezier(0.3, 1.15, 0.5, 1),
+      top var(--dur-button) cubic-bezier(0.3, 1.15, 0.5, 1),
+      visibility 0s;
+  }
+  :root[data-ui="punk"] .crank-arm {
+    rotate: 35deg;
+  }
+  :root[data-ui="punk"] .cut .cut-0 {
+    rotate: -4deg;
+  }
+  :root[data-ui="punk"] .cut .cut-1 {
+    rotate: 3deg;
+    translate: 0 3px;
+  }
+  :root[data-ui="punk"] .cut .cut-2 {
+    rotate: -2deg;
+    translate: 0 -2px;
+  }
+  :root[data-ui="punk"] .cut .cut-3 {
+    rotate: 5deg;
+    translate: 0 1px;
+  }
+  :root[data-ui="punk"] .cut .cut-4 {
+    rotate: 2deg;
+    translate: 0 2px;
+  }
+  :root[data-ui="punk"] .cut .cut-5 {
+    rotate: -5deg;
+  }
+  :root[data-ui="punk"] .cut .cut-6 {
+    rotate: 4deg;
+    translate: 0 -1px;
+  }
+  :root[data-ui="punk"] .legend-key {
+    rotate: 2deg;
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      box-shadow var(--dur-press);
+  }
+  :root[data-ui="punk"] .legend-key[aria-expanded="true"] {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] .counter {
+    rotate: -0.6deg;
+  }
+  :root[data-ui="punk"] .drum + .drum {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] .drum-roll {
+    transition: top var(--dur-button) cubic-bezier(0.3, 1.35, 0.5, 1);
+  }
+  :root[data-ui="punk"] .tag-title {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] .machine-section:nth-of-type(2) .tag-title {
+    rotate: 1deg;
+  }
+  /* 20a's keys: released, tilted half the other way and raised on their shadow; pressed,
+     sunk 3 px onto it, tilted (press() of the mockup). */
+  :root[data-ui="punk"] #filters :is(.key, .kind-disc, .chip-adv) {
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      rotate var(--dur-button) var(--ease-spring),
+      box-shadow var(--dur-button) var(--ease-spring);
+  }
+  :root[data-ui="punk"] #filters .keys .key:nth-child(4n + 1),
+  :root[data-ui="punk"] #filters .keys .key:nth-child(4n + 4) {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] #filters .keys .key:nth-child(4n + 2),
+  :root[data-ui="punk"] #filters .keys .key:nth-child(4n + 3) {
+    rotate: -0.75deg;
+  }
+  :root[data-ui="punk"] #filters .keys .key.on:nth-child(4n + 1),
+  :root[data-ui="punk"] #filters .keys .key.on:nth-child(4n + 4) {
+    rotate: -2deg;
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] #filters .keys .key.on:nth-child(4n + 2),
+  :root[data-ui="punk"] #filters .keys .key.on:nth-child(4n + 3) {
+    rotate: 1.5deg;
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] #filters .states .key.state:nth-child(1) {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] #filters .states .key.state:nth-child(2) {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] #filters .states .key.state.on:nth-child(1) {
+    rotate: -1.5deg;
+    translate: 0 0;
+  }
+  :root[data-ui="punk"] #filters .states .key.state.on:nth-child(2) {
+    rotate: 2deg;
+    translate: 0 0;
+  }
+  :root[data-ui="punk"] #filters .kind:nth-child(5n + 1) .kind-disc {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] #filters .kind:nth-child(5n + 2) .kind-disc {
+    rotate: -1.5deg;
+  }
+  :root[data-ui="punk"] #filters .kind:nth-child(5n + 3) .kind-disc {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] #filters .kind:nth-child(5n + 4) .kind-disc {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] #filters .kind:nth-child(5n + 5) .kind-disc {
+    rotate: 1.5deg;
+  }
+  :root[data-ui="punk"] #filters .kind.on .kind-disc {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] #filters .kind.on:nth-child(5n + 1) .kind-disc {
+    rotate: -4deg;
+  }
+  :root[data-ui="punk"] #filters .kind.on:nth-child(5n + 2) .kind-disc {
+    rotate: 3deg;
+  }
+  :root[data-ui="punk"] #filters .kind.on:nth-child(5n + 3) .kind-disc {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] #filters .kind.on:nth-child(5n + 4) .kind-disc {
+    rotate: 4deg;
+  }
+  :root[data-ui="punk"] #filters .kind.on:nth-child(5n + 5) .kind-disc {
+    rotate: -3deg;
+  }
+  :root[data-ui="punk"] #filters :is(.kind, .chip-adv) .count {
+    rotate: -6deg;
+  }
+  :root[data-ui="punk"] #filters .chip-adv:nth-child(odd) {
+    rotate: 1deg;
+  }
+  :root[data-ui="punk"] #filters .chip-adv:nth-child(even) {
+    rotate: -1deg;
+  }
+  :root[data-ui="punk"] #filters .chip-adv.on:nth-child(odd) {
+    rotate: -2deg;
+  }
+  :root[data-ui="punk"] #filters .chip-adv.on:nth-child(even) {
+    rotate: 2deg;
+  }
+  :root[data-ui="punk"] #filters .advanced summary.more {
+    rotate: -1deg;
+    transition:
+      translate var(--dur-button) var(--ease-spring),
+      box-shadow var(--dur-press);
+  }
+  :root[data-ui="punk"] #filters .advanced details[open] > summary.more {
+    translate: 3px 3px;
+  }
+  :root[data-ui="punk"] #filters .machine-close {
+    rotate: 6deg;
+  }
+  /* « Tout réafficher » sinks 3 px when pressed: the norm's press (buttons.css). */
+  /* « BOUM ! » (20a): a burst, two rings, the word popping out, 1.1 s, once, blocking
+     nothing (DECISIONS 2026-10-06, « Animations… »: a gesture's decoration). */
+  :root[data-ui="punk"] .boom {
+    position: absolute;
+    inset: 0;
+    display: block;
+    pointer-events: none;
+    animation: machine-shake 0.35s linear;
+  }
+  :root[data-ui="punk"] .boom-burst,
+  :root[data-ui="punk"] .boom-ring {
+    position: absolute;
+    border-radius: 50%;
+  }
+  :root[data-ui="punk"] .boom-burst {
+    inset: -4px;
+    background: var(--tag);
+    animation: machine-burst 0.5s ease-out both;
+  }
+  :root[data-ui="punk"] .boom-ring {
+    inset: -2px;
+    border: 3px solid var(--accent-fill);
+    animation: machine-pulse 0.65s ease-out both;
+  }
+  :root[data-ui="punk"] .boom-word {
+    position: absolute;
+    left: 50%;
+    top: -24px;
+    padding: 2px 6px;
+    background: var(--boom-bg);
+    color: var(--boom-ink);
+    font: 900 13px / 1 var(--font-display);
+    font-stretch: 70%;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    box-shadow: 2px 2px 0 var(--accent-fill);
+    animation: machine-pop 1.1s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+  }
+  :root[data-ui="punk"] .reset:has(.boom) .boom-icon {
+    animation: machine-grow 0.4s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+    transform-origin: 50% 85%;
+  }
+  @keyframes machine-shake {
+    0%,
+    100% {
+      translate: 0 0;
+    }
+    20% {
+      translate: -3px 1px;
+    }
+    40% {
+      translate: 3px -1px;
+    }
+    60% {
+      translate: -2px 1px;
+    }
+    80% {
+      translate: 1px 0;
+    }
+  }
+  @keyframes machine-burst {
+    0% {
+      scale: 0.2;
+      opacity: 1;
+    }
+    100% {
+      scale: 2.4;
+      opacity: 0;
+    }
+  }
+  @keyframes machine-pulse {
+    0% {
+      scale: 0.45;
+      opacity: 1;
+    }
+    100% {
+      scale: 1.7;
+      opacity: 0;
+    }
+  }
+  @keyframes machine-grow {
+    0% {
+      scale: 0.25 0.1;
+    }
+    40% {
+      scale: 1.3 1.35;
+    }
+    65% {
+      scale: 0.9 0.94;
+    }
+    85% {
+      scale: 1.05;
+    }
+    100% {
+      scale: 1;
+    }
+  }
+  @keyframes machine-pop {
+    0% {
+      translate: -50% 8px;
+      rotate: -9deg;
+      scale: 0;
+      opacity: 1;
+    }
+    22% {
+      translate: -50% -8px;
+      rotate: -9deg;
+      scale: 1.25;
+    }
+    38% {
+      translate: -50% -6px;
+      rotate: -6deg;
+      scale: 1;
+    }
+    75% {
+      opacity: 1;
+    }
+    100% {
+      translate: -50% -14px;
+      rotate: -6deg;
+      scale: 1;
+      opacity: 0;
+    }
+  }
+}
+
+/* A wide screen under about 760 px: the attribution (ODbL, bottom right, about 410 px wide)
+   would run under the machine (322 px from 18 px): it stops above it (the camera list too,
+   camlist.css). */
+@media (min-width: 601px) and (max-width: 760px) {
+  :root[data-ui="punk"] #filters.machine {
+    bottom: calc(var(--attrib-h, 0px) + 8px);
+  }
+}
+
+/* --- phone (18a): the machine over the whole width, under the ticket's title ------------ */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #filters.machine {
+    position: absolute;
+    inset: auto;
+    left: calc(12px + env(safe-area-inset-left, 0px));
+    right: calc(26px + env(safe-area-inset-right, 0px));
+    top: var(--machine-top, 96px);
+    /* Its feet stand above the attribution (ODbL: always readable), 18a's inset at the
+       bottom left (map.css), its offset shadow clear of it. */
+    bottom: calc(max(22px, env(safe-area-inset-bottom, 0px)) + var(--attrib-h, 0px) + 8px);
+    width: auto;
+    z-index: 5;
+    font-size: 13px;
+  }
+  /* 16 px: iOS zooms into smaller text fields. */
+  :root[data-ui="punk"] #adv-operator {
+    font-size: 16px;
+  }
+}

@@ -1,0 +1,1290 @@
+/* /revue (lot 1 « Modérer » of its redesign, boards P1 and P2; lot 2 « Administrer », P3 to
+   P5: the administrator's views, the password dialog): a sober tool on the theme's
+   tokens, one layout for both interfaces (punk is the target: square corners, 2 px ink
+   rules, condensed capitals for titles, tabs and buttons, one pink primary button on its
+   offset shadow; the classique draws the same with its own tokens). Body text in a
+   readable sans (--font-review), never the typewriter face. A phone (390 px) first; from
+   800 px the camera view sets its map beside what to decide. Every colour is a token
+   (web/tests/theme.test.ts checks them; this file reads the classic ones only). */
+
+html {
+  /* Until the theme marks the page (data-ui), the pre-paint's colours (revue-prepaint.js). */
+  background: var(--page);
+  /* What is scrolled to or focused never hides under the camera view's fixed bar. */
+  scroll-padding-bottom: calc(var(--foot-h, 0px) + 8px);
+}
+body.review {
+  margin: 0;
+  min-height: 100vh;
+  font: 15px / 1.45 var(--font-review);
+  color: var(--fg);
+}
+:root[data-ui] body.review {
+  background: var(--bg);
+}
+.review a {
+  color: inherit;
+}
+.review-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.review :is(p, input, ul, div)[hidden] {
+  display: none;
+}
+/* A heading the code focuses to say where the page is: Tab never reaches it. */
+.review :is(h1, h2)[tabindex="-1"]:focus {
+  outline: none;
+}
+
+/* The display face: titles, tabs, filters, buttons, column heads. */
+.review-brand,
+.review-tab,
+.review-back,
+.review-chip,
+.review-button,
+.review-tag,
+.review-toast-undo,
+.review-diff th[scope="col"],
+.review-table th[scope="col"],
+.review-switch-word,
+.review h1,
+.review h2,
+.review h3 {
+  font-family: var(--font-display);
+  font-stretch: var(--display-stretch);
+  text-transform: var(--display-case);
+  letter-spacing: var(--display-spacing);
+  font-weight: var(--display-weight);
+}
+.review h1,
+.review h2,
+.review-brand {
+  font-weight: var(--heading-weight);
+}
+
+/* --- the head: « Revue », its tabs, who is signed in ------------------------------------- */
+.review-top {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  padding: calc(env(safe-area-inset-top, 0px) + 6px) 16px 6px;
+  border-bottom: var(--border-w) solid var(--line);
+  background: var(--bg-2);
+}
+.review-brand {
+  margin: 0;
+  font-size: 20px;
+  line-height: 44px;
+}
+.review-tabs {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  overflow-x: auto;
+}
+.review-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: var(--border-w) solid transparent;
+  border-radius: var(--radius-button-small);
+  font-size: 15px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.review-tab[aria-current="page"] {
+  border-color: var(--line);
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+.review-who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+/* An administrator's five tabs: on a phone a row of their own under « Revue » and who is
+   in, which scrolls sideways when it must (its current tab brought in sight). */
+@media (max-width: 759px) {
+  .review-top:has(.review-tabs.many) {
+    flex-wrap: wrap;
+  }
+  .review-tabs.many {
+    order: 3;
+    flex: 1 1 100%;
+    gap: 0;
+    margin: 0 -16px;
+    padding: 0 8px 2px;
+  }
+  .review-tabs.many + .review-who {
+    margin-left: auto;
+  }
+  .review-tabs.many .review-tab {
+    padding: 0 8px;
+  }
+}
+/* The camera view's head: back to the queue, the camera's label. */
+.review-top-camera {
+  gap: 4px 10px;
+}
+.review-back {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  font-size: 15px;
+  text-decoration: none;
+}
+.review-top-camera h1 {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+/* --- the views ------------------------------------------------------------------------------ */
+.review-main {
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 16px 32px;
+}
+.review-main h1 {
+  margin: 6px 0 4px;
+  font-size: 24px;
+  line-height: 1.15;
+}
+.review-main h2 {
+  margin: 14px 0 6px;
+  font-size: 17px;
+  line-height: 1.2;
+}
+.review-main h3 {
+  margin: 12px 0 4px;
+  font-size: 15px;
+}
+.review-summary {
+  margin: 0 0 10px;
+  font-variant-numeric: tabular-nums;
+}
+.review-note,
+.review-muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+.review-note {
+  margin: 6px 0;
+}
+.review-main > .review-note {
+  padding: 8px 10px;
+  border: var(--border-w) solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+}
+
+/* Filters and search. */
+.review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 6px;
+  align-items: stretch;
+}
+.review-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.review-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-review-chip);
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 15px;
+  cursor: pointer;
+}
+.review-chip[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.review-chip-n {
+  font-variant-numeric: tabular-nums;
+}
+.review-search {
+  box-sizing: border-box;
+  flex: 1 1 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 10px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-2);
+  color: var(--fg);
+  font: inherit;
+}
+.review-search::placeholder {
+  color: var(--muted);
+}
+.review-count {
+  margin: 10px 0 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* The queue: one row per camera, a link to its view. */
+.review-queue {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-w) solid var(--line);
+}
+.review-queue > li {
+  border-bottom: 1px solid var(--muted);
+}
+.review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 2px 10px;
+  min-height: 44px;
+  padding: 10px 4px;
+  text-decoration: none;
+}
+.review-row:hover,
+.review-row:focus-visible {
+  background: var(--pick-bg);
+}
+.review-row-title {
+  font-weight: 650;
+}
+.review-row-age {
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.review-row-what {
+  grid-column: 1 / -1;
+}
+.review-row-signals,
+.review-signals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.review-row-signals {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+.review-signals {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.review-ok {
+  color: var(--ok);
+  font-weight: 650;
+}
+.review-tag {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  background: var(--tag-bg);
+  color: var(--fg);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.review-tag.warn {
+  background: var(--warn-bg);
+}
+.review-empty {
+  padding: 14px 4px;
+  color: var(--muted);
+}
+.review-csv {
+  margin: 20px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.review-csv a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--fg);
+  font-weight: 650;
+}
+
+/* --- the camera view ------------------------------------------------------------------------ */
+.review-camera {
+  /* Clear of the fixed decision bar (its height, set by camera.ts). */
+  padding-bottom: calc(var(--foot-h, 80px) + 24px);
+}
+.review-map {
+  margin: 0 0 10px;
+}
+#review-map {
+  height: 240px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+}
+.review-legend {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.review-author {
+  margin: 0 0 4px;
+}
+.review-author .review-muted {
+  margin-left: 6px;
+}
+.review-decide h2 {
+  margin-top: 10px;
+}
+.review-diff {
+  width: 100%;
+  margin: 4px 0 8px;
+  border-collapse: collapse;
+}
+.review-diff th,
+.review-diff td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--muted);
+  font-size: 15px;
+  text-align: left;
+  vertical-align: top;
+}
+.review-diff th[scope="col"] {
+  border-bottom: var(--border-w) solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.review-diff th[scope="row"] {
+  font-weight: 650;
+  white-space: nowrap;
+}
+.review-diff .review-new {
+  font-weight: 700;
+}
+.review-dest {
+  margin: 10px 0;
+  padding: 6px 8px;
+  border: var(--border-w) dashed var(--muted);
+  font-size: 14px;
+}
+.review-conflict {
+  margin: 8px 0;
+  padding: 6px 10px;
+  border: var(--border-w) solid var(--warn-line);
+  border-radius: var(--radius-panel);
+  background: var(--conflict-bg);
+  font-size: 14px;
+}
+.review-conflict p {
+  margin: 4px 0;
+}
+.review-tags,
+.review-links {
+  margin: 2px 0 6px;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.review-tags {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.review-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+/* A proposed operator name: the reviewer's choice before « Valider ». */
+.review-choice {
+  margin: 10px 0;
+  padding: 6px 10px 10px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+}
+.review-choice legend {
+  padding: 0 4px;
+  font-weight: 650;
+}
+.review-choice p {
+  margin: 2px 0 4px;
+}
+.review-radio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.review-radio input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+.review-matches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.review-matches .review-button[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.review-units {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.review-units > li {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--muted);
+  font-size: 14px;
+}
+.review-change {
+  margin-top: 6px;
+}
+.review-details {
+  margin: 14px 0 0;
+  border-top: var(--border-w) solid var(--line);
+}
+.review-details summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 8px;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+}
+.review-details summary::-webkit-details-marker {
+  display: none;
+}
+/* A flex summary loses its marker (it read as an empty title, « Détails » alone): draw
+   it, as the map's legend does (style.css). */
+.review-details summary::before {
+  content: "▸";
+  color: var(--fg);
+  font-size: 20px;
+  line-height: 1;
+}
+.review-details[open] > summary::before {
+  content: "▾";
+}
+.review-details summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: 16px;
+}
+.review-details-hint {
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.review-details[open] .review-details-hint {
+  display: none;
+}
+/* Links tapped in a line of text: a 44 px target all the same. */
+.review-details a,
+.review-dest a,
+.review-conflict a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.review-id code {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+/* Buttons: one primary (pink, on its offset shadow), the others paper. */
+.review-button {
+  min-height: 48px;
+  padding: 0 16px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-button-small);
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 17px;
+  cursor: pointer;
+}
+.review-button.primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-panel);
+}
+.review-button.small {
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+.review-button.armed {
+  border-color: var(--warn-line);
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+.review-button[aria-disabled="true"],
+.review-button:disabled {
+  cursor: progress;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .review-button {
+    transition: translate 90ms ease-out;
+  }
+  .review-button:active {
+    translate: 2px 2px;
+  }
+}
+
+/* The decision bar, fixed at the bottom; an error said above it. */
+.review-foot {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 3;
+  border-top: var(--border-w) solid var(--line);
+  background: var(--bg-2);
+}
+.review-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 10px 16px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  box-sizing: border-box;
+}
+.review-bar .review-button {
+  flex: 1 1 0;
+}
+.review-bar .review-button.wide {
+  flex-basis: 100%;
+}
+.review-error {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 8px 16px 0;
+  box-sizing: border-box;
+  color: var(--bad);
+  font-weight: 650;
+}
+
+/* The toast after a decision, above the bar: « Validée. » and « Annuler (8 s) ». */
+.review-toast-host {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 4;
+  max-width: 560px;
+  margin: 0 auto;
+}
+body:has(.review-foot) .review-toast-host {
+  bottom: calc(var(--foot-h, 80px) + 8px);
+}
+.review-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 4px 2px 12px;
+  border-radius: var(--radius-panel);
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 15px;
+}
+.review-toast-text {
+  padding: 10px 0;
+}
+.review-toast-undo {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-bottom: var(--border-w) solid var(--accent-fill);
+  background: transparent;
+  color: var(--bg);
+  font-size: 15px;
+  cursor: pointer;
+}
+.review-toast-undo:focus-visible {
+  outline: 3px dashed var(--bg);
+  outline-offset: -3px;
+}
+
+/* --- not for this session: « Réservé aux relecteurs », the login, the API down -------- */
+.review-forbidden p {
+  margin: 8px 0;
+}
+.review-forbidden > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.review-login {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  max-width: 22em;
+  margin: 12px 0 16px;
+}
+.review-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.review-field input {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 10px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-2);
+  color: var(--fg);
+  font: inherit;
+}
+.review-login-error {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+
+/* --- the administrator's views (lot 2: boards P3, P4, P5) ------------------------------ */
+.review-admin .review-section > h2 {
+  margin-top: 18px;
+}
+.review-admin > .review-search {
+  width: 100%;
+  margin: 4px 0 4px;
+}
+.review-table {
+  width: 100%;
+  margin: 4px 0 8px;
+  border-collapse: collapse;
+}
+.review-table th,
+.review-table td {
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--muted);
+  font-size: 15px;
+  text-align: left;
+  vertical-align: middle;
+}
+.review-table th[scope="col"] {
+  border-bottom: var(--border-w) solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+}
+.review-table th[scope="row"] {
+  font-weight: 400;
+}
+.review-num {
+  font-variant-numeric: tabular-nums;
+}
+.review-bad {
+  color: var(--bad);
+  font-weight: 650;
+}
+.review-name .review-tag {
+  margin-left: 6px;
+}
+.review-sub {
+  display: block;
+  font-size: 13px;
+}
+/* A pseudonym, a camera's id: a link the finger reaches (44 px), in its line of text. */
+.review-cell-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 650;
+}
+.review-table td .review-cell-link {
+  font-weight: 400;
+}
+.review-section {
+  margin-top: 8px;
+}
+
+/* « Fiche utilisateur »: the facts, the counts, the boxes. */
+.review-facts {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 10px;
+}
+.review-fact {
+  display: grid;
+  grid-template-columns: 5.5em minmax(0, 1fr);
+  gap: 8px;
+}
+.review-fact dt {
+  color: var(--muted);
+}
+.review-fact dd {
+  margin: 0;
+}
+.review-counts th[scope="row"] {
+  width: 60%;
+}
+.review-details.review-account-list summary h2 {
+  font-size: 15px;
+}
+.review-contribs a {
+  display: inline;
+  min-height: 0;
+}
+.review-contribs li {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+.review-contrib-label {
+  font-weight: 650;
+}
+.review-box {
+  margin: 12px 0;
+  padding: 2px 12px 12px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-2);
+}
+.review-box > h2:first-of-type {
+  margin: 12px 0 6px;
+}
+.review-box.danger {
+  border-color: var(--bad-line);
+}
+.review-box p {
+  margin: 6px 0;
+}
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.review-button.danger {
+  border-color: var(--bad-line);
+  color: var(--bad);
+}
+.review-button.danger.armed {
+  background: var(--bad);
+  color: var(--bg-2);
+}
+.review-box .review-button.wide {
+  width: 100%;
+}
+.review-panel {
+  margin: 4px 0 8px;
+}
+.review-choice h3 {
+  margin: 8px 0 4px;
+}
+.review-choice fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.review-choice .review-field {
+  margin: 6px 0;
+}
+.review-inline-error {
+  margin: 6px 0;
+  padding: 0;
+}
+.review-warn {
+  font-weight: 650;
+}
+/* A password shown once: in a mono face, wrapped anywhere, its copy beside it. */
+.review-reset {
+  margin: 8px 0;
+  padding: 2px 10px 6px;
+  border: var(--border-w) solid var(--line);
+  background: var(--warn-bg);
+}
+.review-reset h3 {
+  margin: 8px 0 4px;
+}
+.review-secret {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+.review-secret-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* « Retraits »: the id or link, « Masquer » beside it. */
+.review-hide-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.review-hide-row .review-search {
+  flex: 1 1 auto;
+}
+.review-hide-row .review-button {
+  flex: none;
+}
+.review-hide-preview {
+  min-height: 1.45em;
+  margin: 6px 0;
+}
+.review-hidden-list code,
+.review-retreat code {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.review-retreat {
+  margin-top: 14px;
+  border-top: var(--border-w) solid var(--line);
+}
+.review-retreat a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* « Réglages »: a switch per setting, what closing does beside it. */
+.review-setting {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--muted);
+}
+.review-setting p {
+  margin: 2px 0;
+}
+.review-setting-name {
+  font-weight: 650;
+}
+.review-setting-value {
+  flex: none;
+  color: var(--muted);
+}
+.review-switch {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-width: 96px;
+  min-height: 44px;
+  padding: 0 6px 0 10px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-button-small);
+  background: var(--bg-2);
+  color: var(--fg);
+  font-size: 15px;
+  cursor: pointer;
+}
+.review-switch-knob {
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  border: var(--border-w) solid var(--line);
+  background: var(--bg);
+}
+.review-switch[aria-checked="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.review-switch[aria-checked="true"] .review-switch-knob {
+  border-color: var(--bg);
+  background: var(--accent-fill);
+}
+.review-switch[aria-checked="false"] {
+  flex-direction: row-reverse;
+  padding: 0 10px 0 6px;
+}
+.review-switch[aria-checked="false"] .review-switch-knob {
+  margin: 0 auto 0 0;
+}
+.review-switch[aria-disabled="true"] {
+  cursor: progress;
+}
+/* Cannot be turned on (writing to OSM's live server without its client): dashed, muted,
+   its reason said under the hint; a tap says it again. */
+.review-switch.blocked {
+  border-style: dashed;
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.review-setting-reason[hidden] {
+  display: none;
+}
+
+/* « Journal » (the « go » of 17/10: an activity feed): the type's chips (the queue's), the
+   person and « Filtrer »; then one line per entry under the queue's 2 px rule, its day
+   and person first, the camera's id at its end, a link the finger reaches. */
+.review-journal-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.review-journal-who {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+.review-journal-who .review-field {
+  flex: 1 1 200px;
+}
+.review-feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--border-w) solid var(--line);
+}
+.review-feed-item {
+  box-sizing: border-box;
+  min-height: 56px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 12px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--muted);
+}
+.review-feed-line {
+  flex: 1 1 18em;
+  min-width: 0;
+  margin: 4px 0;
+  font-size: 14.5px;
+}
+.review-feed-day {
+  font-variant-numeric: tabular-nums;
+}
+.review-feed-who {
+  font-weight: 650;
+}
+.review-feed-who.gone {
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 400;
+}
+.review-feed-line .review-tag {
+  white-space: nowrap;
+}
+.review-feed-label {
+  font-weight: 650;
+}
+.review-feed-sep {
+  color: var(--muted);
+}
+.review .review-feed-camera {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.review .review-feed-camera:hover {
+  color: var(--fg);
+}
+.review-hidden-list .review-tag {
+  white-space: nowrap;
+}
+
+/* « Confirmez avec votre mot de passe »: a modal dialog over the page. */
+.review-dialog {
+  box-sizing: border-box;
+  width: min(26em, calc(100vw - 32px));
+  padding: 4px 16px 16px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-2);
+  color: var(--fg);
+  box-shadow: var(--shadow-panel);
+  font: 15px / 1.45 var(--font-review);
+}
+.review-dialog::backdrop {
+  background: color-mix(in srgb, var(--fg) 45%, transparent);
+}
+#review-reauth .review-dialog-form > h2 {
+  margin: 12px 0 4px;
+  font-size: 18px;
+}
+.review-dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.review-dialog-form p {
+  margin: 0;
+}
+.review-dialog-actions {
+  display: flex;
+  gap: 8px;
+}
+.review-dialog-actions .review-button {
+  flex: 1 1 0;
+}
+
+/* --- « Statistiques » (lot 4: board P6) --------------------------------------------------
+   One block per question: its sentence (the figure in bold), a small line chart in ink on
+   the paper (one series: 2 px, round joins, no grid; the axes the board's 2 px rules), a
+   muted line, « Voir les chiffres ». On a wide screen two columns, as the board. */
+.review-stats-grid {
+  display: grid;
+  /* One column on a phone, never wider than it (a wide table scrolls in its own box). */
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px 32px;
+}
+.review-stat {
+  min-width: 0;
+  padding-top: 8px;
+}
+.review-stat-answer {
+  margin: 6px 0 10px;
+  font-size: 16px;
+}
+.review-stat-answer strong {
+  font-weight: 700;
+}
+.review-stat-more {
+  margin: 8px 0 0;
+}
+.review-stat-low {
+  margin: 6px 0;
+  color: var(--muted);
+}
+.review-stat-closed {
+  margin: 8px 0;
+  padding: 10px 10px;
+  border: 1px dashed var(--line);
+  color: var(--fg);
+}
+.review-chart {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 110px auto;
+  gap: 2px 6px;
+  margin: 0;
+}
+.review-chart-plot {
+  display: block;
+  width: 100%;
+  height: 110px;
+  overflow: visible;
+  border-left: var(--border-w) solid var(--line);
+  border-bottom: var(--border-w) solid var(--line);
+  box-sizing: border-box;
+}
+.review-chart-line {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+/* The « go » of 17/10: a second series differs by its mark, never by a colour — dashed
+   (the decisions), or a tick on each bar (the reference hour) over a ring of paper. */
+.review-chart-dashed {
+  fill: none;
+  stroke: var(--fg);
+  stroke-width: 2px;
+  stroke-dasharray: 5 4;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.review-chart-bar {
+  fill: var(--muted);
+}
+.review-chart-tick,
+.review-chart-ring {
+  stroke-linecap: butt;
+  vector-effect: non-scaling-stroke;
+}
+.review-chart-tick {
+  stroke: var(--fg);
+  stroke-width: 2.5px;
+}
+.review-chart-ring {
+  stroke: var(--bg);
+  stroke-width: 6px;
+}
+.review-chart-title {
+  margin: 12px 0 4px;
+  font-size: 14px;
+}
+.review-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  gap: 2px 14px;
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.review-chart-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.review-chart-swatch {
+  display: inline-block;
+  flex: none;
+  width: 18px;
+  border-top: 2px solid var(--fg);
+}
+.review-chart-swatch.dashed {
+  border-top-style: dashed;
+}
+.review-chart-swatch.bars {
+  width: 9px;
+  height: 12px;
+  border: 0;
+  background: var(--muted);
+}
+.review-chart-swatch.ticks {
+  width: 14px;
+  border-top-width: 3px;
+}
+.review-stats-lead {
+  margin: 0 0 8px;
+  font-weight: 650;
+}
+/* A table wider than the phone scrolls in its own box, never the page. */
+.review-table-scroll {
+  /* Positioned: the cells' words said, not seen (.review-sr, absolute), stay in its box. */
+  position: relative;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.review-chart-hit {
+  fill: transparent;
+}
+.review-chart-ys {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: right;
+}
+.review-chart-y,
+.review-chart-x {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.review-chart-xs {
+  display: flex;
+  grid-column: 2;
+  justify-content: space-between;
+}
+.review-stat-top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.review-stat-top li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+/* « Voir les chiffres »: a line of text that opens its tables, a 44 px target. */
+.review-figures summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.review-figures[open] summary {
+  color: var(--fg);
+}
+.review-figures h3 {
+  font-size: 14px;
+}
+.review-stats-table {
+  max-width: 34em;
+}
+.review-stats-table td,
+.review-stats-table th[scope="row"] {
+  font-size: 14px;
+}
+.review-stats-table td {
+  text-align: right;
+}
+/* A row's head on one line (« 17/10 3 h (en cours) »): a wide table scrolls instead. */
+.review-stats-table th[scope="row"] {
+  white-space: nowrap;
+}
+.review-stats-table th[scope="col"]:not(:first-child) {
+  text-align: right;
+}
+.review-stats-note {
+  margin-top: 24px;
+}
+
+/* --- wider screens -------------------------------------------------------------------- */
+@media (min-width: 600px) {
+  .review-search {
+    flex: 1 1 220px;
+  }
+}
+@media (min-width: 800px) {
+  .review-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+  }
+  .review-map {
+    position: sticky;
+    top: 12px;
+  }
+  #review-map {
+    height: 300px;
+  }
+  .review-bar .review-button.wide {
+    flex: 1 1 0;
+  }
+  .review-account-cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .review-account-cols .review-box:first-child {
+    margin-top: 0;
+  }
+  .review-stats-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}

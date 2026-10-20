@@ -1,0 +1,946 @@
+/* The participation (lot 3.4): adding a camera and « Modifier », one component
+   (participate/modify.ts; mockups 3a and 4a: the position, the sheet, the direction,
+   « Corriger »), its button on the camera sheet (17a's « Compléter »), and a pending add's
+   answers on its sheet. « Toujours là ? » is the current screen in the punk tokens.
+
+   - Wide screen: 3a's paper at the right, 336 px, 16 px from the top down to the
+     attribution, tilted 0.8°, torn at the bottom, a hard offset shadow (light blue, pink in
+     dark), no tape (DECISIONS 2026-10-09: every decorative yellow tape removed); the map
+     beside it shows the field the changes give. Phone: 4a's sheet over the whole screen, its send button pinned under a
+     dashed rule. The direction's view (3a/4a step 3) is a short paper at the bottom (a
+     phone) or at the bottom right (a wide screen), the map above it.
+   - Rows: 4a's — the label (typewriter), the source tag cut as an arrow (« OSM » yellow,
+     « supposé » the ink with light blue text in light as the sheet's box writes it,
+     « réponse » pale pink, « modifié » pink), a dotted leader, the value in Archivo
+     capitals; a changed row gets 3a's « Corrigé » stamp. Its choices under it (an add: every
+     row; « Modifier »: the assumed or touched rows, the others a button, 44 px, that
+     unfolds them): 3a's shape tiles, 4a's tickets (40 px of the board, 44 px here), pink
+     and lifted once chosen, a dashed « Viser sur la carte › ».
+   - Text 4.5:1, graphics 3:1 on their backgrounds in light and dark: the tokens'. */
+
+/* Said, not seen. */
+:root[data-ui="punk"] #modify-panel .modify-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* The map's zoom buttons would peek out beside the paper (wide screen): gone while it is
+   open, back for the direction's view (the paper at the bottom). */
+:root[data-ui="punk"]
+  body.modifying:has(#modify-panel:not([data-view="aim"], [data-view="position"]))
+  .maplibregl-ctrl-top-right {
+  display: none;
+}
+
+/* The header ticket (« Surveillance World », its links) would cover the map's view: gone
+   while adding or modifying, as the map's other controls are (body.moving). */
+:root[data-ui="punk"] body.modifying #ticket {
+  display: none;
+}
+
+/* --- the frame ---------------------------------------------------------------------- */
+:root[data-ui="punk"] #modify-panel {
+  position: fixed;
+  z-index: 5;
+  top: 16px;
+  right: 22px;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  width: min(336px, calc(100vw - 44px));
+  color: var(--fg);
+  font: 400 14px / 1.3 var(--font-text);
+  filter: drop-shadow(var(--shadow-sheet));
+  transform: rotate(0.8deg);
+}
+:root[data-ui="punk"] #modify-panel[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-paper,
+:root[data-ui="punk"] #modify-panel .modify-foot {
+  background: var(--bg);
+  background-image: radial-gradient(var(--paper-dots) 1px, transparent 1.5px);
+  background-size: 5px 5px;
+}
+:root[data-ui="punk"] #modify-panel .modify-paper {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+/* The torn bottom: on the foot (the send button's), else on the paper. */
+:root[data-ui="punk"] #modify-panel .modify-foot,
+:root[data-ui="punk"]
+  #modify-panel:is([data-view="aim"], [data-view="position"], [data-view="done"])
+  .modify-paper {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 10px),
+    96% 100%,
+    91% calc(100% - 7px),
+    85% 100%,
+    79% calc(100% - 9px),
+    72% calc(100% - 2px),
+    66% calc(100% - 8px),
+    59% 100%,
+    53% calc(100% - 6px),
+    46% calc(100% - 1px),
+    40% calc(100% - 9px),
+    33% 100%,
+    27% calc(100% - 7px),
+    20% calc(100% - 1px),
+    14% calc(100% - 8px),
+    7% 100%,
+    0 calc(100% - 6px)
+  );
+}
+:root[data-ui="punk"] #modify-panel .modify-foot {
+  flex: none;
+  padding: 12px 16px 24px;
+  border-top: 2px dashed var(--line);
+}
+/* The direction's view and the thanks: a short paper. */
+:root[data-ui="punk"]
+#modify-panel:is([data-view="aim"], [data-view="position"], [data-view="done"]) {
+  top: auto;
+  bottom: 40px;
+}
+:root[data-ui="punk"]
+  #modify-panel:is([data-view="aim"], [data-view="position"], [data-view="done"])
+  .modify-paper {
+  padding-bottom: 26px;
+}
+/* --- the head: ←, the sticker, « Modifier » and the camera's line, × ------------------- */
+:root[data-ui="punk"] #modify-panel :is(.modify-head, .modify-aim-head) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root[data-ui="punk"] #modify-panel :is(.modify-back, .modify-close) {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  font: 800 20px / 1 var(--font-display);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #modify-panel .modify-back {
+  transform: rotate(-4deg);
+}
+:root[data-ui="punk"] #modify-panel .modify-close {
+  transform: rotate(6deg);
+}
+:root[data-ui="punk"] #modify-panel .modify-picto {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  margin: -6px -4px;
+}
+:root[data-ui="punk"] #modify-panel .modify-titles {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+:root[data-ui="punk"] #modify-panel .modify-title {
+  margin: 0;
+  font: 900 26px / 0.95 var(--font-display);
+  font-stretch: 62%;
+  letter-spacing: normal;
+  text-transform: uppercase;
+  text-shadow: var(--shadow-title);
+}
+:root[data-ui="punk"] #modify-panel .modify-aim-head .modify-title {
+  flex: 1;
+}
+:root[data-ui="punk"] #modify-panel .modify-sub {
+  margin: 0;
+  font: 400 12.5px / 1.25 var(--font-text);
+}
+:root[data-ui="punk"] #modify-panel .modify-hint {
+  margin: 0;
+}
+:root[data-ui="punk"] #modify-panel .modify-note {
+  flex: 0 0 100%;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+/* --- the rows ------------------------------------------------------------------------- */
+:root[data-ui="punk"] #modify-panel .modify-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+:root[data-ui="punk"] #modify-panel .modify-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+:root[data-ui="punk"] #modify-panel .modify-line {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: start;
+}
+:root[data-ui="punk"] #modify-panel button.modify-line {
+  cursor: pointer;
+}
+:root[data-ui="punk"] #modify-panel .modify-label {
+  flex: none;
+  font: 400 14px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #modify-panel .modify-leader {
+  flex: 1 1 12px;
+  align-self: center;
+  position: relative;
+  top: 4px;
+  border-bottom: 1.5px dotted var(--line);
+}
+:root[data-ui="punk"] #modify-panel .modify-value {
+  flex: 0 1 auto;
+  min-width: 0;
+  font: 800 17px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-align: end;
+  text-shadow: var(--shadow-value);
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+/* The source tag (17a's arrow, as the sheet's). */
+:root[data-ui="punk"] #modify-panel .chip-tag {
+  flex: none;
+  padding: 1px 6px 0;
+  font: 400 12.5px / 17px var(--font-text);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+}
+:root[data-ui="punk"] #modify-panel .chip-tag.osm {
+  background: var(--warn-fill);
+  color: var(--on-warn);
+}
+:root[data-ui="punk"] #modify-panel .chip-tag.answer {
+  background: var(--pick-bg);
+  color: var(--fg);
+}
+:root[data-ui="punk"] #modify-panel .chip-tag.assumed {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+}
+:root[data-ui="punk"] #modify-panel .chip-tag.changed {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+}
+/* 3a's stamp over a changed row: the word « Corrigé » in a double frame. */
+:root[data-ui="punk"] #modify-panel .modify-stamp {
+  position: absolute;
+  left: 76px;
+  top: -10px;
+  padding: 0 8px;
+  border: 3px double var(--accent);
+  color: var(--accent);
+  font: 900 15px / 1.15 var(--font-display);
+  font-stretch: 75%;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+
+/* --- the choices: 4a's tickets ------------------------------------------------------ */
+:root[data-ui="punk"] #modify-panel .modify-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 6px;
+  padding-bottom: 6px;
+}
+:root[data-ui="punk"] #modify-panel .modify-choices[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  /* 3a's tickets on a wide screen; 4a's, taller, on a phone (below). */
+  min-height: 36px;
+  padding: 0 9px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 800 14px / 1 var(--font-display);
+  font-stretch: 72%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: var(--chip-shadow-off);
+  cursor: pointer;
+}
+/* Metres keep their lower-case m, « M » would read mega (the height's choices and value
+   since the author's point 5 of 2026-10-12). */
+:root[data-ui="punk"]
+  #modify-panel
+  :is(.modify-chip[data-part="height"]:not([data-answer="unknown"]), .modify-value.metric) {
+  text-transform: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-chip[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+/* 3a's « Viser sur la carte › »: the one choice that opens the map, dashed, a crosshair. */
+:root[data-ui="punk"] #modify-panel .modify-aim-open {
+  border-style: dashed;
+  box-shadow: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-aim-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+}
+/* Who films (the author's point 6 of 2026-10-12): 20a's « Exploitant précis » search
+   (machine.css #adv-operator, its tokens), the names found under it, a name proposed. */
+:root[data-ui="punk"] #modify-panel .modify-operator {
+  display: flex;
+  flex: 0 0 100%;
+  flex-direction: column;
+  gap: 8px;
+}
+:root[data-ui="punk"] #modify-panel .modify-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: 400 13.5px var(--font-text);
+}
+:root[data-ui="punk"] #modify-operator-search {
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--key-off);
+  color: var(--fg);
+  font: 400 14px var(--font-text);
+}
+:root[data-ui="punk"] #modify-operator-search:focus-visible {
+  outline: 3px dashed var(--focus);
+  outline-offset: 2px;
+}
+:root[data-ui="punk"] #modify-panel .modify-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 6px;
+}
+:root[data-ui="punk"] #modify-panel .modify-propose {
+  border-style: dashed;
+}
+:root[data-ui="punk"] #modify-panel .modify-propose:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+:root[data-ui="punk"] #modify-panel .modify-invalid {
+  color: var(--fg);
+}
+:root[data-ui="punk"] #modify-panel .modify-chip.name {
+  font: 400 13px / 1.2 var(--font-text);
+  text-transform: none;
+  white-space: normal;
+}
+
+/* --- the buttons: 17a's primary (ink, light blue text, pink shadow), 4a's dashed ------- */
+:root[data-ui="punk"] #modify-panel .part-btn {
+  min-height: 52px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 0;
+  font: 900 20px / 1 var(--font-display);
+  font-stretch: 68%;
+  letter-spacing: normal;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #modify-panel .part-btn.primary {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  box-shadow: var(--shadow-accent-2);
+}
+:root[data-ui="punk"] #modify-panel .part-btn.quiet {
+  border: 2px dashed var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 19px;
+}
+:root[data-ui="punk"] #modify-panel #modify-send {
+  width: 100%;
+}
+:root[data-ui="punk"] #modify-panel .modify-actions {
+  display: flex;
+  gap: 10px;
+}
+:root[data-ui="punk"] #modify-panel .modify-actions .primary {
+  flex: 1;
+}
+/* The bearing on 3a's yellow tag beside « Direction ». */
+:root[data-ui="punk"] #modify-panel .modify-bearing {
+  padding: 1px 6px 0;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 12.5px / 17px var(--font-text);
+  white-space: nowrap;
+  transform: rotate(-2deg);
+  clip-path: polygon(6px 0, 100% 0, 100% 100%, 6px 100%, 0 50%);
+}
+:root[data-ui="punk"] #modify-panel .modify-bearing[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #modify-panel .part-abandon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: var(--warn-bg);
+  border: 2px solid var(--line);
+}
+:root[data-ui="punk"] #modify-panel .part-abandon p {
+  margin: 0;
+}
+:root[data-ui="punk"] #modify-panel .part-done {
+  margin: 0;
+  font-size: 15px;
+}
+
+/* --- what a finger touches: 44 px, a wide tablet's too (as area.css) ------------------ */
+@media (pointer: coarse) {
+  :root[data-ui="punk"] #modify-panel .modify-chip {
+    min-height: 44px;
+  }
+  :root[data-ui="punk"] #modify-panel :is(.modify-back, .modify-close) {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* --- a phone: 4a, the sheet over the whole screen ------------------------------------- */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #modify-panel {
+    inset: 0;
+    width: auto;
+    filter: none;
+    transform: none;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-paper {
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 18px 12px;
+    gap: 14px;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-foot {
+    padding: 14px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    clip-path: none;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-chip {
+    min-height: 44px;
+    padding: 0 11px;
+    font-size: 15px;
+  }
+  :root[data-ui="punk"] #modify-panel :is(.modify-back, .modify-close) {
+    width: 44px;
+    height: 44px;
+    font-size: 22px;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-picto {
+    width: 50px;
+    height: 50px;
+    margin: -6px -8px;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-title {
+    font-size: 30px;
+  }
+  /* The direction (4a step 3) and the thanks: a paper at the bottom, waved on top over
+     its light blue (pink) edge, the map above. */
+  :root[data-ui="punk"]
+  #modify-panel:is([data-view="aim"], [data-view="position"], [data-view="done"]) {
+    top: auto;
+    bottom: 0;
+    filter: drop-shadow(var(--shadow-sheet-top));
+  }
+  :root[data-ui="punk"]
+    #modify-panel:is([data-view="aim"], [data-view="position"], [data-view="done"])
+    .modify-paper {
+    padding: 20px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+    clip-path: polygon(
+      0 6px,
+      7% 0,
+      14% 8px,
+      20% 1px,
+      27% 7px,
+      33% 0,
+      40% 9px,
+      46% 1px,
+      53% 6px,
+      59% 0,
+      66% 8px,
+      72% 2px,
+      79% 9px,
+      85% 0,
+      91% 7px,
+      96% 0,
+      100% 10px,
+      100% 100%,
+      0 100%
+    );
+  }
+}
+
+/* --- the camera sheet's « Modifier » (17a's « Compléter »): always there --------------- */
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > #part-modify {
+  position: relative;
+  border: 0;
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+  box-shadow: var(--shadow-accent-2);
+}
+/* A position or direction to check (tiles `pv`): filled pink, as « Déplacer » was there. */
+:root[data-ui="punk"] #sheet .participate > .part-answers:not(.stack) > #part-modify.primary {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+/* Its « ? »: a question of « Compléter » is left (questions.ts), as 17a draws it. */
+:root[data-ui="punk"] #sheet #part-modify.asks::after {
+  content: "?";
+  /* biome-ignore lint/suspicious/noDuplicateProperties: its alternative text, where the
+     browser has the syntax (the « ? » is drawn, not said: the button says « Modifier ») */
+  content: "?" / "";
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  font: 900 13px / 1 var(--font-display);
+  text-shadow: none;
+  transform: rotate(-8deg);
+}
+/* On the pink button: the « ? » in the button's usual colours, not pink on pink. */
+:root[data-ui="punk"] #sheet #part-modify.primary.asks::after {
+  background: var(--accent-2-fill);
+  color: var(--on-accent-2);
+}
+
+/* --- a pending add's answers on its sheet (DECISIONS 2026-10-08) ----------------------- */
+:root[data-ui="punk"] #sheet .add-answers {
+  display: flex;
+  flex-direction: column;
+  margin: 4px 0;
+}
+:root[data-ui="punk"] #sheet .add-answers > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 25px;
+}
+:root[data-ui="punk"] #sheet .add-answers dt {
+  flex: none;
+  font: 400 13px / 1.3 var(--font-text);
+}
+:root[data-ui="punk"] #sheet .add-answers > div::after {
+  content: "";
+  order: 1;
+  flex: 1 1 12px;
+  position: relative;
+  top: 4px;
+  border-bottom: 1.5px dotted var(--line);
+}
+:root[data-ui="punk"] #sheet .add-answers dd {
+  order: 2;
+  margin: 0;
+  font: 800 16px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-align: end;
+  text-shadow: var(--shadow-value);
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #sheet .add-answers dd.none {
+  color: var(--muted);
+  font: 400 13px / 1.3 var(--font-text);
+  text-shadow: none;
+  text-transform: none;
+}
+
+/* --- the editor's own pieces (adding and « Modifier », DECISIONS 2026-10-08) ----------- */
+/* 4a's position ticket: the sticker, where the camera is, « Modifier » with the wavy
+   underline; on white paper (the night's card), tilted, a light blue offset. */
+:root[data-ui="punk"] #modify-panel .modify-row.position {
+  margin-bottom: 2px;
+}
+:root[data-ui="punk"] #modify-panel .modify-position {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 52px;
+  margin: 0;
+  padding: 6px 12px 6px 6px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: inherit;
+  text-align: start;
+  box-shadow: var(--chip-shadow-off);
+  transform: rotate(-0.6deg);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #modify-panel .modify-position-picto {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  margin: -6px -4px;
+}
+:root[data-ui="punk"] #modify-panel .modify-position-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 7px;
+}
+:root[data-ui="punk"] #modify-panel .modify-position-title {
+  font: 800 17px / 1 var(--font-display);
+  font-stretch: 70%;
+  text-transform: uppercase;
+}
+:root[data-ui="punk"] #modify-panel .modify-position-sub {
+  flex-basis: 100%;
+  font: 400 14px / 1.2 var(--font-text);
+}
+:root[data-ui="punk"] #modify-panel .modify-position-sub[hidden] {
+  display: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-position-go {
+  flex: none;
+  font: 400 14px var(--font-text);
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+}
+:root[data-ui="punk"] #modify-panel .modify-row.position .modify-stamp {
+  left: auto;
+  right: 40px;
+  top: -14px;
+}
+
+/* A question's view: « ‹ Retour » over its title. */
+:root[data-ui="punk"] #modify-panel .modify-qhead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+:root[data-ui="punk"] #modify-panel .modify-return {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: 400 15px / 1.3 var(--font-text);
+  text-decoration: underline wavy var(--link-line);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* 3a's shape tiles with 16a's stickers: square-ish, tilted a little each, light blue offset;
+   the chosen one pink, lifted, the ink's offset. */
+:root[data-ui="punk"] #modify-panel .modify-tiles {
+  display: flex;
+  gap: 10px 7px;
+  padding: 4px 0 6px;
+}
+:root[data-ui="punk"] #modify-panel .modify-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 92px;
+  margin: 0;
+  padding: 3px 2px 7px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 400 12px / 1.1 var(--font-text);
+  text-align: center;
+  box-shadow: var(--chip-shadow-off);
+  transform: rotate(1deg);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #modify-panel .modify-tile:nth-child(2) {
+  transform: rotate(1.5deg);
+}
+:root[data-ui="punk"] #modify-panel .modify-tile:nth-child(3) {
+  transform: rotate(-1deg);
+}
+:root[data-ui="punk"] #modify-panel .modify-tile:nth-child(4) {
+  transform: rotate(1deg);
+}
+:root[data-ui="punk"] #modify-panel .modify-tile[aria-pressed="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent);
+  box-shadow: var(--shadow-ticket);
+}
+:root[data-ui="punk"] #modify-panel .modify-tile canvas {
+  display: block;
+  width: 54px;
+  height: 54px;
+}
+/* Lifted once chosen, where motion is welcome. */
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-ui="punk"] #modify-panel .modify-tile {
+    transition: transform 0.25s cubic-bezier(0.3, 1.6, 0.5, 1);
+  }
+  :root[data-ui="punk"] #modify-panel .modify-tile[aria-pressed="true"] {
+    transform: rotate(2deg) translateY(-3px);
+  }
+}
+
+/* « Est-ce l'une de celles-ci ? » */
+:root[data-ui="punk"] #modify-panel .modify-duplicates {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+:root[data-ui="punk"] #modify-panel .modify-duplicate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 4px 10px 4px 4px;
+  border: 2px solid var(--line);
+  border-radius: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  font: 400 14px / 1.3 var(--font-text);
+  text-align: start;
+  box-shadow: var(--chip-shadow-off);
+  cursor: pointer;
+}
+:root[data-ui="punk"] #modify-panel .modify-duplicate canvas {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+:root[data-ui="punk"] #modify-panel .modify-duplicate-text {
+  display: flex;
+  flex-direction: column;
+}
+:root[data-ui="punk"] #modify-panel[data-view="duplicates"] #add-other {
+  width: 100%;
+}
+
+/* The camera as a pin (4a step 1): 16a's sticker whole, tilted, above a stem whose pink
+   tip, ringed in ink, is the position. The element's origin is the tip. */
+:root[data-ui="punk"] #edit-pin {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+:root[data-ui="punk"] #edit-pin .edit-pin-stem {
+  position: absolute;
+  left: -1.5px;
+  bottom: 0;
+  width: 3px;
+  height: 26px;
+  background: var(--line);
+}
+:root[data-ui="punk"] #edit-pin .edit-pin-picto {
+  position: absolute;
+  left: -37px;
+  bottom: 13px;
+  width: 74px;
+  height: 74px;
+  transform: rotate(-4deg);
+}
+:root[data-ui="punk"] #edit-pin .edit-pin-tip {
+  position: absolute;
+  left: -6px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  box-sizing: border-box;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  background: var(--accent-fill);
+}
+/* The sheet on a phone covers the map: no pin above it. */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"]
+    body:is(
+      [data-edit-view="sheet"],
+      [data-edit-view="shape"],
+      [data-edit-view="mount"],
+      [data-edit-view="operator"],
+      [data-edit-view="duplicates"],
+      [data-edit-view="done"]
+    )
+    #edit-pin {
+    display: none;
+  }
+}
+
+/* The target (4a step 3): a pink ring and the ink's cross, 48 px to touch; dimmer until
+   posed. The element's origin is its centre. */
+:root[data-ui="punk"] #edit-target {
+  position: fixed;
+  left: -24px;
+  top: -24px;
+  z-index: 4;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  touch-action: none;
+  cursor: grab;
+}
+:root[data-ui="punk"] #edit-target svg {
+  width: 48px;
+  height: 48px;
+  fill: none;
+  stroke-width: 3;
+}
+:root[data-ui="punk"] #edit-target circle {
+  stroke: var(--accent-fill);
+}
+:root[data-ui="punk"] #edit-target path {
+  stroke: var(--line);
+}
+:root[data-ui="punk"] #edit-target[data-posed="false"] {
+  opacity: 0.55;
+}
+/* A phone (DECISIONS 2026-10-09): the target fixed at the free map's centre, the map
+   sliding under it; a finger on it slides the map. */
+:root[data-ui="punk"] #edit-target[data-centred] {
+  pointer-events: none;
+  cursor: default;
+}
+:root[data-ui="punk"] #edit-target:focus-visible {
+  outline: 3px dashed var(--focus);
+  outline-offset: 2px;
+}
+/* The bearing beside it on the map: 4a's yellow tag, its arrow towards the target. */
+:root[data-ui="punk"] #edit-tag {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  margin: -40px 0 0 28px;
+  padding: 3px 10px 2px 16px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 17px var(--font-text);
+  white-space: nowrap;
+  clip-path: polygon(9px 0, 100% 0, 100% 100%, 9px 100%, 0 50%);
+  pointer-events: none;
+}
+:root[data-ui="punk"] #edit-tag[data-side="left"] {
+  margin: -40px 0 0 -28px;
+  padding: 3px 16px 2px 10px;
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 0 100%);
+}
+:root[data-ui="punk"] #edit-tag[hidden] {
+  display: none;
+}
+/* Why there is no field (the author's point 4 of 2026-10-12): under the target, on the
+   tag's yellow paper, a sentence that wraps. */
+:root[data-ui="punk"] #edit-warn {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 4;
+  box-sizing: border-box;
+  max-width: min(260px, calc(100vw - 16px));
+  padding: 4px 10px 3px;
+  background: var(--warn-fill);
+  color: var(--on-warn);
+  font: 400 13px / 17px var(--font-text);
+  pointer-events: none;
+}
+:root[data-ui="punk"] #edit-warn[hidden] {
+  display: none;
+}
+
+/* The way out of a view on the map: in the paper's head on a wide screen (3a), over the
+   map's top left on a phone (4a). */
+:root[data-ui="punk"] #edit-float {
+  display: none;
+}
+:root[data-ui="punk"] #modify-panel .modify-aim-head .modify-close {
+  margin-left: auto;
+}
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #edit-float {
+    position: fixed;
+    z-index: 5;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    left: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: var(--accent-2-fill);
+    color: var(--on-accent-2);
+    font: 800 22px / 1 var(--font-display);
+    transform: rotate(5deg);
+    cursor: pointer;
+  }
+  :root[data-ui="punk"] #modify-panel .modify-aim-head :is(.modify-back, .modify-close) {
+    display: none;
+  }
+}

@@ -1,0 +1,23 @@
+# Cameras whose direction is not in OSM (no usable camera:direction): how the map says so.
+# Read by lacarte/direction.py (tiles and the live preview).
+version: 3
+
+unknown_direction:
+  id: rule:direction@3:unknown_direction
+  # These kinds without a direction keep every band, computed as for any camera; their
+  # fields and the street portions only they film are drawn light: "direction non relevée".
+  # Not these: PTZ are aimed by an operator and pan; panoramas see (nearly) all around; a
+  # doorbell faces away from its facade by construction. They are drawn like directed ones.
+  kinds: [dome, fixed, unknown, alpr]
+  rationale: >-
+    A direction taken at random, uniform over a 180-degree free arc (a wall camera; a pole
+    gives 360), films a point with probability P_dir = min(F, arc) / arc for a field of
+    view F, at best: on the arc's axis. Combined with the optical samples
+    (optics.samples), the highest probability anywhere, sum of w * min(F, 180) / 180, is
+    0.43 for domes, 0.45 fixed, 0.44 unknown type and 0.21 ALPR (0.22, 0.22, 0.22 and
+    0.11 on a pole): under 0.5, so none of them reaches the probable threshold with its
+    direction counted. Computed on 2026-09-30 from rules/optics.yaml. Tuning the arc was
+    refused (a thin sector on the facade's normal is a direction made up). Version 2 removed
+    their certain and probable bands; version 3 keeps the optical bands and says in the
+    drawing that the direction is unknown (author's decision after the iPhone test: an
+    absent zone read "not filmed"). Doorbells: 0.88 on a wall, out of the rule.
