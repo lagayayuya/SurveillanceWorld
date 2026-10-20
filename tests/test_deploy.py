@@ -866,7 +866,10 @@ def test_bootstrap_adds_the_deploy_key_and_locks_down_ssh_the_firewall_and_ipv6(
     apt = written(r.stdout, "/etc/apt/apt.conf.d/52unattended-upgrades-local")
     assert "#clear Unattended-Upgrade::Origins-Pattern;" in apt
     assert 'label=Debian"' not in apt and "label=Debian-Security" in apt
-    pg = written(r.stdout, "/etc/postgresql/<version>/main/conf.d/preview.conf")
+    # The cluster's version as the dry run read it (pg_lsclusters: "<version>" on a machine
+    # without a Debian cluster, the runner's own elsewhere).
+    version = re.search(r"^cluster: (\S+) main$", r.stdout, re.M)[1]
+    pg = written(r.stdout, f"/etc/postgresql/{version}/main/conf.d/preview.conf")
     assert "listen_addresses = ''" in pg
 
 
