@@ -873,6 +873,13 @@ def test_bootstrap_adds_the_deploy_key_and_locks_down_ssh_the_firewall_and_ipv6(
     assert "listen_addresses = ''" in pg
 
 
+def test_bootstrap_turns_llmnr_and_mdns_off():
+    r = dry_bootstrap()
+    assert r.returncode == 0, r.stderr
+    resolved = written(r.stdout, "/etc/systemd/resolved.conf.d/10-no-llmnr.conf")
+    assert "\n[Resolve]\nLLMNR=no\nMulticastDNS=no\n" in resolved
+
+
 def test_bootstrap_finds_the_main_address_only_when_there_is_one_candidate():
     """Without --main-ip: the only global IPv4 address other than --bind-ip; none or two:
     refused, never guessed."""

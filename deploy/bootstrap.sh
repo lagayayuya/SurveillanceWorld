@@ -45,7 +45,7 @@
 #      connection already open; nothing else;
 #  11. IPv6 off (sysctl), unless an ssh session runs over IPv6 (it would be cut: reconnect
 #      over IPv4 and run again); an address may be bound before it is configured (sysctl:
-#      sshd at boot);
+#      sshd at boot); LLMNR and mDNS off (systemd-resolved);
 #  12. security updates installed every day (unattended-upgrades, Debian-Security only);
 #  13. ssh: keys only, no root, IPv4 only, on the main address only (a drop-in in
 #      sshd_config.d: the host key is the same on both addresses, so the site's address
@@ -561,6 +561,24 @@ elif [ "$(cat /proc/sys/net/ipv6/conf/all/disable_ipv6 2>/dev/null || echo 1)" !
       "reconnect over IPv4 and run again (or reboot)"
   else
     run /usr/lib/systemd/systemd-sysctl "$SYSCTL"
+  fi
+fi
+# LLMNR and mDNS off: systemd-resolved listened on [::]:5355 for nothing (the firewall
+# dropped it). resolved.conf(5): LLMNR= and MulticastDNS= in [Resolve], a drop-in in
+# resolved.conf.d/ wins over the main file. Written even where systemd-resolved is not
+# installed (harmless), applied where it runs.
+[ -d /etc/systemd/resolved.conf.d ] || run install -d -m 755 /etc/systemd/resolved.conf.d
+put /etc/systemd/resolved.conf.d/10-no-llmnr.conf 644 root:root <<'RESOLVED'
+# Written by bootstrap.sh: no LLMNR nor mDNS (nothing here answers a local name).
+[Resolve]
+LLMNR=no
+MulticastDNS=no
+RESOLVED
+if [[ "$changed" == *10-no-llmnr.conf* ]]; then
+  if [ "$CONTAINER" = 1 ]; then
+    echo "LLMNR: written, not applied here (container)"
+  elif active systemd-resolved; then
+    run systemctl restart systemd-resolved
   fi
 fi
 
