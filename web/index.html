@@ -13,7 +13,9 @@
     <link rel="icon" href="/favicon-16.png" type="image/png" sizes="16x16" media="(prefers-color-scheme: light)" />
     <link rel="icon" href="/favicon-16-dark.png" type="image/png" sizes="16x16" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- Fetched without credentials unless use-credentials, even on the same origin: behind
+         the preview's password it was answered 401 (WebKit on Linux asks for it). -->
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
     <!-- Share metadata, from the catalogue at build time (vite.config.ts); the absolute
          addresses from the deploy's host (VITE_SITE_URL), never written here. The preview
          image is the site's own file (/og.jpg, A2 of 2026-10-15): nothing from a third party. -->
