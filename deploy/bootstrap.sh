@@ -115,7 +115,8 @@ if command -v systemd-detect-virt >/dev/null && systemd-detect-virt --quiet --co
   echo "container ($(systemd-detect-virt --container)): the firewall and the sysctl will be written, not applied"
 fi
 
-# The main address (ssh's) and the site's (Caddy's): this machine's, two different ones.
+# The main address (ssh's) and the site's (Caddy's): this machine's, two different ones or,
+# on a server with one address, the same one given twice (--main-ip = --bind-ip).
 # Read-only, so a dry run checks them too (on a machine without iproute2, it cannot).
 global_ipv4() { ip -4 -o addr show scope global | awk '{ split($4, a, "/"); print a[1] }'; }
 if command -v ip >/dev/null; then
@@ -124,7 +125,8 @@ if command -v ip >/dev/null; then
     others="$(printf '%s\n' "$mine" | grep -vxF -e "$BIND_IP" -e "" || true)"
     if [ "$(printf '%s' "$others" | grep -c .)" != 1 ]; then
       echo "--main-ip not given and not detected: this machine's global IPv4 addresses other" \
-        "than --bind-ip are [$(echo $others)]; pass --main-ip (the one you sign in to)" >&2
+        "than --bind-ip are [$(echo $others)]; pass --main-ip (the one you sign in to, the" \
+        "same as --bind-ip on a server with one address)" >&2
       exit 2
     fi
     MAIN_IP="$others"
@@ -141,8 +143,9 @@ else
   [ -n "$MAIN_IP" ] || { echo "--main-ip: no ip command to detect it here; pass it" >&2; exit 2; }
   echo "addresses: not checked (no ip command here)"
 fi
-[ "$MAIN_IP" != "$BIND_IP" ] ||
-  { echo "--main-ip and --bind-ip are the same address: ssh would show itself on the site's" >&2; exit 2; }
+if [ "$MAIN_IP" = "$BIND_IP" ]; then
+  echo "one address: ssh and the site both on $MAIN_IP (ssh by key only, no root)"
+fi
 # Never cut the way in: ssh and the firewall keep port 22 on the main address alone, so a
 # session that came to another one could not come back. (Open sessions are not cut by the
 # reload or the firewall; the next sign-in would be.)
@@ -662,8 +665,13 @@ SSHD
   fi
 fi
 if [ "$DRY" = 0 ]; then
-  echo "Before closing this session, from a new window: ssh -4 $DEPLOY_USER@$MAIN_IP true &&" \
-    "ssh -4 ${SUDO_USER:-debian}@$MAIN_IP true; and nc -z -w3 $BIND_IP 22 must fail."
+  closing="Before closing this session, from a new window: ssh -4 $DEPLOY_USER@$MAIN_IP true &&"
+  closing="$closing ssh -4 ${SUDO_USER:-debian}@$MAIN_IP true"
+  if [ "$MAIN_IP" = "$BIND_IP" ]; then
+    echo "$closing; and ssh -4 -o PubkeyAuthentication=no ${SUDO_USER:-debian}@$MAIN_IP must be refused."
+  else
+    echo "$closing; and nc -z -w3 $BIND_IP 22 must fail."
+  fi
 fi
 
 echo "done${changed:+; changed:$changed}"

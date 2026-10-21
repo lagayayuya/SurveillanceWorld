@@ -904,13 +904,34 @@ def test_bootstrap_finds_the_main_address_only_when_there_is_one_candidate():
     (("--main-ip", "198.51.100.4"), f"{MAIN_IP} {BIND_IP}",
      "198.51.100.4 is not an address of this machine"),
     (("--main-ip", MAIN_IP), MAIN_IP, f"{BIND_IP} is not an address of this machine"),
-    (("--main-ip", BIND_IP), BIND_IP, "--main-ip and --bind-ip are the same address"),
 ])  # fmt: skip
 def test_bootstrap_refuses_addresses_this_machine_does_not_hold(extra, ips, message):
     """sshd -t does not try to bind: an address the machine does not hold would stop ssh at
     the reload (« Cannot bind any address »); the site's, Caddy."""
     r = dry_bootstrap(*extra, ips=ips)
     assert r.returncode == 2 and message in r.stderr, r.stderr
+
+
+def test_bootstrap_takes_one_address_for_ssh_and_the_site():
+    """A server with one IPv4 (the VPS 3): --main-ip = --bind-ip, ssh (by key only, no
+    root) and the site on it, the firewall opening 22, 80, 443 and udp 443 there."""
+    r = dry_bootstrap("--main-ip", MAIN_IP, "--bind-ip", MAIN_IP, ips=MAIN_IP)
+    assert r.returncode == 0, r.stderr
+    assert f"one address: ssh and the site both on {MAIN_IP}" in r.stdout
+    sshd = written(r.stdout, "/etc/ssh/sshd_config.d/10-keys-only.conf")
+    for line in ("PasswordAuthentication no", "KbdInteractiveAuthentication no",
+                 "PermitRootLogin no", f"ListenAddress {MAIN_IP}"):  # fmt: skip
+        assert f"\n{line}\n" in sshd, line
+    assert written(r.stdout, "/etc/caddy/Caddyfile").startswith(f"{{\n\tdefault_bind {MAIN_IP}\n")
+    nft = written(r.stdout, "/etc/nftables.conf")
+    for rule in (f"ip daddr {MAIN_IP} tcp dport 22 accept",
+                 f"ip daddr {MAIN_IP} tcp dport {{ 80, 443 }} accept",
+                 f"ip daddr {MAIN_IP} udp dport 443 accept"):  # fmt: skip
+        assert f"\t\t{rule}\n" in nft, rule
+    assert BIND_IP not in nft
+    # Without --main-ip, one address is not guessed to be both: the hint says how.
+    r = dry_bootstrap("--bind-ip", MAIN_IP, ips=MAIN_IP)
+    assert r.returncode == 2 and "the same as --bind-ip on a server with one address" in r.stderr
 
 
 def test_bootstrap_refuses_while_an_ssh_session_came_to_another_address():
