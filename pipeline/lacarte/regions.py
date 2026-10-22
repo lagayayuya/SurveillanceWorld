@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import dataclasses
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 import yaml
@@ -29,22 +31,47 @@ class Region:
     buffer_m: float = 0.0
     # IGN ADMIN EXPRESS COG CARTO: {source: folder of the layers, departements: [codes]}
     admin: dict = field(default_factory=dict)
+    # A region built in parts (France): their names, each a region whose `aggregate` is this
+    # one; built one at a time, then merged (merge.py). `covers`: the regions it replaces,
+    # whose database it may follow (contrib check-fresh).
+    parts: list[str] = field(default_factory=list)
+    covers: list[str] = field(default_factory=list)
+    # A part's aggregate: the part reads its contributions, hidden cameras and data date,
+    # and is cut from its .pbf along its own units (admin) widened by buffer_m.
+    aggregate: str | None = None
 
     @property
     def build_dir(self) -> Path:
         return BUILD_ROOT / self.name
 
     @property
+    def contrib_name(self) -> str:
+        """The name of the contributions' and hidden cameras' files: a part reads its
+        aggregate's (the database exports one file for the region it serves)."""
+        return self.aggregate or self.name
+
+    @property
     def contrib_file(self) -> Path:
         """The region's exported contributions, read by the `apply` stage (may not exist)."""
-        return CONTRIB_ROOT / f"{self.name}.jsonl"
+        return CONTRIB_ROOT / f"{self.contrib_name}.jsonl"
 
     @property
     def hidden_file(self) -> Path:
         """The cameras the build leaves out, one id per line (`lacarte contrib export`, from
         the participation database's hidden_cameras; may not exist), beside the
         contributions."""
-        return self.contrib_file.with_name(f"{self.name}-hidden.txt")
+        return self.contrib_file.with_name(f"{self.contrib_name}-hidden.txt")
+
+    @property
+    def data_date_file(self) -> Path:
+        """A part's data date (merge.py writes it: the latest edit of the whole aggregate),
+        so that every part dates freshness from the same day as one build would."""
+        return self.build_dir / "data_date.txt"
+
+    def data_date(self) -> date | None:
+        """The date written by merge.py for a part, None otherwise (the cameras' own)."""
+        path = self.data_date_file
+        return date.fromisoformat(path.read_text().strip()) if path.exists() else None
 
     @property
     def source_pbf(self) -> Path:
@@ -73,3 +100,16 @@ def load(name: str, path: Path = ROOT / "regions.yaml") -> Region:
     if "pbf" in c:
         c["pbf"] = ROOT / c["pbf"]
     return Region(name=name, **c)
+
+
+def parts(region: Region, path: Path = ROOT / "regions.yaml") -> list[Region]:
+    """An aggregate's parts, as `region` itself is built: a test's region pinned to its own
+    folders gives parts pinned to the same ones (dataclasses.replace keeps them)."""
+    out = []
+    for name in region.parts:
+        part = load(name, path)
+        if part.aggregate != region.name:
+            raise ValueError(f"part {name} names aggregate {part.aggregate}, not {region.name}")
+        fields = {f.name: getattr(part, f.name) for f in dataclasses.fields(Region)}
+        out.append(dataclasses.replace(region, **fields))
+    return out

@@ -87,44 +87,120 @@ SHOWN = optics.shown_estimates()
 
 
 def run(region: regions.Region) -> dict[str, Path]:
+    if region.parts:
+        from lacarte import merge  # a region built in parts: its parts' features, merged
+
+        return merge.merged_tiles(region)
     b = region.build_dir
-    src = b / "tiles_src"
-    out = b / "tiles"
+    src, out = sources(b)
+    areas = gpd.read_parquet(b / "areas.parquet")
+    cams = gpd.read_parquet(b / apply.CAMERAS)
+    views = pd.read_parquet(b / "views.parquet", columns=VIEW_FILTER_COLUMNS)
+    filters, lists = camera_filters(cams, views, region.data_date())
+    compact = compact_ids(cams.camera_id)
+    write_features(b, src, region.crs, areas, filters, compact, masks_of(cams, filters))
+    return finish(region, src, out, areas, cams, filters, lists, compact)
+
+
+# The views' columns the filters read (camerafilters.camera_filters, position_check).
+VIEW_FILTER_COLUMNS = ["camera_id", "snapped", "inside_building", "area_m2"]
+LAYERS = ("edges", "portions", "bands", "cameras")
+
+
+def sources(b: Path) -> tuple[Path, Path]:
+    """The folders of the tiles' sources and of the tiles, the layers' sources emptied
+    (write_features appends to them)."""
+    src, out = b / "tiles_src", b / "tiles"
     src.mkdir(exist_ok=True)
     out.mkdir(exist_ok=True)
+    for layer in LAYERS:
+        (src / f"{layer}.geojsonl").unlink(missing_ok=True)
+    return src, out
 
-    areas = gpd.read_parquet(b / "areas.parquet")
-    edges = gpd.read_parquet(b / "edges.parquet")
-    views = gpd.read_parquet(b / "views.parquet").to_crs("EPSG:4326")
-    bands = gpd.read_parquet(b / "bands.parquet")
-    cams = gpd.read_parquet(b / apply.CAMERAS)
-    extents = field_extents(bands, cams)
-    bands = bands.to_crs("EPSG:4326")
-    cams = cams.to_crs("EPSG:4326")
-    street = pd.read_parquet(b / "camera_street.parquet").set_index("camera_id")
-    filters, lists = camera_filters(cams, views)
 
-    compact = compact_ids(cams.camera_id)
-    masks = {
+def masks_of(cams: pd.DataFrame, filters: dict) -> dict[str, int]:
+    """camera id -> the SEGMENT_BITS it sets (camerafilters.camera_mask)."""
+    return {
         c.camera_id: camera_mask(c.operator_class, c.kind, filters[c.camera_id]["fl"])
         for c in cams.itertuples(index=False)
     }
+
+
+def write_features(
+    b: Path,
+    src: Path,
+    crs: str,
+    areas: gpd.GeoDataFrame,
+    filters: dict,
+    compact: dict[str, int],
+    masks: dict[str, int],
+    own_cams=None,
+    own_edges=None,
+    fid_offset: int = 0,
+) -> int:
+    """The features of the streets and detail layers of the build in `b`, appended to the
+    sources in `src`: every one, or (a part of a merged region) those of the cameras and
+    segments it owns (`own_cams`, `own_edges`: masks over cameras_applied's and edges'
+    rows), the portions' feature ids from `fid_offset`. Returns the portions written."""
+    edges = gpd.read_parquet(b / "edges.parquet")
+    cams = gpd.read_parquet(b / apply.CAMERAS)
     portions = gpd.read_parquet(b / "street_portions.parquet")
+    own_edges = np.ones(len(edges), dtype=bool) if own_edges is None else own_edges
+    if own_cams is not None:
+        cams = cams[own_cams].reset_index(drop=True)
+    kept = set(cams.camera_id)
+    bands = gpd.read_parquet(b / "bands.parquet")
+    bands = bands[bands.camera_id.isin(kept)].reset_index(drop=True)
+    views = gpd.read_parquet(b / "views.parquet")
+    views = views[views.camera_id.isin(kept)].to_crs("EPSG:4326")
+    extents = field_extents(bands, cams)
+    bands, cams = bands.to_crs("EPSG:4326"), cams.to_crs("EPSG:4326")
+    street = pd.read_parquet(b / "camera_street.parquet").set_index("camera_id")
+
     classes = street_classes(edges)
     filmed = np.zeros(len(edges), dtype=bool)
     filmed[portions.e[portions.band.isin(SHOWN)].to_numpy()] = True
-    _write(src / "edges.geojsonl", _edge_features(edges, classes, filmed))
+    drawn = own_edges & (filmed | unfilmed_drawn(edges, areas, crs))
+    _write(src / "edges.geojsonl", _edge_features(edges, classes, filmed, drawn), append=True)
+    portions = portions[own_edges[portions.e.to_numpy()]]
     axis = edges.axis.to_numpy()
     fb = portion_filter_bits(portions, masks)
     features = itertools.chain(
         _merged_features(portions, fb, axis),
-        _portion_features(portions.to_crs("EPSG:4326"), compact, axis, classes),
+        _portion_features(portions.to_crs("EPSG:4326"), compact, axis, classes, fid_offset),
     )
-    _write(src / "portions.geojsonl", features)
-    _write(src / "bands.geojsonl", _band_features(bands, cams, filters))
-    _write(
-        src / "cameras.geojsonl", _camera_features(cams, views, street, filters, compact, extents)
-    )
+    _write(src / "portions.geojsonl", features, append=True)
+    _write(src / "bands.geojsonl", _band_features(bands, cams, filters), append=True)
+    features = _camera_features(cams, views, street, filters, compact, extents)
+    _write(src / "cameras.geojsonl", features, append=True)
+    return len(portions)
+
+
+def unfilmed_drawn(edges: gpd.GeoDataFrame, areas: gpd.GeoDataFrame, crs: str) -> np.ndarray:
+    """Per segment: drawn even unfilmed, its midpoint in a unit (commune or municipal
+    arrondissement) where a camera stands (rules/streets.yaml unfilmed_only_where_cameras);
+    a segment outside every unit is not."""
+    units = areas[(areas.level == "commune") & (areas.camera_count > 0)].to_crs(crs)
+    mid = shapely.line_interpolate_point(edges.geometry.values, 0.5, normalized=True)
+    out = np.zeros(len(edges), dtype=bool)
+    if len(units) and len(edges):
+        hit, _ = shapely.STRtree(units.geometry.values).query(mid, predicate="within")
+        out[hit] = True
+    return out
+
+
+def finish(
+    region: regions.Region,
+    src: Path,
+    out: Path,
+    areas: gpd.GeoDataFrame,
+    cams: gpd.GeoDataFrame,
+    filters: dict,
+    lists: dict,
+    compact: dict[str, int],
+) -> dict[str, Path]:
+    """meta.json, cameras.json, areas.json and the three archives, from the sources written
+    by write_features and the areas."""
     build = {"build_id": buildinfo.build_id(region), "participation": participation_rules()}
     (out / "meta.json").write_text(json.dumps({**build, **meta(areas), **lists}, indent=2))
     (out / "cameras.json").write_text(
@@ -389,14 +465,16 @@ def width_class(c: str) -> dict:
     return {} if c == exposure._rules()["tile_class"]["default"] else {"c": c}
 
 
-def _edge_features(edges: gpd.GeoDataFrame, classes: np.ndarray, filmed: np.ndarray):
-    """Every segment, grey, under the filmed portions: axes from z14, sidewalks, crossings
-    and paths beside a road from z16; the types of rules/streets.yaml unfilmed_not_drawn only
-    where filmed (the basemap draws the rest). `c`: the width class. Colour, cameras and
-    filter marks are the portions'."""
+def _edge_features(
+    edges: gpd.GeoDataFrame, classes: np.ndarray, filmed: np.ndarray, drawn: np.ndarray
+):
+    """The segments `drawn` says, grey, under the filmed portions: axes from z14, sidewalks,
+    crossings and paths beside a road from z16; the types of rules/streets.yaml
+    unfilmed_not_drawn only where filmed (the basemap draws the rest). `c`: the width class.
+    Colour, cameras and filter marks are the portions'."""
     hidden = edges.highway.isin(exposure._rules()["unfilmed_not_drawn"]["highways"]).to_numpy()
     for i, e in enumerate(edges.to_crs("EPSG:4326").itertuples(index=False)):
-        if hidden[i] and not filmed[i]:
+        if not drawn[i] or (hidden[i] and not filmed[i]):
             continue
         minzoom = UNFILMED_MIN if e.axis else NON_AXIS_MIN
         yield _feature(e.geometry, width_class(classes[i]), {"minzoom": minzoom})
@@ -420,7 +498,11 @@ def camera_table(cams: gpd.GeoDataFrame, filters: dict, compact: dict[str, int])
 
 
 def _portion_features(
-    portions: gpd.GeoDataFrame, compact: dict[str, int], axis: np.ndarray, classes: np.ndarray
+    portions: gpd.GeoDataFrame,
+    compact: dict[str, int],
+    axis: np.ndarray,
+    classes: np.ndarray,
+    fid_offset: int = 0,
 ):
     """Filmed parts of the segments, per shown estimate (`b`), with their highest level
     (`lv`) and cameras (`cs`: focus mode and the filters): from PORTIONS_MIN; those of
@@ -435,7 +517,7 @@ def _portion_features(
         if len(r.cameras):
             props["cs"] = camera_bands_key(r.cameras, compact)
         minzoom = PORTIONS_MIN if axis[r.e] else NON_AXIS_MIN
-        yield _feature(r.geometry, props, {"minzoom": minzoom}, fid=i)
+        yield _feature(r.geometry, props, {"minzoom": minzoom}, fid=fid_offset + i)
 
 
 def compact_ids(camera_ids) -> dict[str, int]:
@@ -604,8 +686,8 @@ def _feature(geom, props: dict, tippecanoe: dict | None = None, fid: int | None 
     return json.dumps(f, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
-def _write(path: Path, features) -> None:
-    with path.open("w") as fh:
+def _write(path: Path, features, append: bool = False) -> None:
+    with path.open("a" if append else "w") as fh:
         for line in features:
             fh.write(line + "\n")
 

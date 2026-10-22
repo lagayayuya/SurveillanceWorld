@@ -22,6 +22,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 import shapely
 
 from lacarte import admin, apply, buildinfo, buildings, participation, regions, views
@@ -41,55 +42,68 @@ def migrate(dsn: str | None = None) -> list[str]:
 
 
 def export(region: regions.Region, out: Path, workers: int | None = None) -> dict:
-    """Write meta.tsv, cameras.tsv.gz and buildings.tsv.gz (COPY text, EWKB hex)."""
+    """Write meta.tsv, cameras.tsv.gz and buildings.tsv.gz (COPY text, EWKB hex). A region
+    in parts (merge.py): each part's buildings and cameras it owns, one part at a time."""
     out.mkdir(parents=True, exist_ok=True)
-    b = region.build_dir
+    # The participation tables, the API's queries and the browser's metric plane are in
+    # Lambert-93 (EPSG:2154): metropolitan France, Corsica included. Overseas needs its own
+    # projection there first (a later region).
     if region.crs != f"EPSG:{SRID}":
         raise SystemExit(f"the participation tables are in EPSG:{SRID}, not {region.crs}")
-    cams = gpd.read_parquet(b / apply.CAMERAS)
-    cams = cams[cams.is_camera].reset_index(drop=True)
-    raw = gpd.read_parquet(b / "buildings.parquet").geometry.values
-    move_max = participation.rules()["move"]["max_m"]
+    if region.parts:
+        from lacarte import merge
 
-    # Every building cluster of the region (phase "Ajouter": a camera may be added anywhere;
-    # before it, only those around cameras: a quarter of a suburban town's streets had them).
-    # Clusters are whole connected components, so each is prepared exactly as the views
-    # stage does.
-    tree = shapely.STRtree(raw)
-    groups = buildings.clusters(raw, tree, np.arange(len(raw)))
-    with ProcessPoolExecutor(max_workers=workers or os.cpu_count()) as pool:
-        chunks = [shapely.to_wkb(raw[g]) for g in groups]
-        prepared = [p for group in pool.map(views._prepare, chunks, chunksize=256) for p in group]
-    polys = shapely.set_srid(shapely.from_wkb(prepared), SRID) if prepared else []
+        shapes = gpd.read_parquet(region.build_dir / merge.OWNERS)
+        rank = pd.read_parquet(region.build_dir / merge.CAMERA_OWNERS).set_index("camera_id")
+        sources = [(p, i) for i, p in enumerate(regions.parts(region))]
+    else:
+        shapes, rank, sources = None, None, [(region, None)]
     # The digest of the text, not of the gzip file (its header holds a time): a deploy loads
     # the buildings again only when it changed.
     digest = hashlib.sha256()
-    with gzip.open(out / "buildings.tsv.gz", "wt", compresslevel=6) as f:
-        for i, wkb in enumerate(shapely.to_wkb(polys, hex=True, include_srid=True)):
-            line = f"{i}\t{wkb}\n"
-            digest.update(line.encode())
-            f.write(line)
-    buildings_sha = digest.hexdigest()
-
-    places = admin.places(cams.geometry.values, region)
-    ways = gpd.read_parquet(b / "ways.parquet", columns=["highway", "name", "geometry"])
-    names = streets(cams.geometry.values, ways, participation.rules()["review"]["street_within_m"])
-    with gzip.open(out / "cameras.tsv.gz", "wt", compresslevel=6, newline="") as f:
+    n_buildings = n_cameras = 0
+    boxes = []
+    with (
+        gzip.open(out / "buildings.tsv.gz", "wt", compresslevel=6) as bf,
+        gzip.open(out / "cameras.tsv.gz", "wt", compresslevel=6, newline="") as cf,
+    ):
         # No quote character: JSON tags carry double quotes; COPY's own escapes (_copy).
         w = csv.writer(
-            f, delimiter="\t", lineterminator="\n", quoting=csv.QUOTE_NONE, quotechar=None
+            cf, delimiter="\t", lineterminator="\n", quoting=csv.QUOTE_NONE, quotechar=None
         )
-        pts = shapely.to_wkb(
-            shapely.set_srid(cams.geometry.values, SRID), hex=True, include_srid=True
-        )
-        for c, pt, (town, commune), street in zip(cams.itertuples(index=False), pts, places,
-                                                  names, strict=True):  # fmt: skip
-            w.writerow(_camera_row(c, pt, town, commune, street))
+        for part, i in sources:
+            b = part.build_dir
+            raw = gpd.read_parquet(b / "buildings.parquet").geometry.values
+            polys = _prepared_buildings(raw, workers)
+            if i is not None and len(polys):
+                from lacarte import merge
+
+                polys = polys[merge.owner(shapely.point_on_surface(polys), shapes) == i]
+            polys = shapely.set_srid(polys, SRID) if len(polys) else polys
+            for wkb in shapely.to_wkb(polys, hex=True, include_srid=True):
+                line = f"{n_buildings}\t{wkb}\n"
+                digest.update(line.encode())
+                bf.write(line)
+                n_buildings += 1
+            cams = gpd.read_parquet(b / apply.CAMERAS)
+            keep = cams.is_camera
+            if i is not None:
+                keep &= cams.camera_id.map(rank["rank"]).eq(i)
+            cams = cams[keep].reset_index(drop=True)
+            for row in _camera_rows(cams, part):
+                w.writerow(row)
+            n_cameras += len(cams)
+            if len(cams):
+                boxes.append(shapely.box(*cams.total_bounds))
+            if len(raw):
+                boxes.append(shapely.box(*shapely.total_bounds(raw)))
+    buildings_sha = digest.hexdigest()
+    move_max = participation.rules()["move"]["max_m"]
 
     # Region bounds for input validation: the box of the cameras and of the buildings (a
     # camera may be added wherever there are buildings), widened by the largest move.
-    both = shapely.box(*cams.total_bounds).union(shapely.box(*shapely.total_bounds(raw)))
-    lo = gpd.GeoSeries([both], crs=cams.crs).to_crs("EPSG:4326").total_bounds
+    both = shapely.box(*shapely.total_bounds(shapely.union_all(boxes)))
+    lo = gpd.GeoSeries([both], crs=region.crs).to_crs("EPSG:4326").total_bounds
     pad = move_max / 111_000 * 2  # generous degrees, both axes
     bounds = shapely.box(lo[0] - pad, lo[1] - pad, lo[2] + pad, lo[3] + pad)
     bid = buildinfo.build_id(region)
@@ -98,10 +112,37 @@ def export(region: regions.Region, out: Path, workers: int | None = None) -> dic
     (out / "meta.tsv").write_text(
         f"true\t{bid}\t{region.name}\t{box_hex}\t{add_camera}\t{buildings_sha}\n"
     )
-    info = {"build_id": bid, "cameras": len(cams), "buildings": len(polys),
+    info = {"build_id": bid, "cameras": n_cameras, "buildings": n_buildings,
             "buildings_sha256": buildings_sha}  # fmt: skip
     (out / "export.json").write_text(json.dumps(info, indent=2))
     return info
+
+
+def _prepared_buildings(raw, workers: int | None = None) -> np.ndarray:
+    """Every building cluster (phase "Ajouter": a camera may be added anywhere; before it,
+    only those around cameras: a quarter of a suburban town's streets had them). Clusters
+    are whole connected components, so each is prepared exactly as the views stage does."""
+    if not len(raw):
+        return np.array([], dtype=object)
+    tree = shapely.STRtree(raw)
+    groups = buildings.clusters(raw, tree, np.arange(len(raw)))
+    with ProcessPoolExecutor(max_workers=workers or os.cpu_count()) as pool:
+        chunks = [shapely.to_wkb(raw[g]) for g in groups]
+        prepared = [p for group in pool.map(views._prepare, chunks, chunksize=256) for p in group]
+    return shapely.from_wkb(prepared) if prepared else np.array([], dtype=object)
+
+
+def _camera_rows(cams: gpd.GeoDataFrame, region: regions.Region):
+    """The cameras' COPY rows: with their town operator and unit (the region's units), and
+    the nearest named way (its ways)."""
+    b = region.build_dir
+    places = admin.places(cams.geometry.values, region)
+    ways = gpd.read_parquet(b / "ways.parquet", columns=["highway", "name", "geometry"])
+    names = streets(cams.geometry.values, ways, participation.rules()["review"]["street_within_m"])
+    pts = shapely.to_wkb(shapely.set_srid(cams.geometry.values, SRID), hex=True, include_srid=True)
+    for c, pt, (town, commune), street in zip(cams.itertuples(index=False), pts, places,
+                                              names, strict=True):  # fmt: skip
+        yield _camera_row(c, pt, town, commune, street)
 
 
 def streets(points, ways: gpd.GeoDataFrame, within_m: float) -> list[str | None]:

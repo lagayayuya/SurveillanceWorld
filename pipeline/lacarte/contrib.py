@@ -154,11 +154,17 @@ def write(path: Path, rows: list[dict]) -> None:
     tmp.replace(path)
 
 
-def export(dsn: str | None = None, ssh: str | None = None) -> dict:
-    """Write the region's file; `ssh`: the server's DB_DSN (default dbname=preview)."""
+def export(dsn: str | None = None, ssh: str | None = None, to: str | None = None) -> dict:
+    """Write the region's file; `ssh`: the server's DB_DSN (default dbname=preview). `to`:
+    a region that covers the one the database serves (regions.yaml `covers`: France after
+    the Île-de-France), written under its name."""
     if ssh:
         dsn = dsn or os.environ.get("DB_DSN", "dbname=preview")
     region, rows = parse(_psql_lines(dsn, ssh))
+    if to:
+        if to != region and region not in regions.load(to).covers:
+            raise SystemExit(f"region {to} does not cover {region}, which the database serves")
+        region = to
     hidden = _psql_lines(dsn, ssh, HIDDEN_SQL)
     path = regions.load(region).contrib_file
     write(path, rows)
@@ -178,7 +184,7 @@ def check_fresh(
     if ssh:
         dsn = dsn or os.environ.get("DB_DSN", "dbname=preview")
     name, rows = parse(_psql_lines(dsn, ssh))
-    if name != region.name:
+    if name != region.name and name not in region.covers:
         return [f"the database serves region {name}, not {region.name}"]
     hidden = _psql_lines(dsn, ssh, HIDDEN_SQL)
     stale = []

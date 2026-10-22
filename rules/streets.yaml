@@ -2,7 +2,7 @@
 # Which OSM ways the map measures and colours, which of them count as "voirie" in the
 # filmed-street percentages, and how wide they are when testing whether a camera films the
 # public street. Widths are [TO ADJUST].
-version: 3.1
+version: 3.2
 drawn_highways:
   id: rule:streets@3.1:drawn_highways
   highways:
@@ -176,6 +176,16 @@ unfilmed_not_drawn:
     segment): 119.2 MB keeping every segment, 109.7 without the unfilmed tracks, 103.5
     without the unfilmed paths too, 103.0 without the motorways and their links too.
     bridleway since 2026-10-17, as path (user decision: the same rule by coherence).
+# Segments no shown estimate films are drawn only in the units (communes, municipal
+# arrondissements) where at least one camera stands, by the unit of their midpoint: elsewhere
+# the basemap's roads alone. Their segments stay in the data and the shares.
+unfilmed_only_where_cameras:
+  id: rule:streets@3.2:unfilmed_only_where_cameras
+  rationale: >-
+    France plan (2026-10-16): 1.33 M of the ~1.40 M km the streets tiles would keep in
+    metropolitan France are unfilmed, and 13.6 % of its communes have a camera;
+    streets.pmtiles estimated ~1.36 GB with every unfilmed segment, ~0.6-0.7 GB with those
+    of communes with a camera only (user decision, 2026-10-16, answer 1 (b)).
 # Camera "films the public street" threshold (share of the view area on street space).
 films_street_share: 0.20
 # Doorbells: any street length inside the view is enough.

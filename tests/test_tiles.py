@@ -56,7 +56,9 @@ def test_segments_are_grey_lines_axes_from_z14_the_rest_from_z16():
         {"axis": [True, False], "highway": ["residential", "footway"]},
         geometry=[LineString([(0, 0), (1, 0)]), LineString([(0, 1), (1, 1)])], crs=CRS,
     )  # fmt: skip
-    feats = [json.loads(f) for f in tiles._edge_features(edges, ["minor", "other"], [False] * 2)]
+    every = np.ones(2, dtype=bool)
+    feats = [json.loads(f) for f in tiles._edge_features(edges, ["minor", "other"], [False] * 2,
+                                                         every)]  # fmt: skip
     assert [f["tippecanoe"]["minzoom"] for f in feats] == [14, 16]
     # The default class is no property (rules/streets.yaml tile_class).
     assert [f["properties"] for f in feats] == [{"c": "minor"}, {}]
@@ -72,9 +74,37 @@ def test_unfilmed_tracks_leave_the_tiles():
         {"axis": [True] * 3, "highway": ["track", "track", "footway"]},
         geometry=[LineString([(0, i), (1, i)]) for i in range(3)], crs=CRS,
     )  # fmt: skip
-    feats = tiles._edge_features(edges, np.array(["other"] * 3), np.array([True, False, False]))
+    feats = tiles._edge_features(edges, np.array(["other"] * 3), np.array([True, False, False]),
+                                 np.ones(3, dtype=bool))  # fmt: skip
     got = [json.loads(f)["geometry"]["coordinates"][0][1] for f in feats]
     assert len(got) == 2 and got[0] < got[1]  # the filmed track and the footway
+
+
+def test_unfilmed_segments_only_where_a_camera_stands():
+    # rule:streets@3.2:unfilmed_only_where_cameras: an unfilmed segment is drawn when its
+    # midpoint lies in a unit with a camera; outside every unit, or in a unit without one,
+    # the basemap's road alone (_edge_features draws a filmed one anyway).
+    import json
+
+    from shapely.geometry import box
+
+    areas = gpd.GeoDataFrame(
+        {"level": ["commune", "commune", "departement"], "camera_count": [2, 0, 2]},
+        geometry=[box(0, 0, 10, 10), box(10, 0, 20, 10), box(0, 0, 20, 10)], crs=CRS,
+    ).to_crs("EPSG:4326")  # fmt: skip
+    edges = gpd.GeoDataFrame(
+        {"axis": [True] * 4, "highway": ["residential"] * 4},
+        geometry=[LineString([(1, 5), (9, 5)]), LineString([(11, 5), (19, 5)]),
+                  LineString([(8, 2), (14, 2)]), LineString([(30, 5), (40, 5)])], crs=CRS,
+    )  # fmt: skip
+    drawn = tiles.unfilmed_drawn(edges, areas, CRS)
+    # The third's midpoint (11, 2) is in the commune without a camera.
+    assert drawn.tolist() == [True, False, False, False]
+    filmed = np.array([False, True, False, False])
+    feats = tiles._edge_features(edges, np.array(["other"] * 4), filmed, drawn | filmed)
+    starts = [round(json.loads(f)["geometry"]["coordinates"][0][0], 6) for f in feats]
+    want = [round(g.coords[0][0], 6) for g in edges.to_crs("EPSG:4326").geometry[:2]]
+    assert starts == want  # the first (unfilmed, a camera's commune) and the filmed second
 
 
 def test_width_classes_follow_the_basemaps_roads():

@@ -90,7 +90,18 @@ def digest(build_dir: Path, extra: Path | None = None, hidden_file: Path | None 
 
 
 def build_id(region: regions.Region) -> str:
-    """`<region>-<latest edit, UTC>-<8 hex of the inputs>`, e.g. idf-20260928T201502Z-1a2b3c4d."""
+    """`<region>-<latest edit, UTC>-<8 hex of the inputs>`, e.g. idf-20260928T201502Z-1a2b3c4d.
+    A region built in parts (merge.py): the latest edit among its parts, and the digest of
+    its parts' names and digests (each with the code, the rules, the contributions and the
+    hidden cameras' list)."""
+    if region.parts:
+        parts = regions.parts(region)
+        when = max(latest_edit(p.build_dir) for p in parts).strftime("%Y%m%dT%H%M%SZ")
+        h = hashlib.sha256()
+        for p in parts:
+            h.update(p.name.encode())
+            h.update(digest(p.build_dir, contributions(p), hidden(p)).encode())
+        return f"{region.name}-{when}-{h.hexdigest()[:8]}"
     when = latest_edit(region.build_dir).strftime("%Y%m%dT%H%M%SZ")
     inputs = digest(region.build_dir, contributions(region), hidden(region))
     return f"{region.name}-{when}-{inputs[:8]}"

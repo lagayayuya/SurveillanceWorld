@@ -38,7 +38,7 @@ class PinnedRegion(regions.Region):
 
     @property
     def contrib_file(self) -> Path:
-        return self.contrib_root / f"{self.name}.jsonl"
+        return self.contrib_root / f"{self.contrib_name}.jsonl"
 
 
 def pinned(name: str, root: Path, contrib_root: Path) -> PinnedRegion:

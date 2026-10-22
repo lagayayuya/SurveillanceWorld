@@ -80,11 +80,12 @@ def camera_freshness(cams: pd.DataFrame, today: date) -> np.ndarray:
     return out
 
 
-def prepare_cameras(cams: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+def prepare_cameras(cams: gpd.GeoDataFrame, today: date | None = None) -> gpd.GeoDataFrame:
     """Mapped cameras (not verified gone) with the per-camera parts of the reliability
-    index."""
+    index; freshness from `today` (a part's: its aggregate's data date), else the cameras'
+    own data date."""
     cams = cams[cams.is_camera & ~apply.gone(cams)].copy()
-    cams["fresh"] = camera_freshness(cams, data_date(cams))
+    cams["fresh"] = camera_freshness(cams, today or data_date(cams))
     cams["dir_known"] = cams.direction_certainty.ne("default") | cams.indoor
     cams["recent"] = cams.fresh >= 1.0
     return cams

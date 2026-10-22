@@ -24,3 +24,272 @@ ci:
   crs: EPSG:2154
   admin:
     source: tests/fixtures/ci-admin
+
+# Metropolitan France, Corsica included (2026-10-22): built in parts, one per former region
+# (2015: the largest, Rhône-Alpes, ~0.5 GB of .pbf, fits the build machine's memory alone),
+# then merged (merge.py). Each part is cut from the France extract along its départements
+# widened by 480 m (max_range_m 180 m + 300 m): its cameras see the neighbours' buildings
+# and its streets the neighbours' cameras. Overseas is a later region: other projections.
+france:
+  url: https://download.geofabrik.de/europe/france-latest.osm.pbf
+  pbf: data/france/src/france-latest.osm.pbf
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+  parts:
+    - fr-alsace
+    - fr-aquitaine
+    - fr-auvergne
+    - fr-basse-normandie
+    - fr-bourgogne
+    - fr-bretagne
+    - fr-centre
+    - fr-champagne-ardenne
+    - fr-corse
+    - fr-franche-comte
+    - fr-haute-normandie
+    - fr-idf
+    - fr-languedoc-roussillon
+    - fr-limousin
+    - fr-lorraine
+    - fr-midi-pyrenees
+    - fr-nord-pas-de-calais
+    - fr-pays-de-la-loire
+    - fr-picardie
+    - fr-poitou-charentes
+    - fr-paca
+    - fr-rhone-alpes
+  covers: [idf]
+
+fr-alsace:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["67", "68"]
+
+fr-aquitaine:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["24", "33", "40", "47", "64"]
+
+fr-auvergne:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["03", "15", "43", "63"]
+
+fr-basse-normandie:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["14", "50", "61"]
+
+fr-bourgogne:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["21", "58", "71", "89"]
+
+fr-bretagne:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["22", "29", "35", "56"]
+
+fr-centre:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["18", "28", "36", "37", "41", "45"]
+
+fr-champagne-ardenne:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["08", "10", "51", "52"]
+
+fr-corse:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["2A", "2B"]
+
+fr-franche-comte:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["25", "39", "70", "90"]
+
+fr-haute-normandie:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["27", "76"]
+
+fr-idf:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["75", "77", "78", "91", "92", "93", "94", "95"]
+
+fr-languedoc-roussillon:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["11", "30", "34", "48", "66"]
+
+fr-limousin:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["19", "23", "87"]
+
+fr-lorraine:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["54", "55", "57", "88"]
+
+fr-midi-pyrenees:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["09", "12", "31", "32", "46", "65", "81", "82"]
+
+fr-nord-pas-de-calais:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["59", "62"]
+
+fr-pays-de-la-loire:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["44", "49", "53", "72", "85"]
+
+fr-picardie:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["02", "60", "80"]
+
+fr-poitou-charentes:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["16", "17", "79", "86"]
+
+fr-paca:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["04", "05", "06", "13", "83", "84"]
+
+fr-rhone-alpes:
+  parent: france
+  aggregate: france
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: data/src/admin-express-2026
+    departements: ["01", "07", "26", "38", "42", "69", "73", "74"]
+
+# The La Défense fixture with its communes in two départements (tests/fixtures/ci-admin-split):
+# whole (ci-split), and in two parts merged (ci-parts), which must give the same build.
+ci-split:
+  pbf: tests/fixtures/ci.osm.pbf
+  crs: EPSG:2154
+  admin:
+    source: tests/fixtures/ci-admin-split
+  covers: [ci]
+
+ci-parts:
+  pbf: tests/fixtures/ci.osm.pbf
+  crs: EPSG:2154
+  admin:
+    source: tests/fixtures/ci-admin-split
+  parts: [ci-east, ci-west]
+  covers: [ci-split]
+
+ci-east:
+  parent: ci-parts
+  aggregate: ci-parts
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: tests/fixtures/ci-admin-split
+    departements: ["92"]
+
+ci-west:
+  parent: ci-parts
+  aggregate: ci-parts
+  buffer_m: 480
+  crs: EPSG:2154
+  admin:
+    source: tests/fixtures/ci-admin-split
+    departements: ["9W"]

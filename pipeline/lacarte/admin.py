@@ -53,12 +53,16 @@ def run(region: regions.Region) -> dict[str, Path]:
     if not region.admin:
         return {}
     b = region.build_dir
-    units, deps = load_units(regions.ROOT / region.admin["source"],
-                             region.admin.get("departements"), region.crs)  # fmt: skip
+    units, deps = region_units(region)
+    own = None
+    if region.aggregate:
+        units, deps, own = with_neighbours(region, units, deps)
     edges = gpd.read_parquet(b / "edges.parquet")
     intervals = pd.read_parquet(b / "filmed_intervals.parquet")
-    cams = aggregate.prepare_cameras(gpd.read_parquet(b / apply.CAMERAS))
+    cams = aggregate.prepare_cameras(gpd.read_parquet(b / apply.CAMERAS), region.data_date())
     areas, stats = aggregate_areas(edges, intervals, cams, units, deps)
+    if own is not None:
+        areas = areas[areas.code.isin(own)].reset_index(drop=True)
     path = b / "areas.parquet"
     areas.to_parquet(path)
     qa = regions.ROOT / "qa" / "out" / region.name / "admin.json"
@@ -80,6 +84,29 @@ def _read(stem: Path, columns: list[str], filters=None) -> gpd.GeoDataFrame:
             g = g[g[col].isin(vals)]
         return g[[*columns, GEOM]]
     return gpd.GeoDataFrame({c: [] for c in [*columns, GEOM]}, geometry=GEOM, crs="EPSG:4326")
+
+
+def region_units(region: regions.Region) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
+    """load_units for the region's admin settings (its départements)."""
+    a = region.admin
+    return load_units(regions.ROOT / a["source"], a.get("departements"), region.crs)
+
+
+def with_neighbours(
+    region: regions.Region, units: gpd.GeoDataFrame, deps: gpd.GeoDataFrame
+) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame, set[str]]:
+    """A part's units and départements with those of its aggregate within its buffer, and
+    the codes it reports (its own): a street or a camera of the neighbour's commune, near
+    the limit, goes to that commune as in one build of the whole, not to the part's nearest
+    by the rescue distance."""
+    agg = regions.load(region.aggregate).admin
+    every, every_dep = load_units(regions.ROOT / agg["source"], agg.get("departements"),
+                                  region.crs)  # fmt: skip
+    zone = shapely.union_all(units.geometry.values).buffer(region.buffer_m)
+    shapely.prepare(zone)
+    near = every[shapely.intersects(zone, every.geometry.values)].reset_index(drop=True)
+    near_dep = every_dep[shapely.intersects(zone, every_dep.geometry.values)]
+    return near, near_dep.reset_index(drop=True), set(units.code) | set(deps.code)
 
 
 def load_units(
@@ -232,8 +259,7 @@ def places(points, region: regions.Region) -> list[tuple[str | None, str | None]
     stands in, shown by /revue (phase "Retours terrain"); None outside every unit."""
     if not region.admin:
         return [(None, None)] * len(points)
-    units, _ = load_units(regions.ROOT / region.admin["source"],
-                          region.admin.get("departements"), region.crs)  # fmt: skip
+    units, _ = region_units(region)
     unit, _ = assign_points(points, units, _rules()["rescue_max_m"])
     towns, names = units.town.to_numpy(), units.name.to_numpy()
     return [(f"Ville {_of_town(towns[u])}", str(names[u])) if u >= 0 else (None, None)

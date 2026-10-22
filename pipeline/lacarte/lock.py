@@ -154,11 +154,20 @@ def lift_abandoned() -> str:
 
 @contextlib.contextmanager
 def held(what: str):
-    """The lock around a block of this process (lacarte build)."""
+    """The lock around a block of this process (lacarte build); its token in the
+    environment meanwhile, for the processes it starts (a region built in parts)."""
     token = acquire(what)
+    before = os.environ.get(TOKEN_ENV)
+    if token:
+        os.environ[TOKEN_ENV] = token
     try:
         yield
     finally:
+        if token:
+            if before is None:
+                os.environ.pop(TOKEN_ENV, None)
+            else:
+                os.environ[TOKEN_ENV] = before
         release(token)
 
 

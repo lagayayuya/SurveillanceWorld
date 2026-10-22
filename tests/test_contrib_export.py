@@ -149,3 +149,18 @@ def test_check_fresh_refuses_an_export_older_than_the_database(pg_loaded, pg_dsn
     finally:
         with psycopg.connect(pg_dsn, autocommit=True) as conn:
             conn.execute("DELETE FROM contributions WHERE camera_id = %s", (cam,))
+
+
+def test_a_covering_region_takes_the_export(pg_loaded, pg_dsn, tmp_path, monkeypatch):
+    # France after the Île-de-France: the database serves ci, the next build is ci-split's
+    # (regions.yaml covers), whose files the export writes and the check compares.
+    monkeypatch.setattr(regions, "CONTRIB_ROOT", tmp_path)
+    info = contrib.export(dsn=pg_dsn, to="ci-split")
+    assert info["region"] == "ci-split"
+    assert (tmp_path / "ci-split.jsonl").exists()
+    assert contrib.check_fresh(regions.load("ci-split"), dsn=pg_dsn) == []
+    with pytest.raises(SystemExit, match="does not cover"):
+        contrib.export(dsn=pg_dsn, to="ci-east")
+    assert contrib.check_fresh(regions.load("ci-east"), dsn=pg_dsn) == [
+        "the database serves region ci, not ci-east"
+    ]

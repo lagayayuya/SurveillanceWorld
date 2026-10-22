@@ -76,13 +76,54 @@ def ensure_source(region: regions.Region) -> Path:
     parent = regions.load(region.parent)
     parent_pbf = ensure_source(parent)
     region.build_dir.mkdir(parents=True, exist_ok=True)
+    pbf = region.source_pbf
+    if region.aggregate and pbf.exists() and pbf.stat().st_mtime > parent_pbf.stat().st_mtime:
+        return pbf  # cut with the other parts (cut_parts), after the parent
     poly = region.build_dir / "boundary.geojson"
-    poly.write_text(json.dumps(_communes_polygon(parent_pbf, region)))
+    if region.aggregate:
+        poly.write_text(json.dumps(units_polygon(region)))
+    else:
+        poly.write_text(json.dumps(_communes_polygon(parent_pbf, region)))
     _osmium(
         "extract", "-p", str(poly), "-s", "smart", str(parent_pbf),
         "-o", str(region.source_pbf), "--overwrite",
     )  # fmt: skip
     return region.source_pbf
+
+
+def cut_parts(parts: list[regions.Region], parent_pbf: Path, per_pass: int = 3) -> None:
+    """Cut each part's .pbf from the parent's (a part: units_polygon), `per_pass` parts per
+    reading of the parent (osmium extract --config): its memory is about 2 x (highest node
+    id / 8) bytes per extract with the smart strategy (osmium-extract(1), « Memory usage »),
+    ~4 GB each for France's."""
+    for i in range(0, len(parts), per_pass):
+        batch = parts[i : i + per_pass]
+        extracts = []
+        for part in batch:
+            part.build_dir.mkdir(parents=True, exist_ok=True)
+            poly = part.build_dir / "boundary.geojson"
+            poly.write_text(json.dumps(units_polygon(part)))
+            polygon = {"file_name": str(poly), "file_type": "geojson"}
+            extracts.append({"output": str(part.source_pbf), "polygon": polygon})
+        config = batch[0].build_dir / "cut-config.json"
+        config.write_text(json.dumps({"extracts": extracts}))
+        _osmium("extract", "-c", str(config), "-s", "smart", str(parent_pbf), "--overwrite")
+        config.unlink()
+
+
+def units_polygon(region: regions.Region) -> dict:
+    """GeoJSON (WGS84) of a part's units (its départements or communes, IGN ADMIN EXPRESS),
+    widened by `buffer_m`: what its cameras may see and what may film its streets."""
+    from lacarte import admin
+
+    units, _ = admin.region_units(region)
+    zone = shapely.union_all(units.geometry.values).buffer(region.buffer_m)
+    wgs = gpd.GeoSeries([zone], crs=region.crs).to_crs("EPSG:4326").iloc[0]
+    return {
+        "type": "Feature",
+        "properties": {"name": region.name},
+        "geometry": shapely.geometry.mapping(wgs),
+    }
 
 
 def _communes_polygon(pbf: Path, region: regions.Region) -> dict:

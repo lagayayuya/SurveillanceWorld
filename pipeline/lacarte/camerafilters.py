@@ -4,6 +4,8 @@ attributes, filter bits, cameras.json). The front decodes the same layouts."""
 
 from __future__ import annotations
 
+from datetime import date
+
 import geopandas as gpd
 import pandas as pd
 import yaml
@@ -42,11 +44,15 @@ SEGMENT_BITS = {
 }
 
 
-def camera_filters(cams: gpd.GeoDataFrame, views: gpd.GeoDataFrame) -> tuple[dict, dict]:
+def camera_filters(
+    cams: gpd.GeoDataFrame, views: pd.DataFrame, today: date | None = None
+) -> tuple[dict, dict]:
     """Per camera id: {"fl": flags, "op": operator index}; and the list the index points
     into (operators by frequency, table names first), plus the "identifies beyond"
-    distance, for meta.json."""
-    today = aggregate.data_date(cams)
+    distance, for meta.json. Freshness from `today` (a part's: its aggregate's data date),
+    else the cameras' own data date. `views` needs camera_id, snapped, inside_building and
+    area_m2 only."""
+    today = today or aggregate.data_date(cams)
     snapped = views.set_index("camera_id")
     # "Position ou direction à corriger": drawn on or in a building, or a field too small to
     # be real (rules/reliability.yaml position_check).
@@ -102,9 +108,11 @@ def camera_mask(operator_class: str, kind: str, fl: int) -> int:
     return sum(1 << b for b in set(bits))
 
 
-def camera_masks(cams: gpd.GeoDataFrame, views: gpd.GeoDataFrame) -> dict[str, int]:
+def camera_masks(
+    cams: gpd.GeoDataFrame, views: pd.DataFrame, today: date | None = None
+) -> dict[str, int]:
     """camera id -> camera_mask."""
-    filters, _ = camera_filters(cams, views)
+    filters, _ = camera_filters(cams, views, today)
     return {
         c.camera_id: camera_mask(c.operator_class, c.kind, filters[c.camera_id]["fl"])
         for c in cams.itertuples(index=False)

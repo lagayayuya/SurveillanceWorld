@@ -64,7 +64,9 @@ def run(region: regions.Region) -> dict[str, Path]:
     }
     edges.to_parquet(paths["edges"])
     street.to_parquet(paths["camera_street"])
-    masks = camerafilters.camera_masks(cams, gpd.read_parquet(region.build_dir / "views.parquet"))
+    masks = camerafilters.camera_masks(
+        cams, gpd.read_parquet(region.build_dir / "views.parquet"), region.data_date()
+    )
     street_portions(edges, pairs, masks=masks).to_parquet(paths["portions"])
     public = set(cams.camera_id[cams.operator_class == "public"])
     directed = {

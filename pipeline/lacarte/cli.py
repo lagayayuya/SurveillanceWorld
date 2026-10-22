@@ -1,4 +1,5 @@
-"""One command: `lacarte build --region NAME` runs every stage from the .osm.pbf.
+"""One command: `lacarte build --region NAME` runs every stage from the .osm.pbf (a region
+in parts, France: its parts' stages, then their merge; merge.py).
 `lacarte calibrate` rewrites the optical distributions of rules/optics.yaml from the
 catalogue (a rules change, reviewed and committed like any other).
 `lacarte db migrate|load` manage the participation database (db.py).
@@ -29,6 +30,7 @@ from lacarte import (
     exposure,
     extract,
     lock,
+    merge,
     normalize,
     regions,
     review,
@@ -36,6 +38,8 @@ from lacarte import (
     views,
 )
 
+# A region built in parts (merge.py): its own stages.
+AGGREGATE_STAGES = merge.STAGES
 STAGES = {
     "extract": extract.run,
     "normalize": normalize.run,
@@ -71,8 +75,12 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("osm", help="one pass of the OSM synchronisation: lacarte osm sync --once")
     build = sub.add_parser("build", help="run the pipeline for a region")
     build.add_argument("--region", required=True)
-    build.add_argument("--from", dest="start", choices=list(STAGES), default="extract")
+    starts = list(dict.fromkeys([*STAGES, *AGGREGATE_STAGES]))
+    build.add_argument("--from", dest="start", choices=starts)
     build.add_argument("--only", choices=list(STAGES))
+    build.add_argument(
+        "--resume", action="store_true", help="a region in parts: skip the parts' stages done"
+    )
     sub.add_parser("calibrate", help="optical distributions from catalogue/models.csv")
     audit = sub.add_parser("audit", help="streets tiles and filters against the filmed length")
     audit.add_argument("--region", required=True)
@@ -85,7 +93,11 @@ def main(argv: list[str] | None = None) -> None:
     cp = sub.add_parser("contrib", help="validated contributions for the build")
     cp.add_argument("action", choices=["export", "report", "check-test", "check-fresh"])
     cp.add_argument("--dsn", help="a local database (default: DB_DSN over ssh DEPLOY_TARGET)")
-    cp.add_argument("--region", help="report: the contributed build")
+    cp.add_argument(
+        "--region",
+        help="report: the contributed build; export: a region covering"
+        " the database's (France after the Île-de-France)",
+    )
     cp.add_argument("--before", type=Path, help="report: the build without contributions")
     bm = sub.add_parser("basemap", help="the self-hosted basemap: strip layers from its archive")
     bm.add_argument("action", choices=["strip"])
@@ -132,7 +144,7 @@ def main(argv: list[str] | None = None) -> None:
                                  " export or the build: export again, then build")  # fmt: skip
             print(f"no test account's contribution ({len(contrib.test_authors())} test account(s))")
             return
-        print(json.dumps(contrib.export(args.dsn, ssh)))
+        print(json.dumps(contrib.export(args.dsn, ssh, args.region)))
         return
     if args.cmd == "db":
         from lacarte import db  # geopandas-free commands stay fast
@@ -160,8 +172,21 @@ def main(argv: list[str] | None = None) -> None:
         return
 
     region = regions.load(args.region)
+    if region.parts:
+        start = args.start or "cut"
+        if start not in AGGREGATE_STAGES or args.only:
+            parser.error(f"a region in parts builds from one of {', '.join(AGGREGATE_STAGES)}")
+        try:
+            with lock.held("lacarte " + " ".join(argv)):
+                merge.build(region, start, resume=args.resume)
+        except lock.Busy as e:
+            parser.exit(3, f"lacarte build: {e}\n")
+        return
     names = list(STAGES)
-    todo = [args.only] if args.only else names[names.index(args.start) :]
+    start = args.start or "extract"
+    if start not in names:
+        parser.error(f"--from takes one of {', '.join(names)}")
+    todo = [args.only] if args.only else names[names.index(start) :]
     if "extract" not in todo:
         from lacarte import extract
 
