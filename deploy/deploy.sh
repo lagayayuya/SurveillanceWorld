@@ -114,12 +114,17 @@ web/scripts/fetch-assets.sh "$REGION"
 # The share tags' absolute addresses (og:url, og:image) from the host (vite.config.ts).
 VITE_CNIL_SIGNAL=true VITE_CONTACT_EMAIL="$CONTACT_EMAIL" VITE_SITE_URL="https://$PREVIEW_HOST" \
   npm --prefix web run build
+# Vite copies public/ with the build's time: each copy gets its source's back, or rsync's
+# quick check (size and time) never finds the basemap unchanged and sends it again whole.
+(cd web/public && find -L . -type f) | while IFS= read -r f; do
+  touch -r "web/public/$f" "web/dist/$f"
+done
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RELEASE="$DEPLOY_PATH/releases/$STAMP"
 API_RELEASE="$API/releases/$STAMP"
 # -L: web/public links the tiles and the basemap; send the files, not the links. A file the
-# release in service holds unchanged (same size and time: the basemap, 5 GB for France) is
+# release in service holds unchanged (same size and time: the basemap, 4.5 GB for France) is
 # hard-linked there, not sent again (--link-dest, rsync(1)).
 rsync -azL --delete $DRY --exclude '.DS_Store' --link-dest="$DEPLOY_PATH/current/" \
   web/dist/ "$DEPLOY_TARGET:$RELEASE/"
