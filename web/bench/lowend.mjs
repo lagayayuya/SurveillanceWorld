@@ -4,6 +4,8 @@
 // bytes downloaded.
 //   node bench/lowend.mjs [--region idf] [--label name] [--ui classique|punk]
 //     [--mode clair|sombre] [--profile lowend|phone4g] [--cpu N] [--port 4181]
+//     [--at Z/LAT/LON] [--no-visit]
+// --at: the first display there (default: the city at z11); --no-visit: stop after it.
 // Network and CPU: profiles.mjs; `lowend` (the default) is Chrome DevTools' "Slow 4G" preset
 // (devtools-frontend, NetworkManager.ts: 1.6 Mbit/s x 0.9 down, 750 kbit/s x 0.9 up,
 // 150 ms x 3.75 latency) and CPU x6; `phone4g --cpu 4` the « x4 » phone. The screen stays
@@ -31,6 +33,8 @@ const PORT = Number(arg("--port", "4181"));
 const profile = arg("--profile", "lowend");
 const CPU_RATE = Number(arg("--cpu", String(PHONE_PROFILES[profile].cpu)));
 const NETWORK = conditions(PHONE_PROFILES[profile]);
+const AT = arg("--at", null);
+const VISITS = !args.includes("--no-visit");
 // On the CI extract (La Défense only), the city and the street are La Défense's.
 const CI = region === "ci";
 const CITY = CI ? [2.2377, 48.8977] : [2.3488, 48.8534];
@@ -93,9 +97,11 @@ try {
 
   const t0 = Date.now();
   await page.goto(
-    `http://localhost:${PORT}/${query ? `?${query}` : ""}#${VISIT[0].zoom}/${CITY[1]}/${CITY[0]}`,
+    `http://localhost:${PORT}/${query ? `?${query}` : ""}#${AT ?? `${VISIT[0].zoom}/${CITY[1]}/${CITY[0]}`}`,
   );
-  await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 180000 });
+  await page.waitForFunction(() => window.__map?.loaded(), null, {
+    timeout: 180000,
+  });
   // First useful display: a surveillance layer drawn on screen (communes, départements,
   // hexagons or streets, whichever the build and zoom draw).
   await page.waitForFunction(
@@ -125,40 +131,52 @@ try {
   });
   result.first_idle_ms = Date.now() - t0;
   result.bytes_first_display_kib = Math.round(bytes / 1024);
+  result.at = AT;
 
-  const run = await page.evaluate(async (legs) => {
-    const map = window.__map;
-    const frames = [];
-    const longTasks = [];
-    const obs = new PerformanceObserver((l) => {
-      for (const e of l.getEntries()) longTasks.push(e.duration);
-    });
-    obs.observe({ type: "longtask" });
-    let last = performance.now();
-    let running = true;
-    const tick = (t) => {
-      frames.push(t - last);
-      last = t;
-      if (running) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-    const t = performance.now();
-    for (const leg of legs.slice(1)) {
-      await new Promise((r) => {
-        map.once("moveend", r);
-        map.flyTo({ center: leg.center, zoom: leg.zoom, duration: leg.duration, essential: true });
-      });
-    }
-    // Settle: wait until every tile of the last view is loaded (or give up after 2 min).
-    const t1 = performance.now();
-    while (!(map.loaded() && map.areTilesLoaded()) && performance.now() - t1 < 120000) {
-      await new Promise((r) => setTimeout(r, 200));
-    }
-    running = false;
-    obs.disconnect();
-    return { frames: frames.slice(1), longTasks, visit_ms: performance.now() - t };
-  }, VISIT);
-  result.visit = {
+  const run = !VISITS
+    ? null
+    : await page.evaluate(async (legs) => {
+        const map = window.__map;
+        const frames = [];
+        const longTasks = [];
+        const obs = new PerformanceObserver((l) => {
+          for (const e of l.getEntries()) longTasks.push(e.duration);
+        });
+        obs.observe({ type: "longtask" });
+        let last = performance.now();
+        let running = true;
+        const tick = (t) => {
+          frames.push(t - last);
+          last = t;
+          if (running) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+        const t = performance.now();
+        for (const leg of legs.slice(1)) {
+          await new Promise((r) => {
+            map.once("moveend", r);
+            map.flyTo({
+              center: leg.center,
+              zoom: leg.zoom,
+              duration: leg.duration,
+              essential: true,
+            });
+          });
+        }
+        // Settle: wait until every tile of the last view is loaded (or give up after 2 min).
+        const t1 = performance.now();
+        while (!(map.loaded() && map.areTilesLoaded()) && performance.now() - t1 < 120000) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        running = false;
+        obs.disconnect();
+        return {
+          frames: frames.slice(1),
+          longTasks,
+          visit_ms: performance.now() - t,
+        };
+      }, VISIT);
+  result.visit = run && {
     ...stats(run.frames),
     visit_ms: Math.round(run.visit_ms),
     long_tasks: {
