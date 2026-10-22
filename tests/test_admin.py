@@ -178,6 +178,16 @@ def test_top_operators_keep_five_by_count_then_name():
     assert top == [["A", 3], ["E", 2], ["B", 1], ["C", 1], ["D", 1]]
 
 
+def test_top_operators_of_cameras_without_a_name_is_an_empty_series():
+    # Corse, 2026-10-22: none of its 65 cameras named an operator.
+    cams = pd.DataFrame({"unit": [0, 1], "operator_norm": [None, ""]})
+    top = admin.top_operators(cams, "unit")
+    assert isinstance(top, pd.Series) and top.empty
+    com = pd.DataFrame(index=range(2))
+    com["operators"] = top.reindex(com.index)
+    assert com.operators.isna().all()
+
+
 def test_the_sum_check_catches_a_lost_stretch():
     assessed = pd.DataFrame({"length_m": [50.0]}, index=[0])
     stretches = pd.DataFrame({"e": [0], "lo": [0.0], "hi": [40.0]})

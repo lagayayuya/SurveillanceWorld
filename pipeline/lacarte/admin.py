@@ -336,6 +336,8 @@ def top_operators(cams: pd.DataFrame, key: str) -> pd.Series:
     named = cams[cams.operator_norm.apply(lambda v: isinstance(v, str) and v != "")]
     counts = named.groupby([key, "operator_norm"]).size().reset_index(name="n")
     counts = counts.sort_values([key, "n", "operator_norm"], ascending=[True, False, True])
+    if counts.empty:  # groupby.apply on no rows gives an empty frame, not a series
+        return pd.Series(dtype=object)
     return counts.groupby(key).apply(
         lambda g: json.dumps(
             [[n, int(c)] for n, c in zip(g.operator_norm, g.n, strict=True)][:TOP_OPERATORS],
