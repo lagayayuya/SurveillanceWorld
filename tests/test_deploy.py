@@ -1110,3 +1110,23 @@ def test_the_deploy_keeps_the_journal_12_months(pg_dsn, pg_loaded):
                            "SELECT string_agg(actor, ',' ORDER BY actor) FROM admin_log"],
                           check=True, capture_output=True, text=True).stdout  # fmt: skip
     assert left == "b,c\n"
+
+
+# --- France (2026-10-22): an unchanged basemap is not sent again; back at once --------------
+
+
+def test_the_web_release_links_what_the_release_in_service_holds():
+    """5 GB of basemap for France: a file the release in service holds unchanged is
+    hard-linked on the server, not sent again (rsync --link-dest)."""
+    text = (ROOT / "deploy" / "deploy.sh").read_text()
+    rsync = text[text.index("rsync -azL") : text.index('"$DEPLOY_TARGET:$RELEASE/"')]
+    assert '--link-dest="$DEPLOY_PATH/current/"' in rsync
+
+
+def test_rollback_swaps_the_tables_back_before_the_releases():
+    """deploy/rollback.sh: the tables first (db/rollback.sh refuses when a migration changed
+    them, and nothing else moves), then both releases, the API's health and the site."""
+    text = (ROOT / "deploy" / "rollback.sh").read_text()
+    assert text.index("db/rollback.sh '$DB_DSN'") < text.index("current.new")
+    assert text.index("current.new") < text.index("systemctl restart preview-api")
+    assert "deploy/site.py check" in text and "lacarte.lock acquire" in text

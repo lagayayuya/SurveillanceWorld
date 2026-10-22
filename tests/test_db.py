@@ -342,6 +342,48 @@ def test_a_second_load_swaps_whole_tables(pg_loaded, pg_dsn):
     assert {"buildings_geom", "cameras_geom", "buildings_pkey", "cameras_pkey"} <= indexes
 
 
+def test_the_build_before_stays_and_rollback_swaps_it_back(pg_loaded, pg_dsn, tmp_path):
+    """France after the Île-de-France: the replaced tables stay one build back (load.sh), and
+    db/rollback.sh swaps them back at once, then forward again; a load with unchanged
+    buildings keeps no buildings_prev (the build before had the same)."""
+    import gzip
+    import shutil
+
+    info, out = pg_loaded
+    other = tmp_path / "other"
+    shutil.copytree(out, other)
+    meta = (other / "meta.tsv").read_text().rstrip("\n").split("\t")
+    (other / "meta.tsv").write_text("\t".join([meta[0], "ci-other", *meta[2:5], "0" * 64]) + "\n")
+    with gzip.open(out / "cameras.tsv.gz", "rt") as f:
+        rows = f.readlines()
+    with gzip.open(other / "cameras.tsv.gz", "wt") as f:
+        f.writelines(rows[:-1])
+    state = ("SELECT build_id, (SELECT count(*) FROM cameras), (SELECT count(*) FROM buildings),"
+             " (SELECT count(*) FROM cameras_prev) FROM meta")  # fmt: skip
+    rollback = [str(db.LOAD_SCRIPT.with_name("rollback.sh")), pg_dsn]
+    try:
+        db.load(other, pg_dsn)
+        n, b = str(info["cameras"]), str(info["buildings"])
+        assert sql(pg_dsn, state) == [["ci-other", str(len(rows) - 1), b, n]]
+        assert sql(pg_dsn, "SELECT build_id FROM meta_prev") == [[info["build_id"]]]
+        assert sql(pg_dsn, "SELECT to_regclass('buildings_prev') IS NOT NULL") == [["t"]]
+        subprocess.run(rollback, check=True, capture_output=True)
+        assert sql(pg_dsn, state) == [[info["build_id"], n, b, str(len(rows) - 1)]]
+        indexes = {r[0] for r in sql(pg_dsn, "SELECT indexname FROM pg_indexes")}
+        assert {"cameras_pkey", "cameras_geom", "cameras_prev_pkey", "cameras_prev_geom",
+                "buildings_pkey", "buildings_geom", "buildings_prev_pkey"} <= indexes  # fmt: skip
+        subprocess.run(rollback, check=True, capture_output=True)
+        assert sql(pg_dsn, state)[0][0] == "ci-other"
+    finally:
+        db.load(out, pg_dsn)
+    assert sql(pg_dsn, "SELECT build_id FROM meta") == [[info["build_id"]]]
+    db.load(out, pg_dsn)  # the same buildings: none kept back
+    assert sql(pg_dsn, "SELECT to_regclass('buildings_prev') IS NULL") == [["t"]]
+    sql(pg_dsn, "DROP TABLE cameras_prev")
+    run = subprocess.run(rollback, capture_output=True, text=True)
+    assert run.returncode == 1 and "no cameras_prev" in run.stderr
+
+
 def test_unchanged_buildings_are_kept_and_need_no_file(pg_loaded, pg_dsn, tmp_path):
     """Phase "Ajouter": every building of the region is loaded; a load whose buildings'
     digest is the database's keeps the table (deploy.sh then does not send the file), and

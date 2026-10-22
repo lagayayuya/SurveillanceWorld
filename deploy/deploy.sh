@@ -14,14 +14,15 @@
 #      months folded into monthly totals (db/retention.sql), the API restarted
 #      and asked for its health on 127.0.0.1 (a route that answers without a session);
 #   2. the web release (built with CONTACT_EMAIL, the address « Me contacter » writes
-#      to), swapped in atomically;
+#      to; the files the release in service holds unchanged linked, not sent), swapped in
+#      atomically;
 #   3. the Caddy site file, Caddy reloaded;
 #   4. what answers without the password (preview: nothing but a generic 401, /api
 #      included; public: the site open with its headers, /revue behind its password,
 #      www.<host> redirected for good to the host, both names on SITE_IP alone, no AAAA
 #      record), and the build id of the served tiles against the database's.
 # The one-time root setup is deploy/bootstrap.sh, run by the author. Nothing about the
-# server is stored here.
+# server is stored here. Back to the release before, tables included: deploy/rollback.sh.
 #   deploy/deploy.sh [--dry-run]     (environment: deploy/deploy.env.example)
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -54,7 +55,7 @@ DEPLOY_PATH="${DEPLOY_PATH:-/srv/preview}"
 CADDY_SITE="${CADDY_SITE:-/etc/caddy/sites.d/preview.caddy}"
 API_PORT="${API_PORT:-8791}"
 DB_DSN="${DB_DSN:-dbname=preview}"
-REGION="${REGION:-idf}"
+REGION="${REGION:-france}"
 KEEP="${KEEP:-3}"
 DRY=""
 [ "${1:-}" = "--dry-run" ] && DRY="--dry-run"
@@ -117,8 +118,11 @@ VITE_CNIL_SIGNAL=true VITE_CONTACT_EMAIL="$CONTACT_EMAIL" VITE_SITE_URL="https:/
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RELEASE="$DEPLOY_PATH/releases/$STAMP"
 API_RELEASE="$API/releases/$STAMP"
-# -L: web/public links the tiles and the basemap; send the files, not the links.
-rsync -azL --delete $DRY --exclude '.DS_Store' web/dist/ "$DEPLOY_TARGET:$RELEASE/"
+# -L: web/public links the tiles and the basemap; send the files, not the links. A file the
+# release in service holds unchanged (same size and time: the basemap, 5 GB for France) is
+# hard-linked there, not sent again (--link-dest, rsync(1)).
+rsync -azL --delete $DRY --exclude '.DS_Store' --link-dest="$DEPLOY_PATH/current/" \
+  web/dist/ "$DEPLOY_TARGET:$RELEASE/"
 # The API's code and what it reads: the package, the rules, the migrations and loader.
 rsync -az --delete $DRY --exclude '__pycache__' --exclude '.DS_Store' \
   pipeline rules db pyproject.toml uv.lock .python-version "$DEPLOY_TARGET:$API_RELEASE/"
