@@ -12,6 +12,8 @@ have() { [ "$("${psql[@]}" -At -c "SELECT to_regclass('$1') IS NOT NULL")" = t ]
 for t in cameras_prev meta_prev; do
   have "$t" || { echo "refused: no $t, nothing to go back to" >&2; exit 1; }
 done
+[ "$("${psql[@]}" -At -c "SELECT count(*) FROM meta_prev")" = 1 ] ||
+  { echo "refused: meta_prev holds no build (the first load keeps none)" >&2; exit 1; }
 columns() {
   "${psql[@]}" -At -c "SELECT string_agg(column_name || ' ' || data_type, ', '
     ORDER BY ordinal_position) FROM information_schema.columns WHERE table_name = '$1'"

@@ -56,6 +56,12 @@ def build(region: regions.Region, start: str = "cut", resume: bool = False,
     build); in this process otherwise (the tests' pinned regions). `resume`: skip the
     (part, stage) pairs a previous run finished."""
     region.build_dir.mkdir(parents=True, exist_ok=True)
+    if STAGES.index(start) > STAGES.index("parts"):
+        wanted = "".join(f"{c}\n" for c in sorted(regions.hidden(region)))
+        for part in regions.parts(region):
+            if (part.build_dir / extract.HIDDEN_APPLIED).read_text() != wanted:
+                raise SystemExit(f"the hidden cameras changed since {part.name}'s extract:"
+                                 " build from parts")  # fmt: skip
     for stage in STAGES[STAGES.index(start) :]:
         t0 = time.perf_counter()
         if stage == "cut":
@@ -155,16 +161,21 @@ def owner(points, shapes: gpd.GeoDataFrame) -> np.ndarray:
     if not len(points):
         return out
     geoms = shapes.geometry.values
-    shapely.prepare(geoms)
-    tree = shapely.STRtree(geoms)
-    src, dst = tree.query(points, predicate="within")
-    order = np.lexsort((dst, src))
-    src, dst = src[order], dst[order]
-    first = np.unique(src, return_index=True)[1]
-    out[src[first]] = dst[first]
+    x, y = shapely.get_x(points), shapely.get_y(points)
+    # A prepared shape answers contains_xy with its own index: 0.0004 ms a point against a
+    # part's outline, 75 times less than an STRtree `within` query (measured on fr-idf).
+    for rank, shape in enumerate(geoms):
+        todo = np.flatnonzero(out < 0)
+        if not len(todo):
+            break
+        x0, y0, x1, y1 = shape.bounds
+        near = todo[(x[todo] >= x0) & (x[todo] <= x1) & (y[todo] >= y0) & (y[todo] <= y1)]
+        if len(near):
+            shapely.prepare(shape)
+            out[near[shapely.contains_xy(shape, x[near], y[near])]] = rank
     rest = np.flatnonzero(out < 0)
     if len(rest):
-        near = tree.query_nearest(points[rest], all_matches=False)
+        near = shapely.STRtree(geoms).query_nearest(points[rest], all_matches=False)
         out[rest[near[0]]] = near[1]
     return out
 
@@ -176,7 +187,9 @@ def midpoints(lines) -> np.ndarray:
 def camera_owners(region: regions.Region, shapes: gpd.GeoDataFrame) -> dict[str, int]:
     """camera id -> the rank of the part it belongs to (owner), among the parts whose
     cameras hold it: a camera drawn as a way may come with a part (osmium's smart strategy)
-    beyond its buffer."""
+    beyond its buffer. An added camera (phase "Ajouter") is applied by every part, wherever
+    it stands: it belongs to the part of its position only, and to none when that part
+    refused it (a duplicate of an OSM camera there)."""
     held: dict[str, list[int]] = {}
     where: dict[str, int] = {}
     for i, part in enumerate(regions.parts(region)):
@@ -185,7 +198,20 @@ def camera_owners(region: regions.Region, shapes: gpd.GeoDataFrame) -> dict[str,
         for cid, rank in zip(cams.camera_id, ranks, strict=True):
             held.setdefault(cid, []).append(i)
             where.setdefault(cid, int(rank))
-    return {cid: (where[cid] if where[cid] in have else have[0]) for cid, have in held.items()}
+    out = {}
+    for cid, have in held.items():
+        rank = choose(cid, where[cid], have)
+        if rank is not None:
+            out[cid] = rank
+    return out
+
+
+def choose(camera_id: str, where: int, have: list[int]) -> int | None:
+    """The owner of a camera standing in part `where`, held by the parts `have`: `where`
+    when it holds it; else the first holder, but an added camera, which none owns then."""
+    if where in have:
+        return where
+    return None if apply.is_added(camera_id) else have[0]
 
 
 # --- merge ----------------------------------------------------------------------------------
@@ -255,8 +281,9 @@ def merge_outcome(region: regions.Region, parts: list[regions.Region],
     report = []
     for c in sorted(apply.read(region.contrib_file), key=lambda c: c.uuid):
         rank = rank_of.get(c.camera_id, 0)
-        o = by_part[rank].get(c.uuid) or next(d[c.uuid] for d in by_part if c.uuid in d)
-        report.append(o)
+        o = by_part[rank].get(c.uuid) or next((d[c.uuid] for d in by_part if c.uuid in d), None)
+        if o is not None:  # none for a hidden camera's: no part applies it (apply.run)
+            report.append(o)
     doc = {"build_id": buildinfo.build_id(region), "contributions": report}
     path.write_text(json.dumps(doc, indent=1, ensure_ascii=False, sort_keys=True) + "\n")
     return path

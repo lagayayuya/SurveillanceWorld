@@ -13,7 +13,7 @@ import pytest
 import shapely
 from conftest import pinned
 
-from lacarte import apply, cli, db, merge, regions
+from lacarte import apply, cli, db, merge, optics, regions
 
 CONTRIB = regions.ROOT / "tests" / "fixtures" / "contrib-ci.jsonl"
 
@@ -154,3 +154,43 @@ def test_owner_takes_the_lowest_rank_inside_and_the_nearest_outside():
     )
     pts = shapely.points([(1, 1), (7, 5), (15, 5), (25, 5), (-3, 5)])
     assert merge.owner(pts, shapes).tolist() == [0, 0, 1, 1, 0]
+
+
+def test_an_added_camera_refused_where_it_stands_belongs_to_no_part():
+    # Every part applies an add, wherever it stands; the part of its position refused it (a
+    # duplicate there): no other part may carry it to the map.
+    assert merge.choose("n123", 1, [0, 1]) == 1
+    assert merge.choose("n123", 2, [0, 1]) == 0  # an OSM camera beyond a buffer
+    assert merge.choose("c0123456789ab", 1, [0, 1]) == 1
+    assert merge.choose("c0123456789ab", 2, [0, 1]) is None
+
+
+def test_a_contribution_no_part_applied_leaves_the_outcome(split_builds, tmp_path):
+    """A hidden camera's contributions are applied by no part (apply.run leaves them out):
+    the merged outcome skips them instead of failing."""
+    import dataclasses
+
+    _, merged = split_builds
+    text = merged.contrib_file.read_text()
+    first = json.loads(text.splitlines()[0])
+    uid = "00000000-0000-4000-8000-00000000abcd"
+    extra = {"answer": "present", "camera_id": "n1", "kind": "verify", "month": "2026-10",
+             "osm_version": 1, "rank": 1, "uuid": uid}  # fmt: skip
+    (tmp_path / "ci-parts.jsonl").write_text(text + json.dumps(extra) + "\n")
+    region = dataclasses.replace(merged, contrib_root=tmp_path)
+    shapes = gpd.read_parquet(merged.build_dir / merge.OWNERS)
+    rank = pd.read_parquet(merged.build_dir / merge.CAMERA_OWNERS)
+    owners = dict(zip(rank.camera_id, rank["rank"], strict=True))
+    path = merge.merge_outcome(region, regions.parts(merged), owners, shapes)
+    uuids = {o["uuid"] for o in json.loads(path.read_text())["contributions"]}
+    assert extra["uuid"] not in uuids and first["uuid"] in uuids
+
+
+def test_a_part_s_buffer_exceeds_the_longest_reach():
+    # The buffer gives a part's cameras the buildings they see and its segments the cameras
+    # that film them: more than the farthest filled field (rules/optics.yaml max_range_m),
+    # with the 300 m margin of DECISIONS 2026-10-22.
+    reach = optics.rules()["max_range_m"]
+    for name in ("france", "ci-parts"):
+        for part in regions.parts(regions.load(name)):
+            assert part.buffer_m >= reach + 300, part.name

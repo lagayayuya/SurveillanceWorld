@@ -119,6 +119,8 @@ def main(argv: list[str] | None = None) -> None:
         if args.action == "report":
             if not (args.region and args.before):
                 parser.error("contrib report needs --region and --before")
+            if regions.load(args.region).parts:
+                parser.error("contrib report reads one build's files: run it on a part")
             rep = contrib.report(regions.load(args.region), args.before)
             print(json.dumps(rep, ensure_ascii=False, indent=1))
             return
@@ -168,12 +170,14 @@ def main(argv: list[str] | None = None) -> None:
     if args.cmd == "audit":
         from lacarte import streetaudit
 
+        if regions.load(args.region).parts:
+            parser.error("audit reads one build's files: run it on a part")
         print(streetaudit.run(regions.load(args.region), skip_tiles=args.skip_tiles))
         return
 
     region = regions.load(args.region)
     if region.parts:
-        start = args.start or "cut"
+        start = args.start or ("parts" if args.resume else "cut")
         if start not in AGGREGATE_STAGES or args.only:
             parser.error(f"a region in parts builds from one of {', '.join(AGGREGATE_STAGES)}")
         try:

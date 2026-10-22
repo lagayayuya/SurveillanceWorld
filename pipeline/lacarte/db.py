@@ -31,6 +31,7 @@ MIGRATIONS = regions.ROOT / "db" / "migrations"
 LOAD_SCRIPT = regions.ROOT / "db" / "load.sh"
 MIGRATE_SCRIPT = regions.ROOT / "db" / "migrate.sh"
 SRID = 2154
+SLICE = 200_000  # buildings written per slice (db.export)
 
 
 def migrate(dsn: str | None = None) -> list[str]:
@@ -74,17 +75,23 @@ def export(region: regions.Region, out: Path, workers: int | None = None) -> dic
         for part, i in sources:
             b = part.build_dir
             raw = gpd.read_parquet(b / "buildings.parquet").geometry.values
+            if len(raw):
+                boxes.append(shapely.box(*shapely.total_bounds(raw)))
             polys = _prepared_buildings(raw, workers)
+            del raw
             if i is not None and len(polys):
                 from lacarte import merge
 
                 polys = polys[merge.owner(shapely.point_on_surface(polys), shapes) == i]
-            polys = shapely.set_srid(polys, SRID) if len(polys) else polys
-            for wkb in shapely.to_wkb(polys, hex=True, include_srid=True):
-                line = f"{n_buildings}\t{wkb}\n"
-                digest.update(line.encode())
-                bf.write(line)
-                n_buildings += 1
+            # In slices: a part's hex EWKB at once would be several GB of text.
+            for k in range(0, len(polys), SLICE):
+                chunk = shapely.set_srid(polys[k : k + SLICE], SRID)
+                for wkb in shapely.to_wkb(chunk, hex=True, include_srid=True):
+                    line = f"{n_buildings}\t{wkb}\n"
+                    digest.update(line.encode())
+                    bf.write(line)
+                    n_buildings += 1
+            del polys
             cams = gpd.read_parquet(b / apply.CAMERAS)
             keep = cams.is_camera
             if i is not None:
@@ -95,8 +102,6 @@ def export(region: regions.Region, out: Path, workers: int | None = None) -> dic
             n_cameras += len(cams)
             if len(cams):
                 boxes.append(shapely.box(*cams.total_bounds))
-            if len(raw):
-                boxes.append(shapely.box(*shapely.total_bounds(raw)))
     buildings_sha = digest.hexdigest()
     move_max = participation.rules()["move"]["max_m"]
 

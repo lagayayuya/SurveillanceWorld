@@ -29,6 +29,11 @@ ssh "$DEPLOY_TARGET" "set -e
   }
   web=\$(before '$DEPLOY_PATH'); api=\$(before '$API')
   [ -n \"\$web\" ] && [ -n \"\$api\" ] || { echo 'refused: no release before' >&2; exit 1; }
+  # The tables kept back must be that release's build (a second rollback would swap them
+  # forward while the releases go further back).
+  kept=\$(psql -XAt '$DB_DSN' -c 'SELECT build_id FROM meta_prev' 2>/dev/null || true)
+  grep -q \"\\\"build_id\\\": \\\"\$kept\\\"\" '$DEPLOY_PATH'/releases/\$web/tiles/meta.json ||
+    { echo \"refused: the tables kept back (\${kept:-none}) are not release \$web's build\" >&2; exit 1; }
   cd '$API/current'
   db/rollback.sh '$DB_DSN'
   for pair in '$API':\$api '$DEPLOY_PATH':\$web; do

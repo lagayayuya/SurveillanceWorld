@@ -379,6 +379,9 @@ def test_the_build_before_stays_and_rollback_swaps_it_back(pg_loaded, pg_dsn, tm
     assert sql(pg_dsn, "SELECT build_id FROM meta") == [[info["build_id"]]]
     db.load(out, pg_dsn)  # the same buildings: none kept back
     assert sql(pg_dsn, "SELECT to_regclass('buildings_prev') IS NULL") == [["t"]]
+    sql(pg_dsn, "DELETE FROM meta_prev")  # as after a database's first load
+    run = subprocess.run(rollback, capture_output=True, text=True)
+    assert run.returncode == 1 and "meta_prev holds no build" in run.stderr
     sql(pg_dsn, "DROP TABLE cameras_prev")
     run = subprocess.run(rollback, capture_output=True, text=True)
     assert run.returncode == 1 and "no cameras_prev" in run.stderr

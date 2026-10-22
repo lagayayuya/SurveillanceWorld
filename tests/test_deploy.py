@@ -1130,3 +1130,5 @@ def test_rollback_swaps_the_tables_back_before_the_releases():
     assert text.index("db/rollback.sh '$DB_DSN'") < text.index("current.new")
     assert text.index("current.new") < text.index("systemctl restart preview-api")
     assert "deploy/site.py check" in text and "lacarte.lock acquire" in text
+    # Not twice: the tables kept back must be the release before's build.
+    assert text.index("SELECT build_id FROM meta_prev") < text.index("db/rollback.sh '$DB_DSN'")
