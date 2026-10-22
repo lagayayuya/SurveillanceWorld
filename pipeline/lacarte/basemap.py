@@ -9,6 +9,10 @@ With `--names fr en`, the names in other languages go too (`name:<lang>`, `pgf:n
 the flavour writes `name:fr`, else `name:en`, else `name` (Protomaps basemaps 5.7, lang
 "fr"). A layer without such a name is kept byte for byte.
 
+With `--undrawn`, the features of the kinds no layer of the style draws go too
+(rules/basemap.yaml undrawn_kinds: most of `landuse`'s bytes at low zooms, farmland and
+meadows). A layer without such a feature is kept byte for byte.
+
     lacarte basemap strip data/basemap/idf.pmtiles data/basemap/idf-light.pmtiles --drop pois
 """
 
@@ -17,12 +21,15 @@ from __future__ import annotations
 import gzip
 import json
 import re
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Callable, Iterable, Iterator, Mapping
 from pathlib import Path
 
+import yaml
 from pmtiles.reader import MmapSource, Reader
 from pmtiles.tile import Compression, deserialize_directory, zxy_to_tileid
 from pmtiles.writer import write
+
+from lacarte import regions
 
 # --- the protobuf of a Mapbox Vector Tile, as little of it as is needed -----------------
 # A tile is a message whose field 3 (length-delimited) repeats the layers; a layer's field 1
@@ -187,6 +194,76 @@ def drop_keys(tile: bytes, dropped: Callable[[str], bool]) -> bytes:
     return b"".join(parts) if changed else tile
 
 
+def undrawn_kinds() -> dict[str, frozenset[str]]:
+    """Layer -> the kinds of its features no layer of the style draws (rules/basemap.yaml)."""
+    rules = yaml.safe_load((regions.ROOT / "rules" / "basemap.yaml").read_text())
+    return {layer: frozenset(kinds) for layer, kinds in rules["undrawn_kinds"].items()}
+
+
+def drop_kinds_in_layer(layer: bytes, kinds: frozenset[str]) -> bytes:
+    """The layer message without its features whose `kind` is one of `kinds`; the same bytes
+    when it has none. Keys and values stay as they were (a value no feature uses any more is
+    a few bytes, and still a valid layer)."""
+    keys: list[str] = []
+    values: list[bytes] = []
+    for number, wire, _, value, end in _fields(layer):
+        if number == 3 and wire == 2:
+            keys.append(layer[value:end].decode())
+        elif number == 4 and wire == 2:
+            values.append(layer[value:end])
+    if "kind" not in keys:
+        return layer
+    kind_key = keys.index("kind")
+    # Value messages whose string_value (field 1) is a dropped kind.
+    dropped_values = set()
+    for i, v in enumerate(values):
+        for number, wire, _, start, end in _fields(v):
+            if number == 1 and wire == 2 and v[start:end].decode() in kinds:
+                dropped_values.add(i)
+    if not dropped_values:
+        return layer
+    out = bytearray()
+    dropped = False
+    for number, wire, start, value, end in _fields(layer):
+        if number == 2 and wire == 2 and _kind_value(layer[value:end], kind_key) in dropped_values:
+            dropped = True
+            continue
+        out += layer[start:end]
+    return bytes(out) if dropped else layer
+
+
+def _kind_value(feature: bytes, kind_key: int) -> int | None:
+    """The index of the value a feature gives the key `kind_key`, if any."""
+    for number, wire, _, value, end in _fields(feature):
+        if number == 2 and wire == 2:
+            i = value
+            while i < end:
+                k, i = _varint(feature, i)
+                v, i = _varint(feature, i)
+                if k == kind_key:
+                    return v
+    return None
+
+
+def drop_kinds(tile: bytes, kinds: Mapping[str, frozenset[str]]) -> bytes:
+    """The uncompressed vector tile without the features of the kinds `kinds` names for their
+    layer; the same bytes when it has none."""
+    parts: list[bytes] = []
+    changed = False
+    for number, wire, start, value, end in _fields(tile):
+        if number == 3 and wire == 2:
+            layer = tile[value:end]
+            wanted = kinds.get(layer_name(layer))
+            if wanted:
+                lighter = drop_kinds_in_layer(layer, wanted)
+                if lighter is not layer:
+                    changed = True
+                    parts.append(_bytes_field(3, lighter))
+                    continue
+        parts.append(tile[start:end])
+    return b"".join(parts) if changed else tile
+
+
 # --- the archive --------------------------------------------------------------------------
 
 
@@ -203,10 +280,17 @@ def _entries(get_bytes, header) -> Iterator[tuple[int, int, int, int]]:
     yield from walk(header["root_offset"], header["root_length"])
 
 
-def strip(src: Path, dst: Path, drop: Iterable[str], names: Iterable[str] | None = None) -> dict:
-    """Write `src` again as `dst` without the layers `drop` and, with `names`, without the
-    names in other languages (name_keys). Returns what it did: the tiles changed, the bytes
-    of tile data before and after."""
+def strip(
+    src: Path,
+    dst: Path,
+    drop: Iterable[str],
+    names: Iterable[str] | None = None,
+    kinds: Mapping[str, frozenset[str]] | None = None,
+) -> dict:
+    """Write `src` again as `dst` without the layers `drop`, with `names` without the names
+    in other languages (name_keys), with `kinds` without the features of those kinds
+    (drop_kinds). Returns what it did: the tiles changed, the bytes of tile data before and
+    after."""
     drop = sorted(set(drop))
     dropped = name_keys(names) if names is not None else None
     with open(src, "rb") as f:
@@ -226,6 +310,8 @@ def strip(src: Path, dst: Path, drop: Iterable[str], names: Iterable[str] | None
                     lighter = drop_layers(raw, drop)
                     if dropped is not None:
                         lighter = drop_keys(lighter, dropped)
+                    if kinds:
+                        lighter = drop_kinds(lighter, kinds)
                     if lighter is not raw:
                         stats["changed"] += 1
                         data = gzip.compress(lighter, mtime=0) if gz else lighter
@@ -263,17 +349,23 @@ def tile(path: Path, z: int, x: int, y: int) -> bytes | None:
         return gzip.decompress(data) if gz else data
 
 
-def main(src: str, dst: str, drop: list[str], names: list[str] | None = None) -> None:
-    stats = strip(Path(src), Path(dst), drop, names)
-    print(json.dumps({"dropped": sorted(set(drop)), "names": names, **stats}))
+def main(
+    src: str, dst: str, drop: list[str], names: list[str] | None = None, undrawn: bool = False
+) -> None:
+    kinds = undrawn_kinds() if undrawn else None
+    stats = strip(Path(src), Path(dst), drop, names, kinds)
+    shown = {k: sorted(v) for k, v in kinds.items()} if kinds else None
+    print(json.dumps({"dropped": sorted(set(drop)), "names": names, "kinds": shown, **stats}))
 
 
 __all__ = [
     "drop_keys",
+    "drop_kinds",
     "drop_layers",
     "layer_names",
     "name_keys",
     "strip",
     "tile",
+    "undrawn_kinds",
     "zxy_to_tileid",
 ]

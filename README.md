@@ -104,7 +104,7 @@ make build REGION=france       # tuiles dans data/build/france/tiles
 pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles data/france/basemap/france-full.pmtiles \
   --region=<contour de la métropole, GeoJSON> --maxzoom=15
 uv run lacarte basemap strip data/france/basemap/france-full.pmtiles data/basemap/france.pmtiles \
-  --drop pois --names fr en
+  --drop pois --names fr en --undrawn   # sans ce que le style ne dessine pas (rules/basemap.yaml)
 make web REGION=france
 ```
 
@@ -122,7 +122,7 @@ make build REGION=idf        # tuiles dans data/build/idf/tiles, contrôles dans
 pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles data/basemap/idf-full.pmtiles \
   --bbox=1.44,48.12,3.56,49.24 --maxzoom=15   # le fond de carte, auto-hébergé
 uv run lacarte basemap strip data/basemap/idf-full.pmtiles data/basemap/idf.pmtiles \
-  --drop pois --names fr en
+  --drop pois --names fr en --undrawn
 make web REGION=idf
 ```
 

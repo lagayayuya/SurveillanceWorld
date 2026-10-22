@@ -1,0 +1,24 @@
+# The self-hosted basemap (pipeline/lacarte/basemap.py, `lacarte basemap strip --undrawn`).
+version: 1
+# Kinds of a layer's features that no layer of the style draws, dropped from every tile:
+# the style (Protomaps basemaps 5.7, both flavours, every zoom) fills `landuse` only through
+# layers filtered on their kind (landuse_park, landuse_urban_green, ...), none of which takes
+# these; web/tests/basemap.test.ts holds it, so an upgrade of the style that draws one of
+# them fails there first. Fields and meadows are drawn by `landcover`, a layer kept whole.
+# Measured on France (Protomaps 20261016, 2026-10-22): `landuse` is 94 % of the bytes of a
+# z7 tile, farmland, meadow and residential 39 of its 70 MB over z0-z9; without these kinds
+# the z7 tile over the Massif central (7/65/44) goes from 369 to 153 KiB. User decision
+# 2026-10-22: the basemap at z <= 7 made lighter, measured.
+undrawn_kinds:
+  landuse:
+    - bare_rock
+    - commercial
+    - farmland
+    - garden
+    - meadow
+    - other
+    - pitch
+    - railway
+    - recreation_ground
+    - residential
+    - wetland

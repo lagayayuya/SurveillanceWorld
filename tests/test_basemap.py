@@ -156,3 +156,49 @@ def test_names_in_other_languages_go_the_others_stay_renumbered():
     # A tile without such names is the same bytes.
     plain = _layer("roads", b"\x78\x02")
     assert basemap.drop_keys(plain, basemap.name_keys(["fr"])) is plain
+
+
+def test_features_of_undrawn_kinds_go_the_others_stay_byte_for_byte():
+    keys = ["kind", "name"]
+    values = ["forest", "farmland", "Bois", "meadow"]
+    forest = _feature([0, 0, 1, 2])
+    farmland = _feature([0, 1])
+    meadow = _feature([1, 2, 0, 3])  # the kind after another key
+    nameless = _feature([1, 2])
+    tail = (
+        b"".join(_field(3, k.encode()) for k in keys)
+        + b"".join(_field(4, _string_value(v)) for v in values)
+        + b"\x28\x80\x20\x78\x02"  # extent 4096, version 2
+    )
+    landuse = _field(1, b"landuse") + forest + farmland + meadow + nameless + tail
+    landcover = _field(1, b"landcover") + farmland + tail  # another layer: kept whole
+    tile = _field(3, landuse) + _field(3, landcover)
+    kinds = {"landuse": frozenset({"farmland", "meadow"})}
+    lighter = basemap.drop_kinds(tile, kinds)
+    assert lighter == _field(3, _field(1, b"landuse") + forest + nameless + tail) + _field(
+        3, landcover
+    )
+    # A tile without such a feature, or a layer not named: the same bytes.
+    assert basemap.drop_kinds(lighter, kinds) is lighter
+    assert basemap.drop_kinds(tile, {"water": frozenset({"farmland"})}) is tile
+
+
+def test_the_undrawn_kinds_are_landuse_ones_and_never_a_drawn_one():
+    kinds = basemap.undrawn_kinds()
+    assert set(kinds) == {"landuse"}
+    assert {"farmland", "meadow", "residential"} <= kinds["landuse"]
+    # web/tests/basemap.test.ts checks them against every layer of the style.
+    assert not {"forest", "wood", "park", "grass", "cemetery"} & kinds["landuse"]
+
+
+def test_the_archive_without_undrawn_kinds(tmp_path):
+    src, out = tmp_path / "full.pmtiles", tmp_path / "light.pmtiles"
+    tail = _field(3, b"kind") + _field(4, _string_value("farmland")) + b"\x78\x02"
+    landuse = _field(3, _field(1, b"landuse") + _feature([0, 0]) + tail)
+    roads = _layer("roads", b"\x78\x02")
+    _archive(src, {(0, 0, 0): landuse + roads, (1, 0, 0): roads})
+    stats = basemap.strip(src, out, [], kinds=basemap.undrawn_kinds())
+    got = _tiles(out)
+    assert got[(0, 0, 0)] == _field(3, _field(1, b"landuse") + tail) + roads
+    assert got[(1, 0, 0)] == roads
+    assert stats["changed"] == 1 and stats["tiles"] == 2

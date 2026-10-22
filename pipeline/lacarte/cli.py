@@ -107,11 +107,16 @@ def main(argv: list[str] | None = None) -> None:
     bm.add_argument(
         "--names", nargs="+", metavar="LANG", help="keep the names in these languages only"
     )
+    bm.add_argument(
+        "--undrawn",
+        action="store_true",
+        help="drop the features of the kinds no style layer draws (rules/basemap.yaml)",
+    )
     args = parser.parse_args(argv)
     if args.cmd == "basemap":
         from lacarte import basemap
 
-        basemap.main(str(args.src), str(args.dst), args.drop, args.names)
+        basemap.main(str(args.src), str(args.dst), args.drop, args.names, args.undrawn)
         return
     if args.cmd == "contrib":
         from lacarte import contrib
