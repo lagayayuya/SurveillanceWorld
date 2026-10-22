@@ -421,7 +421,7 @@ try {
     );
     check(
       "the head: og:title and description from the catalogue, twitter:card summary_large_image, fr_FR; no og:url nor og:image without a host (the gate's build); the L3 icons, the manifest and the A2 preview (/og.jpg, under 300 KB) served",
-      head.title === "Surveillance World — la carte des caméras d'Île-de-France" &&
+      head.title === "Surveillance World — la carte des caméras en France" &&
         head.card === "summary_large_image" &&
         head.locale === "fr_FR" &&
         head.url === null &&

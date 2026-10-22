@@ -11,7 +11,7 @@
 // sun / moon and the account's squares); the visit kept on the device under one key holding « 1 », the
 // panel not back after a reload; without storage the panel still shows and closes; not over
 // a return from OpenStreetMap; no « Questions fréquentes » (not shown, 2026-10-14); the texts as corrected
-// (« The most magical place on Earth », no « Rien n'est stocké… », « Île-de-France »); the credit
+// (« The most magical place on Earth », no « Rien n'est stocké… », « France métropolitaine »); the credit
 // (and the contact address, when the build has one) right of « Voir la carte » on a wide
 // screen, under it from the left on a phone, the button its size; axe-core WCAG 2.2 A/AA
 // in the panel; the classique has neither panel nor « ? »; the site's counters (src/hit.ts):
@@ -182,11 +182,11 @@ try {
     );
     const text = first.text;
     check(
-      "texts as corrected: « The most magical place on Earth », « Tu aimes être surveillé », Île-de-France, no « Rien n'est stocké », « Open source » kept",
+      "texts as corrected: « The most magical place on Earth », « Tu aimes être surveillé », France métropolitaine, no « Rien n'est stocké », « Open source » kept",
       /the most magical place on earth/i.test(text) &&
         text.includes("Tu aimes être surveillé en permanence") &&
         text.includes("rejoins l'aventure <3") &&
-        text.includes("Île-de-France, pour l'instant") &&
+        text.includes("France métropolitaine, pour l'instant") &&
         !/Rien n'est stocké|identifiant OpenStreetMap|Uniquement en France|PASSIONÉ/i.test(text) &&
         text.includes("Open source"),
       text.slice(0, 160).replace(/\n/g, " / "),

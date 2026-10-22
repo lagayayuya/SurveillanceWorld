@@ -15,6 +15,7 @@
 Les contributeurs d'OpenStreetMap ont recensé des dizaines de milliers de caméras en France.
 Surveillance World les place sur une carte et calcule, pour chacune, la zone qu'elle peut
 filmer et les rues qu'elle couvre, en tenant compte des bâtiments qui lui bouchent la vue.
+La carte couvre la France métropolitaine, Corse comprise ; l'outre-mer viendra plus tard.
 
 | La carte | En mode sombre |
 |---|---|
@@ -86,6 +87,26 @@ make try                     # http://127.0.0.1:4470/ — Ctrl-C arrête tout
 `make try` lance l'API sur une base jetable, remplie avec les données de test. Un compte
 contributeur fictif est connecté d'office ; `?as=rev` passe sur le compte administrateur,
 qui ouvre `/revue`. L'ancienne interface reste accessible avec `?ui=classique`.
+
+### Toute la France métropolitaine
+
+La France se construit par morceaux : les 22 anciennes régions (`fr-*` dans `regions.yaml`),
+chacune découpée dans l'extrait France avec une marge de 480 m, puis fusionnées
+(`pipeline/lacarte/merge.py`). Comptez quelques heures et 24 Go de mémoire ; la commande
+reprend là où elle s'est arrêtée avec `--from parts --resume`, et s'arrête d'elle-même sous
+50 Go libres (`LACARTE_MIN_FREE_GB`).
+
+```bash
+curl -L -o data/france/src/france-latest.osm.pbf \
+  https://download.geofabrik.de/europe/france-latest.osm.pbf
+uv run lacarte contrib export --region france     # sur le serveur : la base suivie
+make build REGION=france       # tuiles dans data/build/france/tiles
+pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles data/france/basemap/france-full.pmtiles \
+  --region=<contour de la métropole, GeoJSON> --maxzoom=15
+uv run lacarte basemap strip data/france/basemap/france-full.pmtiles data/basemap/france.pmtiles \
+  --drop pois --names fr en
+make web REGION=france
+```
 
 ### Toute l'Île-de-France
 
