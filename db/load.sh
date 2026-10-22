@@ -35,7 +35,11 @@ if [ "$buildings" = 1 ]; then
 CREATE TABLE buildings_new (LIKE buildings INCLUDING DEFAULTS INCLUDING CONSTRAINTS);
 SQL
   gzip -dc "$dir/buildings.tsv.gz" | "${psql[@]}" -c "COPY buildings_new FROM STDIN"
+  # France: ~25 M buildings; the index's build with PostgreSQL's 64 MB default
+  # (maintenance_work_mem, runtime-config-resource) spills to disk for long. A session
+  # setting, no server one: the API's connections keep theirs.
   "${psql[@]}" <<'SQL'
+SET maintenance_work_mem = '1GB';
 ALTER TABLE buildings_new ADD PRIMARY KEY (id);
 CREATE INDEX buildings_new_geom ON buildings_new USING gist (geom);
 ANALYZE buildings_new;
