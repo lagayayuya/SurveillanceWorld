@@ -42,6 +42,8 @@ export type Proposal = {
    * the direction in degrees, who films as [class, name or null]. */
   ans?: {
     shape?: string;
+    /** « Multi-boules »' number of domes, beside `shape` (absent: none given). */
+    dome_count?: number;
     direction?: number;
     height?: string;
     tilt?: string;

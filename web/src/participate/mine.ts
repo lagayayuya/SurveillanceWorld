@@ -103,19 +103,21 @@ export function openMine(
   /** « OSM : … » under a contribution, when it went or may still go there. */
   const osmLine = (s: Sync | null, uuid: string, status: string): HTMLElement | null => {
     if (!s?.offered) return null;
+    const kept = queue.keptReason(uuid);
     const item =
       s.history.find((h) => h.uuid === uuid) ??
-      // Sent since the history was read, the API said it will leave once accepted.
-      (queue.publishes(uuid) && status === "pending"
+      // Sent since the history was read, the API said it will leave once accepted, or that
+      // a rule keeps it here (« Multi-boules » without its number).
+      ((queue.publishes(uuid) || kept) && status === "pending"
         ? {
             uuid,
             camera: "",
             label: null,
             kind: "",
             status,
-            state: "waiting" as const,
+            state: kept ? ("kept_rule" as const) : ("waiting" as const),
             changeset: null,
-            reason: null,
+            reason: kept ?? null,
             month: null,
           }
         : null);
@@ -161,16 +163,19 @@ export function answerText(c: {
   operator_name?: string | null;
   /** A name not listed, under review: said, never shown (the lot of 2026-10-12). */
   operator_proposed?: boolean | string | null;
+  /** « Multi-boules »' number of domes (null: none given). */
+  dome_count?: number | null;
 }): string {
   switch (c.kind) {
     case "verify":
       return t(`part.mine.answer.${c.answer}`);
     case "move":
       return t("part.mine.moved", { m: c.move_m ?? 0 });
-    case "shape":
-      return c.answer === "unknown"
-        ? t("part.complete.unknown").toLowerCase()
-        : t(`part.complete.shape.${c.answer}`).toLowerCase();
+    case "shape": {
+      if (c.answer === "unknown") return t("part.complete.unknown").toLowerCase();
+      const shape = t(`part.complete.shape.${c.answer}`).toLowerCase();
+      return c.dome_count ? t("modify.shape.with_count", { shape, n: c.dome_count }) : shape;
+    }
     case "direction":
       return c.answer === "not_visible"
         ? t("part.complete.direction.not_visible").toLowerCase()

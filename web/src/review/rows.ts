@@ -26,6 +26,8 @@ export type Piece = {
   move_m: number | null;
   operator_name: string | null;
   operator_proposed: string | null;
+  /** « Multi-boules »' number of domes (null: none given, or another answer). */
+  dome_count?: number | null;
   /** The served value of that field, null when unknown (S1: by kind). */
   before: unknown;
   batch: string | null;
@@ -128,6 +130,8 @@ export type Row = {
   direction: number | null;
   operator_name: string | null;
   operator_proposed?: string | null;
+  /** « Multi-boules »' number of domes (null: none given, or another answer). */
+  dome_count?: number | null;
   operator_choice?: "proposed" | "listed" | "none" | null;
   osm_tags: Record<string, string> | null;
   lon: number;
@@ -265,14 +269,17 @@ export function answerWord(p: {
   move_m?: number | null;
   operator_name: string | null;
   operator_proposed?: string | null;
+  dome_count?: number | null;
 }): string {
   switch (p.kind) {
     case "verify":
       return t(`review.verify.${p.answer ?? "present"}`);
     case "move":
       return t("review.moved", { m: Math.round(p.move_m ?? 0) });
-    case "shape":
-      return t(`part.complete.shape.${p.answer}`);
+    case "shape": {
+      const shape = t(`part.complete.shape.${p.answer}`);
+      return p.dome_count ? t("modify.shape.with_count", { shape, n: p.dome_count }) : shape;
+    }
     case "direction":
       return p.direction === null ? unknownFor("direction") : degrees(p.direction);
     case "height":

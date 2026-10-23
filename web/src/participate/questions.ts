@@ -4,8 +4,11 @@ import type { Shape } from "./shapes";
 
 /** rules/questions.yaml, as the build's meta gives it to the phone. */
 export type Questions = {
-  /** Shape answer -> camera kind of the model. */
+  /** Shape answer -> camera kind of the model (`multidome` since questions@6: the editor
+   * offers « Multi-boules » only when the build names it). */
   shape_kinds: Record<Shape, string>;
+  /** « Multi-boules »' number of domes offered (questions@6); absent from an older build. */
+  dome_count?: { min: number; max: number };
   /** Kinds asked for a direction (the direction rule's kinds). */
   direction_kinds: string[];
   /** Operator classes (tile codes) "who films" may be asked for. */

@@ -1231,8 +1231,8 @@ try {
       .locator('#modify-panel .modify-chip[aria-pressed="true"]')
       .evaluateAll((bs) => bs.map((b) => `${b.dataset.part}:${b.dataset.answer}`));
     check(
-      "modify: four tiles with their stickers, « Je ne sais pas » first, answered in place (pressed, the focus kept); a dome gets the height classes and the tilt line as the build's tilt_kinds say; the direction « Je ne sais pas » and « Viser sur la carte »; « Je ne sais pas » checked on the lines nothing answers",
-      tiles.join(",") === "unknown:true,dome:true,bullet:true,ptz:true" &&
+      "modify: five tiles with their stickers (« Multi-boules » last), « Je ne sais pas » first, answered in place (pressed, the focus kept); a dome gets the height classes and the tilt line as the build's tilt_kinds say; the direction « Je ne sais pas » and « Viser sur la carte »; « Je ne sais pas » checked on the lines nothing answers",
+      tiles.join(",") === "unknown:true,dome:true,bullet:true,ptz:true,multidome:true" &&
         dunno3.includes("direction:unknown") &&
         dunno3.includes("height:unknown") &&
         shape3 === "Petit dôme" &&
@@ -2317,8 +2317,8 @@ try {
     await height(page6, "first");
     const last = await values(page6);
     check(
-      "add: tiles « Je ne sais pas », dome, tube, big ball; a dome's height; the big ball drops the direction and the height, the dome brings them back (on « Je ne sais pas »)",
-      tiles.join(",") === "unknown,dome,bullet,ptz" &&
+      "add: tiles « Je ne sais pas », dome, tube, big ball, multi-dome; a dome's height; the big ball drops the direction and the height, the dome brings them back (on « Je ne sais pas »)",
+      tiles.join(",") === "unknown,dome,bullet,ptz,multidome" &&
         firstRecap.shape === "Petit dôme" &&
         /^\d+° · /.test(firstRecap.direction ?? "") &&
         firstRecap.mount === EDIT_FIRST &&
@@ -2502,6 +2502,106 @@ try {
       queued !== undefined && queuedShape.length === 1 && queuedShape[0].answer === "bullet",
       `${queued?.camera} ${queuedShape.map((a) => a.answer)}`,
     );
+
+    // 6e'. « Multi-boules » (DECISIONS 2026-10-23): its sticker on the pin, « Nombre de
+    // boules » under the shape (« Je ne sais pas », 2 to the build's max), no direction
+    // asked (all around), a height; sent with dome_count 3, then with « Je ne sais pas »
+    // (no dome_count). The second send's answer says what the API says to someone who
+    // publishes on OSM (`osm: "kept"`, added here to the real API's answer, as
+    // smoke-score.mjs adds `will_publish`): the scene says it stays on Surveillance World.
+    {
+      const before = (await adds()).map((c) => c.uuid);
+      const multiAdd = async (at, count) => {
+        await addAtP(page6, at);
+        await here(page6);
+        await tap(page6, ed.tile(page6, "multidome"));
+        const seen = {
+          counts: await page6
+            .locator('#modify-panel [data-row="count"] .modify-chip[data-part="count"]')
+            .evaluateAll((bs) => bs.map((b) => b.dataset.answer)),
+          pressed: await page6
+            .locator('#modify-panel [data-row="count"] .modify-chip[aria-pressed="true"]')
+            .evaluateAll((bs) => bs.map((b) => b.dataset.answer)),
+          rows: await page6
+            .locator("#modify-panel .modify-row[data-row]")
+            .evaluateAll((rs) => rs.map((r) => r.dataset.row)),
+          // The pin wears the tile's sticker (the same drawing, icons.ts cameraCanvas).
+          pin: await page6.evaluate(() => {
+            const pin = document.querySelector("#edit-pin canvas.edit-pin-picto");
+            const tile = document.querySelector('.modify-tile[data-answer="multidome"] canvas');
+            return Boolean(pin && tile && pin.toDataURL() === tile.toDataURL());
+          }),
+        };
+        await tap(page6, ed.part(page6, "count", count));
+        seen.value = await ed.value(page6, "count");
+        seen.direction = await ed.value(page6, "direction");
+        await height(page6, "first");
+        return seen;
+      };
+      const three = await multiAdd([ADD.full[0], ADD.full[1] + 0.0004], "3");
+      await ed.send(page6);
+      await ed.finish(page6);
+      // The add arrives first, its answers after it; past ana's writes_per_minute
+      // (rules/participation.yaml) they wait on the phone for the queue's next try.
+      const newAdd = async () => (await adds()).find((c) => !before.includes(c.uuid));
+      const shapeOn = async (add) =>
+        add ? (await onAdd(add.uuid)).find((a) => a.kind === "shape") : undefined;
+      await waitFor(
+        "the multi-dome with 3 domes",
+        async () => Boolean(await shapeOn(await newAdd())),
+        150000,
+      ).catch(() => {});
+      const add3 = await newAdd();
+      const shape3m = await shapeOn(add3);
+      check(
+        "add: « Multi-boules », its sticker; « Nombre de boules » « Je ne sais pas », 2 to 6 under the shape, no direction (all around), a height; sent with dome_count 3",
+        three.pin &&
+          three.counts.join(",") === "unknown,2,3,4,5,6" &&
+          three.pressed.join(",") === "unknown" &&
+          three.rows.join(",") === "shape,count,direction,mount,operator" &&
+          three.value === "3 boules" &&
+          three.direction === "toutes (plusieurs boules)" &&
+          shape3m?.answer === "multidome" &&
+          shape3m?.dome_count === 3,
+        JSON.stringify({ three, shape: shape3m }),
+      );
+      // « Je ne sais pas »: the answer leaves without a number; the API's `osm: "kept"`.
+      const sentBodies = [];
+      await page6.route("**/api/contributions", async (route) => {
+        const body = route.request().postDataJSON();
+        sentBodies.push(body);
+        const real = await route.fetch();
+        const answer = await real.json().catch(() => ({}));
+        const kept = body?.kind === "shape" && body.answer === "multidome" && !body.dome_count;
+        return route.fulfill({
+          response: real,
+          json: kept ? { ...answer, osm: "kept", osm_reason: "multidome_count_unknown" } : answer,
+        });
+      });
+      const dunno = await multiAdd([ADD.full[0] + 0.0006, ADD.full[1] + 0.0004], "unknown");
+      await ed.send(page6);
+      const keptLine = await page6
+        .waitForSelector("#modify-done .score-kept", { timeout: 15000 })
+        .then((e) => e.textContent())
+        .catch(() => null);
+      if (process.env.SMOKE_SHOTS)
+        await page6.screenshot({
+          path: join(process.env.SMOKE_SHOTS, `${engine}-multidome-kept.png`),
+        });
+      await ed.finish(page6);
+      await page6.unroute("**/api/contributions");
+      // This add's shape (the first one's may still leave in the same flush).
+      const shapeSent = sentBodies.find((b) => b.kind === "shape" && b.camera !== add3?.camera);
+      check(
+        "add: « Multi-boules » with « Je ne sais pas » leaves without dome_count; the API's « kept » said under the scene",
+        dunno.value === "je ne sais pas" &&
+          shapeSent?.answer === "multidome" &&
+          !("dome_count" in shapeSent) &&
+          keptLine ===
+            "Sans le nombre de boules, cette réponse reste sur Surveillance World : elle ne sera pas publiée sur OpenStreetMap.",
+        JSON.stringify({ dunno, shapeSent, keptLine }),
+      );
+    }
     await idle(page6);
     await page6.close();
   }

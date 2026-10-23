@@ -51,6 +51,17 @@ export function stateParts(item: SyncItem, url: string | null): (string | Node)[
       return [item.changeset === null ? t("sync.state.gone_same") : t("sync.state.gone")];
     case "conflict":
       return [t("sync.state.conflict", { reason: reasonText(item.reason) })];
+    case "kept_rule":
+      // A rule keeps it here whatever the review says (« Multi-boules » without its number).
+      return [
+        t("sync.state.kept_rule", {
+          reason: t(
+            item.reason && has(`sync.kept.${item.reason}`)
+              ? `sync.kept.${item.reason}`
+              : "sync.kept.other",
+          ),
+        }),
+      ];
     default:
       return [t(`sync.state.${item.state}`)];
   }

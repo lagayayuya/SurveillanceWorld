@@ -720,6 +720,10 @@
 :root[data-ui="punk"] #modify-panel .modify-tile:nth-child(4) {
   transform: rotate(1deg);
 }
+/* « Multi-boules », the fifth tile (DECISIONS 2026-10-23; no board has it). */
+:root[data-ui="punk"] #modify-panel .modify-tile:nth-child(5) {
+  transform: rotate(-1.5deg);
+}
 :root[data-ui="punk"] #modify-panel .modify-tile[aria-pressed="true"] {
   background: var(--accent-fill);
   color: var(--on-accent);

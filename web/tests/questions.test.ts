@@ -16,7 +16,8 @@ import {
 } from "../src/participate/questions.ts";
 
 const Q = {
-  shape_kinds: { dome: "dome", bullet: "fixed", ptz: "ptz", multi: "panorama" },
+  shape_kinds: { dome: "dome", bullet: "fixed", ptz: "ptz", multi: "panorama", multidome: "multidome" },
+  dome_count: { min: 2, max: 6 },
   direction_kinds: ["dome", "fixed", "unknown", "alpr"],
   operator_codes: ["unk", "pro", "pri"],
   category_unknown: ["private", "syndic d immeuble", "yes"],
@@ -131,6 +132,15 @@ test("the punk editor: a height for every kind but the big ball, the tilt for a 
   assert.deepEqual(editorParts(q, "ptz"), { height: false, tilt: false });
   // A build made before the rule: the height for every kind.
   assert.deepEqual(editorParts(Q, "ptz"), { height: true, tilt: false });
+});
+
+test("the multi-dome (questions@6): a height, no tilt, no direction (all around)", () => {
+  const q = { ...Q, height_excluded_kinds: ["ptz"] };
+  assert.deepEqual(editorParts(q, "multidome"), { height: true, tilt: false });
+  // OSM's direction or none, never asked: its field is the full circle.
+  const multi = cam({ k: "multidome", kc: 2, d: -1, o: "pub", hc: 0 });
+  assert.deepEqual(editorAssumed(multi, q), ["mount"]);
+  assert.equal(q.shape_kinds.multidome, "multidome");
 });
 
 test("the punk « ? »: as soon as a value is assumed and the editor asks it", () => {

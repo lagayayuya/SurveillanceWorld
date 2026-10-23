@@ -89,7 +89,8 @@ export type SyncState =
   | "sending"
   | "waiting"
   | "kept_before"
-  | "kept_edited";
+  | "kept_edited"
+  | "kept_rule";
 export type SyncItem = {
   uuid: string;
   camera: string;
@@ -100,7 +101,7 @@ export type SyncItem = {
   state: SyncState;
   changeset: number | null;
   /** A conflict's reason: osm_version, osm_tags, osm_value, osm_deleted, osm_duplicate,
-   * osm_way. */
+   * osm_way; kept_rule's: multidome_count_unknown (« Multi-boules » without its number). */
   reason: string | null;
   /** "2026-10": months only. */
   month: string | null;

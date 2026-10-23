@@ -130,6 +130,8 @@ export type Mine = {
     operator_name: string | null;
     /** A name proposed, still under review: the API sends `true` and no name. */
     operator_proposed?: boolean | null;
+    /** « Multi-boules »' number of domes (null: none given, or another answer). */
+    dome_count?: number | null;
     /** A piece of a « Modifier » send: the send's uuid. */
     batch?: string | null;
     /** The camera's commune (none for an add not yet in the build), where it stands, and

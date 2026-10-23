@@ -620,6 +620,7 @@ const FIXED_DECOR = new Set([
   ':root[data-ui="punk"] #modify-panel .modify-tile:nth-child(2)',
   ':root[data-ui="punk"] #modify-panel .modify-tile:nth-child(3)',
   ':root[data-ui="punk"] #modify-panel .modify-tile:nth-child(4)',
+  ':root[data-ui="punk"] #modify-panel .modify-tile:nth-child(5)',
   ':root[data-ui="punk"] #edit-pin .edit-pin-picto',
   ':root[data-ui="punk"] #edit-float',
   ':root[data-ui="punk"] #modify-panel .modify-back',

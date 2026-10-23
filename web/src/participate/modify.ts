@@ -87,10 +87,11 @@ import { dimAround, paddingFollower, slideMode } from "./slide";
 type Props = Record<string, string | number | undefined>;
 /** The sheet's lines; "mount" is the height's (its data-field since « Hauteur et
  * inclinaison »). */
-type Field = "shape" | "direction" | "mount" | "tilt" | "operator";
-const FIELDS: Field[] = ["shape", "direction", "mount", "tilt", "operator"];
-/** What a choice answers. */
-type Part = "shape" | "direction" | "height" | "tilt" | "operator";
+type Field = "shape" | "count" | "direction" | "mount" | "tilt" | "operator";
+const FIELDS: Field[] = ["shape", "count", "direction", "mount", "tilt", "operator"];
+/** What a choice answers; "count", « Multi-boules »' number of domes (DECISIONS 2026-10-23),
+ * goes with the shape's piece (POST /api/contributions `dome_count`). */
+type Part = "shape" | "count" | "direction" | "height" | "tilt" | "operator";
 type View = "position" | "duplicates" | "sheet" | "aim" | "sent";
 /** Where the views on the map are: the paper at the bottom, the map above it. */
 const ON_MAP: View[] = ["position", "aim"];
@@ -106,6 +107,8 @@ type Moved = {
 type Changes = {
   move?: Moved;
   shape?: Shape | Unknown;
+  /** « Nombre de boules »: a number of domes, or « Je ne sais pas » (an add's). */
+  domes?: number | Unknown;
   direction?: number | "not_visible";
   height?: Height | Unknown;
   tilt?: Tilt | Unknown;
@@ -114,21 +117,32 @@ type Changes = {
 };
 const CHANGED: Record<Field, (keyof Changes)[]> = {
   shape: ["shape"],
+  count: ["domes"],
   direction: ["direction"],
   mount: ["height"],
   tilt: ["tilt"],
   operator: ["operator"],
 };
-/** The four tiles, 16a's sticker of the kind each answer gives; « Je ne sais pas » first
- * (DECISIONS 2026-10-09, « « Je ne sais pas » comes first… »). */
+/** The tiles, 16a's sticker of the kind each answer gives; « Je ne sais pas » first
+ * (DECISIONS 2026-10-09, « « Je ne sais pas » comes first… »); « Multi-boules » last, a
+ * fifth tile the boards do not have (DECISIONS 2026-10-23), when the build names it. */
 const TILES: { answer: Shape | Unknown; kind: Kind }[] = [
   { answer: "unknown", kind: "unknown" },
   { answer: "dome", kind: "dome" },
   { answer: "bullet", kind: "fixed" },
   { answer: "ptz", kind: "ptz" },
+  { answer: "multidome", kind: "multidome" },
 ];
 /** A shape answer's camera kind -> the shape it is drawn as (the served kind's row). */
-const SHAPE_OF_KIND: Record<string, Shape> = { dome: "dome", fixed: "bullet", ptz: "ptz" };
+const SHAPE_OF_KIND: Record<string, Shape> = {
+  dome: "dome",
+  fixed: "bullet",
+  ptz: "ptz",
+  multidome: "multidome",
+};
+/** The numbers of domes offered when the build gives none (rules/questions.yaml
+ * dome_count). */
+const DOMES = { min: 2, max: 6 };
 const OPERATORS: (OperatorClass | Unknown)[] = ["unknown", "public", "business", "household"];
 /** The heights offered, in metres on the screen (fr.json modify.height.*); the classique
  * keeps shapes.ts HEIGHTS and its « Poteau », which the API stores as `first`. */
@@ -372,9 +386,11 @@ export class ModifyMode {
   /** The pieces the send holds: a piece by changed kind (an add: by answer). */
   private count(): number {
     const c = this.changes;
-    return (["move", "shape", "direction", "height", "tilt", "operator"] as const).filter(
-      (k) => c[k] !== undefined,
-    ).length;
+    return (
+      (["move", "direction", "height", "tilt", "operator"] as const).filter(
+        (k) => c[k] !== undefined,
+      ).length + (this.shapePiece() ? 1 : 0)
+    );
   }
 
   private changed(f: Field): boolean {
@@ -393,6 +409,26 @@ export class ModifyMode {
     if (!this.aims()) drop("direction");
     if (!this.heights()) drop("height");
     if (!this.tilts()) drop("tilt");
+    // A number of domes only with « Multi-boules » (the API refuses it otherwise, 422).
+    if (!this.multi()) {
+      delete this.changes.domes;
+      this.dunno.delete("count");
+    }
+  }
+
+  /** The send makes a multi-dome: « Nombre de boules » is asked. */
+  private multi(kind = this.kindNow()): boolean {
+    return kind === "multidome";
+  }
+
+  /** The shape's piece: its answer, and a multi-dome's number of domes when one is given
+   * (in « Modifier » a number alone on a multi-dome is a « Multi-boules » answer). */
+  private shapePiece(): { answer: Shape | Unknown; dome_count?: number } | undefined {
+    const c = this.changes;
+    const n = typeof c.domes === "number" ? c.domes : undefined;
+    const answer = c.shape ?? (n !== undefined ? "multidome" : undefined);
+    if (answer === undefined) return undefined;
+    return answer === "multidome" && n !== undefined ? { answer, dome_count: n } : { answer };
   }
 
   // --- the views --------------------------------------------------------------------------
@@ -447,7 +483,9 @@ export class ModifyMode {
     paper.append(this.head(), this.positionTicket());
     paper.append(el("p", "modify-hint", t(this.adding ? "modify.add.hint" : "modify.hint")));
     const rows = el("div", "modify-rows");
-    for (const f of FIELDS) if (f !== "tilt" || this.tilts()) rows.append(this.row(f));
+    for (const f of FIELDS)
+      if ((f !== "tilt" || this.tilts()) && (f !== "count" || this.multi()))
+        rows.append(this.row(f));
     paper.append(rows);
     const foot = el("div", "modify-foot");
     const n = this.count();
@@ -632,6 +670,7 @@ export class ModifyMode {
     if (f === "direction") return this.aims();
     if (f === "mount") return this.heights();
     if (f === "tilt") return this.tilts();
+    if (f === "count") return this.multi();
     return true;
   }
 
@@ -642,6 +681,8 @@ export class ModifyMode {
     if (!this.opens(f)) return false;
     if (this.adding || this.touched.has(f)) return true;
     const p = this.props;
+    // A multi-dome whose number no one gave, or the shape just made one.
+    if (f === "count") return p.dn === undefined || this.changes.shape === "multidome";
     const assumed = editorAssumed(
       {
         k: this.kindNow(),
@@ -681,13 +722,28 @@ export class ModifyMode {
               : t(`kind.${k}`);
         return { value, tag: sourced(p.km, Number(p.kc ?? 0)) };
       }
+      case "count": {
+        if (c.domes === "unknown") return dunno;
+        if (c.domes !== undefined)
+          return { value: t("sheet.dome_count", { n: c.domes }), tag: null };
+        if (this.adding) return dunno;
+        if (p.dn === undefined || String(p.k) !== "multidome")
+          return { value: t("modify.value.unknown_m"), tag: null };
+        const dnc = Number(p.dnc ?? 1);
+        return {
+          value: t("sheet.dome_count", { n: Number(p.dn) }),
+          tag: dnc === 2 ? tag("osm") : sourced(p.km, dnc),
+        };
+      }
       case "direction": {
         if (c.direction === "not_visible") return dunno;
         if (c.direction !== undefined) return { value: this.bearingText(c.direction), tag: null };
         if (!this.aims())
           return this.kindNow() === "ptz"
             ? { value: t("chip.value.all_directions"), tag: null }
-            : none;
+            : this.multi()
+              ? { value: t("chip.value.all_around"), tag: null }
+              : none;
         if (this.adding) return dunno;
         const d = Number(p.d ?? -1);
         if (d < 0) return { value: t("chip.value.not_surveyed"), tag: tag("assumed") };
@@ -779,6 +835,10 @@ export class ModifyMode {
       aim.append(el("span", "", t("modify.aim.open")), chevron);
       aim.addEventListener("click", () => this.enterAim());
       box.append(aim);
+    } else if (f === "count") {
+      const { min, max } = this.q.dome_count ?? DOMES;
+      const numbers = Array.from({ length: max - min + 1 }, (_, i) => String(min + i));
+      chips("count", ["unknown", ...numbers], (a) => a);
     } else if (f === "mount") {
       chips("height", ["unknown", ...HEIGHTS], (a) => t(`modify.height.${a}`));
     } else if (f === "tilt") {
@@ -886,6 +946,7 @@ export class ModifyMode {
     tiles.setAttribute("role", "group");
     tiles.setAttribute("aria-labelledby", "modify-label-shape");
     for (const { answer, kind } of TILES) {
+      if (answer !== "unknown" && !this.q.shape_kinds[answer]) continue;
       const b = el("button", "modify-tile");
       b.dataset.answer = answer;
       b.setAttribute("aria-pressed", String(this.pressed("shape", answer)));
@@ -923,7 +984,11 @@ export class ModifyMode {
             : null
         : part === "operator"
           ? c.operator?.answer
-          : c[part];
+          : part === "count"
+            ? c.domes === undefined
+              ? undefined
+              : String(c.domes)
+            : c[part];
     if (held !== undefined) return held === a;
     if (this.dunno.has(part)) return a === "unknown";
     const own = this.adding ? undefined : this.ownChoice(part);
@@ -940,6 +1005,8 @@ export class ModifyMode {
         if (k === "unknown" || Number(p.kc ?? 0) === 0) return undefined;
         return SHAPE_OF_KIND[k] ?? null;
       }
+      case "count":
+        return String(p.k) === "multidome" && p.dn !== undefined ? String(p.dn) : undefined;
       case "direction":
         return Number(p.d ?? -1) >= 0 ? null : undefined;
       case "height": {
@@ -971,6 +1038,9 @@ export class ModifyMode {
     const c = this.changes;
     if (part === "shape") {
       this.setShape(dunno && !this.adding ? undefined : (a as Shape | Unknown));
+    } else if (part === "count") {
+      if (dunno && !this.adding) delete c.domes;
+      else c.domes = dunno ? "unknown" : Number(a);
     } else if (part === "direction") {
       if (this.adding) c.direction = "not_visible";
       else delete c.direction;
@@ -1829,7 +1899,8 @@ export class ModifyMode {
     const pieces: Partial<Contribution>[] = [];
     if (c.move && !this.adding)
       pieces.push({ kind: "move", lon: c.move.lon, lat: c.move.lat, placement: "free" });
-    if (c.shape) pieces.push({ kind: "shape", answer: c.shape });
+    const shapeOf = this.shapePiece();
+    if (shapeOf) pieces.push({ kind: "shape", ...shapeOf });
     if (c.direction === "not_visible") pieces.push({ kind: "direction", answer: "not_visible" });
     else if (deg !== undefined)
       pieces.push({
@@ -1941,10 +2012,15 @@ export class ModifyMode {
         const m = this.changes.move?.m ?? 0;
         return { uuid, what: field("position"), value: t("score.det.moved", { m: Math.round(m) }) };
       }
-      case "shape":
-        return b.answer === "unknown"
-          ? { uuid, what: field("shape"), value: dunno }
-          : { uuid, what: field("shape"), value: t(`modify.shape.${b.answer}`) };
+      case "shape": {
+        if (b.answer === "unknown") return { uuid, what: field("shape"), value: dunno };
+        const shape = t(`modify.shape.${b.answer}`);
+        const value =
+          b.dome_count === undefined
+            ? shape
+            : t("modify.shape.with_count", { shape, n: b.dome_count });
+        return { uuid, what: field("shape"), value };
+      }
       case "direction": {
         if (b.direction === undefined)
           return { uuid, what: field("direction"), value: t("modify.value.not_visible") };

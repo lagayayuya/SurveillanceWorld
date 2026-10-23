@@ -24,7 +24,7 @@
 // the badge. Look: theme/punk/score.css.
 import type { Map as MlMap } from "maplibre-gl";
 import { cannon, motion } from "../cannon";
-import { t } from "../i18n";
+import { has, t } from "../i18n";
 import { isPhone } from "../layout";
 import { awardOf, type TileProps } from "../profile/award";
 import { type Category, categoryClass, categoryWord } from "../profile/categories";
@@ -288,6 +288,23 @@ export class Score {
       this.undo.push(
         opts.queue.onPublishes((u) => {
           if (uuids.includes(u)) osm();
+        }),
+      );
+    // A piece a rule keeps on Surveillance World although she publishes (`osm: "kept"`,
+    // `osm_reason`: « Multi-boules » without its number of domes): a line says why.
+    const kept = (reason: string) => {
+      const key = `osm.kept.${reason}`;
+      if (this.ended || status.querySelector(".score-kept") || !status.contains(badge)) return;
+      if (!has(key)) return;
+      status.append(" ", el("span", "score-osm score-kept", t(key)));
+      this.placeGun();
+    };
+    const keptNow = uuids.map((u) => opts.queue.keptReason(u)).find(Boolean);
+    if (keptNow) kept(keptNow);
+    else
+      this.undo.push(
+        opts.queue.onKept((u, reason) => {
+          if (uuids.includes(u)) kept(reason);
         }),
       );
     if (!opts.offline && !quiet) void this.fetchPoints();

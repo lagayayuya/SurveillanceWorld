@@ -6,8 +6,10 @@
 // longer offered (phase "Retours terrain"): from below its lenses are invisible and its
 // outline is a small dome's; IDF has 18 panoramas of 18,383 cameras. The answers map to
 // camera kinds in rules/questions.yaml, not here; the API still accepts `multi`.
+// « Multi-boules » (multidome, DECISIONS 2026-10-23) is answered in the punk editor
+// (participate/modify.ts) with its number of domes; « Compléter » does not offer it.
 
-export const SHAPES = ["dome", "bullet", "ptz", "multi"] as const;
+export const SHAPES = ["dome", "bullet", "ptz", "multi", "multidome"] as const;
 export type Shape = (typeof SHAPES)[number];
 /** The shapes offered, in this order. */
 export const OFFERED: readonly Shape[] = ["dome", "bullet", "ptz"];
@@ -29,6 +31,11 @@ const DRAWINGS: Record<Shape, string> = {
   // Not offered any more; kept for answers already stored.
   multi: `<rect x="6" y="14" width="52" height="6" rx="2"/>
     <path d="M6 20 h52 a26 14 0 0 1 -52 0 z"/>`,
+  // Three small domes under one housing bar, hung from the plate (the punk sticker's).
+  multidome: `<rect x="22" y="6" width="20" height="5" rx="2"/>
+    <rect x="29" y="11" width="6" height="7"/>
+    <rect x="4" y="18" width="56" height="7" rx="2"/>
+    <path d="M5 25 h16 a8 8 0 0 1 -16 0 z M20 25 h24 a12 12 0 0 1 -24 0 z M43 25 h16 a8 8 0 0 1 -16 0 z"/>`,
 };
 
 /** The drawing as an inline SVG element (decorative: the button carries the label). */

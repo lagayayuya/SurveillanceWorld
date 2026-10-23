@@ -43,6 +43,7 @@ export type Contribution = {
     | "bullet"
     | "ptz"
     | "multi"
+    | "multidome"
     | "unknown"
     | "not_visible"
     | "public"
@@ -56,6 +57,9 @@ export type Contribution = {
     | "horizon"
     | "slight"
     | "steep";
+  // shape « Multi-boules »: its number of domes (questions@6 dome_count); absent: « Je ne
+  // sais pas », or another shape
+  dome_count?: number;
   // direction: bearing from the camera to the target, whole degrees 0-359
   direction?: number;
   // operator: a name from the list the server offered (public, business), or (punk, the
@@ -134,6 +138,11 @@ export class Queue {
   private willPublish = new Set<string>();
   /** Told of each uuid added to willPublish (the points' scene, score.ts). */
   private publishWatchers = new Set<(uuid: string) => void>();
+  /** Contributions the API answered `osm: "kept"`: her choice is on, but a rule keeps them
+   * on Surveillance World (`osm_reason`: multidome_count_unknown, « Multi-boules » without
+   * its number), since the page loaded. */
+  private keptReasons = new Map<string, string>();
+  private keptWatchers = new Set<(uuid: string, reason: string) => void>();
 
   constructor(
     private onChange: (q: Queue) => void,
@@ -256,6 +265,20 @@ export class Queue {
     return this.willPublish.has(uuid);
   }
 
+  /** Why the API said this contribution stays on Surveillance World although its author
+   * publishes on OSM (POST /api/contributions `osm: "kept"`, `osm_reason`); undefined
+   * otherwise. Not known across a reload. */
+  keptReason(uuid: string): string | undefined {
+    return this.keptReasons.get(uuid);
+  }
+
+  /** `watch` told of each contribution the API says stays on Surveillance World, and why;
+   * the returned function stops it. */
+  onKept(watch: (uuid: string, reason: string) => void): () => void {
+    this.keptWatchers.add(watch);
+    return () => this.keptWatchers.delete(watch);
+  }
+
   /** `watch` told of each contribution the API says will be published on OSM from now on;
    * the returned function stops it. */
   onPublishes(watch: (uuid: string) => void): () => void {
@@ -321,13 +344,21 @@ export class Queue {
       // not be known yet at startup: it waits for onSession, which sends it then).
       if (item.owner && item.owner !== this.owner) continue;
       try {
-        const answer = await call<{ osm?: string } | null>("POST", "/api/contributions", {
-          ...item.body,
-          uuid: item.uuid,
-        });
+        const answer = await call<{ osm?: string; osm_reason?: string } | null>(
+          "POST",
+          "/api/contributions",
+          {
+            ...item.body,
+            uuid: item.uuid,
+          },
+        );
         if (answer?.osm === "will_publish") {
           this.willPublish.add(item.uuid);
           for (const w of this.publishWatchers) w(item.uuid);
+        } else if (answer?.osm === "kept") {
+          const reason = answer.osm_reason ?? "other";
+          this.keptReasons.set(item.uuid, reason);
+          for (const w of this.keptWatchers) w(item.uuid, reason);
         }
         if (batch) this.leftBatches.add(batch);
         await tx("readwrite", (s) => s.delete(item.uuid));

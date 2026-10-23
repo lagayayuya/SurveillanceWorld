@@ -834,7 +834,10 @@ function addAnswers(p: Proposal): HTMLElement {
   list.className = "part-recap add-answers";
   const a = p.ans ?? {};
   const rows: [string, string | null][] = [
-    ["shape", a.shape ? answerText({ kind: "shape", answer: a.shape }) : null],
+    [
+      "shape",
+      a.shape ? answerText({ kind: "shape", answer: a.shape, dome_count: a.dome_count }) : null,
+    ],
     [
       "direction",
       a.direction !== undefined
