@@ -9,7 +9,9 @@
 # contributor proposes for the operator (ids questions@4).
 # Version 5 (return on Temps 1, 2026-10-13): the tilt for the small dome too (tilt.kinds,
 # ids questions@5 of height and tilt).
-version: 5
+# Version 6 (DECISIONS 2026-10-23): « Multi-boules », the multi-dome, and its number of domes
+# (shape.kinds multidome, dome_count, id questions@6).
+version: 6
 
 shape:
   id: rule:questions@1:shape
@@ -25,6 +27,24 @@ shape:
     bullet: fixed
     ptz: ptz
     multi: panorama
+    # Questions@6: « Multi-boules », several domes around one housing (rules/optics.yaml
+    # assemblies), with its number of domes (dome_count).
+    multidome: multidome
+
+dome_count:
+  id: rule:questions@6:dome_count
+  rationale: >-
+    With the shape « Multi-boules » (multidome, DECISIONS 2026-10-23), the number of domes,
+    or « Je ne sais pas ». A number sets the multi-dome's dome_count, certainty estimated,
+    source contribution; « Je ne sais pas » sends none: the camera is a multi-dome of
+    unknown number, an OSM camera:count already there stays. Either way its field is the
+    full circle (rules/optics.yaml assemblies): the number is a fact to keep and to
+    publish (camera:count, rules/publish.yaml), not a parameter of the field. Offered from
+    min to max: taginfo (2026-10-23) has camera:count on 364 objects with the values 1 to 6
+    only (2: 200, 3: 77, 1: 39, 4: 24, 5: 20, 6: 4), and the France extract's domes
+    (2026-10-16) carry 2 to 6. [TO ADJUST]
+  min: 2
+  max: 6
 
 direction:
   id: rule:questions@1:direction
@@ -205,6 +225,7 @@ osm:
     bullet: {camera:type: fixed}
     ptz: {camera:type: panning}
     multi: {camera:type: panorama}
+    multidome: {camera:type: dome}  # and camera:count: rules/publish.yaml
   operator:
     public: {}
     business: {operator:type: private}

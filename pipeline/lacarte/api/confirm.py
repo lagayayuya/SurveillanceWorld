@@ -13,8 +13,9 @@ the proposal). Counted per distinct author other than the proposal's:
              another proposal, the phone shows it before sending).
 
 A "Compléter" answer (phase D2: shape, direction, operator) is agreed by another author's
-answer to the same question (rules/participation.yaml confirm): the same shape, the same
-operator (class, and the name when both give one), a direction within `direction_within_deg`;
+answer to the same question (rules/participation.yaml confirm): the same shape (and the
+same number of domes when both « Multi-boules » give one), the same operator (class, and
+the name when both give one), a direction within `direction_within_deg`;
 another answer disagrees. "Je ne sais pas" and "Je ne vois pas" neither agree nor disagree.
 A disabled account's contributions (lot 2: an administrator disabled or suspended it)
 neither agree nor disagree with anything; its own proposals are still counted.
@@ -55,6 +56,7 @@ class Row:
     operator_name: str | None = None  # operator
     on_site: bool | None = None  # made on site, as the phone said (true / false / unknown)
     disabled: bool = False  # its author's account is disabled: its voice never counts
+    dome_count: int | None = None  # shape multidome: its number of domes, if given
 
 
 def answered(r: Row) -> bool:
@@ -72,6 +74,8 @@ def same_answer(a: Row, b: Row, within_deg: float) -> bool:
         return angle_between(a.direction_deg, b.direction_deg) <= within_deg
     if a.kind == "operator" and a.operator_name and b.operator_name:
         return a.answer == b.answer and a.operator_name == b.operator_name
+    if a.kind == "shape" and a.dome_count and b.dome_count:
+        return a.answer == b.answer and a.dome_count == b.dome_count
     return a.answer == b.answer
 
 

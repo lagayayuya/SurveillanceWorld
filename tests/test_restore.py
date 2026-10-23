@@ -95,7 +95,7 @@ def test_a_dump_restores_into_a_fresh_database_by_its_owner(pg_dsn, in_service, 
     target = fresh(pg_dsn, "restored")
     out = restore(path, target)
     assert out.returncode == 0, out.stderr
-    assert "dump at 024_history_pseudonym" in out.stdout
+    assert "dump at 025_multidome" in out.stdout
     assert counts(target) == {**counts(in_service), "sessions": 0, "cameras": 0}
     # The dump's settings, not the ones 020 and 022 seed; the journal numbers on after its
     # last.
@@ -139,7 +139,7 @@ def test_a_dump_at_013_restores_and_migrates(pg_dsn, pg_loaded, tmp_path):
     accounts = sql(target, "SELECT pseudonym, test FROM accounts ORDER BY 1")
     assert accounts == [["ivo", "t"], ["joe", "f"]]
     last = sql(target, "SELECT max(version) FROM schema_migrations")
-    assert last == [["024_history_pseudonym"]]
+    assert last == [["025_multidome"]]
 
 
 def test_a_dump_at_019_restores_its_reviewers_as_administrators(pg_dsn, pg_loaded, tmp_path):

@@ -328,6 +328,8 @@ def questions_rules() -> dict:
     q = participation.questions()
     return {
         "shape_kinds": q["shape"]["kinds"],
+        # Questions@6: « Multi-boules »'s number of domes, offered from min to max.
+        "dome_count": {"min": q["dome_count"]["min"], "max": q["dome_count"]["max"]},
         "direction_kinds": direction.kinds(),
         "operator_codes": q["operator"]["asked"],
         # Folded names that do not tell a business from a private individual.

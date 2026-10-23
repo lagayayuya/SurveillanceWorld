@@ -59,6 +59,17 @@ def tilt_kinds() -> list[str]:
     return list(questions()["tilt"]["kinds"])
 
 
+def dome_count_ok(kind: str, answer: str | None, count) -> bool:
+    """A number of domes only on a « Multi-boules » shape answer (multidome), a whole number
+    within rules/questions.yaml dome_count; none is always fine (« Je ne sais pas »). The
+    API checks a body with it, the `apply` stage an exported line."""
+    if count is None:
+        return True
+    rule = questions()["dome_count"]
+    return (kind == "shape" and answer == "multidome" and type(count) is int
+            and rule["min"] <= count <= rule["max"])  # fmt: skip
+
+
 def tilt_class(deg) -> str | None:
     """The class a tilt in degrees falls in (rules/questions.yaml tilt.bounds): the sheet and
     /revue never show a tilt in degrees."""

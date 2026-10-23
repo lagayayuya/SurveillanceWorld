@@ -547,10 +547,11 @@ def add_answers(conn, add_uuid: str, add_author: str) -> dict:
     """The answers an add no build has applied keeps, one per question: the validated one,
     else the latest day, else the add's author's, else the smallest uuid; withdrawn,
     rejected and "Je ne sais pas" answers left out. {kind: answer}: the direction in
-    degrees, who films as [class, name or null]. Its field (answered_add) and its sheet's
-    list (DECISIONS 2026-10-08) read them."""
+    degrees, who films as [class, name or null]; with a « Multi-boules » shape that gives
+    one, `dome_count` its number of domes. Its field (answered_add) and its sheet's list
+    (DECISIONS 2026-10-08) read them."""
     rows = conn.execute(
-        "SELECT kind, answer, direction_deg, operator_name FROM contributions"
+        "SELECT kind, answer, direction_deg, operator_name, dome_count FROM contributions"
         " WHERE target = %s AND kind IN ('shape', 'direction', 'height', 'tilt', 'operator')"
         " AND status NOT IN ('rejected', 'withdrawn')"
         " AND coalesce(answer, '') NOT IN ('unknown', 'not_visible')"
@@ -559,8 +560,10 @@ def add_answers(conn, add_uuid: str, add_author: str) -> dict:
         (add_uuid, add_author),
     ).fetchall()
     kept: dict = {}
-    for kind, answer, deg, name in rows:
+    for kind, answer, deg, name, count in rows:
         value = deg if kind == "direction" else [answer, name] if kind == "operator" else answer
+        if kind not in kept and kind == "shape" and count is not None:
+            kept["dome_count"] = count
         kept.setdefault(kind, value)
     return kept
 
@@ -656,7 +659,7 @@ class Placement(BaseModel):
 
 # Kinds a shape answer may give (rules/questions.yaml shape.kinds): the direction preview
 # draws the field of the shape just answered.
-AimKind = Literal["dome", "fixed", "ptz", "panorama"]
+AimKind = Literal["dome", "fixed", "ptz", "panorama", "multidome"]
 
 
 class PreviewIn(Placement):
@@ -892,10 +895,20 @@ class OpinionIn(Common):
 
 
 class ShapeIn(Common):
-    """ "À quoi ressemble-t-elle ?" (phase D2)."""
+    """ "À quoi ressemble-t-elle ?" (phase D2). « Multi-boules » (multidome, questions@6)
+    with its number of domes (`dome_count`, rules/questions.yaml dome_count), or none for
+    « Je ne sais pas »; a number with another answer, or out of the rule's bounds, is
+    refused (422)."""
 
     kind: Literal["shape"]
-    answer: Literal["dome", "bullet", "ptz", "multi", "unknown"]
+    answer: Literal["dome", "bullet", "ptz", "multi", "multidome", "unknown"]
+    dome_count: int | None = None
+
+    @model_validator(mode="after")
+    def _dome_count(self):
+        if not participation.dome_count_ok(self.kind, self.answer, self.dome_count):
+            raise ValueError("dome_count")
+        return self
 
 
 class DirectionIn(Common):
@@ -983,7 +996,7 @@ class ModifyPreviewIn(BaseModel):
     lon: float | None = None
     lat: float | None = None
     placement: Literal["facade", "free"] | None = None
-    shape: Literal["dome", "bullet", "ptz", "multi"] | None = None
+    shape: Literal["dome", "bullet", "ptz", "multi", "multidome"] | None = None
     direction: int | None = Field(default=None, ge=0, le=359)
     height: HeightClass | None = None
     tilt: TiltClass | None = None
@@ -1097,7 +1110,7 @@ BATCH_KINDS = ("move", "shape", "direction", "height", "tilt", "operator")
 # 2026-10-12): left out of the digest when absent, so that a phone's contribution queued
 # before this release and sent after it is still the same body. The gesture's duration
 # (lot 4: no longer sent) likewise, the other way: a body that has it keeps its digest.
-LATER_FIELDS = ("batch", "from_lon", "from_lat", "operator_proposed", "duration_ms")
+LATER_FIELDS = ("batch", "from_lon", "from_lat", "operator_proposed", "duration_ms", "dome_count")
 
 
 def body_digest(body: BaseModel) -> str:
@@ -1325,13 +1338,14 @@ def post_contribution(body: ContributionIn, who: Annotated[Account, Depends(auth
             "INSERT INTO contributions (uuid, kind, camera_id, osm_type, osm_id, osm_version,"
             " osm_timestamp, build_id, author_id, day, on_site, answer, target, geom,"
             " payload, body_sha256, direction_deg, operator_name, osm_tags, batch,"
-            " operator_proposed, sync_chosen) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
-            " %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 2154), %s, %s, %s, %s, %s, %s, %s,"
-            " %s)",
+            " operator_proposed, sync_chosen, dome_count) VALUES (%s, %s, %s, %s, %s, %s, %s,"
+            " %s, %s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 2154), %s, %s, %s, %s,"
+            " %s, %s, %s, %s, %s)",
             (uid, body.kind, camera_id, cam.osm_type, cam.osm_id, cam.osm_version,
              cam.osm_timestamp, body.build_id, who.id, body.day, body.on_site,
              answer, target, x, y, json.dumps(payload), digest, direction_deg, operator_name,
-             json.dumps(tags), batch, proposed, sync_chosen(conn, who.id)),
+             json.dumps(tags), batch, proposed, sync_chosen(conn, who.id),
+             getattr(body, "dome_count", None)),
         )  # fmt: skip
         recompute(conn, camera_id)
         status = conn.execute(
@@ -1513,8 +1527,8 @@ def camera_rows(conn, camera_ids: list[str]) -> dict[str, list[confirm.Row]]:
     for cam, *r in conn.execute(
         f"SELECT camera_id, uuid::text, kind, {AUTHOR_KEY}, status, answer, ST_X(geom),"
         " ST_Y(geom), target::text, decided_on IS NOT NULL, direction_deg, operator_name,"
-        " on_site, coalesce((SELECT disabled FROM accounts WHERE id = author_id), false)"
-        " FROM contributions WHERE camera_id = ANY(%s)",
+        " on_site, coalesce((SELECT disabled FROM accounts WHERE id = author_id), false),"
+        " dome_count FROM contributions WHERE camera_id = ANY(%s)",
         (list(camera_ids),),
     ):
         out[cam].append(confirm.Row(*r))
@@ -1825,7 +1839,7 @@ def my_contributions(who: Annotated[Account, Depends(author)]):
         rows = conn.execute(
             "SELECT c.uuid::text, c.kind, c.camera_id, c.day::text, c.status, c.answer,"
             " (c.payload->>'move_m')::float, c.apply_build, c.direction_deg, c.operator_name,"
-            " c.batch::text, k.commune,"
+            " c.batch::text, k.commune, c.dome_count,"
             f" {PROPOSED_WAITING.format(c='c.')},"
             " ST_X(ST_Transform(coalesce(k.geom, c.geom), 4326)),"
             " ST_Y(ST_Transform(coalesce(k.geom, c.geom), 4326)), c.on_site IS TRUE,"
@@ -1846,9 +1860,10 @@ def my_contributions(who: Annotated[Account, Depends(author)]):
     # publication on the live server or the offered one, null when none), where it stands
     # (`state`, collection_state), and each camera's label as « Compte » names it
     # (`cameras`: its kind for the collection's pictograms, an add's from its shape answer).
+    # dome_count: a « Multi-boules » answer's number of domes (null: none given).
     keys = ("uuid", "kind", "camera", "day", "status", "answer", "move_m", "apply_build",
-            "direction", "operator_name", "batch", "commune", "operator_proposed", "lng",
-            "lat", "on_site", "osm")  # fmt: skip
+            "direction", "operator_name", "batch", "commune", "dome_count",
+            "operator_proposed", "lng", "lat", "on_site", "osm")  # fmt: skip
     mine = [dict(zip(keys, r, strict=True)) for r in rows]
     # As /revue counts them (confirm.py): other contributions and opinions; none for what
     # no one can agree with (an opinion itself).
@@ -2059,7 +2074,7 @@ SELECT c.uuid::text, c.kind, c.camera_id, c.answer, c.day::text, c.on_site,
        c.status, c.decided_on::text, ST_X(ST_Transform(c.geom, 4326)),
        ST_Y(ST_Transform(c.geom, 4326)), c.direction_deg, c.operator_name,
        c.operator_proposed, c.target::text, c.batch::text, c.build_id,
-       c.payload - 'bands' - 'old_bands',
+       c.payload - 'bands' - 'old_bands', c.dome_count,
        (SELECT coalesce(jsonb_agg(jsonb_build_object('server', p.server, 'state', p.state,
                 'month', to_char(p.month, 'YYYY-MM'), 'changeset', p.changeset)
                 ORDER BY p.server), '[]')
@@ -2068,7 +2083,7 @@ FROM contributions c WHERE c.author_id = %s ORDER BY c.day, c.uuid
 """
 EXPORT_KEYS = ("uuid", "kind", "camera", "answer", "day", "on_site", "status",
                "decided_on", "lng", "lat", "direction", "operator_name", "operator_proposed",
-               "target", "batch", "build", "details", "osm")  # fmt: skip
+               "target", "batch", "build", "details", "dome_count", "osm")  # fmt: skip
 
 
 def my_points_by_month(conn, who: Account) -> dict:
@@ -2879,14 +2894,14 @@ REVIEW_COLUMNS = (
     f" target::text, {PSEUDONYM_OF.format('decided_by_id')}, decided_on::text,"
     " ST_X(ST_Transform(geom, 4326)), ST_Y(ST_Transform(geom, 4326)), payload, apply_build,"
     f" apply_detail, direction_deg, operator_name, osm_tags, batch::text,"
-    f" operator_proposed, operator_choice, {OSM_PUBLISH}, {IS_TEST}"
+    f" operator_proposed, operator_choice, {OSM_PUBLISH}, {IS_TEST}, dome_count"
 )
 REVIEW_KEYS = (
     "uuid", "kind", "camera", "osm_type", "osm_id", "osm_version", "build_id", "author",
     "day", "on_site", "status", "answer", "target", "decided_by",
     "decided_on", "lon", "lat", "payload", "apply_build", "apply_detail", "direction",
     "operator_name", "osm_tags", "batch", "operator_proposed", "operator_choice",
-    "osm_publish", "test",
+    "osm_publish", "test", "dome_count",
 )  # fmt: skip
 D2 = confirm.D2_KINDS  # "Compléter": shape, direction, operator, height, tilt
 # "Je ne sais pas" / "Je ne vois pas" of a D2 question, in SQL.

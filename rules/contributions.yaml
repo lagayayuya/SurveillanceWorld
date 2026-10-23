@@ -8,7 +8,8 @@
 # Version 3 (phase "Ajouter"): a camera the map does not have, placed on site.
 # Version 4 (phase D3): height and tilt answers.
 # Version 5 (the punk add and « Modifier »): a participant's placement under a roof.
-version: 5
+# Version 6 (DECISIONS 2026-10-23): a multi-dome's number of domes, and camera:count read.
+version: 6
 
 order:
   id: rule:contributions@1:order
@@ -76,12 +77,15 @@ public_month:
     No author's name anywhere on the map.
 
 shape:
-  id: rule:contributions@2:shape
+  id: rule:contributions@6:shape
   rationale: >-
     The latest validated shape answer sets the camera's kind (rules/questions.yaml
     shape.kinds), certainty estimated, source contribution; its optics, reach and the
-    direction rule follow. Two different shapes the rank cannot tell apart: same_day
-    conflict, the OSM kind stays.
+    direction rule follow. A « Multi-boules » answer sets the multi-dome's number of
+    domes too when it gives one (rules/questions.yaml dome_count), certainty estimated;
+    without one, OSM's camera:count stays when OSM already makes it a multi-dome, else
+    the number is unknown. Two different shapes, or two different numbers of domes, the
+    rank cannot tell apart: same_day conflict, the OSM kind stays.
 
 direction:
   id: rule:contributions@2:direction
@@ -124,24 +128,26 @@ tilt:
     Two different classes the rank cannot tell apart: same_day conflict.
 
 fine_conflict:
-  id: rule:contributions@2:fine_conflict
+  id: rule:contributions@6:fine_conflict
   rationale: >-
     A "Compléter" answer is held against the tags it concerns, copied with it from the
     served build, not the whole element: another OSM version conflicts only when one of
     these tags changed (reason osm_tags) or the element is gone (osm_deleted). The keys
     are every tag the derived value reads: the kind also reads surveillance:type (ALPR)
     and camera:mount (doorbell); a direction loses its meaning if the camera becomes a
-    PTZ, a panorama or a doorbell. A move or "Elle est là" keeps the version rule. A
-    conflict revalidated by the review accepts the version the deploy found: held
-    against that version, the answer applies while it does not change again.
+    PTZ, a panorama or a doorbell. Since version 6 the kind reads camera:count too (a dome
+    with 2 or more is a multi-dome, DECISIONS 2026-10-23). A move or "Elle est là" keeps
+    the version rule. A conflict revalidated by the review accepts the version the deploy
+    found: held against that version, the answer applies while it does not change again.
   keys:
-    shape: [camera:type, surveillance:type, camera:mount]
-    direction: [camera:direction, direction, camera:type, surveillance:type, camera:mount]
+    shape: [camera:type, surveillance:type, camera:mount, camera:count]
+    direction: [camera:direction, direction, camera:type, surveillance:type, camera:mount,
+                camera:count]
     operator: [operator, operator:type, surveillance]
     # Phase D3 (rules@4). camera:height has no wiki page and is not read, but a mapper
     # writing it says something about the height.
     height: [height, camera:height]
-    tilt: [camera:angle, camera:type, surveillance:type]
+    tilt: [camera:angle, camera:type, surveillance:type, camera:count]
 
 under_roof:
   id: rule:contributions@5:under_roof

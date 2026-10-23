@@ -9,8 +9,9 @@ import pandas as pd
 import pytest
 import shapely
 
-from lacarte import aggregate, camerafield, camerafilters, direction, optics, tiles
+from lacarte import aggregate, apply, camerafield, camerafilters, direction, optics, tiles
 from lacarte import normalize as n
+from lacarte.api import confirm
 from lacarte.viewshed import ObstacleIndex
 
 DOME = {"man_made": "surveillance", "camera:type": "dome"}
@@ -154,3 +155,91 @@ def test_the_meta_says_what_a_multidome_is_made_of():
         f"filmed_ratio_{e}{s}": [] for e in tiles.ESTIMATES for s in ("", "_pub")}})  # fmt: skip
     m = tiles.meta(areas)
     assert m["assemblies"] == {"multidome": {"optics_of": "dome", "opening_deg": 360}}
+    q = tiles.questions_rules()
+    assert q["shape_kinds"]["multidome"] == "multidome" and q["dome_count"] == {"min": 2, "max": 6}
+    assert "multidome" not in q["direction_kinds"] + q["editor_tilt_kinds"]
+
+
+# --- contributions (questions@6, contributions@6): « Multi-boules » and its number ---------
+
+
+def _shape(uid, rank=1, count=None, answer="multidome", tags=DOME):
+    return apply.Contribution(f"00000000-0000-4000-8000-{uid:012d}", "shape", "n1", 1,
+                              "2026-10", rank, answer=answer, tags=dict(tags),
+                              dome_count=count)  # fmt: skip
+
+
+def _osm(tags=DOME, kind="dome"):
+    return {"n1": apply.Osm(1, dict(tags), (0.0, 0.0), kind)}
+
+
+def test_a_multidome_answer_sets_the_kind_and_its_number():
+    outcome, states = apply.settle([_shape(1, count=3)], _osm())
+    assert outcome[_shape(1).uuid]["result"] == "applied"
+    s = states["n1"]
+    assert (s.kind, s.dome_count) == ("multidome", 3)
+    row, _ = n.normalize_row("n1", 1, None, json.dumps(DOME), apply.overrides(s, DOME))
+    assert (row["kind"], row["dome_count"], row["dome_count_certainty"]) == (
+        "multidome", 3, n.ESTIMATED)  # fmt: skip
+    assert row["fov_deg"] == 360.0
+    # « Je ne sais pas » on the number: a multi-dome of unknown number.
+    _, states = apply.settle([_shape(2)], _osm())
+    assert (states["n1"].kind, states["n1"].dome_count) == ("multidome", None)
+    row, _ = n.normalize_row("n1", 1, None, json.dumps(DOME), apply.overrides(states["n1"], DOME))
+    assert (row["kind"], row["dome_count"], row["dome_count_certainty"]) == (
+        "multidome", None, n.DEFAULT)  # fmt: skip
+
+
+def test_same_day_multidome_answers_conflict_only_on_different_numbers():
+    got, states = apply.settle([_shape(1, count=3), _shape(2, count=4)], _osm())
+    assert {(o["result"], o["reason"]) for o in got.values()} == {("conflict", "same_day")}
+    assert states["n1"].kind is None
+    # A number and none: no disagreement, the number stands.
+    got, states = apply.settle([_shape(1, count=3), _shape(2)], _osm())
+    assert {o["result"] for o in got.values()} == {"applied"}
+    assert states["n1"].dome_count == 3
+    # The latest answer wins: a later tube makes it a tube, no number.
+    got, states = apply.settle([_shape(1, count=3), _shape(2, rank=2, answer="bullet")], _osm())
+    assert (states["n1"].kind, states["n1"].dome_count) == ("fixed", None)
+
+
+def test_camera_count_changed_in_osm_holds_a_shape_a_direction_and_a_tilt():
+    """contributions@6 fine_conflict: the kind reads camera:count (a dome with 2 or more
+    is a multi-dome): a shape, a direction or a tilt answer conflicts when it changed."""
+    now = apply.Osm(2, {**DOME, "camera:count": "3"}, (0.0, 0.0), "multidome")
+    for kind, extra in (("shape", {"answer": "dome"}), ("tilt", {"answer": "slight"}),
+                        ("direction", {"direction": 90, "x": 0.0, "y": 0.0})):  # fmt: skip
+        c = apply.Contribution("00000000-0000-4000-8000-000000000009", kind, "n1", 1,
+                               "2026-10", 1, tags=dict(DOME), **extra)  # fmt: skip
+        assert apply.osm_conflict(c, now) == "osm_tags", kind
+    # A direction on a multi-dome is refused, as on a panorama: it films all around.
+    c = apply.Contribution("00000000-0000-4000-8000-000000000010", "direction", "n1", 1,
+                           "2026-10", 1, tags=dict(DOME), direction=90, x=0.0, y=0.0)  # fmt: skip
+    got, _ = apply.settle([c, _shape(1, count=4)], _osm())
+    assert got[c.uuid] == {"result": "conflict", "reason": "kind"}
+
+
+def test_an_exported_line_carries_a_number_only_with_multidome(tmp_path):
+    base = {"kind": "shape", "camera_id": "n1", "osm_type": "n", "osm_id": 1, "osm_version": 1,
+            "month": "2026-10", "rank": 1, "tags": DOME}  # fmt: skip
+    path = tmp_path / "ci.jsonl"
+    good = [{**base, "uuid": "u1", "answer": "multidome", "dome_count": 2},
+            {**base, "uuid": "u2", "answer": "multidome"}]  # fmt: skip
+    path.write_text("".join(json.dumps(r) + "\n" for r in good))
+    assert [c.dome_count for c in apply.read(path)] == [2, None]
+    for bad in ({"answer": "dome", "dome_count": 3}, {"answer": "multidome", "dome_count": 1},
+                {"answer": "multidome", "dome_count": 7},
+                {"answer": "multidome", "dome_count": "3"}):  # fmt: skip
+        path.write_text(json.dumps({**base, "uuid": "u3", **bad}) + "\n")
+        with pytest.raises(ValueError, match="dome_count"):
+            apply.read(path)
+
+
+def test_two_multidome_answers_agree_only_on_the_same_number():
+    def row(author, count):
+        return confirm.Row(f"u-{author}", "shape", author, "pending", answer="multidome",
+                           dome_count=count)  # fmt: skip
+
+    got = confirm.d2_agreements([row("a", 3), row("b", 3), row("c", 4), row("d", None)], 20)
+    assert got["u-a"] == (2, 1)  # b and d agree (d gives no number), c does not
+    assert got["u-d"] == (3, 0)

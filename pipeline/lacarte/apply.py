@@ -14,9 +14,11 @@ before this stage, byte for byte. Otherwise it gains, for every camera, `positio
 observation, YYYY-MM: the day never leaves the database), and for the "Compléter" answers
 (phase D2) `kind_month`, `direction_month`, `operator_month` and `operator_kind`
 (business | household), and (phase D3) `height_class`, `height_month` and `tilt_month`
-(the tilt's class is read from its degrees, rules/questions.yaml tilt.bounds); a camera
-they change is normalised again (normalize_row with its
-overrides), so its kind, optics, direction and operator class follow. A validated add
+(the tilt's class is read from its degrees, rules/questions.yaml tilt.bounds); a
+« Multi-boules » shape answer brings its number of domes (questions@6 dome_count, the
+camera's dome_count, kept nullable); a camera they change is normalised again
+(normalize_row with its overrides), so its kind, optics, direction and operator class
+follow. A validated add
 (phase "Ajouter") creates a camera with no OSM element (id `c…`, no tag, osm_version null),
 after the OSM cameras, with `added_month`. `on_site` (rules: on_site) says which of these
 months come from a contribution made on site: an integer of ON_SITE bits.
@@ -48,7 +50,7 @@ OUTCOME = "contrib_outcome.json"
 KEYS = {
     "uuid", "kind", "answer", "camera_id", "osm_type", "osm_id", "osm_version",
     "x", "y", "placement", "month", "rank", "direction", "operator_name", "tags", "near",
-    "on_site",
+    "on_site", "dome_count",
 }  # fmt: skip
 # rules: on_site — which shown month a contribution made on site backs; SEEN_BY_ADD: the
 # sighting is the add itself (and the answers on it), said by the position already.
@@ -63,7 +65,7 @@ CLASSED = ("height", "tilt")  # answers are classes of rules/questions.yaml
 # Answers a build applies; "Je ne sais pas" / "Je ne vois pas" are never exported.
 ANSWERS = {
     "verify": ("present", "not_found"),
-    "shape": ("dome", "bullet", "ptz", "multi"),
+    "shape": ("dome", "bullet", "ptz", "multi", "multidome"),
     "operator": ("public", "business", "household"),
 }
 D2_COLUMNS = (
@@ -112,6 +114,7 @@ class Contribution:
     # by the review: rules duplicate)
     near: tuple[str, ...] = ()
     on_site: bool = False  # the phone was within on_site_m (true only; false or unknown)
+    dome_count: int | None = None  # shape multidome: its number of domes, None: not given
 
     @property
     def what(self) -> str:
@@ -138,6 +141,8 @@ def read(path: Path) -> list[Contribution]:
             raise ValueError(f"{path.name}:{n}: answer {row.get('answer')!r}")
         if kind in CLASSED and row.get("answer") not in participation.questions()[kind]["classes"]:
             raise ValueError(f"{path.name}:{n}: answer {row.get('answer')!r}")
+        if not participation.dome_count_ok(kind, row.get("answer"), row.get("dome_count")):
+            raise ValueError(f"{path.name}:{n}: dome_count {row.get('dome_count')!r}")
         added = is_added(row["camera_id"])
         if added != (row.get("osm_version") is None):
             raise ValueError(f"{path.name}:{n}: an OSM version exactly for OSM cameras")
@@ -160,6 +165,7 @@ def read(path: Path) -> list[Contribution]:
                 answer=row.get("answer"), x=row.get("x"), y=row.get("y"),
                 placement=row.get("placement"), direction=row.get("direction"),
                 operator_name=row.get("operator_name"), tags=row.get("tags"),
+                dome_count=row.get("dome_count"),
             )
         )  # fmt: skip
     return out
@@ -175,6 +181,7 @@ class State:
     gone_month: str | None = None
     kind: str | None = None  # a shape answer's kind (rules/questions.yaml shape.kinds)
     kind_month: str | None = None
+    dome_count: int | None = None  # a « Multi-boules » answer's number of domes, if given
     direction: int | None = None
     direction_month: str | None = None
     # who films: (answer public | business | household, or None when answers disagree;
@@ -284,12 +291,15 @@ def settle(
                 continue
             state.added, state.added_month = (add.x, add.y), add.month
             refused[add.uuid] = {"result": "applied", **({"accepted": near} if near else {})}
-        # Shape: the latest answer (rules: shape); different answers on a tie conflict.
+        # Shape: the latest answer (rules: shape); different answers on a tie conflict, and
+        # different numbers of domes (an answer without one says no other).
         top = _top([c for c in live if c.kind == "shape"])
-        if len({c.answer for c in top}) > 1:
+        counts = {c.dome_count for c in top if c.dome_count is not None}
+        if len({c.answer for c in top}) > 1 or len(counts) > 1:
             tied.update(c.uuid for c in top)
         elif top:
             state.kind, state.kind_month = q["shape"]["kinds"][top[0].answer], top[0].month
+            state.dome_count = next(iter(counts), None)
             won.update(c.uuid for c in top)
         # Direction (rules: direction): only for a final kind under the direction rule and
         # a camera still where it was aimed from.
@@ -451,8 +461,9 @@ def overrides(state: State, tags: dict) -> normalize.Overrides | None:
         return None
     dirs = [float(state.direction)] if state.direction is not None else None
     return normalize.Overrides(
-        kind=state.kind, directions=dirs, operator=op, height_m=height, tilt_deg=tilt
-    )
+        kind=state.kind, directions=dirs, operator=op, height_m=height, tilt_deg=tilt,
+        dome_count=state.dome_count,
+    )  # fmt: skip
 
 
 def operator_kind(state: State | None) -> str | None:

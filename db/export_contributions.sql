@@ -20,6 +20,7 @@
 -- TEST_AUTHORS (any case: the export runs before the deploy that sets the flag); a deleted
 -- account's contributions (no author) are nobody's test. A database before 014 (the first
 -- deploy with accounts exports before it migrates) still names the author: the names.
+-- Since 025, a « Multi-boules » shape answer's number of domes (dome_count, when given).
 -- Read only. decision_seq and apply_detail come from migration 005, osm_tags,
 -- direction_deg and operator_name from 006: read through to_jsonb, they are null before it (a decision taken before the counter existed ranks
 -- first on its day; ties are the build's same_day conflicts).
@@ -52,6 +53,8 @@ SELECT json_strip_nulls(json_build_object(
             || coalesce(c.j -> 'apply_detail' -> 'accepted', '[]')) v
         WHERE v !~ '^c[0-9a-f]{12}$') END,
     'direction', (c.j ->> 'direction_deg')::integer,
+    -- A multi-dome's number of domes (migration 025), null when « Je ne sais pas ».
+    'dome_count', (c.j ->> 'dome_count')::integer,
     'operator_name', c.j ->> 'operator_name',
     'tags', CASE WHEN c.osm_type IS NOT NULL THEN c.j -> 'osm_tags' END,
     'month', to_char(c.day, 'YYYY-MM'),
