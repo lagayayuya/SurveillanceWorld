@@ -1,0 +1,15 @@
+# Dependabot reads the lock files named here: uv.lock at the root, web/package-lock.json.
+# Security updates only (open-pull-requests-limit 0 turns version updates off): the
+# dependencies move with a lot, gated, never by a bot's pull request.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
