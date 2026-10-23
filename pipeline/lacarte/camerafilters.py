@@ -35,12 +35,19 @@ FLAG_ROWS = [
     "maybe_gone", "legacy_import", "direction_unknown", "type_unknown", "height_unknown",
     "in_building", "plate_reading", "ptz", "night_vision", "analytics",
 ]  # fmt: skip
+# Each group of rows after the one before, by its length: a kind added (multidome,
+# 2026-10-23) shifts the rows after it instead of landing on one of their bits.
+_GROUPS = [
+    [f"op:{code}" for code in OP_CODE.values()],
+    [f"kind:{k}" for k in KIND_ORDER],
+    FRESH_ROWS,
+    FLAG_ROWS,
+    [f"identifies_far_{e}" for e in SHOWN],
+]
 SEGMENT_BITS = {
-    **{f"op:{code}": i for i, code in enumerate(OP_CODE.values())},
-    **{f"kind:{k}": 4 + i for i, k in enumerate(KIND_ORDER)},
-    **{row: 11 + i for i, row in enumerate(FRESH_ROWS)},
-    **{row: 15 + i for i, row in enumerate(FLAG_ROWS)},
-    **{f"identifies_far_{e}": 25 + i for i, e in enumerate(SHOWN)},
+    row: sum(len(g) for g in _GROUPS[:n]) + i
+    for n, group in enumerate(_GROUPS)
+    for i, row in enumerate(group)
 }
 
 

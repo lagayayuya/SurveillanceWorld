@@ -374,3 +374,13 @@ def test_the_admin_tiles_start_at_z4_and_meta_gives_the_region_bounds(ci_pipelin
         assert Reader(MmapSource(fh)).header()["min_zoom"] == tiles.ADMIN_MIN == 4
     west, south, east, north = json.loads((out / "meta.json").read_text())["bounds"]
     assert west < east and south < north
+
+
+def test_every_segment_row_has_a_bit_of_its_own():
+    # kind:multidome (2026-10-23) once put kind:unknown on fresh_lt1's bit 11.
+    from lacarte.camerafilters import KIND_ORDER, SEGMENT_BITS
+
+    bits = list(SEGMENT_BITS.values())
+    assert len(set(bits)) == len(bits) and sorted(bits) == list(range(len(bits)))
+    assert SEGMENT_BITS["kind:unknown"] == 4 + len(KIND_ORDER) - 1
+    assert SEGMENT_BITS["fresh_lt1"] == 4 + len(KIND_ORDER)
