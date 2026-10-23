@@ -160,11 +160,13 @@ def test_areas_count_their_cameras_by_type_and_class_alike():
     areas, _ = admin.aggregate_areas(edges, intervals, cams, units, deps)
     a = areas.set_index("code")
     kinds = [f"n_kind_{k}" for k in aggregate.KINDS]
-    assert aggregate.KINDS == ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"]
-    assert a.loc["A", kinds].tolist() == [1, 2, 0, 0, 0, 0, 0]
-    assert a.loc["B", kinds].tolist() == [0, 0, 1, 0, 0, 0, 1]
-    assert a.loc["C", kinds].tolist() == [0] * 7  # no camera: zeros, not missing
-    assert a.loc["1", kinds].tolist() == [1, 2, 1, 0, 0, 0, 1]
+    assert aggregate.KINDS == [
+        "dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"
+    ]  # fmt: skip
+    assert a.loc["A", kinds].tolist() == [1, 0, 2, 0, 0, 0, 0, 0]
+    assert a.loc["B", kinds].tolist() == [0, 0, 0, 1, 0, 0, 0, 1]
+    assert a.loc["C", kinds].tolist() == [0] * 8  # no camera: zeros, not missing
+    assert a.loc["1", kinds].tolist() == [1, 0, 2, 1, 0, 0, 0, 1]
     classes = [f"n_{c}" for c in aggregate.OPERATOR_CLASSES]
     for code in ("A", "B", "C", "1"):
         n = a.loc[code, "camera_count"]

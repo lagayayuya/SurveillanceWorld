@@ -360,6 +360,13 @@ def meta(areas: gpd.GeoDataFrame) -> dict:
         "opening_estimate": optics.opening_estimate_index(),
         # Cameras of these kinds without a direction are drawn light (rules/direction.yaml).
         "unknown_direction": {"kinds": direction.kinds()},
+        # Kinds made of several cameras (rules/optics.yaml assemblies): the kind of each
+        # camera and the field's opening (a multi-dome: domes, 360 degrees).
+        "assemblies": {
+            k: {"optics_of": v["optics_of"], "opening_deg": v["opening_deg"]}
+            for k, v in optics.rules()["assemblies"].items()
+            if isinstance(v, dict)
+        },
         # Farthest filled field: "Qui filme" widens the view by it (a field reaching in).
         "max_range_m": optics.rules()["max_range_m"],
         # Median wide field of view of PTZ cameras in the catalogue, for their sheet.
@@ -674,7 +681,14 @@ def _camera_features(
             "d": dirs[0] if dirs else -1,
             "ds": ";".join(map(str, dirs)),
             "dc": CERT_CODE[c.direction_certainty],
+            # Per lens: a multi-dome's is one of its domes' (its field is the full circle).
             "fov": f"{round(c.fov_lo)}–{round(c.fov_hi)}",
+            # A multi-dome (k multidome): its number of domes, absent when unknown, and that
+            # number's certainty (2 OSM's camera:count, 1 an answer, 0 unknown).
+            "dn": _count(getattr(c, "dome_count", None)),
+            "dnc": CERT_CODE[c.dome_count_certainty]
+            if isinstance(getattr(c, "dome_count_certainty", None), str)
+            else None,
             # PTZ: how far it can observe once aimed and zoomed at someone (outline radius).
             "zr": round(optics.tele_reach_m()) if c.kind == "ptz" else None,
             "h": c.height_m,
@@ -713,6 +727,11 @@ def _camera_features(
         }
         clean = {k: val for k, val in props.items() if val not in (None, "")}
         yield _feature(c.geometry, clean, fid=numeric_id(c.camera_id))
+
+
+def _count(value) -> int | None:
+    """A nullable whole number of a parquet column (None, NaN or pandas' NA: None)."""
+    return None if value is None or pd.isna(value) else int(value)
 
 
 def field_extents(bands: gpd.GeoDataFrame, cams: gpd.GeoDataFrame) -> dict[str, dict]:

@@ -111,11 +111,32 @@ def distribution(kind: str, generation: str) -> dict:
     return cell if "resolution_px" in cell else d["pooled"]
 
 
+def optics_kind(kind: str) -> str:
+    """The kind whose optics a camera of `kind` has: an assembly's (rules/optics.yaml
+    assemblies: a multi-dome's domes are domes), else its own."""
+    return rules()["assemblies"].get(kind, {}).get("optics_of", kind)
+
+
+def full_circle(kind: str) -> bool:
+    """Whether a camera of `kind` films all around whatever its surveyed directions (an
+    assembly whose opening is 360 degrees: rules/optics.yaml assemblies)."""
+    return rules()["assemblies"].get(kind, {}).get("opening_deg", 0) >= 360
+
+
+def opening_deg(kind: str) -> float:
+    """The widest opening of a camera of `kind` around one direction: the drawn sector
+    (normalize's fov_deg). An assembly's own (a multi-dome: 360), else the widest field of
+    view of its samples."""
+    return float(rules()["assemblies"].get(kind, {}).get("opening_deg", fov_bounds(kind)[1]))
+
+
 @cache
 def samples(kind: str) -> tuple[Sample, ...]:
     """Weighted (resolution, hfov) samples of a camera type: for each generation, weighted
     by the installed-base mix, the 3 x 3 grid of tercile points of both axes (taken as
-    independent). Identical samples are merged."""
+    independent). Identical samples are merged. An assembly's are those of the kind of its
+    cameras (optics_kind: a multi-dome's are a dome's)."""
+    kind = optics_kind(kind)
     cal = rules()["calibration"]
     mixed = cal["unknown_kind_mix"] if kind == "unknown" else {kind: 1.0}
     acc: dict[tuple[float, float], float] = {}

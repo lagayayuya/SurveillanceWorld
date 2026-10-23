@@ -107,7 +107,9 @@ def observation_bands(r: dict, x: float, y: float, view) -> list[dict]:
 
     One row per (level, reach estimate); `band` is the estimate's index (0 = most certain).
     PTZ cameras pan, so their wide-angle bands are full circles; they also get a `reach`
-    outline: the visible area within the zoomed-in observation range.
+    outline: the visible area within the zoomed-in observation range. A multi-dome's bands
+    are full circles too, whatever its directions: its domes face every way
+    (rules/optics.yaml assemblies; its sector is the full circle by its fov_deg, 360).
     """
     if view.is_empty:
         return []
@@ -122,7 +124,8 @@ def observation_bands(r: dict, x: float, y: float, view) -> list[dict]:
     samples = optics.samples(r["kind"])
     cam_mount = optics.Mount(*r["mount"]) if r["mount"] else None
     pans = r["kind"] == "ptz"
-    directions = [None] if pans or not r["directions"] else r["directions"]
+    around = pans or optics.full_circle(r["kind"])
+    directions = [None] if around or not r["directions"] else r["directions"]
     rows = []
     for level, ppm in rules["levels"].items():
         for t_idx, t in enumerate(optics.thresholds()):

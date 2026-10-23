@@ -8,6 +8,7 @@ unknown_direction:
   # fields and the street portions only they film are drawn light: "direction non relevée".
   # Not these: PTZ are aimed by an operator and pan; panoramas see (nearly) all around; a
   # doorbell faces away from its facade by construction. They are drawn like directed ones.
+  # Nor a multi-dome: its domes face every way (rules/optics.yaml assemblies).
   kinds: [dome, fixed, unknown, alpr]
   rationale: >-
     A direction taken at random, uniform over a 180-degree free arc (a wall camera; a pole

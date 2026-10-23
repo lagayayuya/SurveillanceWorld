@@ -513,6 +513,8 @@ def applied_cameras(
     out["on_site"] = [s.on_site if s else 0 for s in st]
     if out["osm_version"].isna().any():  # added cameras: nullable integers, never floats
         out["osm_version"] = out["osm_version"].astype("Int64")
+    if "dome_count" in out:  # rebuilt above from a list: nullable integers again
+        out["dome_count"] = out["dome_count"].astype("Int64")
     return out
 
 

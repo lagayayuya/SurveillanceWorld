@@ -5,6 +5,8 @@ version: 2
 
 kinds:
   dome:     {night_vision: probable}
+  # Several domes around one housing (rules/optics.yaml assemblies): each a dome.
+  multidome: {night_vision: probable}
   fixed:    {night_vision: probable}
   ptz:      {night_vision: probable}
   panorama: {night_vision: probable}

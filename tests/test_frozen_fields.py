@@ -58,6 +58,9 @@ CASES = {
     "ptz_no_direction": ("ptz", [], None, (X0 - 0.5, Y0 + 10), [BLOCK, FAR]),
     "ptz_directed": ("ptz", [90.0], None, (X0 + 45, Y0), [BLOCK, FAR]),
     "panorama_no_direction": ("panorama", [], None, (X0 + 45, Y0 + 60), [BLOCK, FAR]),
+    # DECISIONS 2026-10-23: a multi-dome at dome_directed's place, its one OSM direction not
+    # drawn: the full circle, each dome's reach.
+    "multidome_one_direction": ("multidome", [270.0], None, (X0 - 0.5, Y0 + 20), [BLOCK, FAR]),
     "dome_wall_no_direction": ("dome", [], None, (X0 + 1, Y0 + 20), [BLOCK, FAR]),
     "dome_pole_no_direction": ("dome", [], None, (X0 - 8, Y0 + 20), [BLOCK, FAR]),
     "dome_corner_no_direction": ("dome", [], (3.0, 20.0), (X0 + 7, Y0 + 7), [CORNER, FAR]),
@@ -82,7 +85,7 @@ def record(name: str) -> dict:
         "x": x,
         "y": y,
         "directions": directions,
-        "fov_deg": max(f for _, f, _ in optics.samples(kind)),
+        "fov_deg": optics.opening_deg(kind),  # normalize's: the samples' widest, or 360
         "range_m": normalize.max_reach(kind),
         "geom_certainty": "default",
         "kind": kind,
@@ -227,3 +230,17 @@ def test_placed_in_a_porch_the_field_stops_after_10_m_of_building():
     street = box(X0 - 20, Y0 + 10, X0, Y0 + 30)
     assert got["view"].intersection(street).area > 0.99 * street.area
     assert max(b["reach_m"] for b in got["bands"]) > 15  # the street, farther than 10 m
+
+
+def test_a_multidome_films_all_around_where_its_one_direction_would_give_a_sector():
+    """DECISIONS 2026-10-23: the multi-dome's field is the union of its domes, the full
+    circle; the same dome aimed west (its OSM direction) films a sector of it."""
+    multi = shapely.from_wkb(fields("multidome_one_direction")["view"])
+    dome = shapely.from_wkb(fields("dome_directed")["view"])
+    # Within the arcs' chords (a sector's ends are not on the full circle's 2-degree grid).
+    assert dome.difference(multi).area < 1e-3 * dome.area and multi.area > 1.5 * dome.area
+    # West, where the direction points, both film; north along the facade, the multi-dome only.
+    x, y = CASES["multidome_one_direction"][3]
+    assert multi.intersects(shapely.Point(x - 30, y)) and dome.intersects(shapely.Point(x - 30, y))
+    north = shapely.Point(x - 5, y + 15)
+    assert multi.intersects(north) and not dome.intersects(north)

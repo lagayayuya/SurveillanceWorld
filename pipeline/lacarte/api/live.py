@@ -98,13 +98,12 @@ def added(template: dict, camera_id: str, x: float, y: float) -> Camera:
 
 def aimed(cam: Camera, direction: int, kind: str | None = None) -> Camera:
     """The camera turned towards `direction` (degrees from north), with the optics of
-    `kind` when a shape answer gives one: as the build would normalise it (the widest
-    field of the kind's samples bounds the sector, its farthest reach the range)."""
+    `kind` when a shape answer gives one: as the build would normalise it (the kind's
+    opening bounds the sector: its samples' widest field, a multi-dome's full circle; its
+    farthest reach the range)."""
     changes: dict = {"directions": [float(direction)]}
     if kind is not None and kind != cam.kind:
-        changes.update(
-            kind=kind, fov_deg=optics.fov_bounds(kind)[1], range_m=optics.max_reach(kind)
-        )
+        changes.update(kind=kind, fov_deg=optics.opening_deg(kind), range_m=optics.max_reach(kind))
     return replace(cam, **changes)
 
 
@@ -121,7 +120,7 @@ def answered(
     if direction is not None:
         cam = aimed(cam, direction, kind)
     elif kind is not None and kind != cam.kind:
-        cam = replace(cam, kind=kind, fov_deg=optics.fov_bounds(kind)[1],
+        cam = replace(cam, kind=kind, fov_deg=optics.opening_deg(kind),
                       range_m=optics.max_reach(kind))  # fmt: skip
     changes: dict = {}
     if height_m is not None:

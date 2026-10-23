@@ -68,8 +68,38 @@ def parse_height(value: str | None) -> float | None:
     return h if 0 < h < 200 else None
 
 
+def parse_count(value: str | None) -> int | None:
+    """camera:count: a whole number of cameras, written alone ("3"); anything else (a list,
+    a range, words) is None."""
+    m = re.fullmatch(r"\s*(\d{1,3})\s*", value or "")
+    n = int(m.group(1)) if m else 0
+    return n if n >= 1 else None
+
+
+# A multi-dome (rules/optics.yaml assemblies): camera:type=dome with this many domes or more.
+MULTIDOME_MIN = 2
+
+
+def dome_count(tags: dict) -> int | None:
+    """The number of domes of a multi-dome the tags describe (camera:type=dome and
+    camera:count >= 2), else None. camera:number (an id as often as a count) and the
+    suffixed keys (camera:type:2...) are not read."""
+    n = parse_count(tags.get("camera:count"))
+    if n is None or n < MULTIDOME_MIN or _kind(tags)[0] != "dome":
+        return None
+    return n
+
+
 def classify_kind(tags: dict) -> tuple[str, str]:
-    """-> (kind, certainty)."""
+    """-> (kind, certainty). camera:type=dome with camera:count >= 2 is a multi-dome."""
+    kind, certainty = _kind(tags)
+    if kind == "dome" and dome_count(tags) is not None:
+        return "multidome", certainty
+    return kind, certainty
+
+
+def _kind(tags: dict) -> tuple[str, str]:
+    """-> (kind, certainty) from camera:type, surveillance:type and camera:mount alone."""
     stype = _values(tags.get("surveillance:type"))
     ctype = [v for v in (tags.get("camera:type") or "").lower().split(";") if v.strip()]
     mount = (tags.get("camera:mount") or "").strip().lower()

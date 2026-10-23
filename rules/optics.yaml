@@ -5,7 +5,7 @@
 # (catalogue/models.csv, manufacturer datasheets) for the distributions generated at the
 # end of this file by `lacarte calibrate`. Nothing here comes from other camera-mapping
 # projects.
-version: 3
+version: 4
 
 # Pixels per metre at the target, IEC 62676-4:2014. Observation 62.5 is confirmed by a
 # secondary source (Axis white paper on the 2014 edition: 63 px/m, 10 px for a 16 cm face).
@@ -66,6 +66,26 @@ calibration:
   # Cameras of unknown type: domes and fixed cameras in their IDF proportions (8,297 domes,
   # 6,183 fixed on the 2026-09-27 extract).
   unknown_kind_mix: {dome: 0.573, fixed: 0.427}
+
+# Version 4 (DECISIONS 2026-10-23): the multi-dome, an assembly of several domes.
+assemblies:
+  id: rule:optics@4:assemblies
+  rationale: >-
+    A multi-dome (user decision 2026-10-23) is several dome cameras mounted around one
+    central housing, mapped as one object: OSM camera:type=dome with an integer
+    camera:count of 2 or more (lacarte.osmtags.classify_kind; Key:camera:type documents no
+    value for such an assembly, taginfo 2026-10-23: dome 93,448, panorama 1,184,
+    panorama_with_ptz 266). Each of its domes is a dome: its optics are the dome's
+    catalogue distributions (no new figure), its reach a dome's. Its field is the union of
+    its domes' fields, a full circle: the domes face every way around the housing. A
+    surveyed direction is not read into it: in the France extract of 2026-10-16, 45 of the
+    84 domes with camera:count >= 2 carry exactly one camera:direction (28 of 48 with 2
+    domes, 11 of 15 with 3, 6 of 6 with 4), one bearing for several domes, which says
+    nothing of the others. The full circle holds when the number of domes is unknown too.
+    Not under the direction rule (rules/direction.yaml): it is drawn like a panorama, not
+    light.
+  # Kind -> the kind whose optics each of its cameras has, and its field's opening.
+  multidome: {optics_of: dome, opening_deg: 360}
 
 # Provisional market ranges [TO ADJUST]: horizontal resolution (px) and horizontal field of
 # view (degrees), least to most capable. Used only for types with too few catalogue models.

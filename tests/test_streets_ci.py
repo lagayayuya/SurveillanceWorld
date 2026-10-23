@@ -91,7 +91,7 @@ COMBINED = ["op:pub&kind:dome", "op:pro&fresh_never", "kind:fixed&direction_unkn
 
 
 def test_filters_keep_portions_only_where_a_kept_camera_films(ci_pipeline):
-    # For each of the 26 simple filters (and three combined), every portion kept for an
+    # For each of the 27 simple filters (and three combined), every portion kept for an
     # estimate lies within the stretches the kept cameras film, within 0.5 m.
     b = ci_pipeline.build_dir
     edges = gpd.read_parquet(b / "edges.parquet")
@@ -103,7 +103,7 @@ def test_filters_keep_portions_only_where_a_kept_camera_films(ci_pipeline):
     cam_iv = streetaudit.camera_intervals(edges, bands, shown)
     names = streetaudit.filter_names() + COMBINED
     got = streetaudit.filter_audit(edges, portions, cam_iv, cams, views, shown, names)
-    assert len(names) == 29
+    assert len(names) == 30  # kind:multidome since 2026-10-23
     bad = {k: v["portions"] for k, v in got.items() if v["portions"]["over_slack"]}
     assert not bad
     kept = sum(v["portions"]["drawn_km"] for v in got.values())

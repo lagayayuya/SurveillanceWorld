@@ -26,6 +26,7 @@ from lacarte.osmtags import (  # noqa: F401 (re-exported: normalize.parse_height
     IDENTIFIED,
     _values,
     classify_kind,
+    dome_count,
     parse_direction,
     parse_height,
     parse_tilt,
@@ -273,13 +274,15 @@ class Overrides:
     it — (class, normalised name or None, keep the OSM name): the class public |
     private_outdoor | private_indoor | unknown; the OSM name is kept when the answer gave
     none and agrees with the class the tags give. Phase D3: its height (metres) and tilt
-    (degrees below the horizon), from the classes of rules/questions.yaml."""
+    (degrees below the horizon), from the classes of rules/questions.yaml. A multi-dome's
+    number of domes, when its shape answer gave one (rules/questions.yaml dome_count)."""
 
     kind: str | None = None
     directions: list[float] | None = None
     operator: tuple[str, str | None, bool] | None = None
     height_m: float | None = None
     tilt_deg: float | None = None
+    dome_count: int | None = None
 
 
 @dataclass(frozen=True)
@@ -315,7 +318,7 @@ def capabilities(
     # Optics: distributions per type from the catalogue (rules/optics.yaml); no OSM tag gives
     # them. Stored as the span of the type's samples; the field questionnaire or an
     # identified model will narrow them.
-    orule = f"rule:optics@{optics.rules()['version']}:distributions.{kind}"
+    orule = f"rule:optics@{optics.rules()['version']}:distributions.{optics.optics_kind(kind)}"
     smp = optics.samples(kind)
     res = [r for r, _, _ in smp]
     fov = [f for _, f, _ in smp]
@@ -342,6 +345,23 @@ def capabilities(
     if kind == "ptz":
         caps.append(Capability("pan_tilt_zoom", True, kind_cert, "osm:camera:type"))
     return caps
+
+
+def dome_count_capability(tags: dict, kind: str, answered: int | None) -> Capability | None:
+    """A multi-dome's number of domes (rules/optics.yaml assemblies): a shape answer's
+    (estimated), else OSM's camera:count when the tags make it a multi-dome (identified: a
+    count, not an estimate), else unknown (None, default: its field is the full circle
+    whatever the number). None for any other kind. A shape answer without a number keeps
+    OSM's."""
+    if kind != "multidome":
+        return None
+    if answered is not None:
+        return Capability("dome_count", answered, ESTIMATED, "contribution")
+    if (tagged := dome_count(tags)) is not None:
+        return Capability("dome_count", tagged, IDENTIFIED, "osm:camera:count")
+    return Capability(
+        "dome_count", None, DEFAULT, f"rule:optics@{optics.rules()['version']}:assemblies"
+    )
 
 
 def max_reach(kind: str) -> float:
@@ -390,6 +410,7 @@ def normalize(
                 "value": json.dumps(cap.value), "certainty": cap.certainty, "source": cap.source,
             })  # fmt: skip
     norm = gpd.GeoDataFrame(rows, geometry=cams.geometry.values, crs=cams.crs)
+    norm["dome_count"] = norm["dome_count"].astype("Int64")  # nullable: unknown or not one
     return norm, pd.DataFrame(cap_rows)
 
 
@@ -422,6 +443,8 @@ def normalize_row(
         op, op_cert = cls, DEFAULT if cls == "unknown" else ESTIMATED
     tagged = tagged_capabilities(tags, kind)
     caps = capabilities(tags, kind, kind_cert, mount, over.directions, over.height_m, over.tilt_deg)
+    if (count := dome_count_capability(tags, kind, over.dome_count)) is not None:
+        caps.append(count)
     c = {cap.name: cap for cap in caps}
     _, dir_status = parse_direction(tags.get("camera:direction") or tags.get("direction"))
     if over.directions:
@@ -462,9 +485,14 @@ def normalize_row(
         "fov_lo": float(c["hfov_deg"].value[0]),
         "fov_hi": float(c["hfov_deg"].value[1]),
         "optics_certainty": c["hfov_deg"].certainty,
-        "fov_deg": float(c["hfov_deg"].value[1]),  # widest: bounds the drawn sector
+        # Widest: bounds the drawn sector (a multi-dome's is the full circle, 360).
+        "fov_deg": optics.opening_deg(kind),
         "range_m": float(c["range_m"].value),
         "tilt_deg": float(c["tilt_deg"].value) if "tilt_deg" in c else None,
+        # A multi-dome's number of domes and its certainty; None for other kinds, and the
+        # number None (certainty default) when unknown.
+        "dome_count": c["dome_count"].value if "dome_count" in c else None,
+        "dome_count_certainty": c["dome_count"].certainty if "dome_count" in c else None,
         "height_m": float(c["height_m"].value),
         "height_certainty": c["height_m"].certainty,
         "night_vision": c["night_vision"].value,

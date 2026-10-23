@@ -29,7 +29,7 @@ FLAG_BITS = {
 # identification beyond identify_beyond_m for that estimate. The browser tests the bits;
 # exact with one group of criteria, approximate when groups combine. Same layout in
 # meta.json (segment_bits).
-KIND_ORDER = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"]
+KIND_ORDER = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"]
 FRESH_ROWS = ["fresh_lt1", "fresh_1to3", "fresh_gt3", "fresh_never"]  # fl % 4
 FLAG_ROWS = [
     "maybe_gone", "legacy_import", "direction_unknown", "type_unknown", "height_unknown",
