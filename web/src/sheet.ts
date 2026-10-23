@@ -186,9 +186,31 @@ function chips(p: CameraProps, ptzFov: number, heights: Record<string, number> =
     bare: typeValue,
     month: str(p.km),
   });
-  const d = Number(p.d ?? -1);
+  // A multi-dome (DECISIONS 2026-10-23): its number of domes (tiles `dn`, absent when
+  // unknown; `dnc` 2 OSM's camera:count, 1 an answer, which goes with the shape's, 0
+  // unknown), and a field all around whatever OSM's direction says (`d` is not read).
+  const multi = kind === "multidome";
+  if (multi) {
+    const n = Number(p.dn);
+    const given = p.dn !== undefined && Number.isFinite(n);
+    const value = given ? t("sheet.dome_count", { n }) : t("chip.value.unknown_m");
+    const cert = given ? Number(p.dnc ?? 1) : 0;
+    const answer = given && cert === 1;
+    out.push({
+      key: "domes",
+      label: t("chip.domes"),
+      value: answer ? answered(value, p.km, "kind") : value,
+      cert,
+      source: answer ? via(p.km, "kind") : undefined,
+      bare: value,
+      month: answer ? str(p.km) : undefined,
+    });
+  }
+  const d = multi ? -1 : Number(p.d ?? -1);
   // A PTZ turns: every direction, whatever the tagged one (its rest position).
   const ptz = kind === "ptz";
+  // Both film all around: the direction row says so, not OSM's bearing.
+  const around = ptz || multi;
   const towards =
     d >= 0 && !ptz
       ? String(p.ds)
@@ -203,13 +225,15 @@ function chips(p: CameraProps, ptzFov: number, heights: Record<string, number> =
     label: t("chip.direction"),
     value: ptz
       ? t("chip.value.all_directions")
-      : d >= 0
-        ? answered(towards, p.dm, "direction")
-        : t("chip.value.not_surveyed"),
-    cert: ptz ? Number(p.kc ?? 0) : Number(p.dc ?? 0),
-    source: ptz ? via(p.km, "kind") : d >= 0 ? via(p.dm, "direction") : undefined,
-    bare: ptz || d < 0 ? undefined : towards,
-    month: str(ptz ? p.km : d >= 0 ? p.dm : undefined),
+      : multi
+        ? t("chip.value.all_around")
+        : d >= 0
+          ? answered(towards, p.dm, "direction")
+          : t("chip.value.not_surveyed"),
+    cert: around ? Number(p.kc ?? 0) : Number(p.dc ?? 0),
+    source: around ? via(p.km, "kind") : d >= 0 ? via(p.dm, "direction") : undefined,
+    bare: around || d < 0 ? undefined : towards,
+    month: str(around ? p.km : d >= 0 ? p.dm : undefined),
   });
   // Who films, when a validated answer says it (the headline gives the class).
   if (p.om) {
@@ -229,12 +253,16 @@ function chips(p: CameraProps, ptzFov: number, heights: Record<string, number> =
     label: t("chip.fov"),
     value: ptz
       ? t("chip.value.ptz_fov", { v: ptzFov })
-      : d >= 0
-        ? t("sheet.deg", { v: String(p.fov) })
-        : t("chip.value.full_circle"),
+      : multi
+        ? p.fov === undefined
+          ? t("sheet.deg", { v: 360 })
+          : t("chip.value.multidome_fov", { v: String(p.fov) })
+        : d >= 0
+          ? t("sheet.deg", { v: String(p.fov) })
+          : t("chip.value.full_circle"),
     cert: 0,
     // The direction's row says it is not surveyed.
-    bare: !ptz && d < 0 ? t("sheet.deg", { v: 360 }) : undefined,
+    bare: !around && d < 0 ? t("sheet.deg", { v: 360 }) : undefined,
   });
   // Phase D3: an answered height says its class (tiles `hk`, `hm`); a tilt only its class
   // (`t`), never degrees, and only while a height at least estimated makes it count.

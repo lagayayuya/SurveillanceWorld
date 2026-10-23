@@ -352,7 +352,7 @@ function rows(input: PunkSheetInput): Fact[] {
       cert: o === "unk" ? 0 : 1,
     });
   }
-  for (const key of ["direction", "fov", "height", "tilt", "night", "zoom"]) {
+  for (const key of ["domes", "direction", "fov", "height", "tilt", "night", "zoom"]) {
     const f = byKey.get(key);
     if (f) out.push(f);
   }
