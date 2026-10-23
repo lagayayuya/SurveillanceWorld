@@ -108,3 +108,9 @@ def test_filters_keep_portions_only_where_a_kept_camera_films(ci_pipeline):
     assert not bad
     kept = sum(v["portions"]["drawn_km"] for v in got.values())
     assert kept > 10  # the filters keep something on the CI extract
+
+
+def test_the_off_limit_is_the_same_share_of_a_grid_unit_on_coarser_zooms():
+    assert streetaudit.outside_limit_m(12, 4096) == streetaudit.OUTSIDE_MERGED_M == 2.5
+    assert streetaudit.outside_limit_m(11, 1024) == 20.0  # z11 at tiles.LOW_DETAIL
+    assert streetaudit.outside_limit_m(15, 4096) == streetaudit.OUTSIDE_MIN_M

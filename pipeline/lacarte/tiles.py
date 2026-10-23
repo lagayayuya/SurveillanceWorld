@@ -2,14 +2,15 @@
 
 - admin.pmtiles    layers `departements` z5-7, `communes` z8-11 (IGN ADMIN EXPRESS COG
                    CARTO; municipal arrondissements in place of their commune)
+- admin7.pmtiles   layer `communes` z7: their outlines only, no attribute (drawn from z7.5)
 - streets.pmtiles  layer `edges`    z14-16  every segment, grey; sidewalks, crossings
                                              and paths beside a road from z16; the ways of
                                              rules/streets.yaml unfilmed_not_drawn only
                                              where filmed; `c` its width class
-                   layer `portions` z12-16  what is filmed, per estimate and level: the
+                   layer `portions` z11-16  what is filmed, per estimate and level: the
                                              filmed intervals of the axes merged at
-                                             z12-14, the portions with their cameras from
-                                             z15 (z16 off the axes)
+                                             z11-14 (z11 on a coarser grid), the portions
+                                             with their cameras from z15 (z16 off the axes)
 - detail.pmtiles   layers `bands` (DORI coverage bands) and `cameras` (with each shown
                    estimate's field extent, for framing); built at z15, overzoomed
 - meta.json        build id (buildinfo.py), participation rules, estimates, quantile
@@ -60,13 +61,20 @@ ATTRIBUTION = (
 ADMIN_ATTRIBUTION = "IGN – Admin Express COG Carto, 2026"
 CERT_CODE = {"default": 0, "estimated": 1, "identified": 2}
 OSM_TYPE_CODE = {"n": 0, "w": 1, "r": 2}
-AREAS_MAX, STREETS_MIN, UNFILMED_MIN, NON_AXIS_MIN, DETAIL_Z = 11, 12, 14, 16, 15
+AREAS_MAX, STREETS_MIN, UNFILMED_MIN, NON_AXIS_MIN, DETAIL_Z = 11, 11, 14, 16, 15
 # The portions with their cameras (`cs`, an id) from the street level, where focus mode
 # starts; below, the merged intervals (MERGED_ZOOMS).
 PORTIONS_MIN = 15
 # Départements up to DEPS_MAX (and DEPS_MAX + 1 for the cross-fade), communes from
 # DEPS_MAX + 1 to AREAS_MAX [TO ADJUST].
 DEPS_MAX = 7
+# The communes' outlines one zoom earlier, from a commune's département view (user decision
+# 2026-10-23): their own archive (admin7.pmtiles), z7 only, outlines without attributes,
+# simplified (OUTLINES_SIMPLIFY, tippecanoe's --simplification). In admin.pmtiles they made
+# the France z7 view 114 -> 2,112 KiB of admin tiles; apart, the web draws them from z7.5,
+# and MapLibre loads a source only when one of its layers is in its zoom range, so the z7
+# view loads none (heaviest tile 186 KiB, 930 KiB on a phone's screen at z7.5).
+OUTLINES_Z, OUTLINES_SIMPLIFY = DEPS_MAX, 4
 QUANTILES = (0.2, 0.4, 0.6, 0.8)
 # z12-14: segments are a few pixels long; contiguous filmed portions of the same estimate,
 # level and filter bits are merged. z14 since lot P (2026-10-17): its portions with their
@@ -76,7 +84,13 @@ QUANTILES = (0.2, 0.4, 0.6, 0.8)
 # simplification (SIMPLIFY_PX screen pixels) is off: on IDF, 0.5 px lost 1.8 % of the
 # coloured length at z12 (4 tiles beyond 5 %) and saved 4 % of the heaviest tile
 # (310 -> 298 KiB); tippecanoe's own remains.
-MERGED_ZOOMS = (12, 13, 14)
+MERGED_ZOOMS = (11, 12, 13, 14)
+# z11 (streets one zoom earlier, user decision 2026-10-23): the same merged intervals in their
+# own source (portions_low), tiled apart at a coarser grid (tippecanoe -d LOW_DETAIL: 1,024
+# units over the tile's 512 CSS px) and joined into streets.pmtiles. At the default 4,096 the
+# heaviest z11 tile (Paris) weighed 718 KiB, over the 500 KiB ceiling; simplifying (4: 685),
+# coalescing (714) or dropping the smallest (12 % of its features kept) did not help.
+LOW_ZOOMS, LOW_DETAIL = (11,), 10
 SIMPLIFY_PX = 0.0
 TILE_PX = 512  # MapLibre draws a vector tile over 512 CSS pixels
 EQUATOR_M = 40_075_016.686
@@ -104,7 +118,7 @@ def run(region: regions.Region) -> dict[str, Path]:
 
 # The views' columns the filters read (camerafilters.camera_filters, position_check).
 VIEW_FILTER_COLUMNS = ["camera_id", "snapped", "inside_building", "area_m2"]
-LAYERS = ("edges", "portions", "bands", "cameras")
+LAYERS = ("edges", "portions", "portions_low", "bands", "cameras")
 
 
 def sources(b: Path) -> tuple[Path, Path]:
@@ -165,11 +179,14 @@ def write_features(
     portions = portions[own_edges[portions.e.to_numpy()]]
     axis = edges.axis.to_numpy()
     fb = portion_filter_bits(portions, masks)
+    high = [z for z in MERGED_ZOOMS if z not in LOW_ZOOMS]
     features = itertools.chain(
-        _merged_features(portions, fb, axis),
+        _merged_features(portions, fb, axis, high),
         _portion_features(portions.to_crs("EPSG:4326"), compact, axis, classes, fid_offset),
     )
     _write(src / "portions.geojsonl", features, append=True)
+    low = _merged_features(portions, fb, axis, LOW_ZOOMS)
+    _write(src / "portions_low.geojsonl", low, append=True)
     _write(src / "bands.geojsonl", _band_features(bands, cams, filters), append=True)
     features = _camera_features(cams, views, street, filters, compact, extents)
     _write(src / "cameras.geojsonl", features, append=True)
@@ -212,6 +229,7 @@ def finish(
         "streets": out / "streets.pmtiles",
         "detail": out / "detail.pmtiles",
         "admin": out / "admin.pmtiles",
+        "admin7": out / "admin7.pmtiles",
     }
     # Tile files of an earlier build that this one no longer writes (cells.pmtiles) would
     # be published with the folder.
@@ -223,6 +241,8 @@ def finish(
         # Départements also in the first communes level: the two cross-fade there.
         zooms = {"maxzoom": DEPS_MAX + 1} if level == "departement" else {"minzoom": DEPS_MAX + 1}
         _write(src / f"{layer}.geojsonl", _area_features(areas[areas.level == level], zooms))
+    outlines = areas[areas.level == "commune"].geometry
+    _write(src / "outlines.geojsonl", _outline_features(outlines))
     (out / "areas.json").write_text(
         json.dumps(area_index(areas), ensure_ascii=False, separators=(",", ":"))
     )
@@ -234,10 +254,34 @@ def finish(
         *(a for layer in levels for a in ("-L", f"{layer}:{src / f'{layer}.geojsonl'}")),
     )  # fmt: skip
     _tippecanoe(
-        *common, "-o", str(paths["streets"]), f"-Z{STREETS_MIN}", "-z16", f"-B{STREETS_MIN}",
+        "--force", "--read-parallel", f"--attribution={ADMIN_ATTRIBUTION}",
+        "-o", str(paths["admin7"]), f"-Z{OUTLINES_Z}", f"-z{OUTLINES_Z}",
+        f"--simplification={OUTLINES_SIMPLIFY}", "--no-feature-limit", "--no-tile-size-limit",
+        "--detect-shared-borders", "--name=la-carte communes outlines",
+        "-L", f"communes:{src / 'outlines.geojsonl'}",
+    )  # fmt: skip
+    high, low = out / "streets-high.pmtiles", out / "streets-low.pmtiles"
+    high_min = min(z for z in MERGED_ZOOMS if z not in LOW_ZOOMS)
+    _tippecanoe(
+        *common, "-o", str(high), f"-Z{high_min}", "-z16", f"-B{high_min}",
         "--no-feature-limit", "--no-tile-size-limit", "--name=la-carte streets",
         "-L", f"edges:{src / 'edges.geojsonl'}", "-L", f"portions:{src / 'portions.geojsonl'}",
     )  # fmt: skip
+    if (src / "portions_low.geojsonl").stat().st_size:
+        _tippecanoe(
+            *common, "-o", str(low), f"-Z{min(LOW_ZOOMS)}", f"-z{max(LOW_ZOOMS)}",
+            f"-B{min(LOW_ZOOMS)}", f"-d{LOW_DETAIL}", "--no-feature-limit",
+            "--no-tile-size-limit", "-L", f"portions:{src / 'portions_low.geojsonl'}",
+        )  # fmt: skip
+        subprocess.run(
+            ["tile-join", "--quiet", "--force", "--no-tile-size-limit", "--name=la-carte streets",
+             f"--attribution={ATTRIBUTION}", "-o", str(paths["streets"]), str(low), str(high)],
+            check=True,
+        )  # fmt: skip
+        low.unlink()
+        high.unlink()
+    else:
+        high.replace(paths["streets"])
     _tippecanoe(
         *common, "-o", str(paths["detail"]), f"-Z{DETAIL_Z}", f"-z{DETAIL_Z}", f"-B{DETAIL_Z}",
         "--no-feature-limit", "--no-tile-size-limit", "--no-tiny-polygon-reduction",
@@ -340,6 +384,13 @@ def unique_breaks(values) -> list[float]:
     return sorted({float(v) for v in values})
 
 
+def _outline_features(outlines: gpd.GeoSeries):
+    """The communes' outlines for admin7.pmtiles: geometry only (the web draws lines)."""
+    for geom in outlines.to_crs("EPSG:4326").values:
+        if geom is not None and not geom.is_empty:
+            yield _feature(geom, {}, {"minzoom": OUTLINES_Z, "maxzoom": OUTLINES_Z})
+
+
 def _area_features(areas: gpd.GeoDataFrame, zooms: dict):
     """Communes or départements: the sheet's "between X % and Y % of the streets", fixed
     whatever the estimate chosen: `lo` = the default estimate filmed by cameras with a
@@ -437,11 +488,13 @@ def merged_portions(
     return out
 
 
-def _merged_features(portions: gpd.GeoDataFrame, fb: np.ndarray, axis: np.ndarray):
-    """z12-14: the filmed intervals of the axes, merged (merged_portions), per zoom."""
+def _merged_features(
+    portions: gpd.GeoDataFrame, fb: np.ndarray, axis: np.ndarray, zooms=MERGED_ZOOMS
+):
+    """z11-14: the filmed intervals of the axes, merged (merged_portions), per zoom."""
     bounds = portions.to_crs("EPSG:4326").total_bounds if len(portions) else [0.0] * 4
     lat = (bounds[1] + bounds[3]) / 2
-    for z in MERGED_ZOOMS:
+    for z in zooms:
         tol = SIMPLIFY_PX * pixel_m(z, lat)
         merged = merged_portions(portions, fb, axis, tol).to_crs("EPSG:4326")
         for m in merged.to_dict("records"):

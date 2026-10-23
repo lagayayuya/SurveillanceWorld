@@ -242,7 +242,7 @@ def test_bands_and_portions_carry_only_what_the_map_reads():
     assert "c" not in feats[2]["properties"]
     # From the street level; a sidewalk's portions with the sidewalk, from z16.
     assert [f["tippecanoe"]["minzoom"] for f in feats] == [15, 15, 16]
-    assert tiles.MERGED_ZOOMS == (12, 13, 14)
+    assert tiles.MERGED_ZOOMS == (11, 12, 13, 14)
 
 
 def test_area_features_carry_the_low_and_high_shares_and_their_zooms():
@@ -312,3 +312,42 @@ def test_position_check_flags_tiny_fields_and_cameras_inside_buildings():
     assert got.to_dict() == {
         "wall_facing": True, "sliver": True, "small": False, "street": False, "inside": True,
     }  # fmt: skip
+
+
+def test_merged_intervals_at_z11_go_to_their_own_zooms():
+    # Streets one zoom earlier (2026-10-23): z11 is written apart (portions_low) and tiled at
+    # a coarser grid; the other merged zooms stay in portions.
+    import json
+
+    rows = [(0, 1, 1, ["n1:1"], LineString([(0, 0), (10, 0)])),
+            (1, 1, 1, ["n1:1"], LineString([(10, 0), (20, 0)]))]  # fmt: skip
+    portions = portions_frame(rows)
+    fb, axis = np.zeros(2, dtype=np.int64), np.array([True, True])
+    low = [json.loads(f) for f in tiles._merged_features(portions, fb, axis, tiles.LOW_ZOOMS)]
+    assert [f["tippecanoe"] for f in low] == [{"minzoom": 11, "maxzoom": 11}]
+    assert tiles.LOW_ZOOMS == (11,) and tiles.STREETS_MIN == 11
+
+
+def test_streets_start_at_z11_and_the_communes_outlines_have_their_own_z7_archive(ci_pipeline):
+    import gzip
+
+    from pmtiles.reader import MmapSource, Reader, all_tiles
+
+    from lacarte import basemap as bm
+
+    out = ci_pipeline.build_dir / "tiles"
+    assert not [p.name for p in out.glob("streets-*.pmtiles")]  # the two halves, joined
+    with open(out / "streets.pmtiles", "rb") as fh:
+        zooms = {z for (z, _, _), _ in all_tiles(MmapSource(fh))}
+    assert min(zooms) == 11 and max(zooms) == 16
+    with open(out / "admin7.pmtiles", "rb") as fh:
+        reader = Reader(MmapSource(fh))
+        assert (reader.header()["min_zoom"], reader.header()["max_zoom"]) == (7, 7)
+        tiles7 = list(all_tiles(MmapSource(fh)))
+    assert tiles7
+    for _, data in tiles7:
+        tile = gzip.decompress(data)
+        layers = [tile[v:e] for num, _, _, v, e in bm._fields(tile) if num == 3]
+        assert [bm.layer_name(layer) for layer in layers] == ["communes"]
+        # Outlines only: no attribute key in the layer (field 3 of a layer message).
+        assert not [f for f in bm._fields(layers[0]) if f[0] == 3]

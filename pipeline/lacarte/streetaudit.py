@@ -35,6 +35,17 @@ OUTSIDE_MERGED_M = 2.5
 FILTER_SLACK_M = 0.5  # a kept portion may overrun its kept cameras by this much
 
 
+def outside_limit_m(z: int, extent: int) -> float:
+    """How long a coloured stretch off the filmed intervals may be at zoom z on a grid of
+    `extent` units: OUTSIDE_MIN_M from z15; on the merged zooms OUTSIDE_MERGED_M, the
+    author's z12 limit, kept as the same share of a grid unit below z12 and on a coarser
+    grid (z11 at tiles.LOW_DETAIL: 20 m, about 0.8 CSS pixel; user decision 2026-10-23,
+    streets one zoom earlier)."""
+    if z not in tiles.MERGED_ZOOMS:
+        return OUTSIDE_MIN_M
+    return OUTSIDE_MERGED_M * 2 ** max(0, 12 - z) * 4096 / extent
+
+
 # --- vector tiles ----------------------------------------------------------------------
 
 
@@ -224,23 +235,26 @@ def tile_audit(
     zoom), tiles outside max(1 m, 5 %), coloured stretches off every filmed interval (any
     segment) and off the filmed intervals of the segments drawn at that zoom (so off the
     axes below z16), counted when longer than OUTSIDE_MIN_M."""
-    extent = next(
-        (layer["extent"] for d in tile_data.values() for layer in decode(d).values()), 4096
-    )
     refs = {est: filmed_lines(edges, intervals, est) for est in estimates}
     out: dict = {}
     for z in zooms:
         prep = {}
         keys = {k for k in tile_data if k[0] == z}
+        # Each zoom's own grid: z11 is tiled coarser (tiles.LOW_DETAIL).
+        extent = next(
+            (layer["extent"] for k in sorted(keys) for layer in decode(tile_data[k]).values()),
+            4096,
+        )
         for est, (ref, visible) in refs.items():
             world = _to_world(ref, z, extent)
             vis = visible if z < 16 else np.ones(len(ref), bool)
             prep[est] = (world, vis, shapely.STRtree(world))
             for x0, y0, x1, y1 in (shapely.bounds(world) // extent).astype(int):
                 keys.update((z, x, y) for x in range(x0, x1 + 1) for y in range(y0, y1 + 1))
-        # Lateral slack, in tile units: quantisation and tippecanoe's simplification, ours
-        # on the merged zooms, and half a metre.
-        slack_units = 2 * extent / 4096 + (
+        # Lateral slack, in tile units: quantisation (a unit of this zoom's grid, whatever
+        # its extent) and tippecanoe's simplification, ours on the merged zooms, and half a
+        # metre.
+        slack_units = 2 + (
             tiles.SIMPLIFY_PX * extent / tiles.TILE_PX if z in tiles.MERGED_ZOOMS else 0
         )
         per_tile: dict[int, list] = {est: [] for est in estimates}
@@ -277,7 +291,7 @@ def tile_audit(
                     near = shapely.clip_by_rect(world[hit], *around)
                     zones = shapely.buffer(near, pad, cap_style="flat", quad_segs=2)
                     drawn = shapely.union_all(col_geom)
-                    lim = OUTSIDE_MERGED_M if z in tiles.MERGED_ZOOMS else OUTSIDE_MIN_M
+                    lim = outside_limit_m(z, extent)
                     off = _off(drawn, shapely.union_all(zones), u, lim)
                     off_vis = (
                         _off(drawn, shapely.union_all(zones[vis[hit]]), u, lim) if z < 16 else off
