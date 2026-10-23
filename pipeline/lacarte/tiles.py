@@ -1,6 +1,6 @@
 """Stage 6: vector tiles (PMTiles) for the three reading levels.
 
-- admin.pmtiles    layers `departements` z5-7, `communes` z8-11 (IGN ADMIN EXPRESS COG
+- admin.pmtiles    layers `departements` z4-8, `communes` z8-11 (IGN ADMIN EXPRESS COG
                    CARTO; municipal arrondissements in place of their commune)
 - admin7.pmtiles   layer `communes` z7: their outlines only, no attribute (drawn from z7.5)
 - streets.pmtiles  layer `edges`    z14-16  every segment, grey; sidewalks, crossings
@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import itertools
 import json
+import math
 import subprocess
 from pathlib import Path
 
@@ -75,6 +76,10 @@ DEPS_MAX = 7
 # and MapLibre loads a source only when one of its layers is in its zoom range, so the z7
 # view loads none (heaviest tile 186 KiB, 930 KiB on a phone's screen at z7.5).
 OUTLINES_Z, OUTLINES_SIMPLIFY = DEPS_MAX, 4
+# The lowest zoom of the départements: on a phone the whole of France fills the screen's
+# width near z4.2 (user decision 2026-10-23: zoomed out, France stays whole and centred);
+# below admin.pmtiles' first zoom the map would show no area at all.
+ADMIN_MIN = 4
 QUANTILES = (0.2, 0.4, 0.6, 0.8)
 # z12-14: segments are a few pixels long; contiguous filmed portions of the same estimate,
 # level and filter bits are merged. z14 since lot P (2026-10-17): its portions with their
@@ -219,7 +224,12 @@ def finish(
     """meta.json, cameras.json, areas.json and the three archives, from the sources written
     by write_features and the areas."""
     build = {"build_id": buildinfo.build_id(region), "participation": participation_rules()}
-    (out / "meta.json").write_text(json.dumps({**build, **meta(areas), **lists}, indent=2))
+    # The region's extent (its départements, WGS84): the map's lowest zoom fits it and a
+    # view taken outside it comes back at the end of the gesture (web bounds.ts).
+    extent = {"bounds": region_bounds(areas)}
+    (out / "meta.json").write_text(
+        json.dumps({**build, **meta(areas), **extent, **lists}, indent=2)
+    )
     (out / "cameras.json").write_text(
         json.dumps(camera_table(cams, filters, compact), separators=(",", ":"))
     )
@@ -248,7 +258,7 @@ def finish(
     )
     _tippecanoe(
         "--force", "--read-parallel", f"--attribution={ADMIN_ATTRIBUTION}",
-        "-o", str(paths["admin"]), "-Z5", f"-z{AREAS_MAX}",
+        "-o", str(paths["admin"]), f"-Z{ADMIN_MIN}", f"-z{AREAS_MAX}",
         "--no-feature-limit", "--no-tile-size-limit", "--detect-shared-borders",
         "--name=la-carte admin",
         *(a for layer in levels for a in ("-L", f"{layer}:{src / f'{layer}.geojsonl'}")),
@@ -360,6 +370,18 @@ def meta(areas: gpd.GeoDataFrame) -> dict:
         # keeps the quantiles above until the switch).
         "area_classes": admin.class_breaks(),
     }
+
+
+def region_bounds(areas: gpd.GeoDataFrame) -> list[float]:
+    """[west, south, east, north] of the région's départements, to 3 decimals outward."""
+    deps = areas[areas.level == "departement"]
+    west, south, east, north = (deps if len(deps) else areas).to_crs("EPSG:4326").total_bounds
+    return [
+        math.floor(west * 1000) / 1000,
+        math.floor(south * 1000) / 1000,
+        math.ceil(east * 1000) / 1000,
+        math.ceil(north * 1000) / 1000,
+    ]
 
 
 def share_breaks(areas: pd.DataFrame) -> dict:

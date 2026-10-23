@@ -351,3 +351,26 @@ def test_streets_start_at_z11_and_the_communes_outlines_have_their_own_z7_archiv
         assert [bm.layer_name(layer) for layer in layers] == ["communes"]
         # Outlines only: no attribute key in the layer (field 3 of a layer message).
         assert not [f for f in bm._fields(layers[0]) if f[0] == 3]
+
+
+def test_the_region_bounds_are_its_departements_rounded_outward():
+    from shapely import box
+
+    areas = gpd.GeoDataFrame(
+        {"level": ["departement", "departement", "commune"]},
+        geometry=[box(2.1234, 48.5, 2.5, 48.9), box(2.5, 48.7, 3.0001, 49.2), box(9, 9, 10, 10)],
+        crs="EPSG:4326",
+    )  # fmt: skip
+    assert tiles.region_bounds(areas) == [2.123, 48.5, 3.001, 49.2]
+
+
+def test_the_admin_tiles_start_at_z4_and_meta_gives_the_region_bounds(ci_pipeline):
+    import json
+
+    from pmtiles.reader import MmapSource, Reader
+
+    out = ci_pipeline.build_dir / "tiles"
+    with open(out / "admin.pmtiles", "rb") as fh:
+        assert Reader(MmapSource(fh)).header()["min_zoom"] == tiles.ADMIN_MIN == 4
+    west, south, east, north = json.loads((out / "meta.json").read_text())["bounds"]
+    assert west < east and south < north
