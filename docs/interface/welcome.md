@@ -82,7 +82,15 @@ The welcome panel, the points at send, loading, legal pages, the launch lot.
   route until the API serves it; at 375 and 390 px, WebKit and Chromium, every ticket and
   the total within 16 px of both edges and centred, no stub's number under the next
   ticket, the cannon clear of « PTS » and half on the screen); `bench/shots-fete.mjs`
-  makes the stop point's captures (`--only centred`: the phone's).
+  makes the stop point's captures (`--only centred`: the phone's). The screen turned or the
+  window resized while the tickets are shown (lot V, the author's « étiquettes décentrées
+  après l'ajout d'une caméra… parfois un bouton sort de l'écran »): on a wide screen the
+  column stays where the sheet stood, anchored to the right edge as the sheets are
+  (`score.ts` columnOf: it was a left offset measured once, the sheet hidden since, and the
+  tickets and « Voir le classement » went off the screen once it turned); narrowed to a
+  phone's layout it is centred; a stack now higher than the screen gathers its added infos
+  then, and the cannon is placed again. Open: on a phone held sideways 375 px high or less,
+  an add's stack does not fit even gathered (its first ticket 5 to 60 px above the screen).
 
 ### 1.10 The launch lot (2026-10-13)
 

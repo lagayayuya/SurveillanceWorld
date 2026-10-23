@@ -4,7 +4,7 @@
    both modes (on the map, not on a paper of the theme); « Voir le classement » is a paper
    key of the theme. The column sits at the bottom left, 8a's 22 px from the edges (its
    tickets 18 px); on a wide screen, in the column of the sheet that just slid away
-   (score.ts sets its left and width: the author's request of 2026-10-12, point 2). The
+   (score.ts gives its right edge and width: the author's request of 2026-10-12, point 2). The
    scene lets every touch through to the map but on its button. Every tilt and fall sits in the motion query: under reduced motion it is
    all there at once, straight. */
 
@@ -28,6 +28,18 @@
   flex-direction: column;
   align-items: flex-start;
   margin-left: -4px;
+}
+/* A wide layout: the column of the sheet that slid away, anchored to the right edge as the
+   sheets are (score.ts columnOf), so that it stays there when the screen turns or the
+   window is resized; the phone's layout (below) ignores it. The complement of layout.ts
+   PHONE_QUERY, as sheet.css writes it. */
+@media (min-width: 601px) and (min-height: 501px), (min-width: 601px) and (pointer: fine),
+  (min-width: 601px) and (pointer: none) {
+  :root[data-ui="punk"] .score-col[data-column] {
+    left: auto;
+    right: var(--column-right, 22px);
+    width: var(--column-width, min(346px, calc(100% - 44px)));
+  }
 }
 /* On a phone the column, its stack and its total are centred, a margin on each side, every
    ticket on the screen with its tilt (the author's request of 2026-10-13, map point 2: the

@@ -69,8 +69,12 @@ const TOP_ROOM = 16;
 const PHONE_CLEAR = 34;
 const PHONE_EDGE = 10;
 
-/** Where a sheet stood: the tickets' column on a wide screen. */
-export type Column = { left: number; width: number };
+/** Where a sheet stood: the tickets' column on a wide screen, as both sheets stand —
+ * anchored to the screen's right edge (`right` px from it, `width` px wide). Kept so, not
+ * as a left offset: the sheet is hidden once it has slid away, so the column is measured
+ * once, and a left offset measured at one width put the tickets and « Voir le classement »
+ * beside or beyond the screen once the screen turned or the window was resized. */
+export type Column = { right: number; width: number };
 
 /** A sheet's layout box (neither its tilt nor its slide), null when it does not show. */
 export function columnOf(e: HTMLElement | null): Column | null {
@@ -78,7 +82,10 @@ export function columnOf(e: HTMLElement | null): Column | null {
   let left = 0;
   for (let n: Element | null = e; n instanceof HTMLElement; n = n.offsetParent)
     left += n.offsetLeft;
-  return { left, width: e.offsetWidth };
+  return {
+    right: document.documentElement.clientWidth - left - e.offsetWidth,
+    width: e.offsetWidth,
+  };
 }
 
 /** A camera's detail tile properties, as the editor reads them (modify.ts tileProps). */
@@ -170,9 +177,12 @@ export class Score {
     const column =
       opts.column !== undefined ? opts.column : columnOf(document.getElementById("modify-panel"));
     const col = el("div", "score-col");
+    // Applied by score.css on a wide layout only: on a phone's (the window narrowed since)
+    // the column is centred whatever stood there.
     if (column && !isPhone()) {
-      col.style.left = `${column.left}px`;
-      col.style.width = `${column.width}px`;
+      col.dataset.column = "";
+      col.style.setProperty("--column-right", `${column.right}px`);
+      col.style.setProperty("--column-width", `${column.width}px`);
     }
     const stack = el("div", "score-stack");
     stack.setAttribute("aria-hidden", "true");
@@ -267,6 +277,15 @@ export class Score {
     }
     status.focus({ preventScroll: true });
     this.listen();
+    // The screen turned or the window resized while the tickets are shown: a stack now
+    // higher than the screen gathers its added infos, the cannon goes beside the total again.
+    const resized = () => {
+      if (this.ended) return;
+      if (this.tooHigh(col)) this.gather(stack, true);
+      this.placeGun();
+    };
+    window.addEventListener("resize", resized);
+    this.undo.push(() => window.removeEventListener("resize", resized));
     // Said in place of the thanks by Participation.sayRefused: the send is gone, so are its
     // points.
     const watch = new MutationObserver(() => {
@@ -354,21 +373,34 @@ export class Score {
   private tooHigh(col: HTMLElement): boolean {
     const row = this.total;
     const bonus = this.bonus;
-    row.hidden = false;
-    this.totalN.textContent = "+00";
-    if (this.unit) this.unit.textContent = t("board.pending.unit", { n: 2 });
+    const unit = this.unit;
+    // Measured with a total and the bonus in, then put back as they were (the screen may
+    // turn once the numbers are shown).
+    const was = {
+      row: row.hidden,
+      n: this.totalN.textContent,
+      unit: unit?.textContent ?? "",
+      bonus: bonus?.hidden ?? true,
+    };
+    if (row.hidden) {
+      row.hidden = false;
+      this.totalN.textContent = "+00";
+      if (unit) unit.textContent = t("board.pending.unit", { n: 2 });
+    }
     if (bonus) bonus.hidden = false;
     const top = col.getBoundingClientRect().top;
-    row.hidden = true;
-    this.totalN.textContent = "";
-    if (this.unit) this.unit.textContent = "";
-    if (bonus) bonus.hidden = true;
+    row.hidden = was.row;
+    this.totalN.textContent = was.n;
+    if (unit) unit.textContent = was.unit;
+    if (bonus) bonus.hidden = was.bonus;
     return top < TOP_ROOM;
   }
 
   /** The added infos on one ticket, where the first of them was (« Fiche », « 5 infos
-   * ajoutées »). */
-  private gather(stack: HTMLElement): void {
+   * ajoutées »). `late`: once the tickets have fallen (the screen turned), the gathered
+   * one lies where the first was, as it lay, without falling again, with its points when
+   * they are known. */
+  private gather(stack: HTMLElement, late = false): void {
     const infos = this.tickets.filter((x) => x.k === "info");
     if (infos.length < 2) return;
     const what = t("score.what.infos");
@@ -380,6 +412,13 @@ export class Score {
       ...this.ticket(what),
     };
     this.paint(one, "info");
+    if (late) {
+      if (infos[0].el.dataset.i) one.el.dataset.i = infos[0].el.dataset.i;
+      one.el.style.animation = "none";
+      const points = this.points;
+      const n = points ? one.uuids.reduce((s, u) => s + (pointsOf(points, u)?.points ?? 0), 0) : 0;
+      one.pts.textContent = n > 0 ? `+${n}` : "";
+    }
     stack.insertBefore(one.el, infos[0].el);
     for (const x of infos) x.el.remove();
     const at = this.tickets.indexOf(infos[0]);
