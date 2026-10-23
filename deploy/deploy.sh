@@ -78,6 +78,9 @@ SITE="$(PREVIEW_ROOT="$DEPLOY_PATH/current" API_PORT="$API_PORT" uv run python d
 for f in "data/build/$REGION/tiles/meta.json" "data/basemap/$REGION.pmtiles"; do
   [ -e "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
+# The basemap made by the current code (its own id, outside the build's: basemap.py), or stop:
+# strip it again (README).
+uv run lacarte basemap check "data/basemap/$REGION.pmtiles"
 BUILD_ID="$(uv run python -c 'import json, sys; print(json.load(open(sys.argv[1]))["build_id"])' \
   "data/build/$REGION/tiles/meta.json")"
 

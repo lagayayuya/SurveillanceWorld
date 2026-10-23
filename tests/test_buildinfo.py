@@ -4,7 +4,7 @@ import re
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from lacarte import buildinfo, regions
+from lacarte import basemap, buildinfo, regions
 
 
 def _build(tmp_path, stamps, extra=b""):
@@ -61,6 +61,33 @@ def test_build_id_changes_with_the_pipeline_code_only(tmp_path, monkeypatch):
     assert buildinfo.digest(d) == before
     (code / "stage.py").write_text("STEP = 2\n")
     assert buildinfo.digest(d) != before
+
+
+def test_the_basemap_and_the_build_have_separate_ids(tmp_path, monkeypatch):
+    """A basemap change needs no build, a build change no new basemap (user decision
+    2026-10-23): each id moves with its own code only."""
+    _, d = _build(tmp_path, ["2026-09-28T20:15:02+00:00"])
+    code = tmp_path / "pipeline" / "lacarte"
+    _code(code)
+    rules = tmp_path / "basemap.yaml"
+    rules.write_text("undrawn_kinds: {}\n")
+    monkeypatch.setattr(buildinfo, "CODE", code)
+    monkeypatch.setattr(basemap, "CODE_FILE", code / "basemap.py")
+    monkeypatch.setattr(basemap, "RULES_FILE", rules)
+    args = basemap.strip_args(["pois"], ["fr", "en"], True)
+    build, bm = buildinfo.digest(d), basemap.basemap_id("a source", args)
+    (code / "basemap.py").write_text("STRIP = 2\n")  # the basemap's code
+    assert buildinfo.digest(d) == build
+    assert basemap.basemap_id("a source", args) != bm
+    bm = basemap.basemap_id("a source", args)
+    (code / "stage.py").write_text("STEP = 2\n")  # a build's module (tiles.py, ...)
+    assert buildinfo.digest(d) != build
+    assert basemap.basemap_id("a source", args) == bm
+
+
+def test_the_basemap_id_hashes_the_module_the_build_id_leaves_out():
+    assert buildinfo.CODE / buildinfo.STANDALONE[0] == basemap.CODE_FILE
+    assert basemap.RULES_FILE.name not in buildinfo.RULES
 
 
 def test_the_real_pipeline_sources_enter_the_id():

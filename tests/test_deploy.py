@@ -533,6 +533,15 @@ def test_deploy_builds_with_the_contact_and_checks_a_route_without_session():
     assert "REVIEW_USER" not in (ROOT / "deploy" / "preview.caddy").read_text()
 
 
+def test_deploy_checks_the_basemap_id_before_anything_is_built():
+    """The served basemap made by the current code (`lacarte basemap check`, its own id since
+    2026-10-23), checked before the tables are exported, the site built or anything sent."""
+    text = (ROOT / "deploy" / "deploy.sh").read_text()
+    check = text.index('uv run lacarte basemap check "data/basemap/$REGION.pmtiles"')
+    assert check < text.index("uv run lacarte db load") < text.index("npm --prefix web run build")
+    assert check < text.index("rsync")
+
+
 # --- sign in with OpenStreetMap: deploy/osm_env.sh, the unit's EnvironmentFile ----------------
 
 OSM_ENV_SH = ROOT / "deploy" / "osm_env.sh"

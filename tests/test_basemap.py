@@ -2,13 +2,15 @@
 tile, every other layer and every untouched tile byte for byte, the names of places kept."""
 
 import gzip
+import re
 from pathlib import Path
 
+import pytest
 from pmtiles.reader import MmapSource, Reader, all_tiles
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import write
 
-from lacarte import basemap
+from lacarte import basemap, cli
 
 FIXTURE = Path(__file__).parent / "fixtures" / "ci-basemap.pmtiles"
 
@@ -202,3 +204,68 @@ def test_the_archive_without_undrawn_kinds(tmp_path):
     assert got[(0, 0, 0)] == _field(3, _field(1, b"landuse") + tail) + roads
     assert got[(1, 0, 0)] == roads
     assert stats["changed"] == 1 and stats["tiles"] == 2
+
+
+# --- the basemap's id (user decision 2026-10-23: out of the build's id, its own) ----------
+
+
+def _meta(path: Path) -> dict:
+    with open(path, "rb") as f:
+        return Reader(MmapSource(f)).metadata()
+
+
+def _stripped(tmp_path: Path) -> tuple[Path, Path]:
+    """A small source archive and its strip by the command (`main`): pois and names, undrawn."""
+    src, out = tmp_path / "full.pmtiles", tmp_path / "light.pmtiles"
+    _archive(src, {(14, 8290, 5634): _layer("places") + _layer("pois", b"\x78\x02")})
+    basemap.main(str(src), str(out), ["pois", "pois"], ["fr", "en"], undrawn=True)
+    return src, out
+
+
+def test_the_strip_writes_its_id_and_the_check_accepts_it(tmp_path, capsys):
+    src, out = _stripped(tmp_path)
+    meta = _meta(out)
+    args = {"drop": ["pois"], "names": ["en", "fr"], "undrawn": True}
+    assert meta["basemap_args"] == args
+    assert meta["basemap_source"] == basemap.source_identity(src)
+    assert re.fullmatch(r"[0-9a-f]{16}", meta["basemap_id"])
+    assert meta["basemap_id"] == basemap.basemap_id(basemap.source_identity(src), args)
+    assert basemap.check(out)["basemap_id"] == meta["basemap_id"]
+    assert [v["id"] for v in meta["vector_layers"]] == ["places", "roads"]  # as before
+    capsys.readouterr()
+    cli.main(["basemap", "check", str(out)])
+    assert capsys.readouterr().out.startswith(f"basemap {meta['basemap_id']}: made by this code")
+    # Other args or another source: another id.
+    other = basemap.strip_args(["pois"], None, True)
+    assert basemap.basemap_id(meta["basemap_source"], other) != meta["basemap_id"]
+    assert basemap.basemap_id("0" * 64, args) != meta["basemap_id"]
+
+
+def test_the_check_refuses_an_archive_made_by_other_code(tmp_path, monkeypatch):
+    _, out = _stripped(tmp_path)
+    code = tmp_path / "basemap.py"
+    code.write_text(basemap.CODE_FILE.read_text() + "# one more line\n")
+    monkeypatch.setattr(basemap, "CODE_FILE", code)
+    with pytest.raises(basemap.NotThisCode, match="made by other code"):
+        basemap.check(out)
+    with pytest.raises(SystemExit, match="made by other code.*strip it again"):
+        cli.main(["basemap", "check", str(out)])
+    monkeypatch.undo()
+    basemap.check(out)
+    rules = tmp_path / "basemap.yaml"  # the rules too
+    rules.write_text(basemap.RULES_FILE.read_text() + "# one more line\n")
+    monkeypatch.setattr(basemap, "RULES_FILE", rules)
+    with pytest.raises(basemap.NotThisCode, match="made by other code"):
+        basemap.check(out)
+
+
+def test_the_check_refuses_an_archive_without_id(tmp_path):
+    src, out = _stripped(tmp_path)
+    with pytest.raises(SystemExit, match="no basemap id"):
+        cli.main(["basemap", "check", str(src)])
+    # A strip by the function alone writes no id, and never keeps its source's.
+    again = tmp_path / "again.pmtiles"
+    basemap.strip(out, again, ["roads"])
+    assert not set(basemap.STAMP) & set(_meta(again))
+    with pytest.raises(basemap.NotThisCode, match="no basemap id"):
+        basemap.check(again)

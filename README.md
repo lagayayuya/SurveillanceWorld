@@ -105,8 +105,15 @@ pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles data/france/basem
   --region=<contour de la métropole, GeoJSON> --maxzoom=15
 uv run lacarte basemap strip data/france/basemap/france-full.pmtiles data/basemap/france.pmtiles \
   --drop pois --names fr en --undrawn   # sans ce que le style ne dessine pas (rules/basemap.yaml)
+uv run lacarte basemap check data/basemap/france.pmtiles   # fait par ce code ?
 make web REGION=france
 ```
+
+Le fond de carte a son propre identifiant, hors de celui de la construction : `strip`
+l'écrit dans l'archive (le code de `pipeline/lacarte/basemap.py`, `rules/basemap.yaml`, les
+options et l'en-tête de l'archive source). Un changement du fond ne demande pas de
+reconstruire, ni l'inverse ; après un changement de `basemap.py` ou de `rules/basemap.yaml`,
+`check` refuse l'ancienne archive et le déploiement s'arrête : refaites le `strip`.
 
 ### Toute l'Île-de-France
 
@@ -123,6 +130,7 @@ pmtiles extract https://build.protomaps.com/<YYYYMMDD>.pmtiles data/basemap/idf-
   --bbox=1.44,48.12,3.56,49.24 --maxzoom=15   # le fond de carte, auto-hébergé
 uv run lacarte basemap strip data/basemap/idf-full.pmtiles data/basemap/idf.pmtiles \
   --drop pois --names fr en --undrawn
+uv run lacarte basemap check data/basemap/idf.pmtiles
 make web REGION=idf
 ```
 
@@ -172,6 +180,10 @@ Imaginé par lagayayuya.
 une API Python), réglés uniquement par des variables d'environnement : voir
 [`deploy/deploy.env.example`](deploy/deploy.env.example). Rien du serveur n'est écrit dans
 le dépôt.
+
+`deploy/deploy.sh` demande, avant de rien construire ni envoyer, les tuiles de la région
+(`data/build/<région>/tiles`) et son fond de carte (`data/basemap/<région>.pmtiles`), fait
+par le code en place : `uv run lacarte basemap check`, sinon refaites le `strip` (plus haut).
 
 - **Comptes.** On entre avec son compte OpenStreetMap (OAuth 2.0 avec PKCE, portée
   `openid` ; le jeton est révoqué aussitôt et seul l'identifiant OSM numérique est gardé). Les

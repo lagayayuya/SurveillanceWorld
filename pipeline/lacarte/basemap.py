@@ -13,13 +13,19 @@ With `--undrawn`, the features of the kinds no layer of the style draws go too
 (rules/basemap.yaml undrawn_kinds: most of `landuse`'s bytes at low zooms, farmland and
 meadows). A layer without such a feature is kept byte for byte.
 
+The stripped archive carries its basemap id (`basemap_id`, below): which code, rules,
+arguments and source made it. The build's id leaves this module out; the deploy runs
+`lacarte basemap check` on the archive it serves and stops unless the current code made it.
+
     lacarte basemap strip data/basemap/idf.pmtiles data/basemap/idf-light.pmtiles --drop pois
+    lacarte basemap check data/basemap/idf-light.pmtiles
 """
 
 from __future__ import annotations
 
 import argparse
 import gzip
+import hashlib
 import json
 import re
 from collections.abc import Callable, Iterable, Iterator, Mapping
@@ -287,11 +293,12 @@ def strip(
     drop: Iterable[str],
     names: Iterable[str] | None = None,
     kinds: Mapping[str, frozenset[str]] | None = None,
+    stamp: Mapping | None = None,
 ) -> dict:
     """Write `src` again as `dst` without the layers `drop`, with `names` without the names
     in other languages (name_keys), with `kinds` without the features of those kinds
-    (drop_kinds). Returns what it did: the tiles changed, the bytes of tile data before and
-    after."""
+    (drop_kinds), its metadata with `stamp` (main: the basemap's id) and never the source's
+    own. Returns what it did: the tiles changed, the bytes of tile data before and after."""
     drop = sorted(set(drop))
     dropped = name_keys(names) if names is not None else None
     with open(src, "rb") as f:
@@ -328,6 +335,7 @@ def strip(
                 if dropped is not None:
                     layers = [_without_fields(v, dropped) for v in layers]
                 metadata = {**metadata, "vector_layers": layers}
+            metadata = {k: v for k, v in metadata.items() if k not in STAMP} | dict(stamp or {})
             writer.finalize(header, metadata)
     return stats
 
@@ -350,13 +358,81 @@ def tile(path: Path, z: int, x: int, y: int) -> bytes | None:
         return gzip.decompress(data) if gz else data
 
 
+# --- the basemap's id -----------------------------------------------------------------------
+# A stripped archive says what made it, in its metadata: `basemap_id`, the digest of this
+# module's source, of rules/basemap.yaml (always, read or not: one rule for every archive),
+# of the strip's arguments (`basemap_args`) and of the source archive's identity
+# (`basemap_source`). The build's id leaves this module out (buildinfo.STANDALONE): a basemap
+# change needs no build, a build no new basemap; `lacarte basemap check`, run by the deploy,
+# refuses an archive this code did not make.
+CODE_FILE = regions.ROOT / "pipeline" / "lacarte" / "basemap.py"
+RULES_FILE = regions.ROOT / "rules" / "basemap.yaml"
+STAMP = ("basemap_id", "basemap_source", "basemap_args")
+
+
+class NotThisCode(Exception):
+    """An archive without a basemap id, or made by other code."""
+
+
+def source_identity(path: Path) -> str:
+    """Which archive a basemap was stripped from: the digest of its header (every section's
+    offset and length, the tile counts, zooms and bounds) and of its metadata as stored (the
+    Protomaps build: planetiler's build time, git hash, OSM replication time). Not its tiles:
+    5 GB for France, minutes at each strip; what the id guards against is code, not a
+    tampered source."""
+    with open(path, "rb") as f:
+        reader = Reader(MmapSource(f))
+        header = reader.header()
+        h = hashlib.sha256(reader.get_bytes(0, 127))  # PMTiles v3: a 127-byte header
+        h.update(reader.get_bytes(header["metadata_offset"], header["metadata_length"]))
+    return h.hexdigest()
+
+
+def strip_args(drop: Iterable[str], names: Iterable[str] | None, undrawn: bool) -> dict:
+    """The strip's arguments as the id takes them, order and repeats left out."""
+    return {
+        "drop": sorted(set(drop)),
+        "names": sorted(set(names)) if names is not None else None,
+        "undrawn": bool(undrawn),
+    }
+
+
+def basemap_id(source: str, args: Mapping) -> str:
+    """16 hex of this module's source, the basemap rules, the source's identity and the args."""
+    h = hashlib.sha256()
+    inputs = (("pipeline/lacarte/basemap.py", CODE_FILE), ("rules/basemap.yaml", RULES_FILE))
+    for label, path in inputs:
+        h.update(label.encode())
+        h.update(hashlib.sha256(path.read_bytes()).digest())
+    h.update(json.dumps({"source": source, "args": args}, sort_keys=True).encode())
+    return h.hexdigest()[:16]
+
+
+def check(path: Path) -> dict:
+    """The archive's stamp when this code made it (its id recomputed from the current code
+    and rules, with the source and the args it stores); NotThisCode otherwise."""
+    with open(path, "rb") as f:
+        metadata = Reader(MmapSource(f)).metadata()
+    stamp = {k: metadata.get(k) for k in STAMP}
+    if not all(stamp.values()):
+        raise NotThisCode(f"{path}: no basemap id: strip it again (lacarte basemap strip, README)")
+    current = basemap_id(stamp["basemap_source"], stamp["basemap_args"])
+    if current != stamp["basemap_id"]:
+        raise NotThisCode(f"{path}: basemap made by other code (its id {stamp['basemap_id']},"
+                          f" this code's {current}): strip it again (README)")  # fmt: skip
+    return stamp
+
+
 def main(
     src: str, dst: str, drop: list[str], names: list[str] | None = None, undrawn: bool = False
 ) -> None:
     kinds = undrawn_kinds() if undrawn else None
-    stats = strip(Path(src), Path(dst), drop, names, kinds)
+    source, args = source_identity(Path(src)), strip_args(drop, names, undrawn)
+    stamp = {"basemap_id": basemap_id(source, args), "basemap_source": source, "basemap_args": args}
+    stats = strip(Path(src), Path(dst), drop, names, kinds, stamp)
     shown = {k: sorted(v) for k, v in kinds.items()} if kinds else None
-    print(json.dumps({"dropped": sorted(set(drop)), "names": names, "kinds": shown, **stats}))
+    print(json.dumps({"dropped": sorted(set(drop)), "names": names, "kinds": shown,
+                      "basemap_id": stamp["basemap_id"], **stats}))  # fmt: skip
 
 
 # --- the command line (`lacarte basemap`) -------------------------------------------------
@@ -365,7 +441,9 @@ def main(
 
 def add_parser(sub: argparse._SubParsersAction) -> None:
     """`lacarte basemap ...` among the `lacarte` parser's subcommands."""
-    bm = sub.add_parser("basemap", help="the self-hosted basemap: strip layers from its archive")
+    bm = sub.add_parser(
+        "basemap", help="the self-hosted basemap: strip layers from its archive, check its id"
+    )
     actions = bm.add_subparsers(dest="action", required=True)
     st = actions.add_parser("strip", help="write SRC again as DST without some of its content")
     st.add_argument("src", type=Path)
@@ -379,11 +457,19 @@ def add_parser(sub: argparse._SubParsersAction) -> None:
         action="store_true",
         help="drop the features of the kinds no style layer draws (rules/basemap.yaml)",
     )
+    ck = actions.add_parser("check", help="exit 1 unless the current code made ARCHIVE")
+    ck.add_argument("archive", type=Path)
 
 
 def run(args: argparse.Namespace) -> None:
     if args.action == "strip":
         main(str(args.src), str(args.dst), args.drop, args.names, args.undrawn)
+        return
+    try:
+        stamp = check(args.archive)
+    except NotThisCode as e:
+        raise SystemExit(str(e)) from None
+    print(f"basemap {stamp['basemap_id']}: made by this code ({json.dumps(stamp['basemap_args'])})")
 
 
 __all__ = [
