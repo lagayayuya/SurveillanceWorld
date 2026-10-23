@@ -137,17 +137,26 @@ redesign: 3.0 alone… »; DECISIONS 2026-10-07, lot 3.0).
   label-content-name-mismatch and WCAG 2.2 A and AA) runs in the local gate
   (`web/scripts/gate.sh`, chips-webkit and chips-chromium) and in CI's full matrix, not in
   the push's light CI; axe-core is a dev dependency.
-- **No pinch-zoom of the interface** (the author's request of 2026-10-11, point 7;
-  `gestures.ts`, `theme/punk/base.css`): the estimate bar, the ticket, the filters machine,
-  the floating buttons, the sheets, the camera list, the participation's panels, « Vos
-  contributions », the send counter and MapLibre's controls say `touch-action: pan-x pan-y`
-  (scrolling and taps; `manipulation` would keep the pinch: MDN, it is « pan-x pan-y
-  pinch-zoom »), at the lowest specificity so that a part that says less keeps it (a phone
-  sheet's head `none`); WebKit's `gesturestart` and `gesturechange` are cancelled when they
-  start on those elements. The
-  map keeps its own zoom (MapLibre's canvas, `none`). The viewport keeps no `maximum-scale`
-  nor `user-scalable`, the text no `-webkit-text-size-adjust`: Safari's text size (« aA »)
-  works as before.
+- **No zoom of the page** (the author's requests of 2026-10-11, point 7, and 2026-10-23,
+  « Zoom bloqué »; `gestures.ts`, `theme/punk/base.css`): the root and every element say
+  `touch-action: pan-x pan-y` (scrolling and taps; no pinch nor double-tap zoom;
+  `manipulation` would keep the pinch: MDN, it is « pan-x pan-y pinch-zoom »), at no
+  specificity so that a part that says less keeps it (a phone sheet's head `none`); every
+  element, not a list of panels, because WebKit starts the chain afresh at each scroll
+  container (`StyleAdjuster.cpp` computeUsedTouchAction), so a pinch on a sheet's scrolling
+  paper zoomed an iPhone's page, and the welcome and the legal pages were in no list.
+  WebKit's `gesturestart` and `gesturechange` are cancelled wherever they start but on the
+  map. The map keeps its own zoom (MapLibre's canvas, `none`). Every text field is 16 px on
+  a phone: under 16 px an iPhone zooms the page on the focused field (16 / its size,
+  `WKWebViewIOS.mm` _zoomToFocusRect) and leaves it zoomed. **The page zoomed all the same**
+  (a browser that forces the zoom, a field the rule missed): while `visualViewport.scale` is
+  over 1.01 the root carries `data-page-zoomed`, every element but the map's canvas goes back
+  to `auto` and no gesture is cancelled, so that two fingers or a double tap zoom it back
+  out; a page cannot set the scale itself (`VisualViewport.scale` is read-only). The viewport
+  keeps no `maximum-scale` nor `user-scalable`, the text no `-webkit-text-size-adjust`:
+  Safari's text size (« aA ») and the system's work as before. Checked by
+  `web/bench/smoke-formats.mjs` on every touch format; only a real iPhone shows WebKit's
+  focus zoom and its pinch.
 - **A phone's keyboard** (the author's request of 2026-10-11, point 4; `keyboard.ts`,
   `bottomsheet.ts`): on each change of `visualViewport` and each focus,
   `data-keyboard="open"` on the root while a field is focused over a keyboard (the layout

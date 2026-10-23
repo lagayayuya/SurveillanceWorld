@@ -51,29 +51,30 @@
   filter: invert(1);
 }
 
-/* No pinch-zoom of the interface (the author's request of 2026-10-11, point 7; gestures.ts
-   lists the same elements and cancels WebKit's gesture events on them): over a panel,
-   a sheet, the ticket or a button, a finger scrolls and taps, two fingers do nothing.
-   `pan-x pan-y`, not `manipulation`, which is « pan-x pan-y pinch-zoom » (MDN, touch-action)
-   and keeps the pinch; a gesture takes the intersection of its element's value and its
-   ancestors' up to the scroller (MDN), so the containers suffice. Lowest specificity
-   (:where): a part that says less (`pan-y`, `none`: a phone sheet's head, the panels
-   style.css gives `pan-y`) keeps its own. Never the map: MapLibre sets its canvas's (`none`). */
-:root[data-ui="punk"]
-:where(
-  #estimate,
-  #ticket,
-  #filters,
-  #fabs,
-  #sheet,
-  #camlist,
-  #filters-empty,
-  #queue-count,
-  #modify-panel,
-  #complete-panel,
-  #move-panel,
-  #mine,
-  .maplibregl-ctrl
-) {
+/* No zoom of the page (the author's requests of 2026-10-11, point 7, and 2026-10-23,
+   « Zoom bloqué »; gestures.ts cancels WebKit's gesture events the same way): a finger
+   scrolls and taps, two fingers or a double tap never zoom the page; the map keeps its own
+   zoom (MapLibre's canvas says `none`, its own rule wins). On every element, not on a list
+   of panels: the welcome and the legal pages were not in the list, and WebKit starts the
+   chain afresh at each scroll container (StyleAdjuster.cpp computeUsedTouchAction: an
+   `overflow` auto or scroll resets it to `auto`), so a pinch on a sheet's scrolling paper
+   zoomed an iPhone's page although the sheet said `pan-x pan-y`. `pan-x pan-y`, not
+   `manipulation`, which is « pan-x pan-y pinch-zoom » (MDN, touch-action). No specificity
+   (:where): a part that says less (`pan-y`, `none`: a phone sheet's head) and MapLibre's
+   canvas keep their own. Safari's text size (« aA ») and the system's are settings, not
+   gestures: untouched (no `maximum-scale`, no `user-scalable`, no
+   `-webkit-text-size-adjust`). */
+:root[data-ui="punk"],
+:where(:root[data-ui="punk"]) * {
   touch-action: pan-x pan-y;
+}
+/* The page zoomed all the same (an iPhone's zoom on a field, a browser that forces the
+   zoom; gestures.ts sets the mark while visualViewport.scale is over 1): the browser's
+   gestures come back everywhere but on the map, so that two fingers or a double tap zoom
+   it back out. Chromium declines to zoom on a field for that reason (« decide not to zoom
+   in if the user won't be able to zoom out », web_frame_widget_impl.cc); WebKit does not
+   ask. */
+:root[data-ui="punk"][data-page-zoomed],
+:where(:root[data-ui="punk"][data-page-zoomed]) * {
+  touch-action: auto;
 }
