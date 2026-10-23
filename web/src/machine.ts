@@ -2,11 +2,10 @@
 // 18a on a phone, and 17a's map side): the header ticket « Surveillance World » with its two
 // links, « Filtres et légende » and « Liste des caméras »; the filters « machine » that rises
 // under the ticket, the ticket printing the legend when « Légende » is pressed; the list of
-// the cameras in view, the map's accessible alternative. Loaded by the punk interface only
-// (main.ts), it builds its DOM once and patches it on every render (filters.ts calls it on
-// each idle): the keyboard focus, a finger's tap and the machine's slide survive the map's
-// moves. The rows keep the current panel's structure (a label holding its input, its label
-// and its count), so that one set of tests drives both interfaces; their look is 20a's.
+// the cameras in view, the map's accessible alternative. A chunk of its own (main.ts), it
+// builds its DOM once and patches it on every render (filters.ts calls it on each idle):
+// the keyboard focus, a finger's tap and the machine's slide survive the map's moves. Each
+// row is a label holding its input, its label and its count; their look is 20a's.
 import type { Map as MlMap } from "maplibre-gl";
 import { t } from "./i18n";
 import { cameraCanvas, type Kind, levelCanvas } from "./icons";

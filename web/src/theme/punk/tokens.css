@@ -1,5 +1,5 @@
 /* The punk theme's tokens, light then dark (:root[data-ui="punk"], then [data-mode="dark"]):
-   they redefine every token of theme/classic.css and add the punk-only ones. Text colours
+   every token the styles read (style.css, review/review.css, theme/punk/*.css). Text colours
    meet 4.5:1 and graphics 3:1 on their backgrounds in both modes (web/tests/theme.test.ts,
    which reads this file). */
 
@@ -52,6 +52,8 @@
   /* /revue, a tool (lot 1 « Modérer », plan-revue): its body text in the system's sans, never
      the typewriter face; its titles, tabs and buttons in the display face above. */
   --font-review: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* figures in /revue and the debug panel */
+  --font-mono: ui-monospace, monospace;
   --font-size: 14px;
   --line-height: 1.45;
   --size-xxs: 12.5px;

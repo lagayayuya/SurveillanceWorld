@@ -9,7 +9,7 @@
 // the refreshes started, the latest wins. No author's name ever reaches the map.
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { DETAIL_MIN } from "../layers";
-import { palette, ui } from "../theme";
+import { palette } from "../theme";
 import { call } from "./api";
 import { addedId, type Queue } from "./queue";
 
@@ -108,19 +108,18 @@ export class ProposalsLayer {
       },
       below,
     );
-    // Punk (DECISIONS 2026-10-08, a pending add's field from its answers): the proposed
-    // field outlined in the ink, dashed, so that it reads among the drawn fields.
-    if (ui() === "punk")
-      this.map.addLayer(
-        {
-          id: "proposal-field-line",
-          type: "line",
-          source: "proposal-field",
-          filter: ["==", ["get", "lv"], 1],
-          paint: { "line-color": p.ink, "line-width": 2, "line-dasharray": [2, 1.5] },
-        },
-        below,
-      );
+    // DECISIONS 2026-10-08, a pending add's field from its answers: the proposed field
+    // outlined in the ink, dashed, so that it reads among the drawn fields.
+    this.map.addLayer(
+      {
+        id: "proposal-field-line",
+        type: "line",
+        source: "proposal-field",
+        filter: ["==", ["get", "lv"], 1],
+        paint: { "line-color": p.ink, "line-width": 2, "line-dasharray": [2, 1.5] },
+      },
+      below,
+    );
     // Under the selected camera, which stays above every layer (focus mode).
     const top = this.map.getLayer("camera-selected") ? "camera-selected" : undefined;
     this.map.addLayer(

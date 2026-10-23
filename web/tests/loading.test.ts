@@ -1,8 +1,7 @@
 // « Chargement »'s first load as index.html's inline script decides it (src/loading.ts): run
-// in a sandbox with a page made of the few parts it touches. The classique (asked, or kept on
-// the device) never shows it; the punk interface's (the default) first load only once 300 ms
-// have passed since the navigation (at once
-// past them), not at all when the map was in first; a return from OpenStreetMap or the
+// in a sandbox with a page made of the few parts it touches. The first load only once 300 ms
+// have passed since the navigation (at once past them), whatever ?ui= says (the classique,
+// removed on 2026-10-23, once skipped it), not at all when the map was in first; a return from OpenStreetMap or the
 // account's address « de votre compte », at once. The component it builds: the word cut into
 // its letters, the line, its words said a moment after it is in the page.
 import assert from "node:assert/strict";
@@ -119,29 +118,27 @@ function run({ search = "", stored = {} as Record<string, string>, now = 0 } = {
   };
 }
 
-test("the classique never shows it, nor marks the page", () => {
+// The classique is gone (2026-10-23): its old links (?ui=classic, ?ui=classique, ?ui=punk)
+// and a choice kept on the device (lacarte.ui) load the site as any visit does.
+test("?ui= and a kept lacarte.ui change nothing: the same first load as any visit", () => {
   for (const r of [
-    run({ search: "?ui=classique", stored: { "lacarte.ui": "punk" } }),
+    run(),
     run({ search: "?ui=classic" }),
+    run({ search: "?ui=classique" }),
+    run({ search: "?ui=punk" }),
     run({ stored: { "lacarte.ui": "classique" } }),
+    run({ search: "?ui=punk", stored: { "lacarte.ui": "classique" } }),
   ]) {
-    r.tick();
-    assert.equal(r.shown.length, 0);
-    assert.equal(r.mark(), undefined);
-    assert.deepEqual(r.delays, []);
-  }
-});
-
-test("punk is the default: nothing asked nor kept, or ?ui=punk over a kept classique", () => {
-  for (const r of [run(), run({ search: "?ui=punk", stored: { "lacarte.ui": "classique" } })]) {
     assert.equal(r.mark(), "map");
+    assert.deepEqual(r.delays, [300]);
     r.tick();
     assert.equal(r.shown.length, 1);
+    assert.equal(r.shown[0].id, "loading");
   }
 });
 
-test("punk's first load: « de la carte » once 300 ms have passed since the navigation", () => {
-  const r = run({ search: "?ui=punk", now: 120 });
+test("the first load: « de la carte » once 300 ms have passed since the navigation", () => {
+  const r = run({ now: 120 });
   assert.equal(r.mark(), "map");
   assert.deepEqual(r.delays, [180]);
   r.tick();
@@ -153,13 +150,13 @@ test("punk's first load: « de la carte » once 300 ms have passed since the nav
   assert.equal(el.querySelector(".loading-line-text")?.textContent, "de la carte");
 });
 
-test("punk kept on the device; past 300 ms already, at once", () => {
-  const r = run({ stored: { "lacarte.ui": "punk" }, now: 900 });
+test("past 300 ms already: at once", () => {
+  const r = run({ now: 900 });
   assert.deepEqual(r.delays, [0]);
 });
 
 test("the map in before the wait has passed: never shown", () => {
-  const r = run({ search: "?ui=punk", now: 50 });
+  const r = run({ now: 50 });
   r.end();
   r.tick();
   assert.equal(r.shown.length, 0);
@@ -167,7 +164,7 @@ test("the map in before the wait has passed: never shown", () => {
 
 test("back from OpenStreetMap or to the account's address: « de votre compte », at once", () => {
   for (const search of ["?osm=signup", "?osm=denied&osm_why=reseau", "?compte=motdepasse"]) {
-    const r = run({ search, stored: { "lacarte.ui": "punk" }, now: 10 });
+    const r = run({ search, now: 10 });
     assert.equal(r.mark(), "account", search);
     assert.equal(r.delays[0], 0, search);
     r.tick();
@@ -176,17 +173,18 @@ test("back from OpenStreetMap or to the account's address: « de votre compte »
 });
 
 test("dark mode asked or followed: the screen drawn dark from the start", () => {
-  const r = run({ search: "?ui=punk&mode=sombre" });
+  const r = run({ search: "?mode=sombre" });
   r.tick();
   assert.equal(r.shown[0]?.dataset.dark, "");
-  const light = run({ search: "?ui=punk&mode=clair" });
+  const light = run({ search: "?mode=clair" });
   light.tick();
   assert.equal(light.shown[0]?.dataset.dark, undefined);
 });
 
 test("one component: the word in its letters, the line, said a moment after", () => {
-  // The classique: no first load of its own, only the component built.
-  const r = run({ search: "?ui=classique", stored: { "lacarte.fonts": "1" } });
+  // The map in before the first load's wait: only the component built.
+  const r = run({ stored: { "lacarte.fonts": "1" }, now: 50 });
+  r.end();
   const el = r.build("account");
   const letters = el.querySelector(".loading-word")?.children ?? [];
   assert.equal(letters.map((t) => t.children[0]?.textContent).join(""), "Chargement");
@@ -195,8 +193,9 @@ test("one component: the word in its letters, the line, said a moment after", ()
   // The device has the punk fonts: its own faces.
   assert.equal(el.dataset.fonts, "");
   assert.equal(el.querySelector(".loading-said")?.textContent, "");
-  assert.deepEqual(r.delays, [150]);
+  assert.deepEqual(r.delays, [250, 150]);
   r.tick();
+  assert.equal(r.shown.length, 0);
   assert.equal(el.querySelector(".loading-said")?.textContent, "Chargement de votre compte");
-  assert.equal(run({ search: "?ui=classique" }).build("map").dataset.fonts, undefined);
+  assert.equal(run().build("map").dataset.fonts, undefined);
 });

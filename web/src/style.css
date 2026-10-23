@@ -1206,8 +1206,8 @@ body.moving #queue-count {
 .sheet-picto.pending {
   opacity: 0.45;
 }
-/* --- theme: display text (buttons, labels that act, titles) in the theme's display face;
-   the classic tokens keep today's face and weights (theme/classic.css). ---------------- */
+/* --- theme: display text (buttons, labels that act, titles) in the theme's display face
+   (theme/punk/tokens.css). --------------------------------------------------------------- */
 .panel-head,
 .panel-close,
 #estimate button,

@@ -21,7 +21,7 @@ import type {
 import { locale, t } from "./i18n";
 import { MARKS, pictoImage, TAG_PREFIX } from "./icons";
 import { PUNK_PORTION_WIDTH, streetWidth } from "./streetwidth";
-import { labelHaloWidth, palette, themeAreaOpacity, ui, waterOverFields } from "./theme";
+import { palette, themeAreaOpacity, waterOverFields } from "./theme";
 
 export const CITY_FADE: [number, number] = [12, 12.5];
 export const STREET_FADE: [number, number] = [12, 12.5];
@@ -204,7 +204,7 @@ export const MAYBE_GONE: ExpressionSpecification = [
  * carry their own colours: filters.ts asks for this colour at every change of focus, and
  * the camera layer's image follows (stickerImage). */
 export function pictoColour(focus: number | null): ExpressionSpecification {
-  if (stickers()) pictoImage(stickerImage(focus));
+  pictoImage(stickerImage(focus));
   const { picto, otherPicto, gone } = palette();
   const own: ExpressionSpecification | string =
     focus === null ? picto : ["case", ["==", ["id"], focus], picto, otherPicto];
@@ -216,13 +216,10 @@ export function pictoColour(focus: number | null): ExpressionSpecification {
 export const VERIFIED_GONE: ExpressionSpecification = ["has", "gm"];
 const STANDING: FilterSpecification = ["!", ["has", "gm"]];
 
-// --- the punk interface's stickers (stickers.ts, registered by icons.ts) -----------------
+// --- the stickers (stickers.ts, registered by icons.ts) ----------------------------------
 // Plain images in several colours (mockup 16a): icon-color and icon-halo do not apply to
 // them, so each state is an image of its own, chosen by icon-image (icons.ts stickerName:
-// `sticker-<kind>-<state>`, the selected camera's drawn larger, `-big`). The current
-// interface keeps its one-colour SDF pictograms, `cam-<kind>`.
-const stickers = () => ui() === "punk";
-const CAM_IMAGE: ExpressionSpecification = ["concat", "cam-", ["get", "k"]];
+// `sticker-<kind>-<state>`, the selected camera's drawn larger, `-big`).
 const sticker = (state: ExpressionSpecification | string): ExpressionSpecification => [
   "concat",
   "sticker-",
@@ -271,19 +268,7 @@ export function scaled(expr: Value, factor: Value): Value {
 }
 
 const STREETS_OPACITY = fadeIn([14, 14.5], 0.8);
-// ["zoom"] must be the input of a top-level interpolate: the per-level opacity is its
-// output at the end of the fade.
-const BANDS_OPACITY: ExpressionSpecification = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  DETAIL_FADE[0],
-  0,
-  DETAIL_FADE[1],
-  ["match", ["get", "lv"], 1, 0.05, 2, 0.08, 3, 0.11, 0.05],
-];
-const UNKNOWN_DIRECTION_OPACITY = fadeIn(DETAIL_FADE, 0.55);
-// Punk: each level opaque (the overlaps of one level draw the same pixels), fading in with
+// Each level opaque (the overlaps of one level draw the same pixels), fading in with
 // the street level.
 const FIELD_OPACITY = fadeIn(DETAIL_FADE, 1);
 
@@ -302,38 +287,24 @@ export function dimmedWithFields(expr: Value, factor: number): ExpressionSpecifi
 
 /** Opacity of every dimmable layer; `focus` is the focused camera's feature id (null: no
  * focus), `portions` the filmed portions' opacity when filters apply (null: none).
- * `whereFields`: the streets and portions are dimmed only where the fields are drawn
- * (from the street level), so that zooming out of a focused camera shows the map as it
- * is (the punk interface); otherwise at every zoom. */
+ * The streets are dimmed only where the fields are drawn (from the street level), so that
+ * zooming out of a focused camera shows the map as it is. The portions stay opaque in
+ * focus, in a dimmed colour (focusedPortionColour); the fields too, the others taking a
+ * dimmed colour instead (fieldPaint), the focused camera's own drawn again above them
+ * (focus-zone-*). */
 type OpacityProp = "line-opacity" | "fill-opacity" | "icon-opacity";
 export const FIELD_LEVELS = [1, 2, 3] as const;
 export type Level = (typeof FIELD_LEVELS)[number];
 export function opacities(
   focus: number | null,
   portions: ExpressionSpecification | null = null,
-  whereFields = false,
 ): [string, OpacityProp, Value][] {
-  const onCamera = (key: ExpressionSpecification): Value =>
-    focus === null ? 1 : ["case", ["==", key, focus], 1, DIM];
-  const band = onCamera(["get", "i"]);
-  const rest = focus === null ? 1 : DIM;
   const dim = (expr: Value): Value =>
-    whereFields && focus !== null ? dimmedWithFields(expr, DIM) : scaled(expr, rest);
-  // Punk: the portions stay opaque in focus, in a dimmed colour (focusedPortionColour).
-  const portionsDim = stickers() ? (expr: Value) => expr : dim;
-  const street: [string, OpacityProp, Value][] = [
+    focus !== null ? dimmedWithFields(expr, DIM) : scaled(expr, 1);
+  return [
     ["streets", "line-opacity", dim(STREETS_OPACITY)],
-    ["portions", "line-opacity", portionsDim(portions ?? portionOpacity())],
+    ["portions", "line-opacity", portions ?? portionOpacity()],
   ];
-  if (!stickers())
-    return [
-      ...street,
-      ["bands", "fill-opacity", scaled(BANDS_OPACITY, band)],
-      ["bands-unknown-direction", "fill-opacity", scaled(UNKNOWN_DIRECTION_OPACITY, band)],
-    ];
-  // Punk: the fields stay opaque in focus; the others take a dimmed colour instead
-  // (fieldPaint), the focused camera's own are drawn again above them (focus-zone-*).
-  return street;
 }
 
 /** Punk: the paint of the levels' layers, every camera's field: in focus one opaque dimmed
@@ -351,12 +322,11 @@ export function fieldPaint(
 }
 
 /** "identification ~6 m" on a band outline: the catalogue template, its {level} and {m}
- * placeholders replaced by feature properties (lv, r). Punk: « identification 6 m », the
- * reach rounded up to the metre as the sheet's tickets (chips.ts upMetre; DECISIONS
- * 2026-10-08, « The punk sheet's « ~ »… »). */
+ * placeholders replaced by feature properties (lv, r): « identification 6 m », the reach
+ * rounded up to the metre as the sheet's tickets (chips.ts upMetre; DECISIONS 2026-10-08,
+ * « The punk sheet's « ~ »… »). */
 export function reachLabel(): ExpressionSpecification {
-  const punk = stickers();
-  const template = t(punk ? "focus.punk.label" : "focus.label", { level: "{level}", m: "{m}" });
+  const template = t("focus.punk.label", { level: "{level}", m: "{m}" });
   const level = [
     "match",
     ["get", "lv"],
@@ -373,9 +343,7 @@ export function reachLabel(): ExpressionSpecification {
       p === "{level}"
         ? level
         : p === "{m}"
-          ? punk
-            ? ["number-format", ["ceil", ["-", ["get", "r"], 1e-9]], { locale }]
-            : ["number-format", ["get", "r"], { locale, "max-fraction-digits": 1 }]
+          ? ["number-format", ["ceil", ["-", ["get", "r"], 1e-9]], { locale }]
           : p,
     );
   return ["concat", ...parts] as ExpressionSpecification;
@@ -433,39 +401,29 @@ function areaLayers(
       ...base,
       id: `${id}-line`,
       type: "line",
-      // Punk: a thin light-blue border, opaque, so that two neighbours of one class read
-      // apart (DECISIONS 2026-10-08, « The more vivid… »), about 0.75 px at every zoom
+      // A thin light-blue border, opaque, so that two neighbours of one class read apart
+      // (DECISIONS 2026-10-08, « The more vivid… »), about 0.75 px at every zoom
       // (DECISIONS 2026-10-09, « Punk map after the iPhone test »: 1.5 px read heavy).
-      paint: stickers()
-        ? {
-            "line-color": palette().areaBorder,
-            "line-opacity": areaOpacity(deps, 1),
-            "line-width": AREA_BORDER,
-          }
-        : {
-            "line-color": palette().areaLine,
-            "line-opacity": areaOpacity(deps, deps ? 0.55 : 0.35),
-            "line-width": deps ? 1.2 : ["interpolate", ["linear"], ["zoom"], 8, 0.4, 12, 1],
-          },
+      paint: {
+        "line-color": palette().areaBorder,
+        "line-opacity": areaOpacity(deps, 1),
+        "line-width": AREA_BORDER,
+      },
     },
-    // Punk: the open area's outline on a dark edge, 1 px of it each side, so that the light
+    // The open area's outline on a dark edge, 1 px of it each side, so that the light
     // blue stands out on the vivid classes (DECISIONS 2026-10-09).
-    ...(stickers()
-      ? [
-          {
-            ...base,
-            id: `${id}-selected-edge`,
-            type: "line",
-            filter: ["==", ["get", "c"], ""],
-            layout: { "line-join": "round" },
-            paint: {
-              "line-color": palette().areaSelectedEdge,
-              "line-width": AREA_SELECTED + 2,
-              "line-opacity": areaOpacity(deps, 1),
-            },
-          },
-        ]
-      : []),
+    {
+      ...base,
+      id: `${id}-selected-edge`,
+      type: "line",
+      filter: ["==", ["get", "c"], ""],
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": palette().areaSelectedEdge,
+        "line-width": AREA_SELECTED + 2,
+        "line-opacity": areaOpacity(deps, 1),
+      },
+    },
     {
       // The area whose sheet is open (filter set by main.ts).
       ...base,
@@ -475,7 +433,7 @@ function areaLayers(
       layout: { "line-join": "round" },
       paint: {
         "line-color": palette().areaSelected,
-        "line-width": stickers() ? AREA_SELECTED : 2.5,
+        "line-width": AREA_SELECTED,
         "line-opacity": areaOpacity(deps, 1),
       },
     },
@@ -560,7 +518,7 @@ export function focusMarkerLayers(): LayerSpecification[] {
       source: FOCUS_CAMERA,
       maxzoom: DETAIL_MIN,
       layout: {
-        "icon-image": stickers() ? sticker("-full") : CAM_IMAGE,
+        "icon-image": sticker("-full"),
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "icon-size": 1,
@@ -576,10 +534,9 @@ const ABOVE_FIELDS = new Set(["buildings"]);
 
 /** A basemap layer as the punk map draws it: the buildings, lifted above the communes too,
  * appear only as the communes fade out (CITY_FADE), at the flavour's own opacity (they
- * stood as pale specks on the opaque communes). Every other layer, and the classique's,
- * as it is. */
+ * stood as pale specks on the opaque communes). Every other layer as it is. */
 function basemapLayer(l: LayerSpecification): LayerSpecification {
-  if (!stickers() || !ABOVE_FIELDS.has(l.id) || l.type !== "fill") return l;
+  if (!ABOVE_FIELDS.has(l.id) || l.type !== "fill") return l;
   const opacity = l.paint?.["fill-opacity"] ?? 1;
   return {
     ...l,
@@ -664,12 +621,10 @@ function waterOver(basemap: LayerSpecification[]): LayerSpecification[] {
 }
 
 /** The basemap's layers as the theme draws them, by id (main.ts restyle swaps them so on a
- * change of mode): punk, the buildings faded in with the streets (basemapLayer), each road
- * line split at the street level, its copy drawn above the fields after the buildings, in
- * the flavour's order, and the water drawn again over the fields (waterOver); the
- * classique's as they are. */
+ * change of mode): the buildings faded in with the streets (basemapLayer), each road line
+ * split at the street level, its copy drawn above the fields after the buildings, in the
+ * flavour's order, and the water drawn again over the fields (waterOver). */
 export function drawnBasemap(basemap: LayerSpecification[]): LayerSpecification[] {
-  if (!stickers()) return basemap;
   const copies = basemap.filter(lifts).map((l) => {
     const from = liftedFrom(l);
     const paint = (l.paint ?? {}) as Record<string, unknown>;
@@ -700,9 +655,7 @@ export function stacked(
   const drawn = drawnBasemap(basemap);
   const labels = drawn.filter((l) => l.type === "symbol");
   const water = drawn.filter((l) => l.id === WATER_OVER || l.id === WATER_SHORE);
-  const lifted = stickers()
-    ? drawn.filter((l) => ABOVE_FIELDS.has(l.id) || l.id.endsWith(LIFTED))
-    : [];
+  const lifted = drawn.filter((l) => ABOVE_FIELDS.has(l.id) || l.id.endsWith(LIFTED));
   const ground = drawn.filter(
     (l) => l.type !== "symbol" && !lifted.includes(l) && !water.includes(l),
   );
@@ -739,9 +692,9 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       paint: { "fill-opacity": 0 },
     },
     // --- streets -----------------------------------------------------------------------
-    ...(stickers()
-      ? [...punkFields(mode), ...streetLayers(mode), ...focusStreets(mode)]
-      : [...streetLayers(mode), ...classicFields(mode), ...focusStreets(mode), ...fanLayers()]),
+    ...punkFields(mode),
+    ...streetLayers(mode),
+    ...focusStreets(mode),
     // --- focus: the clicked camera's reach written on its outlines ---------------------
     {
       // Points set by focus.ts at each band's farthest vertex, where its reach is reached.
@@ -749,38 +702,20 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       type: "symbol",
       source: "focus-points",
       minzoom: DETAIL_MIN,
-      // Wide screens: identification only, every level while the field is hovered; phones:
-      // none (the sheet's ruler says it). Set by FilterPanel.apply.
+      // The chosen level's alone, on every screen. Set by FilterPanel.apply.
       filter: ["==", ["get", "lv"], 3],
-      layout: stickers()
-        ? {
-            // Punk: 17a's yellow tag cut as an arrow, its tip on the band's farthest vertex,
-            // tilted -4°, its text in the typewriter face: an image per text (icons.ts
-            // putTag). Beside the selected camera's sticker (the classique's label moves
-            // around its point to avoid it; a tag points one way, so it stays put).
-            visibility: "none",
-            "icon-image": ["concat", TAG_PREFIX, reachLabel()],
-            "icon-anchor": "left",
-            "icon-rotate": TAG_ROTATE,
-            "icon-rotation-alignment": "viewport",
-            "icon-allow-overlap": true,
-          }
-        : {
-            visibility: "none",
-            "text-field": reachLabel(),
-            "text-font": ["Noto Sans Medium"],
-            "text-size": 12,
-            "text-variable-anchor": ["left", "right", "top", "bottom"],
-            "text-radial-offset": 0.5,
-          },
-      // The theme's label halo where it sets one (punk: the basemap's labels' too).
-      paint: stickers()
-        ? {}
-        : {
-            "text-color": p.label,
-            "text-halo-color": p.halo,
-            "text-halo-width": labelHaloWidth() ?? 1.6,
-          },
+      layout: {
+        // 17a's yellow tag cut as an arrow, its tip on the band's farthest vertex, tilted
+        // -4°, its text in the typewriter face: an image per text (icons.ts putTag). Beside
+        // the selected camera's sticker (a tag points one way, so it stays put).
+        visibility: "none",
+        "icon-image": ["concat", TAG_PREFIX, reachLabel()],
+        "icon-anchor": "left",
+        "icon-rotate": TAG_ROTATE,
+        "icon-rotation-alignment": "viewport",
+        "icon-allow-overlap": true,
+      },
+      paint: {},
     },
     // --- cameras -----------------------------------------------------------------------
     {
@@ -806,7 +741,7 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       "source-layer": "cameras",
       minzoom: DETAIL_MIN,
       layout: {
-        "icon-image": stickers() ? stickerImage(null) : CAM_IMAGE,
+        "icon-image": stickerImage(null),
         "icon-allow-overlap": true,
         "icon-ignore-placement": true,
         "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 1, 20, 1.25],
@@ -814,41 +749,24 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       filter: STANDING,
       paint: { "icon-color": pictoColour(null), ...pictoHalo() },
     },
-    stickers()
-      ? {
-          // Punk: 20a's « peut-être disparue » without its hatching (DECISIONS 2026-10-06,
-          // « Hatching keeps one meaning… »): a dashed ring around the sticker, a « ? »
-          // hooked at its top right (stickers.ts maybeGone).
-          id: "camera-gone",
-          type: "symbol",
-          source: "detail",
-          "source-layer": "cameras",
-          minzoom: DETAIL_MIN,
-          filter: MAYBE_GONE as unknown as FilterSpecification,
-          layout: {
-            "icon-image": MARKS.maybeGone,
-            "icon-allow-overlap": true,
-            "icon-ignore-placement": true,
-            "icon-offset": [1, -1],
-            "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 1, 20, 1.25],
-          },
-        }
-      : {
-          // "Maybe gone": a small grey badge at the pictogram's top right.
-          id: "camera-gone",
-          type: "circle",
-          source: "detail",
-          "source-layer": "cameras",
-          minzoom: DETAIL_MIN,
-          filter: MAYBE_GONE as unknown as FilterSpecification,
-          paint: {
-            "circle-radius": 4,
-            "circle-color": p.gone,
-            "circle-stroke-width": 1.5,
-            "circle-stroke-color": p.halo,
-            "circle-translate": [11, -10],
-          },
-        },
+    {
+      // 20a's « peut-être disparue » without its hatching (DECISIONS 2026-10-06, « Hatching
+      // keeps one meaning… »): a dashed ring around the sticker, a « ? » hooked at its top
+      // right (stickers.ts maybeGone).
+      id: "camera-gone",
+      type: "symbol",
+      source: "detail",
+      "source-layer": "cameras",
+      minzoom: DETAIL_MIN,
+      filter: MAYBE_GONE as unknown as FilterSpecification,
+      layout: {
+        "icon-image": MARKS.maybeGone,
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+        "icon-offset": [1, -1],
+        "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 1, 20, 1.25],
+      },
+    },
     // --- focus: the selected camera above everything, 1.5 times larger, its white outline
     // a little softer. It takes part in symbol placement, so the reach labels (placed after
     // it) avoid it.
@@ -860,9 +778,12 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       minzoom: DETAIL_MIN,
       filter: selectedFilter(NO_CAMERA),
       layout: {
-        "icon-image": stickers()
-          ? sticker(["case", VERIFIED_GONE, "-gone-big", "-full-big"] as ExpressionSpecification)
-          : CAM_IMAGE,
+        "icon-image": sticker([
+          "case",
+          VERIFIED_GONE,
+          "-gone-big",
+          "-full-big",
+        ] as ExpressionSpecification),
         "icon-allow-overlap": true,
         "icon-size": ["interpolate", ["linear"], ["zoom"], 15, 1.5, 20, 1.875],
       },
@@ -891,7 +812,7 @@ function streetLayers(mode: Mode): LayerSpecification[] {
       minzoom: 14,
       paint: {
         "line-color": p.streetNone,
-        "line-width": stickers() ? punkStreetWidth() : STREET_WIDTH,
+        "line-width": punkStreetWidth(),
         "line-opacity": STREETS_OPACITY,
       },
     },
@@ -907,114 +828,26 @@ function streetLayers(mode: Mode): LayerSpecification[] {
       layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-color": portionColour(),
-        "line-width": stickers() ? punkStreetWidth() : PORTION_WIDTH,
+        "line-width": punkStreetWidth(),
         "line-opacity": portionOpacity(),
       },
     },
   ] as LayerSpecification[];
 }
 
-const STREET_WIDTH = [
-  "interpolate",
-  ["exponential", 1.6],
-  ["zoom"],
-  ...[14, 1, 16, 2.5, 19, 6],
-] as ExpressionSpecification;
-
-// The portions' width: thin from z16, where the fields are drawn (they must not double
-// them). Punk: one stroke as wide as the first round's casing, the focused camera's streets
-// alike (focusStreets); past z17 it widens with the map, as the street does (the author's
-// Denfert capture at z18 – z19 in dark: a 4.5 px stroke of the dots' own pink, barely wider
-// than the identify halftone's 2.8 px pitch, read as one more row of dots). Up to z17, as it
-// was.
-const PORTION_WIDTH = [
-  "interpolate",
-  ["linear"],
-  ["zoom"],
-  ...[12, 1.6, 14, 2.5, 15, 4, 16, 2, 19, 2.5],
-] as ExpressionSpecification;
-// Punk: PUNK_PORTION_WIDTH (streetwidth.ts), the floor of the width below.
-// Punk since rules 3.1: the filmed, unfilmed and focused streets as wide as the basemap's
-// road of their class, never narrower than the stroke above (streetwidth.ts; product
-// owner, 2026-10-16: the unfilmed street no longer thinner). Built once.
+// Since rules 3.1: the filmed, unfilmed and focused streets as wide as the basemap's road
+// of their class, never narrower than the pink stroke before them (PUNK_PORTION_WIDTH,
+// streetwidth.ts; product owner, 2026-10-16: the unfilmed street no longer thinner). Built
+// once.
 let punkWidth: ExpressionSpecification | null = null;
 const punkStreetWidth = () =>
   (punkWidth ??= streetWidth(flavourLayers("protomaps", namedFlavor("light")), PUNK_PORTION_WIDTH));
 
-/** The classique's fields: nested bands of one hue at a low opacity, and the hatching of a
- * camera without a surveyed direction. */
-function classicFields(mode: Mode): LayerSpecification[] {
-  const p = palette();
-  return [
-    // --- street level: observation levels (DORI) x certainty ------------------------------
-    // One hue. Bands are nested and stacked with a low opacity: the more levels and the
-    // more certain bands cover a point, the darker it gets. Edges fade out by steps where
-    // the reach is uncertain.
-    {
-      id: "bands",
-      type: "fill",
-      source: "detail",
-      "source-layer": "bands",
-      minzoom: DETAIL_MIN,
-      filter: detailFilters(mode.est).bands as FilterSpecification,
-      paint: {
-        "fill-color": p.field,
-        "fill-opacity": BANDS_OPACITY,
-      },
-    },
-    // Hatching is reserved for "direction unknown", on the chosen estimate's band (the
-    // classique; punk leaves no trace of it on the map: a camera without a surveyed
-    // direction is drawn as a full circle like the others, DECISIONS 2026-10-08, « Unknown
-    // direction leaves no trace… »).
-    ...[
-      {
-        id: "bands-unknown-direction",
-        type: "fill",
-        source: "detail",
-        "source-layer": "bands",
-        minzoom: DETAIL_MIN,
-        filter: detailFilters(mode.est)["bands-unknown-direction"] as FilterSpecification,
-        paint: { "fill-pattern": "hatch-view", "fill-opacity": UNKNOWN_DIRECTION_OPACITY },
-      } as LayerSpecification,
-    ],
-  ] as LayerSpecification[];
-}
-
-/** The focused camera's streets (z15+), above the portions. Punk: the portions' own stroke
+/** The focused camera's streets (z15+), above the portions: the portions' own stroke
  * (DECISIONS 2026-10-08, « The more vivid… »: filmed streets in one style, in focus or not),
  * whole while the rest is dimmed. */
 function focusStreets(mode: Mode): LayerSpecification[] {
-  const p = palette();
-  if (stickers())
-    return [
-      {
-        id: "focus-streets",
-        type: "line",
-        source: "streets",
-        "source-layer": "portions",
-        minzoom: DETAIL_MIN,
-        filter: focusPortionFilter(NO_CAMERA, mode.est),
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": levelColour(), "line-width": punkStreetWidth() },
-      } as LayerSpecification,
-    ];
   return [
-    // Focus: the filmed portions (z15+) listing the clicked camera, for the chosen
-    // estimate. A style filter on its id: it holds for every tile, also those loaded after
-    // the map moved (the fit to the field).
-    {
-      id: "focus-streets-casing",
-      type: "line",
-      source: "streets",
-      "source-layer": "portions",
-      minzoom: DETAIL_MIN,
-      filter: focusPortionFilter(NO_CAMERA, mode.est),
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": p.halo,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 15, 5, 19, 6],
-      },
-    },
     {
       id: "focus-streets",
       type: "line",
@@ -1023,33 +856,9 @@ function focusStreets(mode: Mode): LayerSpecification[] {
       minzoom: DETAIL_MIN,
       filter: focusPortionFilter(NO_CAMERA, mode.est),
       layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": p.focusStreet,
-        "line-width": ["interpolate", ["linear"], ["zoom"], 15, 3, 19, 4],
-      },
-    },
-  ] as LayerSpecification[];
-}
-
-/** The classique's outlines of the focused camera, every level of its chosen estimate. */
-function fanLayers(): LayerSpecification[] {
-  const p = palette();
-  return [
-    // The clicked camera's outlines for the chosen estimate only (its levels), marked;
-    // the sheet's ruler gives the other estimate.
-    {
-      id: "bands-fan",
-      type: "line",
-      source: "detail",
-      "source-layer": "bands",
-      minzoom: DETAIL_MIN,
-      filter: fanFilter(NO_CAMERA, 1),
-      paint: {
-        "line-color": p.fieldLine,
-        "line-width": ["match", ["get", "lv"], 3, 2.6, 2, 2, 1.6],
-      },
-    },
-  ] as LayerSpecification[];
+      paint: { "line-color": levelColour(), "line-width": punkStreetWidth() },
+    } as LayerSpecification,
+  ];
 }
 
 /** Punk fields (DECISIONS 2026-10-08, « One palette… » and « The more vivid… »): each level
@@ -1063,8 +872,8 @@ function fanLayers(): LayerSpecification[] {
  * colour (fieldPaint); above them and the water the focused camera's whole zone, its three
  * levels drawn the same way (`focus-zone-*`), then its chosen level on top, its outline
  * thicker (`bands-fan`, `focus-field`; filters and dash set by filters.ts). Under them
- * `bands`, never drawn: the fields of the chosen estimate for a query or a hover, as in the
- * classique (main.ts, the smoke tests). Buildings go above all of them (stacked). */
+ * `bands`, never drawn: the fields of the chosen estimate for a query (the smoke tests).
+ * Buildings go above all of them (stacked). */
 function punkFields(mode: Mode): LayerSpecification[] {
   const level = (lv: Level): FilterSpecification => [
     "all",
@@ -1166,26 +975,16 @@ export function detailFilters(
   const cameras = showGone ? null : STANDING;
   return {
     bands: ["==", ["get", "b"], est],
-    // Punk: each level's fill and outline; the classique: the hatching of an unknown
-    // direction.
-    ...(stickers()
-      ? Object.fromEntries(
-          FIELD_LEVELS.flatMap((lv) => {
-            const f = ["all", ["==", ["get", "lv"], lv], ["==", ["get", "b"], est]];
-            return [
-              [`field-${lv}`, f],
-              [`field-${lv}-line`, f],
-            ];
-          }),
-        )
-      : {
-          "bands-unknown-direction": [
-            "all",
-            ["==", ["get", "c"], 0],
-            ["==", ["get", "lv"], 1],
-            ["==", ["get", "b"], est],
-          ],
-        }),
+    // Each level's fill and outline.
+    ...Object.fromEntries(
+      FIELD_LEVELS.flatMap((lv) => {
+        const f = ["all", ["==", ["get", "lv"], lv], ["==", ["get", "b"], est]];
+        return [
+          [`field-${lv}`, f],
+          [`field-${lv}-line`, f],
+        ];
+      }),
+    ),
     "camera-hit": cameras,
     cameras,
     "camera-gone": ["all", MAYBE_GONE, STANDING] as unknown as FilterSpecification,
@@ -1278,11 +1077,6 @@ export function proposalLinkHalo(): LayerSpecification {
 export const NO_CAMERA = -1;
 /** The camera in focus, by feature id (NO_CAMERA: none). */
 export const selectedFilter = (cameraId: number): FilterSpecification => ["==", ["id"], cameraId];
-export const fanFilter = (cameraId: number, b: number): FilterSpecification => [
-  "all",
-  ["==", ["get", "i"], cameraId],
-  ["==", ["get", "b"], b],
-];
 
 /** Street segments filmed by a camera (its compact number `n`) with an estimate at least
  * as certain as `est` (bands are nested): `cs` lists ";t;" for each camera filming the

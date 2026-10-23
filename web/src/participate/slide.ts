@@ -1,6 +1,6 @@
 // What move mode and the direction question share: the map slides under a fixed point
 // (pan and pinch stay the map's own, without inertia, no rotation), and every other
-// camera's field and street highlight is hidden (the classique) or dimmed (punk), since it
+// camera's field and street highlight is dimmed, since it
 // would read as the one at hand.
 import type { AllPaintProperties, ExpressionSpecification } from "@maplibre/maplibre-gl-style-spec";
 import type { Map as MlMap, PaddingOptions } from "maplibre-gl";
@@ -61,7 +61,7 @@ export function hideFields(map: MlMap, everything = false): () => void {
 export function dimAround(map: MlMap): () => void {
   const dims = (
     [
-      ...opacities(NO_CAMERA, null, true).filter(([id]) => id === "streets"),
+      ...opacities(NO_CAMERA, null).filter(([id]) => id === "streets"),
       ...fieldPaint(NO_CAMERA),
       ["portions", "line-color", focusedPortionColour(null, false)],
     ] as Saved

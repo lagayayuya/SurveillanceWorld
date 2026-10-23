@@ -1,6 +1,6 @@
-// The theme tokens (src/theme/classic.css, src/theme/punk/tokens.css): every variable the
-// styles read is defined, the punk theme's files are all imported by its entry (tokens
-// first), the punk theme redefines every colour in light and in dark, its text and graphics
+// The theme tokens (src/theme/punk/tokens.css): every variable the styles read is defined,
+// the punk theme's files are all imported by its entry (tokens first), every colour is
+// defined in light and in dark, its text and graphics
 // meet WCAG 2.x
 // contrast (RGAA 3.2 and 3.3: 4.5:1 for text, 3:1 for large text, controls and graphics)
 // on their backgrounds, the three IEC 62676-4 levels of the streets differ by luminance
@@ -17,7 +17,6 @@ import { edgeCasings, edged, PATH_EDGE, ROAD_NAME_FONT, ROAD_NAME_MIN } from "..
 import { colourMap, normalHex, over, paletteFrom } from "../src/theme.ts";
 
 const src = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
-const CLASSIC = src("theme/classic.css");
 // The punk theme as the page gets it: its entry (theme.ts imports it) inlines its files in
 // the order of its @import lines, one stylesheet.
 const PUNK_DIR = "theme/punk";
@@ -36,10 +35,9 @@ function block(css: string, selector: string): Map<string, string> {
   return props;
 }
 
-const classic = block(CLASSIC, ":root");
 const punkLight = block(PUNK, ':root[data-ui="punk"]');
 const punkDark = block(PUNK, ':root[data-ui="punk"][data-mode="dark"]');
-const light = new Map([...classic, ...punkLight]);
+const light = punkLight;
 const dark = new Map([...light, ...punkDark]);
 
 // The opacities layers.ts draws with (read from its source: it needs a browser to run);
@@ -101,39 +99,24 @@ const varsRead = (css: string) => new Set([...css.matchAll(/var\((--[\w-]+)/g)].
 // fallback.
 const RUNTIME = new Set(["--attrib-h", "--sheet-covered", "--foot-h", "--machine-top", "--ticket-bottom", "--digit"]);
 
-test("every variable the shared styles read is defined by the classic tokens", () => {
-  const used = new Set([...varsRead(src("style.css")), ...varsRead(src("review/review.css"))]);
-  const missing = [...used].filter((v) => !classic.has(v) && !RUNTIME.has(v));
-  assert.deepEqual(missing, []);
-});
-
-// The punk rules are loaded with the punk tokens only: they may read punk-only tokens, which
-// then exist in light, and in dark too when they hold a colour (a dark page would otherwise
+// The only tokens are the punk theme's (the classique's theme/classic.css removed on
+// 2026-10-23): every variable the shared styles (style.css, /revue's) and the punk rules
+// read exists in light, and in dark too when it holds a colour (a dark page would otherwise
 // show the light one).
-test("every variable the punk rules read is defined, in light and dark", () => {
-  const used = varsRead(PUNK);
-  const missing = [...used].filter((v) => !classic.has(v) && !punkLight.has(v) && !RUNTIME.has(v));
+test("every variable the styles read is defined by the punk tokens, in light and dark", () => {
+  const used = new Set([
+    ...varsRead(src("style.css")),
+    ...varsRead(src("review/review.css")),
+    ...varsRead(PUNK),
+  ]);
+  const missing = [...used].filter((v) => !punkLight.has(v) && !RUNTIME.has(v));
   assert.deepEqual(missing, []);
   const hasColour = (v: string) => /#[0-9a-f]{3,8}\b|rgba?\(/i.test(v);
   const lightOnly = [...used].filter(
     (v) => punkLight.has(v) && hasColour(punkLight.get(v) as string) && !punkDark.has(v),
   );
-  assert.deepEqual(lightOnly, [], "punk colours read but not redefined in dark");
+  assert.deepEqual(lightOnly, [], "colours read but not redefined in dark");
   assert.ok(punkLight.has("--focus") && punkDark.has("--focus"));
-});
-
-test("the punk theme redefines every colour of the classic one, in light and in dark", () => {
-  const colours = [...classic].filter(([, v]) => isColour(v)).map(([k]) => k);
-  assert.deepEqual(
-    colours.filter((k) => !punkLight.has(k)),
-    [],
-    "missing in punk light",
-  );
-  assert.deepEqual(
-    colours.filter((k) => !punkDark.has(k)),
-    [],
-    "missing in punk dark",
-  );
 });
 
 // The punk light blue (#7fd4ff) is 1.4:1 on the paper: in light it decorates (offset
@@ -430,12 +413,10 @@ for (const [name, tokens] of [
 
 // Communes and départements opaque in punk, light and dark (product owner, 2026-10-06: no
 // more mixing with the basemap; the legend's swatches, palette().area, are then the map's
-// colours); the current interface keeps layers.ts AREA_OPACITY, 0.5.
-test("punk draws the areas opaque in light and dark; the current interface keeps 0.5", () => {
+// colours).
+test("punk draws the areas opaque in light and dark", () => {
   assert.equal(areaAlpha(light), 1);
   assert.equal(areaAlpha(dark), 1);
-  assert.ok(!classic.has("--map-area-opacity"));
-  assert.equal(AREA_OPACITY, 0.5);
 });
 
 // The "no camera" communes keep their hatching (--map-hatch-none stripes, 2 px every 8 px,
@@ -558,10 +539,8 @@ test("punk: the map's dot screen lighter than the machine's paper, in light and 
     assert.equal(map.replace(/[\d.]+\)$/, ""), paper.replace(/[\d.]+\)$/, ""), "one blue");
     assert.ok(alpha(map) > 0 && alpha(map) <= 0.08 && alpha(map) < alpha(paper), map);
   }
-  assert.ok(!classic.has("--map-paper-dots"));
 });
 test("the roads' edge: every casing above ground, a path's just under its line, the names in Medium", () => {
-  assert.ok(!classic.has("--map-road-edge"), "the current interface keeps the flavour's roads");
   for (const mode of ["light", "dark"]) {
     const flavour = { ...namedFlavor(mode) } as unknown as Record<string, unknown>;
     edgeCasings(flavour, "#6b6b6b");
@@ -588,14 +567,6 @@ test("the roads' edge: every casing above ground, a path's just under its line, 
     }
   }
 });
-test("the current interface keeps its basemap's labels and its reach labels' halo", () => {
-  assert.ok(!classic.has("--map-label-halo-width"));
-  assert.deepEqual(
-    [...classic.keys()].filter((k) => /^--basemap-.*_label/.test(k)),
-    [],
-  );
-});
-
 /** Every style rule of `css` with the at-rules it sits in (comments dropped). */
 function styleRules(css: string): { at: string[]; selector: string; body: string }[] {
   const out: { at: string[]; selector: string; body: string }[] = [];
@@ -703,7 +674,6 @@ test("punk hides the same basemap layers in light and dark (a change of mode kee
   const ids = (t: Map<string, string>) => (t.get("--basemap-hide") ?? "").split(/\s+/).sort();
   assert.deepEqual(ids(dark), ids(light));
   assert.ok(ids(light).includes("roads_shields"), "road shields drawn by punk");
-  assert.ok(!classic.has("--basemap-hide"), "the current interface hides nothing");
 });
 
 // A change of mode swaps every colour of the map's style for the same token's colour in the

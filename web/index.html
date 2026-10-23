@@ -35,21 +35,15 @@
     <meta property="og:image:alt" content="%t:share.image_alt%" />
     <!-- /site -->
     <script>
-      // The punk interface (the default; theme.ts chosenUi) in dark mode: until its tokens
-      // arrive with the code, the empty page takes the system's own dark background (no
-      // colour written here).
+      // Dark mode (theme.ts): until the tokens arrive with the code, the empty page takes the
+      // system's own dark background (no colour written here).
       try {
         const q = new URLSearchParams(location.search);
-        const asked = q.get("ui");
-        const classique =
-          asked === "classique" ||
-          asked === "classic" ||
-          (asked !== "punk" && localStorage.getItem("lacarte.ui") === "classique");
         const mode = q.get("mode") || localStorage.getItem("lacarte.mode") || "auto";
         const dark =
           mode === "sombre" ||
           (mode !== "clair" && matchMedia("(prefers-color-scheme: dark)").matches);
-        if (!classique && dark) {
+        if (dark) {
           document.documentElement.style.colorScheme = "dark";
           document.documentElement.style.setProperty("--page", "Canvas");
         }
@@ -66,7 +60,7 @@
     </div>
     <aside id="sheet" hidden></aside>
     <!-- « Chargement » (board 2c of « Chargement punk »: src/loading.ts, src/loading.css),
-         inert until the punk interface clones it; its words from the catalogue. -->
+         inert until the page clones it; its words from the catalogue. -->
     <template
       id="loading-template"
       data-word="%t:loading.word%"
@@ -127,8 +121,7 @@
       // (main.ts), from here: the page is blank until the scripts have arrived and run
       // (measured: 0.7 to 3.5 s on a slow phone, bench/loading-timeline.mjs). Only when the
       // wait passes 300 ms from the navigation (no flash); at once on a return from
-      // OpenStreetMap or to the account's address, whose sheet then takes over. The
-      // classique never shows it.
+      // OpenStreetMap or to the account's address, whose sheet then takes over.
       (() => {
         const root = document.documentElement;
         const template = document.getElementById("loading-template");
@@ -160,14 +153,6 @@
         };
         try {
           const q = new URLSearchParams(location.search);
-          // Punk by default; the classique never shows it (theme.ts chosenUi).
-          const asked = q.get("ui");
-          if (
-            asked === "classique" ||
-            asked === "classic" ||
-            (asked !== "punk" && localStorage.getItem("lacarte.ui") === "classique")
-          )
-            return;
           const mode = q.get("mode") || localStorage.getItem("lacarte.mode") || "auto";
           const dark =
             mode === "sombre" ||

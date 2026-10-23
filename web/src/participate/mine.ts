@@ -10,7 +10,6 @@ import { readSync, type Sync } from "../account/osm";
 import { stateParts } from "../account/syncline";
 import { siteConfig } from "../config";
 import { tp as t } from "../i18n";
-import { ui } from "../theme";
 import { ApiError, mine, SETTLED, shortBuild } from "./api";
 import { twoStep } from "./decide";
 import type { OnSiteRules } from "./onsite";
@@ -100,8 +99,7 @@ export function openMine(
   list.className = "mine-list";
   page.append(waiting, list);
   document.body.append(page);
-  const sync: Promise<Sync | null> =
-    ui() === "punk" && siteConfig().sync ? readSync() : Promise.resolve(null);
+  const sync: Promise<Sync | null> = siteConfig().sync ? readSync() : Promise.resolve(null);
   /** « OSM : … » under a contribution, when it went or may still go there. */
   const osmLine = (s: Sync | null, uuid: string, status: string): HTMLElement | null => {
     if (!s?.offered) return null;

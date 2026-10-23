@@ -1,12 +1,12 @@
 // Camera pictograms drawn at startup. Everything surveillance-related uses ONE hue (the
 // theme's, theme.ts palette()); the shape tells the camera type. The same drawing functions feed the map (addImage) and the
 // filter panel samples, so both show identical pixels.
-// The punk interface draws stickers instead (stickers.ts, mockup 16a), loaded by it alone.
+// The map and the sheets draw stickers (stickers.ts, mockup 16a), loaded at startup.
 
 import type { ExpressionSpecification, Map as MlMap } from "maplibre-gl";
 import { PAPER_EARTH } from "./basemap";
 import type { ThemeInks } from "./stickers";
-import { mode, palette, token, ui } from "./theme";
+import { mode, palette, token } from "./theme";
 
 export const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"] as const;
 export type Kind = (typeof KINDS)[number];
@@ -95,10 +95,10 @@ const rgba = (hex: string, alpha: number) =>
 type Stickers = typeof import("./stickers");
 let stickers: Stickers | null = null;
 
-/** The punk interface's stickers, fetched at startup beside its tokens, before the map asks
- * for them (main.ts); the current interface fetches nothing. */
+/** The stickers, fetched at startup beside the tokens, before the map asks for them
+ * (main.ts). */
 export async function loadStickers(): Promise<void> {
-  if (ui() === "punk") stickers = await import("./stickers");
+  stickers = await import("./stickers");
 }
 
 /** The punk map's other marks (lot 3.1; stickers.ts draws them): the fields' halftone, the

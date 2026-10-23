@@ -117,7 +117,7 @@ export class BottomSheet {
     this.root.dataset.state = state;
     document.body.dataset.sheet = state;
     if (!isPhone()) {
-      // A phone turned wide while standing on a keyboard (punk): no lift on a side panel.
+      // A phone turned wide while standing on a keyboard: no lift on a side panel.
       if (this.standing) {
         this.standing = false;
         this.root.style.marginBottom = "";
@@ -128,8 +128,7 @@ export class BottomSheet {
       return;
     }
     const lift = this.lift;
-    // Punk only: the classique is frozen (it keeps dropping the lift with the focus).
-    this.standing = lift > 0 && document.documentElement.dataset.ui === "punk";
+    this.standing = lift > 0;
     this.root.style.marginBottom = lift ? `${lift}px` : "";
     this.setHeight(this.visible(state));
     this.fitBody(this.shown);

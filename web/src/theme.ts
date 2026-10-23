@@ -1,16 +1,13 @@
-// The interface and its theme. Two interfaces live side by side (DECISIONS 2026-10-05):
-// "punk", the default, and "classique" (the one before the redesign), reached only with
-// ?ui=classique (or ?ui=classic) and kept on the device. The punk interface follows the phone's
-// light or dark setting until the sun / moon button is used, then the choice kept on the
-// device (DECISIONS 2026-10-09; ?mode=clair|sombre|auto sets it too).
-// A theme is a CSS file of tokens (theme/classic.css; the punk one's are theme/punk/tokens.css,
-// beside its rules, one file per screen, all imported by theme/punk/punk.css): the map's
-// colours are its --map-* tokens and its basemap the --basemap* ones, read here.
-export type Ui = "classique" | "punk";
+// The interface's theme: the punk design (the redesign « Carte punk »), the only one since
+// 2026-10-23 (the classique and its ?ui= choice removed; ?ui= is ignored). It follows the
+// phone's light or dark setting until the sun / moon button is used, then the choice kept
+// on the device (DECISIONS 2026-10-09; ?mode=clair|sombre|auto sets it too).
+// Its tokens are theme/punk/tokens.css, beside its rules, one file per screen, all imported
+// by theme/punk/punk.css: the map's colours are its --map-* tokens and its basemap the
+// --basemap* ones, read here.
 export type Mode = "light" | "dark";
 export type ModeChoice = "auto" | "clair" | "sombre";
 
-const UI_KEY = "lacarte.ui";
 const MODE_KEY = "lacarte.mode";
 const DARK = "(prefers-color-scheme: dark)";
 
@@ -30,17 +27,6 @@ function store(key: string, value: string): void {
 }
 const param = (name: string) => new URLSearchParams(window.location.search).get(name);
 
-/** The interface: ?ui=punk|classique (classic too), kept on the device; punk by default. */
-export function chosenUi(): Ui {
-  const q = param("ui");
-  const asked = q === "classic" ? "classique" : q;
-  if (asked === "punk" || asked === "classique") {
-    store(UI_KEY, asked);
-    return asked;
-  }
-  return stored(UI_KEY) === "classique" ? "classique" : "punk";
-}
-
 /** The mode asked for: ?mode=clair|sombre|auto, kept on the device; auto by default. */
 export function modeChoice(): ModeChoice {
   const q = param("mode");
@@ -52,32 +38,28 @@ export function modeChoice(): ModeChoice {
   return s === "clair" || s === "sombre" ? s : "auto";
 }
 
-/** The current interface has no dark mode; the punk one follows the choice or the phone. */
-function resolvedMode(ui: Ui, choice: ModeChoice): Mode {
-  if (ui === "classique") return "light";
+/** The mode shown: the one chosen, or the phone's. */
+function resolvedMode(choice: ModeChoice): Mode {
   if (choice === "auto") return window.matchMedia(DARK).matches ? "dark" : "light";
   return choice === "sombre" ? "dark" : "light";
 }
 
-export const ui = (): Ui => (document.documentElement.dataset.ui as Ui) ?? chosenUi();
 export const mode = (): Mode => (document.documentElement.dataset.mode as Mode) ?? "light";
 
-/** Mark the page with its interface and mode, and load the punk tokens (and their fonts)
- * when asked: the current interface downloads nothing more. */
+/** Mark the page with its mode, and load the tokens and rules (and the fonts' loader), a
+ * chunk of their own fetched as the code starts. The page keeps `data-ui="punk"`: every
+ * rule of theme/punk/ is written under it. */
 export async function initTheme(): Promise<void> {
-  const u = chosenUi();
   const root = document.documentElement;
-  root.dataset.ui = u;
-  root.dataset.mode = resolvedMode(u, modeChoice());
-  if (u === "punk") {
-    // Safari on iOS applies :active on a tap only when a touchstart listener exists on the
-    // element or an ancestor (product owner, 2026-10-07; to check on the iPhone): one,
-    // passive, so that the punk buttons show their press (theme/punk/buttons.css).
-    document.addEventListener("touchstart", () => {}, { passive: true });
-    const [, fonts] = await Promise.all([import("./theme/punk/punk.css"), import("./theme/fonts")]);
-    loadFonts = fonts.loadFonts;
-    if (fonts.seen()) void loadFonts();
-  }
+  root.dataset.ui = "punk";
+  root.dataset.mode = resolvedMode(modeChoice());
+  // Safari on iOS applies :active on a tap only when a touchstart listener exists on the
+  // element or an ancestor (product owner, 2026-10-07; to check on the iPhone): one,
+  // passive, so that the buttons show their press (theme/punk/buttons.css).
+  document.addEventListener("touchstart", () => {}, { passive: true });
+  const [, fonts] = await Promise.all([import("./theme/punk/punk.css"), import("./theme/fonts")]);
+  loadFonts = fonts.loadFonts;
+  if (fonts.seen()) void loadFonts();
   // The tokens are in: drop the page's waiting colours set by index.html.
   root.style.removeProperty("--page");
   root.style.removeProperty("color-scheme");
@@ -86,8 +68,7 @@ export async function initTheme(): Promise<void> {
 
 let loadFonts: (() => Promise<void>) | null = null;
 
-/** The punk fonts, once the first display is done (theme/fonts.ts); nothing for the
- * current interface. */
+/** The punk fonts, once the first display is done (theme/fonts.ts). */
 export function themeFonts(): void {
   void loadFonts?.();
 }
@@ -100,7 +81,7 @@ let repaint: ((from: Palette) => void) | null = null;
  * page's mode by itself; the map's repaint (followMode's `apply`), then every onTheme()
  * listener redraws what was drawn with the old colours (pictograms on canvases). */
 function switchTo(choice: ModeChoice): void {
-  const next = resolvedMode("punk", choice);
+  const next = resolvedMode(choice);
   if (next === mode()) return;
   const from = palette();
   document.documentElement.dataset.mode = next;
@@ -109,9 +90,8 @@ function switchTo(choice: ModeChoice): void {
   window.dispatchEvent(new Event(THEME_EVENT));
 }
 
-/** Follow the phone's light/dark setting while the punk interface is on "auto". */
+/** Follow the phone's light/dark setting while the mode is on "auto". */
 export function followMode(apply: (from: Palette) => void): void {
-  if (ui() !== "punk") return;
   repaint = apply;
   window.matchMedia(DARK).addEventListener("change", () => {
     if (modeChoice() === "auto") switchTo("auto");
@@ -153,11 +133,11 @@ export type Palette = {
   /** Communes and départements, light to dark (quantile classes). */
   area: [string, string, string, string, string];
   areaLine: string;
-  /** The thin border between communes and départements (punk; the classique: areaLine). */
+  /** The thin border between communes and départements. */
   areaBorder: string;
-  /** The outline of the commune or département whose sheet is open (punk; classique: areaLine). */
+  /** The outline of the commune or département whose sheet is open. */
   areaSelected: string;
-  /** The dark edge under that outline (punk; classique: areaLine, not drawn). */
+  /** The dark edge under that outline. */
   areaSelectedEdge: string;
   /** Filmed streets by the highest level reached: [detection, recognition, identification]. */
   level: [string, string, string];
@@ -168,7 +148,7 @@ export type Palette = {
   label: string;
   field: string;
   fieldLine: string;
-  /** The other fields' outline while a camera is in focus (punk; the classique: fieldLine). */
+  /** The other fields' outline while a camera is in focus. */
   fieldDimLine: string;
   hatchView: string;
   picto: string;
@@ -250,18 +230,10 @@ export function paletteFrom(v: (name: string) => string): Palette {
   };
 }
 
-/** Tokens only the punk theme defines, and the one the classique uses in their place. */
-const FALLBACK: Record<string, string> = {
-  "map-area-border": "map-area-line",
-  "map-area-selected": "map-area-line",
-  "map-area-selected-edge": "map-area-line",
-  "map-field-dim-line": "map-field-line",
-};
-
 function readPalette(): Palette {
   const s = getComputedStyle(document.documentElement);
   return paletteFrom((name) => {
-    const value = token(s, name) || (FALLBACK[name] ? token(s, FALLBACK[name]) : "");
+    const value = token(s, name);
     if (!value) throw new Error(`theme: --${name} is not defined`);
     if (!/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value))
       throw new Error(`theme: --${name} is not a hex colour (${value})`);

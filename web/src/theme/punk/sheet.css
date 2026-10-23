@@ -878,7 +878,7 @@
     color: var(--on-accent);
   }
   /* A drawn arrow, as thick as the close's × and in its colour (a font's arrow was a thin
-     line, and the classique's handle bar pushed it aside in the account's sheets). */
+     line, and the old handle bar pushed it aside in the account's sheets). */
   :root[data-ui="punk"] #sheet .sheet-head .sheet-grab::before {
     content: "";
     width: 22px;

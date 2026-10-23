@@ -4,7 +4,7 @@
 // or the pseudonym its author chose to show (« Afficher mon pseudonyme sur les caméras que
 // j'ai relevées », off by default) — and, for one published on OpenStreetMap's live server,
 // a link to that object's history there (GET /api/history, read at each opening: never
-// cached, so that a pseudonym shown or hidden is so at once). Both interfaces, two lines an
+// cached, so that a pseudonym shown or hidden is so at once). Two lines an
 // entry at most, even 320 px wide (lot U2: 17a's rows, their tag « contribution · 10/26 »
 // and dotted leader, made one line too full and « PAR / CARA » wrapped): the change and the
 // month in words (« Position corrigée · octobre 2026 »), then, smaller, « par cara » or
@@ -16,7 +16,6 @@
 // sheet's dates already say when OSM last checked the camera). The words: historytext.ts.
 import { type HistoryEntry, lineText, osmLinks, parseHistory, whoText } from "./historytext";
 import { formatMonth, t } from "./i18n";
-import { ui } from "./theme";
 
 /** GET /api/history: the entries, or null when they cannot be read. */
 export async function readHistory(id: string): Promise<HistoryEntry[] | null> {
@@ -66,14 +65,7 @@ function section(entries: HistoryEntry[]): HTMLElement | null {
     list.append(li);
   }
   box.append(list);
-  const links = osmLinks(entries);
-  if (ui() === "punk") {
-    for (const href of links) box.append(outLink(href, "sheet-link history-osm"));
-  } else if (links.length) {
-    const p = el("p", "links");
-    for (const href of links) p.append(outLink(href, "history-osm"));
-    box.append(p);
-  }
+  for (const href of osmLinks(entries)) box.append(outLink(href, "sheet-link history-osm"));
   return box;
 }
 

@@ -107,7 +107,6 @@ test("identified: the value alone; estimated: « ~ »; default: the box; the wor
 
 // --- the CSS: no button, no state, contrast --------------------------------------------
 
-const CLASSIC = src("theme/classic.css");
 const PUNK_FILES = [...src("theme/punk/punk.css").matchAll(/@import\s+"\.\/([\w-]+\.css)";/g)].map(
   (m) => m[1],
 );
@@ -124,8 +123,7 @@ function block(css: string, selector: string): Map<string, string> {
     props.set(m[1], m[2].trim());
   return props;
 }
-const classic = block(CLASSIC, ":root");
-const light = new Map([...classic, ...block(PUNK, ':root[data-ui="punk"]')]);
+const light = block(PUNK, ':root[data-ui="punk"]');
 const dark = new Map([...light, ...block(PUNK, ':root[data-ui="punk"][data-mode="dark"]')]);
 
 /** A file's rules: selector (its punk prefix removed) -> property -> value; the rules inside

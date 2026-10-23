@@ -5,7 +5,6 @@
 // says « not found » again at once (its words confirm), and « Elle est toujours là »
 // (DECISIONS 2026-10-08, « Punk, until further notice… »).
 import { t } from "../i18n";
-import { ui } from "../theme";
 import { type OnSiteRules, onSite, onSiteHelp } from "./onsite";
 import { type Contribution, type Queue, today } from "./queue";
 
@@ -56,7 +55,7 @@ export function verifyPanel(
     row.append(b);
     return b;
   };
-  if (ui() === "punk" && box.closest("[data-gone]")) {
+  if (box.closest("[data-gone]")) {
     button("sheet.punk.verify_gone.confirm").addEventListener(
       "click",
       () => void send("not_found"),

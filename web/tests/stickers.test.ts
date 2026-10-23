@@ -33,10 +33,9 @@ function block(css: string, selector: string): Map<string, string> {
   return props;
 }
 
-const classic = block(src("theme/classic.css"), ":root");
 // The punk tokens, light then dark (theme/punk/punk.css imports them first).
 const PUNK = src("theme/punk/tokens.css");
-const light = new Map([...classic, ...block(PUNK, ':root[data-ui="punk"]')]);
+const light = block(PUNK, ':root[data-ui="punk"]');
 const dark = new Map([...light, ...block(PUNK, ':root[data-ui="punk"][data-mode="dark"]')]);
 
 const contrast = (a: string, b: string) => {

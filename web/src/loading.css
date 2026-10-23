@@ -5,8 +5,8 @@
    dark is the mockup's own inks, fixed, so that it is drawn before the punk theme's tokens
    arrive (the first load shows it before any script of the page has run). Not in
    theme/punk/: the punk stylesheet arrives with the scripts, seconds after the blank it
-   covers (bench/loading-timeline.mjs); here it comes with the page's first stylesheet, and
-   matches nothing in the classique, which never makes one. Every move sits in the motion
+   covers (bench/loading-timeline.mjs); here it comes with the page's first stylesheet.
+   Every move sits in the motion
    query (the mockup's `still` branch: under reduced motion nothing moves, the camera and the
    letters at rest); the tilts are its fixed decoration. Faces: the punk ones (Archivo,
    Special Elite, Georgia) with their fallbacks; « Loading Archivo » and « Loading Elite »

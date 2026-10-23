@@ -32,12 +32,10 @@ export function t(key: string, params: Record<string, string | number> = {}): st
     });
 }
 
-/** A key the two interfaces share, in the punk interface's own words when it has them
- * (`<key>.punk`; board 26a's vocabulary: « acceptée », not « validée »); the classique
- * keeps its strings until the switch-over. */
+/** A key in the punk interface's own words when it has them (`<key>.punk`; board 26a's
+ * vocabulary: « acceptée », not « validée »), else the key itself. */
 export function tp(key: string, params: Record<string, string | number> = {}): string {
-  const punk = typeof document !== "undefined" && document.documentElement.dataset.ui === "punk";
-  return t(punk && has(`${key}.punk`) ? `${key}.punk` : key, params);
+  return t(has(`${key}.punk`) ? `${key}.punk` : key, params);
 }
 
 export function formatDate(iso: string): string {

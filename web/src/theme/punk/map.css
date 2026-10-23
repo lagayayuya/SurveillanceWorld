@@ -70,7 +70,7 @@
   gap: 3px;
 }
 /* 17a's links: the typewriter face, a wavy underline. « Filtres et légende » is the page's
-   own button (#fab-filters, a phone's floating button in the current interface). */
+   own button (#fab-filters). */
 :root[data-ui="punk"] .ticket-link,
 :root[data-ui="punk"] #fab-filters.ticket-link {
   appearance: none;

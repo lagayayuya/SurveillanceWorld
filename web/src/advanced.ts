@@ -16,36 +16,14 @@ type Props = Record<string, unknown>;
 
 type Row = {
   id: string;
-  /** Its group in the scheme in force (the current interface's or the punk one's). */
+  /** Its group, as mockup 20a's drawer shows them (« Vérifiée il y a… », « Il manque… »,
+   * « Elle peut… », « À vérifier », then the operator search); the logic follows what it
+   * shows: rows of one group OR, groups AND. */
   group: string;
   label: string;
   test: (p: Props, est: number) => boolean;
   expr: (est: number) => ExpressionSpecification;
 };
-
-/** The punk interface groups the rows as mockup 20a's drawer does (« Vérifiée il y a… »,
- * « Il manque… », « Elle peut… », « À vérifier », then the operator search), and the logic
- * follows what it shows: rows of one group OR, groups AND. The current interface keeps its
- * own groups. */
-const PUNK_GROUP: Record<string, string> = {
-  fresh_lt1: "fresh",
-  fresh_1to3: "fresh",
-  fresh_gt3: "fresh",
-  fresh_never: "fresh",
-  direction_unknown: "missing",
-  type_unknown: "missing",
-  height_unknown: "missing",
-  plate_reading: "can",
-  ptz: "can",
-  night_vision: "can",
-  analytics: "can",
-  identifies_far: "can",
-  in_building: "check",
-  maybe_gone: "check",
-  gone: "check",
-  legacy_import: "check",
-};
-export type Scheme = "classique" | "punk";
 
 const FRESH = ["lt1", "1to3", "gt3", "never"];
 
@@ -68,10 +46,7 @@ export class AdvancedFilters {
   operatorQuery = "";
   open = false;
 
-  constructor(
-    private meta: FilterMeta,
-    private scheme: Scheme = "classique",
-  ) {
+  constructor(private meta: FilterMeta) {
     const bits = meta.flag_bits;
     const bit = (id: string, group: string, name: string): Row => ({
       id,
@@ -84,27 +59,27 @@ export class AdvancedFilters {
       ...FRESH.map(
         (f, i): Row => ({
           id: `fresh_${f}`,
-          group: "uptodate",
+          group: "fresh",
           label: t(`adv.fresh_${f}`),
           test: (p) => freshBucket(p) === i,
           expr: () => ["==", bucketExpr, i],
         }),
       ),
-      bit("maybe_gone", "uptodate", "maybe_gone"),
+      bit("maybe_gone", "check", "maybe_gone"),
       {
         // Verified gone (a validated "introuvable", tiles `gm`): hidden unless this row is
         // on; such a camera films nothing, so no street passes it (no segment bit).
         id: "gone",
-        group: "uptodate",
+        group: "check",
         label: t("adv.gone"),
         test: (p) => p.gm !== undefined && p.gm !== null,
         expr: () => ["has", "gm"],
       },
-      bit("legacy_import", "uptodate", "legacy_import"),
-      bit("direction_unknown", "complete", "direction_unknown"),
-      bit("type_unknown", "complete", "type_unknown"),
-      bit("height_unknown", "complete", "height_unknown"),
-      bit("in_building", "complete", "in_building"),
+      bit("legacy_import", "check", "legacy_import"),
+      bit("direction_unknown", "missing", "direction_unknown"),
+      bit("type_unknown", "missing", "type_unknown"),
+      bit("height_unknown", "missing", "height_unknown"),
+      bit("in_building", "check", "in_building"),
       bit("plate_reading", "can", "plate_reading"),
       bit("ptz", "can", "ptz"),
       bit("night_vision", "can", "night_vision"),
@@ -117,13 +92,10 @@ export class AdvancedFilters {
         expr: (est) => bitExpr(bits[`identifies_far_${est}`]),
       },
     ];
-    if (scheme === "punk") for (const r of this.rows) r.group = PUNK_GROUP[r.id] ?? r.group;
   }
 
   get groups(): string[] {
-    return this.scheme === "punk"
-      ? ["fresh", "missing", "can", "check", "who"]
-      : ["uptodate", "complete", "who", "can"];
+    return ["fresh", "missing", "can", "check", "who"];
   }
 
   /** Operator indices whose name contains the query (ignoring accents and case). */

@@ -10,8 +10,7 @@
 // administrator's (?vue=comptes, ?compte=<id>, ?vue=retraits, ?vue=reglages,
 // ?vue=statistiques, ?vue=journal: accounts.ts, hidden.ts, settings.ts, stats.ts,
 // journal.ts). The map links to /revue?status=conflict (and &kind=add): « Conflits ».
-// It follows the interface's choice and mode as the map does (punk by default,
-// ?ui=classique; light or dark), one layout for both, on the theme's tokens.
+// It follows the mode as the map does (light or dark), on the punk theme's tokens.
 import { addProtocol, setWorkerUrl } from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -31,12 +30,11 @@ import { fetchQueue, type QueueNav, queueView } from "./queue";
 import { el, FILTERS, type Filter } from "./rows";
 import { settingsView } from "./settings";
 import { statsView } from "./stats";
-import "../theme/classic.css";
 import "./review.css";
 
 setWorkerUrl(workerUrl);
 addProtocol("pmtiles", new Protocol().tile);
-// The interface's theme (theme.ts): the punk one loads its tokens before anything is drawn.
+// The theme (theme.ts): its tokens loaded before anything is drawn.
 await initTheme();
 themeFonts();
 // Nothing unsent lives here: after a change of the phone's mode the page loads again, its

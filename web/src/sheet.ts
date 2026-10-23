@@ -1,33 +1,34 @@
-// Camera sheet: pictogram and one line, then in large "can identify you up to ~X m" for the
-// chosen estimate; a one-hue reach ruler; facts as chips with their certainty symbol (a tap
-// explains); freshness; the CNIL signal; every explanation behind one "how is it
-// computed?"; OpenStreetMap links last. The punk interface draws the same facts as mockup
-// 17a does (chips.ts, a chunk it alone downloads).
+// Camera sheet: the facts of a camera (its headline, its chips and their certainty, its
+// freshness, its links), drawn as mockup 17a does by chips.ts, a chunk of its own.
 import type { Source } from "./chips";
-import { formatDate, formatMonth, t, tp } from "./i18n";
+import { formatMonth, t, tp } from "./i18n";
 import { cameraCanvas, KINDS, type Kind } from "./icons";
-import { chosenUi, palette, ui } from "./theme";
+import { palette } from "./theme";
 
 export type CameraProps = Record<string, string | number | undefined>;
 
 const CNIL_COMPLAINT = "https://www.cnil.fr/fr/plaintes";
-/** The punk sheet's CNIL box, suspended (DECISIONS 2026-10-08). */
+/** The sheet's CNIL box, suspended (DECISIONS 2026-10-08). */
 const PUNK_CNIL = false;
-// Certainty codes as in the tiles: 2 identified, 1 estimated, 0 default.
-const CERT_SYMBOL = ["○", "◐", "●"];
 
-// The punk sheet (chips.ts) is downloaded by the punk interface only, asked for as this
-// module loads, long before a sheet opens; a sheet drawn before it arrives is the current
-// one, drawn again in punk when it does (and stays the current one if it cannot load).
+// The sheet's drawing (chips.ts), asked for as this module loads, long before a sheet
+// opens; a sheet asked before it arrives shows its grab and close buttons, then is drawn
+// whole when it does.
 type PunkSheet = typeof import("./chips");
 let punk: PunkSheet | undefined;
 let punkLoading: Promise<PunkSheet> | undefined;
 const loadPunk = () => (punkLoading ??= import("./chips").then((m) => (punk = m)));
-if (chosenUi() === "punk") void loadPunk();
-/** In the punk interface before its sheet's chunk: `draw` again once it is in, if the frame
- * still shows what was drawn. */
-function later(frame: HTMLElement, draw: () => void): void {
-  if (ui() !== "punk") return;
+void loadPunk();
+/** Before the sheet's chunk: the grab and close buttons, then `draw` once it is in, if the
+ * frame still shows them. */
+function later(
+  frame: HTMLElement,
+  buttons: { grab: HTMLElement; close: HTMLElement },
+  draw: () => void,
+): void {
+  const top = el("div", { class: "sheet-top" });
+  top.append(buttons.grab, buttons.close);
+  frame.append(top);
   const first = frame.firstElementChild;
   void loadPunk().then(
     () => {
@@ -101,72 +102,6 @@ export function headLine(p: CameraProps): string {
   const who =
     p.ok === "h" ? `sheet.operator.household.${gender}` : `sheet.operator.${op}.${gender}`;
   return `${t(`sheet.kind.${kind}`)} · ${t(who)}`;
-}
-
-/** The reach ruler: one row per level (identify, recognise, detect), a solid segment up
- * to the standard camera's reach, extended by a faded one up to the prudent one's, with
- * both values written above. */
-export function reachRuler(reach: number[][], typical: number, high: number): SVGElement {
-  const rows = [
-    { key: "ruler.identify", lv: 3, opacity: 1 },
-    { key: "ruler.recognise", lv: 2, opacity: 0.6 },
-    { key: "ruler.detect", lv: 1, opacity: 0.3 },
-  ].map((r) => ({ ...r, a: reach[typical]?.[r.lv - 1], b: reach[high]?.[r.lv - 1] }));
-  const max = Math.max(...rows.flatMap((r) => [r.a, r.b]).filter(known), 1) * 1.02;
-  const W = 320;
-  const X0 = 2;
-  const ROW = 32;
-  const x = (m: number) => X0 + ((W - 2 * X0) * m) / max;
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg");
-  svg.setAttribute("viewBox", `0 0 ${W} ${ROW * rows.length}`);
-  svg.setAttribute("class", "ruler");
-  svg.setAttribute("role", "img");
-  const node = (tag: string, attrs: Record<string, string | number>, text?: string) => {
-    const e = document.createElementNS(ns, tag);
-    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
-    if (text !== undefined) e.textContent = text;
-    svg.append(e);
-  };
-  const spoken: string[] = [];
-  rows.forEach((r, i) => {
-    const y = i * ROW;
-    const line = rowText(r.key, r.a, r.b);
-    spoken.push(line);
-    node("text", { x: X0, y: y + 12, class: "ruler-m" }, line);
-    if (known(r.a)) {
-      node("rect", {
-        x: X0,
-        y: y + 17,
-        width: x(r.a) - X0,
-        height: 9,
-        fill: palette().field,
-        "fill-opacity": r.opacity,
-      });
-    }
-    if (known(r.b) && (!known(r.a) || r.b > r.a)) {
-      const from = known(r.a) ? x(r.a) : X0;
-      node("rect", {
-        x: from,
-        y: y + 17,
-        width: x(r.b) - from,
-        height: 9,
-        fill: palette().field,
-        "fill-opacity": r.opacity * 0.3,
-      });
-    }
-  });
-  svg.setAttribute("aria-label", spoken.join(". "));
-  return svg;
-}
-
-/** "Identifier : ~5,6 m (~18 m en prudent)", or what is missing. */
-function rowText(key: string, a: number | undefined, b: number | undefined): string {
-  const verb = t(key);
-  if (known(a) && known(b)) return t("ruler.row", { verb, m: metres(a), M: metres(b) });
-  if (known(b)) return t("ruler.row_high", { verb, M: metres(b) });
-  if (known(a)) return t("ruler.row_one", { verb, m: metres(a) });
-  return t("ruler.row_none", { verb });
 }
 
 /** The sheet's headline, starting with the chosen estimate, then the other one; or why
@@ -303,8 +238,7 @@ function chips(p: CameraProps, ptzFov: number, heights: Record<string, number> =
   });
   // Phase D3: an answered height says its class (tiles `hk`, `hm`); a tilt only its class
   // (`t`), never degrees, and only while a height at least estimated makes it count.
-  // Punk says the editor's metres alone (« ~4 m »: DECISIONS 2026-10-12, the height in
-  // metres); the classique its floor and the metres.
+  // The editor's metres alone (« ~4 m »: DECISIONS 2026-10-12, the height in metres).
   const heightClass = p.hk
     ? tp("chip.value.height", {
         v: tp(`chip.value.height.${p.hk}`),
@@ -464,9 +398,7 @@ function topButtons(opts: { onClose: () => void; onGrab: () => void }) {
   return { grab, close };
 }
 
-/** The sheet in two parts: `.sheet-top` (handle, close, pictogram, line, headline: what a
- * phone shows at its lowest position, and where it is dragged) and `.sheet-body`. The punk
- * interface's is chips.ts's, from the same facts. */
+/** The camera's sheet, drawn by chips.ts from its facts. */
 export function renderSheet(frame: HTMLElement, p: CameraProps, opts: SheetOptions): void {
   frame.replaceChildren();
   const kind = (KINDS as readonly string[]).includes(String(p.k))
@@ -495,137 +427,46 @@ export function renderSheet(frame: HTMLElement, p: CameraProps, opts: SheetOptio
       : headline(opts.reach, typical, high, mounted, opts.est, opts.noDirection);
   // An added camera (phase "Ajouter") has no OpenStreetMap element to link to.
   const osm = !isAddedId(String(p.id));
-  const punkSheet = ui() === "punk" ? punk : undefined;
-  // Punk: « Toujours là ? » asks otherwise on a camera verified gone (participate/verify.ts).
-  if (punkSheet && gone) frame.dataset.gone = "";
+  // « Toujours là ? » asks otherwise on a camera verified gone (participate/verify.ts).
+  if (gone) frame.dataset.gone = "";
   else delete frame.dataset.gone;
+  if (!punk) {
+    later(frame, { grab, close }, () => renderSheet(frame, p, opts));
+    return;
+  }
   let back: HTMLElement | undefined;
   if (opts.onBack) {
-    back = el("button", { class: punkSheet ? "sheet-back" : "part-btn sheet-back" });
+    back = el("button", { class: "sheet-back" });
     back.textContent = t("sheet.back_to_camera");
     back.addEventListener("click", opts.onBack);
   }
   const share = shareButton(opts.shareUrl, t("sheet.share_title"));
-  if (punkSheet) {
-    const [type, id] = osmRef(p);
-    punkSheet.punkSheet(frame, {
-      ...{ p, t, month: formatMonth, title: headLine(p), operatorName: opts.operatorName },
-      ...{ facts: chips(p, opts.ptzFov, opts.heights), sentence, gone, noField, mounted },
-      ...{ reach: opts.reach, shown: opts.shown, est: opts.est, estimates: opts.estimates },
-      ...{ level: opts.level, onLevel: opts.onLevel },
-      noDirection: opts.noDirection,
-      visitor: opts.visitor === true,
-      answerable: opts.answerable ?? [],
-      observed: (what) => observed(p, what as keyof typeof ON_SITE),
-      seen: seenLater(p),
-      seenByAdd: (Number(p.os ?? 0) & SEEN_BY_ADD) !== 0,
-      osm: osm
-        ? {
-            edit: `https://www.openstreetmap.org/edit?${type}=${id}`,
-            page: `https://www.openstreetmap.org/${type}/${id}`,
-          }
-        : undefined,
-      // The CNIL box is suspended in punk until further notice (DECISIONS 2026-10-08,
-      // « Punk, until further notice… »): chips.ts keeps drawing it when given one.
-      cnil: PUNK_CNIL && opts.cnil && Number(p.cnil) === 1 ? CNIL_COMPLAINT : undefined,
-      parts: {
-        ...{ picto, grab, close, back, actions: opts.actions, slots: opts.slots, share },
-        history: opts.history,
-      },
-    });
-    return;
-  }
-
-  const top = el("div", { class: "sheet-top" });
-  const line = el("div", { class: "sheet-line" });
-  line.append(picto, el("span", {}, headLine(p)));
-  const title = el("h2", { class: "headline" }, sentence);
-  top.append(grab, close, line, title);
-  if (osm && (noField || gone)) top.append(osmEditLink(p));
-
-  const body = el("div", { class: "sheet-body" });
-  frame.append(top, body);
-  if (back) body.append(back);
-  if (opts.actions) body.append(opts.actions);
-
-  if (!noField && !gone) body.append(reachRuler(opts.reach, typical, high));
-
-  // Chips: a tap shows a short explanation under them, one at a time.
-  const list = el("div", { class: "chips" });
-  const help = el("p", { class: "chip-help", "aria-live": "polite" });
-  help.hidden = true;
-  let openKey = "";
-  for (const c of chips(p, opts.ptzFov, opts.heights)) {
-    const certText = c.cert === undefined ? "" : t(`cert.${c.cert}`);
-    // Freshness reads as a phrase ("Vérifiée il y a 2 ans"): no label before it.
-    const phrase = c.key === "fresh" || c.key === "fresh_seen";
-    const b = el("button", {
-      class: `chip${c.warn ? " warn" : ""}`,
-      "aria-label": certText
-        ? t("chip.aria", { label: c.label, value: c.value, certainty: certText })
-        : c.key === "fresh"
-          ? c.value
-          : `${c.label} : ${c.value}`,
-      "aria-expanded": "false",
-    });
-    if (c.cert !== undefined)
-      b.append(el("span", { class: "cert", "aria-hidden": "true" }, CERT_SYMBOL[c.cert]));
-    if (!phrase) b.append(el("span", { class: "chip-label" }, c.label));
-    b.append(el("span", { class: "chip-value" }, c.value));
-    b.addEventListener("click", () => {
-      const again = openKey === c.key;
-      openKey = again ? "" : c.key;
-      for (const other of list.querySelectorAll("button"))
-        other.setAttribute("aria-expanded", "false");
-      b.setAttribute("aria-expanded", String(!again));
-      help.hidden = again;
-      const helpKey = c.key.startsWith("stale.") ? "chip.help.warn" : `chip.help.${c.key}`;
-      help.textContent = again
-        ? ""
-        : `${c.label} — ${t(helpKey)}${certText ? ` ${t(`cert.help.${c.cert}`)}` : ""}`;
-    });
-    list.append(b);
-  }
-  body.append(list, help);
-
-  if (opts.cnil && Number(p.cnil) === 1) {
-    const box = el("div", { class: "cnil" });
-    // Without a direction the signal comes from surveillance=public: "can film", not "turned".
-    const title = Number(p.d ?? -1) < 0 ? "sheet.cnil.title_no_direction" : "sheet.cnil.title";
-    box.append(el("strong", {}, t(title)), el("p", {}, t("sheet.cnil.body")));
-    box.append(
-      el("a", { href: CNIL_COMPLAINT, target: "_blank", rel: "noopener" }, t("sheet.cnil.link")),
-    );
-    body.append(box);
-  }
-
-  // Every explanation behind one link.
-  const how = el("details", { class: "how" });
-  how.append(el("summary", {}, t("sheet.how")));
-  for (const key of [
-    "sheet.how.certainty",
-    "sheet.fan",
-    "estimate.probable.sub",
-    "estimate.cautious.sub",
-    "sheet.old_generation",
-    "legend.norm",
-    "sheet.focus_exit",
-  ]) {
-    how.append(el("p", {}, t(key)));
-  }
-  body.append(how);
-
-  body.append(share);
-  if (osm) {
-    const links = el("p", { class: "links" });
-    links.append(osmEditLink(p), osmHistoryLink(p));
-    body.append(links);
-  }
-  if (p.ed && !p.sd)
-    body.append(el("p", { class: "note" }, t("sheet.edited", { date: formatDate(String(p.ed)) })));
-  if (opts.history) body.append(opts.history);
-  // The punk interface before its sheet's chunk: this one, then the punk one.
-  later(frame, () => renderSheet(frame, p, opts));
+  const [type, id] = osmRef(p);
+  punk.punkSheet(frame, {
+    ...{ p, t, month: formatMonth, title: headLine(p), operatorName: opts.operatorName },
+    ...{ facts: chips(p, opts.ptzFov, opts.heights), sentence, gone, noField, mounted },
+    ...{ reach: opts.reach, shown: opts.shown, est: opts.est, estimates: opts.estimates },
+    ...{ level: opts.level, onLevel: opts.onLevel },
+    noDirection: opts.noDirection,
+    visitor: opts.visitor === true,
+    answerable: opts.answerable ?? [],
+    observed: (what) => observed(p, what as keyof typeof ON_SITE),
+    seen: seenLater(p),
+    seenByAdd: (Number(p.os ?? 0) & SEEN_BY_ADD) !== 0,
+    osm: osm
+      ? {
+          edit: `https://www.openstreetmap.org/edit?${type}=${id}`,
+          page: `https://www.openstreetmap.org/${type}/${id}`,
+        }
+      : undefined,
+    // The CNIL box is suspended until further notice (DECISIONS 2026-10-08, « Punk, until
+    // further notice… »): chips.ts keeps drawing it when given one.
+    cnil: PUNK_CNIL && opts.cnil && Number(p.cnil) === 1 ? CNIL_COMPLAINT : undefined,
+    parts: {
+      ...{ picto, grab, close, back, actions: opts.actions, slots: opts.slots, share },
+      history: opts.history,
+    },
+  });
 }
 
 const isAddedId = (id: string) => /^c[0-9a-f]{12}$/.test(id);
@@ -643,41 +484,18 @@ export function renderPendingSheet(
   picto.className = "sheet-picto pending";
   picto.setAttribute("aria-hidden", "true");
   const status = tp(`sheet.pending_add.headline.${opts.status}`);
-  if (ui() === "punk" && punk) {
-    const parts = { picto, grab, close, actions: opts.actions };
-    punk.punkPendingSheet(frame, { t, title: t("sheet.pending_add.line"), status, parts });
+  if (!punk) {
+    later(frame, { grab, close }, () => renderPendingSheet(frame, opts));
     return;
   }
-  const top = el("div", { class: "sheet-top" });
-  const line = el("div", { class: "sheet-line" });
-  line.append(picto, el("span", {}, t("sheet.pending_add.line")));
-  top.append(grab, close, line, el("h2", { class: "headline" }, status));
-  const body = el("div", { class: "sheet-body" });
-  body.append(opts.actions);
-  frame.append(top, body);
-  later(frame, () => renderPendingSheet(frame, opts));
+  const parts = { picto, grab, close, actions: opts.actions };
+  punk.punkPendingSheet(frame, { t, title: t("sheet.pending_add.line"), status, parts });
 }
 
 function osmRef(p: CameraProps): [string, string] {
   const id = String(p.id);
   const type = id.startsWith("n") ? "node" : id.startsWith("w") ? "way" : "relation";
   return [type, id.slice(1)];
-}
-
-function osmEditLink(p: CameraProps): HTMLElement {
-  const [type, id] = osmRef(p);
-  const href = `https://www.openstreetmap.org/edit?${type}=${id}`;
-  return el(
-    "a",
-    { href, target: "_blank", rel: "noopener", class: "osm-edit" },
-    t("sheet.osm.edit"),
-  );
-}
-
-function osmHistoryLink(p: CameraProps): HTMLElement {
-  const [type, id] = osmRef(p);
-  const href = `https://www.openstreetmap.org/${type}/${id}/history`;
-  return el("a", { href, target: "_blank", rel: "noopener" }, t("sheet.osm.history"));
 }
 
 /** "Partager": the system share sheet when there is one, else a copy to the clipboard. */

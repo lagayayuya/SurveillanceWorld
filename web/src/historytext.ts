@@ -60,7 +60,7 @@ export const whatText = (what: string, t: Fmt) => t(`history.what.${what}`);
 export const whoText = (by: string | null, t: Fmt) =>
   by ? t("history.by", { who: by }) : t("history.by_anyone");
 
-/** An entry's first line, in both interfaces: « Position corrigée · octobre 2026 » (the month
+/** An entry's first line: « Position corrigée · octobre 2026 » (the month
  * in words: « 10/26 » read as a day; lot U2). Who comes on its own line (whoText); whether
  * it was on site is no longer said there (the API keeps `on_site`). */
 export function lineText(e: HistoryEntry, t: Fmt, month: (m: string) => string): string {

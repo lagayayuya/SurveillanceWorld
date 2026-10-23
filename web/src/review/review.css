@@ -1,11 +1,10 @@
 /* /revue (lot 1 « Modérer » of its redesign, boards P1 and P2; lot 2 « Administrer », P3 to
-   P5: the administrator's views, the password dialog): a sober tool on the theme's
-   tokens, one layout for both interfaces (punk is the target: square corners, 2 px ink
-   rules, condensed capitals for titles, tabs and buttons, one pink primary button on its
-   offset shadow; the classique draws the same with its own tokens). Body text in a
-   readable sans (--font-review), never the typewriter face. A phone (390 px) first; from
-   800 px the camera view sets its map beside what to decide. Every colour is a token
-   (web/tests/theme.test.ts checks them; this file reads the classic ones only). */
+   P5: the administrator's views, the password dialog): a sober tool on the punk theme's
+   tokens (square corners, 2 px ink rules, condensed capitals for titles, tabs and buttons,
+   one pink primary button on its offset shadow). Body text in a readable sans
+   (--font-review), never the typewriter face. A phone (390 px) first; from 800 px the
+   camera view sets its map beside what to decide. Every colour is a token
+   (web/tests/theme.test.ts checks that theme/punk/tokens.css defines each one it reads). */
 
 html {
   /* Until the theme marks the page (data-ui), the pre-paint's colours (revue-prepaint.js). */

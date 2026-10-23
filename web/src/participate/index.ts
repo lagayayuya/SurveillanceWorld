@@ -12,7 +12,6 @@ import { debugEvent } from "../debug";
 import { formatMonth, t, tp } from "../i18n";
 import { DETAIL_MIN } from "../layers";
 import { awardOf } from "../profile/award";
-import { ui } from "../theme";
 import { AddMode, type Nearby } from "./add";
 import { ApiError, call, withdrawSent } from "./api";
 import { CompleteMode, type CompleteTarget, type Questions } from "./complete";
@@ -55,8 +54,8 @@ export class Participation {
   /** While a refused send is said on the counter: its timer. */
   private refused = 0;
   private me: Me | null = null;
-  /** No session, said by the API (account/session.ts): punk asks for a login where a
-   * contribution would start, the classique (no login screen) hides its participation. */
+  /** No session, said by the API (account/session.ts): a login is asked where a
+   * contribution would start. */
   private visitor = false;
   /** The review account: conflicts of each camera opened (the build found its OSM element
    * changed or gone), fetched once per camera. */
@@ -76,8 +75,8 @@ export class Participation {
       label: (id: string) => string;
       /** A camera's sheet by id: the map's, or a pending add's (the duplicates list). */
       open: (id: string) => void;
-      /** Punk: the login form in the sheet, then `then` once signed in; `back` is its
-       * « ← Retour ». None in the classique, which has no login screen. */
+      /** The login form in the sheet, then `then` once signed in; `back` is its
+       * « ← Retour ». None when contributions are closed. */
       login?: (then: () => void, back?: () => void) => void;
     },
   ) {
@@ -184,10 +183,9 @@ export class Participation {
     // dot. Below min_zoom it stays greyed (aria-disabled, so a tap still comes) and a tap
     // says "Zoomez pour ajouter" for a few seconds.
     const minZoom = meta.participation.add?.min_zoom ?? 17;
-    // Punk (DECISIONS 2026-10-09): active as soon as the stickers show (the street level);
-    // a tap below min_zoom first zooms there, centred where it is, then opens the add.
-    const punk = ui() === "punk";
-    const activeFrom = punk ? DETAIL_MIN : minZoom;
+    // DECISIONS 2026-10-09: active as soon as the stickers show (the street level); a tap
+    // below min_zoom first zooms there, centred where it is, then opens the add.
+    const activeFrom = DETAIL_MIN;
     let saying = 0;
     const label = () => {
       const near = map.getZoom() >= activeFrom;
@@ -203,12 +201,12 @@ export class Participation {
     label();
     this.addButton.addEventListener("click", () => {
       if (!this.add) return;
-      // Signed out (punk): the login, then this same tap once signed in.
+      // Signed out: the login, then this same tap once signed in.
       if (this.visitor && hooks.login) {
         hooks.login(() => this.addButton.click());
         return;
       }
-      if (punk && map.getZoom() >= activeFrom && map.getZoom() < minZoom) {
+      if (map.getZoom() >= activeFrom && map.getZoom() < minZoom) {
         hooks.closeSheet();
         // A finger that stops the zoom halfway stops the add with it. A move still running
         // (a fling's inertia) is stopped first: its own moveend would come at the old zoom.
@@ -231,8 +229,8 @@ export class Participation {
         return;
       }
       hooks.closeSheet();
-      // Punk (DECISIONS 2026-10-08): adding and « Modifier » are one component.
-      if (ui() === "punk" && this.modify) this.modify.startAdd();
+      // DECISIONS 2026-10-08: adding and « Modifier » are one component.
+      if (this.modify) this.modify.startAdd();
       else this.add.begin();
     });
     // Who is signed in (account/session.ts, asked by main.ts at start). Signed in, one may
@@ -314,11 +312,11 @@ export class Participation {
     return box;
   }
 
-  /** The camera sheet's facts marked « ? »: on the punk sheet the lines « Modifier »
-   * would unfold (questions.ts editorAnswerable), else what « Compléter » can answer. */
-  answerable(cam: CompleteTarget, punk: boolean): string[] {
+  /** The camera sheet's facts marked « ? »: the lines « Modifier » would unfold
+   * (questions.ts editorAnswerable), else what « Compléter » can answer. */
+  answerable(cam: CompleteTarget): string[] {
     const q = this.meta.participation.questions;
-    if (punk && this.modify && q) return editorAnswerable(cam, q);
+    if (this.modify && q) return editorAnswerable(cam, q);
     return this.complete?.answerable(cam) ?? [];
   }
 
@@ -334,7 +332,7 @@ export class Participation {
     else if (this.move.active) this.move.exit(false);
   }
 
-  /** No participation at all: the classique signed out (it has no login screen). */
+  /** No participation at all: signed out without a way to sign in. */
   get hidden(): boolean {
     return this.visitor && !this.hooks.login;
   }
@@ -483,7 +481,7 @@ export class Participation {
       if (p.s === "pending" || p.s === "queued" || p.s === "sent")
         block.append(this.withdrawButton(p.q ?? p.u, "prop.withdraw", p.k === "add", block, p.b));
     } else if (this.hidden) {
-      // The classique signed out: the proposal's state alone.
+      // Signed out without a way to sign in: the proposal's state alone.
     } else if (this.me?.reviewer) {
       row.append(
         ...decisionButtons(p.u, p.s, "part-btn", async () => {
@@ -607,7 +605,7 @@ export class Participation {
       const row = document.createElement("div");
       row.className = "part-answers";
       const verify = button("part.verify", "part-btn part-verify");
-      // Signed out (punk): « Compte », then back to this sheet (a password login runs
+      // Signed out: « Compte », then back to this sheet (a password login runs
       // `back`; OpenStreetMap comes back to this camera's address).
       const back = () => this.hooks.open(cam.id);
       const signIn = () => {
@@ -689,21 +687,15 @@ export class Participation {
         row.append(verify);
         slots.mine.append(mine);
         box.append(row);
-      } else {
-        if (cam.check) row.append(move, verify);
-        else row.append(verify, move);
-        if (complete) row.append(complete);
-        box.append(row, mine);
       }
       if (this.me?.reviewer) void this.renderConflicts(cam, box);
     };
     const done = (offline: boolean, sent?: { uuid: string; body: Contribution }) => {
-      // Punk (board 8a): the sheet goes, the ticket falls on the map with its points; a
-      // check that earns nothing (from afar, « Je ne sais pas »: profile/award.ts) has no
-      // ticket nor scene, the sheet says « Envoyé · en attente de revue ».
-      const punk = sent !== undefined && ui() === "punk";
+      // Board 8a: the sheet goes, the ticket falls on the map with its points; a check that
+      // earns nothing (from afar, « Je ne sais pas »: profile/award.ts) has no ticket nor
+      // scene, the sheet says « Envoyé · en attente de revue ».
       const category = sent ? awardOf(sent.body, {}) : null;
-      if (punk && category) {
+      if (sent && category) {
         void this.proposals.refresh();
         // Wide screen: the ticket falls where the camera's sheet stood.
         const column = columnOf(document.getElementById("sheet"));
@@ -732,7 +724,7 @@ export class Participation {
       const p = document.createElement("p");
       p.className = "part-done";
       p.setAttribute("role", "status");
-      p.textContent = t(offline ? "part.queued" : punk ? "score.sent" : "part.sent");
+      p.textContent = t(offline ? "part.queued" : sent ? "score.sent" : "part.sent");
       box.append(p);
       void this.proposals.refresh();
     };
@@ -816,13 +808,13 @@ export function actionSlots(): ActionSlots {
   return { head: slot("part-head"), move: slot("part-move-slot"), mine: slot("part-mine-slot") };
 }
 
-/** Punk (DECISIONS 2026-10-08): a pending add's answers under its proposal's line, as
+/** DECISIONS 2026-10-08: a pending add's answers under its proposal's line, as
  * they make the field drawn, so that one confirms knowingly. A sent add's come with its
  * camera (ProposalsLayer select): none listed until they are read, rather than « pas de
  * réponse » meanwhile; then the list alone is put in, the block's buttons kept. */
 function showAnswers(block: HTMLElement, p: Proposal | undefined): void {
   const old = block.querySelector<HTMLElement>(".add-answers");
-  const shown = ui() === "punk" && p?.k === "add" && (p.ans || p.s === "queued" || p.s === "sent");
+  const shown = p?.k === "add" && (p.ans || p.s === "queued" || p.s === "sent");
   if (!p || !shown) {
     old?.remove();
     return;

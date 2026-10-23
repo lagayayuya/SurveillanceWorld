@@ -70,17 +70,16 @@ import { setLeaderboardOpener } from "./participate/score";
 import { tracker } from "./position";
 import { prefetching, wanted as prefetchWanted } from "./prefetch";
 import { type CameraProps, headLine, renderPendingSheet, renderSheet } from "./sheet";
-import "./theme/classic.css";
 import "./style.css";
 import { basemap, basemapLayers } from "./basemap";
-import { colourMap, followMode, initTheme, type Palette, palette, themeFonts, ui } from "./theme";
+import { colourMap, followMode, initTheme, type Palette, palette, themeFonts } from "./theme";
 import { readHash, readParam, writeHash, writeParams } from "./url";
 
 // The CNIL signal stays hidden until 20 random cases have been reviewed by hand.
 const CNIL_SIGNAL = import.meta.env.VITE_CNIL_SIGNAL === "true";
 
 const base = window.location.origin;
-// The site's counter of map loads (hit.ts): this page, either interface, once it is shown;
+// The site's counter of map loads (hit.ts): this page, once it is shown;
 // sent before anything is awaited, waiting for nothing.
 hitWhenShown("map");
 // Who is signed in (lot « comptes »), asked at once: the sheets and the ticket read it.
@@ -102,29 +101,29 @@ const loadTile: AddProtocolAction = async (params, abortController) => {
     }
   }
 };
-// The tiles around the view fetched while the map rests (prefetch.ts), punk only: started
-// below, once the theme has said which interface this is.
+// The tiles around the view fetched while the map rests (prefetch.ts): started below, once
+// the map exists.
 const prefetch = prefetching(loadTile);
 addProtocol("pmtiles", prefetch.loader);
 
-// The theme first (the punk interface loads its tokens, and its stickers before the map asks
-// for them), with the build's figures.
+// The theme first (its tokens, and the stickers before the map asks for them), with the
+// build's figures.
 const themed = initTheme();
 const stickers = loadStickers();
-// The punk map screen (machine.ts: the header ticket, the filters machine, the camera list),
-// downloaded by the punk interface alone, beside its tokens (initTheme has marked the page).
-const machineModule = ui() === "punk" ? import("./machine") : null;
+// The map screen (machine.ts: the header ticket, the filters machine, the camera list),
+// downloaded beside the tokens, a chunk of its own.
+const machineModule = import("./machine");
 // Its account square and sheets (account/index.ts, lot « comptes »), beside it.
-const accountModule = ui() === "punk" ? import("./account") : null;
+const accountModule = import("./account");
 // The welcome panel of a first visit and its « ? » square (welcome.ts, board 28a), beside it;
 // not over a return from OpenStreetMap or the account's own address, whose sheet opens.
-const welcomeModule = ui() === "punk" ? import("./welcome") : null;
+const welcomeModule = import("./welcome");
 // The legal pages (legal/index.ts, the launch lot), beside it: `?page=` opens one at once.
-const legalModule = ui() === "punk" ? import("./legal") : null;
+const legalModule = import("./legal");
 const landing = readParam("osm") !== null || readParam("compte") !== null;
 // What the API says of the site (config.ts: contributions open or not, publishing, the
-// publisher's identity), punk only, known before its squares and sheets are built.
-const siteAsked = ui() === "punk" ? loadConfig() : null;
+// publisher's identity), known before its squares and sheets are built.
+const siteAsked = loadConfig();
 const meta: Meta = await fetch(`${base}/tiles/meta.json`).then((r) => r.json());
 await themed;
 await stickers;
@@ -135,8 +134,6 @@ const welcomeKit = await welcomeModule;
 const legalKit = await legalModule;
 const sprite = (name: string) => `${base}/basemap/sprites/${name}`;
 const startBasemap = basemap();
-// The punk interface marks the focused camera below the street level (layers.ts).
-const punk = ui() === "punk";
 
 // The position lives in the hash (#zoom/lat/lng, MapLibre's form), written by us so that
 // it can be held while the user's own position is shown (locate.ts).
@@ -161,33 +158,33 @@ const map = new MlMap({
         attribution: `<a href="https://protomaps.com">${tp("attribution.basemap")}</a>`,
       },
       ...sources(base),
-      ...(punk ? focusMarkerSource() : {}),
+      ...focusMarkerSource(),
     },
     // Our surfaces and lines under the basemap's labels (place names stay readable), our
     // pictograms and reach labels above them.
-    // The punk focus marker (below z15) goes just under the selected pictogram (from z15):
+    // The focus marker (below z15) goes just under the selected pictogram (from z15):
     // they never show together, and the selected one stays the top layer.
     layers: stacked(
       basemapLayers(startBasemap),
       surveillanceLayers(
-        // Punk: its fixed classes from the first frame (filters.ts breaks).
-        punk && meta.area_classes
+        // The fixed classes from the first frame (filters.ts breaks); a build without them,
+        // the quantiles.
+        meta.area_classes
           ? { communes: meta.area_classes, departements: meta.area_classes }
           : {
               communes: meta.communes.hi?.breaks ?? [],
               departements: meta.departements.hi?.breaks ?? [],
             },
         { publicOnly: false, est: initialEstimate(meta) },
-      ).flatMap((l) => (punk && l.id === "camera-selected" ? [...focusMarkerLayers(), l] : [l])),
+      ).flatMap((l) => (l.id === "camera-selected" ? [...focusMarkerLayers(), l] : [l])),
     ),
   },
 });
-// Punk: the first load's « Chargement » (index.html, loading.ts) gone at the map's first
+// The first load's « Chargement » (index.html, loading.ts) gone at the map's first
 // complete display (MapLibre's "load": every resource of the first view in and drawn).
 map.once("load", endFirstLoad);
-// Always visible, never collapsed: ODbL requires the attribution. Punk words it as its
-// Sources page (« construit avec Protomaps », « données © les contributeurs
-// d'OpenStreetMap »); the classique keeps its own.
+// Always visible, never collapsed: ODbL requires the attribution, worded as the Sources page
+// (« construit avec Protomaps », « données © les contributeurs d'OpenStreetMap »).
 map.addControl(
   new AttributionControl({
     compact: false,
@@ -201,13 +198,13 @@ map.on("moveend", () => {
   const c = map.getCenter();
   writeHash(map.getZoom(), c.lat, c.lng);
 });
-// The attribution stays expanded (ODbL); on a phone the bottom panels sit above it. Punk on a
+// The attribution stays expanded (ODbL); on a phone the bottom panels sit above it. On a
 // phone (DECISIONS 2026-10-09): a compact « ⓘ », always shown, unfolding the credit on a tap
 // (theme/punk/map.css shows the button and folds the text on a phone only). Our own
 // disclosure button: MapLibre's compact mode folds again on every drag and names its
 // button in English.
 const attribution = document.querySelector(".maplibregl-ctrl-bottom-right") as HTMLElement;
-if (punk) {
+{
   const ctrl = attribution.querySelector(".maplibregl-ctrl-attrib") as HTMLElement;
   const inner = ctrl.querySelector(".maplibregl-ctrl-attrib-inner") as HTMLElement;
   inner.id = "attrib-text";
@@ -408,25 +405,24 @@ function listedCameras() {
   return out.sort((a, b) => a.distance - b.distance || a.id.localeCompare(b.id));
 }
 
-// Punk: a proposal's tape (20a) in place of the participation's blue badge and dot, once
-// its source is there (participate/proposals.ts adds it at the first refresh).
-if (punk)
-  map.on("sourcedata", (e) => {
-    if (e.sourceId !== "proposals" || map.getLayer(PROPOSAL_TAPE)) return;
-    for (const id of ["proposal-dot", "proposal-badge"])
-      if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
-    // A pending move's line, thicker on its halo, above the fields (layers.ts).
-    if (map.getLayer("proposal-link")) {
-      map.addLayer(proposalLinkHalo(), "proposal-link");
-      map.setPaintProperty("proposal-link", "line-width", PROPOSAL_LINK_WIDTH);
-      map.setPaintProperty("proposal-link", "line-dasharray", PROPOSAL_LINK_DASH);
-      map.setLayoutProperty("proposal-link", "line-cap", "butt");
-    }
-    const top = map.getLayer("camera-selected") ? "camera-selected" : undefined;
-    for (const layer of [...proposalHitLayers(), ...proposalTapeLayers()]) map.addLayer(layer, top);
-    panel.apply();
-  });
-// Punk: a proposal answers the pointer as a camera does (layers.ts proposalHitLayers): the
+// A proposal's tape (20a) in place of the participation's blue badge and dot, once its
+// source is there (participate/proposals.ts adds it at the first refresh).
+map.on("sourcedata", (e) => {
+  if (e.sourceId !== "proposals" || map.getLayer(PROPOSAL_TAPE)) return;
+  for (const id of ["proposal-dot", "proposal-badge"])
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
+  // A pending move's line, thicker on its halo, above the fields (layers.ts).
+  if (map.getLayer("proposal-link")) {
+    map.addLayer(proposalLinkHalo(), "proposal-link");
+    map.setPaintProperty("proposal-link", "line-width", PROPOSAL_LINK_WIDTH);
+    map.setPaintProperty("proposal-link", "line-dasharray", PROPOSAL_LINK_DASH);
+    map.setLayoutProperty("proposal-link", "line-cap", "butt");
+  }
+  const top = map.getLayer("camera-selected") ? "camera-selected" : undefined;
+  for (const layer of [...proposalHitLayers(), ...proposalTapeLayers()]) map.addLayer(layer, top);
+  panel.apply();
+});
+// A proposal answers the pointer as a camera does (layers.ts proposalHitLayers): the
 // hand, a ring; a tap is answered in selectAt.
 let hoveredProposal: string | null = null;
 const hoverProposal = (c: string | null) => {
@@ -439,13 +435,11 @@ const hoverProposal = (c: string | null) => {
       map.setPaintProperty(PROPOSAL_HIT, prop as "circle-opacity", value);
   map.getCanvas().style.cursor = c === null ? "" : "pointer";
 };
-if (punk) {
-  map.on("mousemove", PROPOSAL_HIT, (e: MapLayerMouseEvent) => {
-    const c = e.features?.[0]?.properties.c;
-    hoverProposal(c === undefined ? null : String(c));
-  });
-  map.on("mouseleave", PROPOSAL_HIT, () => hoverProposal(null));
-}
+map.on("mousemove", PROPOSAL_HIT, (e: MapLayerMouseEvent) => {
+  const c = e.features?.[0]?.properties.c;
+  hoverProposal(c === undefined ? null : String(c));
+});
+map.on("mouseleave", PROPOSAL_HIT, () => hoverProposal(null));
 map.once("load", () => {
   // The user's position, when asked for (locate.ts), with its accuracy circle.
   map.addSource("me", { type: "geojson", data: EMPTY });
@@ -499,8 +493,7 @@ map.once("load", () => {
       const f = map
         .querySourceFeatures("detail", { sourceLayer: "cameras" })
         .find((c) => c.properties.id === id);
-      if (!punk) return f ? `${headLine(f.properties as CameraProps)} · ${id}` : id;
-      // Punk: the type and where it is (« Caméra fixe · Rue de Paris », the nearest street
+      // The type and where it is (« Caméra fixe · Rue de Paris », the nearest street
       // in the tiles, as the Position ticket), never a raw id; « Caméra » unknown.
       const kind = String(f?.properties.k ?? "unknown");
       const word = t(`sheet.punk.title.${kind}`);
@@ -542,7 +535,7 @@ map.on("mouseleave", "camera-hit", () => {
 // outlined with their reach, the street it films highlighted. Leaving: the sheet's close
 // button, a click or tap anywhere else on the map, or Escape.
 const setFocus = (focus: Focus | null) => {
-  // Punk: a camera comes into focus on « identifie » (DECISIONS 2026-10-08).
+  // A camera comes into focus on « identifie » (DECISIONS 2026-10-08).
   if (focus?.id !== panel.focus?.id) panel.level = DEFAULT_LEVEL;
   panel.focus = focus;
   panel.apply();
@@ -555,12 +548,11 @@ const setFocus = (focus: Focus | null) => {
   );
 };
 /** A camera in focus while the map is below the street level, where neither it nor its
- * field is drawn (punk): its marker stands in (layers.ts), and the sheet's « Revenir à la
+ * field is drawn: its marker stands in (layers.ts), and the sheet's « Revenir à la
  * caméra » (shown by the body's `focus-far`, theme/punk/sheet.css) does what a tap on the marker
  * does, for the keyboard and screen readers. The button gone, its keyboard focus goes to
  * the sheet's headline rather than to the page. */
 function markFar(): void {
-  if (!punk) return;
   // A camera the filters hide has no marker (FilterPanel.refreshFocus): no way back either.
   const far = panel.focus !== null && panel.passes(panel.focus.props) && map.getZoom() < DETAIL_MIN;
   if (far === document.body.classList.contains("focus-far")) return;
@@ -581,33 +573,19 @@ map.on("idle", () => {
   panel.refreshFocus();
   markFar(); // the filters may have hidden or shown the camera in focus
 });
-// Wide screens: hovering the focused camera's field shows every level's reach label.
-map.on("mousemove", "bands", (e: MapLayerMouseEvent) => {
-  const id = panel.focus?.id;
-  panel.setAllLabels(
-    id !== undefined && (e.features ?? []).some((f) => Number(f.properties.i) === id),
-  );
-});
-map.on("mouseleave", "bands", () => panel.setAllLabels(false));
 /** The part of the map the panels leave free (on a phone: above the open sheet). */
 const freePadding = (): PaddingOptions => {
-  // Punk: the header ticket's bottom too, and on a wide screen the machine or the list only
+  // The header ticket's bottom too, and on a wide screen the machine or the list only
   // while open (they are hidden otherwise, the ticket alone at the top left). On a phone the
   // ticket slides away while a sheet is open (theme/punk/map.css): its box, still there,
   // covers nothing then (it took 130 px of the 160 left above a half sheet on a phone).
-  const ticketShown = punk && !(isPhone() && document.body.dataset.sheet !== undefined);
+  const ticketShown = !(isPhone() && document.body.dataset.sheet !== undefined);
   const ticket = ticketShown ? byId("ticket").getBoundingClientRect().bottom : 0;
   const top = Math.max(byId("estimate").getBoundingClientRect().bottom, ticket) + 12;
-  const side = !punk
-    ? byId("filters")
-    : panel.opened
-      ? byId("filters")
-      : cameraList?.opened
-        ? byId("camlist")
-        : null;
-  // Punk on a phone: the attribution (18a's inset, up to four lines with the IGN source)
+  const side = panel.opened ? byId("filters") : cameraList?.opened ? byId("camlist") : null;
+  // On a phone: the attribution (18a's inset, up to four lines with the IGN source)
   // rides above the open sheet, at the bottom left: nothing framed goes under it.
-  const underAttribution = punk ? attribution.offsetHeight + 10 : 0;
+  const underAttribution = attribution.offsetHeight + 10;
   return isPhone()
     ? { top, bottom: sheetPanel.covered + underAttribution + 16, left: 16, right: 16 }
     : {
@@ -617,43 +595,42 @@ const freePadding = (): PaddingOptions => {
         right: sheet.getBoundingClientRect().width + 40,
       };
 };
-// Punk: the level's label goes where it is seen whole (focus.reachLabelPoints): in the part
+// The level's label goes where it is seen whole (focus.reachLabelPoints): in the part
 // of the map the panels leave free, off the floating buttons and map controls over it (« Me
 // localiser », the zoom, the attribution), its size that of its image (icons.ts putTag).
 const LABEL_OBSTACLES = "#fabs > *, .maplibregl-ctrl, #estimate, #ticket, #filters-empty";
-if (punk)
-  panel.labelRoom = (): LabelRoom => {
-    const canvas = map.getCanvas();
-    const origin = map.getContainer().getBoundingClientRect();
-    const pad = { top: 0, bottom: 0, left: 0, right: 0, ...freePadding() };
-    const obstacles = [...document.querySelectorAll<HTMLElement>(LABEL_OBSTACLES)]
-      .map((el) => el.getBoundingClientRect())
-      .filter((r) => r.width > 0 && r.height > 0)
-      .map((r) => ({
-        left: r.left - origin.left,
-        right: r.right - origin.left,
-        top: r.top - origin.top,
-        bottom: r.bottom - origin.top,
-      }));
-    return {
-      left: pad.left,
-      top: pad.top,
-      right: canvas.clientWidth - pad.right,
-      bottom: canvas.clientHeight - pad.bottom,
-      obstacles,
-      size: (lv, r) => {
-        const text = t("focus.punk.label", {
-          level: t(`focus.level.${lv}`),
-          m: new Intl.NumberFormat(locale).format(Math.ceil(r - 1e-9)),
-        });
-        const image = map.hasImage(TAG_PREFIX + text) ? map.getImage(TAG_PREFIX + text) : null;
-        // Before its image exists (the first idle), about the typewriter's advance.
-        return image
-          ? [image.data.width / image.pixelRatio, image.data.height / image.pixelRatio]
-          : [text.length * 8 + 28, 26];
-      },
-    };
+panel.labelRoom = (): LabelRoom => {
+  const canvas = map.getCanvas();
+  const origin = map.getContainer().getBoundingClientRect();
+  const pad = { top: 0, bottom: 0, left: 0, right: 0, ...freePadding() };
+  const obstacles = [...document.querySelectorAll<HTMLElement>(LABEL_OBSTACLES)]
+    .map((el) => el.getBoundingClientRect())
+    .filter((r) => r.width > 0 && r.height > 0)
+    .map((r) => ({
+      left: r.left - origin.left,
+      right: r.right - origin.left,
+      top: r.top - origin.top,
+      bottom: r.bottom - origin.top,
+    }));
+  return {
+    left: pad.left,
+    top: pad.top,
+    right: canvas.clientWidth - pad.right,
+    bottom: canvas.clientHeight - pad.bottom,
+    obstacles,
+    size: (lv, r) => {
+      const text = t("focus.punk.label", {
+        level: t(`focus.level.${lv}`),
+        m: new Intl.NumberFormat(locale).format(Math.ceil(r - 1e-9)),
+      });
+      const image = map.hasImage(TAG_PREFIX + text) ? map.getImage(TAG_PREFIX + text) : null;
+      // Before its image exists (the first idle), about the typewriter's advance.
+      return image
+        ? [image.data.width / image.pixelRatio, image.data.height / image.pixelRatio]
+        : [text.length * 8 + 28, 26];
+    },
   };
+};
 // Show the focused camera's field for the chosen estimate in the part of the map the
 // panels leave free (on a phone: above the sheet at half height).
 const fitField = () => {
@@ -846,10 +823,9 @@ const selectAt = (point: { x: number; y: number }, how: string) => {
       (a, b) => (a && dist(a) <= dist(b) ? a : b),
       undefined,
     );
-  // The focused camera's marker below the street level (punk): back to its field, still in
+  // The focused camera's marker below the street level: back to its field, still in
   // focus (a tap away from the camera leaves it).
   if (
-    punk &&
     panel.focus &&
     map.queryRenderedFeatures([point.x, point.y], { layers: [FOCUS_MARKER_RING] }).length
   ) {
@@ -859,9 +835,9 @@ const selectAt = (point: { x: number; y: number }, how: string) => {
   }
   const f = nearest(map.queryRenderedFeatures([point.x, point.y], { layers: ["camera-hit"] }));
   // A pending add's pale pictogram (phase "Ajouter"), when nearer than any camera: it may
-  // stand a few metres from one (the duplicates list let it). Punk: its target as large as
-  // a camera's (PROPOSAL_HIT).
-  const ghostLayer = punk && map.getLayer(PROPOSAL_HIT) ? PROPOSAL_HIT : "proposal-ghost";
+  // stand a few metres from one (the duplicates list let it). Its target as large as a
+  // camera's (PROPOSAL_HIT), once the proposals' layers are in.
+  const ghostLayer = map.getLayer(PROPOSAL_HIT) ? PROPOSAL_HIT : "proposal-ghost";
   const ghost = map.getLayer(ghostLayer)
     ? nearest(
         map
@@ -929,7 +905,7 @@ canvasBox.addEventListener("pointercancel", (e) => {
   if (!downs.size) pinch = false;
   debugEvent("pointercancel");
 });
-/** The focused camera's marker below the street level (punk), kept clear of the panels: a
+/** The focused camera's marker below the street level, kept clear of the panels: a
  * gesture that ends with it on the screen but under the estimate bar, the sheet or a side
  * panel (outside freePadding's part of the map) moves the map just enough to bring the
  * whole marker back into that part. A gesture's moveend carries its DOM event (MapLibre:
@@ -944,7 +920,6 @@ canvasBox.addEventListener("pointercancel", (e) => {
  * (review, 2026-10-06: the marker stayed under the bar). */
 let nudgePending = false;
 function keepMarkerFree(e: { originalEvent?: unknown }): void {
-  if (!punk) return;
   if (e.originalEvent) nudgePending = true;
   if (nudgePending) requestAnimationFrame(nudgeMarker);
 }
@@ -1071,7 +1046,7 @@ function openArea(p: AreaProps, how: string) {
   // itself, without animation).
   if (how !== "link") void fitArea(String(p.c), true);
 }
-/** A sheet of the account (punk: account/index.ts, profile/leaderboard.ts), rendered in #sheet,
+/** A sheet of the account (account/index.ts, profile/leaderboard.ts), rendered in #sheet,
  * shown in place of the camera's or the area's: their focus and outline let go, the
  * machine closed, the link's parameters gone. */
 function showAccount(state: "peek" | "half" | "full" = "half"): void {
@@ -1089,7 +1064,7 @@ function showAccount(state: "peek" | "half" | "full" = "half"): void {
 panel.onWho = () => {
   if (shownArea && sheetPanel.state) renderAreaSheet(sheet, shownArea, areaOptions());
 };
-for (const id of punk ? [...AREA_LAYERS, FOCUS_MARKER_RING] : AREA_LAYERS) {
+for (const id of [...AREA_LAYERS, FOCUS_MARKER_RING]) {
   map.on("mouseenter", id, () => {
     map.getCanvas().style.cursor = "pointer";
   });
@@ -1122,15 +1097,15 @@ if (wantedArea) {
     map.on("idle", onIdle);
   });
 }
-// Punk, back from OpenStreetMap (?osm=, OSM lot 1): its sheet at once, « Chargement de votre
+// Back from OpenStreetMap (?osm=, OSM lot 1): its sheet at once, « Chargement de votre
 // compte » until the session (and a first sign-in's signup) is known, the map loading or not
 // (account/index.ts land; the parameter is already gone from the address). Here, once every
 // part showAccount touches exists.
 if (account) void account.land();
 // The sheet shows the chosen estimate and the camera's reaches read from its bands.
 const sheetOptions = () => {
-  // The punk sheet reads the participation's parts in its own order (chips.ts).
-  const slots = punk ? actionSlots() : undefined;
+  // The sheet reads the participation's parts in its own order (chips.ts).
+  const slots = actionSlots();
   const target =
     participation && shown && panel.focus
       ? {
@@ -1162,12 +1137,10 @@ const sheetOptions = () => {
       return `${window.location.origin}${window.location.pathname}?cam=${cam}${est}#18.00/${lat.toFixed(6)}/${lng.toFixed(6)}`;
     },
     onGrab: () => sheetPanel.step(),
-    onBack: punk
-      ? () => {
-          debugEvent("back to the camera (sheet)");
-          fitField();
-        }
-      : undefined,
+    onBack: () => {
+      debugEvent("back to the camera (sheet)");
+      fitField();
+    },
     estimates: meta.estimates,
     shown: meta.shown_estimates,
     est: panel.mode.est,
@@ -1178,7 +1151,6 @@ const sheetOptions = () => {
     operatorName: shown?.op === undefined ? undefined : meta.operators[Number(shown.op)],
     level: panel.level,
     onLevel: (lv: 1 | 2 | 3) => panel.setLevel(lv),
-    // The classique signed out shows no participation (it has no login screen).
     actions:
       participation && target && !participation.hidden
         ? participation.actions(target, slots)
@@ -1186,8 +1158,8 @@ const sheetOptions = () => {
     slots,
     // Signed out, or contributions closed: « Corriger sur OpenStreetMap » is the way.
     visitor: isVisitor() || !site.contributions,
-    // The facts the punk sheet marks « ? » (chips.ts): « Modifier »'s assumed lines.
-    answerable: target ? (participation?.answerable(target, punk) ?? []) : [],
+    // The facts the sheet marks « ? » (chips.ts): « Modifier »'s assumed lines.
+    answerable: target ? (participation?.answerable(target) ?? []) : [],
     history: shown ? historyOf(String(shown.id)) : undefined,
   };
 };
@@ -1214,8 +1186,8 @@ panel.onEstimate = () => {
 };
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Escape") return;
-  // Punk: Escape from inside the machine closes it, its link takes the focus back.
-  if (punk && panel.opened && document.activeElement?.closest("#filters, #ticket")) {
+  // Escape from inside the machine closes it, its link takes the focus back.
+  if (panel.opened && document.activeElement?.closest("#filters, #ticket")) {
     panel.setOpened(false);
     byId("fab-filters").focus();
     return;
@@ -1238,13 +1210,9 @@ debugInit(() => {
     site: `contributions ${site.contributions ? "open" : "closed"}, publish ${site.publish}`,
   };
 });
-// Punk only (the author's points 4 and 7 of 2026-10-11): the classique keeps its page
-// pinch-zoom and its sheet as they were (it is frozen); without installKeyboard the
-// bottom sheet's « lacarte:keyboard » never fires there.
-if (punk) {
-  installGestures();
-  installKeyboard();
-}
+// The page's gestures and the phone keyboard (the author's points 4 and 7 of 2026-10-11).
+installGestures();
+installKeyboard();
 if (DEBUG) {
   document.body.classList.add("debug");
   document.addEventListener(
@@ -1277,5 +1245,5 @@ declare global {
   }
 }
 window.__map = map;
-if (punk && prefetchWanted()) prefetch.install(map);
+if (prefetchWanted()) prefetch.install(map);
 window.__palette = palette;
