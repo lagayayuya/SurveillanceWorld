@@ -96,8 +96,9 @@ build_current() {
 # The steps run in two lanes at once (the machine had the room: one lane used 2.4 cores of
 # 8), a lane's steps one after another, then the `last` lane alone (the prefetch's throttled
 # timing). Two steps of one bench script share its ports (the states' harness its three:
-# score, editor, revue-operator), so all of a script's steps are in one lane. Each step keeps
-# its log; the summary lists them in the order below, whatever order they ended in.
+# score, formats-add, editor, revue-operator), so all of a script's steps are in one lane.
+# Each step keeps its log; the summary lists them in the order below, whatever order they
+# ended in.
 # GATE_SERIAL=1 runs the lanes one after the other.
 STATUS="$GATE/status"
 PHASE=""  # run:<lane>: run that lane's steps; summary: print every step's line
@@ -174,6 +175,12 @@ steps() {
   for engine in webkit chromium; do
     step "welcome-$engine" "$B" node bench/smoke-welcome.mjs --browser "$engine"
     step "score-$engine" "$B" node bench/smoke-score.mjs --browser "$engine"
+  done
+  # Lot V (2026-10-23): the formats of smoke-formats after « ＋ Ajouter » chained, the
+  # points' scene watched, cut short and turned (the budget per engine is in the script's
+  # header); on the states' servers, as score.
+  for engine in webkit chromium firefox; do
+    step "formats-add-$engine" "$B" node bench/smoke-formats-add.mjs --browser "$engine"
   done
   lane map
   step "keyboard-webkit" "$B" node bench/smoke-keyboard.mjs

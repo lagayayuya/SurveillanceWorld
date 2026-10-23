@@ -89,8 +89,13 @@ The welcome panel, the points at send, loading, legal pages, the launch lot.
   (`score.ts` columnOf: it was a left offset measured once, the sheet hidden since, and the
   tickets and « Voir le classement » went off the screen once it turned); narrowed to a
   phone's layout it is centred; a stack now higher than the screen gathers its added infos
-  then, and the cannon is placed again. Open: on a phone held sideways 375 px high or less,
-  an add's stack does not fit even gathered (its first ticket 5 to 60 px above the screen).
+  then, and the cannon is placed again. Checked by `bench/smoke-formats-add.mjs` (« ＋
+  Ajouter » chained on the formats of `bench/smoke-formats.mjs`, the scene watched, cut
+  short by Escape or a touch, the operator's search typed, the direction aimed, the screen
+  turned; the column, every landed ticket and every button on the visible screen, the page
+  neither scrolled nor zoomed, nothing left once put away, the floating controls apart).
+  Open: on a phone held sideways 375 px high or less, an add's stack does not fit even
+  gathered (its first ticket 5 to 60 px above the screen; said, not failed, by that bench).
 
 ### 1.10 The launch lot (2026-10-13)
 
