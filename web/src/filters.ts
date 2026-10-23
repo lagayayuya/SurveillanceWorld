@@ -75,6 +75,8 @@ export type Meta = FilterMeta &
     max_range_m: number;
     /** Median wide field of view of PTZ cameras (catalogue), for their sheet. */
     ptz_hfov_p50: number;
+    /** The region's extent [west, south, east, north] (bounds.ts); older builds lack it. */
+    bounds?: [number, number, number, number];
     communes: Record<string, { breaks: number[]; max: number }>;
     departements: Record<string, { breaks: number[]; max: number }>;
     /** The punk map's fixed classes, in % (rules/admin.yaml area_class_breaks_pct). */

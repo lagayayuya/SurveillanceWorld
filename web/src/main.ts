@@ -18,6 +18,7 @@ import { Protocol } from "pmtiles";
 import { isVisitor, loadSession, onSession, type Session } from "./account/session";
 import { type AreaProps, isDepartement, renderAreaSheet } from "./area";
 import { BottomSheet } from "./bottomsheet";
+import { lowestZoom, recentre } from "./bounds";
 import { DEFAULT_CONFIG, loadConfig } from "./config";
 import { DEBUG, debugEvent, debugInit } from "./debug";
 import {
@@ -193,6 +194,30 @@ map.addControl(
 );
 // Zoom buttons on a wide screen only: phones pinch.
 if (!isPhone()) map.addControl(new NavigationControl({ showCompass: false }), "top-right");
+// Zoomed out, the region stays whole and in the middle (bounds.ts): the lowest zoom fits it
+// to the screen, and a view taken outside it comes back once the gesture is over.
+if (meta.bounds) {
+  const region = meta.bounds;
+  const fit = () => {
+    const { clientWidth: w, clientHeight: h } = map.getContainer();
+    if (w && h) map.setMinZoom(lowestZoom(region, w, h));
+  };
+  fit();
+  map.on("resize", fit);
+  let recentring = false;
+  map.on("moveend", () => {
+    if (recentring) {
+      recentring = false;
+      return;
+    }
+    const { clientWidth: w, clientHeight: h } = map.getContainer();
+    const c = map.getCenter();
+    const back = recentre([c.lng, c.lat], map.getZoom(), region, w, h);
+    if (!back) return;
+    recentring = true;
+    map.easeTo({ center: back, duration: 300 });
+  });
+}
 // The URL follows the map (sharing one camera goes through the sheet's "Partager").
 map.on("moveend", () => {
   const c = map.getCenter();
