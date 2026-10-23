@@ -252,6 +252,48 @@ async function scene(k) {
   await k.page.waitForTimeout(300);
 }
 
+/** The real API's answer to a « Multi-boules » sent without its number, as it answers
+ * someone who publishes on OSM (`osm: "kept"`, `osm_reason`): the bench's accounts do not
+ * publish (smoke-score.mjs adds `will_publish` the same way). */
+async function keptMultidome(page) {
+  await page.route("**/api/contributions", async (route) => {
+    const body = route.request().postDataJSON();
+    const real = await route.fetch();
+    const answer = await real.json().catch(() => ({}));
+    const kept = body?.kind === "shape" && body.answer === "multidome" && !body.dome_count;
+    return route.fulfill({
+      response: real,
+      json: kept ? { ...answer, osm: "kept", osm_reason: "multidome_count_unknown" } : answer,
+    });
+  });
+}
+
+/** The CI extract has no multi-dome (tests/fixtures/ci.osm.pbf): the camera `id`'s tile
+ * attributes read as one's (`k` multidome and `extra`), for the sheet only (the map still
+ * draws its tile's sticker). From the next page load: set as main.ts names the map. */
+async function asMultidome(page, id, extra) {
+  await page.addInitScript(
+    ([camera, more]) => {
+      let map = null;
+      Object.defineProperty(window, "__map", {
+        configurable: true,
+        get: () => map,
+        set(m) {
+          map = m;
+          const own = m.querySourceFeatures.bind(m);
+          m.querySourceFeatures = (source, options) =>
+            own(source, options).map((f) =>
+              String(f.properties?.id) === camera
+                ? Object.assign(f, { properties: { ...f.properties, k: "multidome", ...more } })
+                : f,
+            );
+        },
+      });
+    },
+    [id, extra],
+  );
+}
+
 /** An add sent (offline first when `queued`): the filled sheet's « Envoyer », « Terminer ». */
 async function addSent(k, queued = false) {
   await editAddFilled(k);
@@ -2042,6 +2084,43 @@ export const STATES = [
       await editSteps(k, [["shape"], ["dome"]]);
       await k.tap("#modify-panel .modify-head .modify-close");
       await k.page.waitForSelector("#modify-panel .part-abandon");
+    },
+  },
+  // « Multi-boules » (DECISIONS 2026-10-23): its tile, the pin's sticker, « Nombre de
+  // boules »; then « 3 »; then sent with « Je ne sais pas », the API's `osm: "kept"`.
+  {
+    id: "add-multidome",
+    async run(k) {
+      await editAdd(k, FREE, true);
+      await editSteps(k, [["multidome"]]);
+    },
+  },
+  {
+    id: "add-multidome-count",
+    async run(k) {
+      await editAdd(k, FREE, true);
+      await editSteps(k, [["multidome"], ["3", "count"]]);
+    },
+  },
+  {
+    id: "add-multidome-kept",
+    who: "fay",
+    writes: true,
+    async run(k) {
+      await mockPoints(k.page);
+      await keptMultidome(k.page);
+      await editAdd(k, FREE, true);
+      await editSteps(k, [["multidome"], ["first", "height"]]);
+      await k.tap("#modify-send");
+      await k.page.waitForSelector("#modify-done .score-kept", { timeout: 15000 });
+      await scene(k);
+    },
+  },
+  {
+    id: "sheet-multidome",
+    async run(k) {
+      await asMultidome(k.page, DOME.id, { dn: 3, dnc: 1, km: "2026-10" });
+      await sheet(k, DOME);
     },
   },
   {
