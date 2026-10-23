@@ -8,7 +8,7 @@ import pandas as pd
 import pytest
 from shapely import LineString, Point, box
 
-from lacarte import admin, aggregate
+from lacarte import admin, aggregate, normalize, regions
 
 CRS = "EPSG:2154"
 
@@ -225,6 +225,31 @@ def test_municipal_operators_get_their_town(op, town, want):
     towns = {"cachan": "Cachan", "bailly": "Bailly", "saint cyr l ecole": "Saint-Cyr-l'École",
              "le pecq": "Le Pecq", "paris": "Paris", "franconville": "Franconville"}  # fmt: skip
     assert admin.operator_name(op, town, towns) == want
+
+
+@pytest.mark.parametrize(
+    "op", ["Ville de Toulouse", "Ville du Havre", "Ville d'Albi", "Police municipale de Toulouse"]
+)
+def test_a_generic_operator_name_stays_as_normalize_gave_it(op):
+    # normalize.py names "Mairie de Toulouse" "Ville de Toulouse" first: the top operators
+    # keep it, whether the town is one of the region's or not.
+    towns = {"toulouse": "Toulouse", "le havre": "Le Havre", "albi": "Albi"}
+    assert admin.operator_name(op, "Paris", towns) == op
+    assert admin.operator_name(op, "Paris", {}) == op
+
+
+def test_an_unnamed_municipal_police_gets_its_town():
+    assert admin.operator_name("Police municipale (sans précision)", "Les Lilas", {}) == (
+        "Police municipale des Lilas"
+    )
+
+
+def test_place_names_cover_the_source_not_only_the_region():
+    region = regions.load("ci")
+    places = admin.place_names(region)
+    communes = admin._read(regions.ROOT / region.admin["source"] / "commune", [admin.NAME])
+    assert len(places.communes) == communes[admin.NAME].map(normalize.name_key).nunique()
+    assert places.departements
 
 
 def test_uninformative_operators_are_counted_apart():

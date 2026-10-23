@@ -86,6 +86,27 @@ def _read(stem: Path, columns: list[str], filters=None) -> gpd.GeoDataFrame:
     return gpd.GeoDataFrame({c: [] for c in [*columns, GEOM]}, geometry=GEOM, crs="EPSG:4326")
 
 
+def place_names(region: regions.Region) -> normalize.Places | None:
+    """The official names of every commune and département of the region's source (not
+    only the region's: a camera may name another town), for the generic operator names
+    (normalize.normalized_operator); None without admin settings."""
+    if not region.admin:
+        return None
+    return _place_names(regions.ROOT / region.admin["source"])
+
+
+@cache
+def _place_names(source: Path) -> normalize.Places:
+    names = []
+    for layer in ("commune", "departement"):
+        stem = source / layer
+        if stem.with_suffix(".parquet").exists():
+            names.append(pd.read_parquet(stem.with_suffix(".parquet"), columns=[NAME])[NAME])
+        else:
+            names.append(_read(stem, [NAME])[NAME])
+    return normalize.Places.of(*names)
+
+
 def region_units(region: regions.Region) -> tuple[gpd.GeoDataFrame, gpd.GeoDataFrame]:
     """load_units for the region's admin settings (its départements)."""
     a = region.admin
@@ -262,7 +283,7 @@ def places(points, region: regions.Region) -> list[tuple[str | None, str | None]
     units, _ = region_units(region)
     unit, _ = assign_points(points, units, _rules()["rescue_max_m"])
     towns, names = units.town.to_numpy(), units.name.to_numpy()
-    return [(f"Ville {_of_town(towns[u])}", str(names[u])) if u >= 0 else (None, None)
+    return [(f"Ville {normalize.of_place(towns[u])}", str(names[u])) if u >= 0 else (None, None)
             for u in unit]  # fmt: skip
 
 
@@ -271,17 +292,6 @@ def _municipal_rules() -> tuple[set, set, list, set]:
     r = normalize.rules("operators")
     m = r["municipal"]
     return set(m["generic"]), set(m["police"]), list(m["prefixes"]), set(r["no_information"])
-
-
-def _of_town(town: str) -> str:
-    """ "de Montrouge", "d'Asnières-sur-Seine", "du Pecq", "des Lilas"."""
-    if town.startswith("Le "):
-        return f"du {town[3:]}"
-    if town.startswith("Les "):
-        return f"des {town[4:]}"
-    if town[:1].upper() in "AEIOUYÉÈÊÎÏÔÂ":
-        return f"d'{town}"
-    return f"de {town}"
 
 
 def operator_name(op, town: str, towns: dict[str, str]) -> str | None:
@@ -295,20 +305,13 @@ def operator_name(op, town: str, towns: dict[str, str]) -> str | None:
     if key in no_info:
         return None
     if key in generic:
-        return f"Ville {_of_town(town)}"
+        return f"Ville {normalize.of_place(town)}"
     if key in police:
-        return f"Police municipale {_of_town(town)}"
-    rests = [key]
-    for pre in prefixes:
-        if key.startswith(pre + " "):
-            rest = key[len(pre) + 1 :]
-            rests.append(rest)
-            for art, alt in (("de ", ""), ("d ", ""), ("du ", "le "), ("des ", "les ")):
-                if rest.startswith(art):
-                    rests.append(alt + rest[len(art) :])
-    for rest in rests:
+        return f"Police municipale {normalize.of_place(town)}"
+    # The bare town name too ("Franconville"), here only: a commune of the region's.
+    for rest in [key, *normalize.after_prefix(key, prefixes)]:
         if rest in towns:
-            return f"Ville {_of_town(towns[rest])}"
+            return f"Ville {normalize.of_place(towns[rest])}"
     return op
 
 

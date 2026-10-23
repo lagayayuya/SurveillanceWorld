@@ -17,7 +17,7 @@ public_operator_patterns:
 # authorities, public transport and hospitals, public establishments, foreign states and
 # international organisations); private = companies, associations, individuals.
 names:
-  - {name: SNCF, class: public, match: [sncf]}
+  - {name: SNCF, class: public, match: [sncf, surete ferroviaire sncf, sncf gares connexions, sncf reseau, sncf proximites]}
   - {name: Préfecture de police, class: public, match: [prefecture de police de paris, prefecture de police, prefecture de paris]}
   - {name: Police municipale de Saint-Maur-des-Fossés, class: public, match: [police municipale de saint maur des fosses, police municipale de saint maur]}
   - {name: La Banque Postale, class: private, match: [la banque postale]}
@@ -68,6 +68,36 @@ names:
   - {name: Esso, class: private, match: [esso]}
   - {name: Police nationale, class: public, match: [police nationale, commissariat]}
   - {name: Ville (sans précision), class: public, match: [municipal, intercommunalite]}
+  # Outside the Île-de-France (France extract of 2026-10-16, every spelling family with >= 5
+  # cameras). Métropoles whose spellings differ by more than case and accents (the generic
+  # pattern below keeps a métropole's name as written): Le Grand Lyon is the Métropole de
+  # Lyon since 2015, the CODAH the Le Havre Seine Métropole since 2019, Metz Métropole the
+  # Eurométropole de Metz since 2024, Brest Métropole Océane the Brest Métropole since 2015.
+  - {name: Métropole de Lyon, class: public, match: [metropole de lyon, le grand lyon, grand lyon, grand lyon la metropole]}
+  - {name: Clermont Auvergne Métropole, class: public, match: [clermont auvergne metropole]}
+  - {name: Métropole Rouen Normandie, class: public, match: [metropole rouen normandie]}
+  - {name: Nantes Métropole, class: public, match: [nantes metropole]}
+  - {name: Le Havre Seine Métropole, class: public, match: [le havre seine metropole, codah]}
+  - {name: Troyes Champagne Métropole, class: public, match: [troyes champagne metropole]}
+  - {name: Eurométropole de Metz, class: public, match: [eurometropole de metz, euro metropole de metz, metz metropole]}
+  - {name: Brest Métropole, class: public, match: [brest metropole, brest metropole oceane]}
+  # Public transport networks (public, as RATP and SNCF: public transport is a public body's
+  # service even when a private company runs it under contract, as Keolis and Transdev do):
+  # the organising authority or the network's name, with the company that runs it.
+  - {name: SYTRAL Mobilités, class: public, match: [sytral, sytral mobilites, tcl, securite tcl]}
+  - {name: Keolis, class: public, match: [keolis]}
+  - {name: Divia (Keolis Dijon), class: public, match: [divia, divia mobilites, keolis dijon, keolis dijon mobilites]}
+  - {name: STAR (Keolis Rennes), class: public, match: [star, keolis rennes]}
+  - {name: STAS (Transdev Saint-Étienne), class: public, match: [stas, transdev saint etienne]}
+  - {name: Tisséo, class: public, match: [tisseo]}
+  - {name: T2C, class: public, match: [t2c]}
+  - {name: Irigo, class: public, match: [irigo]}
+  - {name: TAN (Semitan), class: public, match: [tan, semitan]}
+  - {name: Fil Bleu (Keolis Tours), class: public, match: [fil bleu, filbleu, keolis tours]}
+  - {name: Ginko, class: public, match: [ginko, ginko tramway et bus]}
+  - {name: RTM, class: public, match: [rtm, regie des transports marseillais, regie des transports marseillais rtm]}
+  - {name: Ilévia, class: public, match: [ilevia, transpole]}
+  - {name: Le Met', class: public, match: [le met]}
 
 # Municipal operators in the communes' top operators (admin.py), spellings compared after
 # lower-casing, removing accents and punctuation. `generic`: the town is not named ("Mairie",
@@ -75,10 +105,42 @@ names:
 # city for a municipal arrondissement); `police`: "Police municipale de <commune>".
 # `prefixes`: "Mairie de X", "ville de x", "Villes de Paris" and the bare town name become
 # "Ville de <X>" with the official name when X is a commune of the region.
+# normalize.py names them first (generic below): "Ville (sans précision)" and "Police
+# municipale (sans précision)" for `generic` and `police` alone, admin.py then gives them
+# the camera's commune.
 municipal:
   generic: [mairie, ville, villes, commune, municipalite, ville sans precision, hotel de ville]
-  police: [police municipale]
-  prefixes: [mairie, ville, villes, commune, hotel de ville]
+  police: [police municipale, police municipale sans precision]
+  prefixes: [mairie, ville, villes, commune, municipalite, hotel de ville]
+
+# Generic names (normalize.normalized_operator), tried after `names` (an exact spelling
+# there wins), in this order, on the spelling key without a remark in brackets ("Ville de
+# Nîmes (CSU)"); never on a value that names several operators (";", "/", " ou ").
+# Each gives the class public (public_operator_patterns already said so for most; the
+# name was the raw spelling, one per way of writing it: "Mairie de Toulouse", "ville de
+# toulouse"…). A place is a commune or a département by its official name (IGN ADMIN
+# EXPRESS: every commune of the region's source, not only the region's, as a camera may
+# name a town other than its own); a key two official names share (58 of 32,588, e.g.
+# Touffreville and Touffréville) names none.
+#  1. `municipal.generic` alone: "Ville (sans précision)"; `municipal.police` alone:
+#     "Police municipale (sans précision)" (admin.py: the camera's commune).
+#  2. `municipal.police` + a commune: "Police municipale de <commune>".
+#  3. `municipal.prefixes` + a commune: "Ville de <commune>" ("Mairie de X", "Commune
+#     d'X", "Ville du Havre"), as admin.py's top operators said it already.
+#  4. `departement` + a département: "Département <article> <département>" (the article
+#     as written, else "de" / "d'").
+#  5. `region` + anything: public, the name as written (no list of regions to check
+#     against; 14 cameras on 2026-10-16).
+#  6. a word of `metropole` anywhere: public, the name as written; the frequent
+#     métropoles are in `names` (above) under one name. No pattern builds a métropole's
+#     name from its town: "Nantes Métropole" and "Métropole de Lyon" are their names.
+# A bare town name ("Bar-le-Duc") is not a pattern: communes named Orange, Mars, Change or
+# Bar are also brands and words; admin.py names it among the top operators when it is a
+# commune of the region. [TO ADJUST]
+generic:
+  departement: [departement, conseil departemental, conseil general]
+  region: [region, conseil regional]
+  metropole: [metropole, eurometropole]
 # Operator values that say nothing about who films: left out of the top operators and
 # counted apart ("dont N sans exploitant précis"). "yes" quoted: YAML reads it as a boolean.
 no_information: [private, prive, inconnu, unknown, "yes", oui, public, none, "n a"]

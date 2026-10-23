@@ -182,3 +182,116 @@ def test_tagged_capabilities():
                     "analytics": False}  # fmt: skip
     assert n.tagged_capabilities({"camera:features": "face_detection"}, "fixed")["analytics"]
     assert n.tagged_capabilities({}, "alpr")["plate_reading"]
+
+
+# Generic operator names (rules/operators.yaml `generic`), on spellings seen outside the
+# Île-de-France (France extract, 2026-10-16), against a few official names.
+PLACES = n.Places.of(
+    ["Marseille", "Toulouse", "Beauvais", "Albi", "Annecy", "Le Havre", "Nîmes", "Lille",
+     "Saint-Étienne-de-Montluc", "Le Val d'Hazey", "La Rochelle", "Touffreville",
+     "Touffréville", "Bron", "Les Lilas"],
+    ["Alpes-Maritimes", "Côte-d'Or", "Seine-Saint-Denis", "Indre-et-Loire", "Rhône"],
+)  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("raw", "name", "cls"),
+    [
+        # 3. a municipal prefix and a commune: "Ville de <official name>"
+        ("Ville de Marseille", "Ville de Marseille", "public"),
+        ("ville de marseille", "Ville de Marseille", "public"),
+        ("VILLE DE MARSEILLE", "Ville de Marseille", "public"),
+        ("Mairie de Toulouse", "Ville de Toulouse", "public"),
+        ("Mairie Beauvais", "Ville de Beauvais", "public"),
+        ("Commune d'Albi", "Ville d'Albi", "public"),
+        ("Ville d’Annecy", "Ville d'Annecy", "public"),  # a typographic apostrophe
+        ("ville du havre", "Ville du Havre", "public"),
+        ("Hôtel de Ville des Lilas", "Ville des Lilas", "public"),
+        ("Ville de La Rochelle", "Ville de La Rochelle", "public"),
+        ("Municipalité du Val d'Hazey", "Ville du Val d'Hazey", "public"),
+        ("Mairie de Saint Etienne de Montluc", "Ville de Saint-Étienne-de-Montluc", "public"),
+        ("Ville de Nîmes (CSU)", "Ville de Nîmes", "public"),  # a remark in brackets
+        ("Ville de Nîmes (CSU ?)", "Ville de Nîmes", "public"),
+        # 1. the town unnamed: admin.py names it from where the camera stands
+        ("mairie", "Ville (sans précision)", "public"),
+        ("Municipalité", "Ville (sans précision)", "public"),
+        ("Police Municipale", "Police municipale (sans précision)", "public"),
+        ("Police municipale ?", "Police municipale (sans précision)", "public"),
+        # 2. the municipal police of a commune
+        ("Police municipale de Lille", "Police municipale de Lille", "public"),
+        ("police municipale de toulouse", "Police municipale de Toulouse", "public"),
+        # not a commune, or a key two communes share: left as written (its class from
+        # public_operator_patterns, operator_class)
+        ("Ville de Brive", "Ville de Brive", None),
+        ("Mairie de Touffreville", "Mairie de Touffreville", None),
+        ("Ville de Paris Habitat", "Ville de Paris Habitat", None),
+        # several operators: none chosen
+        ("Ville de Bron ou Sytral", "Ville de Bron ou Sytral", None),
+        ("Ville de Lille / MEL", "Ville de Lille / MEL", None),
+        ("Mairie de Toulouse;Toulouse Métropole", "Mairie de Toulouse;Toulouse Métropole", None),
+        # a bare town name is not a pattern (communes named like brands: Orange, Mars)
+        ("Beauvais", "Beauvais", None),
+        ("Orange", "Orange", None),
+        # 4. a département by its official name, its article as written
+        ("Département des Alpes-Maritimes", "Département des Alpes-Maritimes", "public"),
+        ("Conseil Départemental de Côte d'Or", "Département de Côte-d'Or", "public"),
+        ("Conseil général Seine-Saint-Denis", "Département de Seine-Saint-Denis", "public"),
+        ("Conseil Général d'Indre & Loire", "Département d'Indre-et-Loire", "public"),
+        ("conseil general du rhone", "Département du Rhône", "public"),
+        ("Département ?", "Département ?", None),
+        ("Service Départemental d'Incendie et de Secours du Rhône",
+         "Service Départemental d'Incendie et de Secours du Rhône", None),
+        # 5. a région, as written
+        ("Région Centre", "Région Centre", "public"),
+        ("Conseil régional Paca", "Conseil régional Paca", "public"),
+        ("Régional Express", "Régional Express", None),
+        # 6. a métropole: as written, the frequent ones under their table name
+        ("Toulouse Métropole", "Toulouse Métropole", "public"),
+        ("Lille Métropole Habitat", "Lille Métropole Habitat", "public"),
+        ("Métropolitain", "Métropolitain", None),
+        ("Clermont Auvergne Metropole", "Clermont Auvergne Métropole", "public"),
+        ("Clermont-Auvergne-Métropole", "Clermont Auvergne Métropole", "public"),
+        ("Le Grand Lyon", "Métropole de Lyon", "public"),
+        ("codah", "Le Havre Seine Métropole", "public"),
+        # transport networks (table)
+        ("SYTRAL", "SYTRAL Mobilités", "public"),
+        ("Sytral?", "SYTRAL Mobilités", "public"),
+        ("Kéolis Rennes", "STAR (Keolis Rennes)", "public"),
+        ("Star Bijoux", "Star Bijoux", None),
+        ("tisseo", "Tisséo", "public"),
+        ("Sûreté Ferroviaire SNCF", "SNCF", "public"),
+        # the table wins over the patterns
+        ("Mairie de Paris", "Ville de Paris", "public"),
+        ("Ville (sans précision)", "Ville (sans précision)", "public"),
+    ],
+)  # fmt: skip
+def test_generic_operator_names(raw, name, cls):
+    assert n.normalized_operator(raw, PLACES) == (name, cls)
+
+
+def test_generic_names_that_need_a_place_wait_for_one():
+    assert n.normalized_operator("Mairie de Toulouse") == ("Mairie de Toulouse", None)
+    assert n.normalized_operator("Mairie") == ("Ville (sans précision)", "public")
+    assert n.normalized_operator("Nantes Métropole") == ("Nantes Métropole", "public")
+
+
+def test_a_generic_name_gives_its_class():
+    # Neither "métropole" nor "SYTRAL" is in public_operator_patterns: private before.
+    tags = {"operator": "Toulouse Métropole", "surveillance": "outdoor"}
+    assert n.operator_class(tags, "dome") == ("public", "estimated")
+    tags = {"operator": "SYTRAL", "surveillance": "outdoor"}
+    assert n.operator_class(tags, "dome", PLACES) == ("public", "estimated")
+
+
+def test_typographic_apostrophes_separate_words():
+    assert n.name_key("Ville d’Annecy") == n.name_key("Ville d'Annecy") == "ville d annecy"
+
+
+def test_the_stage_and_its_rerun_name_alike():
+    # apply.py normalises a contributed camera again: with the same places, the same name.
+    tags = '{"operator": "Mairie de Toulouse"}'
+    row, _ = n.normalize_row("n1", 1, None, tags, places=PLACES)
+    over = n.Overrides(directions=[90.0])
+    again, _ = n.normalize_row("n1", 1, None, tags, over, PLACES)
+    assert row["operator_norm"] == again["operator_norm"] == "Ville de Toulouse"
+    assert row["operator_name"] == "Mairie de Toulouse"

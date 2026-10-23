@@ -461,8 +461,11 @@ def operator_kind(state: State | None) -> str | None:
     return participation.questions()["operator"]["classes"][state.operator[0]].get("operator_kind")
 
 
-def applied_cameras(cams: gpd.GeoDataFrame, states: dict[str, State]) -> gpd.GeoDataFrame:
-    """The cameras with their contributions' state (columns of the module docstring)."""
+def applied_cameras(
+    cams: gpd.GeoDataFrame, states: dict[str, State], places: normalize.Places | None = None
+) -> gpd.GeoDataFrame:
+    """The cameras with their contributions' state (columns of the module docstring);
+    `places` as the normalize stage had them (admin.place_names)."""
     out = with_added(cams, states)
     ids = out.camera_id.to_numpy()
     st = [states.get(i) for i in ids]
@@ -476,7 +479,7 @@ def applied_cameras(cams: gpd.GeoDataFrame, states: dict[str, State]) -> gpd.Geo
         over = overrides(s, json.loads(rec.tags))
         if over is not None:
             changed[i], _ = normalize.normalize_row(
-                rec.camera_id, rec.osm_version, rec.osm_timestamp, rec.tags, over
+                rec.camera_id, rec.osm_version, rec.osm_timestamp, rec.tags, over, places
             )
     if changed:
         for col in next(iter(changed.values())):
@@ -571,7 +574,9 @@ def run(region: regions.Region) -> dict[str, Path]:
     extract = extract_state(cams)
     outcome, states = settle(contribs, extract)
     if states:
-        applied_cameras(cams, states).to_parquet(dst)
+        from lacarte import admin  # admin imports this module
+
+        applied_cameras(cams, states, admin.place_names(region)).to_parquet(dst)
     else:
         shutil.copyfile(src, dst)
     to_ll = Transformer.from_crs(region.crs, "EPSG:4326", always_xy=True)
