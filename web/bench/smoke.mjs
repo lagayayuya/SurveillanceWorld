@@ -1332,7 +1332,7 @@ try {
   // Our surfaces and lines are under the basemap's labels; pictograms and reach labels above.
   const order = await page.evaluate(() => {
     const layers = window.__map.getStyle().layers;
-    const ours = new Set(["admin", "streets", "detail", "focus-points"]);
+    const ours = new Set(["admin", "admin7", "streets", "detail", "focus-points"]);
     const labels = layers.flatMap((l, i) =>
       l.source === "protomaps" && l.type === "symbol" ? [i] : [],
     );

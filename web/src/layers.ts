@@ -23,12 +23,19 @@ import { MARKS, pictoImage, TAG_PREFIX } from "./icons";
 import { PUNK_PORTION_WIDTH, streetWidth } from "./streetwidth";
 import { palette, themeAreaOpacity, waterOverFields } from "./theme";
 
-export const CITY_FADE: [number, number] = [12, 12.5];
-export const STREET_FADE: [number, number] = [12, 12.5];
+// Streets one zoom earlier from a commune's view (user decision 2026-10-23; streets.pmtiles
+// from z11, pipeline tiles.LOW_ZOOMS): the communes fade into them there.
+export const CITY_FADE: [number, number] = [11, 11.5];
+export const STREET_FADE: [number, number] = [11, 11.5];
 /** Départements fade into communes over this range (both are in the z8 tiles). */
 export const AREA_FADE: [number, number] = [8, 8.5];
 /** Communes from here (tiles.DEPS_MAX + 1); the legend and counts switch here. */
 export const COMMUNES_MIN = AREA_FADE[0];
+/** The communes' outlines from a département's view, before their colours (user decision
+ * 2026-10-23): admin7.pmtiles' z7 outlines fade in over this range and hand over to the
+ * communes' own borders over AREA_FADE. Never at z7 itself: MapLibre loads a source only
+ * when one of its layers is in range, so the France z7 view loads none of them. */
+export const OUTLINES_FADE: [number, number] = [7.5, 7.75];
 export const DETAIL_FADE: [number, number] = [15, 15.5];
 export const DETAIL_MIN = DETAIL_FADE[0];
 /** A camera's tap target around its pictogram, in CSS px (`camera-hit`); main.ts keeps a
@@ -59,6 +66,7 @@ export function sources(base: string): Record<string, SourceSpecification> {
   });
   return {
     admin: { ...src("admin"), attribution: t("attribution.ign") } as SourceSpecification,
+    admin7: src("admin7"),
     streets: src("streets"),
     detail: src("detail"),
     "focus-points": { type: "geojson", data: { type: "FeatureCollection", features: [] } },
@@ -679,6 +687,32 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
     // Punk: 20a's dot screen is the basemap earth's own fill (basemap.ts PAPER_EARTH).
     // --- city ------------------------------------------------------------------------
     ...areaLayers("departements", breaks.departements, mode),
+    {
+      // The communes' outlines before their colours, the communes' own border's look.
+      id: "communes-early",
+      type: "line",
+      source: "admin7",
+      "source-layer": "communes",
+      minzoom: OUTLINES_FADE[0],
+      maxzoom: AREA_FADE[1],
+      paint: {
+        "line-color": palette().areaBorder,
+        "line-width": AREA_BORDER,
+        "line-opacity": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          OUTLINES_FADE[0],
+          0,
+          OUTLINES_FADE[1],
+          1,
+          AREA_FADE[0],
+          1,
+          AREA_FADE[1],
+          0,
+        ],
+      },
+    } as LayerSpecification,
     ...areaLayers("communes", breaks.communes, mode),
     {
       // Invisible: keeps the communes loaded down to the street level for the panel's
