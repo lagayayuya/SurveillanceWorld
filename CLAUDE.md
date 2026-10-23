@@ -36,9 +36,8 @@ Working rules for coding agents (and humans) on this repository.
   supersedes and append a short marker to the old one (« → remplacée le <date> »).
 
 ## Working rules
-- `make smoke` (the local gate: CI's full matrix on the CI extract, and the classic interface
-  pixel for pixel against its reference when `GATE_REF_TAR` gives one) is green before any
-  push.
+- `make smoke` (the local gate: CI's full matrix on the CI extract, every bench step of
+  `web/scripts/gate.sh` in its engines) is green before any push.
 - One push per batch of work; inside it, still one small commit per task.
 - One build, gate or deploy at a time on a machine: `lacarte build`, `make smoke` and
   `deploy/deploy.sh` take a common lock and stop if it is taken; `make lock` says who holds

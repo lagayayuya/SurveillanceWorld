@@ -86,7 +86,7 @@ make try                     # http://127.0.0.1:4470/ — Ctrl-C arrête tout
 
 `make try` lance l'API sur une base jetable, remplie avec les données de test. Un compte
 contributeur fictif est connecté d'office ; `?as=rev` passe sur le compte administrateur,
-qui ouvre `/revue`. L'ancienne interface reste accessible avec `?ui=classique`.
+qui ouvre `/revue`.
 
 ### Toute la France métropolitaine
 
