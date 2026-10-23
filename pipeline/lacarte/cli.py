@@ -10,6 +10,7 @@ report` compares a contributed build with the one before (contrib.py).
 (lacarte/api/accounts.py, also run on the server as `python -m lacarte.api.accounts`).
 `lacarte hidden add|remove|list` the cameras every build leaves out (lacarte/api/hidden.py,
 on the server `python -m lacarte.api.hidden`).
+`lacarte basemap strip` makes the self-hosted basemap lighter (basemap.py, its options there).
 `lacarte osm sync --once` runs one pass of the OSM synchronisation (lacarte/api/sync.py; the
 API's thread runs the others).
 A build holds the machine's lock (lock.py), as the gate and the deploy do: taken, it stops."""
@@ -26,6 +27,7 @@ from pathlib import Path
 from lacarte import (
     admin,
     apply,
+    basemap,
     calibrate,
     exposure,
     extract,
@@ -99,24 +101,11 @@ def main(argv: list[str] | None = None) -> None:
         " the database's (France after the Île-de-France)",
     )
     cp.add_argument("--before", type=Path, help="report: the build without contributions")
-    bm = sub.add_parser("basemap", help="the self-hosted basemap: strip layers from its archive")
-    bm.add_argument("action", choices=["strip"])
-    bm.add_argument("src", type=Path)
-    bm.add_argument("dst", type=Path)
-    bm.add_argument("--drop", action="append", required=True, help="a layer to drop (repeat)")
-    bm.add_argument(
-        "--names", nargs="+", metavar="LANG", help="keep the names in these languages only"
-    )
-    bm.add_argument(
-        "--undrawn",
-        action="store_true",
-        help="drop the features of the kinds no style layer draws (rules/basemap.yaml)",
-    )
+    # Its options live in basemap.py, outside the build's id: a basemap change needs no build.
+    basemap.add_parser(sub)
     args = parser.parse_args(argv)
     if args.cmd == "basemap":
-        from lacarte import basemap
-
-        basemap.main(str(args.src), str(args.dst), args.drop, args.names, args.undrawn)
+        basemap.run(args)
         return
     if args.cmd == "contrib":
         from lacarte import contrib

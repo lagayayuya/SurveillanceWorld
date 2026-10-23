@@ -18,6 +18,7 @@ meadows). A layer without such a feature is kept byte for byte.
 
 from __future__ import annotations
 
+import argparse
 import gzip
 import json
 import re
@@ -356,6 +357,33 @@ def main(
     stats = strip(Path(src), Path(dst), drop, names, kinds)
     shown = {k: sorted(v) for k, v in kinds.items()} if kinds else None
     print(json.dumps({"dropped": sorted(set(drop)), "names": names, "kinds": shown, **stats}))
+
+
+# --- the command line (`lacarte basemap`) -------------------------------------------------
+# Here and not in cli.py, which the build's id hashes: a basemap option needs no cli.py edit.
+
+
+def add_parser(sub: argparse._SubParsersAction) -> None:
+    """`lacarte basemap ...` among the `lacarte` parser's subcommands."""
+    bm = sub.add_parser("basemap", help="the self-hosted basemap: strip layers from its archive")
+    actions = bm.add_subparsers(dest="action", required=True)
+    st = actions.add_parser("strip", help="write SRC again as DST without some of its content")
+    st.add_argument("src", type=Path)
+    st.add_argument("dst", type=Path)
+    st.add_argument("--drop", action="append", required=True, help="a layer to drop (repeat)")
+    st.add_argument(
+        "--names", nargs="+", metavar="LANG", help="keep the names in these languages only"
+    )
+    st.add_argument(
+        "--undrawn",
+        action="store_true",
+        help="drop the features of the kinds no style layer draws (rules/basemap.yaml)",
+    )
+
+
+def run(args: argparse.Namespace) -> None:
+    if args.action == "strip":
+        main(str(args.src), str(args.dst), args.drop, args.names, args.undrawn)
 
 
 __all__ = [

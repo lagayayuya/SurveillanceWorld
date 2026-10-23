@@ -1,3 +1,4 @@
+import ast
 import re
 
 import pyarrow as pa
@@ -36,6 +37,7 @@ def _code(root):
     (root / "__init__.py").write_text("")
     (root / "api" / "__init__.py").write_text("")
     (root / "stage.py").write_text("STEP = 1\n")
+    (root / "basemap.py").write_text("STRIP = 1\n")
     (root / "tests" / "test_stage.py").write_text("def test(): pass\n")
     (root / "notes.md").write_text("notes\n")
     (root / "__pycache__" / "stage.cpython-313.pyc").write_bytes(b"\0")
@@ -55,6 +57,7 @@ def test_build_id_changes_with_the_pipeline_code_only(tmp_path, monkeypatch):
     (code / "__pycache__" / "stage.cpython-313.pyc").write_bytes(b"\1")
     (code / "__pycache__" / "cached.py").write_text("X = 1\n")
     (code / "api" / "__init__.py").write_text("SERVED = 1\n")  # the API serves the build
+    (code / "basemap.py").write_text("STRIP = 2\n")  # the basemap: an archive of its own
     assert buildinfo.digest(d) == before
     (code / "stage.py").write_text("STEP = 2\n")
     assert buildinfo.digest(d) != before
@@ -67,5 +70,30 @@ def test_the_real_pipeline_sources_enter_the_id():
     assert {"pipeline/lacarte/db.py", "pipeline/lacarte/tiles.py",
             "pipeline/lacarte/apply.py"} <= set(labels)  # fmt: skip
     assert not any(label.startswith("pipeline/lacarte/api/") for label in labels)
+    # Nor the basemap's code: a basemap change needs no build (user decision 2026-10-23).
+    assert "pipeline/lacarte/basemap.py" not in labels
     assert labels.count("pipeline/lacarte/__init__.py") == 1
     assert all(label.endswith(".py") and "__pycache__" not in label for label in labels)
+
+
+def _imports(path):
+    """The lacarte modules a source imports: `lacarte.x`, `from lacarte import x`."""
+    found = set()
+    for node in ast.walk(ast.parse(path.read_text())):
+        if isinstance(node, ast.Import):
+            found |= {a.name for a in node.names}
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            found |= {node.module} | {f"{node.module}.{a.name}" for a in node.names}
+    return {m for m in found if m.startswith("lacarte.")}
+
+
+def test_no_build_code_imports_the_code_left_out_of_the_id():
+    """What the id leaves out (the API, the basemap) is imported by no code it hashes but
+    cli.py, which only runs their commands: else that code would change a build unseen."""
+    left_out = {"lacarte.basemap"}
+    for label, path in buildinfo.code_files():
+        if label == "pipeline/lacarte/cli.py":
+            continue
+        imported = _imports(path)
+        assert not imported & left_out, label
+        assert not any(m.startswith("lacarte.api") for m in imported), label

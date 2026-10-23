@@ -20,7 +20,9 @@ from lacarte import regions
 # the hidden cameras' list when it lists one (hidden), and so does the pipeline's own code
 # (code_files): the same data through other code is another build. The participation API
 # (pipeline/lacarte/api) is left out: no build file and no loaded table depends on it
-# (nothing outside it imports it), so deploying the API alone needs no build.
+# (nothing outside it imports it), so deploying the API alone needs no build. So is the
+# basemap's code (STANDALONE): it makes an archive the build never reads, under an id of its
+# own (basemap.py); a basemap change needs no build, a build no new basemap.
 INPUTS = ("cameras_norm.parquet", "buildings.parquet")
 # questions.yaml: the tiles class every tilt by its bounds (phase D3), contributions or not;
 # admin.yaml: the communes' rescue distance and the punk map's classes (meta.json);
@@ -36,6 +38,8 @@ RULES = (
 )
 CODE = regions.ROOT / "pipeline" / "lacarte"
 SERVING = ("api",)  # code that serves the build, not code that makes it
+# Code that makes what the build never reads; only cli.py imports it (test_buildinfo.py).
+STANDALONE = ("basemap.py",)
 
 
 def latest_edit(build_dir: Path) -> datetime:
@@ -64,12 +68,14 @@ def hidden(region: regions.Region) -> Path | None:
 
 def code_files() -> list[tuple[str, Path]]:
     """The pipeline's Python sources as (label, path), sorted: every `*.py` under
-    pipeline/lacarte but tests, __pycache__ and the API (SERVING). The label is the path
-    from the repository root, the same on every machine."""
+    pipeline/lacarte but tests, __pycache__, the API (SERVING) and the basemap (STANDALONE).
+    The label is the path from the repository root, the same on every machine."""
     found = []
     for path in CODE.rglob("*.py"):
         rel = path.relative_to(CODE)
         if {"__pycache__", "tests"} & set(rel.parts) or rel.parts[0] in SERVING:
+            continue
+        if rel.as_posix() in STANDALONE:
             continue
         found.append(((Path("pipeline") / "lacarte" / rel).as_posix(), path))
     return sorted(found)
