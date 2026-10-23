@@ -8,7 +8,18 @@ import { PAPER_EARTH } from "./basemap";
 import type { ThemeInks } from "./stickers";
 import { mode, palette, token } from "./theme";
 
-export const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"] as const;
+// The order of pipeline/lacarte/camerafilters.py KIND_ORDER (tests/kinds.test.ts): a kind
+// missing here is filtered off the map with its fields (filters.ts byOpKind).
+export const KINDS = [
+  "dome",
+  "multidome",
+  "fixed",
+  "ptz",
+  "panorama",
+  "alpr",
+  "doorbell",
+  "unknown",
+] as const;
 export type Kind = (typeof KINDS)[number];
 
 const RATIO = 2;
@@ -26,6 +37,19 @@ const shapes: Record<Kind, Draw> = {
     c.lineTo(s * 0.86, s * 0.7);
     c.lineTo(s * 0.14, s * 0.7);
     c.closePath();
+  },
+  // Three small domes under one housing (the sticker's silhouette, stickers.ts).
+  multidome: (c, s) => {
+    c.beginPath();
+    c.rect(s * 0.08, s * 0.34, s * 0.84, s * 0.12);
+    for (const [x, r] of [
+      [0.2, 0.13],
+      [0.5, 0.18],
+      [0.8, 0.13],
+    ]) {
+      c.moveTo(s * (x + r), s * 0.46);
+      c.arc(s * x, s * 0.46, s * r, 0, Math.PI);
+    }
   },
   fixed: (c, s) => {
     c.beginPath();

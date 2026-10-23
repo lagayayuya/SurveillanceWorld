@@ -6,7 +6,16 @@
 import type { CameraLabel, CollectionState, Mine } from "../participate/api";
 
 /** The map's kinds of camera (icons.ts KINDS), the collection's order. */
-export const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"] as const;
+export const KINDS = [
+  "dome",
+  "multidome",
+  "fixed",
+  "ptz",
+  "panorama",
+  "alpr",
+  "doorbell",
+  "unknown",
+] as const;
 export type Kind = (typeof KINDS)[number];
 
 export type Piece = {

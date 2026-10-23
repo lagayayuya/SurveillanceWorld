@@ -195,7 +195,7 @@ export function el<K extends keyof HTMLElementTagNameMap>(tag: K, text = "", cls
 
 // --- a camera's label -------------------------------------------------------------------
 
-const KIND_WORDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell"];
+const KIND_WORDS = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell"];
 /** « Dôme », « Fixe »…; « Caméra » for an unknown kind (null, or the build's default). */
 export const kindWord = (kind: string | null): string =>
   t(`review.kind.${KIND_WORDS.includes(kind ?? "") ? kind : "unknown"}`);

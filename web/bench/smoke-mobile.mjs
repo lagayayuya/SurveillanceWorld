@@ -1,7 +1,7 @@
 // Smoke test on a phone: the "iPhone 14" device profile, in WebKit (every iPhone browser
 // is WebKit) by default, Chromium with --browser chromium. Real taps only: a JS click
 // would pass through what covers an element, which is the bug class under test.
-//   node bench/smoke-mobile.mjs [--region idf|ci] [--browser webkit|chromium]
+//   node bench/smoke-mobile.mjs [--region idf|ci] [--browser webkit|chromium] [--port N]
 import { spawn } from "node:child_process";
 import { chromium, devices, webkit } from "playwright";
 import { accountSmoke } from "./account.mjs";
@@ -16,7 +16,7 @@ const engine = arg("--browser", "webkit");
 // Repeated taps: 5 in CI, 20 with `make smoke-full`.
 const TAPS = Number(arg("--taps", "5"));
 const PART = Number(arg("--part", "0")); // 0: the whole test
-const PORT = 4180;
+const PORT = Number(arg("--port", "4180"));
 const APP = `http://localhost:${PORT}/`;
 const STREET = region === "ci" ? [2.2377, 48.8977] : [2.3485, 48.8597];
 // A position for "Me localiser", near the street, given by the emulated device.
@@ -330,6 +330,37 @@ try {
   await idle(page);
   const vh = page.viewportSize().height;
   check("map loads", true);
+  {
+    // Every kind the build writes (meta.json segment_bits `kind:*`, the multi-dome among
+    // them since 2026-10-23) is kept by each layer that filters on the kind, and has its
+    // sticker: a kind missing from the page's list takes its cameras and fields off the map.
+    const kinds = await page.evaluate(async () => {
+      const meta = await fetch("/tiles/meta.json").then((r) => r.json());
+      const built = Object.keys(meta.segment_bits)
+        .filter((b) => b.startsWith("kind:"))
+        .map((b) => b.slice(5));
+      const m = window.__map;
+      const dropping = m
+        .getStyle()
+        .layers.map((l) => [l.id, JSON.stringify(m.getFilter(l.id) ?? null)])
+        .filter(([, f]) => f.includes('["get","k"]') && f.includes('"literal"'))
+        .map(([id, f]) => [id, built.filter((k) => !f.includes(`"${k}"`))]);
+      return {
+        built,
+        layers: dropping.map(([id]) => id),
+        dropped: dropping.filter(([, gone]) => gone.length),
+        noSticker: built.filter((k) => !m.hasImage(`sticker-${k}-full`)),
+      };
+    });
+    check(
+      "every kind of the build kept by the kind filters, with its sticker (multi-dome)",
+      kinds.built.includes("multidome") &&
+        kinds.layers.length > 0 &&
+        !kinds.dropped.length &&
+        !kinds.noSticker.length,
+      JSON.stringify(kinds),
+    );
+  }
   check("attribution not covered (map)", (await attributionVisible(page)) === "ok");
   {
     // The credit folded to a compact « ⓘ » (44 px), a tap unfolds it at 11 px at least,

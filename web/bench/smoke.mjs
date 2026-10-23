@@ -1019,7 +1019,7 @@ try {
   // state, the selected camera's larger; a proposal's ghost answers to `cam-<kind>`, which
   // no other layer asks for; a change of the phone's mode draws them again, on the map and
   // in the filter panel, exactly as a page opened in that mode.
-  const kinds = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
+  const kinds = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
   const images = await page.evaluate((ks) => {
     const m = window.__map;
     const names = ks.flatMap((k) => [
@@ -1494,7 +1494,7 @@ try {
   {
     const fr = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url)));
     const OPS = ["pub", "pro", "pri", "unk"];
-    const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
+    const KINDS = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
     const ROWS = [
       "fresh_lt1",
       "fresh_1to3",

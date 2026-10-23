@@ -182,7 +182,16 @@ function recorder(): { ctx: CanvasRenderingContext2D; ops: Op[] } {
   return { ctx: ctx as unknown as CanvasRenderingContext2D, ops };
 }
 
-const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"] as const;
+const KINDS = [
+  "dome",
+  "multidome",
+  "fixed",
+  "ptz",
+  "panorama",
+  "alpr",
+  "doorbell",
+  "unknown",
+] as const;
 for (const [name, tokens] of modes) {
   test(`punk ${name}: once gone, no pink and crossed eyes (or a « × » for no type)`, () => {
     const t = themeInks((n) => tokens.get(`--${n}`) ?? "");

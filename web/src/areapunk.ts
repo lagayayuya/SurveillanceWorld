@@ -38,7 +38,7 @@ const OFF_TILT = [1, -1.5, 1.5];
 const TOP_OPERATORS = 5; // pipeline/lacarte/admin.py TOP_OPERATORS: the names the tiles keep
 // The tiles' types (`k_<kind>`, pipeline/lacarte/aggregate.py KINDS) in 24a's order: the
 // known types, then the unknown last.
-const KINDS = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
+const KINDS = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
 // The operator classes (`n_pub`…, the map's « Qui filme »).
 const CLASSES = ["pub", "pro", "pri", "unk"] as const;
 /** The farthest a ticket's fraction may fall below Y (points); farther, the percentage. */

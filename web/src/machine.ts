@@ -483,7 +483,16 @@ export class Machine {
 
     // Type de caméra: round buttons with the map's stickers and a count label.
     const kindRows = h("div", { class: "kinds" });
-    const order: Kind[] = ["dome", "fixed", "ptz", "panorama", "unknown", "alpr", "doorbell"];
+    const order: Kind[] = [
+      "dome",
+      "multidome",
+      "fixed",
+      "ptz",
+      "panorama",
+      "unknown",
+      "alpr",
+      "doorbell",
+    ];
     for (const kind of order) {
       const sample = cameraCanvas(kind);
       sample.className = "sample";

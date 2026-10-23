@@ -150,8 +150,10 @@ type Sticker = {
   body: (c: Ctx) => void;
   /** The eye: centre and radius. */
   eye?: [number, number, number];
-  /** Half-closed: a lid of the body's ink over its upper half (dome). */
+  /** Half-closed: a lid of the body's ink over its upper half (dome, multi-dome). */
   lid?: boolean;
+  /** Smaller eyes beside the main one, open (the multi-dome's other domes). */
+  more?: [number, number, number][];
   /** The globe's equator (PTZ). */
   band?: boolean;
   plate?: boolean;
@@ -195,6 +197,34 @@ const STICKERS: Record<Kind, Sticker> = {
     },
     eye: [30, 28, 9],
     lid: true,
+  },
+  // The multi-dome (DECISIONS 2026-10-23, no board: a new category): the dome's vocabulary
+  // three times, a bigger dome between two small ones under one housing bar, hung from the
+  // ceiling plate by a short rod; the middle eye half-closed as the dome's, the small domes'
+  // eyes open and looking down.
+  multidome: {
+    body: (c) => {
+      c.beginPath();
+      c.roundRect(20, 5, 20, 6, 3);
+      c.rect(27, 10, 6, 8);
+      c.roundRect(5, 17, 50, 8, 3);
+      // Each dome a half-disc under the bar, apart from the next (the outline's notch
+      // between them still shows at the map's size).
+      for (const [x, y, r] of [
+        [12, 25, 8.5],
+        [30, 25, 11.5],
+        [48, 25, 8.5],
+      ]) {
+        c.moveTo(x + r, y);
+        c.arc(x, y, r, 0, Math.PI);
+      }
+    },
+    eye: [30, 30, 7.5],
+    lid: true,
+    more: [
+      [12, 29, 4.5],
+      [48, 29, 4.5],
+    ],
   },
   // The box tilted down on its wall arm, its visor above, the eye at the lens.
   fixed: {
@@ -433,6 +463,7 @@ function paintBody(c: Ctx, kind: Kind, ink: Inks, variant: Variant): void {
     c.strokeStyle = ink.outline;
     c.stroke();
   }
+  for (const small of s.more ?? []) eye(c, small, ink, crossed);
   if (s.eye) eye(c, s.eye, ink, crossed);
   if (s.lid && s.eye && !crossed) {
     const [x, y, r] = s.eye;
