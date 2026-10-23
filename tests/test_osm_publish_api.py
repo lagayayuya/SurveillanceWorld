@@ -508,9 +508,11 @@ def enabled(dsn, fake, aid, server="dev", consent=CONSENT) -> str:
 
 def put(dsn, author, kind, camera, *, answer=None, direction=None, name=None,
         status="applied", on_site=True, day=DAY, seq=None, osm=None, tags=None,
-        target=None, at=AT, old=None, held=None, uid=None, chosen=True) -> str:  # fmt: skip
+        target=None, at=AT, old=None, held=None, uid=None, chosen=True,
+        count=None) -> str:  # fmt: skip
     """A contribution as the API and the review left it (written as the owner); `chosen`:
-    received while its author had chosen to publish (sync_chosen)."""
+    received while its author had chosen to publish (sync_chosen); `count`: a
+    « Multi-boules » answer's number of domes (migration 025)."""
     uid = uid or str(uuid4())
     if kind == "add":
         camera = "c" + uid.replace("-", "")[:12]
@@ -520,13 +522,13 @@ def put(dsn, author, kind, camera, *, answer=None, direction=None, name=None,
             "INSERT INTO contributions (uuid, kind, camera_id, osm_type, osm_id, osm_version,"
             " build_id, author_id, day, on_site, answer, target, geom, payload,"
             " body_sha256, direction_deg, operator_name, osm_tags, status, decision_seq,"
-            " apply_detail, sync_chosen) VALUES (%s, %s, %s, %s, %s, %s, 'b', %s, %s, %s, %s,"
-            " %s, ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s), 4326), 2154), %s, 'x', %s,"
-            " %s, %s, %s, %s, %s, %s)",
+            " apply_detail, sync_chosen, dome_count) VALUES (%s, %s, %s, %s, %s, %s, 'b', %s,"
+            " %s, %s, %s, %s, ST_Transform(ST_SetSRID(ST_MakePoint(%s, %s), 4326), 2154), %s,"
+            " 'x', %s, %s, %s, %s, %s, %s, %s, %s)",
             (uid, kind, camera, osm_type, osm_id, version, author, day, on_site, answer, target,
              *at, json.dumps({"old": old} if old else {}), direction, name,
              json.dumps(tags or {}), status, seq,
-             json.dumps({"osm_version": held}) if held else None, chosen),
+             json.dumps({"osm_version": held}) if held else None, chosen, count),
         )  # fmt: skip
     return uid
 
@@ -707,6 +709,40 @@ def test_a_small_dome_s_tilt_never_leaves(client, fake, pg_dsn, clean):
     (created,) = change(fake, out["changeset"]).iter("node")
     assert node_tags(created)["camera:type"] == "dome"
     assert "camera:angle" not in node_tags(created) and tilt not in publications(pg_dsn)
+
+
+def test_a_multidome_leaves_as_a_dome_with_its_count(client, fake, pg_dsn, clean):
+    """rules/publish.yaml multidome (DECISIONS 2026-10-23): « Multi-boules » with 3 domes
+    is camera:type=dome and camera:count=3 on the node it creates."""
+    aid = make(pg_dsn, "pub-a")
+    enabled(pg_dsn, fake, aid)
+    add, cam = added(pg_dsn, aid)
+    shape = on_add(pg_dsn, aid, add, "shape", answer="multidome", count=3)
+    assert listed(pg_dsn, aid) == {cam: [add, shape]}
+    out = sync_pass(fake, pg_dsn)
+    (created,) = change(fake, out["changeset"]).iter("node")
+    tags = node_tags(created)
+    assert (tags["camera:type"], tags["camera:count"]) == ("dome", "3")
+    assert "camera:number" not in tags and shape in out["published"]
+
+
+def test_a_multidome_without_its_count_stays_and_says_why(client, fake, pg_dsn, clean):
+    """Without its number, camera:type=dome alone would say one dome: the answer stays on
+    Surveillance World — never listed, never sent — and « Compte » says why while her
+    choice is on (kept_rule, multidome_count_unknown); the add leaves without a type."""
+    aid = make(pg_dsn, "pub-a")
+    token = enabled(pg_dsn, fake, aid)
+    add, cam = added(pg_dsn, aid)
+    shape = on_add(pg_dsn, aid, add, "shape", answer="multidome")
+    assert listed(pg_dsn, aid) == {cam: [add]}
+    said = {h["uuid"]: h for h in synced(client, token)["history"]}
+    assert (said[shape]["state"], said[shape]["reason"]) == ("kept_rule", "multidome_count_unknown")
+    out = sync_pass(fake, pg_dsn)
+    (created,) = change(fake, out["changeset"]).iter("node")
+    assert "camera:type" not in node_tags(created) and "camera:count" not in node_tags(created)
+    assert shape not in publications(pg_dsn)
+    said = {h["uuid"]: h for h in synced(client, token)["history"]}
+    assert said[shape]["state"] == "kept_rule" and said[add]["state"] == "gone"
 
 
 def test_what_may_leave_and_what_never_does(client, fake, pg_dsn, clean):
@@ -1156,6 +1192,37 @@ def test_a_contribution_says_it_will_leave_for_osm(client, fake, pg_dsn, clean, 
     assert "osm" not in post(token)  # not offered
 
 
+def test_a_multidome_without_its_count_says_it_stays(client, fake, pg_dsn, clean):
+    """POST /api/contributions with her choice on: « Multi-boules » with its number will
+    leave; without it, `osm: "kept"` and the reason the interface shows."""
+    from lacarte.api import live as live_api
+
+    aid = make(pg_dsn, "pub-a")
+    token = enabled(pg_dsn, fake, aid)
+    with psycopg.connect(pg_dsn) as conn:
+        build = conn.execute("SELECT build_id FROM meta").fetchone()[0]
+    lon, lat = live_api.to_lonlat(644329.8662116162 + 0.7, 6866484.319232392 + 0.7)
+    day = date.today().isoformat()
+    api.limits.hits.clear()
+    add = str(uuid4())
+    r = client.post("/api/contributions", headers=signed(token), json={
+        "kind": "add", "uuid": add, "build_id": build, "day": day, "on_site": True, "lon": lon,
+        "lat": lat, "placement": "facade"})  # fmt: skip
+    assert r.status_code == 200, r.text
+    camera = "c" + add.replace("-", "")[:12]
+
+    def shape(**fields):
+        r = client.post("/api/contributions", headers=signed(token), json={
+            "kind": "shape", "uuid": str(uuid4()), "camera": camera, "build_id": build,
+            "day": day, "on_site": True, "answer": "multidome", **fields})  # fmt: skip
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    kept = shape()
+    assert (kept["osm"], kept["osm_reason"]) == ("kept", "multidome_count_unknown")
+    assert shape(dome_count=4)["osm"] == "will_publish"
+
+
 # --- the live server: OSM's cameras (the fake stands for it, switched on in /revue) -----------
 
 
@@ -1250,6 +1317,27 @@ def test_an_osm_camera_s_conflicts_by_tags_version_and_value(client, fake, pg_ds
     assert out["published"] == [aim]
     (sent,) = change(fake, out["changeset"]).iter("node")
     assert node_tags(sent) == {**public, "note": "repeinte", "camera:direction": "40"}
+
+
+def test_a_multidome_s_count_is_held_and_never_overwritten(client, fake, pg_dsn, clean, live):
+    """On OSM cameras: a camera:count written since the observation holds the answer
+    (osm_tags: contributions@6 fine_conflict reads it); one already there when observed is
+    a conflict (osm_value: never_overwrite), never replaced."""
+    aid = make(pg_dsn, "pub-a")
+    enabled(pg_dsn, fake, aid, "live")
+    (cam, ref, tags, at), (cam2, ref2, tags2, at2) = osm_cameras(pg_dsn, 2)
+    mapped(fake, ref, tags, at, **{"camera:count": "2"})
+    since = put(pg_dsn, aid, "shape", cam, answer="multidome", count=4, osm=ref, tags=tags,
+                at=at)  # fmt: skip
+    there = {**tags2, "camera:count": "2"}
+    mapped(fake, ref2, there, at2)
+    over = put(pg_dsn, aid, "shape", cam2, answer="multidome", count=4, osm=ref2, tags=there,
+               at=at2)  # fmt: skip
+    out = sync_pass(fake, pg_dsn)
+    assert {c["uuid"]: c["reason"] for c in out["conflicts"]} == {
+        since: "osm_tags", over: "osm_value"}  # fmt: skip
+    assert fake.nodes[ref[1]]["tags"]["camera:count"] == "2"
+    assert fake.nodes[ref2[1]]["tags"]["camera:count"] == "2"
 
 
 def test_our_own_last_version_is_accepted_and_a_revalidated_conflict_s_too(client, fake, pg_dsn,

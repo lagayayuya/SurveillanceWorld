@@ -1208,7 +1208,8 @@ def batch_field(conn, batch: str) -> dict | None:
 def post_contribution(body: ContributionIn, who: Annotated[Account, Depends(author)]):
     """Idempotent on the uuid: the same uuid with the same body is a no-op (200), with
     another body or author a conflict (409). {uuid, status, new}, and `osm: "will_publish"`
-    when it will leave for OSM in her name once accepted (will_publish)."""
+    when it will leave for OSM in her name once accepted, or `osm: "kept"` with
+    `osm_reason` when a rule keeps it on Surveillance World (osm_outlook)."""
     uid = v4(body.uuid)
     today = date.today()
     if not FIRST_DAY <= body.day <= today + timedelta(days=1):
@@ -1232,8 +1233,7 @@ def post_contribution(body: ContributionIn, who: Annotated[Account, Depends(auth
             if old[0] != who.id or old[1] != digest:
                 fail(409, "uuid_taken")
             out = {"uuid": uid, "status": old[2], "new": False}
-            if will_publish(conn, who.id, uid):
-                out["osm"] = "will_publish"
+            out.update(osm_outlook(conn, who.id, uid))
             return out
         rules = participation.rules()
         if not limits.allow(who.id, "write", rules["limits"]["writes_per_minute"]):
@@ -1352,8 +1352,7 @@ def post_contribution(body: ContributionIn, who: Annotated[Account, Depends(auth
             "SELECT status FROM contributions WHERE uuid = %s", (uid,)
         ).fetchone()[0]
         out = {"uuid": uid, "status": status, "new": True}
-        if will_publish(conn, who.id, uid):
-            out["osm"] = "will_publish"
+        out.update(osm_outlook(conn, who.id, uid))
     return out
 
 
@@ -1367,19 +1366,22 @@ def sync_chosen(conn, account_id: str) -> bool:
         " AND token IS NOT NULL)", (account_id, server.name)).fetchone()[0]  # fmt: skip
 
 
-def will_publish(conn, account_id: str, uid: str) -> bool:
-    """Whether this contribution, once accepted (and applied by a build), leaves for OSM
-    in the person's name: her choice is on (a token, not blocked) on the offered write
-    server, and the contribution can leave there (publish.says_something, made on site,
-    received while her choice was on (sync_chosen) and observed from her consent day, not
-    on a household's or hidden camera, not on an OSM camera when writing goes to the test
-    server). The page says « sera publiée sur OSM en votre nom après relecture »."""
+def osm_outlook(conn, account_id: str, uid: str) -> dict:
+    """What this contribution, once accepted (and applied by a build), becomes on OSM in
+    the person's name, when her choice is on (a token, not blocked) on the offered write
+    server and the contribution could leave there (made on site, received while her choice
+    was on (sync_chosen) and observed from her consent day, not on a household's or hidden
+    camera, not on an OSM camera when writing goes to the test server): {"osm":
+    "will_publish"} when it says something OSM holds (publish.says_something) — the page
+    says « sera publiée sur OSM en votre nom après relecture » —; {"osm": "kept",
+    "osm_reason": ...} when a rule keeps it on Surveillance World (publish.kept_reason:
+    multidome_count_unknown, « Multi-boules » without its number); {} otherwise."""
     server = publish_server()
     if server is None:
-        return False
+        return {}
     row = conn.execute(
         "SELECT c.kind, c.answer, c.direction_deg, c.operator_name, c.operator_proposed,"
-        " c.on_site IS TRUE AND c.sync_chosen AND c.day >= w.consent_day"
+        " c.dome_count, c.on_site IS TRUE AND c.sync_chosen AND c.day >= w.consent_day"
         " AND coalesce(c.osm_type, '') <> ALL(%s)"
         " AND c.camera_id NOT IN (SELECT camera_id FROM hidden_cameras)"
         " AND NOT EXISTS (SELECT FROM contributions h WHERE h.camera_id = c.camera_id"
@@ -1390,7 +1392,14 @@ def will_publish(conn, account_id: str, uid: str) -> bool:
         " AND coalesce(w.last_error, '') <> 'blocked'",
         (["w", "r"] if server.name == "live" else ["n", "w", "r"], uid, account_id, server.name),
     ).fetchone()
-    return bool(row and row[5] and publish.says_something(*row[:5]))
+    if not (row and row[6]):
+        return {}
+    kind, answer, direction_deg, name, proposed, count = row[:6]
+    if kept := publish.kept_reason(kind, answer, count):
+        return {"osm": "kept", "osm_reason": kept}
+    if publish.says_something(kind, answer, direction_deg, name, proposed, count):
+        return {"osm": "will_publish"}
+    return {}
 
 
 def proposed_name(conn, cam: live.Camera, body: OperatorIn) -> tuple[str | None, str | None]:

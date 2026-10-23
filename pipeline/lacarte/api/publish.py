@@ -287,6 +287,7 @@ class Contribution:
     sent: bool  # a row in osm_publications for this server
     household: bool
     operator_choice: str | None  # the review's choice on a proposed name (migration 017)
+    dome_count: int | None = None  # « Multi-boules »: its number of domes (migration 025)
     tags: dict[str, str] = field(default_factory=dict)  # what it sets on OSM
 
     @property
@@ -319,7 +320,7 @@ SELECT c.uuid::text, c.kind, c.camera_id, c.osm_type, c.osm_id,
        EXISTS (SELECT FROM contributions h WHERE h.camera_id = c.camera_id
                AND h.kind = 'operator' AND h.answer = 'household'
                AND h.status NOT IN ('rejected', 'withdrawn')),
-       c.operator_choice
+       c.operator_choice, c.dome_count
 FROM contributions c
 WHERE c.author_id = %(account)s AND c.status = 'applied' AND c.sync_chosen
   AND c.kind = ANY(%(kinds)s) AND coalesce(c.answer, '') <> ALL(%(blank)s)
@@ -335,6 +336,8 @@ def answer_tags(c: Contribution, answers: dict) -> dict[str, str]:
         tags = answers[c.kind].get(c.answer)
         if c.kind == "verify":
             return {tags: c.day.isoformat()} if tags else {}
+        if c.answer == "multidome":  # rules/publish.yaml multidome: with its number only
+            return {**tags, answers["dome_count"]: str(c.dome_count)} if c.dome_count else {}
         return dict(tags or {})
     if c.kind == "direction" and c.direction is not None:
         return {answers["direction"]: str(c.direction)}
@@ -436,19 +439,30 @@ def says_something(
     direction: int | None,
     operator_name: str | None,
     operator_proposed: str | None = None,
+    dome_count: int | None = None,
 ) -> bool:
     """Whether an answer of this kind can set something on OSM (rules/publish.yaml answers):
-    an add or a move always; a shape, « toujours là : oui », a direction; an operator
-    « commerce ou entreprise », or a public one with a name (chosen, or proposed and maybe
-    accepted). Never a household, « introuvable », « je ne sais pas »."""
+    an add or a move always; a shape (« Multi-boules » with its number only), « toujours
+    là : oui », a direction; an operator « commerce ou entreprise », or a public one with a
+    name (chosen, or proposed and maybe accepted). Never a household, « introuvable », « je
+    ne sais pas »."""
     answers = rules()["answers"]
     if kind in ("add", "move"):
         return True
     if kind == "operator" and answer == "public":
         return bool(operator_name or operator_proposed)
     c = Contribution("", kind, "", None, None, None, answer, direction, operator_name, {},
-                     date.min, None, 0.0, 0.0, None, True, False, False, None)  # fmt: skip
+                     date.min, None, 0.0, 0.0, None, True, False, False, None,
+                     dome_count)  # fmt: skip
     return kind in KINDS and answer not in NO_ANSWER and bool(answer_tags(c, answers))
+
+
+def kept_reason(kind: str, answer: str | None, dome_count: int | None) -> str | None:
+    """Why an answer that says something on Surveillance World stays there by rule, or
+    None: « Multi-boules » without its number of domes (rules/publish.yaml multidome)."""
+    if kind == "shape" and answer == "multidome" and dome_count is None:
+        return rules()["multidome"]["reason"]
+    return None
 
 
 HISTORY_SQL = """
@@ -459,7 +473,7 @@ SELECT c.uuid::text, c.kind, c.camera_id, c.osm_type, c.status, c.day, c.on_site
                AND h.kind = 'operator' AND h.answer = 'household'
                AND h.status NOT IN ('rejected', 'withdrawn')),
        c.camera_id IN (SELECT camera_id FROM hidden_cameras),
-       p.state, p.reason, p.changeset, to_char(p.month, 'YYYY-MM')
+       p.state, p.reason, p.changeset, to_char(p.month, 'YYYY-MM'), c.dome_count
 FROM contributions c
 LEFT JOIN osm_publications p ON p.uuid = c.uuid AND p.server = %(server)s
 WHERE c.author_id = %(account)s AND c.kind = ANY(%(kinds)s)
@@ -481,7 +495,9 @@ def history(conn, account_id: str, server: str, consent: date | None,
     month and changeset), and while her choice is on (`consent`, her consent day), each
     that may still leave there: waiting (its status says whether the review or a build is
     still to come), or kept on Surveillance World — observed before her choice
-    (kept_before), changed by the review (kept_edited). Nothing that can never leave (not
+    (kept_before), changed by the review (kept_edited), or kept by a rule whatever the
+    review says (kept_rule, with its `reason`: multidome_count_unknown, « Multi-boules »
+    without its number, rules/publish.yaml multidome). Nothing else that can never leave (not
     on site, a household's or a hidden camera, an answer OSM cannot hold, an OSM camera on
     the test server), nor an older accepted answer her later one replaced. Months, never
     a day. `camera`: that camera's only (/revue's window), every one of them."""
@@ -497,28 +513,34 @@ def history(conn, account_id: str, server: str, consent: date | None,
             if (cam, kind) not in latest or rank_ > latest[(cam, kind)]:
                 latest[(cam, kind)] = rank_
     for (uid, kind, cam, osm_type, status, day, on_site, answer, direction, name, proposed,
-         choice, seq, household, hidden, state, reason, changeset, month) in rows:  # fmt: skip
+         choice, seq, household, hidden, state, reason, changeset, month,
+         count) in rows:  # fmt: skip
         item = {"uuid": uid, "camera": cam, "kind": kind, "status": status,
                 "changeset": changeset, "reason": reason}  # fmt: skip
         if state is not None:
             out.append({**item, "state": STATE_SAID[state], "month": month})
         elif consent is not None:
+            kept = kept_reason(kind, answer, count)
             if (
                 not on_site
                 or household
                 or hidden
                 or osm_type in ("w", "r")
                 or (osm_type == "n" and server != "live")
-                or not says_something(kind, answer, direction, name, proposed)
+                or (
+                    kept is None
+                    and not says_something(kind, answer, direction, name, proposed, count)
+                )
                 or (
                     status == "applied"
                     and latest[(cam, kind)] != (day, seq is not None, seq or 0, uid)
                 )
             ):
                 continue  # fmt: skip
-            said = ("kept_before" if day < consent else "kept_edited" if choice in EDITED
-                    else "waiting")  # fmt: skip
-            out.append({**item, "state": said, "month": day.strftime("%Y-%m")})
+            said = ("kept_rule" if kept else "kept_before" if day < consent
+                    else "kept_edited" if choice in EDITED else "waiting")  # fmt: skip
+            out.append({**item, "state": said, "month": day.strftime("%Y-%m"),
+                        **({"reason": kept} if kept else {})})  # fmt: skip
         if camera is None and len(out) >= HISTORY_MAX:
             break
     return out

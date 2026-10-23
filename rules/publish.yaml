@@ -14,10 +14,12 @@
 # Version 3 (the synchronisation, migration 022): one changeset per person per pass of the
 # job, its comment written by the job; only what was observed from the consent day; nothing
 # the review changed; an OSM camera near an add stops its creation; the job's pace.
-version: 3
+# Version 4 (DECISIONS 2026-10-23): « Multi-boules » leaves as camera:type=dome with
+# camera:count, and only with its number of domes (multidome).
+version: 4
 
 add_tags:
-  id: rule:publish@3:add_tags
+  id: rule:publish@4:add_tags
   rationale: >-
     An added camera becomes a node man_made=surveillance, surveillance:type=camera, and
     surveillance=outdoor: it was placed on site, seen from the street (Key:surveillance:
@@ -28,7 +30,7 @@ add_tags:
   tags: {man_made: surveillance, "surveillance:type": camera, surveillance: outdoor}
 
 answers:
-  id: rule:publish@3:answers
+  id: rule:publish@4:answers
   rationale: >-
     Only these answers leave, each as its tag; everything else never does: a tilt or a
     height (a class, not a measure: height and camera:angle are measured values; since
@@ -48,6 +50,8 @@ answers:
     bullet: {"camera:type": fixed}
     ptz: {"camera:type": panning}
     multi: {"camera:type": panorama}
+    multidome: {"camera:type": dome}  # with dome_count's key, else nothing: multidome
+  dome_count: camera:count  # a multi-dome's number of domes, a whole number (multidome)
   direction: camera:direction  # the bearing, a whole number 0-359
   height: {}  # no class sends anything (version 2)
   operator:  # plus operator=<name> when one was chosen or accepted; household: nothing, ever
@@ -57,8 +61,30 @@ answers:
   verify:  # the key that takes the day of the observation; not_found: nothing
     present: check_date
 
+multidome:
+  id: rule:publish@4:multidome
+  rationale: >-
+    A multi-dome (« Multi-boules », several domes around one housing, DECISIONS
+    2026-10-23) is one object on OSM as on the map: camera:type=dome, the documented value
+    each of its cameras has (Key:camera:type: fixed, panning, dome, panorama,
+    panorama_with_ptz, doorbell; none for such an assembly), and camera:count, its number
+    of domes. camera:count has no wiki page (2026-10-23), and Tag:man_made=surveillance
+    only says « Place a node at the location of the camera »; it has a clear use on
+    taginfo (2026-10-23), the owner's criterion: 364 objects, whole values 1 to 6 only (2:
+    200, 3: 77, 1: 39, 4: 24, 5: 20, 6: 4), 79.7 % of them with man_made, 78.3 % with
+    surveillance:type, 75.6 % with camera:type; France's extract (2026-10-16) has 84 domes
+    with camera:count >= 2. So the answer leaves only with its number: camera:type=dome
+    alone would say one dome, which is false. Without a number it stays on Surveillance
+    World, and the person is told why (`reason`: the answer to her send, and « Compte »'s
+    history while her choice is on). camera:number (43 objects on taginfo, an id as often
+    as a count) and the suffixed keys (camera:type:2, 81 objects) are never written. Held
+    as every shape answer (rules/contributions.yaml fine_conflict reads camera:count) and
+    never overwritten (never_overwrite): another camera:count on the node is a conflict
+    the review sees.
+  reason: multidome_count_unknown
+
 held:
-  id: rule:publish@3:held
+  id: rule:publish@4:held
   rationale: >-
     Before anything is sent, each existing node is read again. A move or « Toujours là »
     is held against the node's version (the one it was made on, or the one the deploy
@@ -71,7 +97,7 @@ held:
   keys: {}
 
 household:
-  id: rule:publish@3:household
+  id: rule:publish@4:household
   rationale: >-
     A camera with any « Particulier » answer (anyone's) that is neither rejected nor
     withdrawn is a private individual's: nothing about it ever leaves, nor is it listed —
@@ -79,7 +105,7 @@ household:
     public photo).
 
 latest:
-  id: rule:publish@3:latest
+  id: rule:publish@4:latest
   rationale: >-
     Per camera and per question, only the person's own latest accepted answer counts (the
     day of observation, then the review's decision order, as the build ranks them); it is
@@ -90,7 +116,7 @@ latest:
     nothing and are not counted.
 
 never_overwrite:
-  id: rule:publish@3:never_overwrite
+  id: rule:publish@4:never_overwrite
   rationale: >-
     A tag is set only when the node lacks it: an equal value means nothing to send (the
     contribution counts as published, with no changeset), a different one is a conflict
@@ -99,7 +125,7 @@ never_overwrite:
     is not a date (YYYY, YYYY-MM or YYYY-MM-DD) is a conflict too.
 
 changeset:
-  id: rule:publish@3:changeset
+  id: rule:publish@4:changeset
   rationale: >-
     One changeset per person and per pass of the job (the Automated Edits code of conduct:
     one changeset per edit is « extremely hard to read »), at most max_cameras cameras.
@@ -133,7 +159,7 @@ changeset:
     verify: [vérification, vérifications]
 
 max_cameras:
-  id: rule:publish@3:max_cameras
+  id: rule:publish@4:max_cameras
   rationale: >-
     At most this many cameras per changeset: a changeset stays small enough to review on
     OSM, and one pass's checks (one node read per camera) stay short. Beyond it, the
@@ -142,7 +168,7 @@ max_cameras:
   value: 50
 
 consent:
-  id: rule:publish@3:consent
+  id: rule:publish@4:consent
   rationale: >-
     The choice in « Compte » is the consent (the owner's condition 1): only what the
     person observed on or after the day she chose « Publier aussi sur OpenStreetMap en mon
@@ -151,7 +177,7 @@ consent:
     token, starts a new consent day; renewing a token she still has keeps hers.
 
 exact:
-  id: rule:publish@3:exact
+  id: rule:publish@4:exact
   rationale: >-
     Exactly what the person sent (the owner's condition 2): the reviewer accepts or
     rejects, never edits. A decision that changed a value — a proposed operator name
@@ -160,7 +186,7 @@ exact:
     publiée »); a name kept as typed (proposed) leaves.
 
 duplicate:
-  id: rule:publish@3:duplicate
+  id: rule:publish@4:duplicate
   rationale: >-
     Before a node is created, OSM is read around it (GET /map, a box twice this distance):
     an OSM camera within duplicate_m — man_made=surveillance unless every surveillance:type
@@ -172,7 +198,7 @@ duplicate:
   not_cameras: [guard, gunshot_detector, sensor, radar, microphone]
 
 sync:
-  id: rule:publish@3:sync
+  id: rule:publish@4:sync
   rationale: >-
     The API's job (lacarte.api.sync, in the API's process) passes every every_minutes, and
     once first_pass_s after the API starts (a deploy restarts it after the settle). At
