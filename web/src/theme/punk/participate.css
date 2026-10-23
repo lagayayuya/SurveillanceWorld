@@ -453,6 +453,11 @@
 
 /* --- a phone: 4a, the sheet over the whole screen ------------------------------------- */
 @media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  /* 16 px where 20a writes 14: under 16, an iPhone zooms the whole page on the field and
+     leaves it zoomed (docs/interface/participation.md, « Écarts à la maquette »). */
+  :root[data-ui="punk"] #modify-operator-search {
+    font-size: 16px;
+  }
   :root[data-ui="punk"] #modify-panel {
     inset: 0;
     width: auto;

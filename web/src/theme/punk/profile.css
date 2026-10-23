@@ -1212,6 +1212,13 @@
     min-height: 44px;
   }
 }
+/* 16 px where 25a writes 15: under 16, an iPhone zooms the whole page on the field and
+   leaves it zoomed (docs/interface/accounts.md, « Écarts à la maquette »). */
+@media (max-width: 600px), (pointer: coarse) and (max-height: 500px) {
+  :root[data-ui="punk"] #sheet .board-field input {
+    font-size: 16px;
+  }
+}
 
 /* --- motion: 17a's spring, the press, the podium ---------------------------------------- */
 @media (prefers-reduced-motion: no-preference) {
