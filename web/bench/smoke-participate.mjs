@@ -19,7 +19,6 @@
 // bench's accounts of tests/apiserver.py, web/bench/session.mjs; rev, an administrator, by
 // /revue's privileged entry, POST /api/review/session, once through /revue's own form).
 //   node bench/smoke-participate.mjs [--browser webkit|chromium] [--proxy auto|caddy|node]
-//     [--ui classique|punk]
 import { execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import http from "node:http";
@@ -28,20 +27,18 @@ import { join, resolve } from "node:path";
 import { chromium, devices, webkit } from "playwright";
 import { DIST, preview, requireTiles, WEB } from "./dist.mjs";
 import { BENCH_PASSWORD, COOKIE, entryOf, reauthOf, sessionOf } from "./session.mjs";
-import { uiArg, withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
 // The API loads data/build/ci (tests/apiserver.py): the map must show the same build.
 requireTiles("ci", true);
 const engine = arg("--browser", "webkit");
-// Punk (DECISIONS 2026-10-08): « Modifier » replaces « Déplacer » and « Compléter » on the
-// camera sheet; the moves and the answers go through it.
-const punk = uiArg(args) === "punk";
-// The height in metres in punk (the author's point 5 of 2026-10-12: « ~2 m », « ~4 m »,
-// « 6 m et + », no « Poteau »), in the editor and on the camera sheet; the classique keeps
-// its floors (« 1er étage (≈ 4 m) »).
-const FIRST = punk ? "~4 m" : "1er étage";
+// DECISIONS 2026-10-08: « Modifier » replaces « Déplacer » and « Compléter » on the camera
+// sheet; the moves and the answers go through it.
+// The height in metres (the author's point 5 of 2026-10-12: « ~2 m », « ~4 m », « 6 m et
+// + », no « Poteau »), in the editor and on the camera sheet.
+const FIRST = "~4 m";
 const EDIT_FIRST = "~4 m";
 const hasCaddy = (() => {
   try {
@@ -88,35 +85,6 @@ const waitFor = async (what, test, ms = 60000) => {
   throw new Error(`timeout waiting for ${what}`);
 };
 
-/** RFC 4180 rows (quoted fields, doubled quotes), as Python's csv module writes them. */
-function parseCsv(text) {
-  const rows = [];
-  let row = [];
-  let field = "";
-  let quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (c === '"') quoted = false;
-      else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ",") {
-      row.push(field);
-      field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field);
-      rows.push(row);
-      row = [];
-      field = "";
-    } else field += c;
-  }
-  if (field || row.length) rows.push([...row, field]);
-  return rows;
-}
 const basic = (user) => `Basic ${Buffer.from(`${user}:${PW}`).toString("base64")}`;
 const ORIGIN = APP.slice(0, -1);
 /** Past the gate as `user`, signed in to the API as the account of the same name. */
@@ -352,9 +320,6 @@ async function idle(page) {
   );
 }
 
-const placementButton = (page, which) => page.locator(`.part-choice[data-placement="${which}"]`);
-const checked = (page, which) => placementButton(page, which).getAttribute("aria-checked");
-
 // --- punk: the one editor, adding and « Modifier » (DECISIONS 2026-10-08) -------------
 const ed = {
   view: (pg, v) => pg.waitForSelector(`#modify-panel[data-view="${v}"]`, { timeout: 20000 }),
@@ -467,55 +432,18 @@ const ed = {
   },
 };
 
-/** Start move mode on the fixture camera and choose `placement` ("facade" or "free");
- * punk: « Modifier »'s position view, always free. */
-async function startMove(page, fx, placement) {
+/** « Modifier »'s position view on the fixture camera (always free placement). */
+async function startMove(page, fx) {
   await openCamera(page, fx);
-  if (punk) {
-    await tap(page, page.locator("#part-modify"));
-    await ed.view(page, "sheet");
-    await tap(page, page.locator("#modify-position"));
-    await ed.view(page, "position");
-    return;
-  } else {
-    await tap(page, button(page, "Déplacer"));
-    const nearby = page.locator(".part-nearby button");
-    if (await nearby.count()) await tap(page, nearby.first());
-  }
-  await page.waitForSelector("#move-panel");
-  if (!moveChecked) {
-    // The fixture camera's mount decides the preselection; unknown: none, "Valider" waits.
-    const none =
-      (await checked(page, "facade")) === "false" && (await checked(page, "free")) === "false";
-    const disabled = await page.locator("#move-submit").isDisabled();
-    check(
-      "placement: nothing preselected for an unknown mount, Valider waits",
-      fx.mg !== "unknown" || (none && disabled),
-      `mg=${fx.mg} none=${none} disabled=${disabled}`,
-    );
-    moveChecked = true;
-  }
-  await tap(page, placementButton(page, placement === "facade" ? "free" : "facade"));
-  await tap(page, placementButton(page, placement));
-  const other = placement === "facade" ? "free" : "facade";
-  check(
-    `placement: ${placement} and ${other} are exclusive`,
-    (await checked(page, placement)) === "true" && (await checked(page, other)) === "false",
-  );
-  await page.waitForFunction(
-    () => document.getElementById("move-status")?.textContent.includes("champ recalculé"),
-    null,
-    { timeout: 20000 },
-  );
+  await tap(page, page.locator("#part-modify"));
+  await ed.view(page, "sheet");
+  await tap(page, page.locator("#modify-position"));
+  await ed.view(page, "position");
 }
 
 /** « Valider » the position; punk: « Ici », back on « Modifier », its one change sent,
  * « Terminer ». */
 async function submitMove(page) {
-  if (!punk) {
-    await tap(page, page.locator("#move-submit"));
-    return;
-  }
   await tap(page, page.locator("#modify-here"));
   await ed.view(page, "sheet");
   await ed.send(page);
@@ -565,25 +493,6 @@ async function bringToCentre(page, context, target, hold) {
   await page.waitForTimeout(700); // debounce + preview
 }
 
-/** The pin: where its tip is on screen, and what it says (phone or server, pulled). */
-const pinState = (page) =>
-  page.evaluate(() => {
-    const pin = document.getElementById("move-pin");
-    const m = window.__map;
-    const box = m.getContainer().getBoundingClientRect();
-    const c = m.project(m.getCenter());
-    const at = [Number(pin.dataset.lng), Number(pin.dataset.lat)];
-    const q = m.project(at);
-    const r = pin.getBoundingClientRect();
-    return {
-      source: pin.dataset.source,
-      pulled: pin.dataset.pulled === "true",
-      at,
-      // the element's origin is the tip: where it is drawn vs where it says it is
-      drawnOff: Math.hypot(r.left - (box.left + q.x), r.top - (box.top + q.y)),
-      fromCentrePx: Math.hypot(q.x - c.x, q.y - c.y),
-    };
-  });
 const metres = (a, b) => {
   const rad = Math.PI / 180;
   const dx = (b[0] - a[0]) * rad * Math.cos(((a[1] + b[1]) / 2) * rad) * 6371008.8;
@@ -634,7 +543,6 @@ async function reviewMapIdle(pg) {
   );
 }
 
-let moveChecked = false;
 const newMove = async (before) =>
   (await review()).find((c) => c.kind === "move" && !before.has(c.uuid));
 
@@ -735,7 +643,7 @@ try {
     anon.join(","),
   );
 
-  browser = withUi(await (engine === "chromium" ? chromium : webkit).launch(), uiArg(args), true);
+  browser = benchBrowser(await (engine === "chromium" ? chromium : webkit).launch(), true);
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (options) => {
     const context = await recorded(await newContext(options));
@@ -784,11 +692,7 @@ try {
   await page.waitForSelector(".part-done");
   const done = await page.locator(".part-done").innerText();
   // Punk: from afar it earns nothing, so no 8a scene: the sheet says it is sent.
-  check(
-    "verify: thanked",
-    punk ? done === "Envoyé · en attente de revue" : done.includes("Merci"),
-    done,
-  );
+  check("verify: thanked", done === "Envoyé · en attente de revue", done);
   await waitFor("the verify stored", async () =>
     (await review()).some((c) => c.author === "ana" && c.answer === "present"),
   );
@@ -797,7 +701,7 @@ try {
   // 2. "Sur une façade": the map centre 2 m off a facade; the pin is pulled to 0.5 m by
   // the phone while the finger is still down, and the server agrees within 5 cm.
   let before = new Set((await review()).map((c) => c.uuid));
-  if (punk) {
+  {
     // 2'. Punk (DECISIONS 2026-10-08, « Placing a camera is always free… »): « Modifier »'s
     // position view, a small map, no façade / libre choice, no magnet, no « Me localiser »;
     // the pin's tip at the centre while the finger is down, the field drawn once it stops.
@@ -850,102 +754,6 @@ try {
         moved.payload.bands.features.length > 0,
       JSON.stringify({ placement: moved.payload.placement, pulled: moved.payload.pulled }),
     );
-  } else {
-    await startMove(page, fx, "facade");
-    // The server's answers wait while the slides go on (a route holding /api/preview): the
-    // hold reads the phone's own pull however slow the machine is, never an answer that
-    // came in during the finger's 150 ms pause (the debounce).
-    let open;
-    const gate = new Promise((r) => {
-      open = r;
-    });
-    const held = async (route) => {
-      await gate;
-      await route.continue().catch(() => {}); // a request the page aborted meanwhile
-    };
-    await page.route("**/api/preview", held);
-    // Away first, so that the last slide brings the target in with the finger down.
-    const [far] = await targetAndCentre(page, fx.target);
-    await slide(page, context, far, { x: far.x - 80, y: far.y - 60 });
-    let live = null;
-    await bringToCentre(page, context, fx.target, async () => {
-      // The facades load once at the start: the pull waits for them, not for a delay.
-      await page
-        .waitForFunction(
-          () => document.getElementById("move-pin")?.dataset.pulled === "true",
-          null,
-          {
-            timeout: 3000,
-          },
-        )
-        .catch(() => {});
-      live = await pinState(page);
-      if (process.env.SMOKE_SHOTS)
-        await page.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-facade-live.png`) });
-    });
-    open();
-    await page.unroute("**/api/preview", held);
-    check(
-      "façade: the pin follows the map and is pulled by the phone before the finger lifts",
-      live !== null &&
-        live.source === "phone" &&
-        live.pulled &&
-        live.fromCentrePx > 2 &&
-        live.drawnOff < 1.5,
-      JSON.stringify(live),
-    );
-    await page.waitForFunction(
-      () => document.getElementById("move-pin")?.dataset.source === "server",
-    );
-    const rest = await pinState(page);
-    const gap = live ? metres(live.at, rest.at) : Number.NaN;
-    check(
-      "façade: at rest the server's position wins, within 5 cm of the phone's",
-      rest.source === "server" && rest.pulled && gap < 0.05 && rest.drawnOff < 1.5,
-      `gap ${(gap * 100).toFixed(2)} cm ${JSON.stringify(rest)}`,
-    );
-    await page
-      .waitForFunction(
-        () => document.getElementById("move-status")?.textContent.includes("collée à la façade"),
-        null,
-        { timeout: 15000 },
-      )
-      .catch(() => {});
-    const status = await page.locator("#move-status").innerText();
-    const facade = await page.evaluate(
-      () => window.__map.querySourceFeatures("move-facade").length,
-    );
-    check(
-      "move: magnet pulls to the facade",
-      status.includes("collée à la façade") && facade > 0,
-      status,
-    );
-    await submitMove(page);
-    await page.waitForFunction(() => !document.body.classList.contains("moving"));
-    const ghostMove = await ghostShown(page, { camera: fx.camera });
-    check(
-      "proposal: the author's ghost shows right after the move, the map untouched",
-      ghostMove.shown,
-      JSON.stringify(ghostMove),
-    );
-    await idle(page);
-    const fields = await page.evaluate(
-      () => window.__map.queryRenderedFeatures({ layers: ["bands"] }).length,
-    );
-    check("move: the map's fields come back after move mode", fields > 0, `${fields} bands drawn`);
-    await waitFor("the move stored", async () => Boolean(await newMove(before)));
-    const moved = await newMove(before);
-    check(
-      "move: stored pulled, 0.5 m from the facade, with its field",
-      moved.payload.pulled === true &&
-        Math.abs(moved.payload.facade_m - 0.5) < 0.05 &&
-        moved.payload.bands.features.length > 0,
-      JSON.stringify({
-        pulled: moved.payload.pulled,
-        facade_m: moved.payload.facade_m,
-        move_m: moved.payload.move_m,
-      }),
-    );
   }
 
   // 2b. The proposal on the map and in the sheet, for every account.
@@ -961,7 +769,7 @@ try {
   await openCamera(page, fx);
   await idle(page);
   const onMap = {
-    badge: await proposalOnMap(page, punk ? "proposal-tape" : "proposal-badge"),
+    badge: await proposalOnMap(page, "proposal-tape"),
     ghost: await proposalOnMap(page, "proposal-ghost"),
     link: await proposalOnMap(page, "proposal-link"),
     field: await page.evaluate(() => window.__map.querySourceFeatures("proposal-field").length),
@@ -984,7 +792,7 @@ try {
       ownBlock.includes("votre"),
     ownBlock.replace(/\n/g, " / "),
   );
-  if (punk) {
+  {
     // The punk sheet is built in the order it is seen (WCAG 1.3.2, 2.4.3): the keyboard
     // meets its controls top to bottom, left to right — the proposal under the tickets,
     // the buttons after the facts (« Modifier », « Toujours là ? »), then « Partager »,
@@ -1040,7 +848,7 @@ try {
   );
   await page.evaluate(() => window.__map.jumpTo({ zoom: 13.6 }));
   await idle(page);
-  if (punk) {
+  {
     // Punk: no proposal mark before the stickers' zoom (DECISIONS 2026-10-09, « Pending
     // proposals… »): nothing drawn by any proposal layer at z13-14.
     const below = await page.evaluate(() => {
@@ -1061,9 +869,6 @@ try {
       below.ids > 0 && below.drawn === 0,
       JSON.stringify(below),
     );
-  } else {
-    const dot = await proposalOnMap(page, "proposal-dot");
-    check("proposal: a dot at z13-14", dot > 0, String(dot));
   }
 
   // bob confirms from the sheet, in one tap; rev validates from the sheet, in two.
@@ -1112,8 +917,8 @@ try {
 
   // Lot U: the camera's public history on its sheet — the move rev just validated, by the
   // month, « par un contributeur » (ana's pending « Elle est là » not in it); ana chooses to
-  // show her pseudonym (punk: her account's switch; the classique, which has no account
-  // screen, through the API) and the next opening of the sheet says it, then takes it back.
+  // show her pseudonym (her account's switch) and the next opening of the sheet says it,
+  // then takes it back.
   // Lot U2: each entry two lines at most — « Position corrigée · <mois année> », then who on
   // one line —, no tag nor dotted leader.
   const historyText = async (pg) => {
@@ -1164,16 +969,8 @@ try {
       !/contribution ·|\d{2}\/\d{2}/.test(anonymous),
     JSON.stringify(entries),
   );
-  /** ana's choice, from her account's screen (punk) or the API (classique). */
+  /** ana's choice, from her account's screen. */
   const chooseSigned = async (on) => {
-    if (!punk) {
-      const r = await asUser("ana", "/api/me/history-pseudonym", {
-        method: "PUT",
-        headers: { origin: ORIGIN, "content-type": "application/json" },
-        body: JSON.stringify({ on }),
-      });
-      return r.status === 204;
-    }
     await page.goto(`${APP}?open=${++opened}#16/${fx.at[1]}/${fx.at[0]}`);
     await tap(page, page.locator("#account-square"));
     const sw = page.locator("#sheet .board-signed");
@@ -1206,7 +1003,7 @@ try {
     `${turnedOff} ${again}`,
   );
   await bobHistory.close();
-  if (punk) {
+  {
     // Lot U: « Mes caméras » on the real API — ana's camera, its move « acceptée » and her
     // « Elle est là » « en attente »; a tap closes the screen and opens its sheet.
     await page.goto(`${APP}?open=${++opened}#16/${fx.at[1]}/${fx.at[0]}`);
@@ -1240,7 +1037,7 @@ try {
   // 3. "Libre" into a building's footprint (an awning, an arcade): no magnet, the real
   // position kept, found inside by the server.
   before = new Set((await review()).map((c) => c.uuid));
-  if (punk) {
+  {
     // Punk: placed inside the footprint (under a roof), kept there; no field, its direction
     // not surveyed (the server draws one there: tests/test_api_modify.py).
     await startMove(page, fx);
@@ -1264,37 +1061,6 @@ try {
         inside.payload.inside_footprint === true &&
         inside.payload.bands.features.length > 0,
       JSON.stringify({ inside: inside.payload.inside_footprint }),
-    );
-  } else {
-    await startMove(page, fx, "free");
-    await bringToCentre(page, context, fx.inside);
-    await page.waitForFunction(
-      () => document.getElementById("move-pin")?.dataset.source === "server",
-    );
-    const free = await pinState(page);
-    if (process.env.SMOKE_SHOTS)
-      await page.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-free.png`) });
-    check(
-      "free: the pin's tip stays at the centre, where the map is",
-      !free.pulled && free.fromCentrePx < 1 && free.drawnOff < 1.5,
-      JSON.stringify(free),
-    );
-    const freeFacade = await page.evaluate(
-      () => window.__map.querySourceFeatures("move-facade").length,
-    );
-    check("free: no facade pull shown", freeFacade === 0, `${freeFacade}`);
-    await submitMove(page);
-    await waitFor("the free move stored", async () => Boolean(await newMove(before)));
-    const inside = await newMove(before);
-    check(
-      "free: stored free, not pulled, inside a footprint",
-      inside.payload.placement === "free" &&
-        inside.payload.pulled === false &&
-        inside.payload.inside_footprint === true,
-      JSON.stringify({
-        placement: inside.payload.placement,
-        inside: inside.payload.inside_footprint,
-      }),
     );
   }
 
@@ -1345,22 +1111,6 @@ try {
   // (stored, out of the review list), "‹ Changer", the offline queue, and a private
   // individual's sheet without CNIL signal nor complaint link.
   const d2 = fx.complete;
-  // Per « Compléter » question: answers and « Je ne sais pas » / « Je ne vois pas », test
-  // accounts and withdrawn ones aside (the CSV holds every contribution; the statistics
-  // route that said it left with /revue's statistics).
-  const questionStats = async () => {
-    await reauthed();
-    const [head, ...rows] = parseCsv(await (await asUser("rev", "/api/review/export.csv")).text());
-    const col = (name) => head.indexOf(name);
-    const live = rows.filter((r) => r[col("status")] !== "withdrawn" && r[col("test")] !== "True");
-    return Object.fromEntries(
-      ["shape", "direction", "operator", "height", "tilt"].map((k) => {
-        const mine = live.filter((r) => r[col("kind")] === k);
-        const blank = mine.filter((r) => ["unknown", "not_visible"].includes(r[col("answer")]));
-        return [k, { count: mine.length, blank: blank.length }];
-      }),
-    );
-  };
   const page3 = await context.newPage();
   const openD2 = async (pg, c) => {
     if (await pg.evaluate(() => Boolean(window.__map)).catch(() => false)) await idle(pg);
@@ -1373,7 +1123,7 @@ try {
       return {
         pictos: m.getPaintProperty("cameras", "icon-opacity"),
         // The punk map draws its fields as one layer per level (layers.ts punkFields: `bands`
-        // stays at 0 there, kept for the tests' queries); the classique draws `bands`.
+        // stays at 0 there, kept for the tests' queries).
         fields: m.getLayer("field-1")
           ? m.getPaintProperty("field-1", "fill-opacity")
           : m.getPaintProperty("bands", "fill-opacity"),
@@ -1391,7 +1141,7 @@ try {
           : null,
       };
     });
-  if (punk) {
+  {
     // 4b'. « Modifier » (punk, DECISIONS 2026-10-08), in place of « Compléter »: its sheet,
     // the position ticket then Forme, Direction, Hauteur, Exploitant, each line's choices
     // under it — unfolded for what the camera only assumes, a tap unfolds the others; only
@@ -1763,144 +1513,6 @@ try {
     );
     await ed.finish(page3);
     await page3.unroute(contribPath, cut);
-  } else {
-    await openD2(page3, d2.three);
-    await tap(page3, page3.locator("#part-complete"));
-    await page3.waitForSelector("#complete-panel[data-step='shape']");
-    const during = await hidden(page3);
-    check(
-      "complete: only the basemap and the camera, every field and pictogram hidden",
-      during.pictos === 0 && during.fields === 0 && during.marker,
-      JSON.stringify(during),
-    );
-    check(
-      "complete: no « Passer » on the screens",
-      (await page3.locator("#complete-panel button", { hasText: "Passer" }).count()) === 0,
-    );
-    if (process.env.SMOKE_SHOTS)
-      await page3.screenshot({
-        path: join(process.env.SMOKE_SHOTS, `${engine}-complete-shape.png`),
-      });
-    const helpFirst = await page3.locator("#complete-panel .part-onsite-help").count();
-    const backOnExisting = await page3.locator("#complete-back").count();
-    await tap(page3, page3.locator("#complete-panel button[data-answer='unknown']"));
-    await page3.waitForSelector("#complete-panel[data-step='direction']");
-    const helpNext = await page3.locator("#complete-panel .part-onsite-help").count();
-    check(
-      "complete: « Activez Me localiser » on the first question only; no « ‹ Retour » on an existing camera",
-      helpFirst === 1 && helpNext === 0 && backOnExisting === 0,
-      `${helpFirst} then ${helpNext}, back ${backOnExisting}`,
-    );
-    // Too close: "Valider" waits; then the target 15 m north-east, by a finger slide.
-    const tooClose = await page3.locator("#aim-submit").isDisabled();
-    const target = await page3.evaluate(
-      ([lon, lat]) => [lon + 0.00014, lat + 0.000095],
-      d2.three.at,
-    );
-    await bringToCentre(page3, context, target);
-    await page3.waitForFunction(
-      () => document.getElementById("complete-panel")?.dataset.bearing,
-      null,
-      {
-        timeout: 20000,
-      },
-    );
-    const bearing = Number(await page3.locator("#complete-panel").getAttribute("data-bearing"));
-    const cone = await page3.evaluate(() => window.__map.querySourceFeatures("aim-new").length);
-    check(
-      "complete: the bearing follows the target, Valider waits under 5 m, the cone is drawn",
-      tooClose && Math.abs(bearing - 45) <= 8 && cone > 0,
-      `bearing ${bearing}, cone ${cone}`,
-    );
-    if (process.env.SMOKE_SHOTS)
-      await page3.screenshot({
-        path: join(process.env.SMOKE_SHOTS, `${engine}-complete-direction.png`),
-      });
-    await tap(page3, page3.locator("#aim-submit"));
-    await page3.waitForSelector("#complete-panel[data-step='operator']");
-    await tap(page3, page3.locator("button[data-answer='public']"));
-    await page3.waitForSelector("button[data-answer='change']", { timeout: 20000 });
-    const names = await page3.locator("button[data-operator]").allInnerTexts();
-    await tap(page3, page3.locator("button[data-answer='change']"));
-    await page3.waitForSelector("button[data-answer='household']");
-    await tap(page3, page3.locator("button[data-answer='household']"));
-    await page3.waitForSelector("#complete-panel[data-step='done']");
-    check(
-      "complete: the operator list ends with « Autre ou je ne sais pas », « ‹ Changer » sends nothing",
-      names.at(-1) === "Autre ou je ne sais pas" && names.length >= 1,
-      names.join(" | "),
-    );
-    await tap(page3, page3.locator("#complete-panel button", { hasText: "Terminer" }));
-    const after = await hidden(page3);
-    check(
-      "complete: fields and pictograms come back after the questions",
-      after.pictos !== 0 && after.fields !== 0 && !after.marker,
-      JSON.stringify(after),
-    );
-    await waitFor("the three answers stored", async () => {
-      const q = await questionStats();
-      return q.shape.count === 1 && q.direction.count === 1 && q.operator.count === 1;
-    });
-    const listed = (await review()).filter((c) =>
-      ["shape", "direction", "operator"].includes(c.kind),
-    );
-    const dir = listed.find((c) => c.kind === "direction");
-    check(
-      "complete: three contributions; « Je ne sais pas » counted, not in the review list",
-      (await questionStats()).shape.blank === 1 &&
-        listed.length === 2 &&
-        dir?.direction === bearing &&
-        listed.some((c) => c.kind === "operator" && c.answer === "household"),
-      JSON.stringify(listed.map((c) => [c.kind, c.answer, c.direction])),
-    );
-
-    // Offline: three answers queued on the phone, sent when the network comes back.
-    await openD2(page3, d2.three);
-    offline = true;
-    await context.setOffline(true);
-    await tap(page3, page3.locator("#part-complete"));
-    await page3.waitForSelector("#complete-panel[data-step='shape']");
-    await tap(page3, page3.locator(".part-shape[data-answer='dome']"));
-    await page3.waitForSelector("#complete-panel[data-step='direction']");
-    const domeLine = await page3.locator("#complete-panel .part-hint.muted").count();
-    // Phase D3: a dome gets no « Hauteur et inclinaison » (shape, direction, who films).
-    const domeSteps = await page3.locator("#complete-panel .part-step").innerText();
-    if (process.env.SMOKE_SHOTS)
-      await page3.screenshot({
-        path: join(process.env.SMOKE_SHOTS, `${engine}-complete-dome.png`),
-      });
-    check(
-      "complete: a dome gets no height and tilt screen",
-      domeSteps === "Question 2 sur 3",
-      domeSteps,
-    );
-    await tap(page3, page3.locator("button[data-answer='not_visible']"));
-    await page3.waitForSelector("#complete-panel[data-step='operator']");
-    await tap(page3, page3.locator("#complete-panel button[data-answer='unknown']"));
-    await page3.waitForSelector("#complete-panel[data-step='done']");
-    const doneText = await page3.locator("#complete-panel .part-done").innerText();
-    const counter3 = await page3.locator("#queue-count").innerText();
-    check(
-      "complete offline: the dome's hint, three answers kept on the phone",
-      domeLine === 1 && doneText.includes("sur ce téléphone") && counter3.includes("3 en attente"),
-      `${doneText} | ${counter3}`,
-    );
-    await tap(page3, page3.locator("#complete-panel button", { hasText: "Terminer" }));
-    await context.setOffline(false);
-    await page3.waitForFunction(() => document.getElementById("queue-count").hidden, null, {
-      timeout: 45000,
-    });
-    offline = false;
-    const q3 = await questionStats();
-    check(
-      "complete offline: resent; « Je ne vois pas » and « Je ne sais pas » counted",
-      q3.shape.count === 2 && q3.direction.blank === 1 && q3.operator.blank === 1,
-      JSON.stringify({
-        shape: q3.shape,
-        direction: q3.direction.blank,
-        operator: q3.operator.blank,
-      }),
-    );
   }
 
   // A private individual's camera (the CI fixture's validated "Particulier").
@@ -2213,7 +1825,7 @@ try {
     "review: CSV export (the administrator's, after the password again), one line per contribution",
     // Every contribution, the 6 "Compléter" answers included: 12 rows and the header;
     // punk, the cut and the refused sends' piece each (4b', withdrawn) too.
-    csv.startsWith("uuid,kind,camera") && csv.trim().split("\n").length === (punk ? 15 : 13),
+    csv.startsWith("uuid,kind,camera") && csv.trim().split("\n").length === 15,
     `${csv.trim().split("\n").length - 1} rows`,
   );
 
@@ -2369,7 +1981,7 @@ try {
   await gate.click('.review-tab[data-tab="retraits"]');
   await gate.waitForSelector("#review-hidden #review-hide-id");
   // The view loaded (its list said) before typing, as one reads it first: typed at once
-  // after the tab, the field lost its link twice in WebKit classique (lot U2's gate; a pause
+  // after the tab, the field lost its link twice in WebKit (lot U2's gate; a pause
   // of any kind made it pass, the field the same element, no reload).
   await gate.waitForFunction(
     () => (document.querySelector("#review-hidden .review-hidden-list")?.textContent ?? "") !== "",
@@ -2542,25 +2154,6 @@ try {
   const adds = async () => (await review()).filter((c) => c.kind === "add");
   const onAdd = async (uuid) => (await review()).filter((c) => c.target === uuid);
   let loads = 0;
-  /** The position screen at `at`, `placement` chosen; waits for the server's pin when
-   * online. */
-  const addAt = async (pg, at, placement, online = true) => {
-    lastPage = pg;
-    if (await pg.evaluate(() => Boolean(window.__map)).catch(() => false)) await idle(pg);
-    if (online) await pg.goto(`${APP}?add=${++loads}#18.00/${at[1]}/${at[0]}`);
-    await pg.waitForSelector("#fab-add:not([hidden]):not([aria-disabled='true'])", {
-      timeout: 60000,
-    });
-    await tap(pg, pg.locator("#fab-add"));
-    await pg.waitForSelector("#move-panel");
-    await tap(pg, placementButton(pg, placement));
-    if (online)
-      await pg.waitForFunction(
-        () => document.getElementById("move-status")?.textContent.includes("aperçu du champ"),
-        null,
-        { timeout: 20000 },
-      );
-  };
   const page6 = await context.newPage();
   // While offline by design, tile fetches fail (WebKit: "... due to access control checks").
   page6.on(
@@ -2569,9 +2162,7 @@ try {
   );
   // The button: "＋ Ajouter", greyed below z17 (punk: below the street level, z15,
   // DECISIONS 2026-10-09); a tap there says "Zoomez pour ajouter" and opens nothing.
-  await page6.goto(
-    `${APP}?add=${++loads}#${punk ? "14.50" : "16.50"}/${ADD.full[1]}/${ADD.full[0]}`,
-  );
+  await page6.goto(`${APP}?add=${++loads}#14.50/${ADD.full[1]}/${ADD.full[0]}`);
   await page6.waitForSelector("#fab-add:not([hidden])", { timeout: 60000 });
   const greyed = await page6
     .locator("#fab-add")
@@ -2587,7 +2178,7 @@ try {
       !panelOpened,
     `${greyed} | ${zoomSaid}`,
   );
-  if (punk) {
+  {
     // Punk: active from the street level; a tap at z16.5 zooms to z17, then opens the add.
     await page6.evaluate(() => window.__map.jumpTo({ zoom: 16.5 }));
     await page6.waitForSelector("#fab-add:not([aria-disabled='true'])", { timeout: 20000 });
@@ -2603,52 +2194,10 @@ try {
     await page6.waitForTimeout(500);
   }
 
-  // The add's question screens (phase "Retours terrain": every add goes through them).
-  const waitStep = (pg, name) =>
-    pg.waitForSelector(`#complete-panel[data-step='${name}']`, { timeout: 20000 });
-  const back = async (pg) => tap(pg, pg.locator("#complete-back"));
-  const aimAndValidate = async (pg) => {
-    await pg.evaluate(() => {
-      const m = window.__map;
-      const c = m.getCenter();
-      m.jumpTo({ center: [c.lng + 0.00018, c.lat + 0.00011] });
-    });
-    await pg.waitForFunction(() => document.querySelector("#complete-panel")?.dataset.bearing);
-    await tap(pg, pg.locator("#aim-submit"));
-  };
-  const answerPublic = async (pg) => {
-    await tap(pg, pg.locator("button[data-answer='public']"));
-    await pg
-      .waitForSelector("#complete-panel[data-step='done'], button[data-operator='']", {
-        timeout: 20000,
-      })
-      .catch(() => {});
-    const offered = await pg.locator("button[data-operator='']").count();
-    if (offered) await tap(pg, pg.locator("button[data-operator='']"));
-    await waitStep(pg, "done");
-    return offered;
-  };
-  const allUnknown = async (pg) => {
-    await waitStep(pg, "shape");
-    await tap(pg, pg.locator("#complete-panel button[data-answer='unknown']"));
-    await waitStep(pg, "direction");
-    await tap(pg, pg.locator("button[data-answer='not_visible']"));
-    await waitStep(pg, "operator");
-    await tap(pg, pg.locator("#complete-panel button[data-answer='unknown']"));
-    await waitStep(pg, "done");
-  };
-  const recap = (pg) =>
-    pg.locator(".part-recap").evaluate((dl) => {
-      const out = {};
-      const dts = dl.querySelectorAll("dt");
-      for (const dt of dts) out[dt.textContent] = dt.nextElementSibling?.textContent;
-      return out;
-    });
-
   let full;
   let alone;
   let beside;
-  if (punk) {
+  {
     // 6'. Punk (DECISIONS 2026-10-08): the add is « Modifier »'s component — the position
     // first (always free, its field once the pin stops), the duplicates within 5 m, then
     // the sheet, every line's choices under it (only the direction opens the map); nothing
@@ -2955,304 +2504,6 @@ try {
     );
     await idle(page6);
     await page6.close();
-  } else {
-    // 6a. A complete add: on a facade, then shape, direction and who films; « ‹ Retour » on
-    // every screen (back to the position screen too), answers kept and shown, a shape that
-    // drops the direction question and one that brings it back, the summary before sending.
-    await addAt(page6, ADD.full, "facade");
-    const helpOnPosition = await page6.locator("#move-panel .part-onsite-help").count();
-    const sendAlone = await page6.locator("#add-send").count();
-    await tap(page6, page6.locator("#move-submit"));
-    await waitStep(page6, "shape");
-    const helpOnQuestion = await page6.locator("#complete-panel .part-onsite-help").count();
-    check(
-      "add: « Activez Me localiser » on the position screen, not on its questions; no « Envoyer la position seule »",
-      helpOnPosition === 1 && helpOnQuestion === 0 && sendAlone === 0,
-      `${helpOnPosition} then ${helpOnQuestion}, ${sendAlone} send-alone`,
-    );
-    const tiles = await page6
-      .locator(".part-shapes .part-shape")
-      .evaluateAll((bs) => bs.map((b) => b.dataset.answer));
-    if (process.env.SMOKE_SHOTS)
-      await page6.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-add-shape.png`) });
-    check(
-      "add: the shape screen offers dome, tube, big ball and « Je ne sais pas », no « Plusieurs objectifs »",
-      tiles.join(",") === "dome,bullet,ptz,unknown",
-      tiles.join(","),
-    );
-    // Back to the position screen, the placement kept; « Continuer » again.
-    await back(page6);
-    await page6.waitForSelector("#move-panel", { timeout: 20000 });
-    const keptPlacement = await checked(page6, "facade");
-    await page6.waitForFunction(() => !document.getElementById("move-submit")?.disabled, null, {
-      timeout: 20000,
-    });
-    await tap(page6, page6.locator("#move-submit"));
-    await waitStep(page6, "shape");
-    check(
-      "add: « ‹ Retour » from the first question, the position screen with its placement",
-      keptPlacement === "true",
-      keptPlacement,
-    );
-    await tap(page6, page6.locator(".part-shape[data-answer='dome']"));
-    await waitStep(page6, "direction");
-    // Not sent yet: the field aimed from where the server will place it.
-    await page6.evaluate(() => {
-      const m = window.__map;
-      const c = m.getCenter();
-      m.jumpTo({ center: [c.lng + 0.00018, c.lat + 0.00011] });
-    });
-    await page6.waitForFunction(() => document.querySelector("#complete-panel")?.dataset.bearing);
-    await page6.waitForFunction(
-      () => window.__map.querySourceFeatures("aim-new").length > 0,
-      null,
-      {
-        timeout: 20000,
-      },
-    );
-    await tap(page6, page6.locator("#aim-submit"));
-    await waitStep(page6, "operator");
-    const offered = await answerPublic(page6);
-    const firstRecap = await recap(page6);
-    // Back: the operator screen shows « Public », the direction its bearing, the shape the dome.
-    await back(page6);
-    await waitStep(page6, "operator");
-    const opPressed = await page6
-      .locator("button[data-answer='public']")
-      .getAttribute("aria-pressed");
-    await back(page6);
-    await waitStep(page6, "direction");
-    const dirGiven = await page6.locator(".part-given").count();
-    await back(page6);
-    await waitStep(page6, "shape");
-    const domePressed = await page6
-      .locator(".part-shape[data-answer='dome']")
-      .getAttribute("aria-pressed");
-    check(
-      "add: « ‹ Retour » keeps and shows the answers (who films, direction, shape)",
-      opPressed === "true" && dirGiven === 1 && domePressed === "true",
-      JSON.stringify({ opPressed, dirGiven, domePressed }),
-    );
-    // A big hanging ball: no direction question, the direction given goes.
-    await tap(page6, page6.locator(".part-shape[data-answer='ptz']"));
-    await waitStep(page6, "operator");
-    await answerPublic(page6);
-    const noDirection = await recap(page6);
-    // Back to the shape, a dome again: the direction question comes back, unanswered.
-    await back(page6);
-    await waitStep(page6, "operator");
-    await back(page6);
-    await waitStep(page6, "shape");
-    await tap(page6, page6.locator(".part-shape[data-answer='dome']"));
-    await waitStep(page6, "direction");
-    const dirAgain = await page6.locator(".part-given").count();
-    await aimAndValidate(page6);
-    await waitStep(page6, "operator");
-    await answerPublic(page6);
-    const last = await recap(page6);
-    check(
-      "add: changing the shape drops the direction (big ball) and brings it back (dome)",
-      !("Direction" in noDirection) &&
-        noDirection.Forme === "grosse boule suspendue" &&
-        dirAgain === 0 &&
-        /^\d+°$/.test(last.Direction ?? ""),
-      JSON.stringify({ noDirection, last }),
-    );
-    if (process.env.SMOKE_SHOTS)
-      await page6.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-add-send.png`) });
-    const lastScreen = await page6.locator("#complete-panel").innerText();
-    const beforeSend = (await adds()).length;
-    check(
-      "add: nothing leaves before « Envoyer l'ajout »; the last screen sums the answers up",
-      beforeSend === 0 &&
-        lastScreen.includes("Rien n'est encore parti") &&
-        offered > 0 &&
-        firstRecap.Forme === "petit dôme" &&
-        /^\d+°$/.test(firstRecap.Direction ?? "") &&
-        (firstRecap["Qui filme"] ?? "").startsWith("public") &&
-        last.Forme === "petit dôme",
-      JSON.stringify({ firstRecap, last }),
-    );
-    await tap(page6, page6.locator("#add-commit"));
-    await waitFor("the add and its answers", async () => (await adds()).length === 1);
-    full = (await adds())[0];
-    await waitFor("its three answers", async () => (await onAdd(full.uuid)).length === 3);
-    const answers = await onAdd(full.uuid);
-    const ghostAdd = await ghostShown(page6, { camera: full.camera });
-    check(
-      "add: the author's ghost shows right after the questions, the map untouched",
-      ghostAdd.shown,
-      JSON.stringify(ghostAdd),
-    );
-    check(
-      "add: complete — on a facade, the camera's id from its uuid, three answers on it (one each)",
-      full.camera === `c${full.uuid.replaceAll("-", "").slice(0, 12)}` &&
-        full.payload.pulled === true &&
-        full.osm_type === null &&
-        answers.every((a) => a.camera === full.camera && a.osm_type === null) &&
-        answers.length === 3 &&
-        new Set(answers.map((a) => a.kind)).size === 3 &&
-        answers.find((a) => a.kind === "shape")?.answer === "dome",
-      JSON.stringify({
-        pulled: full.payload.pulled,
-        kinds: answers.map((a) => [a.kind, a.answer]),
-      }),
-    );
-
-    // 6b. "Je ne sais pas" everywhere: the summary says so, the add leaves with its three
-    // answers (statistics only: out of the review list, in the camera's window).
-    await addAt(page6, ADD.alone, "free");
-    await tap(page6, page6.locator("#move-submit"));
-    await allUnknown(page6);
-    const unknownRecap = await recap(page6);
-    await tap(page6, page6.locator("#add-commit"));
-    await waitFor("the add with « je ne sais pas »", async () => (await adds()).length === 2);
-    alone = (await adds()).find((c) => c.uuid !== full.uuid);
-    let aloneWindow;
-    await waitFor("its answers", async () => {
-      aloneWindow = await (await asUser("rev", `/api/review/camera?camera=${alone.camera}`)).json();
-      return aloneWindow.contributions.length === 4;
-    });
-    check(
-      "add: « Je ne sais pas » on each question, said in the summary, stored free with its 3 answers",
-      alone.payload.placement === "free" &&
-        (await onAdd(alone.uuid)).length === 0 &&
-        Object.values(unknownRecap).every((v) => /je ne (sais|vois) pas/.test(v)) &&
-        Object.keys(unknownRecap).length === 3,
-      JSON.stringify(unknownRecap),
-    );
-
-    // 6c. Duplicates: a camera of the map 2 m away is listed; a tap opens its sheet and
-    // sends nothing; "Non, c'en est une autre" sends, the camera kept in `near`.
-    await addAt(page6, ADD.near, "free");
-    await tap(page6, page6.locator("#move-submit"));
-    await page6.waitForSelector("#move-panel[data-step='duplicates']");
-    const dupes = await page6
-      .locator(".part-duplicate")
-      .evaluateAll((bs) => bs.map((b) => b.dataset.camera));
-    check("add: duplicates list the camera 2 m away", dupes.includes(ADD.nearCamera), `${dupes}`);
-    await tap(page6, page6.locator(`.part-duplicate[data-camera='${ADD.nearCamera}']`));
-    await page6.waitForFunction(
-      () =>
-        [...document.querySelectorAll(".participate button")].some(
-          (b) => b.textContent === "Toujours là ?",
-        ),
-      null,
-      { timeout: 20000 },
-    );
-    // n1925222797 in focus: osm id * 3 + 0 (tiles.numeric_id).
-    const focused = await page6.evaluate(() =>
-      JSON.stringify(window.__map.getFilter("camera-selected")),
-    );
-    check(
-      "add: a listed camera opens its sheet, nothing sent",
-      focused.includes(String(1925222797 * 3)) && (await adds()).length === 2,
-      focused.slice(0, 80),
-    );
-    await addAt(page6, ADD.near, "free");
-    await tap(page6, page6.locator("#move-submit"));
-    await page6.waitForSelector("#move-panel[data-step='duplicates']");
-    await tap(page6, page6.locator("#add-other"));
-    await allUnknown(page6);
-    await tap(page6, page6.locator("#add-commit"));
-    await waitFor("the add beside a camera", async () => (await adds()).length === 3);
-    beside = (await adds()).find((c) => ![full.uuid, alone.uuid].includes(c.uuid));
-    check(
-      "add: « Non, c'en est une autre » sends, the camera kept in near",
-      beside.payload.near.includes(ADD.nearCamera),
-      JSON.stringify(beside.payload.near),
-    );
-
-    // 6c'. Abandoned after an answer: « Abandonner cet ajout ? » in two steps, nothing leaves.
-    const beforeAbandon = (await adds()).length;
-    await addAt(page6, [ADD.full[0], ADD.full[1] + 0.0004], "free"); // ~45 m north
-    await tap(page6, page6.locator("#move-submit"));
-    await page6.waitForSelector("#complete-panel[data-step='shape'], #add-other", {
-      timeout: 20000,
-    });
-    if (await page6.locator("#add-other").count()) await tap(page6, page6.locator("#add-other"));
-    await page6.waitForSelector("#complete-panel[data-step='shape']", { timeout: 20000 });
-    await tap(page6, page6.locator(".part-shape[data-answer='dome']"));
-    await page6.waitForSelector("#complete-panel[data-step='direction']");
-    await tap(page6, page6.locator("#complete-panel .part-close"));
-    await page6.waitForSelector("#add-abandon");
-    if (process.env.SMOKE_SHOTS)
-      await page6.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-add-abandon.png`) });
-    const asked = await page6.locator(".part-abandon").innerText();
-    await tap(page6, page6.locator("#add-abandon"));
-    await page6.waitForFunction(() => !document.getElementById("complete-panel"));
-    await page6.waitForTimeout(1500);
-    const queuedAfter = await page6.locator("#queue-count").isVisible();
-    check(
-      "add: abandoned after an answer, asked first, nothing sent nor queued",
-      asked.includes("Abandonner cet ajout ?") &&
-        (await adds()).length === beforeAbandon &&
-        !queuedAfter,
-      asked.replace(/\n/g, " / "),
-    );
-
-    // 6d. Offline: the add and its answers wait on the phone, then leave, the add first.
-    // A settled map first: WebKit reports the tile fetches a navigation cuts off as errors.
-    await idle(page6);
-    await page6.goto(`${APP}?add=${++loads}#18.00/${ADD.offline[1]}/${ADD.offline[0]}`);
-    await page6.waitForSelector("#fab-add:not([hidden]):not([aria-disabled='true'])", {
-      timeout: 60000,
-    });
-    await idle(page6);
-    offline = true;
-    await context.setOffline(true);
-    await addAt(page6, ADD.offline, "free", false);
-    await tap(page6, page6.locator("#move-submit"));
-    await page6.waitForSelector("#complete-panel[data-step='shape']", { timeout: 20000 });
-    await tap(page6, page6.locator(".part-shape[data-answer='bullet']"));
-    await page6.waitForSelector("#complete-panel[data-step='direction']");
-    await tap(page6, page6.locator("button[data-answer='not_visible']"));
-    // A tube: « Hauteur et inclinaison » (phase D3); « Je ne sais pas » asks no tilt.
-    await page6.waitForSelector("#complete-panel[data-step='mount']");
-    await tap(page6, page6.locator("button[data-part='height'][data-answer='unknown']"));
-    await page6.waitForSelector("#complete-panel[data-step='operator']");
-    await tap(page6, page6.locator("button[data-answer='unknown']"));
-    await tap(page6, page6.locator("#add-commit"));
-    await page6
-      .waitForFunction(() =>
-        /5 en attente/.test(document.getElementById("queue-count").textContent),
-      )
-      .catch(() => {});
-    const waiting = await page6.locator("#queue-count").innerText();
-    const ghostQueued = await ghostShown(page6, { near: ADD.offline });
-    check(
-      "add: offline, its ghost shows from the queue, the map untouched",
-      ghostQueued.shown,
-      JSON.stringify(ghostQueued),
-    );
-    check(
-      "add: offline, the add and its four answers (a tube: its height too) wait on the phone",
-      waiting.includes("5 en attente"),
-      waiting,
-    );
-    await context.setOffline(false);
-    await page6.waitForFunction(() => document.getElementById("queue-count").hidden, null, {
-      timeout: 45000,
-    });
-    const ghostSent = await ghostShown(page6, { near: ADD.offline });
-    check(
-      "add: once sent on reconnect, its ghost stays, the map untouched",
-      ghostSent.shown,
-      JSON.stringify(ghostSent),
-    );
-    await idle(page6); // the tiles refused while offline, fetched again
-    offline = false;
-    const queued = (await adds()).find(
-      (c) => ![full.uuid, alone.uuid, beside.uuid].includes(c.uuid),
-    );
-    const queuedShape = queued ? await onAdd(queued.uuid) : [];
-    check(
-      "add: offline, sent on reconnect, its answer on it",
-      queued !== undefined && queuedShape.length === 1 && queuedShape[0].answer === "bullet",
-      `${queued?.camera} ${queuedShape.map((a) => a.answer)}`,
-    );
-    await idle(page6);
-    await page6.close();
   }
 
   // 6e. Seen from another account: a pale pictogram; a tap opens "En attente de
@@ -3332,7 +2583,7 @@ try {
     "add: /revue lists the adds as « Ajout », the complete one's answers in its table, the camera within 10 m named by its kind and distance",
     addRows.length >= 4 &&
       addRows.every((l) => l.text.startsWith("Ajout")) &&
-      underFull === (punk ? 4 : 3) &&
+      underFull === 4 &&
       /À [\d,]+ m : .+ déjà sur la carte/.test(nearText) &&
       !nearText.includes("n1925222797"),
     `${addRows.length} adds, ${underFull} answers with the complete one, "${nearText.replace(/\n/g, " | ").slice(0, 160)}"`,
@@ -3501,12 +2752,12 @@ try {
   };
   // Punk: on a phone the floating buttons slide away while a sheet is open (DECISIONS
   // 2026-10-09): the sheet closed first, « Me localiser » comes back.
-  if (punk && (await page7.locator("#sheet").isVisible())) {
+  if (await page7.locator("#sheet").isVisible()) {
     await tap(page7, page7.locator("#sheet .close"));
     await page7.waitForTimeout(600);
   }
   // Punk: 8a's tickets after the answer hide them too (score.css): put away first.
-  if (punk && (await page7.locator("#score").count())) {
+  if (await page7.locator("#score").count()) {
     await page7.keyboard.press("Escape");
     await page7.waitForTimeout(400);
   }
@@ -3698,7 +2949,7 @@ try {
   await page8.waitForSelector(".part-done");
   // The counter sits under an open sheet: closed first (punk on site: the sheet is gone,
   // 8a's tickets fall over the map; put away).
-  if (punk && (await page8.locator("#score").count())) await page8.keyboard.press("Escape");
+  if (await page8.locator("#score").count()) await page8.keyboard.press("Escape");
   else await tap(page8, page8.locator("#sheet .close"));
   await tap(page8, page8.locator("#queue-count"));
   await page8.waitForSelector("#mine [data-withdraw]");
@@ -3773,12 +3024,8 @@ try {
     await idle(page9);
     await page9.screenshot({ path: join(process.env.SMOKE_SHOTS, `${engine}-${name}.png`) });
   };
-  const parts = () =>
-    page9
-      .locator("#complete-panel button[data-part]")
-      .evaluateAll((bs) => bs.map((b) => `${b.dataset.part}:${b.dataset.answer}`));
   const known9 = new Set((await review()).map((c) => c.uuid));
-  if (punk) {
+  {
     // Punk: « Modifier » on a tube whose height is assumed: its « Hauteur » line unfolded
     // (4a-f4's tickets), its « Inclinaison » on the line under it, answered in place, sent
     // at once.
@@ -3825,50 +3072,6 @@ try {
       }),
     );
     await ed.finish(page9);
-  } else {
-    await openD2(page9, d2.tube);
-    await tap(page9, page9.locator("#part-complete"));
-    await waitStep(page9, "direction");
-    await tap(page9, page9.locator("button[data-answer='not_visible']"));
-    await waitStep(page9, "mount");
-    const tubeHeight = await parts();
-    const tubeTitle = await page9.locator("#complete-panel h3").innerText();
-    await shot9("complete-mount-height");
-    await tap(page9, page9.locator("button[data-part='height'][data-answer='first']"));
-    await page9.waitForSelector("button[data-part='tilt']");
-    const tubeTilt = await parts();
-    const tubeLine = await page9.locator("#complete-panel .part-given").innerText();
-    await shot9("complete-mount-tilt");
-    await tap(page9, page9.locator("button[data-part='tilt'][data-answer='slight']"));
-    await waitStep(page9, "done");
-    let sent9;
-    await waitFor("the height and the tilt stored", async () => {
-      sent9 = (await review()).filter((c) => !known9.has(c.uuid));
-      return sent9.length === 2;
-    });
-    const h9 = sent9.find((c) => c.kind === "height");
-    const t9 = sent9.find((c) => c.kind === "tilt");
-    check(
-      "mount: a tube without height — « Hauteur et inclinaison », the height first (four drawings and « Je ne sais pas »), then the tilt",
-      tubeTitle === "Hauteur et inclinaison" &&
-        tubeHeight.join(",") ===
-          "height:ground,height:first,height:upper,height:pole,height:unknown" &&
-        tubeTilt.join(",") === "tilt:horizon,tilt:slight,tilt:steep,tilt:unknown" &&
-        tubeLine.includes(FIRST),
-      JSON.stringify({ tubeTitle, tubeHeight, tubeTilt, tubeLine }),
-    );
-    check(
-      "mount: each answer leaves at once; the tilt carries the height chosen, its field stored for /revue",
-      h9?.answer === "first" &&
-        t9?.answer === "slight" &&
-        t9.payload.aim_height === "first" &&
-        (t9.payload.bands?.features.length ?? 0) > 0 &&
-        (t9.payload.old_bands?.features.length ?? 0) > 0,
-      JSON.stringify(
-        sent9.map((c) => [c.kind, c.answer, c.payload.aim_height, c.payload.no_effect]),
-      ),
-    );
-    await tap(page9, page9.locator("#complete-panel button", { hasText: "Terminer" }));
   }
 
   // The sheet of the tube the fixture gave a height (on site) and a tilt.
@@ -3912,7 +3115,7 @@ try {
           .filter((l) => /Hauteur|Inclinaison|étage|vers/.test(l))
           .join(" / "),
   );
-  if (punk) {
+  {
     // « Modifier » on that tube: its height and tilt known, their lines folded; a tap on
     // « Hauteur » unfolds it alone, in place, nothing to send yet.
     await tap(page9, page9.locator("#part-modify"));
@@ -3965,7 +3168,7 @@ try {
   // An add of a tube: the screen after the direction, « ‹ Retour », « Je ne sais pas ».
   const MOUNT_AT = [ADD.offline[0], ADD.offline[1] + 0.0004];
   let addsBefore;
-  if (punk) {
+  {
     // Punk: a tube placed, aimed by a tap, its height and tilt in one view; « Je ne sais
     // pas » for the height keeps the tilt line (it waits for a height: said under it);
     // the page never scrolls and the paper reaches the bottom.
@@ -4025,121 +3228,6 @@ try {
     addsBefore = new Set((await adds()).map((c) => c.uuid));
     await ed.send(page9);
     await ed.finish(page9);
-  } else {
-    await addAt(page9, MOUNT_AT, "free");
-    await tap(page9, page9.locator("#move-submit"));
-    await waitStep(page9, "shape");
-    await tap(page9, page9.locator(".part-shape[data-answer='bullet']"));
-    await waitStep(page9, "direction");
-    // The bottom panel holds its gestures and the page never scrolls (an iPhone report: a
-    // drag up from the panel moved the map and the camera, a grey gap showed under the
-    // panel, the target sat near the top). Playwright cannot make Safari scroll the page by
-    // itself (rubber band, toolbars): the page is given something to scroll, then asked to.
-    const layout9 = () =>
-      page9.evaluate(() => {
-        const m = window.__map;
-        const r = m.getContainer().getBoundingClientRect();
-        const c = m.project(m.getCenter());
-        const t = document.getElementById("aim-target").getBoundingClientRect();
-        const p = document.getElementById("complete-panel").getBoundingClientRect();
-        const vv = window.visualViewport;
-        return {
-          scrollY: Math.round(window.scrollY + document.documentElement.scrollTop),
-          target: [Math.round(t.left + t.width / 2 - (r.left + c.x)),
-                   Math.round(t.top + t.height / 2 - (r.top + c.y))],
-          gap: Math.round((vv ? vv.height + vv.offsetTop : window.innerHeight) - p.bottom),
-          center: [m.getCenter().lng, m.getCenter().lat],
-        };
-      }); // biome-ignore format: compact
-    await page9.evaluate(() => {
-      const tall = document.createElement("div");
-      tall.id = "smoke-tall";
-      tall.style.cssText = "position:absolute;top:0;left:0;width:1px;height:300vh";
-      document.body.append(tall);
-      window.scrollTo(0, 240);
-    });
-    const panelBox = await page9.locator("#complete-panel").boundingBox();
-    const from = { x: panelBox.x + panelBox.width / 2, y: panelBox.y + panelBox.height * 0.6 };
-    const before9 = await layout9();
-    if (engine === "chromium")
-      await slide(page9, ctx9, from, { x: from.x, y: Math.max(10, from.y - 300) });
-    await page9.waitForTimeout(400);
-    const after9 = await layout9();
-    await page9.evaluate(() => document.getElementById("smoke-tall")?.remove());
-    // Aimed 15 m north-east: the preview by point draws its cone (iPhone report: none).
-    await page9.evaluate(() => {
-      const m = window.__map;
-      const c = m.getCenter();
-      m.jumpTo({ center: [c.lng + 0.00018, c.lat + 0.00011] });
-    });
-    await page9.waitForFunction(
-      () => window.__map.querySourceFeatures("aim-new").length > 0,
-      null,
-      {
-        timeout: 20000,
-      },
-    );
-    const cone9 = await page9.evaluate(() => window.__map.querySourceFeatures("aim-new").length);
-    await shot9("add-direction-panel");
-    check(
-      "panel: the page never scrolls, a drag from the panel leaves the map, the panel reaches the bottom, the target sits at the centre of the visible map",
-      after9.scrollY === 0 &&
-        before9.scrollY === 0 &&
-        after9.gap === 0 &&
-        Math.abs(after9.target[0]) <= 1 &&
-        Math.abs(after9.target[1]) <= 1 &&
-        after9.center[0] === before9.center[0] &&
-        after9.center[1] === before9.center[1] &&
-        cone9 > 0,
-      JSON.stringify({ before9, after9, cone9 }),
-    );
-    await tap(page9, page9.locator("#aim-submit"));
-    await waitStep(page9, "mount");
-    await shot9("add-mount-height");
-    await tap(page9, page9.locator("button[data-part='height'][data-answer='first']"));
-    await page9.waitForSelector("button[data-part='tilt']");
-    await tap(page9, page9.locator("button[data-part='tilt'][data-answer='slight']"));
-    await waitStep(page9, "operator");
-    await tap(page9, page9.locator("#complete-panel button[data-answer='unknown']"));
-    await waitStep(page9, "done");
-    const both = await recap(page9);
-    await back(page9);
-    await waitStep(page9, "operator");
-    await back(page9);
-    await waitStep(page9, "mount");
-    const kept = await page9
-      .locator("button[data-part='height'][data-answer='first']")
-      .getAttribute("aria-pressed");
-    await tap(page9, page9.locator("button[data-part='height'][data-answer='unknown']"));
-    await waitStep(page9, "operator");
-    await tap(page9, page9.locator("#complete-panel button[data-answer='unknown']"));
-    await waitStep(page9, "done");
-    const noTilt = await recap(page9);
-    await back(page9);
-    await waitStep(page9, "operator");
-    await back(page9);
-    await waitStep(page9, "mount");
-    await tap(page9, page9.locator("button[data-part='height'][data-answer='first']"));
-    await page9.waitForSelector("button[data-part='tilt']");
-    await tap(page9, page9.locator("button[data-part='tilt'][data-answer='slight']"));
-    await waitStep(page9, "operator");
-    await tap(page9, page9.locator("#complete-panel button[data-answer='unknown']"));
-    await waitStep(page9, "done");
-    const sentRecap = await recap(page9);
-    await shot9("add-recap");
-    check(
-      "mount, add: « ‹ Retour » keeps the height; « Je ne sais pas » drops the tilt; the summary has both lines",
-      both.Hauteur === "1er étage" &&
-        both.Inclinaison === "un peu vers le bas" &&
-        kept === "true" &&
-        noTilt.Hauteur === "je ne sais pas" &&
-        !("Inclinaison" in noTilt) &&
-        sentRecap.Inclinaison === "un peu vers le bas" &&
-        /^\d+°$/.test(sentRecap.Direction ?? ""),
-      JSON.stringify({ both, noTilt, sentRecap }),
-    );
-    addsBefore = new Set((await adds()).map((c) => c.uuid));
-    await tap(page9, page9.locator("#add-commit"));
   }
   let add9;
   await waitFor("the tube's add", async () => {

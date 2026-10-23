@@ -90,7 +90,6 @@ try {
     const k = kit(page, context, {
       device: size.width < 600 ? "phone" : "desktop",
       mode: "clair",
-      ui: "punk",
     });
     try {
       await k.open("#16.5/48.8963/2.2382");
@@ -108,7 +107,7 @@ try {
     resetContributions();
     const context = await frameContext(browsers.webkit, PHONE, { ...ctx, reduced: ms === null });
     const page = await context.newPage();
-    const k = kit(page, context, { device: "phone", mode: "clair", ui: "punk" });
+    const k = kit(page, context, { device: "phone", mode: "clair" });
     try {
       await mockPoints(page);
       await threeChanges(k);
@@ -135,7 +134,7 @@ try {
     resetContributions();
     const context = await frameContext(browsers.webkit, PHONE, { ...ctx, reduced: true, dark });
     const page = await context.newPage();
-    const k = kit(page, context, { device: "phone", mode, ui: "punk" });
+    const k = kit(page, context, { device: "phone", mode });
     try {
       await mockPoints(page);
       await threeChanges(k);
@@ -168,7 +167,6 @@ try {
       const k = kit(page, context, {
         device: where === "phone" ? "phone" : "desktop",
         mode,
-        ui: "punk",
       });
       try {
         await mockPoints(page);
@@ -207,7 +205,7 @@ try {
       reduced: true,
     });
     const page = await context.newPage();
-    const k = kit(page, context, { device: "desktop", mode, ui: "punk" });
+    const k = kit(page, context, { device: "desktop", mode });
     try {
       await mockPoints(page);
       await addFilled(k, { shape: "bullet" });
@@ -240,7 +238,7 @@ try {
       dark: true,
     });
     const page = await context.newPage();
-    const k = kit(page, context, { device: "phone", mode: "sombre", ui: "punk" });
+    const k = kit(page, context, { device: "phone", mode: "sombre" });
     try {
       await mockPoints(page);
       if (what === "add") await addFilled(k);

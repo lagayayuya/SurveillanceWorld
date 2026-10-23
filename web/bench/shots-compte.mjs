@@ -49,7 +49,7 @@ async function open(size, mode, query = "") {
   const context = await browser.newContext({ ...SIZES[size], locale: "fr-FR" });
   await mockApi(context, { osm: { login: true, server: "dev" } });
   const page = await context.newPage();
-  await page.goto(`${APP}?ui=punk&mode=${mode}${query}${AT}`);
+  await page.goto(`${APP}?mode=${mode}${query}${AT}`);
   await page.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded(), null, {
     timeout: 60_000,
   });
@@ -98,7 +98,7 @@ try {
           .map((c) => String(c.properties.id))
           .find((c) => /^[nwr]\d+$/.test(c)) ?? null,
     );
-    await page.goto(`${APP}?ui=punk&mode=clair&cam=${id}${AT}`);
+    await page.goto(`${APP}?mode=clair&cam=${id}${AT}`);
     await page.waitForSelector('#sheet #part-modify[aria-disabled="true"]', { timeout: 30_000 });
     // The buttons in view: the sheet at full height, its paper scrolled to them.
     await page.locator("#sheet .sheet-grab").click();

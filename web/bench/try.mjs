@@ -6,7 +6,7 @@
 // ana, bob… — all with web/bench/session.mjs's password, fictitious): a page opened without a
 // session signs in as ivo. Ctrl-C stops everything and removes the database.
 //   node web/bench/try.mjs [--seed full|empty] [--port 4470]
-// The map at http://127.0.0.1:4470/?ui=punk as ivo; ?as=rev (or ?as=rvw, ?as=ivo) on any page
+// The map at http://127.0.0.1:4470/ as ivo; ?as=rev (or ?as=rvw, ?as=ivo) on any page
 // signs in as that account (POST /api/session; rev and rvw by /revue's privileged entry,
 // POST /api/review/session, as /revue's form does), ?as= signs out; /revue as rev (every
 // tab) or rvw (« File » only). The servers are the state captures' (states/
@@ -132,8 +132,7 @@ try {
 }
 const app = `http://127.0.0.1:${port}`;
 console.log(`
-  La carte (interface punk), compte ivo:  ${app}/?ui=punk&as=ivo#17/48.8967/2.2388
-  La carte (interface classique)       :  ${app}/?ui=classique
+  La carte, compte ivo                 :  ${app}/?as=ivo#17/48.8967/2.2388
   La revue, compte rev (administrateur):  ${app}/revue?as=rev
   La revue, compte rvw (relecteur)     :  ${app}/revue?as=rvw
   Changer de compte                    :  ajouter ?as=ivo, ?as=rev ou ?as=rvw à n'importe quelle page

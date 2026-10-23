@@ -1,8 +1,8 @@
 name: ci
 
 # Documentation alone (*.md) runs nothing. A push (or a pull request) runs the light CI:
-# `check` and two smoke tests, the phone and participation in WebKit on the main interface.
-# workflow_dispatch runs the full matrix (every smoke test, both engines, both interfaces);
+# `check` and two smoke tests, the phone and participation in WebKit.
+# workflow_dispatch runs the full matrix (every smoke test, both engines);
 # locally `make smoke` runs the same. A new run cancels the one in progress on the same
 # branch and event (a push never cancels a manual full run). `prepare` builds the CI extract
 # once for the smoke jobs, which run in parallel, and says which of them run. No secret is
@@ -30,22 +30,19 @@ jobs:
     outputs:
       smoke: ${{ steps.matrix.outputs.smoke }}
       engines: ${{ steps.matrix.outputs.engines }}
-      uis: ${{ steps.matrix.outputs.uis }}
     steps:
       - uses: actions/checkout@v4
-      # Names of the `smoke` job's entries, and the participation job's engines and interfaces.
+      # Names of the `smoke` job's entries, and the participation job's engines.
       - id: matrix
         env:
           EVENT: ${{ github.event_name }}
         run: |
           if [ "$EVENT" = workflow_dispatch ]; then
-            echo 'smoke=["desktop","phone-webkit","phone-chromium","desktop-punk","phone-webkit-punk","phone-chromium-punk","theme-webkit","theme-chromium","chips-webkit","chips-chromium","profile-webkit","profile-chromium"]' >> "$GITHUB_OUTPUT"
+            echo 'smoke=["desktop","phone-webkit","phone-chromium","theme-webkit","theme-chromium","chips-webkit","chips-chromium","profile-webkit","profile-chromium"]' >> "$GITHUB_OUTPUT"
             echo 'engines=["webkit","chromium"]' >> "$GITHUB_OUTPUT"
-            echo 'uis=["classique","punk"]' >> "$GITHUB_OUTPUT"
           else
-            echo 'smoke=["phone-webkit-punk"]' >> "$GITHUB_OUTPUT"
+            echo 'smoke=["phone-webkit"]' >> "$GITHUB_OUTPUT"
             echo 'engines=["webkit"]' >> "$GITHUB_OUTPUT"
-            echo 'uis=["punk"]' >> "$GITHUB_OUTPUT"
           fi
       - uses: ./.github/actions/setup
       # With the synthetic validated contributions (moved, gone, conflicts): the smoke tests
@@ -94,9 +91,8 @@ jobs:
 
   # The map's smoke tests on the mini extract and its versioned basemap: desktop and the
   # phone test in each engine, one browser per job (the phone test also runs in halves with
-  # --part 1|2, for a longer test later), on the main interface (punk) and the old one
-  # (classique); and the themes' own test. Which ones: the
-  # `prepare` job's list (a push: the phone in WebKit on the punk interface).
+  # --part 1|2, for a longer test later); and the theme's own test. Which ones: the
+  # `prepare` job's list (a push: the phone in WebKit).
   smoke:
     needs: prepare
     runs-on: ubuntu-24.04
@@ -120,11 +116,8 @@ jobs:
         run: |
           case "$NAME" in
             desktop) script="smoke.mjs --region ci" ;;
-            desktop-punk) script="smoke.mjs --region ci --ui punk" ;;
             phone-webkit) script="smoke-mobile.mjs --region ci --browser webkit" ;;
             phone-chromium) script="smoke-mobile.mjs --region ci --browser chromium" ;;
-            phone-webkit-punk) script="smoke-mobile.mjs --region ci --browser webkit --ui punk" ;;
-            phone-chromium-punk) script="smoke-mobile.mjs --region ci --browser chromium --ui punk" ;;
             theme-webkit) script="smoke-theme.mjs --region ci --browser webkit" ;;
             theme-chromium) script="smoke-theme.mjs --region ci --browser chromium" ;;
             chips-webkit) script="smoke-chips.mjs --browser webkit" ;;
@@ -156,8 +149,8 @@ jobs:
           exit "$code"
 
   # Participation on the phone, behind the real site file (Caddy), with PostGIS, one engine
-  # per job (both in one job made it the longest one: 447 s); the engines and interfaces of
-  # the `prepare` job (a push: WebKit, punk).
+  # per job (both in one job made it the longest one: 447 s); the engines of
+  # the `prepare` job (a push: WebKit).
   smoke-participate:
     needs: prepare
     runs-on: ubuntu-24.04
@@ -165,8 +158,7 @@ jobs:
       fail-fast: false
       matrix:
         engine: ${{ fromJSON(needs.prepare.outputs.engines) }}
-        ui: ${{ fromJSON(needs.prepare.outputs.uis) }}
-    name: smoke (participate-${{ matrix.engine }}-${{ matrix.ui }})
+    name: smoke (participate-${{ matrix.engine }})
     services:
       postgis:
         image: postgis/postgis:17-3.5@sha256:01a6a70e41e6c4467c8f55f6063555ed72db2d6662cd0d571040d42eadaeb6f6
@@ -195,13 +187,12 @@ jobs:
       # passes with a warning; any other failure fails, and the local gate keeps it binding.
       - env:
           ENGINE: ${{ matrix.engine }}
-          UI: ${{ matrix.ui }}
           BENCH_TIMING: report
         run: |
           cd web
           log="$(mktemp)"
           set +e # the bench's own exit, whatever the shell's pipefail
-          node bench/smoke-participate.mjs --browser "$ENGINE" --ui "$UI" 2>&1 | tee "$log"
+          node bench/smoke-participate.mjs --browser "$ENGINE" 2>&1 | tee "$log"
           code=${PIPESTATUS[0]}
           set -e
           only_manifest_401() {
@@ -212,7 +203,7 @@ jobs:
                  END { exit !(n > 0 && !bad) }' "$1"
           }
           if [ "$code" != 0 ] && [ "$ENGINE" = webkit ] && only_manifest_401 "$log"; then
-            echo "::warning::participate-$ENGINE-$UI: not binding on CI: WebKit on Linux + the preview's basic auth (401 on /manifest.webmanifest), followed outside CI"
+            echo "::warning::participate-$ENGINE: not binding on CI: WebKit on Linux + the preview's basic auth (401 on /manifest.webmanifest), followed outside CI"
             code=0
           fi
           exit "$code"
@@ -221,7 +212,7 @@ jobs:
       - if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: participate-${{ matrix.engine }}-${{ matrix.ui }}-failure
+          name: participate-${{ matrix.engine }}-failure
           path: /tmp/smoke-part-*/failure.*
           if-no-files-found: ignore
           overwrite: true # a re-run attempt that fails again

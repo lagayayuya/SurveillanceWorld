@@ -12,7 +12,7 @@ import { resolve } from "node:path";
 import { chromium, devices, webkit } from "playwright";
 import { mockApi, OSM_SIGNUP } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -68,8 +68,8 @@ const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
 // The phone in WebKit (an iPhone's engine), the wide screen in Chromium.
 const engines = {
-  phone: withUi(await webkit.launch(), "punk"),
-  wide: withUi(await chromium.launch(), "punk"),
+  phone: benchBrowser(await webkit.launch()),
+  wide: benchBrowser(await chromium.launch()),
 };
 try {
   for (const where of ["first", "account"])

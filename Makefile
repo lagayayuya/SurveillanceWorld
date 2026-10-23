@@ -47,13 +47,10 @@ bench:
 	cd web && node bench/zoom.mjs --region $(REGION)
 
 # The local gate, before any push (web/scripts/gate.sh): CI's full matrix on the CI extract
-# (map on a desktop, phone and participation in WebKit and Chromium, each on --ui classique
-# and --ui punk, the themes' and the punk chips' tests in both engines), then the current
-# interface pixel for pixel against the code before the redesign (shots-theme, shots-add,
-# shots-complete, pixeldiff): its web tree from git (GATE_REF, default b935b91) or from a
-# tarball of it kept outside the repository (GATE_REF_TAR); with neither, that step is
-# skipped and said so. It builds in build/gate/: web/dist and the region linked in
-# web/public stay as they are. Needs the CI extract built from the CI fixture, as CI does:
+# (map on a desktop, phone and participation in WebKit and Chromium, every screen format,
+# the theme's, chips' and account screen's tests in both engines, and the other journeys
+# it lists). It builds in build/gate/: web/dist and the region linked in web/public stay
+# as they are. Needs the CI extract built from the CI fixture, as CI does:
 #   mkdir -p data/contrib && cp tests/fixtures/contrib-ci.jsonl data/contrib/ci.jsonl
 #   make build REGION=ci
 # `make smoke ONLY="participate theme"` runs the steps whose names start so; logs in
@@ -76,7 +73,7 @@ rehearse-restore:
 
 # Try the site by hand (web/bench/try.mjs): the working tree's web build, the participation
 # API on a throwaway database with the CI extract and its test data, accounts ivo and rev
-# (the review account); http://127.0.0.1:4470/?ui=punk, ?as=rev to switch, Ctrl-C stops
+# (the review account); http://127.0.0.1:4470/, ?as=rev to switch, Ctrl-C stops
 # everything. SEED=empty for no contribution.
 try:
 	node web/bench/try.mjs $(if $(SEED),--seed $(SEED))

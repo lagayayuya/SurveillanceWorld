@@ -66,7 +66,6 @@ async function open(size, mode) {
   });
   await context.addInitScript((m) => {
     try {
-      localStorage.setItem("lacarte.ui", "punk");
       localStorage.setItem("lacarte.mode", m);
       localStorage.setItem("lacarte.fonts", "1");
     } catch {

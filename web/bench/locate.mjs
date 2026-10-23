@@ -159,7 +159,6 @@ async function once() {
   });
   await context.addInitScript(() => {
     try {
-      localStorage.setItem("lacarte.ui", "punk");
       localStorage.setItem("lacarte.welcome", "1");
       localStorage.setItem("lacarte.fonts", "1");
     } catch {}

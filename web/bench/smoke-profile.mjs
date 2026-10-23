@@ -29,7 +29,7 @@
 // server); `?osm=write_on`
 // is said. Lot U2: the camera sheet opened from « Mes caméras » and its « ← Mes caméras »
 // button, one sheet head across the account's, a camera's, a commune's and a département's,
-// and a camera's history two lines an entry (punk and classique, 320 and 390 px and a wide
+// and a camera's history two lines an entry (320 and 390 px and a wide
 // screen). With --out, captures. Exits non-zero if a check failed.
 //   node bench/smoke-profile.mjs [--browser chromium|webkit] [--axe PATH] [--out DIR]
 //                                [--port N] [--open CSS]
@@ -96,7 +96,7 @@ async function signedIn(context, mode, opts = {}) {
     page.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded(), null, {
       timeout: 30_000,
     });
-  await page.goto(`${APP}?ui=punk&mode=${mode}${AT}`);
+  await page.goto(`${APP}?mode=${mode}${AT}`);
   await ready();
   await page.waitForTimeout(800);
   return { page, api, errors };
@@ -731,7 +731,7 @@ async function syncChecks(options) {
         sync: SYNC_ON,
       });
       const page = await context.newPage();
-      await page.goto(`${APP}?ui=punk&mode=clair&cam=${CAMS.dome}${AT}`);
+      await page.goto(`${APP}?mode=clair&cam=${CAMS.dome}${AT}`);
       await page.waitForSelector("#sheet .part-link", { timeout: 20_000 });
       await page.locator("#sheet .part-link", { hasText: "Vos contributions" }).click();
       await page.waitForSelector("#mine .mine-osm", { timeout: 10_000 }).catch(() => {});
@@ -821,7 +821,7 @@ async function syncChecks(options) {
         sync: SYNC_ON,
       });
       const page = await context.newPage();
-      await page.goto(`${APP}?ui=punk&mode=clair&osm=write_on${AT}`);
+      await page.goto(`${APP}?mode=clair&osm=write_on${AT}`);
       await page.waitForSelector("#sheet .board-notice:not(:empty)", { timeout: 20_000 });
       await page.waitForSelector("#sheet .board-sync-since", { timeout: 10_000 });
       const notice = await page.locator("#sheet .board-notice").textContent();
@@ -929,11 +929,11 @@ async function headsChecks(page, where, phone) {
     await shot(page, `${where.replace(/\W+/g, "-")}-head-${name}`);
   };
   const goto = async (query) => {
-    await page.goto(`${APP}?ui=punk&mode=clair&${query}`);
+    await page.goto(`${APP}?mode=clair&${query}`);
     await page.waitForSelector("#sheet .sheet-head .headline", { timeout: 20_000 });
   };
   await at("compte", async () => {
-    await page.goto(`${APP}?ui=punk&mode=clair${AT}`);
+    await page.goto(`${APP}?mode=clair${AT}`);
     await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 30_000 });
     await page.waitForTimeout(800);
     // A sheet still open from before (the camera's) hides the header ticket on a phone.
@@ -1059,7 +1059,7 @@ async function headsChecks(page, where, phone) {
   );
 }
 
-/** A camera's history on its sheet (lot U2), punk and classique, on phones 320 and 390 px
+/** A camera's history on its sheet (lot U2), on phones 320 and 390 px
  * wide and a wide screen, light and dark: two lines an entry at most — the change and the
  * month in words, then who on one line —, no tag nor dotted leader, no word cut; the
  * longest pseudonym the accounts allow (32 letters, the widest) on one line, cut short with
@@ -1073,20 +1073,20 @@ const LONG_HISTORY = {
     ...CAMERA_HISTORY[DOME_CAM],
   ],
 };
-async function historyChecks(browser, ui, [name, options], mode) {
-  const where = `history ${ui} ${name} ${mode}`;
+async function historyChecks(browser, [name, options], mode) {
+  const where = `history ${name} ${mode}`;
   const context = await browser.newContext({ ...options, locale: "fr-FR" });
   await mockProfile(context, { history: LONG_HISTORY });
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await page.goto(`${APP}?ui=${ui}&mode=${mode}&cam=${DOME_CAM}${AT}`);
+  await page.goto(`${APP}?mode=${mode}&cam=${DOME_CAM}${AT}`);
   await page.waitForSelector('.sheet-history-slot[data-history="shown"]', {
     state: "attached",
     timeout: 20_000,
   });
   const grab = page.locator("#sheet .sheet-grab");
-  if (ui === "punk" && (await grab.isVisible())) {
+  if (await grab.isVisible()) {
     await grab.click();
     await page.waitForTimeout(500);
   }
@@ -1356,19 +1356,18 @@ try {
   // Lot U2: the history's entries, two lines at most.
   const narrow = { ...devices["iPhone SE"], viewport: { width: 320, height: 568 } };
   const cut = [];
-  for (const ui of ["punk", "classique"])
-    for (const device of [
-      ["320", narrow],
-      ["390", devices["iPhone 14"]],
-      ["desktop", { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 }],
-    ])
-      for (const mode of ui === "punk" ? ["clair", "sombre"] : ["clair"]) {
-        try {
-          cut.push([`${ui} ${device[0]} ${mode}`, await historyChecks(browser, ui, device, mode)]);
-        } catch (e) {
-          check(`history ${ui} ${device[0]} ${mode}`, false, String(e).split("\n")[0]);
-        }
+  for (const device of [
+    ["320", narrow],
+    ["390", devices["iPhone 14"]],
+    ["desktop", { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 }],
+  ])
+    for (const mode of ["clair", "sombre"]) {
+      try {
+        cut.push([`${device[0]} ${mode}`, await historyChecks(browser, device, mode)]);
+      } catch (e) {
+        check(`history ${device[0]} ${mode}`, false, String(e).split("\n")[0]);
       }
+    }
   console.log(`  (a 32-letter pseudonym cut short with « … »: ${JSON.stringify(cut)})`);
   // Reduced motion, and a scale changed in the API's answer.
   const changed = { ...SCALE, add: 60, info: 15 };

@@ -17,7 +17,7 @@ import { resolve } from "node:path";
 import { chromium } from "playwright";
 import { mockApi, OSM_SIGNUP } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -119,7 +119,9 @@ const resources = (page) =>
 
 const NAMED = [
   [/\/assets\/main-.*\.js$/, "main.js"],
-  [/\/assets\/classic-.*\.js$/, "MapLibre chunk"],
+  // The chunk both pages share (MapLibre, pmtiles), named by the bundler after one of its
+  // modules (classic-* until the classique went, 2026-10-23).
+  [/\/assets\/questions-.*\.js$/, "MapLibre chunk"],
   [/\/assets\/punk-.*\.css$/, "punk.css"],
   [/\/tiles\/meta\.json$/, "meta.json"],
   [/^\/api\/me$/, "GET /api/me"],
@@ -241,7 +243,7 @@ async function run(browser, profile, way) {
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = withUi(await chromium.launch(), "punk");
+const browser = benchBrowser(await chromium.launch());
 try {
   for (const profile of profiles) for (const way of ways) await run(browser, profile, way);
 } finally {

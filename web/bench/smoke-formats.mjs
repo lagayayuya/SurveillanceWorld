@@ -8,8 +8,7 @@
 // bottom (visualViewport). A control hidden on purpose at a format (the zoom buttons on a
 // phone) is skipped. Shapes are measured as drawn: each control's own box turned by its
 // tilt and scaled as the CSS says (rotate, scale, transform), a pastille as its circle, so
-// a tilt counts and a bounding box's corners do not. The punk interface only (the
-// classique is frozen, compared pixel for pixel by the gate). Then, on each format, a camera
+// a tilt counts and a bounding box's corners do not. Then, on each format, a camera
 // sheet's head with the longest title there is (lot U2, longestTitle below). With --out, a
 // capture of each format and mode.
 //   node bench/smoke-formats.mjs [--browser chromium|webkit|firefox] [--region ci]
@@ -23,7 +22,7 @@ import { stripTypeScriptTypes } from "node:module";
 import { resolve } from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -346,7 +345,7 @@ async function longestTitle(page, name) {
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = withUi(await { chromium, webkit, firefox }[engine].launch(), "punk");
+const browser = benchBrowser(await { chromium, webkit, firefox }[engine].launch());
 const errors = [];
 try {
   for (const [format, w, h, dpr, touch] of FORMATS) {

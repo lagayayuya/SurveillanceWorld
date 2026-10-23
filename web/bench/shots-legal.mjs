@@ -94,7 +94,7 @@ async function paths(browser, device, mode, tag) {
   // The welcome of a first visit, then « Mentions légales » from it.
   {
     const { context, page } = await open(browser, device, mode, OPEN, { seen: false });
-    await page.goto(`${APP}?ui=punk${at}`);
+    await page.goto(`${APP}${at}`);
     await page.waitForSelector("#welcome [role=dialog]");
     await settle(page);
     await toEnd(page, "#welcome .welcome-body");
@@ -109,7 +109,7 @@ async function paths(browser, device, mode, tag) {
   // The « ? » window, then « Sources et licences » from it, at its notices' link.
   {
     const { context, page } = await open(browser, device, mode, OPEN);
-    await page.goto(`${APP}?ui=punk${at}`);
+    await page.goto(`${APP}${at}`);
     await settle(page);
     await page.locator("#welcome-square").click();
     await page.waitForSelector("#welcome [role=dialog]");
@@ -131,7 +131,7 @@ async function paths(browser, device, mode, tag) {
       osm: { login: true },
       signed,
     });
-    await page.goto(`${APP}?ui=punk${at}`);
+    await page.goto(`${APP}${at}`);
     await settle(page);
     await page.locator("#account-square").click();
     await page.waitForSelector("#sheet .account-legal", { timeout: 20000 });
@@ -151,7 +151,7 @@ async function paths(browser, device, mode, tag) {
   // The map's corner credit (a phone unfolds it from its « ⓘ »).
   {
     const { context, page } = await open(browser, device, mode, OPEN);
-    await page.goto(`${APP}?ui=punk${at}`);
+    await page.goto(`${APP}${at}`);
     await settle(page);
     if (device === "phone") await page.locator("#attrib-toggle").click();
     await page.waitForTimeout(300);
@@ -175,7 +175,7 @@ try {
       // The four pages, over the map.
       for (const slug of ["mentions-legales", "confidentialite", "conditions", "sources"]) {
         const { context, page } = await open(browser, device, mode, OPEN);
-        await page.goto(`${APP}?ui=punk&page=${slug}#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}?page=${slug}#16/${STREET[1]}/${STREET[0]}`);
         await settle(page);
         await page.waitForSelector("#legal [role=dialog]");
         await shot(page, `${tag}-page-${slug}`);
@@ -186,7 +186,7 @@ try {
         const { context, page } = await open(browser, device, mode, OPEN, {
           osm: { login: true, signup: { ...OSM_SIGNUP } },
         });
-        await page.goto(`${APP}?ui=punk&osm=signup#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}?osm=signup#16/${STREET[1]}/${STREET[0]}`);
         await page.waitForSelector("#account-signup-accept", { timeout: 30000 });
         await settle(page);
         await shot(page, `${tag}-pseudonyme`);
@@ -195,7 +195,7 @@ try {
       // Where the pages are linked: the foot of the welcome, the foot of « Compte ».
       {
         const { context, page } = await open(browser, device, mode, OPEN, { seen: false });
-        await page.goto(`${APP}?ui=punk#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}#16/${STREET[1]}/${STREET[0]}`);
         await page.waitForSelector("#welcome [role=dialog]");
         await settle(page);
         await page.evaluate(() => {
@@ -210,7 +210,7 @@ try {
         const { context, page } = await open(browser, device, mode, OPEN, {
           osm: { login: true },
         });
-        await page.goto(`${APP}?ui=punk#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}#16/${STREET[1]}/${STREET[0]}`);
         await settle(page);
         await page.locator("#account-square").click();
         await page.waitForSelector("#sheet .account-legal");
@@ -221,14 +221,14 @@ try {
       // Contributions closed: the map, a camera's sheet, the welcome of a first visit.
       {
         const { context, page } = await open(browser, device, mode, CLOSED);
-        await page.goto(`${APP}?ui=punk#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}#16/${STREET[1]}/${STREET[0]}`);
         await settle(page);
         await shot(page, `${tag}-ferme-carte`);
         await context.close();
       }
       {
         const { context, page } = await open(browser, device, mode, CLOSED);
-        await page.goto(`${APP}?ui=punk#18/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}#18/${STREET[1]}/${STREET[0]}`);
         await settle(page);
         const cam = await page.evaluate(() => {
           const f = window.__map
@@ -236,7 +236,7 @@ try {
             .find((c) => /^[nwr]\d+$/.test(String(c.properties.id)));
           return { id: String(f.properties.id), at: f.geometry.coordinates };
         });
-        await page.goto(`${APP}?ui=punk&cam=${cam.id}#18/${cam.at[1]}/${cam.at[0]}`);
+        await page.goto(`${APP}?cam=${cam.id}#18/${cam.at[1]}/${cam.at[0]}`);
         await page.waitForSelector("#sheet .sheet-paper .headline", { timeout: 30000 });
         await settle(page);
         await shot(page, `${tag}-ferme-fiche`);
@@ -244,7 +244,7 @@ try {
       }
       {
         const { context, page } = await open(browser, device, mode, CLOSED, { seen: false });
-        await page.goto(`${APP}?ui=punk#16/${STREET[1]}/${STREET[0]}`);
+        await page.goto(`${APP}#16/${STREET[1]}/${STREET[0]}`);
         await page.waitForSelector("#welcome [role=dialog]");
         await settle(page);
         await shot(page, `${tag}-ferme-accueil`);

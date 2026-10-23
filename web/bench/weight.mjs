@@ -5,7 +5,7 @@
 // to be idle and the fonts loaded, and sums the requested files: raw bytes, and gzip -9
 // bytes as the server would send them (woff2 and PMTiles as stored); lists what was
 // requested after the map was first idle (the punk fonts).
-//   node bench/weight.mjs [--dist DIR] [--ui classique|punk] [--mode clair|sombre]
+//   node bench/weight.mjs [--dist DIR] [--mode clair|sombre]
 import { createReadStream, existsSync, readFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 import { extname, join, resolve } from "node:path";
@@ -16,7 +16,7 @@ const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
 const DIST = resolve(arg("--dist", "dist"));
 const PUBLIC = resolve(import.meta.dirname, "../public");
-const query = ["ui", "mode"]
+const query = ["mode"]
   .filter((k) => args.includes(`--${k}`))
   .map((k) => `${k}=${arg(`--${k}`)}`)
   .join("&");

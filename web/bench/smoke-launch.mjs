@@ -17,9 +17,9 @@
 // « Compte »'s foot (signed out and in) and from the pseudonym screen's « En validant, vous
 // acceptez les conditions… » (the pseudonym typed kept); closed contributions leave no account
 // part in them but the contact address; the publisher's identity only when the API gives one;
-// axe-core WCAG 2.2 A/AA none in the dialog. A pending proposal's line, punk and classique,
-// says its month (the API gives no day). The map's corner credit in punk's words (its Sources
-// page's), the classique's unchanged. Exits non-zero if a check failed.
+// axe-core WCAG 2.2 A/AA none in the dialog. A pending proposal's line says its month (the
+// API gives no day). The map's corner credit in its Sources page's words. Exits non-zero if
+// a check failed.
 //   node bench/smoke-launch.mjs [--browser webkit|chromium] [--port N]
 // WebKit runs a phone (390 × 845), Chromium a wide screen (960 × 581).
 import { spawn } from "node:child_process";
@@ -107,14 +107,14 @@ async function visit({ config, signed = false, seen = true, url = "", me = ME, p
     }
     return json(signed ? 404 : 401, { error: "x" });
   });
-  await page.goto(url || `${APP}?ui=punk#18/${STREET[1]}/${STREET[0]}`);
+  await page.goto(url || `${APP}#18/${STREET[1]}/${STREET[0]}`);
   await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60000 });
   return { context, page, errors, asked, aim };
 }
 
-/** The first camera of the street's tiles, its sheet opened by its link in `ui`; `aim`
+/** The first camera of the street's tiles, its sheet opened by its link; `aim`
  * (visit's) told which. */
-async function cameraSheet(page, ui = "punk", aim = null) {
+async function cameraSheet(page, aim = null) {
   await page.waitForFunction(
     () => window.__map.querySourceFeatures("detail", { sourceLayer: "cameras" }).length > 0,
     null,
@@ -127,9 +127,8 @@ async function cameraSheet(page, ui = "punk", aim = null) {
     return { id: String(f.properties.id), at: f.geometry.coordinates };
   });
   if (aim) aim.cam = cam;
-  await page.goto(`${APP}?ui=${ui}&cam=${cam.id}#18/${cam.at[1]}/${cam.at[0]}`);
-  // The classique's sheet has no paper.
-  await page.waitForSelector(`#sheet ${ui === "punk" ? ".sheet-paper " : ""}.headline`, {
+  await page.goto(`${APP}?cam=${cam.id}#18/${cam.at[1]}/${cam.at[0]}`);
+  await page.waitForSelector("#sheet .sheet-paper .headline", {
     timeout: 30000,
   });
   // The participation is built at the map's load: its buttons, when any, come with it.
@@ -244,18 +243,17 @@ try {
     await context.close();
   }
   // --- a pending proposal: dated by its month, the API giving no day ---------------------
-  // (signed in: the classique shows no participation to a visitor)
-  for (const ui of ["punk", "classic"]) {
+  {
     const proposal = {
       ...{ u: "0dd0dd00-0000-4000-8000-000000000001", k: "move", ck: "dome", s: "pending" },
       ...{ month: "2026-10", n: 0, d: 0, o: null, to: STREET, mv: 7.2 },
     };
     const { context, page, errors, aim } = await visit({ config: OPEN, signed: true, proposal });
-    await cameraSheet(page, ui, aim);
+    await cameraSheet(page, aim);
     await page.waitForSelector(".proposal-line", { timeout: 20000 });
     const line = await page.locator(".proposal-line").innerText();
     check(
-      `${ui}: a pending proposal's line says its month (« en octobre 2026 »), no day`,
+      "a pending proposal's line says its month (« en octobre 2026 »), no day",
       / en octobre 2026$/.test(line) && !/\d{1,2} octobre/.test(line) && errors.length === 0,
       `${line}${errors.length ? ` | ${errors.join(" | ")}` : ""}`,
     );
@@ -294,7 +292,7 @@ try {
   {
     const { context, page } = await visit({
       config: CLOSED,
-      url: `${APP}?ui=punk&osm=signup&compte=motdepasse#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}?osm=signup&compte=motdepasse#18/${STREET[1]}/${STREET[0]}`,
     });
     await page.waitForTimeout(500);
     const left = await page.evaluate(() => ({
@@ -303,7 +301,7 @@ try {
     }));
     check(
       "closed: ?osm= and ?compte= dropped from the address unread, no sheet opened",
-      left.search === "?ui=punk" && !left.sheet,
+      left.search === "" && !left.sheet,
       JSON.stringify(left),
     );
     await context.close();
@@ -336,7 +334,7 @@ try {
       const v = await visit({
         config: { ...OPEN, publish },
         seen: true,
-        url: `${APP}?ui=punk&page=${slug}#18/${STREET[1]}/${STREET[0]}`,
+        url: `${APP}?page=${slug}#18/${STREET[1]}/${STREET[0]}`,
       });
       await v.page.waitForSelector("#legal [role=dialog]");
       said.push((await legal(v.page)).text);
@@ -445,7 +443,7 @@ try {
     const { context, page, errors } = await visit({
       config: OPEN,
       seen: false,
-      url: `${APP}?ui=punk&page=conditions#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}?page=conditions#18/${STREET[1]}/${STREET[0]}`,
     });
     await page.waitForSelector("#legal [role=dialog]");
     const first = await legal(page);
@@ -575,7 +573,7 @@ try {
   {
     const { context, page } = await visit({
       config: { ...OPEN, publisher: "Jo Exemple, 1 rue de l'Exemple" },
-      url: `${APP}?ui=punk&page=mentions-legales#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}?page=mentions-legales#18/${STREET[1]}/${STREET[0]}`,
     });
     await page.waitForSelector("#legal [role=dialog]");
     const m = await legal(page);
@@ -594,7 +592,7 @@ try {
   for (const slug of ["confidentialite", "conditions"]) {
     const { context, page } = await visit({
       config: CLOSED,
-      url: `${APP}?ui=punk&page=${slug}#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}?page=${slug}#18/${STREET[1]}/${STREET[0]}`,
     });
     await page.waitForSelector("#legal [role=dialog]");
     const l = await legal(page);
@@ -670,7 +668,7 @@ try {
     // The pseudonym screen: the acceptance line and its link, the pseudonym kept.
     const { context, page } = await visit({
       config: OPEN,
-      url: `${APP}?ui=punk&osm=signup#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}?osm=signup#18/${STREET[1]}/${STREET[0]}`,
     });
     await page.waitForSelector("#account-signup-accept", { timeout: 30000 });
     await page.locator("#account-signup-pseudonym").fill("mon_pseudo");
@@ -694,11 +692,11 @@ try {
     );
     await context.close();
   }
-  // --- the map's corner credit: punk's as its Sources page, the classique's unchanged -----
-  for (const ui of ["punk", "classic"]) {
+  // --- the map's corner credit, as its Sources page --------------------------------------
+  {
     const { context, page } = await visit({
       config: OPEN,
-      url: `${APP}?ui=${ui}#18/${STREET[1]}/${STREET[0]}`,
+      url: `${APP}#18/${STREET[1]}/${STREET[0]}`,
     });
     const credit = await page.evaluate(() =>
       [...document.querySelectorAll(".maplibregl-ctrl-attrib-inner a")].map((a) => [
@@ -707,26 +705,14 @@ try {
       ]),
     );
     const said = JSON.stringify(credit);
-    const want =
-      ui === "punk"
-        ? [
-            ["construit avec Protomaps", "https://protomaps.com"],
-            [
-              "données © les contributeurs d'OpenStreetMap",
-              "https://www.openstreetmap.org/copyright",
-            ],
-          ]
-        : [
-            ["fond Protomaps", "https://protomaps.com"],
-            ["© contributeurs OpenStreetMap", "https://www.openstreetmap.org/copyright"],
-          ];
+    const want = [
+      ["construit avec Protomaps", "https://protomaps.com"],
+      ["données © les contributeurs d'OpenStreetMap", "https://www.openstreetmap.org/copyright"],
+    ];
     const text = await page.locator(".maplibregl-ctrl-attrib-inner").textContent();
     check(
-      ui === "punk"
-        ? "punk's corner credit: « construit avec Protomaps », « données © les contributeurs d'OpenStreetMap · licence ODbL »"
-        : "the classique's corner credit unchanged: « fond Protomaps », « © contributeurs OpenStreetMap · données ODbL »",
-      want.every((w) => said.includes(JSON.stringify(w))) &&
-        text.includes(ui === "punk" ? " · licence ODbL" : " · données ODbL"),
+      "the corner credit: « construit avec Protomaps », « données © les contributeurs d'OpenStreetMap · licence ODbL »",
+      want.every((w) => said.includes(JSON.stringify(w))) && text.includes(" · licence ODbL"),
       text,
     );
     await context.close();

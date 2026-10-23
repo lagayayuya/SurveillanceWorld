@@ -25,8 +25,8 @@
 // nothing (an add whose direction is « Je ne vois pas »), none for a piece the server gives
 // nothing, and then no scene but « Envoyé · en attente de revue »; « Toujours là ? » and
 // « Je ne la trouve pas » (« Disparue ») on site, the sheet gone, one ticket with its points;
-// from afar (nothing earned) no scene, the sheet says « Envoyé · en attente de revue »; the
-// classique's thanks unchanged. Exits non-zero if a check failed.
+// from afar (nothing earned) no scene, the sheet says « Envoyé · en attente de revue ».
+// Exits non-zero if a check failed.
 //   node bench/smoke-score.mjs [--browser webkit|chromium]
 
 import { readFileSync } from "node:fs";
@@ -137,7 +137,7 @@ async function open(size, opts = {}) {
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
   const phone = size.width < 600;
-  const k = kit(page, context, { device: phone ? "phone" : "desktop", mode: "clair", ui: "punk" });
+  const k = kit(page, context, { device: phone ? "phone" : "desktop", mode: "clair" });
   return { context, page, errors, k };
 }
 
@@ -897,28 +897,6 @@ try {
         asked.length === 0 &&
         errors.length === 0,
       JSON.stringify({ c, asked, errors }),
-    );
-    await context.close();
-  }
-
-  // --- the classique keeps its thanks ---------------------------------------------------
-  {
-    resetContributions();
-    const { context, page, k } = await open(size);
-    await context.addInitScript(() => localStorage.setItem("lacarte.ui", "classique"));
-    await k.open(`?ui=classique&cam=${DOME.id}#18/${DOME.at[0]}/${DOME.at[1]}`, { sheet: true });
-    await k.tap(page.locator("#sheet button", { hasText: "Toujours là" }).first());
-    await k.tap(page.locator("#sheet button", { hasText: "Elle est là" }).first());
-    await page.waitForSelector("#sheet .part-done");
-    const c = await page.evaluate(() => ({
-      score: Boolean(document.getElementById("score")),
-      thanks: document.querySelector("#sheet .part-done")?.textContent,
-      sheet: !document.getElementById("sheet").hidden,
-    }));
-    check(
-      "classique: « Merci, c'est enregistré. » in the sheet, no tickets",
-      !c.score && c.sheet && c.thanks === "Merci, c'est enregistré.",
-      JSON.stringify(c),
     );
     await context.close();
   }

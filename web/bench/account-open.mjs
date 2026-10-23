@@ -42,7 +42,7 @@ try {
   await cdp.send("Network.enable");
   await cdp.send("Network.emulateNetworkConditions", conditions(PROFILE));
   await cdp.send("Emulation.setCPUThrottlingRate", { rate: PROFILE.cpu });
-  await page.goto(`${APP}?ui=punk&mode=clair${AT}`);
+  await page.goto(`${APP}?mode=clair${AT}`);
   await page.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded(), null, {
     timeout: 180_000,
   });

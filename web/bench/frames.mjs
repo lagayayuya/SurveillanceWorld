@@ -172,7 +172,6 @@ try {
   });
   await context.addInitScript(() => {
     try {
-      localStorage.setItem("lacarte.ui", "punk");
       localStorage.setItem("lacarte.mode", "clair");
       localStorage.setItem("lacarte.welcome", "1");
     } catch {}
@@ -185,7 +184,7 @@ try {
       let layers = null;
       for (let i = 0; i < RUNS; i++) {
         const page = await context.newPage();
-        await page.goto(`${APP}?ui=punk${place.query}#${z}/${place.at}`);
+        await page.goto(`${APP}?${place.query.slice(1)}#${z}/${place.at}`);
         await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 30000 });
         await idle(page);
         renderer ??= await page.evaluate(() => {

@@ -58,7 +58,7 @@ function check(name, ok, detail = "") {
 const visitor = (url, ready) => async (context) => {
   await mockApi(context, { osm: { login: true, server: "dev", signup: { ...OSM_SIGNUP } } });
   const page = await context.newPage();
-  await page.goto(`${APP}?ui=punk${url}${AT}`);
+  await page.goto(`${APP}?${url.slice(1)}${AT}`);
   await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
   await page.waitForSelector(ready, { timeout: 30_000 });
   return page;
@@ -67,7 +67,7 @@ const visitor = (url, ready) => async (context) => {
 const signed = (opts, open, ready) => async (context) => {
   await mockProfile(context, opts);
   const page = await context.newPage();
-  await page.goto(`${APP}?ui=punk&mode=clair${AT}`);
+  await page.goto(`${APP}?mode=clair${AT}`);
   await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
   await page.waitForTimeout(800);
   await page.getByRole("button", { name: "Votre profil" }).first().tap();
@@ -138,7 +138,7 @@ const CASES = [
     open: async (context) => {
       await mockApi(context, {});
       const page = await context.newPage();
-      await page.goto(`${APP}?ui=punk&op=V${AT}`);
+      await page.goto(`${APP}?op=V${AT}`);
       await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
       await page.locator("#fab-filters").tap();
       await page.waitForSelector("#adv-operator", { state: "attached", timeout: 15_000 });
@@ -231,7 +231,7 @@ async function gestures() {
     await mockApi(context, {});
     const page = await context.newPage();
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk${AT}`);
+    await page.goto(`${APP}${AT}`);
     await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
     const id = await page.evaluate(
       () =>
@@ -240,7 +240,7 @@ async function gestures() {
           .map((c) => String(c.properties.id))
           .find((c) => /^[nwr]\d+$/.test(c)) ?? null,
     );
-    await page.goto(`${APP}?ui=punk&cam=${id}${AT}`);
+    await page.goto(`${APP}?cam=${id}${AT}`);
     await page.waitForSelector("#sheet #part-modify", { timeout: 30_000 });
     const read = () =>
       page.evaluate(() => {
@@ -314,25 +314,6 @@ async function gestures() {
       "pinch: the filters machine open, pan-x pan-y and its gestures cancelled",
       open.ta === "pan-x pan-y" && open.cancelled,
       JSON.stringify(open),
-    );
-    // The classique is frozen: its panels keep the page's pinch-zoom (no gesture cancelled,
-    // touch-action untouched) and no keyboard handling (review finding, 2026-10-11).
-    await page.goto(`${APP}?ui=classique${AT}`);
-    await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
-    const classique = await page.evaluate(() =>
-      ["#sheet", "#filters", "#fabs"]
-        .map((sel) => document.querySelector(sel))
-        .filter(Boolean)
-        .map((el) => {
-          const e = new Event("gesturestart", { bubbles: true, cancelable: true });
-          el.dispatchEvent(e);
-          return { id: el.id, ta: getComputedStyle(el).touchAction, cancelled: e.defaultPrevented };
-        }),
-    );
-    check(
-      "classique: no gesture cancelled on its panels, touch-action auto (its pinch-zoom kept)",
-      classique.length > 0 && classique.every((c) => !c.cancelled && c.ta === "auto"),
-      JSON.stringify(classique),
     );
   } catch (e) {
     check("pinch", false, String(e).split("\n")[0]);

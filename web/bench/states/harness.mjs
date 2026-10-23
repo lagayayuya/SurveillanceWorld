@@ -414,8 +414,8 @@ export async function api(who, method, path, body, tries = 4) {
 
 // --- browsers and contexts -------------------------------------------------------------
 
-/** A browser context for one capture: the interface and mode kept on the device (as ?ui=
- * and ?mode= do), the punk fonts loaded at once (as on a second visit), the account
+/** A browser context for one capture: the mode kept on the device (as ?mode= does), the
+ * punk fonts loaded at once (as on a second visit), the account
  * (`opts.who`, ana by default, signed in through the API; null: signed out); a phone held
  * upright, or in landscape with `opts.landscape`. */
 export async function newContext(browsers, combo, opts = {}) {
@@ -430,20 +430,16 @@ export async function newContext(browsers, combo, opts = {}) {
     timezoneId: "Europe/Paris",
     ...(opts.geolocation ? { geolocation: opts.geolocation, permissions: ["geolocation"] } : {}),
   });
-  await context.addInitScript(
-    ([ui, mode]) => {
-      try {
-        localStorage.setItem("lacarte.ui", ui);
-        localStorage.setItem("lacarte.mode", mode);
-        localStorage.setItem("lacarte.fonts", "1");
-        // Not a first visit (welcome.ts): the welcome's own states set it back.
-        localStorage.setItem("lacarte.welcome", "1");
-      } catch {
-        // about:blank has no storage.
-      }
-    },
-    [combo.ui, combo.mode],
-  );
+  await context.addInitScript((mode) => {
+    try {
+      localStorage.setItem("lacarte.mode", mode);
+      localStorage.setItem("lacarte.fonts", "1");
+      // Not a first visit (welcome.ts): the welcome's own states set it back.
+      localStorage.setItem("lacarte.welcome", "1");
+    } catch {
+      // about:blank has no storage.
+    }
+  }, combo.mode);
   const who = opts.who === undefined ? "ana" : opts.who;
   await context.addCookies(
     who

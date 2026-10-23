@@ -5,7 +5,7 @@
 // the word, the ten letters, the camera), never in the way of a pointer, under the welcome
 // panel, light and dark; the tiles let go, it is gone at the map's first display (and its
 // mark on the page with it); under reduced motion nothing of it moves, else its camera and
-// letters do; axe-core WCAG 2.2 A/AA none; the classique never shows it; a return from
+// letters do; axe-core WCAG 2.2 A/AA none; ?ui=classique (an old link) shows it too; a return from
 // OpenStreetMap shows « de votre compte » at once. The account's sheet on that return is
 // bench/account.mjs's. Exits non-zero if a check failed.
 //   node bench/smoke-loading.mjs [--browser webkit|chromium] [--port N]
@@ -46,10 +46,7 @@ async function holdTiles(context) {
 }
 
 let browser;
-async function visit(
-  options,
-  { ui = "punk", dark = false, reduced = false, query = "", watch = false } = {},
-) {
+async function visit(options, { dark = false, reduced = false, query = "", watch = false } = {}) {
   const context = await browser.newContext({
     ...options,
     locale: "fr-FR",
@@ -76,7 +73,8 @@ async function visit(
   await page.route("**/api/**", (r) =>
     r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"no_session"}' }),
   );
-  await page.goto(`${APP}?ui=${ui}${query}${AT}`);
+  const q = query.replace(/^&/, "");
+  await page.goto(`${APP}${q ? `?${q}` : ""}${AT}`);
   return { context, page, errors, release };
 }
 
@@ -201,18 +199,15 @@ try {
     await context.close();
   }
 
-  // The classique never shows it.
+  // The classique's old link (removed 2026-10-23): « Chargement » as on any visit.
   {
-    const { context, page, release } = await visit(PHONE, { ui: "classique" });
-    await page.waitForTimeout(1500);
-    const none = await page.evaluate(() => ({
-      el: document.querySelectorAll(".loading").length,
-      mark: document.documentElement.dataset.loading ?? null,
-    }));
+    const { context, page, release } = await visit(PHONE, { query: "&ui=classique" });
+    await page.waitForSelector("#loading", { timeout: 15000 });
+    const s = await screen(page);
     check(
-      "classique: no « Chargement », no mark",
-      none.el === 0 && none.mark === null,
-      JSON.stringify(none),
+      "?ui=classique: « Chargement de la carte » as on any visit",
+      s !== null && s.line === "de la carte" && s.mark === "map",
+      JSON.stringify(s),
     );
     release();
     await context.close();

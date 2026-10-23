@@ -1,9 +1,9 @@
 // Captures of every interface state docs/interface.md lists as reachable on the CI extract,
-// each in light and dark ("clair", "sombre": the punk interface only has a dark mode), on a
+// each in light and dark ("clair", "sombre"), on a
 // phone (WebKit, iPhone 14) and a wide screen (Chromium, 1440 × 900):
 // <state>-<clair|sombre>-<phone|desktop>.png, and an index.md (state, captures, drawn in the
 // mockup or improvised, failures).
-//   node bench/shots-states.mjs --out DIR [--only PREFIX[,PREFIX…]] [--ui punk|classique]
+//   node bench/shots-states.mjs --out DIR [--only PREFIX[,PREFIX…]]
 //     [--device phone|desktop] [--mode clair|sombre] [--cnil] [--list]
 // --cnil: the build served (LACARTE_DIST) was made with VITE_CNIL_SIGNAL=true, as the
 // private preview's is: its sheets show the CNIL box, and the states that need it are
@@ -40,7 +40,7 @@ import { kit } from "./states/kit.mjs";
 import { SEEDS } from "./states/seed.mjs";
 
 const USAGE =
-  "node bench/shots-states.mjs --out DIR [--only PREFIX[,PREFIX…]] [--ui punk|classique]\n" +
+  "node bench/shots-states.mjs --out DIR [--only PREFIX[,PREFIX…]]\n" +
   "  [--device phone|desktop] [--mode clair|sombre] [--cnil] [--list]\n" +
   "DIR: outside the repository, or in a folder git ignores (the captures are never committed)";
 const args = process.argv.slice(2);
@@ -53,7 +53,6 @@ if (args.includes("--help") || args.includes("-h")) {
 const VALUES = {
   "--out": null,
   "--only": null,
-  "--ui": ["punk", "classique"],
   "--device": ["phone", "desktop"],
   "--mode": ["clair", "sombre"],
 };
@@ -71,7 +70,6 @@ for (let i = 0; i < args.length; i++) {
     usage(`${name} ${value}: one of ${VALUES[name].join(", ")}`);
 }
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
-const UI = arg("--ui", "punk");
 const OUT = args.includes("--out") ? resolve(arg("--out")) : null;
 if (!OUT && !args.includes("--list")) {
   console.log("FAIL --out DIR is required: outside the repository, or in a folder git ignores");
@@ -135,8 +133,6 @@ function catalogue() {
       // "—", nor another state's capture); on both kinds of screen unless the cell names one.
       captured: /^yes/i.test(cells[5] ?? "") && capture.includes(`\`${m[1]}\``),
       devices: device ? [device] : ["phone", "desktop"],
-      // In one interface only when the cell says so: "(punk)".
-      ui: /\((punk|classique)\b/.exec(capture)?.[1],
       // Only from a build with the CNIL box: "(`--cnil`)".
       cnil: capture.includes("`--cnil`"),
       reachable: cells[5] ?? "",
@@ -204,10 +200,6 @@ for (const s of STATES) {
       disagreements.push(
         `${s.id}: captured on ${s.devices ?? "phone,desktop"}, docs/interface.md says ${row.devices}`,
       );
-    if (s.ui !== row.ui)
-      disagreements.push(
-        `${s.id}: interface ${s.ui ?? "any"}, docs/interface.md says ${row.ui ?? "any"}`,
-      );
     if (Boolean(s.cnil) !== row.cnil)
       disagreements.push(
         `${s.id}: ${s.cnil ? "" : "not "}--cnil only, docs/interface.md says the reverse`,
@@ -221,13 +213,13 @@ for (const e of disagreements) console.log(`FAIL ${e}`);
 if (disagreements.length) process.exit(1);
 
 // This run: the captured rows its options select, on the screens and modes they select.
-const modes = UI === "classique" ? ["clair"] : ["clair", "sombre"];
+const modes = ["clair", "sombre"];
 const combos = ["phone", "desktop"]
-  .flatMap((device) => modes.map((mode) => ({ ui: UI, device, mode })))
+  .flatMap((device) => modes.map((mode) => ({ device, mode })))
   .filter((c) => arg("--device", c.device) === c.device && arg("--mode", c.mode) === c.mode);
 const selected = new Set(
   [...doc]
-    .filter(([, row]) => row.captured && (!row.ui || row.ui === UI) && (!row.cnil || CNIL))
+    .filter(([, row]) => row.captured && (!row.cnil || CNIL))
     .filter(([id]) => !only.length || only.some((p) => id.startsWith(p)))
     .map(([id]) => id),
 );
@@ -245,7 +237,7 @@ const named = new Set(
 );
 if (!expected.size) {
   console.log(
-    `FAIL no capture selected (--only ${only.join(",") || "—"}, --ui ${UI}${CNIL ? ", --cnil" : ""})`,
+    `FAIL no capture selected (--only ${only.join(",") || "—"}${CNIL ? ", --cnil" : ""})`,
   );
   process.exit(1);
 }
@@ -318,7 +310,7 @@ try {
   browsers = { webkit: await webkit.launch(LAUNCH), chromium: await chromium.launch(LAUNCH) };
   // The CNIL box as --cnil says: without it, a VITE_CNIL_SIGNAL=true build would put the box
   // in sheets the catalogue describes without it.
-  const probe = { ui: UI, device: "desktop", mode: modes[0] };
+  const probe = { device: "desktop", mode: modes[0] };
   const probeContext = await newContext(browsers, probe);
   const shown = await cnilShown(kit(await probeContext.newPage(), probeContext, probe));
   await probeContext.close();
@@ -463,7 +455,7 @@ const minutes = ((Date.now() - t0) / 60000).toFixed(1);
 const lines = [
   "# États de l'interface : captures",
   "",
-  `Interface ${UI}${CNIL ? ", build de la préversion (--cnil : encart CNIL affiché)" : ""}, ` +
+  `${CNIL ? "Build de la préversion (--cnil : encart CNIL affiché), " : ""}` +
     `${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC, ` +
     `${minutes} min. Catalogue : docs/interface.md (états, code, maquette, données de test). ` +
     "Fichiers : `<état>-<clair|sombre>-<phone|desktop>.png` ; un état propre à un seul " +

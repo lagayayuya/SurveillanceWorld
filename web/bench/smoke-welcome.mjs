@@ -14,9 +14,9 @@
 // (« The most magical place on Earth », no « Rien n'est stocké… », « France métropolitaine »); the credit
 // (and the contact address, when the build has one) right of « Voir la carte » on a wide
 // screen, under it from the left on a phone, the button its size; axe-core WCAG 2.2 A/AA
-// in the panel; the classique has neither panel nor « ? »; the site's counters (src/hit.ts):
+// in the panel; the site's counters (src/hit.ts):
 // no POST /api/hit under navigator.webdriver (this bench's browsers), and, webdriver said
-// false, the map's once in either interface and a welcome's at each showing. Exits non-zero
+// false, the map's once and a welcome's at each showing. Exits non-zero
 // if a check failed.
 //   node bench/smoke-welcome.mjs [--browser webkit|chromium] [--port N]
 import { spawn } from "node:child_process";
@@ -65,7 +65,7 @@ const byline = (page) =>
 
 /** A fresh device (no storage): a first visit. The API says « signed out ». `hits`: the
  * bodies of the page's POST /api/hit, in order (src/hit.ts), from before it loads. */
-async function visit(options, { reduced = false, url = `${APP}?ui=punk${AT}`, init } = {}) {
+async function visit(options, { reduced = false, url = `${APP}${AT}`, init } = {}) {
   const context = await browser.newContext({
     ...options,
     locale: "fr-FR",
@@ -205,7 +205,7 @@ try {
         };
       });
     const light = await ink(page);
-    const night = await visit(PHONE, { url: `${APP}?ui=punk&mode=sombre${AT}` });
+    const night = await visit(PHONE, { url: `${APP}?mode=sombre${AT}` });
     await night.page.waitForSelector("#welcome [role=dialog]");
     await night.page.evaluate(() => document.fonts.ready);
     const dark = await ink(night.page);
@@ -457,7 +457,7 @@ try {
     );
     await context.close();
   }
-  // --- a wide screen, a return from OpenStreetMap, the classique ------------------------
+  // --- a wide screen, a return from OpenStreetMap ----------------------------------------
   {
     const { context, page } = await visit(WIDE);
     await page.waitForSelector("#welcome [role=dialog]");
@@ -480,21 +480,12 @@ try {
     await context.close();
   }
   {
-    const { context, page } = await visit(PHONE, { url: `${APP}?ui=punk&osm=denied${AT}` });
+    const { context, page } = await visit(PHONE, { url: `${APP}?osm=denied${AT}` });
     await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 15000 });
     check(
       "back from OpenStreetMap (?osm=): no welcome over the account's sheet",
       !(await state(page)).open,
     );
-    await context.close();
-  }
-  {
-    const { context, page } = await visit(PHONE, { url: `${APP}?ui=classique${AT}` });
-    await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 15000 });
-    const none = await page.evaluate(
-      () => !document.querySelector("#welcome, #welcome-square, .popper"),
-    );
-    check("classique: no welcome panel, no « ? »", none);
     await context.close();
   }
 
@@ -508,40 +499,37 @@ try {
     await page.waitForSelector("#welcome [role=dialog]");
     await page.waitForTimeout(500);
   };
-  for (const ui of ["punk", "classique"]) {
+  {
     // A browser driven by a script (the benches: navigator.webdriver) sends nothing.
-    const { context, page, hits: sent } = await visit(PHONE, { url: `${APP}?ui=${ui}${AT}` });
+    const { context, page, hits: sent } = await visit(PHONE, { url: `${APP}${AT}` });
     const driven = await page.evaluate(() => navigator.webdriver === true);
-    if (ui === "punk") await welcomeTwice(page);
-    else await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 15000 });
+    await welcomeTwice(page);
     await page.waitForTimeout(500);
     check(
-      `${ui}, navigator.webdriver true: no POST /api/hit (the map, two welcomes)`,
+      "navigator.webdriver true: no POST /api/hit (the map, two welcomes)",
       driven && sent.length === 0,
       `webdriver ${driven}, sent ${JSON.stringify(sent)}`,
     );
     await context.close();
   }
-  for (const ui of ["punk", "classique"]) {
-    // The same page as a person's browser (webdriver said false): the map once, whatever the
-    // interface, and in punk a welcome each time the panel shows.
+  {
+    // The same page as a person's browser (webdriver said false): the map once, and a
+    // welcome each time the panel shows.
     const {
       context,
       page,
       hits: sent,
     } = await visit(PHONE, {
-      url: `${APP}?ui=${ui}${AT}`,
+      url: `${APP}${AT}`,
       init: () => Object.defineProperty(Navigator.prototype, "webdriver", { get: () => false }),
     });
-    if (ui === "punk") await welcomeTwice(page);
-    else await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 15000 });
+    await welcomeTwice(page);
     await page.waitForTimeout(500);
     const map = sent.filter((b) => b === '{"event":"map"}').length;
     const welcome = sent.filter((b) => b === '{"event":"welcome"}').length;
-    const want = ui === "punk" ? 2 : 0;
     check(
-      `${ui}, webdriver false: the map's hit once, ${want} welcome hits, nothing else`,
-      map === 1 && welcome === want && sent.length === 1 + want,
+      "webdriver false: the map's hit once, 2 welcome hits, nothing else",
+      map === 1 && welcome === 2 && sent.length === 3,
       JSON.stringify(sent),
     );
     await context.close();

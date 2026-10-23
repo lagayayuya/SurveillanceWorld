@@ -123,7 +123,7 @@ async function deleteFlow(who, { osm, uuid, wrong, right, field, said }) {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(String(e)));
-  await page.goto(`${APP}/?ui=punk#18/${STREET[1]}/${STREET[0]}`);
+  await page.goto(`${APP}/#18/${STREET[1]}/${STREET[0]}`);
   await page.waitForSelector('#account-square[data-signed="true"]', { timeout: 60000 });
   await page.locator("#account-square").click();
   await page.waitForSelector("#sheet .board-delete", { timeout: 20000 });

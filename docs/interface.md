@@ -9,15 +9,15 @@ Captures: `node bench/shots-states.mjs --out DIR` (from `web/`, after `npm run b
 the CI extract built with `tests/fixtures/contrib-ci.jsonl`; DIR, required, outside the
 repository or in a folder git ignores) writes, for every row whose Capture cell holds its
 own name, `<state>-<clair|sombre>-<phone|desktop>.png` (four files, two when the cell
-names one kind of screen), and an `index.md`; `--only PREFIX`, `--ui classique|punk` (punk
-by default), `--device`, `--mode`, `--list`; `--cnil` when the build served
+names one kind of screen), and an `index.md`; `--only PREFIX`, `--device`, `--mode`,
+`--list`; `--cnil` when the build served
 (`LACARTE_DIST`) was made with `VITE_CNIL_SIGNAL=true`, as the preview's is: the rows
 marked « (`--cnil`) » are captured only then, every other one as the preview shows it, and
 whether the build shows the CNIL box is checked against the option before any capture (it
 fails, exit 1, when they disagree, or when the camera it opens has lost the signal in the
 tiles). Before anything runs, `--list` included, it fails (exit 1) when this catalogue and
 its registry (`web/bench/states/catalogue.mjs`) disagree (a captured row without its entry
-or the reverse, other screens or another interface) or when the counts below are no longer
+or the reverse, other screens) or when the counts below are no longer
 those of the rows. After the captures it fails (exit 1) when a capture fails, when a file
 the run's options ask for is missing, or when the folder holds a file no row of this
 catalogue names whatever the options (a short run into the folder of a full one passes). A
@@ -30,21 +30,18 @@ stops the database at once. A full run on the CI extract wrote 682 files (`sheet
 not captured yet) in 48 min (2026-10-06, on the author's Mac with the local gate running
 beside it).
 
-## 1. The interfaces in force
+## 1. The interface in force
 
 Each point gives the `DECISIONS.md` line (by date) it rests on.
 
-### 1.1 Two interfaces
+### 1.1 One interface
 
-- **classique**: the interface before the redesign, frozen but for its move to tokens,
-  pixel-identical (2026-10-05, coexistence and tokens; checked against the code before the redesign by `make
-  smoke`, 2026-10-06). Light only. Since the launch lot (2026-10-13, the author's request,
-  point 2) reached only by `?ui=classique` or its alias `?ui=classic`, kept on the device
-  (`lacarte.ui`); no link or control of the site leads to it (`theme.ts` chosenUi).
-- **punk**, the default since the launch lot: nothing asked nor kept gives punk; `?ui=punk`
-  still works and wins over a kept classique (`theme.ts` chosenUi; index.html's dark
-  pre-paint and « Chargement » and revue.html's pre-paint decide by the same rule before
-  the code) (2026-10-05; the default, 2026-10-13); light or
+- **punk**, the only interface since 2026-10-23 (the author's decision: the classique, the
+  interface before the redesign, and its `?ui=` choice removed). `?ui=classique`,
+  `?ui=classic`, `?ui=punk` and a choice kept on the device (`lacarte.ui`) are ignored: the
+  site as on any visit (`web/tests/loading.test.ts`, `bench/smoke-theme.mjs`). The page
+  keeps `data-ui="punk"`, under which every rule of `theme/punk/` is written (`theme.ts`
+  initTheme). Light or
   dark, following the phone on a first visit, then the ticket's sun / moon button's choice
   kept on the device (`lacarte.mode`; 2026-10-09, « Punk map after the iPhone test »,
   replacing the Clair / Sombre / Auto keys of 2026-10-08; `map-mode-toggle`), or
@@ -52,27 +49,25 @@ Each point gives the `DECISIONS.md` line (by date) it rests on.
   of the phone's mode repaints the open map in place (2026-10-05), a change met while the
   map is loading waiting for its next idle and repainting once from the colours last
   painted (2026-10-06, « A change of mode while the map is loading waits for its next
-  idle… »; `main.ts:163` restyle). Today it is the same pages with the punk tokens
-  (`theme/punk/punk.css` and its files, 1.2; fonts after the first idle; its basemap
-  without points of interest, 2026-10-05, nor road number shields, 2026-10-06), its
-  communes and départements opaque where the classique's are at 0.5 (2026-10-06, « Punk
-  communes and départements are opaque… »; `theme.ts:219` themeAreaOpacity), every name on
+  idle… »; `main.ts` restyle). Its tokens and rules are `theme/punk/punk.css` and its files
+  (1.2; fonts after the first idle; its basemap without points of interest, 2026-10-05,
+  nor road number shields, 2026-10-06), its communes and départements opaque (2026-10-06,
+  « Punk communes and départements are opaque… »; `theme.ts` themeAreaOpacity), every name on
   the map, the basemap's and the focus reach labels, in one colour, the ink, on an opaque
   2 px halo of the map's paper (2026-10-06, « Punk map names in one colour… »;
   `basemap.ts:50` basemapLayers, `theme.ts:241` labelHalo), the legend's named level
   samples (2026-10-06), the focus rules below, and lot 3.0's shared bricks (1.2); its own
   screens (mockup 16a, 17a, 18a, 20a, 24a) come with the redesign lots (2026-10-06). It
   became the default on the author's agreement (2026-10-05), given for the launch lot
-  (2026-10-13).
+  (2026-10-13), and the only interface on 2026-10-23.
 
 ### 1.2 The punk interface's shared bricks (lot 3.0)
 
 Lot 3.0 gives the punk interface what every later lot builds on (2026-10-06, « Lots of the
-redesign: 3.0 alone… »; DECISIONS 2026-10-07, lot 3.0); the classique is unchanged but for its page title and share
-metadata, which both interfaces share.
+redesign: 3.0 alone… »; DECISIONS 2026-10-07, lot 3.0).
 
-- **One CSS file per screen.** `theme/punk/punk.css` is the entry `theme.ts` imports (punk
-  only); it holds nothing but `@import`s, in the cascade's order: `tokens.css` (every
+- **One CSS file per screen.** `theme/punk/punk.css` is the entry `theme.ts` imports; it
+  holds nothing but `@import`s, in the cascade's order: `tokens.css` (every
   token, light then dark), `base.css` (less motion, the keyboard focus, MapLibre's own
   controls), `map.css` (the estimate bar, the canvas, the legend's swatches; lot 3.1),
   `sheet.css` (« Revenir à la caméra »; lot 3.2), `chips.css`, then `buttons.css`, last so
@@ -152,10 +147,9 @@ metadata, which both interfaces share.
   field drawn almost nil has neither, and « Disparue » is a warning with both. The
   accessible name is the visible text in reading order then the certainty (« Type, OSM :
   fixe, estimée »), so that what one sees is what a voice command says (WCAG 2.5.3). A tap
-  still explains (the chip pink, an ink bar on its left edge). The classique's chips are
-  unchanged.
+  still explains (the chip pink, an ink bar on its left edge).
 - **The product's name** (2026-10-06, « The product is named « Surveillance.Fun »… »; renamed 2026-10-11, « Renamed « Surveillance World »… »):
-  « Surveillance World » in the page titles and share metadata of both interfaces:
+  « Surveillance World » in the page titles and share metadata:
   `index.html`'s `<title>`, description and Open Graph tags (since 2026-10-15: og:title and
   og:description of their own (`share.*`), `twitter:card` summary_large_image, and og:url,
   og:image (`/og.jpg`, the A2 preview, 1200×630) with its type, size and alt, absolute from
@@ -179,8 +173,8 @@ metadata, which both interfaces share.
   contributions », the send counter and MapLibre's controls say `touch-action: pan-x pan-y`
   (scrolling and taps; `manipulation` would keep the pinch: MDN, it is « pan-x pan-y
   pinch-zoom »), at the lowest specificity so that a part that says less keeps it (a phone
-  sheet's head `none`, the classique's panels `pan-y`); WebKit's `gesturestart` and
-  `gesturechange` are cancelled when they start on those elements (both interfaces). The
+  sheet's head `none`); WebKit's `gesturestart` and `gesturechange` are cancelled when they
+  start on those elements. The
   map keeps its own zoom (MapLibre's canvas, `none`). The viewport keeps no `maximum-scale`
   nor `user-scalable`, the text no `-webkit-text-size-adjust`: Safari's text size (« aA »)
   works as before.
@@ -200,11 +194,11 @@ metadata, which both interfaces share.
   size (`web/bench/smoke-keyboard.mjs`: the viewport shrunk, and `visualViewport` alone
   shrunk as on iOS); the real keyboard only on an iPhone. /revue's sign-in is a page, not
   a panel: the browser's own behaviour.
-- **/revue** (lot 1 « Modérer », 2026-10-16): the interface's choice and mode as the map's
-  (punk by default, `?ui=classique`; light or dark, reloaded on a change of the phone's
-  mode), one layout for both on the tokens (`review/review.css`): the display face for
-  titles, tabs, filters and buttons, a system sans for the body (`--font-review`, never the
-  typewriter face), square corners and 2 px ink rules in punk, one primary button (pink,
+- **/revue** (lot 1 « Modérer », 2026-10-16): the mode as the map's (light or dark,
+  reloaded on a change of the phone's mode), one layout on the punk tokens
+  (`review/review.css`; since 2026-10-23 they alone, `theme/punk/tokens.css`): the display
+  face for titles, tabs, filters and buttons, a system sans for the body (`--font-review`,
+  never the typewriter face), square corners and 2 px ink rules, one primary button (pink,
   its offset shadow), the ink toast. Its pre-paint is a file (`public/revue-prepaint.js`):
   the page's Content-Security-Policy (`deploy/preview.caddy`) allows no inline script.
 
@@ -214,8 +208,8 @@ metadata, which both interfaces share.
 |---|---|---|---|
 | 5 – 8.5 | Départements, coloured by Y (the high end of "between X % and Y %"), five quantile classes (punk: fixed classes < 5, 5 – 15, 15 – 30, 30 – 50, ≥ 50 %, the same for communes and départements, rules/admin.yaml; 2026-10-09); hatched without camera; fading into communes over 8 – 8.5 | « Jusqu'à … % des rues, par département », « Aucune caméra recensée », quantiles note | 2026-09-28 (city view), 2026-09-29 (fade), 2026-09-30 (Y, fixed) |
 | 8 – 12.5 | Communes or municipal arrondissements, same scale; fading into the streets over 12 – 12.5; punk: five classes spread evenly (1.5:1 apart, light #ffeef6 → #c9006e, dark #36202d → #fe48b0), opaque, cut apart by a thin light-blue border (#7fd4ff, dark #80d4ff, `--map-area-border`; 0.75 px at every zoom, 2026-10-09 « Punk map after the iPhone test »), the open area outlined in the light blue, 3 px, on a 5 px near-black edge so that it stands out on the vivid classes (2026-10-09; `--map-area-selected`, `--map-area-selected-edge`) | « …, par commune » | 2026-09-28, 2026-09-29 (hexagons removed), 2026-09-30, 2026-10-08 (« The more vivid… ») |
-| 12 – 15 | Only what is filmed, in the colour of the highest level reached (identifier / reconnaître / détecter; punk: the one palette (2026-10-08, « One palette… », « The more vivid… »): from pale (little filmed) to 17a's vivid pink (much filmed) in light and dark, each street one pink stroke of its level, the ramp's classes 3, 4, 5, no casing): merged axes at 12 – 13, portions with their cameras from 14; unfilmed segments grey from 14; the proposals' dot from 13 (classique; punk: no proposal mark before the stickers' zoom, as 20a, 2026-10-09) | street levels, « Seul ce qui est filmé est coloré » below 14, « Non filmé » from 14, the proposals' dot from 13 | 2026-09-30 (tronçons, points 1 and 6), 2026-10-06 (« détecter »), 2026-10-07 (« Lots after 3.0… », lot 3.1) |
-| 15 + | Fields: the IEC 62676-4 levels as nested bands of one hue, hatched without a surveyed direction (punk, 2026-10-08: each level an opaque layer of its own map-aligned pattern, drawn détecte, reconnaît, identifie, so that each point shows the highest level reached, never a sum: the overlaps of one level draw the same pixels; the levels differ by shape, the halftone's density — one dot, two, four per 8 px — and the outline — dotted, dashed, solid — each outline under its own fill so that only the union's edge shows; since the second round (« The more vivid… ») a fine, close halftone as 20a's — two, four, eight dots per 8 px tile, about 2 px each — on pale pink grounds, never white (light #ffd6eb / #ffc2e3 / #ffaed9, dark the dull wines #36202d / #62284c / #ab347a), the dots 17a's pink; the basemap's buildings drawn over the fields at their own opacity (fading in with the streets, never over the communes); the filmed streets drawn over the fields; past z17 the filmed streets widen with the map (6 px at z18, 10 at z19, 16 at z20, the same colour, no edge; up to z17 unchanged; since 2026-10-16 never narrower than the basemap's road of their class, filmed or not: web/src/streetwidth.ts), so that at house-number zooms, where a portion lies on a field of its own level, the stroke stays a band and not one more row of dots (2026-10-14, « Punk streets keep their style… »; the ink edges of 2026-10-13 removed); no trace of an unknown direction, its field a full circle drawn like every other); pictograms (shape = type, one colour; punk: 16a's stickers, 1.2), the maybe-gone badge (punk: 20a's dashed ring with a « ? », unhatched), the proposals' badge (punk: 20a's yellow tape across the sticker, the ghost taped too, a pending add's ghost with a camera's 20 px target and hover ring); sidewalks, crossings and paths beside a road from 16; no direction cone, no PTZ zoom outline | level samples (punk: exactly the three fields' samples, their halftone and outline, named identifier, reconnaître, détecter; classique: a sentence), hatching (classique only), maybe gone, verified gone, proposal badge and ghost, IEC note | 2026-09-27 (zoom scheme, one hue), 2026-09-29 (pictograms, badge), 2026-09-30 (hatching, cones and PTZ outline removed, paths from 16), 2026-10-06 (named samples; stickers, DECISIONS 2026-10-07, lot 3.0; the unhatched « maybe gone »), 2026-10-07 (« Lots after 3.0… », lot 3.1: halftone, tape), 2026-10-08 (« Unknown direction leaves no trace… », « One palette… »), 2026-10-14 (« Punk streets keep their style… »: wider past z17) |
+| 12 – 15 | Only what is filmed, in the colour of the highest level reached (identifier / reconnaître / détecter; punk: the one palette (2026-10-08, « One palette… », « The more vivid… »): from pale (little filmed) to 17a's vivid pink (much filmed) in light and dark, each street one pink stroke of its level, the ramp's classes 3, 4, 5, no casing): merged axes at 12 – 13, portions with their cameras from 14; unfilmed segments grey from 14; no proposal mark before the stickers' zoom (as 20a, 2026-10-09) | street levels, « Seul ce qui est filmé est coloré » below 14, « Non filmé » from 14 | 2026-09-30 (tronçons, points 1 and 6), 2026-10-06 (« détecter »), 2026-10-07 (« Lots after 3.0… », lot 3.1) |
+| 15 + | Fields: the IEC 62676-4 levels (2026-10-08: each level an opaque layer of its own map-aligned pattern, drawn détecte, reconnaît, identifie, so that each point shows the highest level reached, never a sum: the overlaps of one level draw the same pixels; the levels differ by shape, the halftone's density — one dot, two, four per 8 px — and the outline — dotted, dashed, solid — each outline under its own fill so that only the union's edge shows; since the second round (« The more vivid… ») a fine, close halftone as 20a's — two, four, eight dots per 8 px tile, about 2 px each — on pale pink grounds, never white (light #ffd6eb / #ffc2e3 / #ffaed9, dark the dull wines #36202d / #62284c / #ab347a), the dots 17a's pink; the basemap's buildings drawn over the fields at their own opacity (fading in with the streets, never over the communes); the filmed streets drawn over the fields; past z17 the filmed streets widen with the map (6 px at z18, 10 at z19, 16 at z20, the same colour, no edge; up to z17 unchanged; since 2026-10-16 never narrower than the basemap's road of their class, filmed or not: web/src/streetwidth.ts), so that at house-number zooms, where a portion lies on a field of its own level, the stroke stays a band and not one more row of dots (2026-10-14, « Punk streets keep their style… »; the ink edges of 2026-10-13 removed); no trace of an unknown direction, its field a full circle drawn like every other); pictograms (shape = type: 16a's stickers, 1.2), the maybe-gone mark (20a's dashed ring with a « ? », unhatched), a proposal's mark (20a's yellow tape across the sticker, the ghost taped too, a pending add's ghost with a camera's 20 px target and hover ring); sidewalks, crossings and paths beside a road from 16; no direction cone, no PTZ zoom outline | level samples (exactly the three fields' samples, their halftone and outline, named identifier, reconnaître, détecter), maybe gone, verified gone, proposal badge and ghost, IEC note | 2026-09-27 (zoom scheme, one hue), 2026-09-29 (pictograms, badge), 2026-09-30 (hatching, cones and PTZ outline removed, paths from 16), 2026-10-06 (named samples; stickers, DECISIONS 2026-10-07, lot 3.0; the unhatched « maybe gone »), 2026-10-07 (« Lots after 3.0… », lot 3.1: halftone, tape), 2026-10-08 (« Unknown direction leaves no trace… », « One palette… »), 2026-10-14 (« Punk streets keep their style… »: wider past z17) |
 
 At every zoom: the estimate bar, « Standard » (the map opens on it) or « Prudent »
 (`?est=prudent`) (2026-09-30); filters hide what they exclude, nothing is faded
@@ -224,11 +218,11 @@ sets and the counts are approximate (« ≈ », by commune) (2026-09-27, 2026-09
 level the counts take the view widened by the farthest field (2026-09-30).
 
 Punk, at every zoom (lot 3.1; 2026-10-07, « Lots after 3.0… »; mockups 20a, 18a and 17a's
-map side; `machine.ts`, a chunk the punk interface alone downloads): 20a's light blue dot
+map side; `machine.ts`, a chunk of its own): 20a's light blue dot
 screen over the map's paper, lighter than the machine's (the earth's own pattern, icons.ts
 paper, --map-paper-dots; roads and paths edged in grey, roadedge.ts; 2026-10-19, « A2 + B »);
 the header ticket
-« Surveillance World » (`app.name`; the classique keeps `legend.title`), without 20a's
+« Surveillance World » (`app.name`), without 20a's
 scotch (the map's only tape means « correction en attente », 2026-10-09), with 17a's link
 « Filtres et légende → » (the page's own `#fab-filters`, moved: « (n) » while filters
 restrict, at every zoom) and under it 25a's squares, keys as the machine's: the sun / moon
@@ -250,42 +244,31 @@ together.
 
 ### 1.4 The camera sheet
 
-The classique's, unchanged:
+The facts every sheet says (`sheet.ts` headline and chips, drawn by `chips.ts` below; the
+classique's own layout of them, its ruler and its chips as buttons, removed on 2026-10-23):
 
-- One line (pictogram, « Type · exploitant », « de particulier » for a household,
-  2026-10-01), then a headline in the chosen estimate first: « Peut identifier jusqu'à ~X
-  (~Y en prudent) » (2026-09-28, 2026-09-30), « si elle est tournée vers vous » without a
-  surveyed direction (2026-09-30), « Filme, mais trop haute ou trop inclinée… » (2026-09-28),
-  « Position ou direction à vérifier » with the OSM link and « Déplacer » first (2026-09-30),
+- « Type · exploitant », « de particulier » for a household (2026-10-01); the chosen
+  estimate first (2026-09-28, 2026-09-30); without a surveyed direction it films only if
+  turned towards you (2026-09-30); « Filme, mais trop haute ou trop inclinée… »
+  (2026-09-28); « Position ou direction à vérifier » with the OSM link (2026-09-30);
   « Disparue : introuvable (sur place) (mois) » (2026-09-30, 2026-10-01).
-- The ruler: one row per level, solid to Standard, faded to Prudent (2026-09-28).
-- Chips: every fact with its certainty, ● identifiée, ◐ estimée, ○ par défaut (CLAUDE.md,
-  domain); a tap explains. A PTZ turns: « toutes (motorisée) » (2026-09-30). Validated
-  contributions are months, « sur place » only when it was (2026-09-30, 2026-10-01); height
-  and tilt are classes, never metres typed nor degrees (2026-10-04).
+- Every fact with its certainty, identifiée, estimée, par défaut (CLAUDE.md, domain). A PTZ
+  turns: « toutes (motorisée) » (2026-09-30). Validated contributions are months, « sur
+  place » only when it was (2026-09-30, 2026-10-01); height and tilt are classes, never
+  metres typed nor degrees (2026-10-04).
 - The CNIL box of a private camera filming the street (« Caméra privée tournée vers la voie
-  publique : potentiellement non conforme », « … qui peut filmer … » without a surveyed
-  direction, the complaint link) shows only in a build made with `VITE_CNIL_SIGNAL=true`
-  (`main.ts:56`): the private preview's, `deploy/deploy.sh` (2026-09-27, « CNIL signal
-  enabled in the private preview build… »; its wording without direction, 2026-09-30, « The
-  CNIL box of a private camera without a direction… »). `npm run build`, CI and the local
-  gate build without it. On the CI extract 39 cameras carry the signal; in a preview build
-  the captures of `sheet-too-high` and `sheet-too-high-prudent` (n1925222792),
-  `prop-validated` and `prop-validated-reviewer` (n1925180682) and `prop-more`
-  (n2001233184) also show the box, below the chips, and `sheet-cnil` exists only there
-  (`--cnil`, below). /revue never shows it, nor, until further notice, the punk sheet
-  (DECISIONS 2026-10-08, « Punk, until further notice… »: neither shown nor captured;
-  `sheet.ts` PUNK_CNIL).
-- For the accounts the API knows: « Toujours là ? », « Déplacer », « Compléter » (only when a
-  question remains, 2026-10-01), « Vos contributions », and the box of the camera's proposal
-  (2026-09-29).
+  publique : potentiellement non conforme », the complaint link), for a build made with
+  `VITE_CNIL_SIGNAL=true` (the private preview's, `deploy/deploy.sh`; 2026-09-27), is
+  suspended until further notice (DECISIONS 2026-10-08, « Punk, until further notice… »:
+  `sheet.ts` PUNK_CNIL gives `chips.ts` none; neither shown nor captured). /revue never
+  shows it.
 - A phone shows it as a bottom sheet (peek, half, full), a wide screen as a side panel
   (2026-09-28).
 
-The punk interface's (lot 3.2), ported from mockup 17a on a wide screen and 4b on a phone
+The sheet (lot 3.2), ported from mockup 17a on a wide screen and 4b on a phone
 (DECISIONS 2026-10-07, « Fidelity to the mockup comes first… » and « The camera sheet's facts
-follow 17a… »; `chips.ts`, a chunk the punk interface alone downloads, drawing the same facts
-as `sheet.ts`; `theme/punk/sheet.css` and `chips.css`). Where it differs from the boards and
+follow 17a… »; `chips.ts`, a chunk of its own, drawing the facts of `sheet.ts`; a sheet
+asked before it arrives shows its grab and close buttons, then is drawn whole; `theme/punk/sheet.css` and `chips.css`). Where it differs from the boards and
 why: §3, « Camera sheet (lot 3.2) ».
 
 - **Paper.** A wide screen: 17a's, 372 px, 18 px from the top (from 960 px wide; below,
@@ -385,7 +368,7 @@ why: §3, « Camera sheet (lot 3.2) ».
 - **States** in the mockup's vocabulary: « Revenir à la caméra → » a link first in the body
   below the street level; the CNIL box (suspended, above) a yellow band, its words, its link ↗; a pending
   add's sheet « Caméra proposée » in letters, its status on the yellow tape.
-- **History** (lot U, 2026-10-18, owner's decision applied by default): both interfaces'
+- **History** (lot U, 2026-10-18, owner's decision applied by default): the
   sheet ends with « Historique », the contributions the review accepted (validated,
   applied, superseded; never pending, rejected, withdrawn nor in conflict; never a test
   account's nor a hidden camera's), newest first, each with what it changed, its month
@@ -411,8 +394,7 @@ why: §3, « Camera sheet (lot 3.2) ».
   at each idle); the streets it films stay highlighted whole whatever
   the level, in the filmed streets' one style (the tiles' portions carry the highest level
   reached by any camera, not by this one), the other pictograms in
-  their colour at 70 % over white, opaque, in the classique (`theme.ts:191` otherPicto),
-  their dimmed sticker in punk (`layers.ts:200` stickerImage; 1.2), it 1.5 times larger
+  their dimmed sticker (`layers.ts` stickerImage; 1.2), it 1.5 times larger
   (2026-09-29; punk: its `-big` sticker); its outlines for the chosen estimate with its
   reach written, every level's on a wide screen's hover (2026-09-28; punk: 17a's yellow
   tag cut as an arrow, ink in the typewriter face, one image per text drawn on demand,
@@ -448,16 +430,6 @@ why: §3, « Camera sheet (lot 3.2) ».
 - « Toujours là ? »: three answers, « Je ne la trouve pas » confirmed in two steps
   (2026-09-29); punk, on a camera verified gone, two: « Elle n'est plus là (je confirme) »
   and « Elle est toujours là » (2026-10-08, « Punk, until further notice… »).
-- « Déplacer »: the map slides under the camera's pin, « Sur une façade » (the magnet) or
-  « Libre », preselected by the mount, the field previewed by the server, 50 m at most,
-  possible offline (2026-09-29).
-- « Compléter »: at most shape, direction, height and tilt, who films, each asked only when
-  the map lacks it, each answer sent at once; « Je ne sais pas » is an answer (2026-10-01);
-  height and tilt on one screen, the tilt for a tube only, and only when the answer changes
-  the field (2026-10-04; the frozen classique keeps the tube alone when punk asks a small
-  dome's tilt too, 2026-10-13: rules/questions.yaml tilt.classique_kinds, served as meta `tilt_kinds`). No answer is preselected and the aim screen keeps « Je ne vois
-  pas » (2026-10-06, doc audit c6, against the mockup). The classique's only on an existing
-  camera; punk has « Modifier » instead (below).
 - « Modifier » and the punk « ＋ Ajouter », one component (2026-10-08): a sheet whose
   lines — the shape (four tiles), the direction (« Je ne sais pas », or a crosshair posed
   on the map from where the send puts the camera), the height (every shape but the big
@@ -480,15 +452,11 @@ why: §3, « Camera sheet (lot 3.2) ».
   withdraws it whole; a validated send wins over the OSM version it saw and is a conflict
   when the node changes since (2026-10-05, « Corriger »). The add and its answers leave in
   one queue transaction, « je ne sais pas » included.
-- « ＋ Ajouter » from z17, the classique: the position screen (façade or libre, nothing
-  preselected), the cameras within 5 m listed first, then the questions with « ‹ Retour »,
-  a summary and one send; « Annuler » and the cross ask first (2026-10-01, 2026-10-02,
-  2026-10-04).
 - Proposals (moves, « introuvable », adds) for every account: a dot, then a badge and a pale
   pictogram; « Je confirme » / « Ce n'est pas ça »; « Valider » / « Rejeter » in two steps for
   the review account (2026-09-29); « Retirer » (2026-10-02); a pending add's field from its
   answers (2026-10-05), in punk outlined and its answers listed on its sheet (2026-10-08).
-  A pending proposal is dated by its month in both interfaces: `GET /api/proposals` gives
+  A pending proposal is dated by its month: `GET /api/proposals` gives
   the public its month, never its day (2026-10-13, « The public API dates a pending
   proposal by its month… », refining 2026-09-30); the reviewers' routes and the person's
   own « Vos contributions » keep the day.
@@ -518,7 +486,7 @@ why: §3, « Camera sheet (lot 3.2) ».
   where a curve helps (map loads a day, sends waiting each day), « Voir les chiffres » (its
   tables), and under the API's threshold only « Pas encore assez de données (n = …) »;
   publishing not offered, « Publication non ouverte. » whatever the count.
-  The site's counters (`hit.ts`): the map page, either interface, sends POST /api/hit
+  The site's counters (`hit.ts`): the map page sends POST /api/hit
   {"event":"map"} once it is shown (at once, at its first visibilitychange to visible, after
   a prerender's activation; never for a page never shown), the punk welcome
   {"event":"welcome"} each time it shows; nothing under navigator.webdriver, no cookie
@@ -642,8 +610,7 @@ the screens behave as before accounts, a send waits in the queue).
   `account/syncline.ts`, `account/osm.ts` readSync / startSync / stopSync). Offered when GET
   /api/config says `sync` (whatever contributions are: a person can always stop it) and GET
   /api/osm/sync says `offered` (the write server is the live one /revue switched to, or the
-  test server while sign-in goes through it); nothing of it otherwise, and nothing in the
-  classique, which has no sign-in. Before the foot's links, under a dashed rule, « PUBLIER
+  test server while sign-in goes through it); nothing of it otherwise. Before the foot's links, under a dashed rule, « PUBLIER
   SUR OPENSTREETMAP » (the scale's heading), the states first: « Envois vers OSM suspendus
   par l'équipe : rien ne part pour l'instant, votre choix est gardé. » (`suspended`), « OSM a
   retiré l'autorisation : autorisez à nouveau pour que vos contributions repartent. »
@@ -696,10 +663,7 @@ the screens behave as before accounts, a send waits in the queue).
   « Connectez-vous pour participer » under them; a tap or Enter on either, « Je confirme » /
   « Ce n'est pas ça », « ＋ Ajouter » and the counter's « Reconnectez-vous… » open « Compte »
   (`account-ask-from-action`); « Corriger sur OpenStreetMap ↗ » among its links; no « Vos
-  contributions ». Punk's participation says « acceptée » where the classique says
-  « validée » (board 26a).
-- The classique, which has no login screen: signed in, unchanged; signed out, no
-  participation in the sheet and no « ＋ Ajouter » (`account-classique-visitor`).
+  contributions ». The participation says « acceptée », not « validée » (board 26a).
 - `/revue`: a reviewer or an administrator opens it by its own entry (lot 2: POST
   /api/review/session, the password; a session the map opened, OpenStreetMap's or
   /api/session's, never does, and /api/session refuses these accounts); anyone else reads
@@ -717,39 +681,30 @@ the screens behave as before accounts, a send waits in the queue).
 Each item names the `DECISIONS.md` line that decides it (its date and first words), then
 says what the code does today.
 
-- The punk screens, lot by lot (2026-10-06, « Lots of the redesign: 3.0 alone… »): today
-  the punk interface is the classique's screens in its own tokens (1.1) with lot 3.0's
-  shared bricks (1.2).
 - Settings and about, lot 3.6 (the same line; the mode chosen by hand, 2026-10-05, « Dark
-  mode follows the phone's setting… »; the interface kept on the device, 2026-10-05, « The
-  interface is chosen with ?ui=punk|classique… »): today the mode is chosen by the sun /
-  moon square or `?mode=`, the interface only by `?ui=` (`theme.ts` modeChoice, chosenUi;
-  punk by default since the launch lot), and there is no about page: the welcome panel and
+  mode follows the phone's setting… »): today the mode is chosen by the sun / moon square or
+  `?mode=` (`theme.ts` modeChoice; one interface since 2026-10-23), and there is no about
+  page: the welcome panel and
   the four legal pages (1.10) say what the site is and what it stores.
-- The punk commune and département sheets (2026-10-06, « Punk commune and département
-  sheets show only Y… »): today « Entre X % et Y % des rues » in both interfaces.
-- « Ajouter » as one sheet (2026-10-05, « « Ajouter » in the new interface is one
-  sheet… »; 2026-10-08, « Adding and « Modifier » are one component… »): built in punk
-  (lot 3.4); the classique keeps one question per screen and a « Dernière étape » until
-  the switch-over.
 - Height and tilt (2026-10-08, « The tilt is asked for a tube only… »; for the tilt
   superseded by 2026-10-13, « The tilt is asked for a tube and a small dome… »): in punk
   the height for every shape but the big ball (rules/questions.yaml height.modify_excludes,
   in the meta once the extract is built again; a build before it offers every kind a
   height) and the tilt for a tube and a small dome (tilt.kinds, questions@5, read from the
   meta's `tilt_kinds`: a build made before it, the CI extract's and the IDF one's today,
-  says `["fixed"]` and offers it to a tube only); the classique's « Compléter » keeps its
-  rule, a tube only (`participate/questions.ts` mountParts, reading meta `tilt_kinds` = rules/questions.yaml tilt.classique_kinds).
+  says `["fixed"]` and offers it to a tube only). The meta's `tilt_kinds` (rules/questions.yaml
+  tilt.classique_kinds, written by the pipeline) is read by the « Compléter » code alone
+  (`participate/questions.ts` mountParts), the classique's, which no screen opens since
+  2026-10-23.
 - The product's name (2026-10-06, « The product is named « Surveillance.Fun »… »; renamed 2026-10-11, « Renamed « Surveillance World »… »): the
   page titles and the share metadata say it (1.2), the README too, and the punk
-  interface's ticket says « Surveillance World » (lot 3.1); in the classique « Vidéosurveillance »
-  heads the filters panel (`legend.title`), and the share titles say « Caméra de vidéosurveillance »
+  interface's ticket says « Surveillance World » (lot 3.1); the share titles say « Caméra de vidéosurveillance »
   (`sheet.share_title`) and « Vidéosurveillance : <commune> » (`area.share_title`).
 - Animations (2026-10-06, « Animations: at most 400 ms… »): `theme/punk/machine.css` holds
   « BOUM ! »'s keyframes (played once, only when motion is welcome; lot 3.1); what moves is the punk buttons' hover and press (1.2: transitions of 300 ms
   and 90 ms, none under reduced motion; `theme/punk/buttons.css`), the phone's sheet, its
-  height over `--dur-sheet`, 0.22 s (`style.css:548`; 0 s under reduced motion in the punk
-  interface, `theme/punk/base.css:4`, 0.22 s still in the classique), and the map's own
+  height over `--dur-sheet`, 0.22 s (`style.css`; 0 s under reduced motion,
+  `theme/punk/base.css`), and the map's own
   moves: `easeTo` to a camera's field (`main.ts:367` fitField) and to a pending add
   (`main.ts:430` openPending), `fitBounds` to an area (`main.ts:658` fitArea, animated
   when an area is tapped), `panBy` of the focus marker's nudge (`main.ts:574`
@@ -840,8 +795,7 @@ says what the code does today.
 ### 1.10 The launch lot (2026-10-13)
 
 The lot's contract (the author's request of 2026-10-13; its `DECISIONS.md` lines come with
-the lot's merge). Punk only, but the default interface (1.1); the classique asks nothing
-and shows none of it.
+the lot's merge).
 
 - **What the site says of itself** (`config.ts` loadConfig, parseConfig): `GET
   /api/config`, asked once as the page starts, beside the session, answered before the
@@ -938,7 +892,7 @@ and shows none of it.
 The author's return on the launch lot; its `DECISIONS.md` lines are dated 2026-10-13. Each
 point is written where it applies:
 
-- the small dome's tilt in the punk editor, the classique unchanged (1.6, 1.8;
+- the small dome's tilt in the punk editor (1.6, 1.8;
   `modify-dome-tilt`);
 - the possible field while placing, the aimed field after (1.6; `modify-possible-field`);
 - 8a centred on a phone, its cannon smaller, each stub's number above the next ticket
@@ -946,7 +900,7 @@ point is written where it applies:
 - the filmed streets wider past z17, where they lie on a field of their own level (1.3; `map-street-wide`);
 - the basemap's roads above the fields from z15, its paths from z16 (1.3, 2026-10-15; `map-roads-lifted`);
 - the basemap's water over the fields from z15, see through, with a shore line (1.3, 2026-10-15; `map-water-over`);
-- a pending proposal dated by its month in both interfaces (1.6; the `prop-*` and
+- a pending proposal dated by its month (1.6; the `prop-*` and
   `add-pending-*` rows);
 - the legal pages' legal bases, transfer, export sentence, « Publier sur OpenStreetMap »
   and Sources' licences (1.10; `legal-privacy`, `legal-terms`, `legal-publish`,
@@ -964,19 +918,19 @@ come first, then those the mockup draws, the unreachable ones last within each g
 
 | Screen | States | Improvised | Reachable | Captured | Files | Not reachable |
 |---|---|---|---|---|---|---|
-| Map | 50 | 35 | 46 | 37 | 132 | 4 |
-| Filters and legend | 23 | 12 | 23 | 22 | 80 | 0 |
-| Camera sheet | 62 | 40 | 50 | 41 | 148 | 12 |
+| Map | 49 | 35 | 45 | 36 | 128 | 4 |
+| Filters and legend | 21 | 12 | 21 | 20 | 76 | 0 |
+| Camera sheet | 60 | 38 | 48 | 39 | 140 | 12 |
 | Proposals in the camera sheet | 18 | 18 | 18 | 17 | 68 | 0 |
-| A pending add's sheet | 8 | 8 | 8 | 8 | 32 | 0 |
+| A pending add's sheet | 7 | 7 | 7 | 7 | 28 | 0 |
 | Commune, arrondissement, département | 13 | 9 | 10 | 10 | 38 | 3 |
 | Participation: « Toujours là ? » | 6 | 5 | 6 | 6 | 24 | 0 |
-| Participation: « Déplacer » | 11 | 10 | 11 | 10 | 40 | 0 |
-| Participation: « Compléter » | 12 | 7 | 11 | 11 | 44 | 1 |
+| Participation: « Déplacer » | 3 | 3 | 3 | 2 | 8 | 0 |
+| Participation: « Compléter » | 1 | 1 | 0 | 0 | 0 | 1 |
 | Participation: « Modifier » | 37 | 22 | 37 | 21 | 84 | 0 |
-| Participation: « ＋ Ajouter » | 10 | 6 | 10 | 10 | 40 | 0 |
+| Participation: « ＋ Ajouter » | 2 | 2 | 2 | 2 | 8 | 0 |
 | « Vos contributions » and the send queue | 10 | 10 | 10 | 9 | 36 | 0 |
-| Account (lot « comptes ») | 21 | 15 | 21 | 19 | 76 | 0 |
+| Account (lot « comptes ») | 20 | 14 | 20 | 18 | 72 | 0 |
 | /revue | 60 | 60 | 56 | 50 | 200 | 4 |
 | Errors | 6 | 6 | 6 | 6 | 24 | 0 |
 | Leaderboard | 44 | 38 | 43 | 38 | 152 | 1 |
@@ -985,7 +939,15 @@ come first, then those the mockup draws, the unreachable ones last within each g
 | Loading (2c) | 3 | 1 | 3 | 0 | 0 | 0 |
 | Legal pages (launch lot) | 10 | 10 | 10 | 0 | 0 | 0 |
 | Contributions closed (launch lot) | 4 | 4 | 4 | 0 | 0 | 0 |
-| **Total** | 418 | 322 | 393 | 319 | 1234 | 25 |
+| **Total** | 384 | 301 | 359 | 285 | 1102 | 25 |
+
+The classique's removal (2026-10-23) drops its 34 states, all of them its own (the
+`(classique)` rows): `map-proposals-dots`, `filters-legend`, `filters-collapsed`,
+`sheet-chip-help`, `sheet-cnil`, eight of « Déplacer » (`move-*` but `move-sent` and
+`move-queued`), eleven of « Compléter » (`complete-*` but `complete-none`), eight of
+« ＋ Ajouter » (`add-*` but `add-sent` and `add-queued`), `add-pending-sent` and
+`account-classique-visitor`; a row's « (punk) » no longer narrows anything. The paragraphs
+below are the catalogue's history, when two interfaces lived side by side.
 
 Lot U (2026-10-18) adds 13 states, 12 improvised, all reachable (two by a route), 6
 captured in four files each, in punk only but `sheet-history` and `sheet-history-signed`
@@ -1065,10 +1027,10 @@ The fixes of 2026-10-15 add 2 states, improvised, reachable, not captured by thi
 The rules improvised states must keep are those of the 2026-10-06 line « Every state the
 code can produce is catalogued in docs/interface.md… ». Today these break them:
 
-- « the month, never the day »: the day is written in both interfaces by every `mine-*` row (« 2026-10-05 · … », a panel of lot 3.4) and /revue (the review account only: lines, contributions,
+- « the month, never the day »: the day is written by every `mine-*` row (« 2026-10-05 · … », a panel of lot 3.4) and /revue (the review account only: lines, contributions,
   decisions « rev, 16/10/2026 », « reçue le … »), which DECISIONS 2026-10-13 keeps to the day for
   the person and the reviewers (the `prop-*` and `add-pending-*` rows, public, write the
-  month in both interfaces since then);
+  month since then);
 - « never colour alone »: /revue's legend named colours (« Cercle blanc », « rouge ») until
   lot 1 « Modérer » (2026-10-16), which names the shapes drawn instead (« rond cerclé »,
   « rond plein », « contour pointillé », « zone pleine », « losange », « carré »);
@@ -1159,13 +1121,12 @@ code can produce is catalogued in docs/interface.md… ». Today these break the
 | `map-z10-communes` | Communes by quantile class of Y (punk: by fixed class, < 5 % … ≥ 50 %) | layers.ts:333 areaLayers | 1a (Ville, z11); 24a (dark) | `#10.30/48.895/2.23` | `map-z10-communes` | yes |
 | `map-z12-streets` | Filmed streets, merged axes, by level reached | layers.ts:518 portions | 1a (Quartier, z13) | `#12.60/48.8977/2.2377` | `map-z12-streets` | yes |
 | `map-z14-portions` | Filmed portions, unfilmed segments grey (since 2026-10-17 the z14 portions are the merged intervals of z12-13, without their cameras, which start at z15; punk since 2026-10-16: as wide as the basemap's road of their class, as the filmed ones; the unfilmed tracks, paths, bridleways, motorways and motorway links are not in the tiles, the basemap draws them, rules/streets.yaml unfilmed_not_drawn; since 2026-10-22 no unfilmed segment of a commune without a camera either, its streets are the basemap's alone, unfilmed_only_where_cameras) | layers.ts:504 streets | 1a (Quartier: unfilmed streets drawn) | `#14.50/48.8977/2.2377` | `map-z14-portions` | yes |
-| `map-roads-lifted` | Punk, from z15: the basemap's roads, quays, ramps and bridges drawn in their own style above the fields (fill and outline) and the buildings, its paths (`other`: footways, sidewalks, cycle tracks) from z16 where their portions start, under the filmed streets and every label; tunnels, railways and the pedestrian areas stay below; nothing changes below z15; the classique as before. Since rule:streets@3 the motorways, trunks, cycleways, paths, steps, tracks and bridleways are coloured where filmed, since rule:streets@3.1 the busways too; our streets are at least as wide as these roads (streetwidth.ts) | layers.ts drawnBasemap (`<id>-lifted` copies), stacked; main.ts restyle | IMPROVISED (the owner's captures of 2026-10-15 at Bercy: the paths lost under the fields, worst in « Prudent ») | `#18.31/48.82642/2.39073`, `?est=prudent#17.79/48.82615/2.39061` on an IDF build | — (shots-roads.mjs on an IDF build: avant / apres, Standard and Prudent, z15 – z19, light and dark) | yes, without a capture of its own: every punk map state from z15 |
-| `map-water-over` | Punk, from z15: the basemap's water drawn again over the fields, see through (`--map-water-opacity` 0.7), the halftone guessable under it, a 1 px shore line a little darker (`--map-water-shore`); the fields' outlines under it with their fills; the focused camera's zone above it; the fields not cut, counts unchanged; the classique as before | layers.ts waterOver, drawnBasemap, stacked; theme.ts waterOverFields | IMPROVISED (the owner's request of 2026-10-15) | Bercy `?est=prudent#16.40/48.82509/2.39018`, the canal Saint-Martin at z17, on an IDF build | — (shots-water.mjs on an IDF build: avant / apres, light and dark) | yes, without a capture of its own: every punk map state from z15 with water |
-| `map-z16-street` | Fields, hatching without direction (classique; punk: none, a full circle like the others), pictograms (punk: 16a's full stickers, only the dome, fixed and unknown kinds on CI), sidewalks; punk: the one palette's fields (each level an opaque halftone on its pale ground, pink dots in both modes, two, four or eight per 8 px, its outline dotted, dashed or solid; overlaps of one level alike, the highest level on top), the buildings over them, the filmed ones one pink stroke of their level, wider past z17 (`map-street-wide`); 20a's light blue dot screen over the whole map, under our layers; the header ticket « Surveillance World » with « Filtres et légende → » and « Liste des caméras → », the round pastilles beside it, 20a's floating buttons (« ＋ Ajouter » enabled from z15, « Me localiser » on the ink, the zoom buttons ink squares) | layers.ts punkFields (field-1..3, field-1..3-line), streetLayers (portions), stacked (buildings), classicFields (bands, bands-unknown-direction), paper-dots, cameras; stickers.ts fieldPattern, paperDots; machine.ts:226 buildTicket | 1a (Rue, z16.8), 16a (street view), 17a and 20a (the halftone, the ticket, the pastilles, the floating buttons); the mockup dots an unknown direction: the classique hatches it, punk leaves no trace (2026-10-08); its halftone discs are our exact fields (§3) | `#16.5/48.8963/2.2382` | `map-z16-street` | yes |
+| `map-roads-lifted` | Punk, from z15: the basemap's roads, quays, ramps and bridges drawn in their own style above the fields (fill and outline) and the buildings, its paths (`other`: footways, sidewalks, cycle tracks) from z16 where their portions start, under the filmed streets and every label; tunnels, railways and the pedestrian areas stay below; nothing changes below z15. Since rule:streets@3 the motorways, trunks, cycleways, paths, steps, tracks and bridleways are coloured where filmed, since rule:streets@3.1 the busways too; our streets are at least as wide as these roads (streetwidth.ts) | layers.ts drawnBasemap (`<id>-lifted` copies), stacked; main.ts restyle | IMPROVISED (the owner's captures of 2026-10-15 at Bercy: the paths lost under the fields, worst in « Prudent ») | `#18.31/48.82642/2.39073`, `?est=prudent#17.79/48.82615/2.39061` on an IDF build | — (shots-roads.mjs on an IDF build: avant / apres, Standard and Prudent, z15 – z19, light and dark) | yes, without a capture of its own: every punk map state from z15 |
+| `map-water-over` | Punk, from z15: the basemap's water drawn again over the fields, see through (`--map-water-opacity` 0.7), the halftone guessable under it, a 1 px shore line a little darker (`--map-water-shore`); the fields' outlines under it with their fills; the focused camera's zone above it; the fields not cut, counts unchanged | layers.ts waterOver, drawnBasemap, stacked; theme.ts waterOverFields | IMPROVISED (the owner's request of 2026-10-15) | Bercy `?est=prudent#16.40/48.82509/2.39018`, the canal Saint-Martin at z17, on an IDF build | — (shots-water.mjs on an IDF build: avant / apres, light and dark) | yes, without a capture of its own: every punk map state from z15 with water |
+| `map-z16-street` | Fields, no hatching without direction (a full circle like the others), pictograms (punk: 16a's full stickers, only the dome, fixed and unknown kinds on CI), sidewalks; punk: the one palette's fields (each level an opaque halftone on its pale ground, pink dots in both modes, two, four or eight per 8 px, its outline dotted, dashed or solid; overlaps of one level alike, the highest level on top), the buildings over them, the filmed ones one pink stroke of their level, wider past z17 (`map-street-wide`); 20a's light blue dot screen over the whole map, under our layers; the header ticket « Surveillance World » with « Filtres et légende → » and « Liste des caméras → », the round pastilles beside it, 20a's floating buttons (« ＋ Ajouter » enabled from z15, « Me localiser » on the ink, the zoom buttons ink squares) | layers.ts punkFields (field-1..3, field-1..3-line), streetLayers (portions), stacked (buildings), paper-dots, cameras; stickers.ts fieldPattern, paperDots; machine.ts:226 buildTicket | 1a (Rue, z16.8), 16a (street view), 17a and 20a (the halftone, the ticket, the pastilles, the floating buttons); the mockup dots an unknown direction: the classique hatches it, punk leaves no trace (2026-10-08); its halftone discs are our exact fields (§3) | `#16.5/48.8963/2.2382` | `map-z16-street` | yes |
 | `map-z18-street` | Close up: a dome's hatched disc (punk: its plain full disc), the pictograms' shapes (punk: the stickers' eyes and plates readable); punk: the halftone over the outermost band | the same; layers.ts:200 stickerImage | 16a | `#18.2/48.8979/2.2378` | `map-z18-street` | yes |
 | `map-prudent` | « Prudent » chosen: larger fields, its button pressed, `?est=prudent`; punk: the round « Prudent » pastille pink with its ✓, a solid edge and an ink offset, « Standard » paper, dashed and smaller | filters.ts:588 renderEstimateBar, 93 initialEstimate | 17a (Prudent pastille pressed) | `?est=prudent#16.5/48.8963/2.2382` | `map-prudent` | yes |
 | `map-focus` | A camera in focus: the others dimmed (punk: their dim sticker, the body half-way to the outline, never an opacity), it larger (punk: its big sticker), its outlines and reach, its streets highlighted; a phone's sheet at its top only; punk: the camera's whole zone over the other fields in one dimmed colour, its « identifie » level on top (pattern and a wider solid outline) and its reach as 17a's yellow tag (« identification 6 m », rounded up), on a phone too | filters.ts:219 apply; layers.ts:200 stickerImage, 604 bands-fan, 589 focus-streets, 618 focus-labels, 692 camera-selected; layers.ts:638 focus-labels (punk: icons.ts:137 putTag) | 17a, 4b (focus map); 16a (the « version atténuée ») | `?cam=n1879237466#18/48.896425/2.239968`, phone: the handle twice | `map-focus` | yes |
-| `map-proposals-dots` | z13 – 15: a blue dot per proposal (classique); punk draws no proposal before the stickers' zoom, as 20a (2026-10-09) | proposals.ts:162 (proposal-dot); punk layers.ts proposalTapeLayers | 18a (legend row « point bleu ») | seed full, `#13.6/48.8968/2.2388` | `map-proposals-dots` (classique) | yes |
 | `map-list` | Punk: « Liste des caméras » from the ticket: the cameras in view that the filters keep, nearest the map's centre first, each a button (its sticker, its line « Type · exploitant », its distance) opening its sheet; « N caméras dans la vue (filtres compris) »; a paper panel under the ticket, closed by its × or Escape; the machine closes when it opens and the reverse | machine.ts:837 CameraList, 914 show, 935 render; main.ts:258 listedCameras | IMPROVISED (17a draws the link « Liste des caméras → », not the list) | `#17.4/48.8963/2.2382`, « Liste des caméras » | — | no: hidden until further notice (DECISIONS 2026-10-08, « Punk, until further notice… »), its code kept |
 | `map-list-zoom` | Punk: the list below the street level, where no camera is loaded: « Zoomez au niveau de la rue pour lister les caméras de la vue. » and « Zoomer ici » (to z16) | machine.ts:935 render; main.ts:241 | IMPROVISED | `#13.2/48.8965/2.2385`, « Liste des caméras » | — | no: hidden until further notice (DECISIONS 2026-10-08, « Punk, until further notice… »), its code kept |
 | `map-list-more` | Punk: more than 60 cameras in view: the 60 nearest, then « … et N autres : zoomez pour les voir. » | machine.ts:935 render (MAX) | IMPROVISED | `#15.2/48.8963/2.2382`, « Liste des caméras », scrolled to its end | — | no: hidden until further notice (DECISIONS 2026-10-08, « Punk, until further notice… »), its code kept |
@@ -1198,7 +1159,6 @@ it.
 | `button-panel-hover` | Punk, wide screen: the mouse over the machine's ×: ×1.1 and tilted -12° (the close norm, as the sheet's); no hover on a phone | theme/punk/buttons.css:116 (close) | partly 17a (the ×'s hover on the sheet); on the machine IMPROVISED | `#16.5/48.8963/2.2382`, « Filtres et légende », the mouse over the machine's × | `button-panel-hover` (desktop) (punk) | yes |
 | `button-panel-press` | Punk, wide screen: the mouse button held on « Tout réafficher » with a filter on: it sinks 3 px down and right; nothing is reset until it is released | theme/punk/buttons.css:136 | IMPROVISED (17a draws no press; the 3 px sink is the mockup's press() of 20a's filter keys) | `?f=fresh_never#16.5/48.8963/2.2382`, « Filtres et légende », the mouse held on « Tout réafficher » | `button-panel-press` (desktop) (punk); phone: not captured (pointer state: a touch cannot be held, Playwright's touchscreen only taps) | yes |
 | `filters-z16` | Street zoom: level samples, hatching, maybe gone, verified gone, proposals; « Qui filme » and « Type de caméra » checkboxes with counts, rows absent from the view omitted; drawer closed. Punk: 20a's machine (18a's on a phone, across the width under the ticket's title, the pastilles gone meanwhile) risen in 300 ms under the ticket's title, usable from its first frame: the cut-out title « FILTRES », « Légende ↑ », the counter's drums « 90 caméras affichées sur 90 dans la vue » and « Tout réafficher » (the mushroom, inert until a filter is on), « Qui filme » as four keys with their counts (pressed: pink with a ✓), « Type de caméra » as round stickers with yellow count labels (types absent from the view omitted), « État de la fiche » (« Peut-être disparue », « Correction en attente »), « Plus de filtres »; the case, its handle, tray, crank and screws a decoration | filters.ts:642 levelScale, 464-500, 672; icons.ts:127 cameraCanvas; punk machine.ts:282 buildMachine, 604 render, 694 drumsTo; theme/punk/machine.css | 20a (desktop), 18a (phone), 16a (the stickers); the machine's 1.7 s opening shortened (DECISIONS 2026-10-06, « Animations: at most 400 ms… ») | `#16.5/48.8963/2.2382`, phone: « Filtres » | `filters-z16` | yes |
-| `filters-legend` | Phone, classique: the legend opened (closed by default there); punk: `filters-ticket-legend` | filters.ts:121, 427 | 18a (« Légende ↑ » prints the ticket) | as `filters-z16`, then « Légende » | `filters-legend` (phone) (classique) | yes |
 | `filters-ticket-legend` | Punk: « Légende ↑ » pressed: the ticket prints the legend, « Rue filmée, la caméra peut… (hypothèse Standard, tournée vers vous) », the three levels named, below z15 each with 20a's swatch in its street colour, from z15 with its field's sample alone (halftone and outline as the map draws them; 2026-10-08, « One palette… »), « rue non filmée », « champ de vision : identifier au centre, détecter au bord », « peut-être disparue », « disparue (vérifiée) », « correction en attente », « position proposée », « Calcul ? » (the three names each as wide as itself, the free width between them: at 272 px « reconnaître » and « détecter » 20 px apart, 2026-10-08); the machine slides under the whole ticket, its key reads « Ranger ↓ »; on a phone the ticket takes the pastilles' place | machine.ts:714 renderLegend, 577 setLegend, 214 place; stickers.ts fieldSample | 20a, 18a (« Légende ↑ » prints the ticket); the level samples (DECISIONS 2026-10-08, « One palette… »), « disparue (vérifiée) » and « position proposée » IMPROVISED | `#16.5/48.8963/2.2382`, « Filtres et légende », « Légende ↑ » | `filters-ticket-legend` (punk) | yes |
 | `filters-ticket-legend-areas` | Punk, commune zoom, the legend printed: « Jusqu'à … % des rues, par commune », the five classes with their swatches, « Aucune caméra recensée » | machine.ts:714 renderLegend (areas) | IMPROVISED (20a prints the street legend only; the classes as 1a's strip) | `#10.30/48.895/2.23`, « Filtres et légende », « Légende ↑ » | `filters-ticket-legend-areas` (punk) | yes |
 | `filters-legend-calc` | Punk: « Calcul ? » under the ticket's title, open: what the chosen hypothesis means and the levels' norm (IEC 62676-4) | machine.ts:226 buildTicket (calc), 714 renderLegend | partly 20a (« Calcul ? » is a link to nothing there); its text IMPROVISED | as `filters-ticket-legend`, then « Calcul ? » | `filters-legend-calc` (punk) | yes |
@@ -1208,31 +1168,30 @@ it.
 | `filters-advanced-active` | Two rows on: the drawer opens by itself, « Filtres avancés (2 actifs) », « Filtres (2) », « N tronçons concernés dans la vue »; punk: the two chips pressed, « Plus de filtres (2) », « Filtres et légende (2) », the streets line under the counter | advanced.ts:164 fromParams; filters.ts:502 | 20a (pressed keys with ✓; the streets line is not drawn) | `?f=fresh_never,direction_unknown#16.5/48.8963/2.2382` | `filters-advanced-active` | yes |
 | `filters-operator` | An operator search with matches: its count, the streets line; punk: in « Exploitant précis », its count as a yellow label | filters.ts:536-559 | 20a (« Rechercher un exploitant ») | `?op=Vinci#16.5/48.8963/2.2382` | `filters-operator` | yes |
 | `filters-unchecked` | A type unchecked: its cameras and fields hidden; punk: the type's round key released (paper, no ✓) | filters.ts:479-499 | 20a (a released key) | z16, uncheck « fixe » | `filters-unchecked` | yes |
-| `filters-collapsed` | Wide screen, classique: the panel folded to its title; punk: the machine is closed until asked for (every map state) | filters.ts:416-422 | 20a (closed ticket « Filtres et légende ↓ ») | z16, a click on the title | `filters-collapsed` (desktop) (classique) | yes |
 | `button-panel-rest` | Punk: the panel's own buttons at rest: the ticket's links (17a's typewriter face, a wavy pink underline, 28 px with a mouse, 44 under a finger), the machine's × (an ink square, its × in the light blue), « Légende ↑ » (a yellow key on an ink offset) | machine.ts:226 buildTicket, 282 buildMachine; theme/punk/map.css:69; theme/punk/machine.css:259, 716 | 17a (the ticket's links), 20a, 18a (the machine's × and « Légende ↑ ») | `#16.5/48.8963/2.2382`, phone: « Filtres » | `filters-z16` (punk) | yes, without a capture of its own: `filters-z16`'s screen |
 | `button-panel-focus` | Punk: the keyboard on the ticket's « Filtres et légende »: the dashed outline | theme/punk/base.css:11; machine.ts:226 buildTicket | 7b | `#16.5/48.8963/2.2382`; Tab (Option+Tab in WebKit) to « Filtres et légende » | `button-panel-focus` (punk) | yes |
 
 ### Camera sheet
 
-In punk (lot 3.2) the sheet is 17a's on a wide screen and 4b's on a phone (1.4): each row
-below says what the punk sheet shows where it differs from the classique's.
+The sheet is 17a's on a wide screen and 4b's on a phone (lot 3.2, 1.4); a row's « punk: »
+says what the sheet shows where its first words, older, describe the classique's (removed
+on 2026-10-23).
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
-| `sheet-peek` | Phone: the sheet at its lowest (handle, line, headline; punk: 4b's « réduite », the sticker, the title in letters with the operator under it, « ↑ » and ×, the three tickets and their note; the dates come when it rises, as in 4b's « étendue »); the same screen as `map-focus` on a phone | bottomsheet.ts:52 visible; chips.ts:539 punkSheet (`.sheet-top`) | IMPROVISED (4b « réduite » is our peek in punk, our half in the classique) | `sheet-fixed`, the handle twice | `sheet-peek` (phone) | yes |
+| `sheet-peek` | Phone: the sheet at its lowest (handle, line, headline; punk: 4b's « réduite », the sticker, the title in letters with the operator under it, « ↑ » and ×, the three tickets and their note; the dates come when it rises, as in 4b's « étendue »); the same screen as `map-focus` on a phone | bottomsheet.ts:52 visible; chips.ts:539 punkSheet (`.sheet-top`) | IMPROVISED (4b « réduite » is our peek) | `sheet-fixed`, the handle twice | `sheet-peek` (phone) | yes |
 | `sheet-half-scrolled` | Punk, phone: the sheet half open, its paper scrolled 120 px: the head alone stays, folded to one bar (lot U2: the sticker, the title on one line in plain letters cut short with « … », « ↑ » and ×, an ink rule under it), the dates, the tickets and the facts went under it; back at its start at the peek (2026-10-09, « Punk sheets on a phone… ») | chips.ts:197 pinHead; theme/punk/sheet.css (a phone) | IMPROVISED (4b draws no scrolled sheet) | `sheet-fixed`, the paper scrolled 120 px | `sheet-half-scrolled` (phone) (punk) | yes |
-| `sheet-chip-help` | Classique: a chip tapped: its explanation and its certainty's under the chips. Punk: rows are not buttons, no such state; their help is in « Calcul ? » (`sheet-how`) | sheet.ts:451 renderSheet (chips) | IMPROVISED | `sheet-fixed`, full, first chip | `sheet-chip-help` (classique) | yes |
 | `sheet-how` | « Comment c'est calculé ? » open (punk: « Calcul ? » opened under the links: certainty in 17a's language, the tickets and the two estimates, then each row's meaning with its certainty's word, aria-expanded) | sheet.ts:451 renderSheet; chips.ts:460 how | IMPROVISED (17a, 4b: the « Calcul ? » link only) | `sheet-fixed`, full, the summary (punk: « Calcul ? ») | `sheet-how` | yes |
 | `sheet-share` | Wide screen: « Partager » copied the link, « Lien copié » for 3 s (punk: a link of 17a's) | sheet.ts:652 shareButton | IMPROVISED (4b: a « Partager » link) | `sheet-fixed`, Partager (clipboard allowed, no share sheet) | `sheet-share` (desktop) | yes |
-| `sheet-history` | Lot U: the sheet ends with « Historique », the contributions the review accepted (validated, applied, superseded), newest first: what each changed (« Ajoutée », « Vérifiée », « Introuvable », « Position corrigée », « Forme précisée », « Direction relevée », « Hauteur précisée », « Inclinaison précisée », « Exploitant précisé »), its month and « par un contributeur ». Lot U2, both interfaces: two lines an entry at most, even 320 px wide, « Position corrigée · octobre 2026 » then, smaller, « par un contributeur » on one line (a long pseudonym cut short with « … »); punk under the « Supposé » box's ink tile, no tag nor dotted leader; classique as a bulleted list. Asked at each opening (GET /api/history, no-store), never awaited: it comes in last in the body, under every button and link; nothing at all when the list is empty or the API unreachable | history.ts historySlot, section; historytext.ts; sheet.ts renderSheet (`history`); chips.ts punkSheet (`parts.history`); main.ts historyOf | IMPROVISED (no board draws a camera's history; 17a's rows and its box's title tile) | n1925180682 (cara's move, validated), seed full, the sheet full, the section in view | `sheet-history` | yes |
+| `sheet-history` | Lot U: the sheet ends with « Historique », the contributions the review accepted (validated, applied, superseded), newest first: what each changed (« Ajoutée », « Vérifiée », « Introuvable », « Position corrigée », « Forme précisée », « Direction relevée », « Hauteur précisée », « Inclinaison précisée », « Exploitant précisé »), its month and « par un contributeur ». Lot U2: two lines an entry at most, even 320 px wide, « Position corrigée · octobre 2026 » then, smaller, « par un contributeur » on one line (a long pseudonym cut short with « … »); under the « Supposé » box's ink tile, no tag nor dotted leader. Asked at each opening (GET /api/history, no-store), never awaited: it comes in last in the body, under every button and link; nothing at all when the list is empty or the API unreachable | history.ts historySlot, section; historytext.ts; sheet.ts renderSheet (`history`); chips.ts punkSheet (`parts.history`); main.ts historyOf | IMPROVISED (no board draws a camera's history; 17a's rows and its box's title tile) | n1925180682 (cara's move, validated), seed full, the sheet full, the section in view | `sheet-history` | yes |
 | `sheet-history-signed` | The same once its author chose « Afficher mon pseudonyme sur les caméras que j'ai relevées »: « par cara » (punk « PAR CARA »), at the next opening of the sheet; taken back, « par un contributeur » again | history.ts; pipeline/lacarte/api/app.py camera_history (HISTORY_WHO) | IMPROVISED | as `sheet-history`, cara's choice on (PUT /api/me/history-pseudonym) | `sheet-history-signed` | yes |
 | `sheet-history-osm` | A contribution published on OpenStreetMap's live server: « Son historique sur OpenStreetMap ↗ » under the history (punk: a link of 17a's), to the node's history there; never a test server's object | history.ts outLink; historytext.ts osmLinks, parseHistory (OSM_LIVE) | IMPROVISED | route: GET /api/history with a live publication (bench/smoke-profile.mjs, the dome n998633844 opened from « Mes caméras ») | — | yes, route: no live publication on the CI data |
 | `sheet-household` | « Caméra fixe · de particulier » (a validated answer; punk: the title « Caméra fixe de particulier », the Statut row tagged « réponse · 10/26 », « ~UN PARTICULIER ») | sheet.ts:79 headLine, 211 chips; chips.ts:285 shortTitle, 300 rows | IMPROVISED | n1864927349 (fixture k3), `#18/48.897241/2.239254` | `sheet-household` | yes |
-| `sheet-no-field` | A field under 10 m² or drawn inside a building (tiles `pv`): « Position ou direction à vérifier », no ruler, the OSM edit link under the headline, « Déplacer » first and filled, chip « À vérifier : champ dessiné presque nul » (punk: no tickets, the yellow band « Position ou direction à vérifier : champ dessiné presque nul », « Corriger sur OpenStreetMap ↗ », « Modifier » pink (`primary`, as « Déplacer » was before lot 3.4) first in the buttons' line, then « Toujours là ? ») | sheet.ts:451 renderSheet; chips.ts:539 punkSheet (band); participate/index.ts:535-537, 580 (classique), 552-569 (punk) | IMPROVISED | n1925222794, `#18/48.8960185/2.23791` | `sheet-no-field` | yes |
+| `sheet-no-field` | A field under 10 m² or drawn inside a building (tiles `pv`): « Position ou direction à vérifier », no ruler, the OSM edit link under the headline, « Déplacer » first and filled, chip « À vérifier : champ dessiné presque nul » (punk: no tickets, the yellow band « Position ou direction à vérifier : champ dessiné presque nul », « Corriger sur OpenStreetMap ↗ », « Modifier » pink (`primary`, as « Déplacer » was before lot 3.4) first in the buttons' line, then « Toujours là ? ») | sheet.ts:451 renderSheet; chips.ts:539 punkSheet (band); participate/index.ts actions | IMPROVISED | n1925222794, `#18/48.8960185/2.23791` | `sheet-no-field` | yes |
 | `sheet-private-indoor` | « Caméra fixe · privée (intérieur) »: an indoor camera has no field at all, so the headline reads « Position ou direction à vérifier » with the OSM edit link, while nothing is to check (no chip says why; « Déplacer » not first): the no-field branch does not tell an indoor camera apart (punk: the same band, without its reason; Statut « ~PRIVÉ (INTÉRIEUR) ») | sheet.ts:451 renderSheet (noField) | IMPROVISED | n2001235418 (also n2001231961), `#18/48.896392/2.238238` | `sheet-private-indoor` | yes |
 | `sheet-too-high` | Height and tilt known (OSM height 6 m, camera:angle 45): « Filme, mais trop haute ou trop inclinée pour identifier (~X en prudent) » (punk: the identify ticket « — », « reconnaît » on pink, the note « trop haute ou trop inclinée pour identifier · Prudent : ~10 · ~13 · ~37 m », the sentence the tickets' name; in a preview build the CNIL box below the chips too, as in `sheet-cnil`) | sheet.ts:160 headline; chips.ts:370 tickets | IMPROVISED (no tilt in the mockup) | n1925222792, `#18/48.895987/2.237501` | `sheet-too-high` | yes |
 | `sheet-too-high-prudent` | The same under Prudent: « Peut identifier jusqu'à ~X (en standard, trop haute ou trop inclinée pour identifier) » (punk: the Prudent tickets, the note « Standard : — · ~9,2 · ~19 m »; in a preview build the CNIL box below the chips too, as in `sheet-cnil`) | sheet.ts:160 headline; chips.ts:370 tickets | IMPROVISED | n1925222792 with `&est=prudent` | `sheet-too-high-prudent` | yes |
-| `sheet-height-tilt-answered` | Height and tilt from validated answers: « Hauteur : 1er étage (≈ 4 m) (punk, the editor's metres since the lot of 2026-10-12: « ~4 m »), d'après une réponse sur place (octobre 2026) », « Inclinaison : un peu vers le bas, d'après une réponse (octobre 2026) », « Vérifiée sur place (octobre 2026) » (the on-site answer); the note under the links still says « Aucune date de vérification ; dernière modification OpenStreetMap le … » (sheet.ts reads OpenStreetMap's survey date only) — a contradiction in the classique. Punk: Hauteur tagged « sur place · 10/26 », « ~1ER ÉTAGE (≈ 5 M) », Inclinaison « réponse · 10/26 », the dates line « Vérifiée sur place : octobre 2026 · Modif. OSM : juillet 2024 » (no stamp since 2026-10-08): no contradiction | sheet.ts:211 chips; chips.ts:342 dates | IMPROVISED (17a: « Hauteur ~3 m », no tilt) | n12035135119 (fixture l1 – l4), `#18/48.897946/2.233871` | `sheet-height-tilt-answered` | yes |
+| `sheet-height-tilt-answered` | Height and tilt from validated answers: « Hauteur : 1er étage (≈ 4 m) (punk, the editor's metres since the lot of 2026-10-12: « ~4 m »), d'après une réponse sur place (octobre 2026) », « Inclinaison : un peu vers le bas, d'après une réponse (octobre 2026) », « Vérifiée sur place (octobre 2026) » (the on-site answer); the note under the links still says « Aucune date de vérification ; dernière modification OpenStreetMap le … » (sheet.ts reads OpenStreetMap's survey date only). Punk: Hauteur tagged « sur place · 10/26 », « ~1ER ÉTAGE (≈ 5 M) », Inclinaison « réponse · 10/26 », the dates line « Vérifiée sur place : octobre 2026 · Modif. OSM : juillet 2024 » (no stamp since 2026-10-08): no contradiction | sheet.ts:211 chips; chips.ts:342 dates | IMPROVISED (17a: « Hauteur ~3 m », no tilt) | n12035135119 (fixture l1 – l4), `#18/48.897946/2.233871` | `sheet-height-tilt-answered` | yes |
 | `sheet-gone` | Verified gone: grey pictogram (punk: the gone sticker), « Disparue : introuvable sur place (septembre 2026) », the OSM link, no ruler, chip « Disparue » (punk: no tickets, the stamp « Disparue / introuvable sur place · septembre 2026 » in their place, « Corriger sur OpenStreetMap ↗ », no « Vérifié » stamp) | sheet.ts:451 renderSheet; chips.ts:539 punkSheet (stamp) | IMPROVISED (20a: a filter « disparue » only; the stamp is 17a's « Toujours là ») | `?cam=n1923568277&f=gone` (fixture d2) | `sheet-gone` | yes |
 | `sheet-position-corrected` | A validated move made on site: « Position : corrigée sur place (septembre 2026) », « Vérifiée sur place (septembre 2026) » (punk: the Position row tagged « sur place · 09/26 », « CORRIGÉE », the dates line, no stamp) | sheet.ts:211 chips; chips.ts:300 rows | IMPROVISED (3a, 4a draw the correction form, not its result) | n1925222790 (fixture a1), `#18/48.896031/2.237693` | `sheet-position-corrected` | yes |
 | `sheet-position-corrected-off` | The same not on site: « corrigée (septembre 2026) », « Vérifiée (septembre 2026) » (punk: tagged « contribution · 09/26 », « Vérifiée : septembre 2026 ») | sheet.ts:211 chips | IMPROVISED | n1923568246 (fixture b1, b2) | `sheet-position-corrected-off` | yes |
@@ -1241,7 +1200,6 @@ below says what the punk sheet shows where it differs from the classique's.
 | `sheet-added` | An add a build applied, made on site: « ? » pictogram (punk: the unknown sticker), « Position : ajoutée sur place (octobre 2026) » (punk: the Position row tagged « sur place · 10/26 », « AJOUTÉE »), no OSM link | sheet.ts:211 chips, 451; chips.ts:300 rows | IMPROVISED | cadd000010000 (fixture add00001) | `sheet-added` | yes |
 | `sheet-added-answered` | An applied add with its answers (shape, direction, who films), not on site (punk: tagged « contribution » and « réponse », each « · 10/26 »; its own add is its only sighting: no « Vérifiée », no stamp) | sheet.ts:211 chips; chips.ts:342 dates | IMPROVISED | cadd000020000 (fixture add00002, a2…21 – 23) | `sheet-added-answered` | yes |
 | `sheet-reviewer-conflict` | The review account: « 1 contribution en conflit avec OpenStreetMap sur cette caméra », « Voir dans la revue » (punk: a yellow band under the tickets) | participate/index.ts:439 renderConflicts | IMPROVISED | seed full, who=rev, n1891366478 (fixture e1, settled in conflict) | `sheet-reviewer-conflict` | yes |
-| `sheet-cnil` | A private camera filming the street, in a preview build only: the CNIL box below the chips, « Caméra privée tournée vers la voie publique : potentiellement non conforme », « Un particulier ou une entreprise ne peut pas… », « Adresser une plainte à la CNIL »; without a surveyed direction « … qui peut filmer … » (punk: suspended until further notice, DECISIONS 2026-10-08 « Punk, until further notice… »; chips.ts still draws it as a yellow band, its words, its link ↗, below the « Supposé » box, when given one) | sheet.ts:451 renderSheet; chips.ts:539 punkSheet; main.ts:56 CNIL_SIGNAL | IMPROVISED | n1925222792, `#18/48.895987/2.237501`, full, the box; a build with `VITE_CNIL_SIGNAL=true` served by `LACARTE_DIST` | `sheet-cnil` (classique) (`--cnil`) | yes, in a preview build (`VITE_CNIL_SIGNAL=true`) |
 | `chip-answer` | Punk: the « réponse · 10/26 » tag (on pale pink, wine in dark), a validated « Compléter » answer made elsewhere: on n12035135119 « Type », « Direction » and « Inclinaison », their values without the source and the month the tag says, « ~ » before them (estimated) | chips.ts:88 factRow; theme/punk/chips.css (`.chip-tag.answer`) | IMPROVISED (17a tags « OSM » and « sur place » only) | n12035135119 (fixture l1 – l4), full, rows | `sheet-height-tilt-answered` (punk) | yes, without a capture of its own: `sheet-height-tilt-answered`'s screen |
 | `chip-contribution` | Punk: the « contribution · 10/26 » tag (as « réponse »), another validated contribution made elsewhere: the Position row « AJOUTÉE » (cadd000020000) | the same | IMPROVISED | cadd000020000 (fixture add00002), full, rows | `sheet-added-answered` (punk) | yes, without a capture of its own: `sheet-added-answered`'s screen |
 | `chip-no-certainty` | Punk: what has a source but no certainty: the dates line (« Vérifiée (OSM) : <mois> », OpenStreetMap's check date) and the no-field band (« champ dessiné presque nul », computed, neither tag nor certainty); beside them « Type », « Direction », « Hauteur », « Inclinaison » tagged « OSM », « ~ » (estimated), and « Angle de champ », « Vision de nuit » in the box « Supposé d'après le type », no « ? » (default, never asked) | chips.ts:342 dates, 539 punkSheet (band) | IMPROVISED (17a draws the check date as a stamp) | n1932117216, `#18/48.896421/2.239843`, full, rows | `chip-no-certainty` (punk) | yes |
@@ -1263,7 +1221,7 @@ below says what the punk sheet shows where it differs from the classique's.
 | `sheet-fixed` | Half (phone) or panel: line, headline (Standard first), « Toujours là ? / Déplacer / Compléter », « Vos contributions », ruler, chips with their certainty (here ◐ and ○), « Vérifiée il y a 4 ans », how, Partager, OSM links. Punk (17a, 4b): the title « Caméra fixe publique » in letters, the dates line, the tickets « ~5,5 m identifie / ~11 m reconnaît / ~55 m détecte » and « Prudent : ~13 · ~25 · ~126 m », the stamp « Vérifié ✓ 07/22 », the rows tagged « OSM » with « ~ », the box « Supposé d'après le type » (Angle de champ, Vision de nuit: never asked, no « ? »), « Modifier » without its « ? » (nothing it asks is assumed) and « Toujours là ? », the links | sheet.ts:451 renderSheet; chips.ts:539 punkSheet; participate/index.ts:382 actions | 17a (desktop), 4b (phone) | `?cam=n1879237466#18/48.896425/2.239968` | `sheet-fixed` | yes |
 | `sheet-prudent` | « Prudent » chosen: the headline turned round, « … (~X en standard) » (punk: the Prudent tickets, the note « Standard : … ») | sheet.ts:160 headline; chips.ts:370 tickets | 17a (Prudent pastille) | the same with `&est=prudent` | `sheet-prudent` | yes |
 | `sheet-full` | Phone: the whole sheet (punk: 4b's « étendue », the buttons in the body's flow) | bottomsheet.ts:99 step | 4b (étendue) | `sheet-fixed`, the handle | `sheet-full` (phone) | yes |
-| `sheet-no-direction` | Dome without a surveyed direction: « Peut identifier jusqu'à ~X si elle est tournée vers vous (~Y en prudent) », a full hatched disc (punk: the note « Prudent : … » under the tickets, without « si elle est tournée vers vous » since 2026-10-11, as 4b; on the map a full disc drawn like every other field, no hatching) | sheet.ts:160 headline; chips.ts:370 tickets; filters.ts:100 withoutDirection | 2b, 4b (« tournée vers vous » as a note; not in 17a); the mockup's dots: hatching in the classique, nothing in punk (DECISIONS 2026-10-08) | n5442645358, `#18/48.898154/2.237327` | `sheet-no-direction` | yes |
+| `sheet-no-direction` | Dome without a surveyed direction: « Peut identifier jusqu'à ~X si elle est tournée vers vous (~Y en prudent) », a full hatched disc (punk: the note « Prudent : … » under the tickets, without « si elle est tournée vers vous » since 2026-10-11, as 4b; on the map a full disc drawn like every other field, no hatching) | sheet.ts:160 headline; chips.ts:370 tickets; filters.ts:100 withoutDirection | 2b, 4b (« tournée vers vous » as a note; not in 17a); the mockup's dots: nothing (DECISIONS 2026-10-08) | n5442645358, `#18/48.898154/2.237327` | `sheet-no-direction` | yes |
 | `sheet-no-direction-prudent` | The same under Prudent | sheet.ts:160 headline | as above | with `&est=prudent` | `sheet-no-direction-prudent` | yes |
 | `sheet-no-direction-chips` | Its chips: « Direction : non relevée » ○, « Angle de champ : 360° (direction non relevée) », « Hauteur : 5 m » ○ (punk: the « Supposé · à compléter » box, « Direction » and « Hauteur » with their « ? » (« Modifier » asks a dome's height), « Angle de champ » « 360° » and « Vision de nuit » without: never asked) | sheet.ts:211 chips; chips.ts punkSheet; participate/questions.ts editorAnswerable | 17a (box « Supposé · à compléter ») | n5442645358, full, rows | `sheet-no-direction-chips` | yes |
 | `sheet-unknown` | Type and operator unknown: « ? » pictogram (punk: the unknown sticker, a star with a big « ? »), « Caméra de type inconnu · d'exploitant inconnu », « Type : inconnu » ○ (punk: the title « Caméra » in letters, Type and Statut « INCONNU » in the « Supposé · à compléter » box with their « ? », Direction and Hauteur too, Angle de champ and Vision de nuit without) | sheet.ts:79 headLine, 211 chips; chips.ts:285 shortTitle | 17a (« ? » values, « Compléter » with its « ? »), 16a (unknown sticker) | n9622344410, `#18/48.897761/2.239971` | `sheet-unknown` | yes |
@@ -1286,12 +1244,11 @@ below says what the punk sheet shows where it differs from the classique's.
 
 In punk (lot 3.2) the proposal block sits under the distance tickets, without a frame: its
 line on 20a's yellow tape (« correction en attente »), its counts and notes on the paper, its
-buttons the participation's (1.4). The words are participate/index.ts's; both interfaces
-date the proposal by its month (« déplacée de 7,2 m en octobre 2026 », « signalée
+buttons the participation's (1.4). The words are participate/index.ts's; it dates the
+proposal by its month (« déplacée de 7,2 m en octobre 2026 », « signalée
 introuvable en octobre 2026 »; DECISIONS 2026-09-30, « Dates of contributions on the map
 are months… »): `GET /api/proposals` gives the public `month`, never the day (DECISIONS
-2026-10-13, « The public API dates a pending proposal by its month… »; until then the
-classique wrote the day).
+2026-10-13, « The public API dates a pending proposal by its month… »).
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
@@ -1319,8 +1276,8 @@ classique wrote the day).
 In punk (lot 3.2): « Caméra proposée » in cut-out letters (smaller on a phone, a word longer
 than « PUBLIC »), the pale sticker before it on a phone, its status on 20a's yellow tape, then
 the proposal block, its line on the paper (chips.ts punkPendingSheet), dated by the month
-(« Ajoutée en octobre 2026 », « Ajoutée sur place en octobre 2026 »), as the classique's
-since the public API gives no day (DECISIONS 2026-10-13). Under that line punk lists the answers its field is computed from
+(« Ajoutée en octobre 2026 », « Ajoutée sur place en octobre 2026 »), since the public API
+gives no day (DECISIONS 2026-10-13). Under that line punk lists the answers its field is computed from
 (DECISIONS 2026-10-08; participate/index.ts addAnswers, the API's add_answers): Forme,
 Direction, Hauteur (Inclinaison when one is kept), Qui filme, « pas de réponse » where none
 is; and the map outlines that field in the ink, dashed (proposals.ts `proposal-field-line`),
@@ -1336,7 +1293,6 @@ while the sheet is open. The seed's adds carry no answer: on their captures ever
 | `add-pending-validated` | « Validée, visible à la prochaine mise à jour », « Ajoutée en octobre 2026 »; « Je confirme » / « Ce n'est pas ça » still offered on a decided add | sheet.ts:570 | IMPROVISED | c5eed0a030000 (cara's, validated), `#18.5/48.899/2.2405` | `add-pending-validated` | yes |
 | `add-pending-conflict` | The review account only: « En attente de vérification », « … une caméra OpenStreetMap a été cartographiée tout près », « Voir dans la revue » | participate/index.ts:269-281 | IMPROVISED | seed full (add00003 settled: duplicate), who=rev, `?cam=cadd000030000` | `add-pending-conflict` | yes |
 | `add-pending-queued` | An add sent offline, its pale pictogram tapped: « En attente d'envoi » | proposals.ts:200-205 | IMPROVISED | `add-summary`, offline, « Envoyer l'ajout » (punk: `add-sheet-filled`, offline, « Envoyer », « Terminer »), a tap on it | `add-pending-queued` | yes |
-| `add-pending-sent` | An add that has left the phone, drawn from an answer of the proposals asked before it reached the server (a slow network): « En attente de validation », as a pending one (the raw key « sheet.pending_add.headline.sent » until lot 3.2, which gave it its string) | sheet.ts:604 renderPendingSheet; proposals.ts:231 draw | IMPROVISED | who=gil, `add-summary`, then « Envoyer l'ajout » with GET /api/proposals?bbox answered late (the one asked as the questions close after 3 s, the later ones after 25 s), a tap on it (writes) | `add-pending-sent` (classique) | yes |
 
 ### Commune, arrondissement, département
 
@@ -1344,15 +1300,15 @@ while the sheet is open. The seed's adds carry no answer: on their captures ever
 |---|---|---|---|---|---|---|
 | `area-tab-cameras` | Punk: the « 94 caméras » ticket chosen: « La liste des caméras », « direction non relevée pour 10 % » (under the label when the line is full), the cameras by type with the map's 16a sticker (redrawn on a change of mode), a dotted leader to each count — Dôme 6, Fixe 85, Type inconnu 3 —, a type without camera left out; « Types non comptés dans ces données. » on tiles built before 90e5a9a | areapunk.ts:229 cameras, 215 countRow, 373 punkAreaSheet; area.ts:58 (the sticker, icons.ts cameraCanvas) | 24a (its tab, panel and list by type); no « Ouvrir la liste complète → » (§3) | `?insee=92026`, « 94 caméras » | `area-tab-cameras` (punk) | yes |
 | `area-half-scrolled` | Punk, phone: the commune sheet half open, its paper scrolled 120 px: the title alone stays, folded to one bar (lot U2), the tabs and the panel went under it (2026-10-09, « Punk sheets on a phone… ») | areapunk.ts:373 punkAreaSheet; chips.ts:197 pinHead | IMPROVISED (24a draws no phone) | `?insee=92026`, the paper scrolled 120 px | `area-half-scrolled` (phone) (punk) | yes |
-| `area-how` | Classique: « Comment c'est calculé ? » open. Punk: « Calcul ? » open under the links: « À portée », et les mètres qui « peuvent être filmés »… (a maximum), the street length, the rounding (the fraction never above Y, the percentage when it falls more than 2 points below), the cameras by type, « Qui filme ? » counts cameras and ends with the classes, the quantiles, the area's reliability, « Standard / Prudent… », the source | area.ts:58 renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a: the « Calcul ? » link only) | `?insee=92026`, full, « Calcul ? » | `area-how` | yes |
+| `area-how` | « Calcul ? » open under the links: « À portée », et les mètres qui « peuvent être filmés »… (a maximum), the street length, the rounding (the fraction never above Y, the percentage when it falls more than 2 points below), the cameras by type, « Qui filme ? » counts cameras and ends with the classes, the quantiles, the area's reliability, « Standard / Prudent… », the source | area.ts renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a: the « Calcul ? » link only) | `?insee=92026`, full, « Calcul ? » | `area-how` | yes |
 | `area-departement` | « Hauts-de-Seine », « Département (92) »; punk: 24a's sheet, its ramp the départements' (`meta.departements`) | area.ts:43 areaLine; areapunk.ts:107 mapClass | IMPROVISED (24a draws a commune only) | `?insee=92` | `area-departement` | yes |
-| `area-no-camera` | No camera, no street within reach. Classique: « Entre 0 % et 0 % des rues », « Aucune caméra recensée », « Fiabilité : non calculable… », « Aucun exploitant renseigné. ». Punk: « Aucune rue à portée », « 0 caméra », « 0 exploitant nommé », the street empty (0 m, 100 m hors de portée), « Sur la carte : hachurée, aucune caméra recensée. » | area.ts:58 renderAreaSheet; areapunk.ts:82 streetShare, 285 place | IMPROVISED | `?insee=92035` (La Garenne-Colombes) | `area-no-camera` | yes |
-| `area-no-camera-filmed` | No camera, yet streets within reach of the next commune's. Classique: « Entre 0 % et 58 % des rues » beside « Aucune caméra recensée ». Punk: « 57 % / des rues à portée » (Y = 58,0 %: « 5 sur 10 » would fall 8 points below), 58 m « peuvent être filmés », « Aucune caméra recensée ici : ces rues sont à portée de caméras voisines. », no cursor on the ramp (the map hatches it) | area.ts:58 renderAreaSheet; areapunk.ts:82 streetShare, 149 streets | IMPROVISED | `?insee=92050` (Nanterre) | `area-no-camera-filmed` | yes |
+| `area-no-camera` | No camera, no street within reach: « Aucune rue à portée », « 0 caméra », « 0 exploitant nommé », the street empty (0 m, 100 m hors de portée), « Sur la carte : hachurée, aucune caméra recensée. » | area.ts renderAreaSheet; areapunk.ts:82 streetShare, 285 place | IMPROVISED | `?insee=92035` (La Garenne-Colombes) | `area-no-camera` | yes |
+| `area-no-camera-filmed` | No camera, yet streets within reach of the next commune's: « 57 % / des rues à portée » (Y = 58,0 %: « 5 sur 10 » would fall 8 points below), 58 m « peuvent être filmés », « Aucune caméra recensée ici : ces rues sont à portée de caméras voisines. », no cursor on the ramp (the map hatches it) | area.ts renderAreaSheet; areapunk.ts:82 streetShare, 149 streets | IMPROVISED | `?insee=92050` (Nanterre) | `area-no-camera-filmed` | yes |
 | `area-arrondissement` | « Arrondissement · Paris (75) » (punk: the same line under the cut-out name, ranked among the communes) | area.ts:43 areaLine | IMPROVISED | — | — | no: no municipal arrondissement in `tests/fixtures/ci-admin` (IDF `?insee=75104`) |
-| `area-no-operator-info` | Classique: « … dont N publiques et M sans exploitant précis ». Punk: those cameras are among « Exploitant non renseigné » (or « Autres exploitants ou non renseigné ») of « Qui filme ? » | area.ts:52 ofWhich; areapunk.ts:254 who | IMPROVISED | — | — | no: no CI camera's operator value says nothing (n_no_operator_info 0) |
-| `area-reliability-low` | « Fiabilité moyenne » or « faible » with its reason (punk: in « Calcul ? ») | area.ts:58 renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a drops the reliability) | — | — | no: Courbevoie and Hauts-de-Seine are « bonne » on CI |
-| `area-commune` | Classique: name, « Commune · Hauts-de-Seine (92) », « Entre X % et Y % des rues », cameras « dont N publiques », share without direction, road km, reliability, top operators, Partager. Punk (24a): the name in cut-out letters, its line, three tickets that are tabs — « 5 sur 10 / rues à portée » (Y = 51,4 %, rounded down), « 94 / caméras », the first operator's name (clamped to two lines) / « a le plus de caméras » — the « Rues » panel: « Sur 100 m de rue », « Toutes / Publiques », the 100 m street (51,5 m in light blue on the ink), « 51,5 m peuvent être filmés · 10,1 km » and « 48,5 m hors de portée · 9,4 km »; the map's ramp with « Courbevoie » over it and a ▾ on its class (the name never runs out of the ramp), « Sa couleur : la classe la plus filmée (plus de 51,4 % des rues à portée) »; Partager, Calcul ? | area.ts:58 renderAreaSheet; areapunk.ts:373 punkAreaSheet, 149 streets, 285 place | 24a (dark, desktop); punk: Y only (§3) | `?insee=92026` (Courbevoie) | `area-commune` | yes |
-| `area-commune-public` | The map's « Caméras publiques seules ». Classique: « … par des caméras publiques ». Punk: the sheet opens on « Publiques »: « 47 % / des rues à portée » (Y = 47,4 %: « 4 sur 10 » would fall 7 points below), 47,5 m, the ramp on the public set's breaks | area.ts:58 renderAreaSheet; main.ts:681; areapunk.ts:149 streets | 24a (« Toutes / Publiques ») | `?insee=92026`, Filtres, « Caméras publiques seules » | `area-commune-public` | yes |
+| `area-no-operator-info` | Cameras without a precise operator: among « Exploitant non renseigné » (or « Autres exploitants ou non renseigné ») of « Qui filme ? » | areapunk.ts:254 who | IMPROVISED | — | — | no: no CI camera's operator value says nothing (n_no_operator_info 0) |
+| `area-reliability-low` | « Fiabilité moyenne » or « faible » with its reason (punk: in « Calcul ? ») | area.ts renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a drops the reliability) | — | — | no: Courbevoie and Hauts-de-Seine are « bonne » on CI |
+| `area-commune` | 24a: the name in cut-out letters, its line, three tickets that are tabs — « 5 sur 10 / rues à portée » (Y = 51,4 %, rounded down), « 94 / caméras », the first operator's name (clamped to two lines) / « a le plus de caméras » — the « Rues » panel: « Sur 100 m de rue », « Toutes / Publiques », the 100 m street (51,5 m in light blue on the ink), « 51,5 m peuvent être filmés · 10,1 km » and « 48,5 m hors de portée · 9,4 km »; the map's ramp with « Courbevoie » over it and a ▾ on its class (the name never runs out of the ramp), « Sa couleur : la classe la plus filmée (plus de 51,4 % des rues à portée) »; Partager, Calcul ? | area.ts renderAreaSheet; areapunk.ts:373 punkAreaSheet, 149 streets, 285 place | 24a (dark, desktop); punk: Y only (§3) | `?insee=92026` (Courbevoie) | `area-commune` | yes |
+| `area-commune-public` | The map's « Publiques seules »: the sheet opens on « Publiques »: « 47 % / des rues à portée » (Y = 47,4 %: « 4 sur 10 » would fall 7 points below), 47,5 m, the ramp on the public set's breaks | area.ts renderAreaSheet; main.ts:681; areapunk.ts:149 streets | 24a (« Toutes / Publiques ») | `?insee=92026`, Filtres, « Caméras publiques seules » | `area-commune-public` | yes |
 | `area-sheet-public` | Punk: « Publiques » pressed in the sheet itself (the map's « Qui filme » unchanged): the street, its rows, the first ticket and the ramp recounted for the public cameras, the keyboard focus kept on « Publiques » | areapunk.ts:373 punkAreaSheet setPub | 24a (« Toutes / Publiques » in the « Rues » panel) | `?insee=92026`, « Publiques » | `area-sheet-public` (punk) | yes |
 | `area-tab-who` | Punk: the first operator's ticket chosen: « Qui filme ? », each named operator with its count and a pink bar of its share of the cameras, then under a dashed rule « Exploitant non renseigné » (fewer than five names: every camera left has none) or « Autres exploitants ou non renseigné » (five names) in grey; then « Par catégorie d'exploitant » and every camera by class with a dotted leader — Publiques 43, Privées, extérieur 46, Privées, intérieur 2, Exploitant inconnu 3 (« Aucun exploitant renseigné. » above them when no name) | areapunk.ts:254 who | 24a (« Qui filme ? »); the classes IMPROVISED (§3) | `?insee=92026`, the operator's ticket | `area-tab-who` (punk) | yes |
 
@@ -1363,51 +1319,32 @@ while the sheet is open. The seed's adds carry no answer: on their captures ever
 | `verify-question` | « Cette caméra est-elle toujours là ? »: Elle est là / Je ne la trouve pas / Je ne sais pas / Annuler, the on-site line with « Me localiser » | verify.ts:12 verifyPanel; onsite.ts:60 onSiteHelp | IMPROVISED (17a: « Toujours là ? » stamps at once) | n1879237466, « Toujours là ? » | `verify-question` | yes |
 | `verify-gone` | Punk, on a camera verified gone: « Elle n'est plus là (je confirme) » (one tap: its words confirm; it says « introuvable » again) / « Elle est toujours là » / Annuler, the on-site line | verify.ts verifyPanel (`data-gone`, set by sheet.ts renderSheet) | IMPROVISED (DECISIONS 2026-10-08, « Punk, until further notice… ») | n1923568277 with `&f=gone`, « Toujours là ? » | `verify-gone` (punk) | yes |
 | `verify-armed` | « J'ai bien cherché autour : confirmer » (6 s) | verify.ts:52-67 | IMPROVISED | « Je ne la trouve pas » once | `verify-armed` | yes |
-| `verify-queued` | Offline: « Merci, c'est enregistré sur ce téléphone ; envoi dès que le réseau revient. », its proposal waiting; punk on site: the sheet gone, 8a's ticket « Disparue · Vérification · introuvable sur place » on the map without points (on a wide screen in the column of the camera sheet that slid away), that sentence in the badge's place, no total; punk from afar (the test's case; launch lot): it earns nothing, no scene, the sheet stays with that sentence, as the classique's | participate/index.ts done; punk participate/score.ts; profile/award.ts awardOf | IMPROVISED (8a draws the send online) | offline, « introuvable » confirmed | `verify-queued` | yes |
+| `verify-queued` | Offline: « Merci, c'est enregistré sur ce téléphone ; envoi dès que le réseau revient. », its proposal waiting; punk on site: the sheet gone, 8a's ticket « Disparue · Vérification · introuvable sur place » on the map without points (on a wide screen in the column of the camera sheet that slid away), that sentence in the badge's place, no total; punk from afar (the test's case; launch lot): it earns nothing, no scene, the sheet stays with that sentence | participate/index.ts done; punk participate/score.ts; profile/award.ts awardOf | IMPROVISED (8a draws the send online) | offline, « introuvable » confirmed | `verify-queued` | yes |
 | `verify-on-site-waiting` | « Position en cours, précision insuffisante pour l'instant. » | onsite.ts:72-78 | IMPROVISED | geo ±400 m, « Me localiser » in the line | `verify-on-site-waiting` | yes |
 | `verify-sent` | « Merci, c'est enregistré. »; punk from afar (the test's case; the launch lot, the author's request of 2026-10-13, point 1): it earns nothing, no scene: the sheet stays and says « Envoyé · en attente de revue » (role status); punk on site (8a, the author's request of 2026-10-11): the sheet gone, one ticket « Toujours là · Vérification · vue sur place » in the verification's colour from its first frame falling on the map, on a wide screen in the column of the camera sheet that slid away, its points, « en attente de revue », the cannon; « Merci, c'est enregistré. » said | participate/index.ts done; verify.ts; punk participate/score.ts, columnOf; profile/award.ts awardOf | 17a (the « Toujours là » stamp and « Présence confirmée »: drawn as confirmed before any review, against the rules); punk 8a | who=dan, « Elle est là » (writes), no position: from afar | `verify-sent` | yes |
 
 ### Participation: « Déplacer »
 
-The classique's. Punk has no move mode (DECISIONS 2026-10-08, « Placing a camera is always
-free… »): the position is « Modifier »'s position view (below), with no façade / libre
+No move mode (DECISIONS 2026-10-08, « Placing a camera is always free… »; the classique's
+removed on 2026-10-23): the position is « Modifier »'s position view (below), with no façade / libre
 choice and no magnet; there `move-sent` and `move-queued` come after « Ici », « Envoyer 1
 modification » and « Terminer ».
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
-| `move-nearby` | « Plusieurs caméras ici : laquelle déplacer ? » | participate/index.ts:462 chooseAndMove | IMPROVISED | n1271510647 (n1933603253 is 0.63 m away, Lambert-93), « Déplacer » | `move-nearby` (classique) | yes |
-| `move-placement-needed` | Mount unknown, nothing preselected: « Choisissez d'abord : sur une façade ou libre. », Valider off; the pin, the current field dashed | move.ts:136 start, 318, 336 | IMPROVISED | fx.camera (mount unknown), « Déplacer » | `move-placement-needed` (classique) | yes |
-| `move-free-inside` | Libre in a building's footprint: « … dans l'emprise d'un bâtiment (auvent, arcade) » | move.ts:334 | IMPROVISED | fx.camera, « Libre », the map slid to fx.inside | `move-free-inside` (classique) | yes |
-| `move-too-far` | « Trop loin : 50 m au plus. Est-ce bien la même caméra ? », Valider off | move.ts:107 statusLines | IMPROVISED | slid 60 m | `move-too-far` (classique) | yes |
-| `move-loading` | « calcul du champ… » | move.ts:354 | IMPROVISED | route /api/preview never answers | `move-loading` (classique) | yes |
-| `move-preview-error` | « aperçu du champ indisponible » | move.ts:379-384 | IMPROVISED | route /api/preview → 500 | `move-preview-error` (classique) | yes |
-| `move-offline` | « Déplacée de X m · aperçu du champ indisponible hors ligne, le déplacement reste possible »; no current field drawn: its fallback from the loaded tiles (move.ts:389 oldFromTiles) draws nothing here | move.ts:379-384, 389 oldFromTiles | IMPROVISED | offline before « Déplacer » | `move-offline` (classique) | yes |
 | `move-sent` | Back on the map, nothing said: the proposal drawn (badge, pale pictogram, dotted line); punk: once 8a's tickets are put away | move.ts:398 submit; modify.ts send (punk); participate/index.ts:101-109 | IMPROVISED | who=eve, fx.camera, façade, slid, Valider; punk: « Modifier », its position slid to fx.target, « Ici », « Envoyer 1 modification », Escape (writes) | `move-sent` | yes |
 | `move-queued` | Sent offline: the proposal drawn from the queue (badge, dotted line, a pale « ? » pictogram: a queued proposal does not know the camera's type), « 1 en attente d'envoi » | proposals.ts:197 queued | IMPROVISED | the same, offline before Valider (punk: before « Envoyer ») | `move-queued` | yes |
 | `button-panel-disabled` | Punk: a participation button disabled (the direction's « Valider » until a target is posed, `:disabled`): faded to 0.45, and neither a hover nor a press moves it | style.css:636; theme/punk/buttons.css:135 (`:not(:disabled, …)`) | IMPROVISED (3a, 4a draw « Valider » enabled) | n9622344410, « Modifier », « Forme » petit dôme, « Direction » | `modify-aim-waiting` (punk) | yes, without a capture of its own: `modify-aim-waiting`'s screen |
-| `move-facade` | « Sur une façade »: the pin pulled onto the facade, the facade drawn; « Déplacée de X m · collée à la façade (0,5 m) · champ recalculé ici » | move.ts:170 phonePosition, 327 updateStatus | 3a, 4a step 1 (pin and panel « Placez l'épingle… », Annuler / Ici; no façade / libre choice) | fx.camera, « Sur une façade », slid to fx.target | `move-facade` (classique) | yes |
 
 ### Participation: « Compléter »
 
-The classique's, on an existing camera and for an add's questions: in punk « Modifier »
-replaces it on the camera sheet and the add is « Modifier »'s component (DECISIONS
-2026-10-08).
+The classique's, removed with it on 2026-10-23: « Modifier » replaces it on the camera
+sheet and the add is « Modifier »'s component (DECISIONS 2026-10-08). Its code
+(`participate/complete.ts`) stays, opened by no screen; its one row, a dead branch.
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
-| `complete-direction-closer` | « Visez plus loin de la caméra. », Valider off | complete.ts:534 aimStatus | IMPROVISED | n9622344410, « Petit dôme », the target 2 m away (fake send) | `complete-direction-closer` (classique) | yes |
-| `complete-direction-offline` | « aperçu du champ indisponible hors ligne, la réponse reste possible » | complete.ts:588-595 | IMPROVISED | the same, offline | `complete-direction-offline` (classique) | yes |
-| `complete-tilt` | The tilt part: « Hauteur : Au 1er étage (≈ 5 m) », « Où pointe-t-elle ? », three profiles, « Je ne sais pas » | complete.ts:632 renderMount, 708 renderTilt | IMPROVISED (no tilt in the mockup) | n13610509865: « Je ne vois pas », « Au 1er étage » (fake send) | `complete-tilt` (classique) | yes |
-| `complete-operator-names` | « Public », then the names around: « Lequel ? Facultatif… », « ‹ Changer », « Autre ou je ne sais pas » | complete.ts:771 answerOperator, 794 renderNames | IMPROVISED | n9622344410: Je ne sais pas, Je ne vois pas, Public (fake send) | `complete-operator-names` (classique) | yes |
-| `complete-done` | « Merci, 3 réponses enregistrées. », Terminer | complete.ts:886 renderDone | IMPROVISED | n9622344410, three « je ne sais pas » (fake send) | `complete-done` (classique) | yes |
-| `complete-done-offline` | « Merci, 3 réponses enregistrées sur ce téléphone ; envoi dès que le réseau revient. » | complete.ts:894-896 | IMPROVISED | the same, offline | `complete-done-offline` (classique) | yes |
 | `complete-none` | « Aucune réponse envoyée. » | complete.ts:894 | IMPROVISED | — | — | no: dead branch (every screen sends before it goes on; `offers()` guards an empty list) |
-| `complete-shape` | « Question 1 sur 3 », « À quoi ressemble-t-elle ? »: Petit dôme / Tube / Grosse boule suspendue / Je ne sais pas, the cross; only the camera on a white disc | complete.ts:180 show, 355 renderShape | 3a, 4a step 2 (the « Forme » row, on one sheet) | n9622344410, « Compléter » (fake send) | `complete-shape` (classique) | yes |
-| `complete-direction` | « Qu'est-ce qu'elle regarde ? », the target, « Je ne vois pas » / Valider (off), the dome hint | complete.ts:412 renderDirection | 3a, 4a step 3 | after « Petit dôme » | `complete-direction` (classique) | yes |
-| `complete-direction-aimed` | « Direction : 68°, à l'est » and the field for it | complete.ts:534 aimStatus, 555 preview | 3a, 4a step 3 (« 27° · nord-est ») | the target 20 m away | `complete-direction-aimed` (classique) | yes |
-| `complete-height` | « Hauteur et inclinaison »: four silhouettes with ≈ m, « Je ne sais pas » | complete.ts:668 renderHeight | 3a, 4a step 2 (the « Hauteur » row: RDC / 1er / 2e+ / Poteau) | n13610509865, « Je ne vois pas » | `complete-height` (classique) | yes |
-| `complete-operator` | « Qui l'a installée, d'après vous ? »: Public / Commerce ou entreprise / Particulier / Je ne sais pas | complete.ts:747 renderOperator | 3a, 4a step 2 (the « Exploitant » row) | n9622344410, Je ne sais pas, Je ne vois pas | `complete-operator` (classique) | yes |
 
 ### Participation: « Modifier »
 
@@ -1464,13 +1401,13 @@ punk « ＋ Ajouter » opens its position first. Where it differs from the board
 | `score-osm` | The API answered a piece of the send `osm: "will_publish"` (her synchronisation on, the piece able to leave): « Sera publiée sur OSM en votre nom après relecture. » under the badge, the badge's black strip on a line of its own, in the status line (said when it comes); kept when the scene goes quiet | participate/score.ts; participate/queue.ts publishes | IMPROVISED (the contract's « Synchro OSM », no board) | the real API's answer with `osm` added (smoke-score) | — | yes, without a capture of its own (checked by smoke-score) |
 | `score-quiet` | 8a, a send the server's answer gives nothing (every piece sent again within its month): once GET /api/me/points answers, the tickets, the bonus, the cannon and « Voir le classement » go, no total, « Envoyé · en attente de revue » (`score.sent`) alone in the scene's status line, said again | participate/score.ts fetchPoints, hush | IMPROVISED (the launch lot, the author's request of 2026-10-13, point 1) | `modify-done`'s, route GET /api/me/points giving each piece 0 | — | yes, with a route; without a capture of its own (checked by smoke-score) |
 | `modify-possible-field` | Punk, while the camera is placed and no direction is chosen (the position view once the pin stops, the sheet before a direction, the aim without a target or with one too close, after « Je ne vois pas »): its possible field, the « détecte » level of the preview asked without a direction (POST /api/modify/preview: the ring cut by the buildings), a fill of the fields' pink at 0.1 and a 1.5 px dotted outline (dots every 2.5 widths, round caps) in the fields' outline colour, both where the edit field goes, under the buildings, the streets, the portions and every label; aimed (a target far enough, a direction chosen, or in « Modifier » the camera's own), the field instead (`modify-field-under`) and the possible one gone; a big ball, no direction asked, has its field at once; cleared at 8a's scene; a failing preview draws neither | modify.ts addLayers (edit-possible, edit-possible-line; POSSIBLE_OPACITY, POSSIBLE_WIDTH, POSSIBLE_DASH), preview, aimed, scored | IMPROVISED (the author's request of 2026-10-13, point 4; 3a and 4a draw no field before the aim: §3) | `add-place`'s, the pin stopped; then « Ici », « Petit dôme »; then « Viser sur la carte › » before a target | — (smoke-editor.mjs --shots: 3a-placement-light-phone, 3a-placement-dark-phone, 3a-placement-light-wide, 3a-placement-dark-wide) | yes, without a capture of its own: `add-place`'s screen |
-| `modify-dome-tilt` | Punk, a small dome (its shape answered, or the camera's kind in « Modifier »): « Inclinaison » on the line under « Hauteur », as a tube's: « Je ne sais pas » (pressed while nothing else is), « vers l'horizon », « un peu vers le bas », « fortement vers le sol »; without a height « L'inclinaison ne compte qu'avec une hauteur : indiquez-la aussi. »; in « Modifier » folded unless the height is assumed; an answer changes the field the send gives (the same optical model as a tube's: a blind zone at the foot, the reach capped on the ground); never a big ball, a panorama or an unknown kind; the frozen classique's « Compléter » still asks a tube only | questions.ts editorParts, mountParts (meta `tilt_kinds`, the classique's; `editor_tilt_kinds` the editor's); modify.ts tilts, row, choices; rules/questions.yaml tilt.kinds (questions@5) | IMPROVISED (the author's request of 2026-10-13, point 1; DECISIONS 2026-10-13, « The tilt is asked for a tube and a small dome… ») | `add-place`'s, « Ici », « Petit dôme », the meta's `tilt_kinds` answered `["fixed", "dome"]` by the page (smoke-editor) while the CI extract predates questions@5 | — | yes, with a route until the CI extract is built again (its meta says `["fixed"]`); without a capture of its own (checked by smoke-editor) |
+| `modify-dome-tilt` | Punk, a small dome (its shape answered, or the camera's kind in « Modifier »): « Inclinaison » on the line under « Hauteur », as a tube's: « Je ne sais pas » (pressed while nothing else is), « vers l'horizon », « un peu vers le bas », « fortement vers le sol »; without a height « L'inclinaison ne compte qu'avec une hauteur : indiquez-la aussi. »; in « Modifier » folded unless the height is assumed; an answer changes the field the send gives (the same optical model as a tube's: a blind zone at the foot, the reach capped on the ground); never a big ball, a panorama or an unknown kind | questions.ts editorParts (meta `editor_tilt_kinds`); modify.ts tilts, row, choices; rules/questions.yaml tilt.kinds (questions@5) | IMPROVISED (the author's request of 2026-10-13, point 1; DECISIONS 2026-10-13, « The tilt is asked for a tube and a small dome… ») | `add-place`'s, « Ici », « Petit dôme », the meta's `tilt_kinds` answered `["fixed", "dome"]` by the page (smoke-editor) while the CI extract predates questions@5 | — | yes, with a route until the CI extract is built again (its meta says `["fixed"]`); without a capture of its own (checked by smoke-editor) |
 | `score-phone-centred` | Punk, on a phone (600 px wide or less, or a coarse pointer 500 px high or less: layout.ts PHONE_QUERY): 8a's column centred (left and right 0, auto margins), its stack and its total centred in it, every ticket with its tilt and the total within 16 px of both edges; each stub's number raised by 22 px of padding under it, clear of the next ticket (on every screen); the cannon, when motion is welcome, drawn at 0.65, its mouth at least 34 px right of « PTS » and up to 10 px from the screen's right edge, its body partly beyond (a four-digit total at 375 px: its pull ring off the screen, 84 % of its body shown) | theme/punk/score.css (the phone query: .score-col, .score-stack, .score-total, .cannon; .score-ticket-pts padding); participate/score.ts placeCannon (PHONE_CLEAR, PHONE_EDGE) | partly IMPROVISED: 8a, its phone frame's column at the left; centred, the author's request of 2026-10-13, map point 2 (« +50 » cut, the stack off the left edge of an iPhone) | who=fay, 375 × 812, dark: a small dome added with its answers, or three changes, « Envoyer », at rest; the points from score-kit.mjs | — (shots-fete.mjs --only centred: centred-375-add-webkit-sombre, centred-375-changes-webkit-sombre, centred-375-add-chromium-sombre) | yes, without a capture of its own: `modify-done`'s and `add-done`'s phone screens (checked by smoke-score at 375 and 390 px) |
 | `modify-open` | Nothing changed, nothing assumed: « ← », 16a's sticker whole, « Modifier », the line « Caméra fixe · publique », 4a's position ticket (the street, « Position actuelle · Courbevoie », « Modifier » wavy), « Touchez ce qui est faux ou manquant. », the lines Forme, Direction, Hauteur, Inclinaison (a tube), Exploitant with their values and source tags (« OSM », « supposé », « réponse »), each folded (a button that unfolds its choices), « Envoyer » off; a line the kind does not take (a big ball's direction and height) is no button | modify.ts renderSheet, positionTicket, namePlace, row, unfolded, current; place.ts | 3a, 4a screen 4 | n1879237466, « Modifier » | `modify-open` (punk) | yes |
 | `modify-assumed` | 4a-f4: an applied add's public dome whose height is assumed: only « Hauteur » (« supposé », « ~4 m », its m in lower case) shows its choices (Je ne sais pas, pressed: the height is only assumed / ~2 m / ~4 m / 6 m et +), the other lines folded | modify.ts unfolded, row (metric); questions.ts editorAssumed | 4a screen 4 (« Hauteur » open) | cadd000020000, « Modifier » | `modify-assumed` (punk) | yes |
 | `modify-row-open` | A tube's « Hauteur » unfolded by a tap: « Je ne sais pas » then its classes under the line, the camera's own class pressed when it has one (« Je ne sais pas » when only assumed or in metres: none pressed); its « Inclinaison » stays folded | modify.ts row, choices | 4a screen 4 (« Hauteur » open) | n1879237466, « Modifier », « Hauteur » | `modify-row-open` (punk) | yes |
 | `modify-height-dome` | A camera of unknown type made a dome: the tile pressed in place, its « Hauteur » (assumed) with the classes and « Je ne sais pas », no tilt line | modify.ts choices, pick; questions.ts editorParts | 4a step 2 (the « Hauteur » row) | n9622344410, « Petit dôme » | `modify-height-dome` (punk) | yes |
-| `modify-height-metres` | « Hauteur »'s choices in metres (an add, or the line unfolded in « Modifier »): « Je ne sais pas » (pressed while nothing else is), « ~2 m », « ~4 m », « 6 m et + », their m in lower case (the classes ground, first, upper: rules/questions.yaml height, 2, 4 and 7 m, certainty estimated); no « Poteau »; a tile built before migration 017 that says `pole` reads « ~4 m » and presses it; the frozen classique keeps its four silhouettes and « Poteau », stored as `first` | modify.ts choices, heightNow, ownChoice (HEIGHTS, heightClass) | 4a step 2 (the « Hauteur » row, its classes in floors and « Poteau »: §3) | `add-place`'s, « Ici », « Petit dôme », « ~4 m » | — (smoke-editor.mjs --shots: 5-heights-phone, 5-heights-wide) | yes, without a capture of its own: `add-sheet`'s screen |
+| `modify-height-metres` | « Hauteur »'s choices in metres (an add, or the line unfolded in « Modifier »): « Je ne sais pas » (pressed while nothing else is), « ~2 m », « ~4 m », « 6 m et + », their m in lower case (the classes ground, first, upper: rules/questions.yaml height, 2, 4 and 7 m, certainty estimated); no « Poteau »; a tile built before migration 017 that says `pole` reads « ~4 m » and presses it | modify.ts choices, heightNow, ownChoice (HEIGHTS, heightClass) | 4a step 2 (the « Hauteur » row, its classes in floors and « Poteau »: §3) | `add-place`'s, « Ici », « Petit dôme », « ~4 m » | — (smoke-editor.mjs --shots: 5-heights-phone, 5-heights-wide) | yes, without a capture of its own: `add-sheet`'s screen |
 | `modify-shapes` | An unknown camera: what it assumes unfolded, « Forme »'s 3a tiles with 16a's stickers (Je ne sais pas, pressed, Petit dôme, Tube, Grosse boule), « Direction »'s « Je ne sais pas » (pressed: none surveyed) and « Viser sur la carte › » (dashed, a crosshair), « Hauteur », « Exploitant » | modify.ts row, choices, shapeTiles | 3a, 4a step 2 | n9622344410, « Modifier » | `modify-shapes` (punk) | yes |
 | `modify-changed` | Changes made in place: their lines tagged « modifié » and stamped « Corrigé », the chosen tickets pink, « Envoyer 2 modifications »; on a wide screen the map draws the field they give | modify.ts row, pick, preview | 3a, 4a screen 4 (« Direction » stamped) | n1879237466, « Hauteur » ~4 m, « Inclinaison » un peu vers le bas | `modify-changed` (punk) | yes |
 | `modify-aim` | 3a/4a step 3, from « Viser sur la carte › »: « ← », « Direction », the bearing on its yellow tag (« 68° · est ») in the paper and beside the crosshair on the map, « Posez la cible sur ce que regarde l'objectif. » (a phone: « Faites glisser la carte jusqu'à poser la cible… »), « Je ne vois pas » / « Valider », the crosshair posed by a click (a phone: fixed at the centre, the map slid under it or a tap bringing its point there, the field following as the map moves), the dotted ink line from the camera (from where the send puts it) to it, the field for that bearing (under the streets and their names, `modify-field-under`) | modify.ts enterAim, aimInput, centredInput, drawAim | 3a, 4a step 3 | n9622344410, « Forme » petit dôme, « Direction », a tap 20 m east | `modify-aim` (punk) | yes |
@@ -1482,22 +1419,14 @@ punk « ＋ Ajouter » opens its position first. Where it differs from the board
 
 ### Participation: « ＋ Ajouter »
 
-The classique's add: the position screen (move mode), then « Compléter »'s questions. Punk:
-« Modifier »'s component (above); `add-sent` and `add-queued` there come after its filled
+« Modifier »'s component (above; the classique's position screen and questions removed on
+2026-10-23); `add-sent` and `add-queued` there come after its filled
 sheet's « Envoyer » and « Terminer ».
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
-| `add-cancel-armed` | « Annuler » asks again: « Abandonner cet ajout ? » on the button | add.ts:127 render | IMPROVISED | `#18/48.8981364/2.2403746`, « ＋ Ajouter », façade, Annuler once | `add-cancel-armed` (classique) | yes |
-| `add-duplicates` | « Est-ce l'une de celles-ci ? »: n1925222797 « à 2 m », « ‹ Position », « Non, c'en est une autre » | add.ts:140 submit, 147 renderDuplicates | IMPROVISED | `#18/48.8967635/2.2384109`, Libre, Continuer | `add-duplicates` (classique) | yes |
-| `add-abandon` | The cross: « Abandonner cet ajout ? Rien n'a encore été envoyé. », Reprendre / Abandonner | complete.ts:269 askAbandon | IMPROVISED | `add-question`, the cross | `add-abandon` (classique) | yes |
-| `add-direction-given` | Back on an answered direction: « Votre réponse : 87°. Visez de nouveau pour la changer. »; the map back on the camera, so « Visez plus loin de la caméra. » and Valider off until one aims again | complete.ts:211-214, 534 | IMPROVISED | Petit dôme, aimed 15 m east, Valider, « ‹ Retour » | `add-direction-given` (classique) | yes |
 | `add-sent` | Back on the map: the add's pale pictogram and badge | complete.ts:874-881; modify.ts send (punk) | IMPROVISED | who=fay, « Envoyer l'ajout » online; punk: `add-sheet-filled`'s « Envoyer », Escape (8a's tickets put away) (writes) | `add-sent` | yes |
 | `add-queued` | Sent offline: the pale pictogram from the queue, « 4 en attente d'envoi » (the add and its three answers; punk: « 5 en attente d'envoi », four answers) | proposals.ts:200 | IMPROVISED | offline before « Envoyer l'ajout » (punk: before « Envoyer ») | `add-queued` | yes |
-| `add-position` | « Ajouter une caméra », « Une caméra que vous voyez depuis l'espace public. », façade / libre (nothing preselected), Continuer off; the status already says « dans l'emprise d'un bâtiment (auvent, arcade) · aperçu du champ · Choisissez d'abord : sur une façade ou libre. » and the field is previewed | add.ts:74 begin; move.ts:273 render | 3a, 4a step 1 | `#18/48.8981364/2.2403746`, « ＋ Ajouter » | `add-position` (classique) | yes |
-| `add-position-facade` | « collée à la façade (0,5 m) · aperçu du champ » | move.ts:347 request | 3a, 4a step 1 (no façade / libre choice) | « Sur une façade » | `add-position-facade` (classique) | yes |
-| `add-question` | The first question of an add: « ‹ Retour », « Question 1 sur 3 »; nothing sent yet | add.ts:198 proceed; complete.ts:195 | 3a, 4a step 2 (every question on one sheet, DECISIONS 2026-10-05) | façade, Continuer | `add-question` (classique) | yes |
-| `add-summary` | « Dernière étape »: « Rien n'est encore parti. La caméra et vos 3 réponses partiront ensemble : », the answers, « Envoyer l'ajout » | complete.ts:839 renderSend | 3a, 4a step 2 (the one sheet is the summary, « Envoyer ») | Petit dôme, aimed 15 m east (87°), Je ne sais pas | `add-summary` (classique) | yes |
 
 ### « Vos contributions » and the send queue
 
@@ -1512,7 +1441,7 @@ sheet's « Envoyer » and « Terminer ».
 | `mine-withdraw-busy` | « … · trop de demandes en une minute, réessayez dans un instant » | mine.ts:59-61 | IMPROVISED | route withdraw → 429 | `mine-withdraw-busy` | yes |
 | `mine-offline` | Offline with one waiting: « 1 contribution attend encore sur ce téléphone. », its line « en attente d'envoi sur ce téléphone » with Retirer, « Liste indisponible hors ligne. » | mine.ts:43, 74-82, 106 | IMPROVISED | offline, « introuvable » confirmed, the counter | `mine-offline` | yes |
 | `mine-sync` | Punk, the OSM synchronisation on: under each contribution that went or may still go, « OSM : partira après relecture », « OSM : publiée · changeset n° 12345 ↗ » (a link, a new window), « OSM : partira après la prochaine mise à jour de la carte », « OSM : conflit : une caméra est déjà sur OSM à quelques mètres · rien n'a été écrasé »; GET /api/osm/sync asked once | participate/mine.ts osmLine; account/syncline.ts | IMPROVISED | profile-mock SYNC_ON, a sheet's « Vos contributions » | `mine-sync` (punk) | yes |
-| `queue-relogin` | Punk: a send answered 401 (the session expired): kept, nothing more sent until a login; the page asks /api/me again (signed out from then on) and the counter reads « Reconnectez-vous pour envoyer 1 contribution », a tap opening « Entrer » (no « ← Retour »), the login sending it; the classique's counter keeps « N en attente d'envoi » | queue.ts:273 run, resume; participate/index.ts:333 renderCounter, the queue's listener | IMPROVISED | route /api/me → 401 once a POST /api/contributions is answered 401, « Toujours là ? », « Elle est là » | `queue-relogin` (punk) | yes |
+| `queue-relogin` | Punk: a send answered 401 (the session expired): kept, nothing more sent until a login; the page asks /api/me again (signed out from then on) and the counter reads « Reconnectez-vous pour envoyer 1 contribution », a tap opening « Entrer » (no « ← Retour »), the login sending it | queue.ts:273 run, resume; participate/index.ts:333 renderCounter, the queue's listener | IMPROVISED | route /api/me → 401 once a POST /api/contributions is answered 401, « Toujours là ? », « Elle est là » | `queue-relogin` (punk) | yes |
 
 ### Account (lot « comptes »)
 
@@ -1527,7 +1456,6 @@ needs it.
 | `account-form-failed` | Any other answer (500…): « Connexion impossible pour l'instant : réessayez dans un moment. » | account/index.ts:310 form | IMPROVISED | the same, route POST /api/session → 500 | `account-form-failed` (punk) | yes |
 | `account-ask-from-action` | « Compte » (28a; 25a's stamp when OSM's sign-in is off) opened by the greyed « Modifier » or « Toujours là ? » (tap or Enter; its key's `then` that camera's address, `?cam=<id>`: back signed in, the camera's sheet), « Je confirme » / « Ce n'est pas ça », « ＋ Ajouter », or the counter's « Reconnectez-vous… »; no « ← Retour » (28a draws none: its × closes) | account/index.ts require; participate/index.ts idle (signIn), loginFirst; account/osm.ts comeBackTo, cameraAddress | partly IMPROVISED: 28a, opened from where 28a does not | `account-sheet-visitor`, « Modifier » | `account-osm-key` | yes, without a capture of its own: `account-osm-key`'s screen |
 | `account-sheet-visitor` | Punk signed out: the camera sheet's « Modifier » (no « ? », never filled) and « Toujours là ? » greyed as « ＋ Ajouter » below its zoom (the paper, the muted ink, a dashed ink edge, no shadow), `aria-disabled` (not `disabled`), both `aria-describedby` « Connectez-vous pour participer », a plain line under them; « Corriger sur OpenStreetMap ↗ » among the links before « OpenStreetMap ↗ », no « Vos contributions »; a tap or Enter on a greyed button, « Je confirme » / « Ce n'est pas ça » open « Compte » | participate/index.ts actions (idle); chips.ts punkSheet; main.ts sheetOptions (visitor); theme/punk/buttons.css | IMPROVISED (the contract's « Signed out » list, the author's request of 2026-10-11 point 3; no board draws it) | route /api/me → 401, `?cam=n1879237466` | `account-sheet-visitor` (punk) | yes |
-| `account-classique-visitor` | The classique signed out (it has no login screen): the camera sheet without participation (no « Toujours là ? », « Déplacer », « Compléter », « Vos contributions »), no « ＋ Ajouter »; a proposal's state without its buttons | main.ts:1009 sheetOptions; participate/index.ts hidden | IMPROVISED | route /api/me → 401, `?cam=n1879237466` | `account-classique-visitor` (classique) | yes |
 | `account-osm-key` | OSM sign-in on: « Compte » as board 28a: the cut-out « COMPTE », ×; in the middle of the paper « Connexion et inscription passent par OpenStreetMap » (Archivo 900 36 px, « OpenStreetMap » on the light blue paper, pink in dark), « Pas encore de compte OSM ? Vous le créerez en chemin. », the one key « Se connecter avec / OpenStreetMap → » (76 px; ink with light blue words on the pink shadow, light blue with ink words on the cream shadow in dark; a link to `/api/osm/login?then=…`, described by the next line; while sign-in goes through OSM's test server its yellow « serveur de test » label, part of its name), « Rien n'est publié sans votre accord. »; at the bottom under a dashed rule « La carte se lit sans compte. » and « Me contacter » (a link, the mailto), then the four legal pages' links (`legal-account-links`); no password form, no OSM link; on a phone full height; the key tapped (a plain click or tap; not for a new tab or window), the sheet says « Chargement de votre compte » (`loading-account`) until the browser has left, and a page brought back from the history with it shows « Compte » again | account/index.ts askOsm (the key's click), constructor (pageshow); account/osm.ts osmLogin, loginHref; theme/punk/account.css (28a) | 28a frames 1 (light) and 3 (dark) | route /api/me → 401, /api/osm/status → `{login: true}`; the account square | `account-osm-key` (punk) | yes |
 | `account-osm-signup` | Back from OpenStreetMap the first time (`?osm=signup`, removed from the address), after « Chargement de votre compte » (`loading-account`), the map loading or not (GET /api/osm/signup asked as the page starts, beside GET /api/me): « Choisissez votre pseudonyme » (cut-out, on two or three lines), « Votre nom sur OSM : Jean Dupont », « Pseudonyme » holding the API's suggestion « Jean_Dupont » (focused), its rule, « En validant, vous acceptez les conditions d'utilisation et de contribution. » (the launch lot: its link opens « Conditions » over the sheet, the pseudonym typed kept; inline in its sentence on a phone; « Valider » described by it), « Valider → » (25a's « Entrer » key), under a dashed rule what is kept, « ← Retour » (to « Compte »); full height on a phone | account/index.ts land, waiting, signup, signupForm; legal/index.ts legalLink, template | IMPROVISED (25a's form and key; no board draws it) | route /api/me → 401, /api/osm/signup → the suggestion; `?osm=signup` | `account-osm-signup` (punk); shots-legal.mjs: phone-light-pseudonyme, phone-dark-pseudonyme, wide-light-pseudonyme, wide-dark-pseudonyme | yes |
 | `account-osm-signup-taken` | « Ce pseudonyme est déjà pris : choisissez-en un autre. » on the yellow band (role alert), the field `aria-invalid`, its text selected | account/index.ts signupForm | IMPROVISED | `account-osm-signup`, « pris », POST /api/osm/signup → 409 pseudonym_taken | `account-osm-signup-taken` (punk) | yes |
@@ -1716,7 +1644,7 @@ in Chromium, scale 2), light and dark, at rest.
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
 | `loading-account` | On a return from OpenStreetMap (`?osm=`) or at `?compte=motdepasse`, at once (no 300 ms wait): before the scripts have run, the first load's page with the line « de votre compte » (`loading-map`'s); then, the map loading or not, the account's sheet (« Compte », a phone's full sheet, a wide screen's side sheet) holding 2c's drawing on its paper (at 0.68 on a wide screen, whole on a phone, 0.5 under 500 px high), « de votre compte », « Chargement de votre compte » said, not focused; never « Compte » signed out meanwhile; then the pseudonym's form, the account's screen or « Compte » with the failure; back to a camera (`?osm=signed&cam=`) no sheet, the first load's page until the map; also after the OSM key's tap until the browser has left (`account-osm-key`) | index.html (its inline script); account/index.ts land, waiting, askOsm; loading.ts loading, endFirstLoad; main.ts showAccount | partly IMPROVISED: 2c's drawing; « de votre compte » and its place in the account's sheet are the author's request of 2026-10-12, point 1 | route /api/me → 401 answered late, /api/osm/signup → the suggestion; `?osm=signup` | — (shots-loading.mjs: account-sheet-phone-light, account-sheet-phone-dark, account-sheet-wide-light, account-sheet-wide-dark) | yes, without a capture of its own |
-| `loading-map` | The first load, from 300 ms after the navigation until MapLibre's "load" (the first view drawn; a load under 300 ms shows nothing): over the whole page (under the welcome panel, never catching a pointer) 2c's page (light #dbe7ee, dark #141216, its pink halftone), the cute camera hanging on its articulated arm, « CHARGEMENT » in ransom letters (each cut-out its tilt, face and flat colour), the black line « de la carte » (cream in dark) with its blinking ▌; role status, « Chargement de la carte » said 150 ms after it appears; light or dark from `?mode=`, `lacarte.mode` or the phone; the punk faces once the device has them (`lacarte.fonts`), a first visit on their fallbacks; under 600 px high the drawing at 0.85, under 480 px at 0.62; the classique never shows it | index.html (its template and inline script, window.__loading); loading.ts endFirstLoad; main.ts (the map's "load"); loading.css | 2c (frames 1 light and 2 sombre) | punk, `#16.5/48.8963/2.2382`, a slow network | — (shots-loading.mjs: first-load-phone-light, first-load-phone-dark, first-load-wide-light, first-load-wide-dark) | yes, without a capture of its own |
+| `loading-map` | The first load, from 300 ms after the navigation until MapLibre's "load" (the first view drawn; a load under 300 ms shows nothing): over the whole page (under the welcome panel, never catching a pointer) 2c's page (light #dbe7ee, dark #141216, its pink halftone), the cute camera hanging on its articulated arm, « CHARGEMENT » in ransom letters (each cut-out its tilt, face and flat colour), the black line « de la carte » (cream in dark) with its blinking ▌; role status, « Chargement de la carte » said 150 ms after it appears; light or dark from `?mode=`, `lacarte.mode` or the phone; the punk faces once the device has them (`lacarte.fonts`), a first visit on their fallbacks; under 600 px high the drawing at 0.85, under 480 px at 0.62; `?ui=classique` (an old link) shows it as any visit | index.html (its template and inline script, window.__loading); loading.ts endFirstLoad; main.ts (the map's "load"); loading.css | 2c (frames 1 light and 2 sombre) | punk, `#16.5/48.8963/2.2382`, a slow network | — (shots-loading.mjs: first-load-phone-light, first-load-phone-dark, first-load-wide-light, first-load-wide-dark) | yes, without a capture of its own |
 | `loading-reduced` | Under reduced motion: the same drawing at rest, the camera on its arm and the letters still, the caret steady | loading.css (every move in the motion query) | 2c (its `still` branch) | `loading-map`'s or `loading-account`'s, reduced motion | — | yes, without a capture of its own |
 
 ### Legal pages (launch lot)
@@ -1776,7 +1704,7 @@ screen's lot; the first table holds what every screen shares.
 | 18a's and 20a's light blue halftone in dark | 17a's pink halftone in both modes | DECISIONS 2026-10-08 « One palette… » (anchored on 17a's electric pink in light and dark) |
 | 20a's light blue dot screen over the whole map (0.22 light, 0.12 dark); roads without an edge, street names in the regular weight | the map's dot screen about 2.5 times paler (--map-paper-dots 0.08 / 0.05; the machine's paper unchanged); roads and paths edged in grey, street names in Noto Sans Medium, 12–15 px | streets' legibility: the roads stood at 1.02–1.38:1 (WCAG 1.4.11 asks 3:1), now 4.53:1 light and 3.98:1 dark on the earth; DECISIONS 2026-10-19 (« A2 + B ») |
 | Quarter names in pink | every name in the ink on a 2 px halo | DECISIONS 2026-10-06 « Punk map names in one colour… » |
-| In focus, the other fields hidden | in one opaque dimmed colour (punk; the classique at 15 %) | DECISIONS 2026-10-06 « No answer is preselected… » (doc audit c5) |
+| In focus, the other fields hidden | in one opaque dimmed colour | DECISIONS 2026-10-06 « No answer is preselected… » (doc audit c5) |
 | The pig sticker beside an operator | none | DECISIONS 2026-10-05 « Neutrality… » |
 | The motorised camera as a dome with arrows (2a; the type buttons of 18a, 20a) | a ball at the end of a pipe (16a) | DECISIONS 2026-10-05 « The big motorised ball's sticker… » |
 | Answers preselected (« Je ne sais pas », « Public ») | none preselected; punk's add / « Modifier » sheet: « Je ne sais pas » checked when nothing else is, never « Public » | DECISIONS 2026-10-06 « No answer is preselected… »; 2026-10-09 « « Je ne sais pas » comes first… » |
@@ -1796,7 +1724,7 @@ screen's lot; the first table holds what every screen shares.
 | « Type de caméra » and « État de la fiche » at every zoom | from the street level; below, « Types et état de la fiche : au zoom de la rue. » | real data: no camera is loaded below z15 (DECISIONS 2026-09-27, « Advanced filters in a drawer… apply to cameras at street zoom only ») |
 | « Plus de filtres » open (its dashed top edge the rule above 18a's tray, the drawer running on below the paper's fold) | closed until asked for, open by itself while one of its filters is on; its edge, the same dashed rule, comes with it | DECISIONS 2026-09-27, « Advanced filters in a drawer, collapsed by default… » |
 | « Vérifiée sur place il y a… » | « Vérifiée il y a… » | DECISIONS 2026-10-01, « "Sur place" is said only when it is true… » (freshness is the latest check or survey date, on site or not) |
-| « Elle peut… »: four chips | a fifth, « identifier au-delà de N m », when cameras in view can | the current interface's filter kept (DECISIONS 2026-09-27, the advanced filters): the punk interface loses none |
+| « Elle peut… »: four chips | a fifth, « identifier au-delà de N m », when cameras in view can | the filter of DECISIONS 2026-09-27 (the advanced filters) kept: the punk interface loses none |
 | The legend's levels: 20a's flat swatch and a reach under each (« ~6 m ») | below the street level the swatch in the street colour; from z15 exactly the three fields' samples (halftone and outline as the map draws them), named; no reach | DECISIONS 2026-10-08, « One palette… » (the legend shows exactly these three samples); real data: the legend is the map's, a reach belongs to one camera |
 | The legend: five items | two more, « disparue (vérifiée) » and « position proposée » | real data: states the map draws (lot 3.0's gone sticker, DECISIONS 2026-10-07; the proposals' ghost, 2026-09-29) |
 | « Peut-être disparue »: a dashed ring hatched inside, its « ? » yellow on ink | the dashed ring without hatching; in dark the « ? » ink on a cream disc | DECISIONS 2026-10-06, « Hatching keeps one meaning… »; WCAG 1.4.11 (20a's yellow on cream is 1.2:1) |

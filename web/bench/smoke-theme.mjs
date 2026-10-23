@@ -1,15 +1,15 @@
-// Smoke test of the interfaces and their themes (redesign, phase 2), on the production
-// build: punk by default; ?ui=classique (or ?ui=classic), kept on the device, downloads
-// nothing of the punk one; ?ui=punk loads its tokens and fonts and is kept too; its mode follows the phone, or ?mode=; a change of
-// the phone's mode mid-session, either way, repaints the map exactly as a page opened in
-// that mode (every layer's paint, filter and order, with a camera in focus; communes and
-// départements opaque in both, at 0.5 in the current interface); a focused
+// Smoke test of the interface and its theme (redesign, phase 2), on the production build:
+// one interface since 2026-10-23, ?ui= (the classique's old links, ?ui=punk) and a choice
+// kept on the device change nothing; its tokens and fonts load; its mode follows the phone,
+// or ?mode=; a change of the phone's mode mid-session, either way, repaints the map exactly
+// as a page opened in that mode (every layer's paint, filter and order, with a camera in
+// focus; communes and départements opaque in both); a focused
 // camera zoomed out below the street level is marked, the map's own pixels as without
 // focus but for the marker, and « Revenir à la caméra » (or a tap on the marker) brings its
 // field back; a gesture leaving the marker under the estimate bar brings it back into view,
 // our own moves never; less motion stops the sheet's animation; the focus is a dashed outline; the
-// punk basemap has no road shields, and every label in one colour on the map's halo (the
-// current interface keeps its own); the punk buttons (theme/punk/buttons.css) transition
+// punk basemap has no road shields, and every label in one colour on the map's halo; the
+// punk buttons (theme/punk/buttons.css) transition
 // listed properties briefly, move on hover without selecting or recolouring (a pressed one
 // untilted), sink onto their shadow when pressed, move not at all under less motion, and
 // are 44 px at least. Exits non-zero if a check failed.
@@ -116,7 +116,7 @@ const offColour = (l) =>
   });
 
 /** The départements' and communes' fill opacity at the end of their fade in (the highest
- * output of their zoom curve): punk draws them opaque, the current interface at 0.5. */
+ * output of their zoom curve): punk draws them opaque. */
 const areaOpacity = (page) =>
   page.evaluate(() =>
     ["deps", "communes"].map((id) =>
@@ -154,89 +154,56 @@ const device =
   engine === "webkit" ? devices["iPhone 14"] : { viewport: { width: 1280, height: 800 } };
 
 try {
-  // --- punk by default: nothing asked, nothing kept on the device ------------------------
-  {
+  // --- one interface: ?ui= and a choice kept on the device change nothing ---------------
+  // The classique is gone (2026-10-23): its old links (?ui=classic, ?ui=classique), ?ui=punk
+  // and a « classique » kept on the device (lacarte.ui) load the site as a plain visit does,
+  // with no error, and nothing is written for them.
+  for (const [query, kept] of [
+    ["", null],
+    ["?ui=classic", null],
+    ["?ui=classique", null],
+    ["?ui=punk", null],
+    ["", "classique"],
+  ]) {
     const context = await browser.newContext({ ...device, colorScheme: "light" });
+    if (kept)
+      await context.addInitScript((k) => {
+        try {
+          if (!sessionStorage.getItem("seeded")) localStorage.setItem("lacarte.ui", k);
+          sessionStorage.setItem("seeded", "1");
+        } catch {
+          // about:blank has no storage.
+        }
+      }, kept);
     const page = await context.newPage();
-    await page.goto(`${APP}${CAMERA.hash}`);
-    await idle(page);
-    const state = await page.evaluate(() => ({
-      ui: document.documentElement.dataset.ui,
-      kept: localStorage.getItem("lacarte.ui"),
-    }));
-    check(
-      "punk by default (no ?ui=, nothing kept), nothing written on the device",
-      state.ui === "punk" && state.kept === null,
-      JSON.stringify(state),
-    );
-    await page.goto(`${APP}?ui=classic${CAMERA.hash}`);
-    await idle(page);
-    await page.goto(`${APP}${CAMERA.hash}`);
-    await idle(page);
-    const classic = await page.evaluate(() => ({
-      ui: document.documentElement.dataset.ui,
-      kept: localStorage.getItem("lacarte.ui"),
-    }));
-    check(
-      "?ui=classic: the classique, kept on the device as « classique »",
-      classic.ui === "classique" && classic.kept === "classique",
-      JSON.stringify(classic),
-    );
-    await context.close();
-  }
-
-  // --- the classique, asked for: nothing of the punk one is downloaded -------------------
-  {
-    const context = await browser.newContext({ ...device });
-    const page = await context.newPage();
+    const errors = [];
+    page.on("pageerror", (e) => errors.push(String(e)));
     const urls = [];
     page.on("request", (r) => urls.push(r.url()));
-    await page.goto(`${APP}?ui=classique${CAMERA.hash}`);
+    await page.goto(`${APP}${query}${CAMERA.hash}`);
     await idle(page);
     const state = await page.evaluate(() => ({
       ui: document.documentElement.dataset.ui,
       mode: document.documentElement.dataset.mode,
+      bg: getComputedStyle(document.documentElement).getPropertyValue("--bg").trim(),
+      kept: localStorage.getItem("lacarte.ui"),
+      sheet: !document.getElementById("sheet").hidden,
     }));
-    const punk = urls.filter((u) => /punk|woff2/.test(u));
+    const punkCss = urls.some((u) => /\/assets\/punk-.*\.css$/.test(new URL(u).pathname));
     check(
-      "?ui=classique: the classique, light, no punk CSS nor font requested",
-      state.ui === "classique" && state.mode === "light" && punk.length === 0,
-      JSON.stringify({ ...state, punk }),
-    );
-    const shields = await page.evaluate(() => Boolean(window.__map.getLayer("roads_shields")));
-    check("classique keeps its road shields", shields);
-    const labels = await labelStyle(page);
-    const colours = new Set(labels.layers.map((x) => x.color));
-    const areas = await areaOpacity(page);
-    check(
-      "classique keeps its départements and communes at 0.5",
-      areas.every((a) => a === 0.5),
-      JSON.stringify(areas),
-    );
-    // (Its road shields have no halo.)
-    const widths = new Set(labels.layers.map((x) => x.width ?? "none"));
-    check(
-      "classique keeps its basemap's label colours and 1 px halos, its reach labels' 1.6 px",
-      labels.want.width === null &&
-        colours.size > 1 &&
-        [...widths].every((w) => w === 1 || w === "none") &&
-        labels.layers.every((x) => x.blur === undefined) &&
-        labels.reach.width === 1.6,
-      JSON.stringify({ colours: [...colours], widths: [...widths], reach: labels.reach }),
-    );
-    const legend = await page.evaluate(() => ({
-      samples: document.querySelectorAll("#filters canvas.sample.level").length,
-      line: document.querySelector("#filters .legend")?.textContent.includes("Foncé : identifier"),
-    }));
-    check(
-      "classique keeps its levels sentence in the legend",
-      legend.samples === 0 && legend.line,
-      JSON.stringify(legend),
+      `${query || "no ?ui="}${kept ? `, « ${kept} » kept on the device` : ""}: the site as any visit, no error`,
+      state.ui === "punk" &&
+        state.mode === "light" &&
+        state.bg === "#f2efe6" &&
+        punkCss &&
+        state.kept === kept &&
+        errors.length === 0,
+      JSON.stringify({ ...state, punkCss, errors }),
     );
     await context.close();
   }
 
-  // --- punk: tokens, fonts, kept on the device, mode from the phone or ?mode= ----------
+  // --- punk: tokens, fonts, mode from the phone or ?mode= -----------------------------
   {
     const context = await browser.newContext({ ...device, colorScheme: "light" });
     const page = await context.newPage();
@@ -244,7 +211,7 @@ try {
     page.on("pageerror", (e) => errors.push(String(e)));
     const urls = [];
     page.on("request", (r) => urls.push(r.url()));
-    await page.goto(`${APP}?ui=punk${CAMERA.hash}`);
+    await page.goto(`${APP}${CAMERA.hash}`);
     await idle(page);
     // The fonts load once the map is drawn (theme/fonts.ts).
     await page
@@ -272,7 +239,7 @@ try {
     const shields = await page.evaluate(() => Boolean(window.__map.getLayer("roads_shields")));
     check("punk light: no road shields layer", !shields);
     check(
-      "?ui=punk: punk tokens, light, both fonts self-hosted (after the map), buttons in capitals",
+      "punk tokens, light, both fonts self-hosted (after the map), buttons in capitals",
       s.ui === "punk" &&
         s.mode === "light" &&
         s.bg === "#f2efe6" &&
@@ -283,32 +250,16 @@ try {
         urls.every((u) => u.startsWith(APP) || u.startsWith("data:") || u.startsWith("blob:")),
       JSON.stringify({ ...s, fonts }),
     );
-    await page.goto(`${APP}${CAMERA.hash}`);
-    await idle(page);
-    const kept = await page.evaluate(() => document.documentElement.dataset.ui);
-    check("punk kept on the device without the parameter", kept === "punk", kept);
-    await page.goto(`${APP}?ui=classique${CAMERA.hash}`);
-    await idle(page);
-    await page.goto(`${APP}${CAMERA.hash}`);
-    await idle(page);
-    const back = await page.evaluate(() => document.documentElement.dataset.ui);
-    check("?ui=classique goes back, kept too", back === "classique", back);
-    await page.goto(`${APP}?ui=punk${CAMERA.hash}`);
-    await idle(page);
-    await page.goto(`${APP}${CAMERA.hash}`);
-    await idle(page);
-    const again = await page.evaluate(() => document.documentElement.dataset.ui);
-    check("?ui=punk (old links) over a kept classique: punk again, kept", again === "punk", again);
     check("no page error", errors.length === 0, errors.join(" | "));
     await context.close();
   }
   {
     const context = await browser.newContext({ ...device, colorScheme: "dark" });
     const page = await context.newPage();
-    await page.goto(`${APP}?ui=punk&mode=auto${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=auto${CAMERA.hash}`);
     await idle(page);
     const auto = await page.evaluate(() => document.documentElement.dataset.mode);
-    await page.goto(`${APP}?ui=punk&mode=clair${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=clair${CAMERA.hash}`);
     await idle(page);
     const forced = await page.evaluate(() => document.documentElement.dataset.mode);
     await page.goto(`${APP}${CAMERA.hash}`);
@@ -328,7 +279,7 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk${CAMERA.hash}`);
+    await page.goto(`${APP}${CAMERA.hash}`);
     await idle(page);
     const state = () =>
       page.evaluate(() => {
@@ -373,7 +324,7 @@ try {
     ["light", "dark"],
     ["dark", "light"],
   ]) {
-    const url = `${APP}?ui=punk&mode=auto&cam=${CAMERA.id}${CAMERA.hash}`;
+    const url = `${APP}?mode=auto&cam=${CAMERA.id}${CAMERA.hash}`;
     const live = await browser.newContext({ ...device, colorScheme: first });
     const page = await live.newPage();
     const errors = [];
@@ -494,7 +445,7 @@ try {
   // opened in the last mode (a change met while the style was busy waits for the next
   // idle, and the swap starts from what is painted: main.ts restyle) -------------------
   {
-    const url = `${APP}?ui=punk&mode=auto&cam=${CAMERA.id}${CAMERA.hash}`;
+    const url = `${APP}?mode=auto&cam=${CAMERA.id}${CAMERA.hash}`;
     const busy = await browser.newContext({ ...device, colorScheme: "light" });
     const page = await busy.newPage();
     await page.goto(url);
@@ -544,7 +495,7 @@ try {
   {
     const context = await browser.newContext({ ...device, colorScheme: "light" });
     const page = await context.newPage();
-    await page.goto(`${APP}revue.html?ui=punk&mode=auto`);
+    await page.goto(`${APP}revue.html?mode=auto`);
     await page.waitForFunction(() => document.documentElement.dataset.mode === "light");
     await page.emulateMedia({ colorScheme: "dark" });
     // The page reloads: read it once the new document has its tokens.
@@ -576,7 +527,7 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk&mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
     await idle(page);
     await page.waitForFunction(() => document.body.classList.contains("focus"), null, {
       timeout: 20000,
@@ -762,7 +713,7 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk&mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
     await idle(page);
     await page.waitForFunction(() => document.body.classList.contains("focus"), null, {
       timeout: 20000,
@@ -820,7 +771,7 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk&mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
     await idle(page);
     await page.waitForFunction(() => document.body.classList.contains("focus"), null, {
       timeout: 20000,
@@ -977,7 +928,7 @@ try {
     const page = await context.newPage();
     const errors = [];
     page.on("pageerror", (e) => errors.push(String(e)));
-    await page.goto(`${APP}?ui=punk&mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
+    await page.goto(`${APP}?mode=clair&cam=${CAMERA.id}${CAMERA.hash}`);
     await idle(page);
     await page.waitForSelector("#sheet:not([hidden]) .close", { timeout: 20000 });
     // The camera sheet's rows are not buttons (lot 3.2): its × stands for its buttons.
@@ -1156,7 +1107,7 @@ try {
   {
     const context = await browser.newContext({ ...device, reducedMotion: "reduce" });
     const page = await context.newPage();
-    await page.goto(`${APP}?ui=punk${CAMERA.hash}`);
+    await page.goto(`${APP}${CAMERA.hash}`);
     await idle(page);
     const dur = await page.evaluate(() =>
       getComputedStyle(document.documentElement).getPropertyValue("--dur-sheet").trim(),

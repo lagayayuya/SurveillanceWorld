@@ -112,7 +112,7 @@ async function open(size, dark = false) {
       : route.fulfill({ json: { near: NEAR, all: ALL } }),
   );
   const phone = size.width < 600;
-  const k = kit(page, context, { device: phone ? "phone" : "desktop", mode: "clair", ui: "punk" });
+  const k = kit(page, context, { device: phone ? "phone" : "desktop", mode: "clair" });
   return { context, page, errors, k };
 }
 
@@ -483,7 +483,7 @@ async function pointFive(size) {
 
 // --- 6. who films: the whole list, a search, a name not listed ----------------------------
 // POST /api/operators without `class` as the contract answers it (rules/operators.yaml's
-// names; RATP among them), with `class` the API of this branch (the classique).
+// names; RATP among them), with `class` the API of this branch.
 const NEAR = [{ name: "Ville de Courbevoie", class: "public" }];
 const ALL = [
   { name: "Carrefour", class: "business" },

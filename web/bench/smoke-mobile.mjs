@@ -1,12 +1,12 @@
 // Smoke test on a phone: the "iPhone 14" device profile, in WebKit (every iPhone browser
 // is WebKit) by default, Chromium with --browser chromium. Real taps only: a JS click
 // would pass through what covers an element, which is the bug class under test.
-//   node bench/smoke-mobile.mjs [--region idf|ci] [--browser webkit|chromium] [--ui classique|punk]
+//   node bench/smoke-mobile.mjs [--region idf|ci] [--browser webkit|chromium]
 import { spawn } from "node:child_process";
 import { chromium, devices, webkit } from "playwright";
 import { accountSmoke } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { uiArg, withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -310,11 +310,7 @@ const areaFramed = (page, code) =>
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = withUi(
-  await (engine === "chromium" ? chromium : webkit).launch(),
-  uiArg(args),
-  true,
-);
+const browser = benchBrowser(await (engine === "chromium" ? chromium : webkit).launch(), true);
 try {
   const context = await browser.newContext({
     ...devices["iPhone 14"],
@@ -335,7 +331,7 @@ try {
   const vh = page.viewportSize().height;
   check("map loads", true);
   check("attribution not covered (map)", (await attributionVisible(page)) === "ok");
-  if (uiArg(args) === "punk") {
+  {
     // The credit folded to a compact « ⓘ » (44 px), a tap unfolds it at 11 px at least,
     // another folds it again (DECISIONS 2026-10-09).
     const credit = () =>
@@ -398,7 +394,6 @@ try {
 
     // Filters: full-screen layer from the button, closed by "Fermer". Punk: 18a's machine,
     // risen across the width, from under the ticket's title to the screen's foot.
-    const punk = uiArg(args) === "punk";
     await page.locator("#fab-filters").tap();
     await page.waitForTimeout(400);
     const layer = await page.locator("#filters").boundingBox();
@@ -406,22 +401,17 @@ try {
     // Punk: down to the attribution (18a's inset at the bottom left), never over it (ODbL).
     const attrib = await page.locator(".maplibregl-ctrl-attrib").boundingBox();
     check(
-      punk
-        ? "filters open: the machine across the screen, under the ticket's title, down to the attribution"
-        : "filters open full screen",
+      "filters open: the machine across the screen, under the ticket's title, down to the attribution",
       layer !== null &&
-        (punk
-          ? attrib !== null &&
-            layer.x <= 16 &&
-            layer.x + layer.width >= vw - 32 &&
-            layer.y < 120 &&
-            layer.y + layer.height >= attrib.y - 20 &&
-            layer.y + layer.height <= attrib.y
-          : layer.width >= 389 && layer.height >= vh - 1),
+        attrib !== null &&
+        layer.x <= 16 &&
+        layer.x + layer.width >= vw - 32 &&
+        layer.y < 120 &&
+        layer.y + layer.height >= attrib.y - 20 &&
+        layer.y + layer.height <= attrib.y,
       JSON.stringify({ layer, attrib }),
     );
-    if (punk)
-      check("attribution not covered (machine open)", (await attributionVisible(page)) === "ok");
+    check("attribution not covered (machine open)", (await attributionVisible(page)) === "ok");
     check(
       "touch targets >= 44 px (filters)",
       (await smallTargets(page)).length === 0,
@@ -473,7 +463,7 @@ try {
       tops.join(","),
     );
     check("attribution not covered (sheet half)", (await attributionVisible(page)) === "ok");
-    if (uiArg(args) === "punk") {
+    {
       // The sheet open, the ticket slid away to the left, the floating buttons to the right,
       // gone (DECISIONS 2026-10-09); back when it closes (below).
       await page.waitForTimeout(450);
@@ -488,18 +478,17 @@ try {
       );
     }
     const mapLabels = await page.evaluate(() => ({
-      punk: document.documentElement.dataset.ui === "punk",
       visibility: window.__map.getLayoutProperty("focus-labels", "visibility"),
       filter: JSON.stringify(window.__map.getFilter("focus-labels")),
       pieces: window.__map.queryRenderedFeatures({ layers: ["focus-streets"] }).length,
     }));
-    // Punk: the chosen level's yellow label alone, « identifie » first (DECISIONS
-    // 2026-10-08, « Punk focus… »); the classique: none on a phone (the ruler says it).
+    // The chosen level's yellow label alone, « identifie » first (DECISIONS 2026-10-08,
+    // « Punk focus… »).
     check(
-      "phone focus: labels as the interface says (punk: identify's alone), filmed pieces drawn",
-      (mapLabels.punk
-        ? mapLabels.visibility === "visible" && mapLabels.filter === '["==",["get","lv"],3]'
-        : mapLabels.visibility === "none") && mapLabels.pieces > 0,
+      "phone focus: identify's label alone, filmed pieces drawn",
+      mapLabels.visibility === "visible" &&
+        mapLabels.filter === '["==",["get","lv"],3]' &&
+        mapLabels.pieces > 0,
       JSON.stringify(mapLabels),
     );
     check(
@@ -512,8 +501,7 @@ try {
     // punk sheet (lot 3.2, mockup 17a): its title's real text, the distance tickets named
     // by the headline, the facts as rows (dl, dt, dd) each saying its certainty, « Calcul ? »
     // once, the links after the facts.
-    const punkSheet = await page.evaluate(() => document.documentElement.dataset.ui === "punk");
-    if (punkSheet) {
+    {
       const content = await page.evaluate(() => {
         const sh = document.getElementById("sheet");
         const rows = [...sh.querySelectorAll(".facts > .fact")];
@@ -567,57 +555,11 @@ try {
       );
       await page.locator("#sheet .how-toggle").tap();
       await page.waitForTimeout(200);
-    } else {
-      const content = await page.evaluate(() => {
-        const sh = document.getElementById("sheet");
-        const chips = [...sh.querySelectorAll(".chip")];
-        return {
-          headline: sh.querySelector(".headline")?.textContent ?? "",
-          ruler: sh.querySelector("svg.ruler")?.getAttribute("aria-label") ?? "",
-          chips: chips.length,
-          labelled: chips.every((c) => (c.getAttribute("aria-label") ?? "").length > 3),
-          symbols: chips.filter((c) => c.querySelector(".cert")).length,
-          how: sh.querySelectorAll("details.how").length,
-          // The OSM links last of what the sheet draws at once, the edit date's note maybe
-          // after them; the camera's history (lot U) comes in under them once the API
-          // answers (nothing here: no API).
-          lastIsLinks: (() => {
-            const drawn = [...(sh.querySelector(".sheet-body")?.children ?? [])].filter(
-              (e) => !e.classList.contains("sheet-history-slot"),
-            );
-            const last = drawn.at(-1);
-            return (
-              last?.classList.contains("links") ||
-              last?.previousElementSibling?.classList.contains("links")
-            );
-          })(),
-          doubled: /type type/i.test(sh.textContent ?? ""),
-        };
-      });
-      check(
-        "sheet: headline, ruler, chips with certainty, one explanation link, OSM links last",
-        /identifier jusqu'à ~/.test(content.headline) &&
-          /Identifier : (~|seulement en prudent, ~)/.test(content.ruler) &&
-          content.chips >= 5 &&
-          content.labelled &&
-          content.symbols >= 4 &&
-          content.how === 1 &&
-          content.lastIsLinks &&
-          !content.doubled,
-        JSON.stringify(content),
-      );
-      await page.locator("#sheet .chip").first().tap();
-      await page.waitForTimeout(200);
-      check(
-        "sheet: a tapped chip explains itself",
-        await page.locator("#sheet .chip-help").isVisible(),
-        await page.locator("#sheet .chip-help").innerText(),
-      );
     }
 
     // Punk, half open: only the title stays, the tickets and the rest scroll under it; left
     // scrolled, the paper is back at its start at the peek (below).
-    if (uiArg(args) === "punk") {
+    {
       const pinned = await page.evaluate(PINNED);
       check(
         "punk sheet at half: only its title stays, the tickets and the rest scroll under it",
@@ -662,7 +604,7 @@ try {
     };
     check("drag up: full", (await drag(-vh * 0.4)) === "full");
     check("drag down: peek", (await drag(vh * 0.8)) === "peek");
-    if (uiArg(args) === "punk") {
+    {
       const peek = await page.evaluate(() => {
         const sheet = document.getElementById("sheet");
         const ticket = sheet.querySelector(".ticket");
@@ -688,28 +630,12 @@ try {
       (await page.evaluate(() => document.getElementById("sheet").dataset.state)) === "half",
     );
 
-    // Filters over an open sheet: the layer covers it; closing it gives the sheet back.
-    // Punk: the ticket and its « Filtres et légende » slid away while a sheet is open
-    // (DECISIONS 2026-10-09): out of reach, checked above.
-    if (uiArg(args) !== "punk") {
-      await page
-        .locator("#fab-filters")
-        .tap({ timeout: 5000 })
-        .catch(() => {});
-      await page.waitForTimeout(300);
-      const over = await onTop(page, 195, vh * 0.75, ["#filters", "#sheet"]);
-      check("filters over the sheet", over === "#filters", String(over));
-      await page.locator("#filters .panel-close").tap();
-      await page.waitForTimeout(300);
-      check(
-        "sheet back after closing filters",
-        (await onTop(page, 195, sheet.y + 30, ["#sheet"])) === "#sheet",
-      );
-    } else
-      check(
-        "punk: « Filtres et légende » out of reach while a sheet is open",
-        !(await page.locator("#fab-filters").isVisible()),
-      );
+    // The ticket and its « Filtres et légende » slid away while a sheet is open (DECISIONS
+    // 2026-10-09): out of reach, checked above.
+    check(
+      "punk: « Filtres et légende » out of reach while a sheet is open",
+      !(await page.locator("#fab-filters").isVisible()),
+    );
 
     // A camera where the half sheet will be: the map moves once, in at most 400 ms (DECISIONS
     // 2026-10-06), just enough for the camera's tap target to be above the sheet, the zoom
@@ -794,7 +720,7 @@ try {
       empty !== null && !(await page.locator("#sheet").isVisible()),
       JSON.stringify({ empty, tries, ...afterEmpty }),
     );
-    if (uiArg(args) === "punk") {
+    {
       await page.waitForTimeout(450);
       const back = await slid(page);
       check(
@@ -1264,8 +1190,7 @@ try {
     const pubOnly = await page.evaluate(async (unlisted) => {
       const m = window.__map;
       const t = await fetch("/tiles/cameras.json").then((r) => r.json());
-      // The classique's hatching of an unknown direction (punk has none).
-      const layers = ["bands", "bands-unknown-direction"].filter((id) => m.getLayer(id));
+      const layers = ["bands"].filter((id) => m.getLayer(id));
       const bands = m.queryRenderedFeatures({ layers });
       let keptPrivate = 0;
       for (const f of m.queryRenderedFeatures({ layers: ["portions"] })) {
@@ -1324,10 +1249,8 @@ try {
       return Array.isArray(arm) ? (c ? arm[arm.indexOf(c) + 1] : arm.at(-1)) : null;
     };
     check(
-      "portions thin from z16 (2 px; punk 3.5 px, a boulevard as wide as the basemap's)",
-      uiArg(args) === "punk"
-        ? punkAt16(width16) === 3.5 && punkAt16(width16, "major") > 4.5
-        : width16.includes("16,2"),
+      "portions from z16: 3.5 px, a boulevard as wide as the basemap's",
+      punkAt16(width16) === 3.5 && punkAt16(width16, "major") > 4.5,
       width16.slice(0, 300),
     );
 
@@ -1356,14 +1279,13 @@ try {
         hidden === 0 && shown >= 1,
         `${hidden} / ${shown}`,
       );
-      for (const [cam, at, est, wantClassique, wantPunk] of [
+      for (const [cam, at, est, want] of [
         // Validated contributions (tests/fixtures/contrib-ci.jsonl, applied by the CI
         // build): verified gone (d2), and moved then seen on site (a1), months only.
         [
           "n1923568277",
           [48.895771, 2.239842],
           "",
-          /Disparue : introuvable sur place \(septembre 2026\)[\s\S]*Disparue[\s\S]*introuvable sur place/,
           // Punk (17a): the stamp in place of the tickets, the month.
           /Disparue[\s\S]*introuvable sur place · septembre 2026/,
         ],
@@ -1371,7 +1293,6 @@ try {
           "n1925222790",
           [48.896031, 2.237693],
           "",
-          /Position[\s\S]*corrigée sur place \(septembre 2026\)[\s\S]*Vérifiée sur place \(septembre 2026\)/,
           // Punk: the dates line, then the Position row tagged « sur place · 09/26 ».
           /Vérifiée sur place : septembre 2026[\s\S]*Position[\s\S]*sur place · 09\/26[\s\S]*corrigée/i,
         ],
@@ -1379,7 +1300,6 @@ try {
           "n1925222792",
           [48.895987, 2.237501],
           "",
-          /Filme, mais trop haute ou trop inclinée pour identifier/,
           // Punk: the note under the tickets says it.
           /trop haute ou trop inclinée pour identifier/,
         ],
@@ -1389,13 +1309,11 @@ try {
           [48.896526, 2.239174],
           "",
           /Position ou direction à vérifier(?![\s\S]*Identifier :)/,
-          /Position ou direction à vérifier(?![\s\S]*Identifier :)/,
         ],
         [
           "n1933603486",
           [48.895967, 2.23638],
           "",
-          /si elle est tournée vers vous \(~[\d,]+\sm en prudent\)[\s\S]*Direction[\s\S]*non relevée/,
           // Punk: the note under the tickets, the other estimate rounded up, no « ~ », and no
           // « si elle est tournée vers vous » (removed 2026-10-11).
           /(?<!tournée vers vous · )Prudent\s:\s[\d\s—·]+\sm[\s\S]*Direction[\s\S]*non relevée/i,
@@ -1404,16 +1322,12 @@ try {
           "n1933603486",
           [48.895967, 2.23638],
           "prudent",
-          /si elle est tournée vers vous \(~[\d,]+\sm en standard\)[\s\S]*Direction[\s\S]*non relevée/,
           /(?<!tournée vers vous · )Standard\s:\s[\d\s—·]+\sm[\s\S]*Direction[\s\S]*non relevée/i,
         ],
       ]) {
         const q = est ? `&est=${est}` : "";
         await page.goto(`${APP}?cam=${cam}${q}#18/${at[0]}/${at[1]}`);
         await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60000 });
-        const want = (await page.evaluate(() => document.documentElement.dataset.ui === "punk"))
-          ? wantPunk
-          : wantClassique;
         await page
           .waitForFunction(() => !document.getElementById("sheet").hidden, null, { timeout: 20000 })
           .catch(() => {});
@@ -1681,7 +1595,7 @@ try {
       (await smallTargets(page)).length === 0,
       (await smallTargets(page)).join(" "),
     );
-    if (uiArg(args) === "punk") {
+    {
       // The sheet holds in the phone's width (2026-10-09, « Punk sheets on a phone… »).
       await page.waitForSelector("#sheet .area-place-text", { timeout: 10000 }).catch(() => null);
       const fit = await page.evaluate(AREA_FIT);
@@ -1842,7 +1756,7 @@ try {
 
   // Punk: the account's screens on a phone (lot « comptes », board 25a), the API simulated
   // (bench/account.mjs), in the second half.
-  if (uiArg(args) === "punk" && PART !== 1)
+  if (PART !== 1)
     await accountSmoke(browser, {
       app: APP,
       street: STREET,

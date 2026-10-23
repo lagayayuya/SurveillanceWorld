@@ -75,7 +75,6 @@ const context = await browser.newContext({
 });
 await context.addInitScript(() => {
   try {
-    localStorage.setItem("lacarte.ui", "punk");
     localStorage.setItem("lacarte.welcome", "1");
     localStorage.setItem("lacarte.fonts", "1");
     // The prefetch, off in a browser driven by tests (src/prefetch.ts wanted), measured here.
@@ -117,7 +116,7 @@ if (engine === "chromium") {
 }
 
 const t0 = Date.now();
-await page.goto(`${APP}?ui=punk#${START.zoom}/${START.center[1]}/${START.center[0]}`, {
+await page.goto(`${APP}#${START.zoom}/${START.center[1]}/${START.center[0]}`, {
   waitUntil: "load",
 });
 await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 120000 });

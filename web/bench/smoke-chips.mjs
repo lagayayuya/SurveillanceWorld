@@ -363,7 +363,7 @@ process.exit(failed.length ? 1 : 0);
 
 /** One camera's sheet: its rows, its stamp, axe, a capture. */
 async function sheetChecks(page, where, cam, hash, mode, device, want, boxed) {
-  await page.goto(`${APP}?ui=punk&mode=${mode}&cam=${cam}${hash}`);
+  await page.goto(`${APP}?mode=${mode}&cam=${cam}${hash}`);
   await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60000 });
   await page.waitForFunction(() => !document.getElementById("sheet").hidden, null, {
     timeout: 20000,

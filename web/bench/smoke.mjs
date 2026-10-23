@@ -1,12 +1,12 @@
 // Smoke test of the map interactions on the production build (needs the region's tiles and
 // basemap in web/public). Exits non-zero if any check failed.
-//   node bench/smoke.mjs [--region idf|ci] [--ui classique|punk]
+//   node bench/smoke.mjs [--region idf|ci]
 import { spawn } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { chromium } from "playwright";
 import { accountSmoke } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { uiArg, withUi } from "./ui.mjs";
+import { benchBrowser } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const region = args.includes("--region") ? args[args.indexOf("--region") + 1] : "idf";
@@ -16,30 +16,18 @@ const APP = `http://localhost:${PORT}/`;
 // A street with cameras in each region: Châtelet; La Défense for the CI extract.
 const STREET = region === "ci" ? [2.2377, 48.8977] : [2.3485, 48.8597];
 const checks = [];
-// The punk interface's panel is mockup 20a's machine (machine.ts): closed until « Filtres et
-// légende » opens it, its keys and chips written as 20a writes them (fr.json filters.*,
-// adv.chip.*); the same structure (a label, its input, its label and count) otherwise.
-const PUNK = uiArg(args) === "punk";
-const W = PUNK
-  ? {
-      pubOnly: "Publiques seules",
-      all: "Toutes",
-      dir: "la direction",
-      height: "la hauteur",
-      never: "jamais",
-      scope: "ne suivent que",
-    }
-  : {
-      pubOnly: "Caméras publiques seules",
-      all: "Toutes les caméras",
-      dir: "Direction non relevée",
-      height: "Hauteur inconnue",
-      never: "Jamais vérifiée",
-      scope: "pourcentages ne changent pas",
-    };
-/** Punk: the machine opened (a camera's sheet closes it), before the panel is used. */
+// The panel is mockup 20a's machine (machine.ts): closed until « Filtres et légende » opens
+// it, its keys and chips written as 20a writes them (fr.json filters.*, adv.chip.*).
+const W = {
+  pubOnly: "Publiques seules",
+  all: "Toutes",
+  dir: "la direction",
+  height: "la hauteur",
+  never: "jamais",
+  scope: "ne suivent que",
+};
+/** The machine opened (a camera's sheet closes it), before the panel is used. */
 async function openPanel(page) {
-  if (!PUNK) return;
   if (await page.evaluate(() => document.body.classList.contains("machine-open"))) return;
   await page.locator("#fab-filters").click();
   await page.waitForTimeout(400);
@@ -166,14 +154,13 @@ async function pictoColours(page, focusId) {
 }
 
 /** The colour of the other pictograms in focus mode, and how near (sum of the channels'
- * differences) a pixel must be to count: theme.ts otherPicto, one colour; the punk
- * stickers' dimmed body, half-way from the pictogram's colour to the halo (16a,
- * stickers.ts variantInks), counted closely: around a pair's middle the eyes and lash
- * lines of a sticker blend into its body at their edges (anti-aliasing, not opacity). */
+ * differences) a pixel must be to count: the stickers' dimmed body, half-way from the
+ * pictogram's colour to the halo (16a, stickers.ts variantInks), counted closely: around a
+ * pair's middle the eyes and lash lines of a sticker blend into its body at their edges
+ * (anti-aliasing, not opacity). */
 const otherPicto = (page) =>
   page.evaluate(() => {
     const p = window.__palette();
-    if (document.documentElement.dataset.ui !== "punk") return [p.otherPicto, 60];
     const rgb = (c) => [1, 3, 5].map((i) => Number.parseInt(c.slice(i, i + 2), 16));
     const [a, b] = [rgb(p.picto), rgb(p.halo)];
     const dim = a.map((v, i) =>
@@ -289,10 +276,8 @@ const areaFramed = (page, code) =>
     const y = p.y + r.top;
     const bar = document.getElementById("estimate").getBoundingClientRect().bottom;
     const sheet = document.getElementById("sheet").getBoundingClientRect();
-    // The punk machine, closed, covers nothing (only its ticket, at the top left).
-    const closed =
-      document.documentElement.dataset.ui === "punk" &&
-      !document.body.classList.contains("machine-open");
+    // The machine, closed, covers nothing (only its ticket, at the top left).
+    const closed = !document.body.classList.contains("machine-open");
     const panel = closed
       ? { right: 0 }
       : document.getElementById("filters").getBoundingClientRect();
@@ -305,9 +290,8 @@ const areaFramed = (page, code) =>
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = withUi(
+const browser = benchBrowser(
   await chromium.launch({ args: ["--use-angle=metal", "--ignore-gpu-blocklist"] }),
-  uiArg(args),
   true,
 );
 try {
@@ -368,12 +352,9 @@ try {
     portionsDrawn.portions > 0 && portionsDrawn.grey,
     JSON.stringify(portionsDrawn),
   );
-  // The current interface says it in a sentence; the punk one names a sample per level, in
-  // the legend its ticket prints (20a: « identifier · reconnaître · détecter »).
+  // A sample per level, in the legend its ticket prints (20a: « identifier · reconnaître ·
+  // détecter »).
   const levels = await page.evaluate(() => {
-    const panel = document.getElementById("filters");
-    const punk = document.documentElement.dataset.ui === "punk";
-    if (!punk) return panel.textContent.includes("Foncé : identifier");
     // Rows holding a level sample canvas (machine.ts renderLegend), not the swatches alone.
     const names = [...document.querySelectorAll("#legend .legend-levels dt")]
       .filter((r) => r.querySelector("canvas.sample.level"))
@@ -450,22 +431,20 @@ try {
   await idle(page);
   // Punk: the machine is patched at each idle, never rebuilt: a key keeps the keyboard focus
   // while the map moves and settles again (machine.ts render).
-  if (PUNK) {
-    await first.locator("input").focus();
-    const focusKept = await page.evaluate(async () => {
-      const before = document.activeElement;
-      const m = window.__map;
-      for (const dx of [60, -60]) {
-        m.panBy([dx, 0], { duration: 0 });
-        await new Promise((r) => {
-          m.once("idle", r);
-          setTimeout(r, 8000);
-        });
-      }
-      return before?.tagName === "INPUT" && document.activeElement === before;
-    });
-    check("punk: a key keeps the keyboard focus while the map moves and settles", focusKept);
-  }
+  await first.locator("input").focus();
+  const focusKept = await page.evaluate(async () => {
+    const before = document.activeElement;
+    const m = window.__map;
+    for (const dx of [60, -60]) {
+      m.panBy([dx, 0], { duration: 0 });
+      await new Promise((r) => {
+        m.once("idle", r);
+        setTimeout(r, 8000);
+      });
+    }
+    return before?.tagName === "INPUT" && document.activeElement === before;
+  });
+  check("punk: a key keeps the keyboard focus while the map moves and settles", focusKept);
   const unfiltered = await page.evaluate(() =>
     JSON.stringify(window.__map.getPaintProperty("portions", "line-color")).includes(
       "feature-state",
@@ -665,11 +644,8 @@ try {
     colour: JSON.stringify(window.__map.getPaintProperty("cameras", "icon-color")),
     opacity: window.__map.getPaintProperty("cameras", "icon-opacity") ?? 1,
     image: JSON.stringify(window.__map.getLayoutProperty("cameras", "icon-image")),
-    punk: document.documentElement.dataset.ui === "punk",
   }));
-  const byImage = paint.punk
-    ? paint.image.includes(`["==",["id"],${focusId}],"-full","-dim"`)
-    : paint.colour.includes('"case"');
+  const byImage = paint.image.includes(`["==",["id"],${focusId}],"-full","-dim"`);
   check(
     "focus: other pictograms one solid lighter colour, overlaps not darker",
     paint.opacity === 1 &&
@@ -681,7 +657,7 @@ try {
       singles: cols.singles.length,
       overlaps: cols.overlaps.map((p) => p.rgb),
       odd: cols.singles.filter((p) => !same(p.rgb)).map((p) => p.rgb),
-      ...(paint.punk ? { image: paint.image.slice(0, 200) } : {}),
+      image: paint.image.slice(0, 200),
     }),
   );
   await page.evaluate((v) => window.__map.jumpTo(v), view);
@@ -739,8 +715,8 @@ try {
     cut.highlighted > 0 && cut.mine === cut.highlighted && cut.inField >= cut.highlighted * 0.9,
     JSON.stringify(cut),
   );
-  // Hovering the field shows every level's label (the classique); punk shows the chosen
-  // level's alone, chosen by the sheet's tickets (DECISIONS 2026-10-08, « Punk focus… »).
+  // Hovering the field shows the chosen level's label alone, chosen by the sheet's tickets
+  // (DECISIONS 2026-10-08, « Punk focus… »).
   const fieldPoint = await page.evaluate((c) => {
     const m = window.__map;
     const r = m.getCanvas().getBoundingClientRect();
@@ -750,101 +726,91 @@ try {
   await page.mouse.move(fieldPoint.x, fieldPoint.y);
   await idle(page);
   const hovered = (await focusState()).levels;
-  if (PUNK) {
+  check(
+    "focus (punk): hovering the field keeps the chosen level's label alone",
+    hovered.every((lv) => lv === 3),
+    JSON.stringify(hovered),
+  );
+  await page.mouse.move(5, 790);
+  // « reconnaît » chosen: the map's focused field, outline and label are that level's.
+  const ticket = page.locator('#sheet .ticket[data-level="2"]:not([aria-disabled])');
+  if (await ticket.count()) {
+    await ticket.click();
+    await idle(page);
+    const chosen = await page.evaluate(() => {
+      const m = window.__map;
+      return {
+        fan: JSON.stringify(m.getFilter("bands-fan")),
+        field: JSON.stringify(m.getFilter("focus-field")),
+        label: JSON.stringify(m.getFilter("focus-labels")),
+        checked: document.querySelector("#sheet .ticket[aria-checked=true]")?.dataset.level,
+        drawn: [
+          ...new Set(
+            m.queryRenderedFeatures({ layers: ["focus-field"] }).map((f) => f.properties.lv),
+          ),
+        ],
+      };
+    });
     check(
-      "focus (punk): hovering the field keeps the chosen level's label alone",
-      hovered.every((lv) => lv === 3),
-      JSON.stringify(hovered),
+      "focus (punk): a ticket chosen shows its level alone, with its label",
+      chosen.checked === "2" &&
+        chosen.fan.includes('["==",["get","lv"],2]') &&
+        chosen.field === chosen.fan &&
+        chosen.label === '["==",["get","lv"],2]' &&
+        chosen.drawn.every((lv) => lv === 2),
+      JSON.stringify(chosen),
     );
-    await page.mouse.move(5, 790);
-    // « reconnaît » chosen: the map's focused field, outline and label are that level's.
-    const ticket = page.locator('#sheet .ticket[data-level="2"]:not([aria-disabled])');
-    if (await ticket.count()) {
-      await ticket.click();
-      await idle(page);
-      const chosen = await page.evaluate(() => {
-        const m = window.__map;
-        return {
-          fan: JSON.stringify(m.getFilter("bands-fan")),
-          field: JSON.stringify(m.getFilter("focus-field")),
-          label: JSON.stringify(m.getFilter("focus-labels")),
-          checked: document.querySelector("#sheet .ticket[aria-checked=true]")?.dataset.level,
-          drawn: [
-            ...new Set(
-              m.queryRenderedFeatures({ layers: ["focus-field"] }).map((f) => f.properties.lv),
-            ),
-          ],
-        };
-      });
-      check(
-        "focus (punk): a ticket chosen shows its level alone, with its label",
-        chosen.checked === "2" &&
-          chosen.fan.includes('["==",["get","lv"],2]') &&
-          chosen.field === chosen.fan &&
-          chosen.label === '["==",["get","lv"],2]' &&
-          chosen.drawn.every((lv) => lv === 2),
-        JSON.stringify(chosen),
-      );
-      // « détecte » chosen, its field the widest: its yellow label lies wholly in the visible
-      // map, never under the sheet, « Me localiser » or the other panels (product owner,
-      // 2026-10-08; focus.reachLabelPoints).
-      await page.locator('#sheet .ticket[data-level="1"]').click();
-      await idle(page);
-      // The camera brought 120 px left of the sheet: its field runs under the sheet, where
-      // its farthest point's label would go.
-      await page.evaluate((c) => {
-        const m = window.__map;
-        const at = m.project([c.lng, c.lat]);
-        const edge = document.querySelector("#sheet").getBoundingClientRect().left;
-        const dx = edge - m.getContainer().getBoundingClientRect().left - 120 - at.x;
-        if (dx > 0) m.panBy([-dx, 0], { duration: 0 });
-      }, focusCam);
-      await idle(page);
-      const tag = await page.evaluate(() => {
-        const m = window.__map;
-        const origin = m.getContainer().getBoundingClientRect();
-        const f = m.queryRenderedFeatures({ layers: ["focus-labels"] })[0];
-        if (!f) return { drawn: false };
-        const at = m.project(f.geometry.coordinates);
-        const icon = f.layer.layout["icon-image"];
-        const image = m.getImage(typeof icon === "string" ? icon : (icon?.name ?? ""));
-        const [w, h] = image
-          ? [image.data.width / image.pixelRatio, image.data.height / image.pixelRatio]
-          : [0, 0];
-        const box = { left: at.x, right: at.x + w, top: at.y - h / 2, bottom: at.y + h / 2 };
-        const over = [...document.querySelectorAll("#sheet, #fabs > *, #ticket, #estimate")]
-          .map((el) => [el.id || el.className, el.getBoundingClientRect()])
-          .filter(([, r]) => r.width > 0)
-          .filter(
-            ([, r]) =>
-              r.left - origin.left < box.right &&
-              r.right - origin.left > box.left &&
-              r.top - origin.top < box.bottom &&
-              r.bottom - origin.top > box.top,
-          )
-          .map(([id]) => id);
-        const c = m.getCanvas();
-        const inside =
-          box.left >= 0 &&
-          box.top >= 0 &&
-          box.right <= c.clientWidth &&
-          box.bottom <= c.clientHeight;
-        return { drawn: true, w: Math.round(w), box, inside, over };
-      });
-      check(
-        "focus (punk): the level's label lies wholly in the visible map",
-        tag.drawn && tag.w > 0 && tag.inside && tag.over.length === 0,
-        JSON.stringify(tag),
-      );
-      await page.locator('#sheet .ticket[data-level="3"]').click();
-      await idle(page);
-    }
-  } else
+    // « détecte » chosen, its field the widest: its yellow label lies wholly in the visible
+    // map, never under the sheet, « Me localiser » or the other panels (product owner,
+    // 2026-10-08; focus.reachLabelPoints).
+    await page.locator('#sheet .ticket[data-level="1"]').click();
+    await idle(page);
+    // The camera brought 120 px left of the sheet: its field runs under the sheet, where
+    // its farthest point's label would go.
+    await page.evaluate((c) => {
+      const m = window.__map;
+      const at = m.project([c.lng, c.lat]);
+      const edge = document.querySelector("#sheet").getBoundingClientRect().left;
+      const dx = edge - m.getContainer().getBoundingClientRect().left - 120 - at.x;
+      if (dx > 0) m.panBy([-dx, 0], { duration: 0 });
+    }, focusCam);
+    await idle(page);
+    const tag = await page.evaluate(() => {
+      const m = window.__map;
+      const origin = m.getContainer().getBoundingClientRect();
+      const f = m.queryRenderedFeatures({ layers: ["focus-labels"] })[0];
+      if (!f) return { drawn: false };
+      const at = m.project(f.geometry.coordinates);
+      const icon = f.layer.layout["icon-image"];
+      const image = m.getImage(typeof icon === "string" ? icon : (icon?.name ?? ""));
+      const [w, h] = image
+        ? [image.data.width / image.pixelRatio, image.data.height / image.pixelRatio]
+        : [0, 0];
+      const box = { left: at.x, right: at.x + w, top: at.y - h / 2, bottom: at.y + h / 2 };
+      const over = [...document.querySelectorAll("#sheet, #fabs > *, #ticket, #estimate")]
+        .map((el) => [el.id || el.className, el.getBoundingClientRect()])
+        .filter(([, r]) => r.width > 0)
+        .filter(
+          ([, r]) =>
+            r.left - origin.left < box.right &&
+            r.right - origin.left > box.left &&
+            r.top - origin.top < box.bottom &&
+            r.bottom - origin.top > box.top,
+        )
+        .map(([id]) => id);
+      const c = m.getCanvas();
+      const inside =
+        box.left >= 0 && box.top >= 0 && box.right <= c.clientWidth && box.bottom <= c.clientHeight;
+      return { drawn: true, w: Math.round(w), box, inside, over };
+    });
     check(
-      "focus: hovering the field shows every label",
-      hovered.length >= 2,
-      JSON.stringify(hovered),
+      "focus (punk): the level's label lies wholly in the visible map",
+      tag.drawn && tag.w > 0 && tag.inside && tag.over.length === 0,
+      JSON.stringify(tag),
     );
+    await page.locator('#sheet .ticket[data-level="3"]').click();
+    await idle(page);
+  }
   await page.mouse.move(5, 790);
   // Switching hypothesis during focus leaves one set of outlines, the new one's.
   const fanBands = () =>
@@ -1053,96 +1019,94 @@ try {
   // state, the selected camera's larger; a proposal's ghost answers to `cam-<kind>`, which
   // no other layer asks for; a change of the phone's mode draws them again, on the map and
   // in the filter panel, exactly as a page opened in that mode.
-  if (await page.evaluate(() => document.documentElement.dataset.ui === "punk")) {
-    const kinds = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
-    const images = await page.evaluate((ks) => {
+  const kinds = ["dome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
+  const images = await page.evaluate((ks) => {
+    const m = window.__map;
+    const names = ks.flatMap((k) => [
+      ...["full", "dim", "gone", "full-big", "gone-big"].map((s) => `sticker-${k}-${s}`),
+      `cam-${k}`,
+    ]);
+    return {
+      missing: names.filter((n) => !m.hasImage(n)),
+      sdf: names.filter((n) => m.style.getImage(n)?.sdf),
+      cam: m
+        .getStyle()
+        .layers.filter((l) => JSON.stringify(l.layout?.["icon-image"] ?? "").includes('"cam-"'))
+        .map((l) => l.id),
+    };
+  }, kinds);
+  check(
+    "punk: a sticker per type and state, plain images; only the proposals' ghost asks cam-*",
+    !images.missing.length &&
+      !images.sdf.length &&
+      images.cam.every((id) => id === "proposal-ghost"),
+    JSON.stringify(images),
+  );
+  await settle(page, { center: STREET, zoom: 17 });
+  // A fingerprint of every sticker image and of the filter panel's samples.
+  const prints = (p) =>
+    p.evaluate((ks) => {
       const m = window.__map;
-      const names = ks.flatMap((k) => [
-        ...["full", "dim", "gone", "full-big", "gone-big"].map((s) => `sticker-${k}-${s}`),
-        `cam-${k}`,
-      ]);
+      const hash = (bytes) => {
+        let h = 2166136261;
+        for (let i = 0; i < bytes.length; i += 3) h = Math.imul(h ^ bytes[i], 16777619);
+        return (h >>> 0).toString(16);
+      };
+      const names = ks.flatMap((k) => [`sticker-${k}-full`, `sticker-${k}-dim`, `cam-${k}`]);
+      const samples = [...document.querySelectorAll("#filters canvas.sample")].map((c) =>
+        hash(new TextEncoder().encode(c.toDataURL())),
+      );
       return {
-        missing: names.filter((n) => !m.hasImage(n)),
-        sdf: names.filter((n) => m.style.getImage(n)?.sdf),
-        cam: m
-          .getStyle()
-          .layers.filter((l) => JSON.stringify(l.layout?.["icon-image"] ?? "").includes('"cam-"'))
-          .map((l) => l.id),
+        map: names.map((n) => hash(m.style.getImage(n).data.data)).join(" "),
+        samples: samples.join(" "),
+        water: JSON.stringify(
+          ["water-over-fields", "water-shore"].map(
+            (id) => m.getStyle().layers.find((l) => l.id === id)?.paint,
+          ),
+        ),
       };
     }, kinds);
-    check(
-      "punk: a sticker per type and state, plain images; only the proposals' ghost asks cam-*",
-      !images.missing.length &&
-        !images.sdf.length &&
-        images.cam.every((id) => id === "proposal-ghost"),
-      JSON.stringify(images),
-    );
-    await settle(page, { center: STREET, zoom: 17 });
-    // A fingerprint of every sticker image and of the filter panel's samples.
-    const prints = (p) =>
-      p.evaluate((ks) => {
-        const m = window.__map;
-        const hash = (bytes) => {
-          let h = 2166136261;
-          for (let i = 0; i < bytes.length; i += 3) h = Math.imul(h ^ bytes[i], 16777619);
-          return (h >>> 0).toString(16);
-        };
-        const names = ks.flatMap((k) => [`sticker-${k}-full`, `sticker-${k}-dim`, `cam-${k}`]);
-        const samples = [...document.querySelectorAll("#filters canvas.sample")].map((c) =>
-          hash(new TextEncoder().encode(c.toDataURL())),
-        );
-        return {
-          map: names.map((n) => hash(m.style.getImage(n).data.data)).join(" "),
-          samples: samples.join(" "),
-          water: JSON.stringify(
-            ["water-over-fields", "water-shore"].map(
-              (id) => m.getStyle().layers.find((l) => l.id === id)?.paint,
-            ),
-          ),
-        };
-      }, kinds);
-    const light = await prints(page);
-    await page.emulateMedia({ colorScheme: "dark" });
-    await page.waitForFunction(() => document.documentElement.dataset.mode === "dark");
-    await idle(page);
-    const switched = await prints(page);
-    // The same page (its query and position in the URL) opened in dark.
-    const fresh = await browser.newPage({
-      viewport: { width: 1280, height: 800 },
-      colorScheme: "dark",
-    });
-    await fresh.goto(page.url());
-    await fresh.waitForFunction(() => window.__map?.loaded());
-    await idle(fresh);
-    const opened = await prints(fresh);
-    await fresh.close();
-    await page.emulateMedia({ colorScheme: "light" });
-    await page.waitForFunction(() => document.documentElement.dataset.mode === "light");
-    await idle(page);
-    const back = await prints(page);
-    check(
-      "punk: a change of mode draws the stickers again (map and panel), as a page opened in it",
-      switched.map !== light.map &&
-        switched.map === opened.map &&
-        switched.samples === opened.samples &&
-        switched.samples !== light.samples &&
-        back.map === light.map &&
-        back.samples === light.samples,
-      JSON.stringify({
-        samples: light.samples.split(" ").length,
-        darkEqual: [switched.map === opened.map, switched.samples === opened.samples],
-        lightEqual: [back.map === light.map, back.samples === light.samples],
-      }),
-    );
-    check(
-      "punk: a change of mode paints the water over the fields and its shore as a page opened in it",
-      light.water !== switched.water &&
-        switched.water === opened.water &&
-        back.water === light.water &&
-        !light.water.includes("null"),
-      JSON.stringify({ light: light.water, dark: switched.water, opened: opened.water }),
-    );
-  }
+  const light = await prints(page);
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.waitForFunction(() => document.documentElement.dataset.mode === "dark");
+  await idle(page);
+  const switched = await prints(page);
+  // The same page (its query and position in the URL) opened in dark.
+  const fresh = await browser.newPage({
+    viewport: { width: 1280, height: 800 },
+    colorScheme: "dark",
+  });
+  await fresh.goto(page.url());
+  await fresh.waitForFunction(() => window.__map?.loaded());
+  await idle(fresh);
+  const opened = await prints(fresh);
+  await fresh.close();
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.waitForFunction(() => document.documentElement.dataset.mode === "light");
+  await idle(page);
+  const back = await prints(page);
+  check(
+    "punk: a change of mode draws the stickers again (map and panel), as a page opened in it",
+    switched.map !== light.map &&
+      switched.map === opened.map &&
+      switched.samples === opened.samples &&
+      switched.samples !== light.samples &&
+      back.map === light.map &&
+      back.samples === light.samples,
+    JSON.stringify({
+      samples: light.samples.split(" ").length,
+      darkEqual: [switched.map === opened.map, switched.samples === opened.samples],
+      lightEqual: [back.map === light.map, back.samples === light.samples],
+    }),
+  );
+  check(
+    "punk: a change of mode paints the water over the fields and its shore as a page opened in it",
+    light.water !== switched.water &&
+      switched.water === opened.water &&
+      back.water === light.water &&
+      !light.water.includes("null"),
+    JSON.stringify({ light: light.water, dark: switched.water, opened: opened.water }),
+  );
 
   // Filters act on the merged axes too (z11-13): the "direction unknown" row keeps axes
   // whose bit is set in fb<zone> (recomputed here from the tiles' bit layout); two groups
@@ -1269,76 +1233,68 @@ try {
     "click on a commune opens its sheet and outlines it",
     areaSheet.visible &&
       areaSheet.name === city.name &&
-      (PUNK
-        ? // Mockup 24a with Y only, as a maximum: « 1 sur N rues à portée » (or « N sur
-          // 10 », or the percentage; 2026-10-08), never X nor a certainty (DECISIONS 2026-10-06,
-          // « Punk commune and département sheets… »); the 100 m street without « au
-          // plus » / « au moins » (2026-10-08), the ticket and the colour line neither
-          // (2026-10-09, « Punk sheets on a phone… »).
-          AREA_TICKET.test(areaSheet.streets) &&
-          !/Entre [\d,]+ %|à coup sûr|direction connue|au moins|au\splus/.test(areaSheet.text)
-        : // "Entre X % et Y % des rues", X <= Y, whatever the hypothesis chosen.
-          (([, x, y]) =>
-            x !== undefined && Number(x.replace(",", ".")) <= Number(y.replace(",", ".")))(
-            areaSheet.head.match(/^Entre ([\d,]+) % et ([\d,]+) % des rues/) ?? [],
-          )) &&
+      // Mockup 24a with Y only, as a maximum: « 1 sur N rues à portée » (or « N sur 10 »,
+      // or the percentage; 2026-10-08), never X nor a certainty (DECISIONS 2026-10-06,
+      // « Punk commune and département sheets… »); the 100 m street without « au plus » /
+      // « au moins » (2026-10-08), the ticket and the colour line neither (2026-10-09,
+      // « Punk sheets on a phone… »).
+      AREA_TICKET.test(areaSheet.streets) &&
+      !/Entre [\d,]+ %|à coup sûr|direction connue|au moins|au\splus/.test(areaSheet.text) &&
       areaSheet.selected.includes(`"${city.code}"`),
     JSON.stringify({ ...areaSheet, text: undefined }),
   );
-  if (PUNK) {
-    // Its colour on the map in words, its class's range « des rues à portée » (2026-10-09).
-    const place = await page
-      .waitForSelector("#sheet .area-place-text", { timeout: 10000 })
-      .then((e) => e.textContent())
-      .catch(() => "");
-    check("punk commune sheet: its colour's class in words", AREA_PLACE.test(place), place);
-    const fit = await page.evaluate(AREA_FIT);
-    check(
-      "punk commune sheet: no sideways scroll, title left of ×, the cursor over its ramp",
-      fit.sideways.length === 0 && fit.title <= fit.buttons && fit.cursor,
-      JSON.stringify(fit),
-    );
-    // 24a's tickets are tabs: a click and the arrows choose, the panel follows.
-    await page.click("#area-tab-cameras");
-    await page.keyboard.press("ArrowRight");
-    const tabs = await page.evaluate(() => ({
-      selected: [...document.querySelectorAll("#sheet [role=tab]")]
-        .filter((b) => b.getAttribute("aria-selected") === "true")
-        .map((b) => b.id),
-      focused: document.activeElement?.id ?? "",
-      panel: document.getElementById("area-panel")?.getAttribute("aria-labelledby") ?? "",
+  // Its colour on the map in words, its class's range « des rues à portée » (2026-10-09).
+  const place = await page
+    .waitForSelector("#sheet .area-place-text", { timeout: 10000 })
+    .then((e) => e.textContent())
+    .catch(() => "");
+  check("punk commune sheet: its colour's class in words", AREA_PLACE.test(place), place);
+  const fit = await page.evaluate(AREA_FIT);
+  check(
+    "punk commune sheet: no sideways scroll, title left of ×, the cursor over its ramp",
+    fit.sideways.length === 0 && fit.title <= fit.buttons && fit.cursor,
+    JSON.stringify(fit),
+  );
+  // 24a's tickets are tabs: a click and the arrows choose, the panel follows.
+  await page.click("#area-tab-cameras");
+  await page.keyboard.press("ArrowRight");
+  const tabs = await page.evaluate(() => ({
+    selected: [...document.querySelectorAll("#sheet [role=tab]")]
+      .filter((b) => b.getAttribute("aria-selected") === "true")
+      .map((b) => b.id),
+    focused: document.activeElement?.id ?? "",
+    panel: document.getElementById("area-panel")?.getAttribute("aria-labelledby") ?? "",
+  }));
+  check(
+    "punk commune sheet: its tickets are tabs (click, arrows), the panel follows",
+    tabs.selected.join() === "area-tab-who" &&
+      tabs.focused === "area-tab-who" &&
+      tabs.panel === "area-tab-who",
+    JSON.stringify(tabs),
+  );
+  // « Qui filme ? » ends with every camera by operator class; « La liste des caméras »
+  // counts them by type, each row with its sticker (24a, 16a): both add up to the ticket.
+  const counted = () =>
+    page.evaluate(() => ({
+      n: Number.parseInt(document.querySelector("#area-tab-cameras .area-tab-v").textContent, 10),
+      rows: [...document.querySelectorAll("#area-panel .area-list li")].map((li) => ({
+        n: Number(li.querySelector(".area-count")?.textContent),
+        sticker: li.querySelector(".area-sticker canvas") !== null,
+      })),
     }));
-    check(
-      "punk commune sheet: its tickets are tabs (click, arrows), the panel follows",
-      tabs.selected.join() === "area-tab-who" &&
-        tabs.focused === "area-tab-who" &&
-        tabs.panel === "area-tab-who",
-      JSON.stringify(tabs),
-    );
-    // « Qui filme ? » ends with every camera by operator class; « La liste des caméras »
-    // counts them by type, each row with its sticker (24a, 16a): both add up to the ticket.
-    const counted = () =>
-      page.evaluate(() => ({
-        n: Number.parseInt(document.querySelector("#area-tab-cameras .area-tab-v").textContent, 10),
-        rows: [...document.querySelectorAll("#area-panel .area-list li")].map((li) => ({
-          n: Number(li.querySelector(".area-count")?.textContent),
-          sticker: li.querySelector(".area-sticker canvas") !== null,
-        })),
-      }));
-    const byClass = await counted();
-    await page.click("#area-tab-cameras");
-    const byKind = await counted();
-    const sum = (c) => c.rows.reduce((s, r) => s + r.n, 0);
-    check(
-      "punk commune sheet: cameras by type with stickers, by operator class in « Qui filme ? »",
-      byClass.rows.length === 4 &&
-        sum(byClass) === byClass.n &&
-        byKind.rows.length > 0 === byKind.n > 0 &&
-        byKind.rows.every((r) => r.sticker && r.n > 0) &&
-        sum(byKind) === byKind.n,
-      JSON.stringify({ byClass, byKind }),
-    );
-  }
+  const byClass = await counted();
+  await page.click("#area-tab-cameras");
+  const byKind = await counted();
+  const sum = (c) => c.rows.reduce((s, r) => s + r.n, 0);
+  check(
+    "punk commune sheet: cameras by type with stickers, by operator class in « Qui filme ? »",
+    byClass.rows.length === 4 &&
+      sum(byClass) === byClass.n &&
+      byKind.rows.length > 0 === byKind.n > 0 &&
+      byKind.rows.every((r) => r.sticker && r.n > 0) &&
+      sum(byKind) === byKind.n,
+    JSON.stringify({ byClass, byKind }),
+  );
   await page.waitForTimeout(900);
   await idle(page);
   const framedC = await areaFramed(page, city.code);
@@ -1400,8 +1356,7 @@ try {
   // Punk (product owner, 2026-10-15): the basemap's roads, paths, piers, ramps and bridges
   // drawn again above the fields from the street level (z15, layers.ts DETAIL_MIN), fill and
   // outline, after the buildings, in the flavour's order and its paint, under our streets and
-  // every label; the flavour's own stop there; tunnels and railways stay below. The
-  // classique: none of it.
+  // every label; the flavour's own stop there; tunnels and railways stay below.
   const roads = await page.evaluate(() => {
     const layers = window.__map.getStyle().layers;
     const at = (id) => layers.findIndex((l) => l.id === id);
@@ -1456,23 +1411,19 @@ try {
   });
   const LIFTS = ["roads_other", "roads_pier", "roads_link", "roads_minor", "roads_bridges_other"];
   check(
-    PUNK
-      ? "punk: the basemap's roads, paths and piers drawn again above the fields (fill and outline) and the buildings from z15 (the paths' lines from z16, with their portions), in their own style, under our streets and the labels"
-      : "classique: the basemap's roads where the flavour puts them, none drawn again",
-    PUNK
-      ? LIFTS.every((id) => roads.ids.includes(id)) &&
-          !roads.ids.some((id) => /^roads_(tunnels_|rail)/.test(id)) &&
-          roads.flavourOrder &&
-          roads.samePaint &&
-          roads.fromStreetLevel &&
-          roads.inParents &&
-          roads.pathsFrom16 &&
-          roads.groundStops &&
-          roads.othersKept &&
-          roads.aboveFields &&
-          roads.underStreets &&
-          roads.underLabels
-      : roads.lifted === 0 && roads.othersKept,
+    "punk: the basemap's roads, paths and piers drawn again above the fields (fill and outline) and the buildings from z15 (the paths' lines from z16, with their portions), in their own style, under our streets and the labels",
+    LIFTS.every((id) => roads.ids.includes(id)) &&
+      !roads.ids.some((id) => /^roads_(tunnels_|rail)/.test(id)) &&
+      roads.flavourOrder &&
+      roads.samePaint &&
+      roads.fromStreetLevel &&
+      roads.inParents &&
+      roads.pathsFrom16 &&
+      roads.groundStops &&
+      roads.othersKept &&
+      roads.aboveFields &&
+      roads.underStreets &&
+      roads.underLabels,
     JSON.stringify(roads),
   );
 
@@ -1480,7 +1431,6 @@ try {
   // fields from z15, see through, with its shore line, under the focused camera's zone (its
   // outline stays clear) and the lifted roads; the flavour's water kept under the fields at
   // every zoom (the copy over it the same colour: nothing changes where there is no field).
-  // The classique: none of it.
   const water = await page.evaluate(() => {
     const layers = window.__map.getStyle().layers;
     const at = (id) => layers.findIndex((l) => l.id === id);
@@ -1516,10 +1466,8 @@ try {
     };
   });
   check(
-    PUNK
-      ? "punk: the water drawn again over the fields from z15, see through, its shore above, under the focused zone, the buildings and the lifted roads; the flavour's own kept"
-      : "classique: the water where the flavour puts it, none drawn again",
-    PUNK ? Object.values(water).every(Boolean) : !water.over && !water.shore && water.groundKept,
+    "punk: the water drawn again over the fields from z15, see through, its shore above, under the focused zone, the buildings and the lifted roads; the flavour's own kept",
+    Object.values(water).every(Boolean),
     JSON.stringify(water),
   );
 
@@ -1583,9 +1531,9 @@ try {
       const left = [];
       await openPanel(page);
       for (const c of codes) {
-        const key = PUNK ? `filters.${prefix === "op" ? "who" : "kind"}.${c}` : `${prefix}.${c}`;
+        const key = `filters.${prefix === "op" ? "who" : "kind"}.${c}`;
         const label = fr[key].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        const set = PUNK ? (prefix === "op" ? "[data-op]" : "[data-kind]") : "";
+        const set = prefix === "op" ? "[data-op]" : "[data-kind]";
         const row = page
           .locator(`#filters label.toggle${set}`)
           .filter({ has: page.locator(".label", { hasText: new RegExp(`^${label}$`) }) })
@@ -1721,7 +1669,7 @@ try {
   // Punk (DECISIONS 2026-10-09): filters that hide every camera or every filmed street of
   // the view say so on the map with « Tout réafficher »; filters set in the street view are
   // told in the machine at every zoom, and counted on « Filtres et légende (N) ».
-  if (PUNK) {
+  {
     const told = () =>
       page.evaluate(() => {
         const empty = document.getElementById("filters-empty");
@@ -1767,72 +1715,71 @@ try {
       JSON.stringify({ street, streets, low, reset, search }),
     );
     await page.keyboard.press("Escape");
-
-    // A pending add (the participation API mocked: this preview has none) answers as a
-    // camera from the stickers' zoom: its ghost has a camera's target (22 px) and a hover
-    // ring (the iPhone test's « caméra anormale », 2026-10-09); below it nothing is drawn,
-    // nothing answers (DECISIONS 2026-10-09, « Pending proposals… »).
-    const at = [STREET[0] + 0.0004, STREET[1] + 0.0003];
-    const add = {
-      type: "Feature",
-      geometry: { type: "Point", coordinates: at },
-      properties: {
-        ...{ u: "11111111-2222-4333-8444-555555555555", c: "c111111112222", k: "add" },
-        ...{ ck: "dome", s: "pending", month: "2026-10", n: 0, d: 0, m: false, o: null },
-      },
-    };
-    const ghost = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    ghost.on("pageerror", (e) => errors.push(String(e)));
-    await ghost.route("**/api/**", (r) =>
-      r.request().url().includes("/api/proposals")
-        ? r.fulfill({ json: { type: "FeatureCollection", features: [add] } })
-        : r.fulfill({ json: { name: "smoke", review: false } }),
-    );
-    const answers = [];
-    for (const [z, dx] of [
-      [14.2, 0],
-      [16, 17],
-    ]) {
-      await ghost.goto(`${APP}?r=${z}#${z}/${at[1]}/${at[0]}`);
-      await ghost.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded());
-      await ghost.waitForTimeout(1200);
-      const p = await ghost.evaluate((a) => window.__map.project(a), at);
-      const box = await ghost.locator("#map canvas").boundingBox();
-      await ghost.mouse.move(box.x + p.x + dx, box.y + p.y);
-      await ghost.waitForTimeout(300);
-      const cursor = await ghost.evaluate(() => window.__map.getCanvas().style.cursor);
-      await ghost.mouse.click(box.x + p.x + dx, box.y + p.y);
-      await ghost
-        .waitForFunction(() => !document.getElementById("sheet").hidden, null, { timeout: 5000 })
-        .catch(() => {});
-      answers.push({
-        z,
-        dx,
-        cursor,
-        sheet: await ghost.evaluate(() => !document.getElementById("sheet").hidden),
-      });
-    }
-    await ghost.close();
-    check(
-      "punk: a pending add takes the hand and opens its sheet from z15, its ghost 17 px off; nothing below",
-      answers[0].cursor === "" &&
-        !answers[0].sheet &&
-        answers[1].cursor === "pointer" &&
-        answers[1].sheet,
-      JSON.stringify(answers),
-    );
   }
 
-  // Punk: the account's screens (lot « comptes », board 25a), the API simulated
-  // (bench/account.mjs).
-  if (PUNK)
-    await accountSmoke(browser, {
-      app: APP,
-      street: STREET,
-      phone: false,
-      check,
-      context: { viewport: { width: 1280, height: 800 } },
+  // A pending add (the participation API mocked: this preview has none) answers as a
+  // camera from the stickers' zoom: its ghost has a camera's target (22 px) and a hover
+  // ring (the iPhone test's « caméra anormale », 2026-10-09); below it nothing is drawn,
+  // nothing answers (DECISIONS 2026-10-09, « Pending proposals… »).
+  const at = [STREET[0] + 0.0004, STREET[1] + 0.0003];
+  const add = {
+    type: "Feature",
+    geometry: { type: "Point", coordinates: at },
+    properties: {
+      ...{ u: "11111111-2222-4333-8444-555555555555", c: "c111111112222", k: "add" },
+      ...{ ck: "dome", s: "pending", month: "2026-10", n: 0, d: 0, m: false, o: null },
+    },
+  };
+  const ghost = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+  ghost.on("pageerror", (e) => errors.push(String(e)));
+  await ghost.route("**/api/**", (r) =>
+    r.request().url().includes("/api/proposals")
+      ? r.fulfill({ json: { type: "FeatureCollection", features: [add] } })
+      : r.fulfill({ json: { name: "smoke", review: false } }),
+  );
+  const answers = [];
+  for (const [z, dx] of [
+    [14.2, 0],
+    [16, 17],
+  ]) {
+    await ghost.goto(`${APP}?r=${z}#${z}/${at[1]}/${at[0]}`);
+    await ghost.waitForFunction(() => window.__map?.loaded() && window.__map.areTilesLoaded());
+    await ghost.waitForTimeout(1200);
+    const p = await ghost.evaluate((a) => window.__map.project(a), at);
+    const box = await ghost.locator("#map canvas").boundingBox();
+    await ghost.mouse.move(box.x + p.x + dx, box.y + p.y);
+    await ghost.waitForTimeout(300);
+    const cursor = await ghost.evaluate(() => window.__map.getCanvas().style.cursor);
+    await ghost.mouse.click(box.x + p.x + dx, box.y + p.y);
+    await ghost
+      .waitForFunction(() => !document.getElementById("sheet").hidden, null, { timeout: 5000 })
+      .catch(() => {});
+    answers.push({
+      z,
+      dx,
+      cursor,
+      sheet: await ghost.evaluate(() => !document.getElementById("sheet").hidden),
     });
+  }
+  await ghost.close();
+  check(
+    "punk: a pending add takes the hand and opens its sheet from z15, its ghost 17 px off; nothing below",
+    answers[0].cursor === "" &&
+      !answers[0].sheet &&
+      answers[1].cursor === "pointer" &&
+      answers[1].sheet,
+    JSON.stringify(answers),
+  );
+
+  // The account's screens (lot « comptes », board 25a), the API simulated
+  // (bench/account.mjs).
+  await accountSmoke(browser, {
+    app: APP,
+    street: STREET,
+    phone: false,
+    check,
+    context: { viewport: { width: 1280, height: 800 } },
+  });
 
   // Narrow screen: the panel is a full-screen layer behind the "Filtres" button (the phone
   // itself is covered by smoke-mobile.mjs).

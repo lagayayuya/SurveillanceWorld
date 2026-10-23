@@ -139,7 +139,6 @@ export async function frameContext(
   await context.addInitScript(
     ([mode, first]) => {
       try {
-        localStorage.setItem("lacarte.ui", "punk");
         localStorage.setItem("lacarte.mode", mode);
         localStorage.setItem("lacarte.fonts", "1");
         if (first) localStorage.removeItem("lacarte.welcome");

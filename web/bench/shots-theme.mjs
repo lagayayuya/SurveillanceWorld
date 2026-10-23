@@ -1,13 +1,12 @@
-// Captures for the theme work (redesign, phase 2): the same states for every interface and
-// mode, on a phone (WebKit, "iPhone 14") and a wide screen (Chromium 1440×900), with the
-// map's style as JSON, so that the current interface can be proven unchanged (identical
-// style, identical pixels) and the punk one looked at in light and dark.
-//   node bench/shots-theme.mjs [--region idf|ci] [--ui classique|punk] [--mode clair|sombre]
+// Captures for the theme work (redesign, phase 2): the same states in each mode, on a phone
+// (WebKit, "iPhone 14") and a wide screen (Chromium 1440×900), with the map's style as JSON,
+// so that a change can be proven not to move the map (identical style, identical pixels,
+// bench/pixeldiff.mjs between two builds) and looked at in light and dark.
+//   node bench/shots-theme.mjs [--region idf|ci] [--mode clair|sombre]
 //     [--out DIR] [--only phone|desktop]
 // Needs `npm run build` with the region's tiles in web/public (make web-assets REGION=idf),
-// or LACARTE_DIST (bench/dist.mjs; the local gate captures the CI extract). /revue is not
-// captured here: its redesign (lot 1 « Modérer », 2026-10-16) is a layout of its own in both
-// interfaces, no longer the classique frozen at b935b91 (its states: states/catalogue.mjs).
+// or LACARTE_DIST (bench/dist.mjs). /revue is not captured here (its states:
+// states/catalogue.mjs).
 import { spawn } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -18,7 +17,6 @@ const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
 const region = arg("--region", "idf");
 requireTiles(region);
-const ui = arg("--ui", null);
 const mode = arg("--mode", null);
 const only = arg("--only", null);
 const OUT = resolve(arg("--out", "shots-theme"));
@@ -28,7 +26,6 @@ mkdirSync(OUT, { recursive: true });
 
 const query = (extra = "") => {
   const q = new URLSearchParams(extra);
-  if (ui) q.set("ui", ui);
   if (mode) q.set("mode", mode);
   const s = q.toString();
   return s ? `?${s}` : "";

@@ -124,7 +124,6 @@ try {
       });
       await context.addInitScript((m) => {
         try {
-          localStorage.setItem("lacarte.ui", "punk");
           localStorage.setItem("lacarte.mode", m);
           localStorage.setItem("lacarte.welcome", "1");
         } catch {
@@ -138,9 +137,7 @@ try {
           const errors = [];
           page.on("pageerror", (e) => errors.push(String(e)));
           const [lat, lng] = place.at;
-          await page.goto(
-            `${APP}?ui=punk${place.est ? `&est=${place.est}` : ""}#${z}/${lat}/${lng}`,
-          );
+          await page.goto(`${APP}${place.est ? `?est=${place.est}` : ""}#${z}/${lat}/${lng}`);
           await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 30000 });
           await idle(page);
           await page.screenshot({ path: resolve(OUT, `${name}.png`) });

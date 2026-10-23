@@ -49,7 +49,6 @@ const DIRECTION_ANSWERED = C("n998633844", 48.897282, 2.238582);
 const OPERATOR_ANSWERED = C("n9622344411", 48.897581, 2.240147);
 const ADDED_ON_SITE = C("cadd000010000", 48.895957, 2.240695);
 const ADDED_ANSWERED = C("cadd000020000", 48.897519, 2.234453);
-const TWIN = C("n1271510647", 48.896671, 2.23676); // n1933603253 0.63 m away (Lambert-93)
 const STREET = [48.8963, 2.2382]; // the cluster of the extract
 const FREE = [48.8981364, 2.2403746]; // a facade, no camera within 20 m
 const NEAR = [48.8967635, 2.2384109]; // 1.8 m from n1925222797
@@ -57,10 +56,10 @@ const NEAR = [48.8967635, 2.2384109]; // 1.8 m from n1925222797
 // --- gestures shared by the states ---------------------------------------------------
 
 const sheetBtn = (k, text) => k.page.locator("#sheet button", { hasText: text }).first();
-// The sheet's facts: the classique's chips, the punk sheet's rows (lot 3.2) and its box of
+// The sheet's facts: its rows (lot 3.2) and its box of
 // default values.
-const ROWS = "#sheet :is(.chips, .sheet-facts)";
-const ASSUMED = "#sheet :is(.chips, .sheet-assumed)";
+const ROWS = "#sheet .sheet-facts";
+const ASSUMED = "#sheet .sheet-assumed";
 
 /** The punk sheet's paper scrolled by `px` (a phone's half-open sheet scrolls under its
  * head). */
@@ -110,9 +109,8 @@ export async function cnilShown(k) {
 /** The filters panel: a full-screen layer opened by its button on a phone, always there on
  * a wide screen; punk: the machine (machine.ts), opened by the ticket's « Filtres et
  * légende » on both. */
-const punk = (k) => k.combo.ui === "punk";
 async function filters(k) {
-  if (k.phone || punk(k)) await k.tap("#fab-filters");
+  await k.tap("#fab-filters");
   await k.page.waitForTimeout(500);
 }
 
@@ -132,18 +130,6 @@ async function openFilters(k, target) {
 const street = (k) => k.open(hash(STREET, 16.5));
 const PRUDENT = '#estimate button[aria-pressed="false"]';
 
-/** POST /api/contributions answered here (200, nothing stored). */
-const fakeSend = (k) =>
-  k.page.route("**/api/contributions", (route) => {
-    if (route.request().method() !== "POST") return route.continue();
-    const body = route.request().postDataJSON();
-    return route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ uuid: body.uuid, status: "pending", new: true }),
-    });
-  });
-
 /** Offline once the page and its tiles are in (no service worker: a page cannot load
  * offline). */
 const offline = async (k) => {
@@ -158,20 +144,9 @@ async function notFound(k) {
   await k.tap(sheetBtn(k, "J'ai bien cherché"));
   await k.page.waitForSelector(".part-done");
   // Punk on site: 8a's ticket on the map, the sheet gone (held at rest); from afar (no
-  // position here) it earns nothing: no scene, the sheet says so, as the classique's.
-  if (punk(k) && (await k.page.$("#score"))) await scene(k);
+  // position here) it earns nothing: no scene, the sheet says so.
+  if (await k.page.$("#score")) await scene(k);
   else await k.page.waitForTimeout(800);
-}
-
-/** Move mode from the open sheet: « Déplacer » (the classique; punk has « Modifier »'s
- * position view: editPosition). */
-async function toMoveMode(k) {
-  await k.tap(sheetBtn(k, "Déplacer"));
-}
-
-/** « Valider » a position. */
-async function submitMove(k) {
-  await k.tap("#move-submit");
 }
 
 // Punk (DECISIONS 2026-10-08): adding and « Modifier » are one component (modify.ts).
@@ -254,24 +229,6 @@ async function editAddFilled(k) {
   await k.page.waitForTimeout(1200);
 }
 
-/** Move mode on a camera, from its sheet; `placement` chosen when given. */
-async function moveMode(k, c, placement) {
-  await sheet(k, c);
-  await toMoveMode(k);
-  await k.page.waitForSelector("#move-panel");
-  if (placement) await k.tap(`#move-panel button[data-placement='${placement}']`);
-  await k.page.waitForTimeout(1500);
-}
-
-/** The move's pin slid to (lon, lat), the server's answer at rest. */
-async function slideTo(k, lngLat) {
-  await k.jump({ center: lngLat }, 400);
-  await k.page
-    .waitForSelector("#move-pin[data-source='server']", { state: "attached", timeout: 15000 })
-    .catch(() => {});
-  await k.page.waitForTimeout(1200);
-}
-
 /** Punk: « Modifier », its position slid to fx.target, « Ici », « Envoyer 1 modification »
  * (offline first when `queued`), « Terminer ». */
 async function editMove(k, fx, queued = false) {
@@ -295,70 +252,14 @@ async function scene(k) {
   await k.page.waitForTimeout(300);
 }
 
-/** "Compléter" on a camera, from its sheet. */
-async function complete(k, c) {
-  await sheet(k, c);
-  await k.tap("#part-complete");
-  await k.page.waitForSelector("#complete-panel");
-  await k.page.waitForTimeout(1500);
-}
-const answer = async (k, value) => {
-  await k.tap(`#complete-panel button[data-answer='${value}']`);
-  await k.page.waitForTimeout(1200);
-};
-
-/** "＋ Ajouter" at (lat, lon), z18: the position screen, `placement` chosen when given. */
-async function addMode(k, at, placement) {
-  await k.open(hash(at, 18));
-  await k.page.waitForSelector("#fab-add:not([hidden]):not([aria-disabled='true'])", {
-    timeout: 30000,
-  });
-  await k.tap("#fab-add");
-  await k.page.waitForSelector("#move-panel");
-  if (placement) {
-    await k.tap(`#move-panel button[data-placement='${placement}']`);
-    await k.page
-      .waitForSelector("#move-pin[data-source='server']", { state: "attached", timeout: 20000 })
-      .catch(() => {});
-  }
-  await k.page.waitForTimeout(1500);
-}
-
-/** An add at FREE up to its questions (nothing sent yet: the add waits on the phone). */
-async function addQuestions(k) {
-  await addMode(k, FREE, "facade");
-  await k.tap("#move-submit");
-  await k.page.waitForSelector("#complete-panel[data-step='shape']", { timeout: 20000 });
-  await k.page.waitForTimeout(1200);
-}
-
-/** An add through its three questions to the last screen. */
-async function addSummary(k) {
-  await addQuestions(k);
-  await answer(k, "dome");
-  await k.page.waitForSelector("#complete-panel[data-step='direction']");
-  await k.jump({ center: offsetLngLat(FREE, 15, 0) }, 1500);
-  await k.tap("#aim-submit");
-  await k.page.waitForSelector("#complete-panel[data-step='operator']");
-  await answer(k, "unknown");
-  await k.page.waitForSelector("#complete-panel[data-step='done']");
-  await k.page.waitForTimeout(600);
-}
-/** An add sent (offline first when `queued`): the classique's « Envoyer l'ajout » after
- * its questions; punk: the filled sheet's « Envoyer », « Terminer ». */
+/** An add sent (offline first when `queued`): the filled sheet's « Envoyer », « Terminer ». */
 async function addSent(k, queued = false) {
-  if (punk(k)) {
-    await editAddFilled(k);
-    if (queued) await offline(k);
-    await k.tap("#modify-send");
-    await k.page.waitForSelector('#modify-panel[data-view="sent"]', { state: "attached" });
-    await k.page.keyboard.press("Escape");
-    await k.page.waitForFunction(() => !document.getElementById("modify-panel"));
-    return;
-  }
-  await addSummary(k);
+  await editAddFilled(k);
   if (queued) await offline(k);
-  await k.tap("#add-commit");
+  await k.tap("#modify-send");
+  await k.page.waitForSelector('#modify-panel[data-view="sent"]', { state: "attached" });
+  await k.page.keyboard.press("Escape");
+  await k.page.waitForFunction(() => !document.getElementById("modify-panel"));
 }
 const offsetLngLat = ([lat, lon], dx, dy) => [
   lon + dx / (111320 * Math.cos((lat * Math.PI) / 180)),
@@ -847,10 +748,9 @@ async function myCameras(k, opts = {}) {
 
 const CAMERAS_STATES = [
   // « Mes caméras » (lot U), on the account's screen
-  { id: "cameras-open", ui: "punk", run: (k) => myCameras(k) },
+  { id: "cameras-open", run: (k) => myCameras(k) },
   {
     id: "cameras-list",
-    ui: "punk",
     async run(k) {
       await myCameras(k);
       await k.show("#sheet .board-cameras .profile-group");
@@ -858,7 +758,6 @@ const CAMERAS_STATES = [
   },
   {
     id: "cameras-back",
-    ui: "punk",
     async run(k) {
       await myCameras(k);
       const dome = `#sheet [data-camera="${DOME_CAM}"] button.profile-cam`;
@@ -874,10 +773,9 @@ const CAMERAS_STATES = [
 
 const PROFILE_STATES = [
   // Leaderboard (26a), the account's screen
-  { id: "board-month", ui: "punk", run: (k) => board(k) },
+  { id: "board-month", run: (k) => board(k) },
   {
     id: "board-logout-offline",
-    ui: "punk",
     async run(k) {
       await board(k, { fail: ["/api/session"] });
       await k.show("#sheet .profile-logout");
@@ -886,11 +784,10 @@ const PROFILE_STATES = [
       await k.show("#sheet .profile-logout-error");
     },
   },
-  { id: "board-password-form", ui: "punk", run: (k) => changePassword(k, null) },
-  { id: "board-password-wrong", ui: "punk", run: (k) => changePassword(k, "wrong password") },
+  { id: "board-password-form", run: (k) => changePassword(k, null) },
+  { id: "board-password-wrong", run: (k) => changePassword(k, "wrong password") },
   {
     id: "board-all",
-    ui: "punk",
     async run(k) {
       await board(k);
       await k.tap(k.page.locator("#sheet .board-period").nth(1));
@@ -899,7 +796,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-kind",
-    ui: "punk",
     async run(k) {
       await board(k);
       await k.tap(k.page.locator("#sheet .board-count", { hasText: "Ajouts" }));
@@ -908,7 +804,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-list",
-    ui: "punk",
     async run(k) {
       await board(k);
       await k.show("#sheet .board-list");
@@ -916,7 +811,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-scale",
-    ui: "punk",
     async run(k) {
       await board(k);
       await k.show("#sheet .board-scale-toggle");
@@ -924,12 +818,11 @@ const PROFILE_STATES = [
       await k.show("#sheet .board-scale");
     },
   },
-  { id: "board-opted-out", ui: "punk", run: (k) => board(k, { optIn: false }) },
+  { id: "board-opted-out", run: (k) => board(k, { optIn: false }) },
   // Lot U: « Afficher mon pseudonyme sur les caméras que j'ai relevées », off, what it
   // reveals under it.
   {
     id: "board-signed",
-    ui: "punk",
     async run(k) {
       await board(k, { signed: false });
       await k.show("#sheet .board-signed-help");
@@ -937,7 +830,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-me-far",
-    ui: "punk",
     async run(k) {
       await board(k, {
         me: [
@@ -949,15 +841,13 @@ const PROFILE_STATES = [
       await k.show("#sheet .board-gap");
     },
   },
-  { id: "board-empty", ui: "punk", run: (k) => board(k, { nobody: true }) },
+  { id: "board-empty", run: (k) => board(k, { nobody: true }) },
   {
     id: "board-offline",
-    ui: "punk",
     run: (k) => board(k, { fail: ["/api/leaderboard", "/api/me/score"] }),
   },
   {
     id: "board-optin-offline",
-    ui: "punk",
     async run(k) {
       await board(k, { fail: ["/api/me/leaderboard"] });
       await k.show("#sheet .board-switch");
@@ -967,7 +857,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-scale-offline",
-    ui: "punk",
     async run(k) {
       await board(k, { fail: ["/api/leaderboard"] });
       await k.show("#sheet .board-scale-toggle");
@@ -977,29 +866,24 @@ const PROFILE_STATES = [
   },
   {
     id: "board-delete-form",
-    ui: "punk",
     run: (k) => deleteAccount(k, null, false),
   },
   {
     id: "board-delete-empty",
-    ui: "punk",
     run: (k) => deleteAccount(k, null),
   },
   {
     id: "board-delete-wrong",
-    ui: "punk",
     run: (k) => deleteAccount(k, "pas le bon"),
   },
   {
     id: "board-delete-failed",
-    ui: "punk",
     run: (k) => deleteAccount(k, PASSWORD, true, { fail: ["/api/me/delete"] }),
   },
   {
     // Back from OpenStreetMap signed in (OSM lot 1): the page opened as the callback leaves
     // it, the account's screen with its line.
     id: "board-osm-status",
-    ui: "punk",
     async run(k) {
       await mockProfile(k.page, { account: { osm: true, password: false }, osmLogin: true });
       await k.open(`?osm=signed${PROFILE_AT}`);
@@ -1012,22 +896,18 @@ const PROFILE_STATES = [
   // The account and OpenStreetMap at the foot (OSM lot 1), sign-in on.
   {
     id: "board-osm-link",
-    ui: "punk",
     run: (k) => osmBoard(k, { osm: false, password: true }),
   },
   {
     id: "board-osm-linked",
-    ui: "punk",
     run: (k) => osmBoard(k, { osm: true, password: true }),
   },
   {
     id: "board-osm-only",
-    ui: "punk",
     run: (k) => osmBoard(k, { osm: true, password: false }),
   },
   {
     id: "board-delete-osm-only",
-    ui: "punk",
     async run(k) {
       await osmBoard(k, { osm: true, password: false });
       await k.show("#sheet .board-delete");
@@ -1040,7 +920,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-osm-unlinked",
-    ui: "punk",
     async run(k) {
       await osmBoard(k, { osm: true, password: true });
       await k.tap("#sheet .board-osm-unlink");
@@ -1050,7 +929,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-osm-unlink-failed",
-    ui: "punk",
     async run(k) {
       await osmBoard(k, { osm: true, password: true }, { unlinkFails: true });
       await k.tap("#sheet .board-osm-unlink");
@@ -1062,16 +940,14 @@ const PROFILE_STATES = [
   // server unless said.
   {
     id: "board-sync-not-offered",
-    ui: "punk",
     async run(k) {
       await board(k, { account: { osm: true, password: true, sync: false } });
       await k.show("#sheet .board-links");
     },
   },
-  { id: "board-sync-off", ui: "punk", run: (k) => syncBoard(k, SYNC) },
+  { id: "board-sync-off", run: (k) => syncBoard(k, SYNC) },
   {
     id: "board-sync-enable",
-    ui: "punk",
     async run(k) {
       await syncBoard(k, SYNC);
       await k.tap(k.page.locator("#sheet .board-sync-choice", { hasText: "Publier aussi" }));
@@ -1081,15 +957,13 @@ const PROFILE_STATES = [
       await k.show("#board-sync-enable");
     },
   },
-  { id: "board-sync-on", ui: "punk", run: (k) => syncBoard(k, SYNC_ON) },
+  { id: "board-sync-on", run: (k) => syncBoard(k, SYNC_ON) },
   {
     id: "board-sync-history",
-    ui: "punk",
     run: (k) => syncBoard(k, SYNC_ON, {}, ".board-sync-history-title"),
   },
   {
     id: "board-sync-stop",
-    ui: "punk",
     async run(k) {
       await syncBoard(k, SYNC_ON);
       await k.tap(k.page.locator("#sheet .board-sync-choice", { hasText: "Rester" }));
@@ -1098,7 +972,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-sync-stopped",
-    ui: "punk",
     async run(k) {
       await syncBoard(k, SYNC_ON);
       await k.tap(k.page.locator("#sheet .board-sync-choice", { hasText: "Rester" }));
@@ -1109,29 +982,24 @@ const PROFILE_STATES = [
   },
   {
     id: "board-sync-suspended",
-    ui: "punk",
     run: (k) => syncBoard(k, { ...SYNC_ON, suspended: true }),
   },
   {
     id: "board-sync-revoked",
-    ui: "punk",
     run: (k) => syncBoard(k, { ...SYNC, last_error: "revoked" }),
   },
   {
     id: "board-sync-blocked",
-    ui: "punk",
     run: (k) => syncBoard(k, { ...SYNC_ON, last_error: "blocked" }),
   },
   {
     id: "board-sync-retry",
-    ui: "punk",
     run: (k) => syncBoard(k, { ...SYNC_ON, last_error: "osm_down" }),
   },
   // The camera sheet's « Vos contributions », the choice on: « OSM : … » under each one
   // that went or may still go.
   {
     id: "mine-sync",
-    ui: "punk",
     async run(k) {
       await mockProfile(k.page, {
         account: { osm: true, password: true, sync: true },
@@ -1144,7 +1012,6 @@ const PROFILE_STATES = [
   },
   {
     id: "board-sync-live",
-    ui: "punk",
     run: (k) => syncBoard(k, { ...SYNC_ON, server: "live", url: "https://www.openstreetmap.org" }),
   },
 ];
@@ -1284,7 +1151,7 @@ export const STATES = [
       await filters(k);
       await k.tap(k.page.locator("#filters label", { hasText: "publiques seules" }));
       await k.page.waitForTimeout(800);
-      if (k.phone || punk(k)) await closeFilters(k);
+      await closeFilters(k);
       await k.idle();
     },
   },
@@ -1294,19 +1161,16 @@ export const STATES = [
   // the filter bits there: PTZ, which no camera of the view is): the map's message.
   {
     id: "map-filtered-empty-streets",
-    ui: "punk",
     run: (k) => k.open(`?f=ptz${hash(STREET, 14.5)}`),
   },
   // Punk: below the street level the machine says the filters set in the street view.
   {
     id: "filters-street-active",
-    ui: "punk",
     run: (k) => openFilters(k, `?op=zzz${hash(STREET, 13.2)}`),
   },
   // Punk, a phone: the credit unfolded from its « ⓘ ».
   {
     id: "map-attribution-open",
-    ui: "punk",
     devices: ["phone"],
     async run(k) {
       await street(k);
@@ -1347,7 +1211,6 @@ export const STATES = [
   },
   {
     id: "map-focus-far",
-    ui: "punk",
     async run(k) {
       await sheet(k, FIXED);
       // Zoomed out around it, the camera in the part of the map the panels leave free (a
@@ -1359,7 +1222,6 @@ export const STATES = [
   },
   {
     id: "map-focus-far-filtered",
-    ui: "punk",
     async run(k) {
       // Verified less than a year ago: not this camera (2022), hidden with its marker.
       await sheet(k, FIXED, "&f=fresh_lt1");
@@ -1368,13 +1230,6 @@ export const STATES = [
       await k.centreInFree([FIXED.at[1], FIXED.at[0]]);
       await k.idle(800);
     },
-  },
-  {
-    id: "map-proposals-dots",
-    seed: "full",
-    // Punk draws no proposal before the stickers' zoom (layers.ts proposalTapeLayers).
-    ui: "classique",
-    run: (k) => k.open("#13.6/48.8968/2.2388"),
   },
   { id: "map-proposals-street", seed: "full", run: (k) => k.open(hash([48.8962, 2.238], 17.4)) },
   { id: "map-proposal-add", seed: "full", run: (k) => k.open(hash(ADD.a1.at, 18.6)) },
@@ -1414,7 +1269,7 @@ export const STATES = [
     id: "map-add-zoom",
     async run(k) {
       // Punk: « ＋ Ajouter » is active from the street level (DECISIONS 2026-10-09).
-      await k.open(hash(FREE, punk(k) ? 14.6 : 16.4));
+      await k.open(hash(FREE, 14.6));
       await k.page.waitForSelector("#fab-add:not([hidden])", { timeout: 30000 });
       await k.tap("#fab-add");
       await k.page.waitForTimeout(400);
@@ -1424,7 +1279,6 @@ export const STATES = [
   // Punk: « ＋ Ajouter » tapped at z16.4: the map zooms to z17, then the add opens.
   {
     id: "map-add-zooms-in",
-    ui: "punk",
     async run(k) {
       await k.open(hash(FREE, 16.4));
       await k.page.waitForSelector("#fab-add:not([hidden]):not([aria-disabled='true'])", {
@@ -1463,7 +1317,6 @@ export const STATES = [
   // the keyboard focus on both.
   {
     id: "button-estimate-hover",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await street(k);
@@ -1472,7 +1325,6 @@ export const STATES = [
   },
   {
     id: "button-estimate-press",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await street(k);
@@ -1481,7 +1333,6 @@ export const STATES = [
   },
   {
     id: "button-estimate-focus",
-    ui: "punk",
     async run(k) {
       await street(k);
       await k.keyFocus("#estimate button");
@@ -1489,7 +1340,6 @@ export const STATES = [
   },
   {
     id: "button-fab-hover",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await street(k);
@@ -1498,7 +1348,6 @@ export const STATES = [
   },
   {
     id: "button-fab-press",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await street(k);
@@ -1507,7 +1356,6 @@ export const STATES = [
   },
   {
     id: "button-fab-press-reduced",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await k.page.emulateMedia({ reducedMotion: "reduce" });
@@ -1517,7 +1365,6 @@ export const STATES = [
   },
   {
     id: "button-fab-focus",
-    ui: "punk",
     async run(k) {
       await street(k);
       await k.keyFocus("#fab-locate");
@@ -1530,21 +1377,9 @@ export const STATES = [
   { id: "filters-z13", run: (k) => openFilters(k, "#13.2/48.8965/2.2385") },
   { id: "filters-z14", run: (k) => openFilters(k, "#14.50/48.8977/2.2377") },
   { id: "filters-z16", run: (k) => openFilters(k, hash(STREET, 16.5)) },
-  {
-    id: "filters-legend",
-    devices: ["phone"],
-    ui: "classique",
-    async run(k) {
-      await k.open(hash(STREET, 16.5));
-      await filters(k);
-      await k.tap(k.page.locator("#filters .legend summary"));
-      await k.page.waitForTimeout(500);
-    },
-  },
   // Punk: « Légende ↑ » prints the legend on the ticket (20a, 18a), on both screens.
   {
     id: "filters-ticket-legend",
-    ui: "punk",
     async run(k) {
       await openFilters(k, hash(STREET, 16.5));
       await k.tap("#filters .legend-key");
@@ -1553,7 +1388,6 @@ export const STATES = [
   },
   {
     id: "filters-ticket-legend-areas",
-    ui: "punk",
     async run(k) {
       await openFilters(k, "#10.30/48.895/2.23");
       await k.tap("#filters .legend-key");
@@ -1562,7 +1396,6 @@ export const STATES = [
   },
   {
     id: "filters-legend-calc",
-    ui: "punk",
     async run(k) {
       await openFilters(k, hash(STREET, 16.5));
       await k.tap("#filters .legend-key");
@@ -1575,7 +1408,6 @@ export const STATES = [
   // cameras, their tape and ghosts hidden.
   {
     id: "filters-state-hidden",
-    ui: "punk",
     seed: "full",
     async run(k) {
       await openFilters(k, hash([48.8962, 2.238], 17.4));
@@ -1589,7 +1421,6 @@ export const STATES = [
   // (a decoration of 1.2 s, caught 250 ms in).
   {
     id: "filters-reset",
-    ui: "punk",
     async run(k) {
       await openFilters(k, `?f=fresh_never${hash(STREET, 16.5)}`);
       await k.tap("#filters .reset");
@@ -1648,19 +1479,8 @@ export const STATES = [
     },
   },
   {
-    id: "filters-collapsed",
-    devices: ["desktop"],
-    ui: "classique",
-    async run(k) {
-      await k.open(hash(STREET, 16.5));
-      await k.tap("#filters .panel-head");
-      await k.page.waitForTimeout(400);
-    },
-  },
-  {
     // The machine's ×, as the sheet's (the close norm).
     id: "button-panel-hover",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await openFilters(k, hash(STREET, 16.5));
@@ -1670,7 +1490,6 @@ export const STATES = [
   {
     // « Tout réafficher », a filter on: it sinks; nothing is reset until it is released.
     id: "button-panel-press",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await openFilters(k, `?f=fresh_never${hash(STREET, 16.5)}`);
@@ -1680,7 +1499,6 @@ export const STATES = [
   {
     // The machine's own opener: the ticket's « Filtres et légende », on both screens.
     id: "button-panel-focus",
-    ui: "punk",
     async run(k) {
       await street(k);
       await k.keyFocus("#fab-filters");
@@ -1711,22 +1529,10 @@ export const STATES = [
   {
     // Punk, half open, scrolled: the head alone stays, the tickets went under it.
     id: "sheet-half-scrolled",
-    ui: "punk",
     devices: ["phone"],
     async run(k) {
       await sheet(k, FIXED);
       await scrollPaper(k);
-    },
-  },
-  {
-    // The classique's: the punk sheet's rows are not buttons (lot 3.2).
-    id: "sheet-chip-help",
-    ui: "classique",
-    async run(k) {
-      await sheet(k, FIXED);
-      await k.fullSheet();
-      await k.tap("#sheet .chips .chip");
-      await k.show("#sheet .chip-help");
     },
   },
   {
@@ -1850,7 +1656,6 @@ export const STATES = [
   {
     // Punk: « reconnaît » chosen among the tickets (DECISIONS 2026-10-08, « Punk focus… »).
     id: "sheet-level-chosen",
-    ui: "punk",
     async run(k) {
       await sheet(k, DIRECTION_ANSWERED);
       await k.tap('#sheet .ticket[data-level="2"]');
@@ -1899,21 +1704,9 @@ export const STATES = [
     },
   },
   {
-    // The classique's: punk suspends the box until further notice (DECISIONS 2026-10-08).
-    id: "sheet-cnil",
-    ui: "classique",
-    cnil: true,
-    async run(k) {
-      if (!(await cnilShown(k))) throw new Error("no CNIL box: not a VITE_CNIL_SIGNAL=true build");
-      await k.fullSheet();
-      await k.show("#sheet .cnil");
-    },
-  },
-  {
     // Punk: what has no certainty: the dates line (OSM's check date, by the month) and the
     // band of a field drawn almost nil (neither tag nor certainty).
     id: "chip-no-certainty",
-    ui: "punk",
     async run(k) {
       await sheet(k, CHECK);
       await k.fullSheet();
@@ -1922,7 +1715,6 @@ export const STATES = [
   },
   {
     id: "button-close-hover",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await sheet(k, FIXED);
@@ -1931,7 +1723,6 @@ export const STATES = [
   },
   {
     id: "button-close-press",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await sheet(k, FIXED);
@@ -1940,7 +1731,6 @@ export const STATES = [
   },
   {
     id: "button-close-focus",
-    ui: "punk",
     async run(k) {
       await sheet(k, FIXED);
       await k.keyFocus("#sheet .close");
@@ -1949,7 +1739,6 @@ export const STATES = [
   {
     // The sheet's buttons (lot 3.2, 17a): « Toujours là ? » lifts, the links never move.
     id: "button-sheet-hover",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await sheet(k, FIXED);
@@ -1958,7 +1747,6 @@ export const STATES = [
   },
   {
     id: "button-sheet-press",
-    ui: "punk",
     devices: ["desktop"],
     async run(k) {
       await sheet(k, FIXED);
@@ -1968,7 +1756,6 @@ export const STATES = [
   {
     // A link's focus: « Calcul ? ».
     id: "button-sheet-focus",
-    ui: "punk",
     async run(k) {
       await sheet(k, FIXED);
       await k.fullSheet();
@@ -2102,7 +1889,6 @@ export const STATES = [
   {
     // Punk: on a camera verified gone, the two answers (DECISIONS 2026-10-08).
     id: "verify-gone",
-    ui: "punk",
     async run(k) {
       await sheet(k, GONE, "&f=gone");
       await k.tap(sheetBtn(k, "Toujours là"));
@@ -2128,7 +1914,7 @@ export const STATES = [
       await k.tap(sheetBtn(k, "Elle est là"));
       await k.page.waitForSelector(".part-done");
       // From afar a check earns nothing: punk shows no scene then, only its confirmation.
-      if (punk(k) && (await k.page.$("#score"))) await scene(k);
+      if (await k.page.$("#score")) await scene(k);
       else await k.page.waitForTimeout(800);
     },
   },
@@ -2152,91 +1938,12 @@ export const STATES = [
     },
   },
 
-  // "Déplacer"
-  {
-    id: "move-nearby",
-    // Punk: « Modifier » is the sheet's camera's; there is no « Déplacer » to ask which.
-    ui: "classique",
-    async run(k) {
-      await sheet(k, TWIN);
-      await k.tap(sheetBtn(k, "Déplacer"));
-      await k.page.waitForSelector("#sheet .part-nearby");
-      await k.page.waitForTimeout(300);
-    },
-  },
-  {
-    id: "move-placement-needed",
-    ui: "classique",
-    run: (k, fx) => moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }),
-  },
-  {
-    id: "move-facade",
-    ui: "classique",
-    async run(k, fx) {
-      await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "facade");
-      await slideTo(k, fx.target);
-    },
-  },
-  {
-    id: "move-free-inside",
-    ui: "classique",
-    async run(k, fx) {
-      await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "free");
-      await slideTo(k, fx.inside);
-    },
-  },
-  {
-    id: "move-too-far",
-    ui: "classique",
-    async run(k, fx) {
-      await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "free");
-      await k.jump({ center: offsetLngLat([fx.at[1], fx.at[0]], 60, 0) }, 2000);
-    },
-  },
-  {
-    id: "move-loading",
-    ui: "classique",
-    async run(k, fx) {
-      await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "free");
-      // The server never answers: "calcul du champ…" stays.
-      await k.page.route("**/api/preview", () => {});
-      await k.jump({ center: fx.target }, 1200);
-    },
-  },
-  {
-    id: "move-preview-error",
-    ui: "classique",
-    async run(k, fx) {
-      await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "free");
-      await k.page.route("**/api/preview", (r) =>
-        r.fulfill({ status: 500, contentType: "application/json", body: '{"error":"internal"}' }),
-      );
-      await k.jump({ center: fx.target }, 1500);
-    },
-  },
-  {
-    id: "move-offline",
-    ui: "classique",
-    async run(k, fx) {
-      await sheet(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] });
-      await offline(k);
-      await toMoveMode(k);
-      await k.page.waitForSelector("#move-panel");
-      await k.tap("#move-panel button[data-placement='facade']");
-      await k.jump({ center: fx.target }, 2000);
-    },
-  },
   {
     id: "move-sent",
     who: "eve",
     writes: true,
     async run(k, fx) {
-      if (punk(k)) await editMove(k, fx);
-      else {
-        await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "facade");
-        await slideTo(k, fx.target);
-        await submitMove(k);
-      }
+      await editMove(k, fx);
       await k.page.waitForFunction(() => !document.body.classList.contains("moving"));
       await k.page.waitForTimeout(2000);
       await k.idle();
@@ -2245,157 +1952,28 @@ export const STATES = [
   {
     id: "move-queued",
     async run(k, fx) {
-      if (punk(k)) await editMove(k, fx, true);
-      else {
-        await moveMode(k, { id: fx.camera, at: [fx.at[1], fx.at[0]] }, "facade");
-        await slideTo(k, fx.target);
-        await offline(k);
-        await submitMove(k);
-      }
+      await editMove(k, fx, true);
       await k.page.waitForFunction(() => !document.body.classList.contains("moving"));
       await k.page.waitForTimeout(1500);
     },
   },
 
-  // "Compléter" (answers answered here: nothing stored)
-  {
-    id: "complete-shape",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-    },
-  },
-  {
-    id: "complete-direction",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "dome");
-      await k.page.waitForSelector("#complete-panel[data-step='direction']");
-      await k.page.waitForTimeout(800);
-    },
-  },
-  {
-    id: "complete-direction-aimed",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "dome");
-      await k.jump({ center: offsetLngLat(UNKNOWN.at, 20, 8) }, 2500);
-    },
-  },
-  {
-    id: "complete-direction-closer",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "dome");
-      await k.jump({ center: offsetLngLat(UNKNOWN.at, 2, 1) }, 1200);
-    },
-  },
-  {
-    id: "complete-direction-offline",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "dome");
-      await offline(k);
-      await k.jump({ center: offsetLngLat(UNKNOWN.at, 20, 8) }, 2000);
-    },
-  },
-  {
-    id: "complete-height",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, LAMP);
-      await answer(k, "not_visible");
-      await k.page.waitForSelector("#complete-panel[data-step='mount']");
-    },
-  },
-  {
-    id: "complete-tilt",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, LAMP);
-      await answer(k, "not_visible");
-      await answer(k, "first");
-      await k.page.waitForSelector("#complete-panel button[data-part='tilt']");
-    },
-  },
-  {
-    id: "complete-operator",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "unknown");
-      await answer(k, "not_visible");
-      await k.page.waitForSelector("#complete-panel[data-step='operator']");
-    },
-  },
-  {
-    id: "complete-operator-names",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "unknown");
-      await answer(k, "not_visible");
-      await answer(k, "public");
-      await k.page.waitForSelector("#complete-panel button[data-operator]");
-    },
-  },
-  {
-    id: "complete-done",
-    ui: "classique",
-    async run(k) {
-      await fakeSend(k);
-      await complete(k, UNKNOWN);
-      await answer(k, "unknown");
-      await answer(k, "not_visible");
-      await answer(k, "unknown");
-      await k.page.waitForSelector("#complete-panel[data-step='done']");
-    },
-  },
-  {
-    id: "complete-done-offline",
-    ui: "classique",
-    async run(k) {
-      await complete(k, UNKNOWN);
-      await offline(k);
-      await answer(k, "unknown");
-      await answer(k, "not_visible");
-      await answer(k, "unknown");
-      await k.page.waitForSelector("#complete-panel[data-step='done']");
-    },
-  },
-
   // Adding and « Modifier » (punk, DECISIONS 2026-10-08): one component
-  { id: "modify-open", ui: "punk", run: (k) => modify(k, FIXED) },
-  { id: "modify-row-open", ui: "punk", run: (k) => modify(k, FIXED, [["mount"]]) },
+  { id: "modify-open", run: (k) => modify(k, FIXED) },
+  { id: "modify-row-open", run: (k) => modify(k, FIXED, [["mount"]]) },
   // 4a-f4: only what the camera assumes unfolded (an applied add's dome: its height).
-  { id: "modify-assumed", ui: "punk", run: (k) => modify(k, ADDED_ANSWERED) },
+  { id: "modify-assumed", run: (k) => modify(k, ADDED_ANSWERED) },
   {
     id: "modify-height-dome",
-    ui: "punk",
     run: (k) => modify(k, UNKNOWN, [["shape"], ["dome"], ["mount"]]),
   },
   {
     id: "modify-changed",
-    ui: "punk",
     run: (k) => modify(k, FIXED, [["mount"], ["first", "height"], ["tilt"], ["slight", "tilt"]]),
   },
-  { id: "modify-shapes", ui: "punk", run: (k) => modify(k, UNKNOWN, [["shape"]]) },
+  { id: "modify-shapes", run: (k) => modify(k, UNKNOWN, [["shape"]]) },
   {
     id: "modify-aim-waiting",
-    ui: "punk",
     async run(k) {
       await modify(k, UNKNOWN, [["shape"], ["dome"], ["direction"]]);
       await editView(k, "aim");
@@ -2403,7 +1981,6 @@ export const STATES = [
   },
   {
     id: "modify-aim",
-    ui: "punk",
     async run(k) {
       await modify(k, UNKNOWN, [["shape"], ["dome"], ["direction"]]);
       await editView(k, "aim");
@@ -2414,7 +1991,6 @@ export const STATES = [
   },
   {
     id: "modify-operator-names",
-    ui: "punk",
     async run(k) {
       await modify(k, UNKNOWN, [["operator"], ["public"]]);
       await k.page
@@ -2424,7 +2000,6 @@ export const STATES = [
   },
   {
     id: "modify-abandon",
-    ui: "punk",
     async run(k) {
       await modify(k, FIXED, [["mount"], ["first", "height"], ["tilt"], ["slight", "tilt"]]);
       await k.tap("#modify-panel .modify-head .modify-close");
@@ -2433,7 +2008,6 @@ export const STATES = [
   },
   {
     id: "modify-done",
-    ui: "punk",
     who: "hal",
     writes: true,
     async run(k) {
@@ -2445,7 +2019,6 @@ export const STATES = [
   },
   {
     id: "modify-done-offline",
-    ui: "punk",
     async run(k) {
       await modify(k, FIXED, [["mount"], ["first", "height"], ["tilt"], ["slight", "tilt"]]);
       await offline(k);
@@ -2453,19 +2026,17 @@ export const STATES = [
       await scene(k);
     },
   },
-  { id: "modify-position", ui: "punk", run: (k, fx) => editPosition(k, fx, fx.inside) },
+  { id: "modify-position", run: (k, fx) => editPosition(k, fx, fx.inside) },
   {
     id: "modify-position-too-far",
-    ui: "punk",
     run: (k, fx) => editPosition(k, fx, offsetLngLat([fx.at[1], fx.at[0]], 60, 0)),
   },
-  { id: "add-place", ui: "punk", run: (k) => editAdd(k, FREE) },
-  { id: "add-place-duplicates", ui: "punk", run: (k) => editAdd(k, NEAR, true) },
-  { id: "add-sheet", ui: "punk", run: (k) => editAdd(k, FREE, true) },
-  { id: "add-sheet-filled", ui: "punk", run: (k) => editAddFilled(k) },
+  { id: "add-place", run: (k) => editAdd(k, FREE) },
+  { id: "add-place-duplicates", run: (k) => editAdd(k, NEAR, true) },
+  { id: "add-sheet", run: (k) => editAdd(k, FREE, true) },
+  { id: "add-sheet-filled", run: (k) => editAddFilled(k) },
   {
     id: "add-sheet-abandon",
-    ui: "punk",
     async run(k) {
       await editAdd(k, FREE, true);
       await editSteps(k, [["shape"], ["dome"]]);
@@ -2475,7 +2046,6 @@ export const STATES = [
   },
   {
     id: "add-done",
-    ui: "punk",
     who: "fay",
     writes: true,
     async run(k) {
@@ -2487,7 +2057,6 @@ export const STATES = [
   },
   {
     id: "add-done-offline",
-    ui: "punk",
     async run(k) {
       await editAddFilled(k);
       await offline(k);
@@ -2496,54 +2065,6 @@ export const STATES = [
     },
   },
 
-  // "＋ Ajouter"
-  { id: "add-position", ui: "classique", run: (k) => addMode(k, FREE) },
-  { id: "add-position-facade", ui: "classique", run: (k) => addMode(k, FREE, "facade") },
-  {
-    id: "add-cancel-armed",
-    ui: "classique",
-    async run(k) {
-      await addMode(k, FREE, "facade");
-      await k.tap(k.page.locator("#move-panel .part-actions button").first());
-      await k.page.waitForTimeout(300);
-    },
-  },
-  {
-    id: "add-duplicates",
-    ui: "classique",
-    async run(k) {
-      await addMode(k, NEAR, "free");
-      await k.tap("#move-submit");
-      await k.page.waitForSelector("#move-panel[data-step='duplicates']");
-      await k.page.waitForTimeout(600);
-    },
-  },
-  { id: "add-question", ui: "classique", run: (k) => addQuestions(k) },
-  {
-    id: "add-abandon",
-    ui: "classique",
-    async run(k) {
-      await addQuestions(k);
-      await k.tap("#complete-panel .part-close");
-      await k.page.waitForSelector("#complete-panel .part-abandon");
-      await k.page.waitForTimeout(300);
-    },
-  },
-  {
-    id: "add-direction-given",
-    ui: "classique",
-    async run(k) {
-      await addQuestions(k);
-      await answer(k, "dome");
-      await k.jump({ center: offsetLngLat(FREE, 15, 0) }, 1500);
-      await k.tap("#aim-submit");
-      await k.page.waitForSelector("#complete-panel[data-step='operator']");
-      await k.tap("#complete-back");
-      await k.page.waitForSelector("#complete-panel[data-step='direction'] .part-given");
-      await k.page.waitForTimeout(1500);
-    },
-  },
-  { id: "add-summary", ui: "classique", run: (k) => addSummary(k) },
   {
     id: "add-sent",
     who: "fay",
@@ -2569,32 +2090,6 @@ export const STATES = [
       await addSent(k, true);
       await k.page.waitForFunction(() => !document.body.classList.contains("moving"));
       await k.page.waitForTimeout(1000);
-      await k.tapAt([FREE[1], FREE[0]]);
-      await k.page.waitForSelector("#sheet:not([hidden])", { timeout: 10000 });
-      await k.page.waitForTimeout(800);
-    },
-  },
-  {
-    id: "add-pending-sent",
-    // The classique's add journey; the punk one goes through « Modifier »'s component.
-    ui: "classique",
-    who: "gil",
-    writes: true,
-    async run(k) {
-      await addSummary(k);
-      // A slow network. The proposals' refresh started as the questions close goes out at
-      // once, before the add reaches the server, and its answer comes back 3 s later; the
-      // refreshes after the send answer 25 s later. In between, the add has left the
-      // phone and the proposals the map draws do not hold it yet: it is drawn as "sent".
-      let answered = 0;
-      await k.page.route(/\/api\/proposals\?bbox=/, async (r) => {
-        const response = await r.fetch().catch(() => null);
-        await new Promise((res) => setTimeout(res, answered++ === 0 ? 3000 : 25000));
-        if (response) await r.fulfill({ response }).catch(() => {});
-      });
-      await k.tap("#add-commit");
-      await k.page.waitForFunction(() => !document.body.classList.contains("moving"));
-      await k.page.waitForTimeout(4500);
       await k.tapAt([FREE[1], FREE[0]]);
       await k.page.waitForSelector("#sheet:not([hidden])", { timeout: 10000 });
       await k.page.waitForTimeout(800);
@@ -2666,7 +2161,6 @@ export const STATES = [
     // The session expired: the send is answered 401, the page asks who is signed in (401
     // too from then on), the counter asks for a login.
     id: "queue-relogin",
-    ui: "punk",
     async run(k) {
       let expired = false;
       await k.page.route("**/api/me", (r) => (expired ? SESSION_401(r) : r.continue()));
@@ -2691,12 +2185,11 @@ export const STATES = [
 
   // Account (lot « comptes », board 25a), punk; the API's answers simulated where the
   // state needs them (signed out: /api/me 401; the login's answer).
-  { id: "account-square", ui: "punk", run: (k) => signedOutMap(k) },
-  { id: "account-ask", ui: "punk", run: (k) => accountAsk(k) },
-  { id: "account-form", ui: "punk", run: (k) => accountForm(k) },
+  { id: "account-square", run: (k) => signedOutMap(k) },
+  { id: "account-ask", run: (k) => accountAsk(k) },
+  { id: "account-form", run: (k) => accountForm(k) },
   {
     id: "account-form-error",
-    ui: "punk",
     run: (k) =>
       accountLogin(k, (r) =>
         r.fulfill({
@@ -2709,64 +2202,48 @@ export const STATES = [
   {
     // The server's delay after refusals (1 s, 2 s, 4 s… up to 30 s): no answer yet.
     id: "account-form-waiting",
-    ui: "punk",
     run: (k) => accountLogin(k, () => {}),
   },
   {
     id: "account-form-offline",
-    ui: "punk",
     run: (k) => accountLogin(k, (r) => r.abort("internetdisconnected")),
   },
   {
     id: "account-form-failed",
-    ui: "punk",
     run: (k) => accountLogin(k, (r) => r.fulfill({ status: 500, body: "" })),
   },
   {
     id: "account-sheet-visitor",
-    ui: "punk",
-    async run(k) {
-      await k.page.route("**/api/me", SESSION_401);
-      await sheet(k, FIXED);
-    },
-  },
-  {
-    id: "account-classique-visitor",
-    ui: "classique",
     async run(k) {
       await k.page.route("**/api/me", SESSION_401);
       await sheet(k, FIXED);
     },
   },
   // Sign-in with OpenStreetMap (OSM lot 1), its routes answered by the page.
-  { id: "account-osm-key", ui: "punk", run: (k) => osmAsk(k) },
-  { id: "account-osm-signup", ui: "punk", run: (k) => osmLanding(k, "signup") },
+  { id: "account-osm-key", run: (k) => osmAsk(k) },
+  { id: "account-osm-signup", run: (k) => osmLanding(k, "signup") },
   {
     id: "account-osm-signup-taken",
-    ui: "punk",
     run: (k) =>
       osmSignup(k, "pris", (r) => r.fulfill({ status: 409, json: { error: "pseudonym_taken" } })),
   },
-  { id: "account-osm-signup-invalid", ui: "punk", run: (k) => osmSignup(k, "é") },
+  { id: "account-osm-signup-invalid", run: (k) => osmSignup(k, "é") },
   {
     id: "account-osm-signup-failed",
-    ui: "punk",
     run: (k) => osmSignup(k, "Jean_Dupont", (r) => r.abort("internetdisconnected")),
   },
   {
     id: "account-osm-signup-expired",
-    ui: "punk",
     run: (k) =>
       osmLanding(k, "signup", {
         read: (r) => r.fulfill({ status: 401, json: { error: "signup_expired" } }),
       }),
   },
-  { id: "account-osm-status", ui: "punk", run: (k) => osmLanding(k, "denied") },
+  { id: "account-osm-status", run: (k) => osmLanding(k, "denied") },
   {
     // Sign-ups closed in /revue's « Réglages » (GET /api/config `signups`): « Compte » says
     // only existing accounts enter.
     id: "account-osm-signups-closed",
-    ui: "punk",
     async run(k) {
       await k.page.route("**/api/config", (r) =>
         r.fulfill({
@@ -2779,7 +2256,6 @@ export const STATES = [
   {
     // Back from OpenStreetMap the first time while sign-ups are closed: 403 signups_closed.
     id: "account-osm-signup-closed",
-    ui: "punk",
     run: (k) =>
       osmLanding(k, "signup", {
         read: (r) => r.fulfill({ status: 403, json: { error: "signups_closed" } }),
@@ -2789,7 +2265,6 @@ export const STATES = [
     // A first sign-in while sign-ups are closed, said by the API's callback itself
     // (?osm=signups_closed: no account made, lot 4 of /revue), sign-ups closed in /api/config.
     id: "account-osm-return-closed",
-    ui: "punk",
     async run(k) {
       await k.page.route("**/api/config", (r) =>
         r.fulfill({
@@ -3409,7 +2884,6 @@ export const STATES = [
   // The punk sheet after 24a: its tickets are tabs, « Publiques » recounts in the sheet.
   {
     id: "area-sheet-public",
-    ui: "punk",
     async run(k) {
       await k.open("?insee=92026", { sheet: true });
       await k.tap('#sheet .area-toggle[data-set="public"]');
@@ -3418,7 +2892,6 @@ export const STATES = [
   },
   {
     id: "area-tab-cameras",
-    ui: "punk",
     async run(k) {
       await k.open("?insee=92026", { sheet: true });
       await k.tap("#area-tab-cameras");
@@ -3427,7 +2900,6 @@ export const STATES = [
   },
   {
     id: "area-tab-who",
-    ui: "punk",
     async run(k) {
       await k.open("?insee=92026", { sheet: true });
       await k.tap("#area-tab-who");
@@ -3437,7 +2909,6 @@ export const STATES = [
   {
     // A phone's half-open commune sheet, scrolled: the title and its line alone stay.
     id: "area-half-scrolled",
-    ui: "punk",
     devices: ["phone"],
     async run(k) {
       await k.open("?insee=92026", { sheet: true });
@@ -3513,5 +2984,5 @@ export const STATES = [
   ...CAMERAS_STATES,
   // The welcome (28a, lot of 2026-10-11): a device that has not seen it (the harness marks
   // every other capture a returning visit).
-  { id: "welcome-first", ui: "punk", run: (k) => welcome(k) },
+  { id: "welcome-first", run: (k) => welcome(k) },
 ];

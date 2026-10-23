@@ -2,7 +2,7 @@
 // 4G, cold cache, on the production build. Records the time to the first useful display
 // (surveillance layer drawn), frame times and long tasks over a typical visit, and the
 // bytes downloaded.
-//   node bench/lowend.mjs [--region idf] [--label name] [--ui classique|punk]
+//   node bench/lowend.mjs [--region idf] [--label name] [--mode clair|sombre]
 //     [--mode clair|sombre] [--profile lowend|phone4g] [--cpu N] [--port 4181]
 //     [--at Z/LAT/LON] [--no-visit]
 // --at: the first display there (default: the city at z11); --no-visit: stop after it.
@@ -20,8 +20,8 @@ const args = process.argv.slice(2);
 const region = args.includes("--region") ? args[args.indexOf("--region") + 1] : "idf";
 requireTiles(region);
 const label = args.includes("--label") ? args[args.indexOf("--label") + 1] : "lowend";
-// The interface and its mode (redesign): a query string, as a link would carry it.
-const query = ["ui", "mode"]
+// The mode (redesign): a query string, as a link would carry it.
+const query = ["mode"]
   .filter((k) => args.includes(`--${k}`))
   .map((k) => `${k}=${args[args.indexOf(`--${k}`) + 1]}`)
   .join("&");
