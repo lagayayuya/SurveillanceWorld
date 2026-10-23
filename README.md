@@ -94,7 +94,10 @@ La France se construit par morceaux : les 22 anciennes régions (`fr-*` dans `re
 chacune découpée dans l'extrait France avec une marge de 480 m, puis fusionnées
 (`pipeline/lacarte/merge.py`). Comptez quelques heures et 24 Go de mémoire ; la commande
 reprend là où elle s'est arrêtée avec `--from parts --resume`, et s'arrête d'elle-même sous
-50 Go libres (`LACARTE_MIN_FREE_GB`).
+50 Go libres (`LACARTE_MIN_FREE_GB`). Le contour de la France (la relation OSM de niveau 2,
+mer territoriale comprise) est tiré du même extrait : les caméras de Monaco, de Genève ou de
+Sarrebruck prises dans la marge sortent dès l'extraction, celles d'une jetée ou d'une plage
+vont à la commune la plus proche à moins de 500 m (`rules/admin.yaml`).
 
 ```bash
 curl -L -o data/france/src/france-latest.osm.pbf \

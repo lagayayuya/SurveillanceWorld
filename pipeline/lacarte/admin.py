@@ -10,7 +10,9 @@ recomputed from their cameras.
 
 COG CARTO limits are generalised: a stretch of street outside every unit goes to the
 nearest one within `rescue_max_m` (rules/admin.yaml), beyond that it is outside the
-region's units. Both are counted in qa/out/<region>/admin.json.
+region's units; a camera too, or in a country's region (France: its cameras abroad left at
+the extract) within `camera_rescue_max_m`, the coast's. Both are counted in
+qa/out/<region>/admin.json.
 """
 
 from __future__ import annotations
@@ -40,6 +42,21 @@ def _rules() -> dict:
     return yaml.safe_load((regions.ROOT / "rules" / "admin.yaml").read_text())
 
 
+def rescue_max_m() -> float:
+    """How far outside every commune a street stretch or a camera still goes to the
+    nearest (rules/admin.yaml rescue_max_m)."""
+    return float(_rules()["rescue_max_m"])
+
+
+def camera_rescue_m(region: regions.Region) -> float:
+    """How far outside every commune a camera of `region` still goes to the nearest: in a
+    country's region (regions.country), whose cameras abroad left at the extract, rules/
+    admin.yaml camera_rescue_max_m (the coast); elsewhere rescue_max_m."""
+    if regions.country(region):
+        return float(_rules()["camera_rescue_max_m"])
+    return rescue_max_m()
+
+
 def class_breaks() -> list[float]:
     """The punk map's fixed colour classes of the areas, in % (rules/admin.yaml
     area_class_breaks_pct), strictly increasing."""
@@ -60,7 +77,7 @@ def run(region: regions.Region) -> dict[str, Path]:
     edges = gpd.read_parquet(b / "edges.parquet")
     intervals = pd.read_parquet(b / "filmed_intervals.parquet")
     cams = aggregate.prepare_cameras(gpd.read_parquet(b / apply.CAMERAS), region.data_date())
-    areas, stats = aggregate_areas(edges, intervals, cams, units, deps)
+    areas, stats = aggregate_areas(edges, intervals, cams, units, deps, camera_rescue_m(region))
     if own is not None:
         areas = areas[areas.code.isin(own)].reset_index(drop=True)
     path = b / "areas.parquet"
@@ -281,7 +298,7 @@ def places(points, region: regions.Region) -> list[tuple[str | None, str | None]
     if not region.admin:
         return [(None, None)] * len(points)
     units, _ = region_units(region)
-    unit, _ = assign_points(points, units, _rules()["rescue_max_m"])
+    unit, _ = assign_points(points, units, camera_rescue_m(region))
     towns, names = units.town.to_numpy(), units.name.to_numpy()
     return [(f"Ville {normalize.of_place(towns[u])}", str(names[u])) if u >= 0 else (None, None)
             for u in unit]  # fmt: skip
@@ -356,10 +373,14 @@ def aggregate_areas(
     cams: gpd.GeoDataFrame,
     units: gpd.GeoDataFrame,
     deps: gpd.GeoDataFrame,
+    camera_rescue: float | None = None,
 ) -> tuple[gpd.GeoDataFrame, dict]:
     """Communes (or arrondissements) and départements with the columns of the hexagons
-    (aggregate.summarise) plus names, codes and main operators; EPSG:4326. And QA stats."""
-    rescue_m = _rules()["rescue_max_m"]
+    (aggregate.summarise) plus names, codes and main operators; EPSG:4326. And QA stats.
+    A camera outside every unit goes to the nearest within `camera_rescue` (camera_rescue_m;
+    default rescue_max_m, as a street stretch)."""
+    rescue_m = rescue_max_m()
+    camera_rescue = rescue_m if camera_rescue is None else camera_rescue
     # Counted segments only (exposure.mark_counted): street axes of the counted types, seen
     # from outside. Sidewalks, crossings and paths beside a road are sides of a street
     # (rules/streets.yaml parallel_path), not streets of their own; motorways and tracks are
@@ -378,7 +399,7 @@ def aggregate_areas(
     inside = stretches[stretches.unit >= 0]
     roads = inside.groupby("unit")[["road_m", *aggregate.FILMED]].sum()
 
-    cam_unit, cam_rescued = assign_points(cams.geometry.values, units, rescue_m)
+    cam_unit, cam_rescued = assign_points(cams.geometry.values, units, camera_rescue)
     cams = cams.assign(unit=cam_unit)
     placed = cams[cams.unit >= 0].copy()
     placed["dep"] = units.dep.to_numpy()[placed.unit.to_numpy()]
@@ -435,6 +456,7 @@ def aggregate_areas(
         "filmed_outside_m": {c: round(float(outside[c].sum()), 1) for c in aggregate.FILMED},
         "cameras": len(cams),
         "cameras_rescued": int(cam_rescued.sum()),
+        "camera_rescue_max_m": camera_rescue,
         "cameras_outside": int((cam_unit < 0).sum()),
     }
     check_sums(stretches, assessed, intervals, total_filmed)

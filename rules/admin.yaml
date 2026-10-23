@@ -8,6 +8,17 @@ version: 1
 # (neighbouring départements). 100 m would have given ~49 km of their streets to border
 # communes. [TO ADJUST]
 rescue_max_m: 10
+# A camera outside every commune of a country's region (regions.yaml `country`: France),
+# whose cameras abroad left at the extract (extract.py: outside France's OSM outline,
+# territorial sea included, and more than rescue_max_m from every commune), stands on
+# French ground or water: a port, a jetty, a beach, a gap between the generalised limits
+# and the coast. It goes to the nearest commune within this distance (the stretches of
+# street keep rescue_max_m: measured on slivers; a pier's street is rare). Measured on the
+# France build of 2026-10-22: 57 cameras in France outside every commune, 42 within 10 m,
+# 15 from 10 to 270 m (Morbihan, Finistère, Vendée, Ille-et-Vilaine, Manche, Charente-
+# Maritime, Bouches-du-Rhône…), none beyond 500 m. Beyond it, a camera stays on the map,
+# in no commune (qa admin.json cameras_outside). User decision 2026-10-23. [TO ADJUST]
+camera_rescue_max_m: 500
 
 # Colour classes of the communes and départements on the punk map: fixed breaks, in % of
 # the streets in range, on the high end Y of the sheet's "between X % and Y %" (every

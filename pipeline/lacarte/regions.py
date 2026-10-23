@@ -39,6 +39,10 @@ class Region:
     # A part's aggregate: the part reads its contributions, hidden cameras and data date,
     # and is cut from its .pbf along its own units (admin) widened by buffer_m.
     aggregate: str | None = None
+    # A country's region (France): the ISO 3166-1 code of the OSM admin_level=2 relation
+    # whose outline its cameras must stand in (extract.country_outline); its parts take
+    # their aggregate's.
+    country: str | None = None
 
     @property
     def build_dir(self) -> Path:
@@ -77,6 +81,14 @@ class Region:
     def source_pbf(self) -> Path:
         """The region's own .osm.pbf (downloaded, fixture, or cut from its parent)."""
         return self.pbf if self.pbf else self.build_dir / f"{self.name}.osm.pbf"
+
+
+def country(region: Region) -> str | None:
+    """The region's country (Region.country), a part's its aggregate's; None for a region
+    that is no country's (Île-de-France, the CI fixtures)."""
+    if region.country or not region.aggregate:
+        return region.country
+    return load(region.aggregate).country
 
 
 def hidden(region: Region) -> frozenset[str]:

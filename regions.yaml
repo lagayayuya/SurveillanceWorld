@@ -36,6 +36,9 @@ france:
   crs: EPSG:2154
   admin:
     source: data/src/admin-express-2026
+  # The cameras abroad (Monaco, Geneva, Basel, Luxembourg… within a part's 480 m) leave at
+  # the extract: France's outline is derived from this .pbf (extract.country_outline).
+  country: FR
   parts:
     - fr-alsace
     - fr-aquitaine

@@ -3,7 +3,8 @@
     lacarte build --region france [--from cut|parts|merge|tiles|tiles_stats] [--resume]
 
 1. cut: each part's .pbf from the region's (extract.cut_parts: its units widened by its
-   buffer_m, a few parts per reading of the region's file);
+   buffer_m, a few parts per reading of the region's file), and a country's outline
+   (extract.country_outline: each part's extract leaves its cameras abroad);
 2. parts: every part through PART_STAGES, stage by stage, each (part, stage) in a process
    of its own (its time and peak memory recorded in progress.json; memory freed between
    them). After `apply`, the region's data date (the latest edit among every part's
@@ -66,6 +67,7 @@ def build(region: regions.Region, start: str = "cut", resume: bool = False,
         t0 = time.perf_counter()
         if stage == "cut":
             extract.cut_parts(regions.parts(region), extract.ensure_source(region))
+            extract.country_outline(region)  # once, from the region's .pbf, for every part
         elif stage == "parts":
             run_parts(region, resume=resume, isolate=isolate, log=log)
         elif stage == "merge":
