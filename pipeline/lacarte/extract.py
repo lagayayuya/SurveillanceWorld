@@ -109,6 +109,10 @@ def camera_abroad(cams: gpd.GeoDataFrame, region: regions.Region) -> np.ndarray:
     from lacarte import admin
 
     shape = gpd.GeoSeries([shape], crs="EPSG:4326").to_crs(region.crs).iloc[0]
+    pts = cams.geometry.values
+    shapely.prepare(shape)
+    if shapely.contains_xy(shape, shapely.get_x(pts), shapely.get_y(pts)).all():
+        return np.zeros(len(cams), dtype=bool)  # an inland part: no commune to load
     units, deps = admin.region_units(region)
     if region.aggregate:
         units, _, _ = admin.with_neighbours(region, units, deps)

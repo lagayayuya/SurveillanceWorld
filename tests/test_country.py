@@ -81,11 +81,13 @@ def test_outline_closes_rings_from_their_ways_and_cuts_the_inner_ones():
         extract.outline([], inner)
 
 
-def _osm(path, ways_present=("1", "2", "3")):
-    """A tiny .osm: France (2 outer ways around a square, 1 inner, 1 overseas way absent from
-    the file) and Belgium's relation; lon/lat degrees."""
-    nodes = {1: (0, 0), 2: (1, 0), 3: (1, 1), 4: (0, 1), 5: (0.4, 0.4), 6: (0.6, 0.4),
-             7: (0.6, 0.6), 8: (0.4, 0.6)}  # fmt: skip
+def _osm(path, ways_present=("1", "2", "3"), frame=(0, 0, 1, 1)):
+    """A tiny .osm: France (2 outer ways around the square `frame`, 1 inner, 1 overseas way
+    absent from the file) and Belgium's relation; lon/lat degrees."""
+    unit = {1: (0, 0), 2: (1, 0), 3: (1, 1), 4: (0, 1), 5: (0.4, 0.4), 6: (0.6, 0.4),
+            7: (0.6, 0.6), 8: (0.4, 0.6)}  # fmt: skip
+    x0, y0, x1, y1 = frame
+    nodes = {i: (x0 + (x1 - x0) * u, y0 + (y1 - y0) * v) for i, (u, v) in unit.items()}
     ways = {"1": [1, 2, 3], "2": [3, 4, 1], "3": [5, 6, 7, 8, 5]}
     xml = ['<?xml version="1.0" encoding="UTF-8"?>', '<osm version="0.6" generator="test">']
     for i, (lon, lat) in nodes.items():
@@ -130,3 +132,25 @@ def test_a_ring_with_a_way_missing_stops_the_build(tmp_path):
         extract.derive_country(pbf, "FR", tmp_path / "out.geojson")
     with pytest.raises(ValueError, match="0 admin_level=2"):
         extract.derive_country(_osm(tmp_path / "ok.osm"), "DE", tmp_path / "out.geojson")
+
+
+def test_the_extract_leaves_out_the_cameras_abroad_of_a_country_s_region(tmp_path):
+    # The CI communes (La Défense) in a "country" ending at 2.25° E: Puteaux's and
+    # Courbevoie's east lies outside it, as a generalised commune may cross the border.
+    import geopandas as gpd
+
+    pbf = _osm(tmp_path / "country.osm", frame=(2.0, 48.8, 2.25, 49.0))
+    ci = regions.load("ci")
+    region = PinnedRegion(name="t", crs=CRS, pbf=pbf, country="FR", admin=ci.admin,
+                          root=tmp_path, contrib_root=tmp_path)  # fmt: skip
+    units, _ = admin.region_units(region)
+    towns = shapely.union_all(units.to_crs("EPSG:4326").geometry.values)
+    in_commune_abroad = towns.intersection(box(2.25, 48.8, 3, 49)).representative_point()
+    pts = {"inland": Point(2.20, 48.89), "in_commune_abroad": in_commune_abroad,
+           "abroad": Point(2.40, 48.89)}  # fmt: skip
+    cams = gpd.GeoDataFrame({"camera_id": list(pts)}, geometry=list(pts.values()),
+                            crs="EPSG:4326").to_crs(CRS)  # fmt: skip
+    assert extract.camera_abroad(cams, region).tolist() == [False, False, True]
+    # Inland only: no commune loaded, none abroad; outside a country's region: none.
+    assert not extract.camera_abroad(cams.iloc[:1], region).any()
+    assert not extract.camera_abroad(cams, ci).any()
