@@ -27,9 +27,9 @@
 //   node bench/smoke-keyboard.mjs [--port N]
 import { spawn } from "node:child_process";
 import { webkit } from "playwright";
-import { mockApi, OSM_SIGNUP } from "./account.mjs";
+import { mockApi } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { mockProfile, SYNC } from "./profile-mock.mjs";
+import { fieldCases } from "./fields.mjs";
 import { returning } from "./ui.mjs";
 
 const args = process.argv.slice(2);
@@ -54,100 +54,9 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "ok  " : "FAIL"} [webkit] ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
-/** Signed out, sign-in with OpenStreetMap on (its signup waiting for `?osm=signup`). */
-const visitor = (url, ready) => async (context) => {
-  await mockApi(context, { osm: { login: true, server: "dev", signup: { ...OSM_SIGNUP } } });
-  const page = await context.newPage();
-  await page.goto(`${APP}?${url.slice(1)}${AT}`);
-  await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
-  await page.waitForSelector(ready, { timeout: 30_000 });
-  return page;
-};
-/** Signed in, the account's screen open, then `open` tapped (a link that unfolds a form). */
-const signed = (opts, open, ready) => async (context) => {
-  await mockProfile(context, opts);
-  const page = await context.newPage();
-  await page.goto(`${APP}?mode=clair${AT}`);
-  await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
-  await page.waitForTimeout(800);
-  await page.getByRole("button", { name: "Votre profil" }).first().tap();
-  await page.waitForSelector("#sheet .board-paper .board-place", { timeout: 15_000 });
-  if (open) {
-    await page.locator(open).scrollIntoViewIfNeeded();
-    await page.locator(open).tap();
-  }
-  await page.waitForSelector(ready, { state: "visible", timeout: 15_000 });
-  return page;
-};
-
-const CASES = [
-  {
-    name: "« Entrer », the password (?compte=motdepasse)",
-    open: visitor("&compte=motdepasse", '#sheet [data-account="form"]'),
-    field: "#account-password",
-    submit: "#sheet .account-submit",
-  },
-  {
-    name: "« Choisissez votre pseudonyme » (?osm=signup)",
-    open: visitor("&osm=signup", '#sheet [data-account="signup"]'),
-    field: "#account-signup-pseudonym",
-    submit: "#sheet .account-submit",
-  },
-  {
-    name: "« Changer le mot de passe », the new one",
-    open: signed(
-      { account: { password: true } },
-      "#sheet .board-password",
-      "#board-password-form:not([hidden])",
-    ),
-    field: '#board-password-form input[autocomplete="new-password"]',
-    submit: '#board-password-form button[type="submit"]',
-  },
-  {
-    name: "« Supprimer mon compte », the password",
-    open: signed(
-      { account: { password: true } },
-      "#sheet .board-delete",
-      "#board-delete-form:not([hidden])",
-    ),
-    field: "#board-delete-form input",
-    submit: '#board-delete-form button[type="submit"]',
-  },
-  {
-    name: "« Relier à OpenStreetMap », the password",
-    open: signed(
-      { account: { osm: false, password: true }, osmLogin: true },
-      "#sheet .board-osm-link",
-      "#board-osm-link-form:not([hidden])",
-    ),
-    field: "#board-osm-link-form input",
-    submit: '#board-osm-link-form button[type="submit"]',
-  },
-  {
-    name: "« Publier aussi sur OpenStreetMap en mon nom », the password",
-    open: signed(
-      { account: { osm: true, password: true }, sync: SYNC },
-      "#sheet .board-sync-choice:has(#board-sync-publish)",
-      "#board-sync-enable:not([hidden])",
-    ),
-    field: '#board-sync-enable input[type="password"]',
-    submit: '#board-sync-enable button[type="submit"]',
-  },
-  {
-    name: "the filters' operator (the machine)",
-    open: async (context) => {
-      await mockApi(context, {});
-      const page = await context.newPage();
-      await page.goto(`${APP}?op=V${AT}`);
-      await page.waitForFunction(() => window.__map?.loaded(), null, { timeout: 60_000 });
-      await page.locator("#fab-filters").tap();
-      await page.waitForSelector("#adv-operator", { state: "attached", timeout: 15_000 });
-      return page;
-    },
-    field: "#adv-operator",
-    submit: null,
-  },
-];
+// The fields (bench/fields.mjs, shared with smoke-formats); « Modifier »'s panel is not a
+// sheet: no keyboard played over it here.
+const CASES = fieldCases(APP, AT).filter((c) => c.keyboard !== false);
 
 /** The sheet's top at every frame from now on (null while hidden), until `seen` reads it. */
 const watch = (page) =>
