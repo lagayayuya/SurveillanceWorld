@@ -72,13 +72,14 @@
         <div style="display: flex; flex-direction: column; min-width: 0; border-top: 2px solid var(--fg)">
           <sc-for list="{{rows}}" as="r" hint-placeholder-count="10">
             <a class="{{r.cls}}" href="{{r.href}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" style="text-decoration: none">
-              <span style="display: flex; align-items: center; gap: 10px"><span class="tw" style="font-size: 14px; color: var(--muted); width: 128px; white-space: nowrap">{{r.date}}</span><span class="b" style="{{r.badge}}">{{r.type}}</span><span style="margin-left: auto; font-weight: 800">{{r.amt}}</span></span>
+              <span style="display: flex; align-items: center; gap: 10px"><span class="tw" style="font-size: 14px; color: var(--muted); width: 128px; white-space: nowrap">{{r.date}}<sc-if value="{{r.dm}}"><sup aria-hidden="true">?</sup><span class="sr"> {{r.dm}}</span></sc-if></span><span class="b" style="{{r.badge}}">{{r.type}}</span><span style="margin-left: auto; font-weight: 800">{{r.amt}}</span></span>
               <strong class="tt" style="display: block; margin-top: 4px; font-size: 16px; line-height: 1.3">{{r.title}}</strong>
               <span style="display: block; margin-top: 2px; font-size: 14px; color: var(--muted)">{{r.meta}}</span>
             </a>
           </sc-for>
           <sc-if value="{{noRows}}" hint-placeholder-val="{{false}}"><p style="margin: 16px 0; color: var(--muted)">{{t.registre.aucun_document_ne_correspond_retirez}}</p></sc-if>
           <sc-if value="{{hasMore}}" hint-placeholder-val="{{true}}"><button class="more" onClick="{{more}}" style="margin-top: 14px">{{t.registre.10_de_plus}}</button></sc-if>
+          <sc-if value="{{arretes}}"><p class="tw" style="margin: 14px 0 0; font-size: 13px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p><p class="tw" style="margin: 6px 0 0; font-size: 13px; color: var(--muted)">{{{nonLus}}}</p></sc-if>
         </div>
 
         <dc-include src="panneau"></dc-include>
