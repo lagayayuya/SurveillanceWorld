@@ -220,3 +220,15 @@ def test_the_commune_maps_layers_are_served_as_imported(built):
     assert (built / "carte" / "69283.json").read_bytes() == (
         FIXTURE / "prototype-v10" / "carte" / "69283.json"
     ).read_bytes()
+
+
+def test_the_home_names_its_rows_buyers_and_the_search_the_map_counts(built):
+    """The home's latest and largest documents come with their affaires (a contract's buyer is
+    often its affaire's), and the search's communes with their map count (the rankings)."""
+    index = read(built, "index.json")
+    rows = index["recents"] + index["gros"]
+    assert {e["affaire"] for e in rows if e.get("affaire")} <= set(index["dico"]["affaires"])
+    recherche = read(built, "recherche.json")
+    assert (
+        recherche["communes"][MIONS]["carte"] == read(built, f"commune/{MIONS}.json")["carte"]["n"]
+    )

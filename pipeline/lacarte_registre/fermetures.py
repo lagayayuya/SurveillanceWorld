@@ -285,6 +285,12 @@ def _dico(ctx: Context, events: list[Event]) -> dict[str, Any]:
         "entreprises": {s: ctx.entreprise(s) for s in sirens},
         "acheteurs": {b: ctx.acheteur(b) for b in buyers},
         "communes": {k: ctx.commune(k) for k in insees},
+        # the buyer of a contract is its affaire's when the document does not name it
+        "affaires": {
+            a: {k: x[k] for k in AFF_SHORT if x.get(k) is not None}
+            for a in sorted({e["affaire"] for e in events if e.get("affaire")})
+            if (x := reg.affaires.get(a))
+        },
     }
 
 
@@ -325,7 +331,11 @@ def recherche_file(ctx: Context) -> dict[str, Any]:
         "evenements": reg.evenements,
         "entreprises": {s: ctx.entreprise(s) for s in sorted(reg.pilote.reg["entreprises"])},
         "acheteurs": {b: ctx.acheteur(b) for b in buyers},
-        "communes": {k: ctx.commune(k) for k in sorted(reg.communes)},
+        # each commune with its map's count (« Sur la carte » in the rankings)
+        "communes": {
+            k: {**ctx.commune(k), "carte": ctx.commune_stats(k).get("carte")}
+            for k in sorted(reg.communes)
+        },
         "affaires": {
             a: {k: x[k] for k in AFF_SHORT if x.get(k) is not None} for a, x in reg.affaires.items()
         },
