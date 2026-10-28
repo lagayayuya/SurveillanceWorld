@@ -1199,6 +1199,22 @@ table.t tr.r.on td {
   .v-autorisations .lst > li > :first-child {
     grid-column: 1 / -1;
   }
+  /* the coverage page's tables are short words and dates, all of which matter: every cell shown, named */
+  .th.v-couverture table.t td:not(:first-child):not(.num) {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    clip: auto !important;
+    white-space: normal !important;
+    flex: 1 1 100% !important;
+    font-size: 14px;
+  }
+  .v-couverture table.t td[data-l]::before {
+    content: attr(data-l) " : ";
+    color: var(--muted);
+    font-size: 13px;
+  }
   .v-contrat [style*="gap: 0px; align-items: stretch"] {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 6px !important;
