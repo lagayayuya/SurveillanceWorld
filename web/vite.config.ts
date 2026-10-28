@@ -92,6 +92,24 @@ const registreCatalogue: Plugin = {
   },
 };
 
+// The other way round: the map's and /revue's catalogue (src/i18n.ts imports locales/fr.json, the
+// only module that does) without the register's keys, which they never read (824 keys, 60 kB
+// before compression). Before Vite's own JSON plugin, on the file's text.
+const siteCatalogue: Plugin = {
+  name: "site-catalogue",
+  enforce: "pre",
+  transform: (code, id) =>
+    /\/src\/locales\/fr\.json$/.test(id)
+      ? JSON.stringify(
+          Object.fromEntries(
+            Object.entries(JSON.parse(code) as Record<string, string>).filter(
+              ([k]) => !k.startsWith("registre."),
+            ),
+          ),
+        )
+      : null,
+};
+
 // Local development only: the participation API (tests/apiserver.py) behind a proxy that
 // adds the account name, as Caddy does on the server with basic auth.
 const api = {
@@ -103,7 +121,7 @@ const api = {
 
 export default defineConfig({
   // The third-party licence notices served at /licences.txt (scripts/licences.mjs).
-  plugins: [headStrings, manifest, licences(catalogue), registreCatalogue],
+  plugins: [headStrings, manifest, licences(catalogue), registreCatalogue, siteCatalogue],
   server: { port: 5173, proxy: api },
   preview: { port: 4173, proxy: api },
   // Three pages: the map, the review page (served at /revue by Caddy) and the register (served at
