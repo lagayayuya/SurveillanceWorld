@@ -224,7 +224,16 @@ async function startNodeProxy() {
 // --- gestures ----------------------------------------------------------------------------
 async function tap(page, locator) {
   await locator.scrollIntoViewIfNeeded();
-  const b = await locator.boundingBox();
+  // Where it rests (Playwright's « stable »: the same box twice): a sheet still sliding in
+  // would send the finger elsewhere, to the map under it, which then selects a camera.
+  let b = await locator.boundingBox();
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(50);
+    const now = await locator.boundingBox();
+    const same = now && b && ["x", "y", "width", "height"].every((k) => now[k] === b[k]);
+    b = now;
+    if (same) break;
+  }
   await page.touchscreen.tap(b.x + b.width / 2, b.y + b.height / 2);
 }
 
