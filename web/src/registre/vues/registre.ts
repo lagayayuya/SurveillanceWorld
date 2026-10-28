@@ -393,7 +393,10 @@ class Registre extends Vue<Props, State> {
       href: "#",
       act: (ev: { preventDefault(): void }) => {
         ev.preventDefault();
-        void this.ensure().then((all) => exporter(all.R, this.compute(all).list, fmt, I.maj));
+        // a failed load sets echec (ensure), it is not left as an unhandled rejection
+        this.ensure()
+          .then((all) => exporter(all.R, this.compute(all).list, fmt, I.maj))
+          .catch(() => {});
       },
     });
     let det: Record<string, unknown> = {
