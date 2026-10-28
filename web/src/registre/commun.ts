@@ -33,6 +33,7 @@ export type Couverture = {
   maj: string;
   departement: {
     etat: "collecte" | "non_collecte" | "impossible";
+    documents_demandes?: boolean;
     depuis?: string;
     dernier_recueil?: string;
     raison?: string;

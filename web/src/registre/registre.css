@@ -1515,3 +1515,10 @@ table.t tr.r.on td {
     width: auto !important;
   }
 }
+
+/* the mockups set a few words in italic (« nom non publié »): the site serves no italic Archivo and the
+   punk theme forbids synthesis (tokens.css, Special Elite's one weight): the register allows a slanted
+   Archivo, its only italic */
+.th {
+  font-synthesis-style: auto;
+}
