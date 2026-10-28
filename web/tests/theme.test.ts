@@ -99,6 +99,14 @@ const varsRead = (css: string) => new Set([...css.matchAll(/var\((--[\w-]+)/g)].
 // fallback.
 const RUNTIME = new Set(["--attrib-h", "--sheet-covered", "--foot-h", "--machine-top", "--ticket-bottom", "--digit"]);
 
+// The register (registre.html) reads the punk tokens too: its stylesheet, its templates' inline
+// styles (the mockups' markup) and its views' code (a style computed in TypeScript).
+const REGISTRE = readdirSync(new URL("../src/registre/", import.meta.url), { recursive: true })
+  .map(String)
+  .filter((f) => /\.(css|html|ts)$/.test(f))
+  .map((f) => src(`registre/${f}`))
+  .join("\n");
+
 // The only tokens are the punk theme's (the classique's theme/classic.css removed on
 // 2026-10-23): every variable the shared styles (style.css, /revue's) and the punk rules
 // read exists in light, and in dark too when it holds a colour (a dark page would otherwise
@@ -108,6 +116,7 @@ test("every variable the styles read is defined by the punk tokens, in light and
     ...varsRead(src("style.css")),
     ...varsRead(src("review/review.css")),
     ...varsRead(PUNK),
+    ...varsRead(REGISTRE),
   ]);
   const missing = [...used].filter((v) => !punkLight.has(v) && !RUNTIME.has(v));
   assert.deepEqual(missing, []);

@@ -1,0 +1,109 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <dc-include src="tete-commune"></dc-include>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 56px; min-width: 0">
+
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <p class="lead">{{{lead}}}</p>
+        <div class="kpis">
+          <sc-for list="{{kpis}}" as="k"><div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{mairie.show}}"><section id="mairie" aria-labelledby="a-mairie" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <div><h2 id="a-mairie" class="h2">{{t.autorisations.les_cameras_de_la_mairie}}</h2><p class="tw" style="margin: 6px 0 0; font-size: 14px; color: var(--muted)">{{mairie.sous}}</p></div>
+          <button class="ibtn" onClick="{{tgl.dos}}" aria-expanded="{{open.dos}}" aria-label="{{t.autorisations.ce_qu_est_un_dossier}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.dos}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.autorisations.une_autorisation_de_cameras_est}}</p></sc-if>
+
+        <div role="group" aria-label="{{t.autorisations.les_arretes_du_dossier_dans}}" style="position: relative; height: 150px; margin: 8px 0 0; border-bottom: 2px solid var(--fg)">
+          <div style="position: absolute; left: 0; width: 20%; bottom: 0; height: 66px; border: 2px dashed var(--muted); border-bottom: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--muted); padding: 0 8px">{{mairie.avant}}</div>
+          <sc-for list="{{marks}}" as="m" hint-placeholder-count="3">
+            <button class="{{m.cls}}" style="{{m.pos}}" onMouseEnter="{{m.hover}}" onFocus="{{m.hover}}" onClick="{{m.hover}}" aria-label="{{m.aria}}"><span class="n">{{m.n}}</span><span class="x">{{m.delta}}</span><span class="dot" aria-hidden="true"></span></button>
+          </sc-for>
+          <span aria-hidden="true" style="position: absolute; left: 86%; bottom: -2px; top: 40px; border-left: 2px dotted var(--muted)"></span>
+          <span class="jusq" style="position: absolute; right: 0; top: 52px; text-align: right; font-size: 13px; color: var(--muted)">{{mairie.jusquaL}}<br><strong style="color: var(--fg)">{{mairie.jusqua}}</strong></span>
+        </div>
+        <div class="tw" aria-hidden="true" style="position: relative; height: 20px; font-size: 13px; color: var(--muted)">
+          <span style="position: absolute; left: 0">{{mairie.an0}}</span>
+          <sc-for list="{{marks}}" as="m" hint-placeholder-count="3"><span class="{{m.lcls}}" style="{{m.lpos}}">{{m.d}}</span></sc-for>
+          <span style="position: absolute; left: 86%; transform: translateX(-50%); color: var(--fg); font-weight: 700">{{t.autorisations.auj}}</span>
+        </div>
+
+        <table class="t" style="margin-top: 10px">
+          <caption class="sr">{{f.autorisations.avec_la_repartition_des_cameras}}</caption>
+          <thead><tr><th scope="col"><button>{{t.autorisations.arrete}}</button></th><th scope="col" class="num"><button>{{t.autorisations.cameras}}</button></th><th scope="col" class="num"><button>{{t.autorisations.sur_la_rue}}</button></th><th scope="col" class="num"><button>{{t.autorisations.abords_des_batiments}}</button></th><th scope="col" class="num"><button>{{t.autorisations.dans_les_batiments}}</button></th><th scope="col" class="num"><button>{{t.autorisations.ecart}}</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td><td class="num"><strong>{{r.delta}}</strong></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 14px; align-items: start">
+          <div>
+            <h3 class="h3">{{t.autorisations.ce_que_permet_l_autorisation}}</h3>
+            <p class="tw" style="margin: 4px 0 8px; font-size: 13px; color: var(--muted)">{{mairie.arrete}}</p>
+            <div style="border-top: 2px solid var(--fg)">
+              <sc-for list="{{mairie.permet}}" as="y"><div class="yes"><span>{{{y.l}}}</span><strong>{{y.v}}</strong></div></sc-for>
+            </div>
+          </div>
+          <div style="border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px">
+            <h3 class="h3">{{f.autorisations.avant}}</h3>
+            <p style="margin: 0">{{f.autorisations.les_arretes_existent_mais_ne}}</p>
+            <a href="{{lien.ici}}" data-demande="{{mairie.demande}}" data-qui="prefecture" data-insee="{{com.insee}}" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--fg); color: var(--bg); font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none">{{t.autorisations.demander_a_la_prefecture}}</a>
+          </div>
+        </div>
+        <sc-if value="{{autres.length}}">
+        <h3 class="h3" style="margin-top: 14px">{{f.autorisations.les_autres_dossiers_de_la}}</h3>
+        <table class="t">
+          <caption class="sr">{{t.autorisations.les_autres_dossiers_prefectoraux_de}}</caption>
+          <thead><tr><th scope="col"><button>{{t.autorisations.dossier}}</button></th><th scope="col"><button>{{t.autorisations.dernier_arrete}}</button></th><th scope="col" class="num"><button>{{t.autorisations.arretes}}</button></th><th scope="col" class="num"><button>{{t.autorisations.cameras}}</button></th><th scope="col" class="num"><button>{{t.autorisations.sur_la_rue}}</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{autres}}" as="r"><tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" id="{{r.ancre}}"><td class="tw">{{r.no}}</td><td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td><td class="num">{{r.na}}</td><td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td></tr></sc-for>
+          </tbody>
+        </table>
+        </sc-if>
+      </section></sc-if>
+
+      <sc-if value="{{priv.length}}"><section id="prives" aria-labelledby="a-prives" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-prives" class="h2">{{t.autorisations.commerces_et_entreprises}}</h2>
+          <button class="ibtn" onClick="{{tgl.nom}}" aria-expanded="{{open.nom}}" aria-label="{{t.autorisations.pourquoi_certains_noms_ne_sont}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.nom}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.autorisations.le_nom_n_est_affiche}}</p></sc-if>
+        <p style="margin: 0"><strong>{{prv.cam}}</strong> {{f.autorisations.autorisees_dans_chacune_de_ces}}</p>
+        <table class="t">
+          <caption class="sr">{{f.autorisations.arretes_pour_des_commerces_et}}</caption>
+          <thead><tr><th scope="col"><button>{{t.autorisations.arrete}}</button></th><th scope="col"><button>{{t.autorisations.beneficiaire}}</button></th><th scope="col" class="num"><button>{{t.autorisations.cameras}}</button></th><th scope="col" class="num"><button>{{t.autorisations.abords}}</button></th><th scope="col" class="num"><button>{{t.autorisations.interieur}}</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{priv}}" as="r" hint-placeholder-count="6">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                <td><span style="{{r.nomStyle}}">{{r.nom}}</span><div style="font-size: 13px; color: var(--muted)">{{r.cat}}</div></td>
+                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{prv.more}}"><button class="more" onClick="{{prv.moreAct}}">{{prv.more}}</button></sc-if>
+      </section></sc-if>
+
+      <section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="a-autres" class="h2">{{t.autorisations.drones_cameras_pietons_analyse_algorithmique}}</h2>
+        <sc-if value="{{autresArr.none}}"><p style="margin: 0">{{f.autorisations.aucun_arrete_trouve_pour}} <a href="{{autresArr.exHref}}">{{autresArr.ex}}</a></p></sc-if>
+        <sc-if value="{{autresArr.list.length}}"><ul class="lst" style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)"><sc-for list="{{autresArr.list}}" as="x"><li style="display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule)"><span class="tw" style="color: var(--muted)">{{x.d}}</span><span>{{{x.t}}}</span><a href="{{x.href}}">{{x.l}}</a></li></sc-for></ul></sc-if>
+        <sc-if value="{{autresArr.multi}}"><p style="margin: 0">{{{autresArr.multi}}}</p></sc-if>
+        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{cesTxt}} <a href="{{lien.documents}}">{{docsTxt}}</a>.</p>
+      </section>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

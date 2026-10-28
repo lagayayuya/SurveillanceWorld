@@ -1,5 +1,26 @@
 {
-  "files": { "includes": ["src/**", "bench/**", "*.ts", "*.json", "!package-lock.json"] },
+  "files": {
+    "includes": [
+      "src/**",
+      "bench/**",
+      "*.ts",
+      "*.json",
+      "!package-lock.json",
+      "!src/registre/vues/*.html"
+    ]
+  },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },
-  "linter": { "enabled": true }
+  "linter": { "enabled": true },
+  "overrides": [
+    {
+      "includes": ["src/registre/registre.css"],
+      "linter": {
+        "rules": {
+          "complexity": { "noImportantStyles": "off" },
+          "style": { "noDescendingSpecificity": "off" }
+        }
+      },
+      "formatter": { "enabled": false }
+    }
+  ]
 }

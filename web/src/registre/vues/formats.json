@@ -1,0 +1,97 @@
+{
+  "registre.ile_de_france_rhone_bouches": {
+    "maj": "maj"
+  },
+  "registre.documents": {
+    "ndocs": "ndocs"
+  },
+  "registre.filtres": {
+    "nfTxt": "nfTxt"
+  },
+  "registre.voir": {
+    "countLabel": "countLabel"
+  },
+  "chiffres.ile_de_france_rhone_bouches": {
+    "maj": "maj"
+  },
+  "chiffres.documents": {
+    "ndocs": "ndocs"
+  },
+  "chiffres.entreprises_les_10_premieres": {
+    "nEnts": "nEnts"
+  },
+  "chiffres.depuis": {
+    "e_deps": "e.deps",
+    "e_y0": "e.y0"
+  },
+  "chiffres.acheteurs_les_10_premiers": {
+    "nBuy": "nBuy"
+  },
+  "chiffres.communes_avec_au_moins_un": {
+    "ncom": "ncom"
+  },
+  "chiffres.contrats_signes_par_dispositif_une": {
+    "nCon": "nCon"
+  },
+  "commune.ou_sont_les_autres": {
+    "ou_k": "ou.k"
+  },
+  "commune.la_prefecture_a_autorise_cameras": {
+    "ou_vp": "ou.vp",
+    "ou_pub": "ou.pub"
+  },
+  "commune.aussi_a": {
+    "com_nom": "com.nom"
+  },
+  "commune.de_commerces_et_d_entreprises": {
+    "prv_kinds": "prv.kinds"
+  },
+  "commune.au_maximum_le_plafond_ecrit": {
+    "arg_couv": "arg.couv"
+  },
+  "commune.les_documents": {
+    "nDocs": "nDocs"
+  },
+  "commune.documents_rattaches_a_une_commune": {
+    "ter_couv": "ter.couv"
+  },
+  "commune.fait_partie_de": {
+    "com_nom": "com.nom",
+    "ter_de": "ter.de"
+  },
+  "commune.communes_dont_ont_au_moins": {
+    "ter_nCom": "ter.nCom",
+    "ter_nReg": "ter.nReg"
+  },
+  "commune.achete_aussi_elle_meme": {
+    "ter_achatQui": "ter.achatQui"
+  },
+  "commune.comme": {
+    "ter_achat": "ter.achat"
+  },
+  "documents.documents_officiels_de_filtres_et": {
+    "com_nom": "com.nom"
+  },
+  "autorisations.avec_la_repartition_des_cameras": {
+    "mairieCap": "mairieCap"
+  },
+  "autorisations.avant": {
+    "mairie_avantMois": "mairie.avantMois"
+  },
+  "autorisations.les_arretes_existent_mais_ne": {
+    "mairie_avantQ": "mairie.avantQ"
+  },
+  "autorisations.les_autres_dossiers_de_la": {
+    "autres_length": "autres.length"
+  },
+  "autorisations.autorisees_dans_chacune_de_ces": {
+    "prv_arr": "prv.arr",
+    "prv_span": "prv.span"
+  },
+  "autorisations.arretes_pour_des_commerces_et": {
+    "com_nom": "com.nom"
+  },
+  "autorisations.aucun_arrete_trouve_pour": {
+    "com_nom": "com.nom"
+  }
+}

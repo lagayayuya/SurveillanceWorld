@@ -39,6 +39,7 @@ test-results/
 # Web runtime assets fetched by web/scripts/fetch-assets.sh
 /web/public/basemap/
 /web/public/tiles
+/web/public/data/
 
 # Local agent tooling
 /.claude/

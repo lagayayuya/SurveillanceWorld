@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="fr" data-ui="punk" data-mode="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>%t:registre.page.titre% · %t:app.name%</title>
+    <!-- Not indexed until the register's public opening (DECISIONS 2026-10-28). -->
+    <meta name="robots" content="noindex" />
+    <meta name="description" content="%t:registre.page.description%" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="/favicon-32-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
+    <script src="/registre-prepaint.js"></script>
+  </head>
+  <body>
+    <!-- The register's pages (registre/main.ts): the kit's header, drawn once, then the view. -->
+    <div id="kit" class="th">
+      <a class="sr skip11" href="#vue">%t:registre.entete.aller_au_contenu%</a>
+      <header class="entete">
+        <a class="marque" href="/registre/">%t:app.name%</a>
+        <a class="nav" href="/" data-nav="carte">%t:registre.entete.carte%</a>
+        <a class="nav" href="/registre/" data-nav="registre">%t:registre.entete.registre%</a>
+        <a class="hdr hdr-carte" href="/" data-nav="carte-ic" aria-label="%t:registre.entete.voir_la_carte%"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg></a>
+        <a class="hdr" href="/registre/#chercher" data-nav="chercher" aria-label="%t:registre.entete.rechercher%"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+        <button class="hdr" type="button" data-theme-btn aria-label="%t:registre.entete.theme_sombre%"><svg data-mode="light" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg><svg data-mode="dark" hidden width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></button>
+      </header>
+      <div id="vue" tabindex="-1"></div>
+    </div>
+    <script type="module" src="/src/registre/main.ts"></script>
+  </body>
+</html>

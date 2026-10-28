@@ -66,6 +66,32 @@ const manifest: Plugin = {
   },
 };
 
+// The register's words: the catalogue's `registre.*` keys only, as a module of their own
+// (registre/main.ts imports "virtual:registre-catalogue"), so that the register's page does not
+// ship the map's and /revue's keys.
+const REGISTRE_CATALOGUE = "virtual:registre-catalogue";
+const registreCatalogue: Plugin = {
+  name: "registre-catalogue",
+  resolveId: (id) => (id === REGISTRE_CATALOGUE ? `\0${REGISTRE_CATALOGUE}` : null),
+  load: (id) =>
+    id === `\0${REGISTRE_CATALOGUE}`
+      ? `export default ${JSON.stringify(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))))};`
+      : null,
+  // the register's paths are its page's (Caddy rewrites them on the server, deploy/preview.caddy)
+  configureServer: (server) => {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/registre.html";
+      next();
+    });
+  },
+  configurePreviewServer: (server) => {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/registre.html";
+      next();
+    });
+  },
+};
+
 // Local development only: the participation API (tests/apiserver.py) behind a proxy that
 // adds the account name, as Caddy does on the server with basic auth.
 const api = {
@@ -77,15 +103,18 @@ const api = {
 
 export default defineConfig({
   // The third-party licence notices served at /licences.txt (scripts/licences.mjs).
-  plugins: [headStrings, manifest, licences(catalogue)],
+  plugins: [headStrings, manifest, licences(catalogue), registreCatalogue],
   server: { port: 5173, proxy: api },
   preview: { port: 4173, proxy: api },
-  // Two pages: the map, and the review page (served at /revue by Caddy).
+  // Three pages: the map, the review page (served at /revue by Caddy) and the register (served at
+  // /registre/… by Caddy), each its own bundle: the register never loads the map's code until a view
+  // shows a map.
   build: {
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         revue: resolve(import.meta.dirname, "revue.html"),
+        registre: resolve(import.meta.dirname, "registre.html"),
       },
     },
   },

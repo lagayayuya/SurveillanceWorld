@@ -1,0 +1,1453 @@
+/* The register (registre.html): its kit, the wide mockups' « socle » (their kit-grand-ecran, § 1), as the
+   mockups write it, then each view's own rules scoped by its class (.v-<name>), then what the site adds:
+   the fluid column under 1280 px, the map's frame, the dialogs, the phone (under 960 px, one column, a fixed
+   band for the panel, rows that unfold) and the accessibility fixes. Made by scripts/gabarits.mjs --css from
+   the prototype's kit.css. Colours are the punk tokens (theme/punk/tokens.css, light and dark): the kit's
+   --card is --bg-2, its --link and blue --accent are --blue, its --hover is --accent-fill (pink text on
+   hover is --accent), its --warn fill is --warn-bg. */
+
+/* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
+@font-face {
+  font-family: Archivo;
+  src: url(../theme/fonts/archivo-400-900-62-100.woff2) format("woff2");
+  font-weight: 400 900;
+  font-stretch: 62% 100%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Special Elite";
+  src: url(../theme/fonts/special-elite.woff2) format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
+/* --- kit, § 1 (verbatim) --- */
+body {
+  margin: 0;
+}
+.th a {
+  color: var(--blue);
+}
+.tw {
+  font-family: "Special Elite", "Courier New", monospace;
+}
+.h1 {
+  margin: 0;
+  font-weight: 900;
+  font-stretch: 62%;
+  font-size: 72px;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+.h2 {
+  margin: 0;
+  font-weight: 900;
+  font-stretch: 66%;
+  font-size: 30px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.h3 {
+  margin: 0;
+  font-weight: 900;
+  font-stretch: 75%;
+  font-size: 20px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.lead {
+  margin: 0;
+  max-width: 860px;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 500;
+}
+.nav {
+  color: #f2efe6 !important;
+  font-weight: 700;
+  text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.nav[aria-current="page"] {
+  font-weight: 900;
+  text-decoration: underline;
+  text-underline-offset: 6px;
+}
+.hdr {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: #f2efe6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.crumbs {
+  font-size: 14px;
+}
+.crumbs a {
+  text-decoration: none;
+}
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  color: #111;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-top: 2px solid var(--fg);
+  border-bottom: 2px solid var(--fg);
+}
+.kpis > div {
+  padding: 14px 0 14px 20px;
+  border-left: 1px solid var(--rule);
+}
+.kpis > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.kv {
+  font-weight: 900;
+  font-stretch: 64%;
+  font-size: 48px;
+  line-height: 1;
+}
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--fg);
+}
+.tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 18px;
+  font-weight: 800;
+  font-stretch: 80%;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--fg);
+}
+.tabs a[aria-current="page"] {
+  box-shadow: inset 0 -4px 0 var(--fg);
+}
+.ibtn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ibtn span {
+  width: 22px;
+  height: 22px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font:
+    900 13px Archivo,
+    sans-serif;
+}
+.note {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 14px;
+}
+table.t {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+table.t th {
+  text-align: left;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0;
+  border-bottom: 2px solid var(--fg);
+}
+table.t th button {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+table.t th.num button {
+  justify-content: flex-end;
+}
+table.t td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+table.t td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+table.t tr.r {
+  cursor: pointer;
+}
+table.t tr.r:hover td,
+table.t tr.r.on td {
+  background: var(--soft);
+}
+.rowlink {
+  color: var(--fg) !important;
+  font-weight: 700;
+  text-decoration: none;
+}
+.rowlink:hover {
+  text-decoration: underline;
+}
+.panel {
+  position: sticky;
+  top: 20px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 260px;
+  box-sizing: border-box;
+}
+.prow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.prow span {
+  color: var(--muted);
+}
+.b {
+  display: inline-block;
+  padding: 1px 6px;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1.5px solid var(--fg);
+  white-space: nowrap;
+}
+.seg {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--fg);
+  font:
+    700 15px Archivo,
+    sans-serif;
+  cursor: pointer;
+  margin-left: -2px;
+}
+.more {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  color: var(--fg);
+  font:
+    800 14px Archivo,
+    sans-serif;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+}
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+/* --- registre (its mockup's own rules) --- */
+.v-registre .fbox {
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid var(--fg);
+}
+.v-registre .fbox h3 {
+  margin: 14px 0 4px;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.v-registre .fopt {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 36px;
+  font-size: 15px;
+  box-sizing: border-box;
+}
+.v-registre .fopt .box {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--fg);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+.v-registre .fopt:focus-visible {
+  outline: 2px solid var(--blue);
+}
+.v-registre .fopt[aria-pressed="true"] .box {
+  background: var(--fg);
+  color: var(--bg);
+}
+.v-registre .fopt.zero {
+  color: var(--muted);
+}
+.v-registre a.res {
+  display: block;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  color: var(--fg);
+}
+.v-registre a.res:hover,
+.v-registre a.res.on {
+  background: var(--soft);
+}
+.v-registre a.res:hover strong.tt {
+  text-decoration: underline;
+}
+.v-registre .chip {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 2px solid var(--fg);
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--bg-2);
+}
+.v-registre .sug {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  text-decoration: none;
+  color: var(--fg) !important;
+  min-width: 0;
+}
+.v-registre .sug:hover {
+  background: var(--soft);
+}
+.v-registre .kbtn {
+  all: unset;
+  cursor: pointer;
+  display: block;
+  padding: 14px 0 14px 18px;
+  border-left: 1px solid var(--rule);
+}
+.v-registre .kbtn:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.v-registre .kbtn:hover .kv {
+  color: var(--accent);
+}
+.v-registre .kbtn[aria-pressed="true"] .kv {
+  text-decoration: underline;
+  text-decoration-thickness: 4px;
+  text-underline-offset: 6px;
+}
+
+/* --- commune (its mockup's own rules) --- */
+.v-commune .ctl {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  color: var(--fg);
+  cursor: pointer;
+}
+.v-commune .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  color: var(--fg) !important;
+  font-family: Archivo, sans-serif;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 15px;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+.v-commune .hv {
+  cursor: pointer;
+}
+.v-commune .hv:hover,
+.v-commune .hv.on {
+  background: var(--soft);
+}
+.v-commune .lst {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--fg);
+}
+.v-commune .lst > li {
+  padding: 12px 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* --- documents (its mockup's own rules) --- */
+.v-documents .fh {
+  margin: 0;
+  font-weight: 800;
+  font-stretch: 80%;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.v-documents .chk {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 4px;
+  cursor: pointer;
+  font-size: 15px;
+}
+.v-documents .chk:hover {
+  background: var(--soft);
+}
+.v-documents .chk:focus-visible {
+  outline: 2px solid var(--blue);
+}
+.v-documents .box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--fg);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font:
+    900 13px Archivo,
+    sans-serif;
+  line-height: 1;
+}
+.v-documents .cnt {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* --- autorisations (its mockup's own rules) --- */
+.v-autorisations .mk {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 64px;
+  text-align: center;
+}
+.v-autorisations .mk:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 4px;
+}
+.v-autorisations .mk .dot {
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--fg);
+  background: var(--bg-2);
+  box-sizing: border-box;
+}
+.v-autorisations .mk.on .dot,
+.v-autorisations .mk:hover .dot {
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+}
+.v-autorisations .mk .n {
+  font-weight: 900;
+  font-stretch: 66%;
+  font-size: 34px;
+  line-height: 1;
+}
+.v-autorisations .mk .d {
+  font-size: 13px;
+  color: var(--muted);
+}
+.v-autorisations .mk .x {
+  font-size: 14px;
+  font-weight: 800;
+}
+.v-autorisations .yes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+/* --- carte (its mockup's own rules) --- */
+.v-carte .btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  color: var(--fg);
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-stretch: 80%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.v-carte .chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid var(--fg);
+  border-radius: 22px;
+  font:
+    700 15px Archivo,
+    sans-serif;
+  cursor: pointer;
+}
+.v-carte .panel {
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 520px;
+  overflow: hidden;
+}
+
+/* --- contrat (its mockup's own rules) --- */
+.v-contrat .st {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  min-height: 120px;
+}
+.v-contrat .st:hover,
+.v-contrat .st.on {
+  background: var(--soft);
+  border-color: var(--accent-fill);
+}
+.v-contrat .st:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.v-contrat .st.ghostst {
+  border-style: dashed;
+  background: transparent;
+}
+.v-contrat .arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 22px;
+  color: var(--muted);
+}
+.v-contrat dl.f {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  border-top: 2px solid var(--fg);
+}
+.v-contrat dl.f dt,
+.v-contrat dl.f dd {
+  margin: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.v-contrat dl.f dt {
+  color: var(--muted);
+}
+
+/* --- entreprise (its mockup's own rules) --- */
+.v-entreprise .bar2 {
+  all: unset;
+  cursor: pointer;
+  display: grid;
+  box-sizing: border-box;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--rule);
+}
+.v-entreprise .bar2:hover,
+.v-entreprise .bar2.on {
+  background: var(--soft);
+}
+
+/* --- acheteur (its mockup's own rules) --- */
+.v-acheteur .gl {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  min-height: 52px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.v-acheteur .gl:hover,
+.v-acheteur .gl.on {
+  background: var(--soft);
+}
+.v-acheteur .track {
+  position: relative;
+  height: 18px;
+  background: var(--soft);
+}
+.v-acheteur.dark .track {
+  background: #202020;
+}
+.v-acheteur .sw {
+  display: inline-block;
+  width: 18px;
+  height: 10px;
+  vertical-align: 0;
+}
+
+/* --- departement (its mockup's own rules) --- */
+.v-departement .exp {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  font-weight: 700;
+}
+.v-departement .exp:focus-visible {
+  outline: 2px solid var(--blue);
+}
+.v-departement .sub td {
+  background: var(--soft);
+  padding: 10px 8px 14px 34px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.v-departement .sub a {
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.v-departement .sub a:hover {
+  text-decoration: underline;
+}
+.v-departement .sub .c {
+  color: var(--muted);
+  margin-right: 14px;
+}
+.v-departement .filt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 14px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  width: 420px;
+  box-sizing: border-box;
+}
+.v-departement .filt input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    500 17px Archivo,
+    sans-serif;
+}
+.v-departement .yb {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 6px;
+}
+.v-departement .yb:focus-visible {
+  outline: 2px solid var(--blue);
+}
+
+/* --- glossaire (its mockup's own rules) --- */
+.v-glossaire .filt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 12px;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  box-sizing: border-box;
+}
+.v-glossaire .filt input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    500 16px Archivo,
+    sans-serif;
+}
+.v-glossaire .idx a {
+  display: flex;
+  align-items: center;
+  min-height: 30px;
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 15px;
+}
+.v-glossaire .idx a:hover {
+  color: var(--accent);
+}
+.v-glossaire .entry {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 20px;
+}
+.v-glossaire .entry p {
+  margin: 6px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+  max-width: 820px;
+}
+
+/* --- prototype additions (not in the mockups) --- */
+/* the shell: the kit's header is drawn once, outside the views */
+#kit {
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  min-height: 100vh;
+}
+#kit[hidden] {
+  display: none;
+}
+.th .hdr-carte {
+  display: none;
+}
+.skip11:focus {
+  position: fixed;
+  left: 8px;
+  top: 8px;
+  width: auto;
+  height: auto;
+  clip: auto;
+  z-index: 10;
+  background: var(--bg-2);
+  color: var(--fg);
+  padding: 8px 12px;
+  border: 2px solid var(--fg);
+}
+#vue:focus {
+  outline: none;
+}
+/* under 1280 px wide, the 1180 px column follows the screen (20 px each side) */
+.th [style*="width: 1180px"] {
+  width: min(1180px, calc(100% - 40px)) !important;
+  box-sizing: border-box;
+}
+/* the map (carte3d.mjs) inside a view: it fills the mockup's frame; its own rules from style.css */
+.th .c3 {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-2);
+  overflow: hidden;
+}
+.th .c3-map {
+  position: absolute;
+  inset: 0;
+}
+.th .c3-map .maplibregl-canvas-container,
+.th .c3-map .maplibregl-map {
+  background: transparent;
+}
+.th .c3-over {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.th .c3-ctl {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  gap: 6px;
+  z-index: 3;
+}
+.th .c3-ctl[hidden] {
+  display: none;
+}
+.th .c3 .ctl {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--fg);
+  background: var(--bg-2);
+  color: var(--fg);
+  cursor: pointer;
+}
+.th .sr-only,
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* the v10 dialogs (sources, a request to copy, the image to share), drawn over a view */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: Archivo, sans-serif;
+}
+.modal .box {
+  background: var(--bg, #f2efe6);
+  color: var(--fg, #111);
+  border: 3px solid var(--fg, #111);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 16px;
+}
+.modal h2 {
+  margin: 0 0 10px;
+  font:
+    900 24px / 1.1 Archivo,
+    sans-serif;
+  font-stretch: 68%;
+  text-transform: uppercase;
+}
+.modal textarea {
+  width: 100%;
+  min-height: 180px;
+  font:
+    13px / 1.45 "Special Elite",
+    monospace;
+  padding: 8px;
+}
+.modal .btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid #111;
+  background: #fff;
+  color: #111;
+  font:
+    800 15px Archivo,
+    sans-serif;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* --- the phone (under 960 px), for the views without a phone mockup (brief § 2, « Au téléphone »): one column;
+   the panel becomes the fixed band of v10 (kicker and title, at the bottom of the screen); a table becomes rows
+   (the name and two figures), a row touched unfolds the rest; the tabs scroll sideways --- */
+@media (max-width: 959px) {
+  #kit .entete {
+    gap: 8px !important;
+    padding: 0 8px 0 16px !important;
+    height: 52px !important;
+  }
+  #kit .entete > a:first-child {
+    font-size: 18px !important;
+  }
+  #kit .entete .nav {
+    display: none;
+  }
+  .th .hdr-carte {
+    display: flex;
+  }
+  .th [style*="width: 1180px"] {
+    width: auto !important;
+    margin-left: 16px !important;
+    margin-right: 16px !important;
+  }
+  .th [style*="grid-template-columns: minmax(0, 1fr) 320px"],
+  .th [style*="grid-template-columns: minmax(0, 1fr) 340px"],
+  .th [style*="grid-template-columns: 220px minmax(0, 1fr) 290px"],
+  .th [style*="grid-template-columns: 230px minmax(0, 1fr) 300px"],
+  .th [style*="grid-template-columns: 280px minmax(0, 1fr)"],
+  .th [style*="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)"],
+  .th :not(dl)[style*="grid-template-columns: minmax(0, 1fr) auto"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 28px !important;
+  }
+  .th .h1 {
+    font-size: 48px !important;
+  }
+  .th .lead {
+    font-size: 19px;
+  }
+  .th .kpis,
+  .th [style*="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px"],
+  .th [role="group"][style*="repeat(5, minmax(0, 1fr))"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .th .kpis > div,
+  .th [style*="repeat(4, minmax(0, 1fr)); margin-top: 22px"] > div,
+  .th .kbtn {
+    padding: 10px 0 10px 12px !important;
+    border-left: 1px solid var(--rule);
+  }
+  .th .kpis > div:nth-child(odd),
+  .th .kbtn:nth-child(odd) {
+    padding-left: 0 !important;
+    border-left: 0 !important;
+  }
+  .th .kv {
+    font-size: 36px;
+  }
+  .th .tabs,
+  .th nav[aria-label="Sections"] > div {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .th .tabs a,
+  .th nav[aria-label="Sections"] a {
+    flex: none;
+    white-space: nowrap;
+  }
+  .th svg[width="818"],
+  .th svg[width="1144"] {
+    width: 100% !important;
+    height: auto;
+  }
+  .v-departement .filt,
+  .v-glossaire .filt {
+    width: 100% !important;
+  }
+  .th main[style*="gap: 64px"],
+  .th main[style*="gap: 60px"],
+  .th main[style*="gap: 56px"],
+  .th main[style*="gap: 52px"] {
+    gap: 40px !important;
+  }
+  .th [style*="grid-template-columns: 210px 22px minmax(0, 1fr)"] {
+    grid-template-columns: 96px 18px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+  .th [style*="grid-template-columns: 200px minmax(0, 1fr)"] {
+    grid-template-columns: 110px minmax(0, 1fr) !important;
+  }
+  .v-acheteur .gl {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 4px;
+  }
+  .th [style*="grid-template-columns: 210px minmax(0, 1fr) 60px"] {
+    grid-template-columns: 130px minmax(0, 1fr) 44px !important;
+  }
+  .th [style*="grid-template-columns: 110px minmax(0, 1fr) 220px 110px"] {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+  .th [style*="grid-template-columns: 110px minmax(0, 1fr) 220px 110px"] > :nth-child(2) {
+    grid-column: 1 / -1;
+  }
+  .th [style*="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .th .panel {
+    position: sticky !important;
+    bottom: 0;
+    top: auto !important;
+    z-index: 6;
+    height: 64px;
+    min-height: 0 !important;
+    overflow: hidden;
+    padding: 8px 16px !important;
+    gap: 2px !important;
+    margin: 0 -16px;
+    border-width: 2px 0 0 !important;
+  }
+  .th .panel > :not(:nth-child(1)):not(:nth-child(2)) {
+    display: none !important;
+  }
+  .th .panel > strong {
+    font-size: 18px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .v-carte .panel {
+    height: 64px !important;
+  }
+  /* a table as rows: the name and two figures; touched, the row unfolds */
+  .th table.t thead {
+    display: none;
+  }
+  .th table.t tbody tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 12px;
+    border-bottom: 1px solid var(--rule);
+    padding: 8px 0;
+    min-height: 44px;
+    box-sizing: border-box;
+  }
+  .th table.t tbody tr.sub {
+    display: none;
+  }
+  .th table.t tbody tr.sub[style=""] {
+    display: block;
+  }
+  .th table.t td {
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  .th table.t td:first-child {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .th table.t td.num ~ td.num ~ td.num {
+    display: none;
+  }
+  .th table.t td:not(.num):not(:first-child) {
+    display: none;
+  }
+  .th table.t tr.ouvert {
+    flex-wrap: wrap;
+  }
+  .th table.t tr.ouvert td {
+    display: block !important;
+    flex: 1 1 100% !important;
+    text-align: left !important;
+  }
+  .th table.t tr.ouvert td[data-l]::before {
+    content: attr(data-l) " : ";
+    color: var(--muted);
+    font-size: 13px;
+  }
+}
+@media (max-width: 959px) {
+  .th #carte-ess {
+    height: 340px !important;
+  }
+  .v-carte [style*="height: 520px"] {
+    height: 380px !important;
+  }
+  .v-carte button[style*="grid-template-columns: 210px 180px"] {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 2px 10px !important;
+    padding: 8px 0 !important;
+  }
+  .v-carte button[style*="grid-template-columns: 210px 180px"] > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .v-carte [style*="justify-content: space-between; gap: 20px"] {
+    flex-direction: column;
+    align-items: flex-start !important;
+  }
+  .v-carte [style*="justify-content: space-between; gap: 20px"] > div {
+    flex-wrap: wrap;
+  }
+  .th [style*="grid-template-columns: repeat(9, minmax(0, 1fr))"],
+  .v-entreprise [role="img"][style*="grid-template-columns"] {
+    gap: 4px !important;
+  }
+  .th section[style*="justify-content: space-between; padding: 24px"] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .th footer[style*="justify-content: space-between"] {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .th [style*="justify-content: space-between; gap: 20px; margin-top: 4px"] {
+    flex-direction: column;
+  }
+}
+@media (max-width: 959px) {
+  .th [style*="display: flex; align-items: flex-end; justify-content: space-between"] {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+  .th [style*="justify-content: space-between; gap: 12px; padding: 8px 12px"] {
+    flex-wrap: wrap;
+  }
+  /* a row whose first cell is a date shows the next cell too (the document, the beneficiary), under the date */
+  .th table.t td:first-child:is(.tw, :has(> a.tw)) {
+    flex: 1 1 100% !important;
+    font-size: 13px;
+  }
+  .th table.t td:first-child:is(.tw, :has(> a.tw)) + td {
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .v-autorisations [aria-label="Les arrêtés du dossier, dans le temps"] > div:first-child {
+    display: none !important;
+  }
+  .v-autorisations .mk .n {
+    font-size: 22px;
+  }
+  .v-autorisations .mk {
+    min-width: 40px;
+  }
+  .v-autorisations [aria-hidden="true"][style*="height: 20px"] > span:first-child {
+    display: none;
+  }
+  .v-contrat [style*="gap: 0; align-items: stretch"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+  .v-contrat .arrow {
+    transform: rotate(90deg);
+    height: 20px;
+  }
+  .v-contrat dl.f {
+    grid-template-columns: 110px minmax(0, 1fr);
+  }
+  .v-entreprise [style*="text-align: center"] > span > span:last-child {
+    display: none;
+  }
+  .v-entreprise [role="img"] button > span:first-child {
+    font-size: 10px !important;
+  }
+  .v-carte section[aria-label="Choisir une période"] > div:first-child {
+    flex-wrap: wrap;
+  }
+  .v-registre .fbox {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+  }
+}
+
+/* accessibility (axe-core, link-in-text-block; RGAA 10.6): the crumbs' links underlined, the mockup draws them
+   without underline at a contrast of 2.86:1 with the text (1.43:1 in dark) */
+.th .crumbs a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+@media (max-width: 959px) {
+  /* a folded cell stays readable by a screen reader (clipped, not removed) */
+  .th table.t td.num ~ td.num ~ td.num,
+  .th table.t td:not(.num):not(:first-child) {
+    display: block !important;
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap;
+  }
+  .th table.t td:first-child:is(.tw, :has(> a.tw)) + td {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    clip: auto !important;
+    white-space: normal;
+  }
+  .th table.t tr.ouvert td {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+  .th table.t tbody tr {
+    position: relative;
+  }
+}
+@media (max-width: 959px) {
+  .th [style*="justify-content: space-between"]:has([role="group"]) {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .th [style*="height: 34px; border: 2px solid var(--fg)"] > span {
+    min-width: 0;
+  }
+}
+@media (max-width: 959px) {
+  .th .tabs,
+  .th nav[aria-label="Sections"] > div {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .th [role="group"][style="display: flex"] {
+    flex-wrap: wrap;
+  }
+  .th [style*="height: 34px; border: 2px solid var(--fg)"] {
+    overflow: hidden;
+  }
+  .th [style*="height: 34px; border: 2px solid var(--fg)"] > span {
+    padding: 0 2px !important;
+  }
+}
+@media (max-width: 959px) {
+  /* a word never breaks: the title's size fits its width (app11.js, fitTitles), as the site does */
+  .th h1 {
+    font-size: 44px !important;
+    overflow-wrap: normal;
+    hyphens: manual;
+    white-space: normal;
+  }
+  .th [style*="display: flex; align-items: flex-end; gap: 18px"] {
+    flex-wrap: wrap;
+    gap: 4px 18px !important;
+  }
+  .th main,
+  .th aside {
+    min-width: 0;
+  }
+}
+
+/* --- 12th pass: the registre's filters on a phone, in the frame of the phone mockup « Filtres » --- */
+.v-registre .filtres-btn,
+.v-registre .sheet-head,
+.v-registre .sheet-foot {
+  display: none;
+}
+@media (max-width: 959px) {
+  .v-registre .filtres-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 48px;
+    padding: 0 16px;
+    border: 2px solid var(--fg);
+    background: var(--bg-2);
+    color: var(--fg);
+    font:
+      800 15px Archivo,
+      sans-serif;
+    font-stretch: 80%;
+    text-transform: uppercase;
+    cursor: pointer;
+    justify-self: start;
+  }
+  .v-registre .fbox {
+    display: none !important;
+  }
+  .v-registre .fbox.ouvert {
+    display: flex !important;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 86vh;
+    z-index: 30;
+    background: var(--bg);
+    border-top: 3px solid var(--fg);
+    overflow: hidden;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
+  }
+  .v-registre .fbox.ouvert > div:not(.sheet-head):not(.sheet-foot) {
+    padding: 0 16px;
+  }
+  .v-registre .fbox.ouvert {
+    overflow-y: auto;
+  }
+  .v-registre .fbox.ouvert .sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 8px 4px 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 1;
+  }
+  .v-registre .sheet-handle {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 48px;
+    height: 5px;
+    margin-left: -24px;
+    background: var(--fg);
+    border-radius: 3px;
+  }
+  .v-registre .sheet-t {
+    margin: 0;
+    font-weight: 900;
+    font-stretch: 66%;
+    font-size: 30px;
+    text-transform: uppercase;
+  }
+  .v-registre .sheet-x {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    background: none;
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .v-registre .fbox.ouvert .sheet-foot {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px 24px;
+    border-top: 2px solid var(--fg);
+    background: var(--bg);
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+  }
+  .v-registre .sheet-raz,
+  .v-registre .sheet-voir {
+    min-height: 48px;
+    border: 2px solid var(--fg);
+    font:
+      800 15px Archivo,
+      sans-serif;
+    font-stretch: 80%;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .v-registre .sheet-raz {
+    flex: 1;
+    background: var(--bg-2);
+    color: var(--fg);
+  }
+  .v-registre .sheet-voir {
+    flex: 1.6;
+    background: var(--fg);
+    color: var(--bg);
+  }
+}
+
+/* v12: the frieze's axis on the phone keeps one year in two, none next to « auj. » (the labels overlapped at 390 px) */
+@media (max-width: 959px) {
+  .tk-o {
+    display: none;
+  }
+}
+@media (max-width: 959px) {
+  .jusq {
+    top: 0 !important;
+    background: var(--page);
+    padding-left: 6px;
+  }
+}
+
+/* --- the page's header (the kit's « entete », as the mockups draw it; in the stylesheet rather than in
+   style attributes, so that the page holds under a Content-Security-Policy without inline styles) --- */
+.entete {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 60px;
+  padding: 0 20px 0 28px;
+  background: #000;
+  color: #f2efe6;
+  border-bottom: 2px solid var(--fg);
+}
+.entete .marque {
+  color: #f2efe6;
+  text-decoration: none;
+  font-weight: 900;
+  font-stretch: 70%;
+  font-size: 22px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-right: auto;
+}
+#kit {
+  background: var(--page);
+  color: var(--fg);
+}
+/* the theme button shows the icon of the other mode (an SVG ignores the hidden attribute alone) */
+[data-theme-btn] svg[hidden]{display:none}

@@ -1,0 +1,65 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <dc-include src="tete-commune"></dc-include>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 80px; display: grid; grid-template-columns: 220px minmax(0, 1fr) 290px; gap: 26px; align-items: start">
+
+    <aside aria-label="{{t.documents.filtres}}" style="display: flex; flex-direction: column; gap: 22px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <h2 class="h3">{{t.documents.filtres}}</h2>
+        <button onClick="{{clear}}" style="all: unset; cursor: pointer; min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; color: var(--blue); text-decoration: underline">{{t.documents.tout_effacer}}</button>
+      </div>
+      <sc-for list="{{facets}}" as="g" hint-placeholder-count="3">
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px">
+          <legend class="fh" style="padding: 0 0 6px; width: 100%; border-bottom: 2px solid var(--fg); margin-bottom: 4px">{{g.l}}</legend>
+          <sc-for list="{{g.items}}" as="i" hint-placeholder-count="4">
+            <button class="chk" role="checkbox" aria-checked="{{i.checked}}" onClick="{{i.pick}}" style="{{i.style}}">
+              <span class="box" aria-hidden="true">{{i.mark}}</span><span>{{i.l}}</span><span class="cnt">{{i.n}}</span>
+            </button>
+          </sc-for>
+        </fieldset>
+      </sc-for>
+      <div style="display: flex; align-items: flex-start; gap: 2px">
+        <p style="margin: 10px 0 0; font-size: 14px; color: var(--muted)">{{t.documents.nom_non_publie_pourquoi}}</p>
+        <button class="ibtn" onClick="{{tgl.np}}" aria-expanded="{{open.np}}" aria-label="{{t.documents.pourquoi_certains_noms_ne_sont}}"><span aria-hidden="true">i</span></button>
+      </div>
+      <sc-if value="{{show.np}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.documents.le_registre_n_affiche_que}}</p></sc-if>
+    </aside>
+
+    <main style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 12px; border: 2px solid var(--fg); background: var(--bg-2)">
+        <span><strong style="font-size: 18px">{{countLabel}}</strong></span>
+        <div style="display: flex; align-items: center; gap: 4px">
+          <span style="color: var(--muted)">{{dlLabel}}</span>
+          <a href="#" onClick="{{dl.csv}}" style="font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px">{{t.documents.csv}}</a>
+          <span aria-hidden="true">·</span>
+          <a href="#" onClick="{{dl.json}}" style="font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px">{{t.documents.json}}</a>
+          <button class="ibtn" onClick="{{tgl.dl}}" aria-expanded="{{open.dl}}" aria-label="{{t.documents.licence_et_contenu_des_fichiers}}"><span aria-hidden="true">i</span></button>
+        </div>
+      </div>
+      <sc-if value="{{show.dl}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.documents.licence_ouverte_2_0_reutilisation}}</p></sc-if>
+
+      <table class="t">
+        <caption class="sr">{{f.documents.documents_officiels_de_filtres_et}}</caption>
+        <thead><tr>
+          <sc-for list="{{cols}}" as="c" hint-placeholder-count="4">
+            <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+          </sc-for>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="17">
+            <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+              <td class="tw" style="white-space: nowrap; color: var(--muted)">{{r.date}}<sc-if value="{{r.flag}}" hint-placeholder-val="{{false}}"><br><span style="background: var(--warn-bg); border: 1px dashed var(--fg); padding: 0 4px; font-size: 12px; color: var(--fg)">{{t.documents.a_verifier}}</span></sc-if></td>
+              <td><span class="b" style="{{r.bs}}">{{r.type}}</span><br><a href="{{r.href}}" class="rowlink" style="font-weight: 600; display: inline-block; margin-top: 4px">{{r.objet}}</a></td>
+              <td style="font-size: 14px"><span style="{{r.quiStyle}}">{{{r.qui}}}</span><div style="color: var(--muted)">{{{r.ent}}}</div></td>
+              <td class="num"><strong>{{r.fig}}</strong><div style="font-size: 13px; color: var(--muted)">{{r.figL}}</div></td>
+            </tr>
+          </sc-for>
+        </tbody>
+      </table>
+      <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 20px; border: 2px dashed var(--fg)">{{t.documents.aucun_document_pour_ces_filtres}} <button onClick="{{clear}}" style="all: unset; cursor: pointer; color: var(--blue); text-decoration: underline; font-weight: 700">{{t.documents.tout_effacer}}</button></p></sc-if>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

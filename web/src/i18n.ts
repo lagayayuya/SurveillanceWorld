@@ -1,13 +1,12 @@
 // Minimal message catalogue: {name} placeholders and ICU-like plurals
 // ({n, plural, =0 {...} one {# ...} other {# ...}}). One JSON file per language.
 import fr from "./locales/fr.json";
+import { render } from "./messages.ts";
 
 type Catalogue = Record<string, string>;
 const catalogues: Record<string, Catalogue> = { fr };
 export const locale = "fr";
 const messages = catalogues[locale];
-const plurals = new Intl.PluralRules(locale);
-const numbers = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
 
 export const has = (key: string): boolean => key in messages;
 
@@ -17,19 +16,7 @@ export function t(key: string, params: Record<string, string | number> = {}): st
     console.warn(`missing message ${key}`);
     return key;
   }
-  return template
-    .replace(/\{(\w+), plural, ((?:[^{}]|\{[^{}]*\})*)\}/g, (_, name: string, body: string) => {
-      const n = Number(params[name]);
-      const cases = Object.fromEntries(
-        [...body.matchAll(/(=\d+|\w+) \{([^{}]*)\}/g)].map((m) => [m[1], m[2]]),
-      );
-      const chosen = cases[`=${n}`] ?? cases[plurals.select(n)] ?? cases.other ?? "";
-      return chosen.replace(/#/g, numbers.format(n));
-    })
-    .replace(/\{(\w+)\}/g, (_, name: string) => {
-      const v = params[name];
-      return typeof v === "number" ? numbers.format(v) : String(v ?? "");
-    });
+  return render(template, params);
 }
 
 /** A key in the punk interface's own words when it has them (`<key>.punk`; board 26a's

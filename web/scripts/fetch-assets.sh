@@ -30,4 +30,7 @@ if [ ! -e "../data/basemap/$REGION.pmtiles" ] && [ -e "$FIXTURE" ]; then
 fi
 ln -sfn "$BASEMAP" "$PUB/basemap/basemap.pmtiles"
 ln -sfn "../../data/build/$REGION/tiles" "$PUB/tiles"
+# The register's files (lacarte registre construire), served under /data/registre/.
+mkdir -p "$PUB/data"
+ln -sfn "../../../data/registre/site" "$PUB/data/registre"
 echo "assets ready for region $REGION"
