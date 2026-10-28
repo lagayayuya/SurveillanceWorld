@@ -71,7 +71,9 @@ function header(r: Route): void {
   for (const a of kit.querySelectorAll<HTMLAnchorElement>("[data-nav]")) {
     const k = a.dataset.nav;
     if (k === "carte" || k === "carte-ic") a.href = back;
-    if (k === "registre" && r.view !== "introuvable") a.setAttribute("aria-current", "page");
+    const glossaire = location.pathname.startsWith("/registre/glossaire");
+    if ((k === "registre" && r.view !== "introuvable") || (k === "glossaire" && glossaire))
+      a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
   const dark = document.documentElement.dataset.mode === "dark";

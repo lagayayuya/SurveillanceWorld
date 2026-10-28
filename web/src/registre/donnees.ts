@@ -106,6 +106,8 @@ export type NonLu = {
   date?: string | null;
   dep?: string | null;
   insee?: string | null;
+  /** its commune's name, when the build knows it */
+  commune?: string;
   ref?: string | null;
   url?: string | null;
   page?: number | null;

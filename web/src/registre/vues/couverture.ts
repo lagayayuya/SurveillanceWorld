@@ -112,7 +112,9 @@ class Couverture_ extends Vue<Props> {
           date: shortDate(n.date),
           acte: type ? `${type} · ${n.id}` : n.id,
           href: n.insee ? communeHref(n.insee) : "",
-          commune: n.insee ? (c?.nom ?? t("commun.code_insee", { insee: n.insee })) : "",
+          commune: n.insee
+            ? (n.commune ?? c?.nom ?? t("commun.code_insee", { insee: n.insee }))
+            : "",
           sans: n.insee ? "" : "—",
           raisons: n.raisons
             .map((r) => (has(`registre.non_lu.${r}`) ? t(`non_lu.${r}`) : r))
