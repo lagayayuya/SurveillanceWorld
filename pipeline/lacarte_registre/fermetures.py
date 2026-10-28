@@ -346,6 +346,8 @@ def non_lus_file(ctx: Context) -> dict[str, Any]:
     rows = []
     for e in ctx.reg.non_lus:
         row = {k: e.get(k) for k in NON_LU_ROW if k in e and (k != "insee" or e.get(k))}
+        if (nom := (ctx.reg.communes.get(e.get("insee") or "") or {}).get("nom")) is not None:
+            row["commune"] = nom
         rows.append({**row, "raisons": e["non_lu"]})
     return {"v": 1, "non_lus": rows}
 

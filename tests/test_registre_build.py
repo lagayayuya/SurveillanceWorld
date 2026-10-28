@@ -232,3 +232,10 @@ def test_the_home_names_its_rows_buyers_and_the_search_the_map_counts(built):
     assert (
         recherche["communes"][MIONS]["carte"] == read(built, f"commune/{MIONS}.json")["carte"]["n"]
     )
+
+
+def test_the_unread_decrees_name_their_commune_and_the_coverage_its_departements(built):
+    """The coverage page writes names, not codes, where the export gives them."""
+    rows = read(built, "non_lus.json")["non_lus"]
+    assert all(r["commune"] for r in rows if r.get("insee"))
+    assert read(built, "couverture.json")["departements"]["69"]["nom"] == "Rhône"

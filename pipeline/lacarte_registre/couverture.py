@@ -92,6 +92,10 @@ def build(reg: Registre, conf: dict[str, Any]) -> dict[str, Any]:
     for code in dict.fromkeys([*conf["departements"], *present]):
         rule = conf["departements"].get(code, conf["default"])
         row = {k: rule[k] for k in ("etat", "raison", "depuis", "documents_demandes") if k in rule}
+        # its name when the export gives one (the pilot names its own départements only)
+        nom = (reg.pilote.globals.get("DEP", {}).get(code) or {}).get("nom")
+        if nom:
+            row["nom"] = nom
         if rule["etat"] == "collecte":
             row["dernier_recueil"] = _latest(
                 [recueil(e) for e in reg.by_dep.get(code, []) if e["t"].startswith("arrete")]
