@@ -227,6 +227,16 @@ const PAIRS: [string, string, number][] = [
   ["--map-maybe-ring", "--basemap-earth", GRAPHIC],
   ["--map-maybe-mark", "--map-maybe-disc", GRAPHIC],
   ["--map-maybe-disc", "--basemap-earth", GRAPHIC],
+  // The register (lot R1a): each document badge's ink on its fill, the drones' blue as a
+  // graphic on the surfaces, text on the soft fill of a selected or striped row. The gold
+  // and the green are fills only (2.67:1 and 4.39:1 on the paper): never a text colour.
+  ["--ao-ink", "--ao", TEXT],
+  ["--aut-ink", "--aut", TEXT],
+  ["--sub-ink", "--sub", TEXT],
+  ["--drone", "--bg", GRAPHIC],
+  ["--drone", "--bg-2", GRAPHIC],
+  ["--fg", "--soft", TEXT],
+  ["--muted", "--soft", TEXT],
 ];
 
 for (const [name, tokens] of [

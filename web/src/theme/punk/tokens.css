@@ -360,6 +360,23 @@
   --welcome-go-shadow: #111111;
   --welcome-letter: #b8005f;
   --welcome-link-line: #b8005f;
+
+  /* The register (registre.html, lot R1a), from its kit (the mockups' kit-grand-ecran): the
+     five document badges' fills and inks (contract on the ink, tender notice in gold,
+     authorisation in blue, subsidy in green), the drones' blue on the map and in the frieze,
+     the tables' rules and the soft fill of a selected or striped row. The kit's other colours
+     are the site's: its --card is --bg-2, its --link and its blue --accent are --blue, its
+     --hover is --accent-fill (a fill; pink text on hover is --accent), its --warn (a fill)
+     is --warn-bg. */
+  --ao: #b38f00;
+  --ao-ink: #111111;
+  --aut: #0060a0;
+  --aut-ink: #ffffff;
+  --sub: #2e7d4f;
+  --sub-ink: #ffffff;
+  --drone: #0089c7;
+  --rule: #c9c4b6;
+  --soft: #e9e5da;
 }
 
 :root[data-ui="punk"][data-mode="dark"] {
@@ -602,4 +619,15 @@
   --welcome-go-shadow: #f2efe6;
   --welcome-letter: #ff7cc6;
   --welcome-link-line: #ff48b0;
+
+  /* the register: the kit's dark inks, on the site's dark surfaces */
+  --ao: #e0b400;
+  --ao-ink: #111111;
+  --aut: #7fd4ff;
+  --aut-ink: #111111;
+  --sub: #7fd18f;
+  --sub-ink: #111111;
+  --drone: #7fd4ff;
+  --rule: #3a3640;
+  --soft: #26232a;
 }
