@@ -910,6 +910,48 @@ point is written where it applies:
 - publishing in one's own name offered on the public site once /revue switches writing to
   OSM's live server (1.7, 1.10; `board-sync-not-offered`).
 
+### 1.12 The register (lots R0 and R1a, 2026-10-28)
+
+The register is the site's second part: the public documents on video surveillance — contracts
+(DECP), tender notices (BOAMP), prefectural decrees (the préfectures' recueils, the Rhône's first)
+and subsidies — tied to communes, companies and buyers. A page of its own, `registre.html`, served
+for every `/registre` path (`deploy/preview.caddy`), not indexed until its public opening; its
+code in `src/registre/`, its data the static files `lacarte-registre construire` writes under
+`/data/registre/` (`pipeline/lacarte_registre/`). Its rules are DECISIONS 2026-10-28.
+
+- **The pages.** `/registre/` (Documents: the search, the filters, the latest documents),
+  `/registre/chiffres` (figures and rankings), `/registre/couverture` (what the register covers:
+  each source's dates, each département's state, the decrees not read entirely), and a commune's
+  three tabs: `/registre/commune/<insee>` (L'essentiel), `…/documents`, `…/autorisations[/<dossier>]`.
+  A company, a buyer, a département, a contract, the glossary and « Carte et drones » are lot R1b's:
+  their links lead to « Bientôt » (`src/registre/vues/introuvable.ts`), « Carte et drones » to the
+  map on the commune (`/?insee=`).
+- **The templates are the mockups' markup** (the direction mockups, wide; the phone is the same
+  view in one column), rendered by the register's engine (`src/registre/dc.ts`): every word a
+  path into the catalogue (`registre.*`), the colours the punk tokens (`theme/punk/tokens.css`,
+  the register's block), every deviation in §3 « The register ».
+- **The header** is the kit's: « Surveillance World » (to the register's home), « Carte » (back to
+  the map: its own address when the register was opened from it, `?carte=`, else the commune on
+  the map, else the map), « Registre », « Glossaire », search, the sun / moon (the map's own
+  choice, `lacarte.mode`).
+- **No human review.** One line where decrees are listed says they are read by a program and
+  that an error is possible; a decree's panel links its source (« Voir l'arrêté (recueil de la
+  préfecture) ») and « Signaler une erreur » (a message to the site's address with the document's
+  id, until lot R1b's form). The decrees that could not be read entirely are counted on the home
+  and listed on the coverage page with what failed; an unreadable camera count counts in the
+  decrees, never in the cameras.
+- **Dates from the data.** The home says when it was last updated; a commune's Autorisations says
+  « Dernier recueil lu : <date> », or that its département's decrees are not collected, or why
+  they cannot be.
+- **Discreet mentions.** An amount shows alone; one line under the money says « Montant prévu au
+  contrat : une enveloppe, pas forcément dépensée en entier. »; « date à vérifier » and « lien
+  probable » are a small mark beside the datum, named for assistive technologies and explained
+  in the panel and under « i ».
+- **Loading.** The home reads `index.json` (4.5 kB) and loads the whole search file only when
+  the reader searches, filters, sorts by amount or asks for more rows; a commune's file is asked
+  as its path opens; the tilted map (`src/registre/carte3d.ts`: the site's France basemap masked
+  by the commune's outline) and MapLibre come after the content.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
@@ -940,7 +982,8 @@ come first, then those the mockup draws, the unreachable ones last within each g
 | Loading (2c) | 3 | 1 | 3 | 0 | 0 | 0 |
 | Legal pages (launch lot) | 10 | 10 | 10 | 0 | 0 | 0 |
 | Contributions closed (launch lot) | 4 | 4 | 4 | 0 | 0 | 0 |
-| **Total** | 388 | 305 | 363 | 289 | 1118 | 25 |
+| The register (lots R0 and R1a) | 29 | 23 | 28 | 0 | 0 | 1 |
+| **Total** | 417 | 328 | 391 | 289 | 1118 | 26 |
 
 The multi-dome (DECISIONS 2026-10-23) adds four states, all improvised (no board draws
 it): `add-multidome`, `add-multidome-count` and `add-multidome-kept` in « Modifier »,
@@ -1693,6 +1736,49 @@ than 2.5 s the page reads them open (`config.ts` loadConfig). Test data: as the 
 | `closed-welcome` | A first visit: the welcome with its title « The most magical place on Earth », its pitch without « et rejoins l'aventure » (« … redécouvre ton quartier sous un nouveau jour <3 », `welcome.pitch.closed`), without « Participer », without « Contributions vérifiées » among « Garanties » and without the two questions that speak of accounts (no question shown since 2026-10-14), the legal pages' links, « Voir la carte → » | welcome.ts Welcome (contributions), build | partly IMPROVISED: 28a, less what speaks of accounts | a device that has not seen the welcome | — (shots-legal.mjs: phone-light-ferme-accueil, phone-dark-ferme-accueil, wide-light-ferme-accueil, wide-dark-ferme-accueil) | yes, without a capture of its own |
 | `closed-landing` | A return from OpenStreetMap (`?osm=`, `?osm_why=`) or the account's own address (`?compte=`): the parameters removed from the address unread; index.html's first load, which runs before the answer is known, says « de votre compte » until the map is drawn (`loading-map`'s screen); then no sheet, no welcome: the map as `closed-map` | main.ts (writeParams before the Account; the map's "load" ends the first load); index.html (its inline script) | IMPROVISED | `?osm=signed` with /api/config `contributions: false` | — | yes, without a capture of its own (checked by smoke-launch) |
 
+### The register (lots R0 and R1a)
+
+`registre.html` (1.12). Mockups: the direction mockups (wide, the product owner's files, not in
+the repository): « Registre », « Registre-chiffres », « Commune-grand », « Documents-grand »,
+« Autorisations-grand »; the phone has no current board (the wide view in one column; the phone
+mockup « Filtres » for the filters' sheet only). Test data: the pilot export built by
+`lacarte-registre importer-pilote` then `construire` (Île-de-France, the Rhône and the
+Bouches-du-Rhône; not the CI extract), Mions 69283, Lyon 69123, Paris 75056, Saint-Denis 93066,
+Ampuis 69007. Captured at 960 × 581 and 390 × 845, scale 2, light and dark, and at 1280 beside the
+mockup's render, outside the repository (no bench script yet: « — »).
+
+| State | Description | Code | Mockup | Test data | Capture | Reachable |
+|---|---|---|---|---|---|---|
+| `reg-coming` | A page of lot R1b (company, buyer, département, contract, glossary): « BIENTÔT », the sentence that names what comes, « Le registre → » | registre/vues/introuvable.ts | IMPROVISED | `/registre/entreprise/431903954` | — | yes |
+| `reg-not-found` | A path the register does not answer: « PAGE INTROUVABLE », « Le registre → » | registre/vues/introuvable.ts; registre/routes.ts route | IMPROVISED | `/registre/rien` | — | yes |
+| `reg-load-error` | A view's code or file that does not arrive: one sentence, « Rechargez-la, ou revenez au registre » | registre/main.ts show | IMPROVISED | a file of `/data/registre/` missing | — | yes |
+| `reg-search` | Typing: the search file arrives, « Aller directement à » (communes, a département, companies, a buyer), the list filtered, the query as a chip | registre/vues/registre.ts | partly IMPROVISED: Registre draws no typed search | `/registre/?q=mions` | — | yes |
+| `reg-no-result` | « Aucun document ne correspond. Retirez un filtre. » | registre/vues/registre.ts | partly IMPROVISED | `/registre/?q=zzzz` | — | yes |
+| `reg-unread-line` | Under a list that holds decrees: the line on decrees read by a program and « 34 arrêtés n'ont pas pu être lus entièrement → » (to the coverage page) | registre/vues/registre.ts; registre.html | IMPROVISED (DECISIONS 2026-10-28) | `/registre/?t=aut` | — | yes |
+| `reg-panel-decree` | A decree's row hovered, focused or touched: the panel with its figures, « Voir l'arrêté (recueil de la préfecture) », « Signaler une erreur » when the build has a contact address | registre/vues/registre.ts; registre/signaler.ts | partly IMPROVISED: Registre's panel, its links the owner's (DECISIONS 2026-10-28) | `/registre/?t=aut`, a row | — | yes |
+| `reg-coverage` | « Ce que couvre le registre »: the last update, the sources' table (documents until, collected on; a source dated by its year says so), each département's state (collected since, not yet, impossible and why, documents asked for) | registre/vues/couverture.ts; registre/collecte.ts | IMPROVISED (no board: DECISIONS 2026-10-28) | `/registre/couverture` | — | yes |
+| `reg-coverage-unread` | Its `#non-lus` part: « 34 arrêtés n'ont pas pu être lus entièrement », the counts by reason, the line on decrees read by a program, each decree (date, id, commune, what failed, its source) | registre/vues/couverture.ts | IMPROVISED | `/registre/couverture#non-lus` | — | yes |
+| `commune-docs-filtered` | A commune's documents filtered (type, who — la mairie, État, entreprises et commerces, nom non publié —, year), the path keeping them (`?t=aut&qui=n`) | registre/vues/documents.ts | partly IMPROVISED: Documents-grand, « État » added | `/registre/commune/69283/documents?t=aut&qui=n` | — | yes |
+| `commune-docs-unread` | A decree not read entirely in the list: « — », what failed and « source » under the figure | registre/vues/documents.ts | IMPROVISED | `/registre/commune/69123/documents?t=aut` | — | yes |
+| `commune-docs-empty` | A commune with no document: « Le registre n'a aucun document pour cette commune. » | registre/vues/documents.ts | IMPROVISED | `/registre/commune/69172/documents` | — | yes |
+| `commune-aut-shared` | A drone decree that names several communes: « partagé avec N communes », each commune a link, « Sur la carte → » | registre/vues/autorisations.ts | partly IMPROVISED: the 12th pass's rule | `/registre/commune/69283/autorisations` | — | yes |
+| `commune-aut-dossier` | A dossier's path: its row selected and shown, the panel on it (a private dossier past the 15th unfolds the list) | registre/vues/autorisations.ts | partly IMPROVISED | `/registre/commune/69123/autorisations/69-20110354` | — | yes |
+| `commune-aut-not-collected` | A département whose decrees are not collected: the introduction says so, no figure (a missing figure is not zero), the panel at rest « Arrêtés non collectés » with the coverage page's link | registre/vues/autorisations.ts; registre/collecte.ts | IMPROVISED (DECISIONS 2026-10-28) | `/registre/commune/93066/autorisations` | — | yes |
+| `commune-aut-impossible` | Collecting impossible: why (Paris: the préfecture's site blocks reading by a program; Essonne: closed to robots) and that the documents were asked for | registre/vues/autorisations.ts; registre/collecte.ts | IMPROVISED | `/registre/commune/75056/autorisations` | — | yes |
+| `commune-aut-unread` | A mairie's decree with an unreadable count: in the dossier's table with « — », out of the frieze, counted in the decrees and not in the cameras, its panel says why | registre/vues/autorisations.ts | IMPROVISED | `/registre/commune/69044/autorisations` | — | yes |
+| `commune-aut-one` | One decree: the singular everywhere (« Cet arrêté figure aussi parmi le document d'Ampuis. ») | registre/vues/autorisations.ts | IMPROVISED | `/registre/commune/69007/autorisations` | — | yes |
+| `commune-request` | « Demander à la préfecture / à la mairie »: the dialog with the request's text to copy, Escape closes it and gives the focus back | registre/demande.ts | partly IMPROVISED: the prototype's | `/registre/commune/69283/autorisations`, « Demander à la préfecture » | — | yes |
+| `commune-ess-no-document` | A commune with no document: its lead « Aucun document trouvé pour … », the frieze and « Ce qui s'est passé » absent (no empty frame) | registre/vues/commune.ts | IMPROVISED | `/registre/commune/69182` | — | yes |
+| `commune-ess-map-not-cut` | A commune whose map is not cut (the build's `carte.decoupee`): « La carte de <commune> », a sentence in the frame, no pause button nor attribution, nothing asked | registre/vues/commune.ts | IMPROVISED | `/registre/commune/95176` | — | yes |
+| `commune-ess-no-webgl` | A device without WebGL 2: « La carte de <commune> ne peut pas s'afficher sur cet appareil. » in the frame | registre/vues/commune.ts | IMPROVISED | a browser without WebGL 2 | — | no (not on the bench's browsers) |
+| `commune-ess-share` | « Partager l'image »: a 1200 × 630 image of the commune's figures drawn in the browser, downloaded | registre/vues/commune-outils.ts | partly IMPROVISED: the prototype's | `/registre/commune/69283`, « Partager l'image » | — | yes |
+| `reg-home` | « LE REGISTRE », its sources and update date (« mis à jour le 23/10/2026 », from the build), the five figures (a filter each), « Documents · 6 517 » and « Chiffres et classements », the search, the filters (type, département, dispositif, year), the latest documents, the panel « Votre recherche » with the two downloads (CSV, JSON) | registre/vues/registre.ts; registre/corpus.ts | Registre | `/registre/` | — | yes |
+| `reg-filters-sheet` | On a phone: « Filtres (N) » opens the sheet (handle, title, ✕, the facets, « Tout effacer », « Voir N documents »), a dialog, the rest of the page inert, Escape closes it | registre/vues/registre.ts | the phone mockup « Filtres » | `/registre/`, 390 px, « Filtres » | — | yes |
+| `reg-figures` | « Chiffres et classements »: what is counted, the companies, buyers and communes ranked (sortable), the years; the money line under the amounts | registre/vues/chiffres.ts | Registre-chiffres | `/registre/chiffres` | — | yes |
+| `commune-ess` | A commune's essentials: its head and tabs, the lead (« En juin 2026, la préfecture a autorisé 154 caméras à la mairie de Mions. 125 filment la rue. La carte n'en connaît que 10. »), the four figures, the tilted map (after the content; turning, the pause button; its legend and attribution), « Où sont les 118 autres ? », what the préfecture authorises, the shops, the money (« 415 000 € de contrats depuis 2021 », the envelope's line), the frieze, the territory's table, what happened, the documents not found, the panel | registre/vues/commune.ts; registre/carte3d.ts | Commune-grand | `/registre/commune/69283` | — | yes |
+| `commune-docs` | A commune's documents: its head and tabs, the filters, the table (date, document, who, amount or cameras), the panel, the downloads | registre/vues/documents.ts; registre/commun.ts | Documents-grand | `/registre/commune/69283/documents` | — | yes |
+| `commune-aut` | A commune's authorisations: the introduction and « Dernier recueil lu », the four figures, the mairie's dossier (its steps, its table, what it allows, before the first published decree), the shops and companies, the drones and other devices, the panel | registre/vues/autorisations.ts | Autorisations-grand | `/registre/commune/69283/autorisations` | — | yes |
+
 ## 3. Deviations from the mockup (« Écarts à la maquette »)
 
 The punk interface ports the mockup (`Carte punk.dc.html`, export of 2026-10-06, the product
@@ -2036,3 +2122,55 @@ closed: each is built from the boards' own vocabulary as ported (1.10).
 | 28a's welcome: the questions, then « Voir la carte » | the four legal pages' links after the labels (the questions not shown, 2026-10-14), under a dashed rule, as on the pages themselves | the launch lot's contract (the pages linked from the welcome) |
 | The pseudonym screen (no board; 25a's form) | « En validant, vous acceptez les conditions d'utilisation et de contribution. » in the form's hint style between the rule and « Valider → », its link inline in the sentence on a phone too (not a 44 px box) | the launch lot's contract (accepting the conditions at sign-up); WCAG 2.5.8's exception for a link in a sentence (a box of its own broke the sentence on a 390 px phone) |
 | 25a's three squares; 28a's pitch, « Participer », « Contributions vérifiées » | contributions closed: the sun / moon and « ? » squares only; the welcome's pitch without « et rejoins l'aventure », without « Participer » and « Contributions vérifiées » (2026-10-13: the invitation and the promise too); the camera sheet without « Modifier » nor « Toujours là ? » — absent, nothing greyed in their place | the launch lot's contract (contributions closed: « absent — not greyed ») |
+
+### The register (lots R0 and R1a)
+
+The direction mockups (wide; Registre, Registre-chiffres, Commune-grand, Documents-grand,
+Autorisations-grand) are ported as their markup (`src/registre/vues/*.html`, made by
+`web/scripts/gabarits.mjs` from the prototype's templates, where every change from the mockup was
+logged with its reason). The rows below are those changes and what the port adds; a hole (a
+figure, a link, a shared part) is no deviation.
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Every view: « au maximum » beside an amount; yellow tags « date à vérifier », « lien probable » | the amount alone; one line under the money (« Montant prévu au contrat : une enveloppe, pas forcément dépensée en entier. »), the detail under « i »; a small « ? » beside the date, named « date à vérifier » for assistive technologies, explained in the panel | DECISIONS 2026-10-28 « Discreet mentions » |
+| Every view: « lu par programme, à relire », « relu à la main » | gone; one line where decrees are listed (« Ces arrêtés sont lus par un programme : une erreur reste possible. Consultez l'arrêté ou signalez une erreur. »); a decree's panel: « Voir l'arrêté (recueil de la préfecture) » and « Signaler une erreur » | DECISIONS 2026-10-28 « no human review » |
+| Every view: the work plane's fixed 1180 px column | a column of 1180 px at most, following the screen from 960 px; under 960 px the view in one column (the panel a fixed band, a table's rows that unfold, the tabs scrolling sideways) | the screen's width (the mockups are drawn at 1280); the phone mockups are out of date (the owner, 2026-10-25): the phone is the wide view in one column |
+| Every view: the crumbs' links not underlined | underlined | WCAG 1.4.1 / RGAA 10.6 (2.86:1 against the text: a link must show without its colour) |
+| Every view: a chart holding buttons or links as `role="img"` | `role="group"` with its name | axe-core nested-interactive (an image cannot hold controls) |
+| Every view: « autorisations de la préfecture » for every decree | « arrêtés » for everything a préfecture publishes, « autorisations de caméras » for video protection alone, « arrêtés de drones » | one word per perimeter (the 11th pass's rule): a drone decree is not a camera authorisation |
+| Every view: Archivo 400–700 | Archivo 400–900 served by the site (`theme/fonts/archivo-400-900-62-100.woff2`), widths 62–100 % | none left (the font is the mockups'); a slanted Archivo where the mockups set italic (« nom non publié »): the site serves no italic face |
+| Every view: names as the mockups typed them (« Société Générale », « MDTP ») | the name as published (« Societe Generale », « Mdtp ») | data: the names SIRENE and the decrees publish; the mockups had retyped them |
+| Every view: a person or a sole trader named | « nom non publié » | DECISIONS 2026-10-28 (names in the register) |
+| Registre: 6 759 documents, 2 616 tender notices | 6 517, 2 374 | data: 242 BOAMP notices were in the pilot export twice, byte-identical; the build keeps them once |
+| Registre: « Maquette : la liste et la recherche portent sur un extrait de 250 documents » | gone | the search covers every document |
+| Registre: the latest document a subsidy dated « 2026 » | a decree of 23 October 2026 first | a document dated by its year only sorts at the start of that year (the build's order, the same before and after the search file arrives) |
+| Registre: « Télécharger cette sélection (CSV, JSON) », one zip | two links, CSV (UTF-8 with its BOM) and JSON | no dependency added (the prototype zipped with fflate); the licence in the JSON's `meta` |
+| Registre: no line under the list | the line on decrees read by a program and « N arrêtés n'ont pas pu être lus entièrement → » when the list holds decrees | DECISIONS 2026-10-28 (the unread decrees published) |
+| Registre: the filters always shown, on a phone too | on a phone (under 960 px) behind « Filtres (N) », in the phone mockup « Filtres »'s sheet | the 12th pass: the filters took the whole screen before the first result |
+| Registre-chiffres: « Montant max. » | « Montant » | DECISIONS 2026-10-28 « Discreet mentions » |
+| Registre-chiffres: 760 buyers | 508 | buyers of at least one signed contract (the mockup counted every buyer of the dictionary, notices included) |
+| Registre-chiffres: the amounts of 2026-10-24 (Serfim 45 M€…) | the build's (`compte`): Spie 91 M€, Serfim 47 M€ | data, one counting rule (DECISIONS 2026-10-28 « Amounts in the register ») |
+| Commune-grand: an illustration of the map | the tilted map itself (the site's France basemap masked by the commune, the cameras, filmed streets and fields of view, the drone zones flat and hatched), after the content, its attribution under it | DECISIONS 2026-10-28 (the tilted map); the licences (ODbL, Protomaps) |
+| Commune-grand: « Où sont les 115 autres ? », « La carte n'en connaît que 10 » | « Où sont les 118 autres ? » with its « i », « La carte en connaît 7 publiques » | the 10th and 12th passes: compared with the map's public cameras only |
+| Commune-grand: the legend « champ de vision », « zone de drones autorisée · aucune à Mions » | « champ de vision · de près, dans Carte et drones »; « 2 arrêtés de drones (zones partagées avec d'autres communes) » | the map shows no field of view at a whole commune's scale; data |
+| Commune-grand: « versés à une seule entreprise » | « signés avec une seule entreprise » | « versés » would contradict the envelope's line (DECISIONS 2026-10-28 « Discreet mentions ») |
+| Commune-grand: a chronology of 8 lines | 12 at Mions: the three elections since the dossier opened, the drone decrees | data (the register's mandates and decrees) |
+| Commune-grand: « Demander la liste à la mairie » a link | a button that opens the request's text to copy | the request templates work (lot R1a) |
+| Commune-grand: « Me prévenir (RSS) » | absent | lot R1a: not yet |
+| Commune-grand: « Nos sources » a button | a link to « Ce que couvre le registre » | the dates come from the data, never a text |
+| Commune-grand: one line per end of authorisation in « À surveiller » | one line « Fin de N autorisations de la préfecture, la dernière le … » | data that do not fit (Lyon: 30 dossiers of the mairie) |
+| Commune-grand: the frieze and the chronology always there | absent when they would be empty | data (a commune with no document) |
+| Documents-grand: 17 documents, Autorisations · 9 | 19, 11 | data: two drone decrees name Mions among other communes; a shared decree appears in each commune it names |
+| Documents-grand: who « la mairie », « entreprises et commerces », « nom non publié » | « État » added | data: the police's and gendarmerie's drone decrees are neither a business nor the mairie |
+| Documents-grand: names as text | names as links, in the text's colour, underlined | every name is a link (the 11th pass); WCAG 1.4.1 |
+| Documents-grand: 960 px, the same three columns | from 960 to 1179 px: filters 170 px, panel 220 px, gaps 16 px; long codes wrap | real data: at 960 the middle column was narrower than the table |
+| Documents-grand: a row only hovered | a row hovered, focused or touched fills the panel | WCAG 2.1.1 (the panel's links reachable by keyboard) |
+| Autorisations-grand: 9 decrees, « Drones : aucun » | 11, « 2 arrêtés », each « partagé avec N communes » with the communes linked | data (the shared drone decrees); the 12th pass's rule |
+| Autorisations-grand: nothing under the introduction | « Dernier recueil lu : 23 octobre 2026 »; a département not collected or impossible to collect says so instead of figures | DECISIONS 2026-10-28 (dates from the data; a missing figure is not zero) |
+| Autorisations-grand: on a phone, two close dates on the steps' axis; « valable jusqu'au » across the « auj. » line | the second date hidden on a phone (the table gives them all); the label above the line | 390 px: they overlapped |
+| Autorisations-grand: the drones' list, date beside text | on a phone, the date above | 390 px: 130 px of date left a word per line |
+| Autorisations-grand: « Exemple à Lyon : … → » and « Sur la carte → » to the drone map | to the map on the commune (`/?insee=`) | « Carte et drones » is lot R1b's |
+| (no board) « Ce que couvre le registre » | the kit's vocabulary: crumbs, title, lead, tables, typewriter notes | DECISIONS 2026-10-28 (the coverage page) |
+| (no board) a page not yet ported | « BIENTÔT » and what comes | lot R1b |
+| The header: Carte · Registre · Glossaire in the work plane's header, in style attributes | the same, its styles in `registre.css` | the register's Content-Security-Policy allows no inline style in the page's own markup |

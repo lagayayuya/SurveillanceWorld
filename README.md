@@ -53,6 +53,30 @@ flowchart LR
   rues. Chaque valeur garde son degré de certitude (connue, estimée ou supposée), jusque
   dans la fiche.
 
+## Le registre
+
+Le second volet du site, sous `/registre/` : les documents publics de la vidéosurveillance,
+liés aux communes, aux entreprises et aux acheteurs. Les contrats publics (données
+essentielles de la commande publique, data.gouv.fr) et les avis de marché (BOAMP, DILA), les
+arrêtés des préfectures (recueils des actes administratifs, le Rhône d'abord) et les
+subventions (listes des régions et des préfectures). Les entreprises sont vérifiées dans le
+répertoire SIRENE (INSEE) ; un particulier ou un commerçant en nom propre n'est jamais nommé.
+
+- **Lu par un programme.** Personne ne relit les arrêtés ; le site le dit, publie la liste de
+  ceux qui n'ont pas pu être lus entièrement, et chaque document mène à sa source. « Signaler
+  une erreur » corrige le registre.
+- **Daté.** La page « Ce que couvre le registre » dit, source par source, jusqu'à quelle date
+  vont les documents et quand ils ont été collectés.
+- **Une règle de calcul.** Un total additionne le montant prévu de chaque contrat signé, sans
+  les contrats d'acheteurs nationaux, les plafonds de centrales d'achat, les contrats mixtes,
+  les montants à vérifier ni les doublons (`pipeline/lacarte/registre/`).
+- **Aucun PDF hébergé** : l'identifiant de l'acte, l'adresse du recueil, sa page et son
+  empreinte seulement. Aucun croisement avec la délinquance.
+
+Les données sont construites hors ligne par `lacarte registre construire` et servies en
+fichiers statiques. Les données essentielles de la commande publique, le BOAMP et SIRENE sont
+sous Licence Ouverte 2.0 ; chaque document est cité avec sa source.
+
 ## Vie privée par construction
 
 - Aucun traceur, aucun cookie de mesure : la carte n'appelle aucun service tiers. Le fond de
@@ -170,7 +194,9 @@ juridique sur sa conformité. Une caméra absente d'OSM n'apparaît pas sur la c
   (voir [`web/src/theme/fonts/README.md`](web/src/theme/fonts/README.md)). Le site sert
   toutes les notices tierces à `/licences.txt`.
 - Fixtures de test (`tests/fixtures/`) : extrait OSM et extrait du fond Protomaps sur
-  La Défense (ODbL), communes IGN découpées (Licence Ouverte 2.0), contributions inventées.
+  La Défense (ODbL), communes IGN découpées (Licence Ouverte 2.0), contributions inventées ;
+  extrait du registre (`tests/fixtures/registre/` : contrats, avis, arrêtés et subventions sous
+  Licence Ouverte 2.0, couches de carte de Mions sous ODbL).
 - Sources consultées : les données, le wiki et taginfo d'OSM, les fiches des fabricants, les
   normes et la documentation des bibliothèques. Aucun code, texte ni jeu de données d'autres
   projets de cartographie des caméras n'est lu ni repris.
