@@ -46,9 +46,6 @@
   "commune.de_commerces_et_d_entreprises": {
     "prv_kinds": "prv.kinds"
   },
-  "commune.au_maximum_le_plafond_ecrit": {
-    "arg_couv": "arg.couv"
-  },
   "commune.les_documents": {
     "nDocs": "nDocs"
   },
