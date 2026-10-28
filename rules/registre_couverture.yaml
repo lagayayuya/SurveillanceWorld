@@ -1,0 +1,121 @@
+# What the registre covers (pipeline/lacarte_registre/couverture.py, `lacarte-registre
+# construire` → couverture.json): its sources, and for each département whether the
+# préfecture's acts (video-protection, drones, body cameras, algorithmic analysis) are
+# collected. The dates come from the data: a source's `jusqu_au` is its latest document with
+# a full date (a subsidy list dated by its year only never counts), its `collecte_le` the
+# latest collection of its documents. The départements listed are the pilot's; they are
+# also the département facet of the registre's home (every other one is « xx »). Reason
+# codes and labels are the web catalogue's (registre.couverture.*). Not in buildinfo's
+# hashed rules: no map build depends on it.
+version: 1
+
+# One row per source (`source`, its label key): the documents it holds (types `t`, a
+# reference prefix, a département).
+sources:
+  - source: contrats
+    id: rule:registre_couverture@1:source_contrats
+    types: [attribution, modification]
+    rationale: >-
+      Contracts and their modifications: the public procurement data (DECP, data.gouv.fr),
+      all of France for the pilot's buyers.
+  - source: avis
+    id: rule:registre_couverture@1:source_avis
+    types: [avis, resultat, rectificatif]
+    rationale: >-
+      Calls for tenders, their results and corrections: the BOAMP (DILA).
+  - source: subventions_region_idf
+    id: rule:registre_couverture@1:source_subventions_region_idf
+    types: [subvention_region]
+    ref_prefix: "Région Île-de-France"
+    rationale: >-
+      The Île-de-France Region's video-protection grants, read in its standing committee's
+      deliberations.
+  - source: subventions_region_sud
+    id: rule:registre_couverture@1:source_subventions_region_sud
+    types: [subvention_region]
+    ref_prefix: "Région Sud"
+    rationale: >-
+      The Région Sud's grants (Bouches-du-Rhône), read in its deliberations.
+  - source: subventions_etat_69
+    id: rule:registre_couverture@1:source_subventions_etat_69
+    types: [subvention_etat]
+    dep: "69"
+    rationale: >-
+      The State's grants (DETR, DPV) listed by the préfecture du Rhône, one list per year.
+  - source: subventions_etat_13
+    id: rule:registre_couverture@1:source_subventions_etat_13
+    types: [subvention_etat]
+    dep: "13"
+    rationale: >-
+      The State's grants (DETR) listed by the préfecture des Bouches-du-Rhône, one list per
+      year.
+  - source: arretes_69
+    id: rule:registre_couverture@1:source_arretes_69
+    types: [arrete, arrete_drone, arrete_pietons, arrete_vsa]
+    dep: "69"
+    recueil: true
+    rationale: >-
+      The préfecture du Rhône's acts, read in its collections of administrative acts
+      (recueils des actes administratifs): `jusqu_au` is the date of the last collection
+      read, written in its file name (RAA_69-<year>-<number>-<ddmmyy>).
+
+# Every département not listed below.
+default:
+  id: rule:registre_couverture@1:default
+  etat: non_collecte
+  rationale: >-
+    The pilot covers ten départements; elsewhere the préfecture's acts are not collected
+    (the contracts and notices of the pilot's buyers may still be there).
+
+departements:
+  "69":
+    id: rule:registre_couverture@1:rhone
+    etat: collecte
+    depuis: "2025-09-30"
+    rationale: >-
+      The préfecture du Rhône's collections are read from the first one of the pilot, whose
+      first act is dated 30 September 2025; the earlier acts are not collected.
+  "75":
+    id: rule:registre_couverture@1:paris
+    etat: impossible
+    raison: defi_anti_robot
+    documents_demandes: true
+    rationale: >-
+      The police prefecture's index of its collections is behind an anti-robot challenge:
+      the collection cannot read it. The documents were asked for.
+  "91":
+    id: rule:registre_couverture@1:essonne
+    etat: impossible
+    raison: ferme_aux_robots
+    documents_demandes: true
+    rationale: >-
+      The préfecture de l'Essonne's site is closed to robots: the collection cannot read its
+      collections. The documents were asked for.
+  "13":
+    id: rule:registre_couverture@1:bouches_du_rhone
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "77":
+    id: rule:registre_couverture@1:seine_et_marne
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "78":
+    id: rule:registre_couverture@1:yvelines
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "92":
+    id: rule:registre_couverture@1:hauts_de_seine
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "93":
+    id: rule:registre_couverture@1:seine_saint_denis
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "94":
+    id: rule:registre_couverture@1:val_de_marne
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.
+  "95":
+    id: rule:registre_couverture@1:val_d_oise
+    etat: non_collecte
+    rationale: A pilot département whose préfecture's acts are not collected yet.

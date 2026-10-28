@@ -1,4 +1,4 @@
-"""`lacarte registre importer-pilote [DIR]`: the pilot export, read as data.
+"""`lacarte-registre importer-pilote [DIR]`: the pilot export, read as data.
 
 The pilot's files are scripts of assignments, `window.NAME = <JSON>;`, one or several per
 file, between `//` comment lines; a file of départements also merges keyed values
@@ -40,6 +40,11 @@ SOURCES = (
     "prototype-v12/geo/voisins.js",
 )
 DEP_FILES = "prototype-v12/geo/dep-*.js"
+# The tilted commune maps' layers (cameras, filmed streets, fields of view, the commune's outline),
+# cut from the map's build by commune: plain JSON, OpenStreetMap-derived (ODbL); kept as they are
+# under pilote/carte/ and served by construire beside the register's files.
+MAP_FILES = "prototype-v10/carte/*.json"
+MAP_KEYS = ("insee", "bbox", "contour", "cams")
 
 _NAME = r"[A-Za-z_$][\w$]*"
 _ASSIGN = re.compile(rf'window\.({_NAME})(\["[^"\\]*"\])?[ \t]*=[ \t]*')
@@ -187,6 +192,20 @@ def run(folder: Path, root: Path | None = None) -> dict[str, Any]:
             else:
                 globals_[name] = value
         files[rel] = {"sha256": hashlib.sha256(raw).hexdigest(), "globales": sorted(names)}
+    maps: dict[str, bytes] = {}
+    for path in sorted(folder.glob(MAP_FILES)):
+        raw = path.read_bytes()
+        rel = path.relative_to(folder).as_posix()
+        try:
+            layer = json.loads(raw)
+        except ValueError as e:
+            raise NotPilotFile(f"{rel}: not JSON ({e})") from e
+        if not isinstance(layer, dict) or any(k not in layer for k in MAP_KEYS):
+            raise NotPilotFile(f"{rel}: a commune map needs {', '.join(MAP_KEYS)}")
+        if not re.fullmatch(r"\d[\dAB]\d{3}", str(layer["insee"])) or path.stem != layer["insee"]:
+            raise NotPilotFile(f"{rel}: its name is not its commune's code")
+        maps[path.stem] = raw
+        files[rel] = {"sha256": hashlib.sha256(raw).hexdigest(), "globales": []}
     reg = globals_.get("REG")
     if not isinstance(reg, dict) or not isinstance(reg.get("evenements"), list):
         raise NotPilotFile(f"{SOURCES[0]}: no REG with its evenements")
@@ -201,6 +220,10 @@ def run(folder: Path, root: Path | None = None) -> dict[str, Any]:
         for name, value in globals_.items():
             sortie.dump(tmp / f"{name}.json", value)
         sortie.dump(tmp / "pilote.json", manifest)
+        if maps:
+            (tmp / "carte").mkdir()
+            for insee, raw in maps.items():
+                (tmp / "carte" / f"{insee}.json").write_bytes(raw)
 
     sortie.replace_dir(root / "pilote", write)
     return manifest

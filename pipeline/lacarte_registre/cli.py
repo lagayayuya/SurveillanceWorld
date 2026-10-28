@@ -1,5 +1,6 @@
 """`lacarte-registre importer-pilote [DIR]` reads the registre's pilot export (importer.py), DIR
-or LACARTE_REGISTRE_PILOTE.
+or LACARTE_REGISTRE_PILOTE; `lacarte-registre construire` writes its site files, under the
+machine's lock (construire.py).
 
 A command of its own, beside `lacarte`: the map's build id covers every source of the lacarte
 package (buildinfo.py), its command line included, and the deploy refuses a build made by
@@ -14,7 +15,7 @@ import os
 from pathlib import Path
 
 import lacarte_registre as registre
-from lacarte_registre import importer
+from lacarte_registre import construire, importer
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -27,7 +28,11 @@ def main(argv: list[str] | None = None) -> None:
         type=Path,
         help=f"the pilot export's folder (default: {registre.PILOTE_ENV})",
     )
+    sub.add_parser("construire", help="write the site's files (construire.py), under the lock")
     args = parser.parse_args(argv)
+    if args.cmd == "construire":
+        print(json.dumps(construire.main(), ensure_ascii=False, indent=1))
+        return
     if args.cmd == "importer-pilote":
         folder = args.dir or os.environ.get(registre.PILOTE_ENV)
         if not folder:

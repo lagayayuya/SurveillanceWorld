@@ -1,0 +1,20 @@
+# Reviewed values of the registre (pipeline/lacarte_registre/regles.py, `lacarte-registre
+# construire`): a document keeps its source's value, as published, and the reading of the
+# review beside it (`date_lue` for a date), which the timelines use. Each correction names
+# the document (`evenement`, its id in the registre), the field, the value read, why, and
+# the document that gives it. Not in buildinfo's hashed rules: no map build depends on it.
+version: 1
+
+corrections:
+  - id: rule:registre_corrections@1:mions_award_2021
+    evenement: "216902833000132020_32323500~0"
+    field: date
+    value: "2021-02-05"
+    source: BOAMP, avis de résultat 21-16838
+    rationale: >-
+      Mions' contract for buying and maintaining its cameras is dated 5 February 2020 in the
+      public procurement data (DECP); the BOAMP result notice 21-16838 gives its award on
+      5 February 2021, and its amount is the estimate of the call for tenders 20-142345 of
+      22 November 2020, so the source's year is very likely wrong. The record keeps the
+      source's date with its review note; the timelines place the contract at the date read
+      in the notice.

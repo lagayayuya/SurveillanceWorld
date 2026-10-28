@@ -107,3 +107,21 @@ def test_the_cli_needs_a_folder(monkeypatch, tmp_path):
     with pytest.raises(SystemExit) as e:
         cli.main(["importer-pilote", str(tmp_path)])  # no registre.js there
     assert e.value.code == 2
+
+
+def test_a_commune_map_must_carry_its_code_and_layers(tmp_path):
+    """A map file is plain JSON named after its commune, with its outline and cameras."""
+    folder = tmp_path / "export"
+    (folder / "prototype-v4").mkdir(parents=True)
+    (folder / "prototype-v4" / "registre.js").write_text('window.REG = {"evenements": []};')
+    (folder / "prototype-v10" / "carte").mkdir(parents=True)
+    bad = folder / "prototype-v10" / "carte" / "69283.json"
+    bad.write_text('{"insee": "69123", "bbox": [], "contour": [], "cams": []}')
+    with pytest.raises(importer.NotPilotFile, match="its name is not its commune"):
+        importer.run(folder, tmp_path / "out")
+    bad.write_text('{"insee": "69283", "bbox": []}')
+    with pytest.raises(importer.NotPilotFile, match="needs insee, bbox, contour, cams"):
+        importer.run(folder, tmp_path / "out")
+    bad.write_text('{"insee": "69283", "bbox": [], "contour": [], "cams": []}')
+    importer.run(folder, tmp_path / "out")
+    assert (tmp_path / "out" / "pilote" / "carte" / "69283.json").is_file()
