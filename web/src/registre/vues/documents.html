@@ -48,15 +48,17 @@
         </tr></thead>
         <tbody>
           <sc-for list="{{rows}}" as="r" hint-placeholder-count="17">
-            <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
-              <td class="tw" style="white-space: nowrap; color: var(--muted)">{{r.date}}<sc-if value="{{r.flag}}" hint-placeholder-val="{{false}}"><br><span style="background: var(--warn-bg); border: 1px dashed var(--fg); padding: 0 4px; font-size: 12px; color: var(--fg)">{{t.documents.a_verifier}}</span></sc-if></td>
+            <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" onFocus="{{r.hover}}">
+              <td class="tw" style="white-space: nowrap; color: var(--muted)">{{r.date}}<sc-if value="{{r.flag}}" hint-placeholder-val="{{false}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></td>
               <td><span class="b" style="{{r.bs}}">{{r.type}}</span><br><a href="{{r.href}}" class="rowlink" style="font-weight: 600; display: inline-block; margin-top: 4px">{{r.objet}}</a></td>
               <td style="font-size: 14px"><span style="{{r.quiStyle}}">{{{r.qui}}}</span><div style="color: var(--muted)">{{{r.ent}}}</div></td>
-              <td class="num"><strong>{{r.fig}}</strong><div style="font-size: 13px; color: var(--muted)">{{r.figL}}</div></td>
+              <td class="num"><strong>{{r.fig}}</strong><div style="font-size: 13px; color: var(--muted)">{{{r.figL}}}</div></td>
             </tr>
           </sc-for>
         </tbody>
       </table>
+      <sc-if value="{{arretes}}"><p style="margin: 0; font-size: 14px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p></sc-if>
+      <sc-if value="{{aucun}}"><p style="margin: 0; padding: 20px; border: 2px dashed var(--fg)">{{t.documents.aucun_document}}</p></sc-if>
       <sc-if value="{{empty}}" hint-placeholder-val="{{false}}"><p style="margin: 0; padding: 20px; border: 2px dashed var(--fg)">{{t.documents.aucun_document_pour_ces_filtres}} <button onClick="{{clear}}" style="all: unset; cursor: pointer; color: var(--blue); text-decoration: underline; font-weight: 700">{{t.documents.tout_effacer}}</button></p></sc-if>
     </main>
 

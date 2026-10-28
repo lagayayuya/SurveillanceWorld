@@ -1454,3 +1454,35 @@ table.t tr.r.on td {
 }
 /* the theme button shows the icon of the other mode (an SVG ignores the hidden attribute alone) */
 [data-theme-btn] svg[hidden]{display:none}
+
+/* --- Documents (a commune's documents): what the real data need --- */
+/* the names in the table are links in the text's own colour (the mockup's style="color: inherit" on each) */
+.v-documents a.nom {
+  color: inherit;
+}
+/* real data: an object can hold a long code (« AC_SURETE_ELECTRO_3_2026_ARA »), a buyer a long word
+   (« INSTAL.ELECTR.COURANTS »), and a decree not read entirely says why under its figure: they wrap, the
+   table keeps to its column */
+.v-documents table.t td:nth-child(2),
+.v-documents table.t td:nth-child(3) {
+  overflow-wrap: anywhere;
+}
+.v-documents table.t td.num > div {
+  white-space: normal;
+}
+/* a reference can be one long word (« DECP 216902833000132020_32323500 »): it wraps inside the panel */
+.v-documents .panel .prow strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+/* from 960 to 1179 px the middle column (366 px at 960) is narrower than the table's least width (a date,
+   a badge, a figure, a name and a title: about 480 px): the filters and the panel give it room, the figures' head its width */
+@media (min-width: 960px) and (max-width: 1179px) {
+  .v-documents [style*="grid-template-columns: 220px minmax(0px, 1fr) 290px"] {
+    grid-template-columns: 170px minmax(0, 1fr) 220px !important;
+    gap: 16px !important;
+  }
+  .v-documents table.t th.num {
+    width: auto !important;
+  }
+}
