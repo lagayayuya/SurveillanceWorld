@@ -74,8 +74,10 @@ API="$DEPLOY_PATH/api"
 # mode, REVIEW_ACCOUNTS).
 SITE="$(PREVIEW_ROOT="$DEPLOY_PATH/current" API_PORT="$API_PORT" uv run python deploy/site.py render)"
 
-# The region's tiles and basemap must exist (make build REGION=... and the basemap extract).
-for f in "data/build/$REGION/tiles/meta.json" "data/basemap/$REGION.pmtiles"; do
+# The region's tiles and basemap must exist (make build REGION=... and the basemap extract), and
+# the register's files (lacarte registre construire).
+for f in "data/build/$REGION/tiles/meta.json" "data/basemap/$REGION.pmtiles" \
+  "data/registre/site/index.json"; do
   [ -e "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
 # The basemap made by the current code (its own id, outside the build's: basemap.py), or stop:

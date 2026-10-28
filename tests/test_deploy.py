@@ -160,6 +160,9 @@ def serve(tmp_path, mode, name="127.0.0.1"):
     (web / "tiles").mkdir(parents=True)
     (web / "index.html").write_text("<title>la-carte</title>example-brand")
     (web / "revue.html").write_text("<title>revue</title>")
+    (web / "registre.html").write_text("<title>registre</title>")
+    (web / "data" / "registre").mkdir(parents=True)
+    (web / "data" / "registre" / "index.json").write_text('{"v": 1}')
     (web / "tiles" / "meta.json").write_text('{"name": "la-carte"}')
     (web / "tiles" / "streets.pmtiles").write_bytes(b"PM" + bytes(62))
     (web / "assets").mkdir()
@@ -393,14 +396,19 @@ def test_the_review_page_opens_past_the_gate(caddy_server):
             assert status == 200 and b"revue" in body
 
 
-def test_the_review_page_alone_has_a_content_security_policy():
-    """Both modes render it on /revue and /revue.html only; the check wants it there (on
-    the 401 too) and nowhere else."""
+def test_the_review_page_and_the_register_alone_have_a_content_security_policy():
+    """Both modes render the review's on /revue and /revue.html, the register's on every
+    /registre path; the check wants each there (on the 401 too) and none elsewhere. The
+    register's is the stricter: no inline style at all."""
     line = (f'\t@review path /revue /revue.html\n'
             f'\theader @review Content-Security-Policy "{site.REVIEW_CSP}"\n')  # fmt: skip
     assert line in site.render(ENV) and line in site.render(PUBLIC)
-    assert site.render(ENV).count("Content-Security-Policy") == 1
+    line = (f'\t@registre path /registre /registre/* /registre.html\n'
+            f'\theader @registre Content-Security-Policy "{site.REGISTRE_CSP}"\n')  # fmt: skip
+    assert line in site.render(ENV) and line in site.render(PUBLIC)
+    assert site.render(ENV).count("Content-Security-Policy") == 2
     assert "script-src 'self';" in site.REVIEW_CSP and "'unsafe-eval'" not in site.REVIEW_CSP
+    assert "style-src 'self';" in site.REGISTRE_CSP and "unsafe" not in site.REGISTRE_CSP
     bare = {k.lower(): v for k, v in site.HEADERS.items()}
     assert site.header_problems("preview", "/revue", 401, {}) == [
         "/revue: Content-Security-Policy None, expected the review's"]  # fmt: skip
@@ -408,7 +416,13 @@ def test_the_review_page_alone_has_a_content_security_policy():
     assert site.header_problems("preview", "/revue.html", 401, csp) == []
     assert site.header_problems("public", "/", 200, {**bare, **csp,
                                 "strict-transport-security": "max-age=31536000"}) == [
-        f"/: Content-Security-Policy {site.REVIEW_CSP!r} outside /revue"]  # fmt: skip
+        f"/: Content-Security-Policy {site.REVIEW_CSP!r} outside /revue and /registre"]  # fmt: skip
+    assert site.header_problems("preview", "/registre/commune/69283", 401, csp) == [
+        f"/registre/commune/69283: Content-Security-Policy {site.REVIEW_CSP!r},"
+        " expected the register's"]  # fmt: skip
+    ours = {"content-security-policy": site.REGISTRE_CSP}
+    assert site.header_problems("preview", "/registre", 401, ours) == []
+    assert site.registre_page("/registre/") and not site.registre_page("/registres")
 
 
 @needs_caddy
@@ -420,7 +434,11 @@ def test_the_review_page_is_served_with_its_policy(request, server):
         assert status == 200 and headers["Content-Security-Policy"] == site.REVIEW_CSP
         status, headers, _ = authed(base + path, None)  # the gate's 401 carries it
         assert status == 401 and headers["Content-Security-Policy"] == site.REVIEW_CSP
-    for path in ("/", "/tiles/meta.json", "/api/review/queue"):
+    for path in ("/registre/", "/registre/commune/69283/documents"):
+        status, headers, body = authed(base + path, "reviewer")
+        assert status == 200 and b"registre" in body, path
+        assert headers["Content-Security-Policy"] == site.REGISTRE_CSP, path
+    for path in ("/", "/tiles/meta.json", "/data/registre/index.json", "/api/review/queue"):
         _, headers, _ = authed(base + path, "reviewer")
         assert "Content-Security-Policy" not in headers, path
 
@@ -433,6 +451,8 @@ def test_cache_headers(caddy_server):
         "/assets/main-0123abcd.js": "private, max-age=31536000, immutable",
         "/": "no-cache",
         "/revue": "no-cache",
+        "/registre/commune/69283": "no-cache",
+        "/data/registre/index.json": "no-cache",
         "/tiles/meta.json": "no-cache",
         "/tiles/streets.pmtiles": "private, max-age=86400",
     }

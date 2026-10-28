@@ -55,6 +55,24 @@ REVIEW_CSP = (
     " form-action 'self'"
 )
 REVIEW_PAGES = ("/revue", "/revue.html")
+# The register's Content-Security-Policy (both modes, every /registre path): stricter than the
+# review's, no inline style at all (its template engine builds the DOM itself and sets styles
+# through the CSSOM, web/src/registre/dc.ts), its own scripts, styles, fonts and data; images and
+# workers from data: and blob: too (its tilted map); no plugin, no <base>, never framed.
+REGISTRE_CSP = (
+    "default-src 'self'; script-src 'self'; style-src 'self';"
+    " img-src 'self' data: blob:; font-src 'self'; connect-src 'self';"
+    " worker-src 'self' blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none';"
+    " form-action 'self'"
+)
+
+
+def registre_page(path: str) -> bool:
+    """A path the register's page answers (registre.html, served for /registre and below)."""
+    p = urlsplit(path).path
+    return p in ("/registre", "/registre.html") or p.startswith("/registre/")
+
+
 # The gate's basic-auth users (not the API's accounts, which sign in with a session).
 ACCOUNT_RE = re.compile(r"[A-Za-z0-9._-]{1,64}")
 # Words that must never be readable without the password (case-insensitive): the project's
@@ -74,6 +92,7 @@ PROBES = (
     ("POST", "/api/review/decide"),
     ("GET", "/api/review/export.csv"),
     ("GET", "/revue"),
+    ("GET", "/registre/"),
     ("GET", "/no-such-file"),
 )
 # Public mode: what anyone reads, never a 401 (the page, a tile file, the API's reads, the
@@ -84,6 +103,9 @@ OPEN_PROBES = (
     ("GET", "/tiles/meta.json"),
     ("GET", "/api/proposals?bbox=2.2,48.8,2.3,48.9"),
     ("POST", "/api/session"),
+    ("GET", "/registre/"),
+    ("GET", "/registre/commune/69283"),
+    ("GET", "/data/registre/index.json"),
     ("GET", "/no-such-file"),
 )
 REVIEW_PROBES = (
@@ -144,6 +166,7 @@ def render(env: dict[str, str] | None = None) -> str:
     env["GATE_ACCOUNTS"] = accounts(env[ACCOUNTS[mode]], ACCOUNTS[mode])
     env["GATED_PATHS"] = GATED[mode]
     env["REVIEW_CSP"] = REVIEW_CSP
+    env["REGISTRE_CSP"] = REGISTRE_CSP
     env["MODE_HEADERS"] = "\n".join(f"\t\t{h}" for h in MODE_HEADERS[mode])
     env["WWW_SITE"], env["BARE_URL"] = www_site(env["PREVIEW_HOST"])
     text = TEMPLATE.read_text()
@@ -284,8 +307,11 @@ def header_problems(mode: str, path: str, status: int, headers: dict[str, str]) 
     if urlsplit(path).path in REVIEW_PAGES:
         if csp != REVIEW_CSP:
             problems.append(f"{path}: Content-Security-Policy {csp!r}, expected the review's")
+    elif registre_page(path):
+        if csp != REGISTRE_CSP:
+            problems.append(f"{path}: Content-Security-Policy {csp!r}, expected the register's")
     elif csp is not None:
-        problems.append(f"{path}: Content-Security-Policy {csp!r} outside /revue")
+        problems.append(f"{path}: Content-Security-Policy {csp!r} outside /revue and /registre")
     if status >= 400:  # an error is answered again by handle_errors, empty and bare
         return problems
     want = {k.lower(): v for k, v in HEADERS.items()}
