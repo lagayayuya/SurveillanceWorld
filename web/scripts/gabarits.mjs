@@ -146,6 +146,9 @@ const CSS_HEAD = `/* The register (registre.html): its kit, the wide mockups' «
    --card is --bg-2, its --link and blue --accent are --blue, its --hover is --accent-fill (pink text on
    hover is --accent), its --warn fill is --warn-bg. */
 
+/* The punk tokens, light and dark: the register reads the same ones as the map. */
+@import "../theme/punk/tokens.css";
+
 /* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
 @font-face { font-family: Archivo; src: url(../theme/fonts/archivo-400-900-62-100.woff2) format("woff2"); font-weight: 400 900; font-stretch: 62% 100%; font-display: swap; }
 @font-face { font-family: "Special Elite"; src: url(../theme/fonts/special-elite.woff2) format("woff2"); font-weight: 400; font-display: swap; }
@@ -159,8 +162,24 @@ export function css(kit) {
     .slice(start)
     .filter((l) => !/^\.(th|v-carte)(\.dark)?\{--page/.test(l))
     .join("\n");
-  return `${CSS_HEAD}${colours(body).trimEnd()}\n`;
+  return `${CSS_HEAD}${written(colours(body)).trimEnd()}\n`;
 }
+
+/** A rule that selects an inline style by its text reads it as the browser writes it back: dc.ts
+ * sets a style through the CSSOM, and Chromium and WebKit write « minmax(0px, 1fr) », « gap: 0px; »
+ * and « display: flex; » for the mockups' « minmax(0, 1fr) », « gap: 0; », « display: flex ». */
+export const written = (css) =>
+  css
+    .split("\n")
+    .map((l) =>
+      l.includes("[style")
+        ? l
+            .replace(/minmax\(0, 1fr\)/g, "minmax(0px, 1fr)")
+            .replace(/gap: 0;/g, "gap: 0px;")
+            .replace(/\[style="display: flex"\]/g, '[style="display: flex;"]')
+        : l,
+    )
+    .join("\n");
 
 if (import.meta.url === `file://${process.argv[1]}` && process.argv[2] === "--css") {
   writeFileSync(join(WEB, "src/registre/registre.css"), css(readFileSync(process.argv[3], "utf8")));
