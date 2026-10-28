@@ -28,6 +28,14 @@ LATIN="U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-20
 ft fonttools varLib.instancer "$TMP/archivo.ttf" wght=800:900 wdth=62:100 -o "$TMP/archivo-cut.ttf" -q
 ft pyftsubset "$TMP/archivo-cut.ttf" --unicodes="$LATIN" --flavor=woff2 \
   --name-IDs='*' --name-languages='*' --output-file="$OUT/archivo-800-900-62-100.woff2"
+# Archivo for the register's text (registre.html): every weight from 400 to 900 and the widths its
+# kit uses (62-100 %), Latin and Latin Extended (the names of places and companies), one variable
+# file; the upstream file's SHA-256 is printed (README.md there records it).
+LATIN_EXT="$LATIN,U+0100-024F,U+0259,U+1E00-1EFF,U+20A0-20C0,U+2C60-2C7F,U+A720-A7FF"
+ft fonttools varLib.instancer "$TMP/archivo.ttf" wght=400:900 wdth=62:100 -o "$TMP/archivo-text.ttf" -q
+ft pyftsubset "$TMP/archivo-text.ttf" --unicodes="$LATIN_EXT" --flavor=woff2 \
+  --name-IDs='*' --name-languages='*' --output-file="$OUT/archivo-400-900-62-100.woff2"
+shasum -a 256 "$TMP/archivo.ttf"
 ft pyftsubset "$TMP/elite.ttf" --unicodes="$LATIN" --flavor=woff2 \
   --name-IDs='*' --name-languages='*' --output-file="$OUT/special-elite.woff2"
 ls -l "$OUT"/*.woff2
