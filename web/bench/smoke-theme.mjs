@@ -827,7 +827,7 @@ try {
               const q = m.project(at);
               m.zoomTo(s.zoom, { around: m.unproject([q.x, 0]), duration: 0 }, data);
             } else {
-              m.panBy([0, s.pan], { duration: 0 }, data);
+              m.panBy([s.panX ?? 0, s.pan ?? 0], { duration: 0 }, data);
             }
             await frames();
             const p = m.project(at);
@@ -908,12 +908,21 @@ try {
       Math.abs(snap.y - free(snap)) < 1.5 && snap.bearing === 0 && !snap.moving,
       JSON.stringify(snap),
     );
-    // A gesture that takes the marker off the screen: the user moved away, left alone.
-    const away = await run([{ pan: -2000, gesture: true }]);
+    // A gesture that takes the marker off the screen: the user moved away, left alone. Kept
+    // within the region (bounds.ts brings back a view taken outside it, a move of its own):
+    // the CI extract is 8.5 km wide, the camera 4.8 km from its west edge; 1000 px west at
+    // z14.5, below the street level where the marker stands in, is 2.2 km.
+    const width = page.viewportSize().width;
+    const away = await run([
+      { zoom: 14.5, place: 30 },
+      { panX: -1000, gesture: true },
+    ]);
     check(
       "focus marker: a gesture taking it off the screen leaves it there",
-      away.steps[0].y > 1500 && away.steps[0].moves === "gesture",
-      JSON.stringify(away),
+      away.steps[1].x > width + 100 &&
+        Math.abs(away.steps[1].x - away.steps[0].x - 1000) < 1.5 &&
+        away.steps[1].moves === "gesture",
+      JSON.stringify({ width, ...away }),
     );
     check("focus marker kept in view: no page error", errors.length === 0, errors.join(" | "));
     await context.close();
