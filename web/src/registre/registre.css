@@ -6,6 +6,9 @@
    --card is --bg-2, its --link and blue --accent are --blue, its --hover is --accent-fill (pink text on
    hover is --accent), its --warn fill is --warn-bg. */
 
+/* The punk tokens, light and dark: the register reads the same ones as the map. */
+@import "../theme/punk/tokens.css";
+
 /* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
 @font-face {
   font-family: Archivo;
@@ -957,13 +960,13 @@ table.t tr.r.on td {
     margin-left: 16px !important;
     margin-right: 16px !important;
   }
-  .th [style*="grid-template-columns: minmax(0, 1fr) 320px"],
-  .th [style*="grid-template-columns: minmax(0, 1fr) 340px"],
-  .th [style*="grid-template-columns: 220px minmax(0, 1fr) 290px"],
-  .th [style*="grid-template-columns: 230px minmax(0, 1fr) 300px"],
-  .th [style*="grid-template-columns: 280px minmax(0, 1fr)"],
-  .th [style*="grid-template-columns: minmax(0, 1fr) minmax(0, 1fr)"],
-  .th :not(dl)[style*="grid-template-columns: minmax(0, 1fr) auto"] {
+  .th [style*="grid-template-columns: minmax(0px, 1fr) 320px"],
+  .th [style*="grid-template-columns: minmax(0px, 1fr) 340px"],
+  .th [style*="grid-template-columns: 220px minmax(0px, 1fr) 290px"],
+  .th [style*="grid-template-columns: 230px minmax(0px, 1fr) 300px"],
+  .th [style*="grid-template-columns: 280px minmax(0px, 1fr)"],
+  .th [style*="grid-template-columns: minmax(0px, 1fr) minmax(0px, 1fr)"],
+  .th :not(dl)[style*="grid-template-columns: minmax(0px, 1fr) auto"] {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 28px !important;
   }
@@ -974,12 +977,12 @@ table.t tr.r.on td {
     font-size: 19px;
   }
   .th .kpis,
-  .th [style*="grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px"],
-  .th [role="group"][style*="repeat(5, minmax(0, 1fr))"] {
+  .th [style*="grid-template-columns: repeat(4, minmax(0px, 1fr)); margin-top: 22px"],
+  .th [role="group"][style*="repeat(5, minmax(0px, 1fr))"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
   .th .kpis > div,
-  .th [style*="repeat(4, minmax(0, 1fr)); margin-top: 22px"] > div,
+  .th [style*="repeat(4, minmax(0px, 1fr)); margin-top: 22px"] > div,
   .th .kbtn {
     padding: 10px 0 10px 12px !important;
     border-left: 1px solid var(--rule);
@@ -1017,27 +1020,27 @@ table.t tr.r.on td {
   .th main[style*="gap: 52px"] {
     gap: 40px !important;
   }
-  .th [style*="grid-template-columns: 210px 22px minmax(0, 1fr)"] {
+  .th [style*="grid-template-columns: 210px 22px minmax(0px, 1fr)"] {
     grid-template-columns: 96px 18px minmax(0, 1fr) !important;
     gap: 8px !important;
   }
-  .th [style*="grid-template-columns: 200px minmax(0, 1fr)"] {
+  .th [style*="grid-template-columns: 200px minmax(0px, 1fr)"] {
     grid-template-columns: 110px minmax(0, 1fr) !important;
   }
   .v-acheteur .gl {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 4px;
   }
-  .th [style*="grid-template-columns: 210px minmax(0, 1fr) 60px"] {
+  .th [style*="grid-template-columns: 210px minmax(0px, 1fr) 60px"] {
     grid-template-columns: 130px minmax(0, 1fr) 44px !important;
   }
-  .th [style*="grid-template-columns: 110px minmax(0, 1fr) 220px 110px"] {
+  .th [style*="grid-template-columns: 110px minmax(0px, 1fr) 220px 110px"] {
     grid-template-columns: minmax(0, 1fr) auto !important;
   }
-  .th [style*="grid-template-columns: 110px minmax(0, 1fr) 220px 110px"] > :nth-child(2) {
+  .th [style*="grid-template-columns: 110px minmax(0px, 1fr) 220px 110px"] > :nth-child(2) {
     grid-column: 1 / -1;
   }
-  .th [style*="grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px"] {
+  .th [style*="grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 10px"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
   .th .panel {
@@ -1135,7 +1138,7 @@ table.t tr.r.on td {
   .v-carte [style*="justify-content: space-between; gap: 20px"] > div {
     flex-wrap: wrap;
   }
-  .th [style*="grid-template-columns: repeat(9, minmax(0, 1fr))"],
+  .th [style*="grid-template-columns: repeat(9, minmax(0px, 1fr))"],
   .v-entreprise [role="img"][style*="grid-template-columns"] {
     gap: 4px !important;
   }
@@ -1183,7 +1186,7 @@ table.t tr.r.on td {
   .v-autorisations [aria-hidden="true"][style*="height: 20px"] > span:first-child {
     display: none;
   }
-  .v-contrat [style*="gap: 0; align-items: stretch"] {
+  .v-contrat [style*="gap: 0px; align-items: stretch"] {
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 6px !important;
   }
@@ -1262,7 +1265,7 @@ table.t tr.r.on td {
     min-width: 0;
     max-width: 100%;
   }
-  .th [role="group"][style="display: flex"] {
+  .th [role="group"][style="display: flex;"] {
     flex-wrap: wrap;
   }
   .th [style*="height: 34px; border: 2px solid var(--fg)"] {
