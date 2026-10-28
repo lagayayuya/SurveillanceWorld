@@ -916,7 +916,11 @@ table.t tr.r.on td {
   font-stretch: 68%;
   text-transform: uppercase;
 }
+.modal a {
+  color: var(--blue);
+}
 .modal textarea {
+  box-sizing: border-box;
   width: 100%;
   min-height: 180px;
   font:
@@ -1185,6 +1189,15 @@ table.t tr.r.on td {
   }
   .v-autorisations [aria-hidden="true"][style*="height: 20px"] > span:first-child {
     display: none;
+  }
+  /* the drones' list: the date above, the text and its link beside each other (130 px of date left the
+     text a word per line at 390 px) */
+  .v-autorisations .lst > li {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 2px 12px !important;
+  }
+  .v-autorisations .lst > li > :first-child {
+    grid-column: 1 / -1;
   }
   .v-contrat [style*="gap: 0px; align-items: stretch"] {
     grid-template-columns: minmax(0, 1fr) !important;

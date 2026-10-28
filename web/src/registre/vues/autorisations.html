@@ -7,9 +7,10 @@
 
       <div style="display: flex; flex-direction: column; gap: 18px">
         <p class="lead">{{{lead}}}</p>
-        <div class="kpis">
+        <sc-if value="{{couverture}}"><p class="tw" style="margin: -8px 0 0; font-size: 13px; color: var(--muted)">{{couverture}}</p></sc-if>
+        <sc-if value="{{kpis.length}}"><div class="kpis">
           <sc-for list="{{kpis}}" as="k"><div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
-        </div>
+        </div></sc-if>
       </div>
 
       <sc-if value="{{mairie.show}}"><section id="mairie" aria-labelledby="a-mairie" style="display: flex; flex-direction: column; gap: 16px">
@@ -95,13 +96,14 @@
         <sc-if value="{{prv.more}}"><button class="more" onClick="{{prv.moreAct}}">{{prv.more}}</button></sc-if>
       </section></sc-if>
 
-      <section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px">
+      <sc-if value="{{autresArr.show}}"><section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px">
         <h2 id="a-autres" class="h2">{{t.autorisations.drones_cameras_pietons_analyse_algorithmique}}</h2>
-        <sc-if value="{{autresArr.none}}"><p style="margin: 0">{{f.autorisations.aucun_arrete_trouve_pour}} <a href="{{autresArr.exHref}}">{{autresArr.ex}}</a></p></sc-if>
+        <sc-if value="{{autresArr.none}}"><p style="margin: 0">{{f.autorisations.aucun_arrete_trouve_pour}} <sc-if value="{{autresArr.ex}}"><a href="{{autresArr.exHref}}">{{autresArr.ex}}</a></sc-if></p></sc-if>
         <sc-if value="{{autresArr.list.length}}"><ul class="lst" style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)"><sc-for list="{{autresArr.list}}" as="x"><li style="display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule)"><span class="tw" style="color: var(--muted)">{{x.d}}</span><span>{{{x.t}}}</span><a href="{{x.href}}">{{x.l}}</a></li></sc-for></ul></sc-if>
         <sc-if value="{{autresArr.multi}}"><p style="margin: 0">{{{autresArr.multi}}}</p></sc-if>
-        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{cesTxt}} <a href="{{lien.documents}}">{{docsTxt}}</a>.</p>
-      </section>
+        <sc-if value="{{lus}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{lus}}</p></sc-if>
+        <sc-if value="{{cesTxt}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{cesTxt}} <a href="{{lien.documents}}">{{docsTxt}}</a>.</p></sc-if>
+      </section></sc-if>
     </main>
 
     <dc-include src="panneau"></dc-include>
