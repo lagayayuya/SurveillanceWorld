@@ -27,6 +27,7 @@ export type VueModule = {
 const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>> = {
   registre: () => import("./vues/registre.ts"),
   chiffres: () => import("./vues/chiffres.ts"),
+  commune: () => import("./vues/commune.ts"),
   documents: () => import("./vues/documents.ts"),
   autorisations: () => import("./vues/autorisations.ts"),
   couverture: () => import("./vues/couverture.ts"),
