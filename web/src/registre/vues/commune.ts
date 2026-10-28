@@ -238,6 +238,11 @@ class Commune extends Vue<Props, State> {
     const { d, insee, nom } = this.prep;
     const el = document.getElementById("carte-ess");
     if (!el || this.dead) return;
+    // an uncut map: said at once, nothing asked (neither MapLibre nor a file that is not there)
+    if (d.f.carte.decoupee === false) {
+      this.absent(el, nom);
+      return;
+    }
     try {
       const { carte, carteUrl } = await import("../carte3d.ts");
       if (this.dead) return;

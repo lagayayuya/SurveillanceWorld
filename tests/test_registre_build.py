@@ -239,3 +239,12 @@ def test_the_unread_decrees_name_their_commune_and_the_coverage_its_departements
     rows = read(built, "non_lus.json")["non_lus"]
     assert all(r["commune"] for r in rows if r.get("insee"))
     assert read(built, "couverture.json")["departements"]["69"]["nom"] == "Rhône"
+
+
+def test_a_commune_file_says_whether_its_map_is_served(built):
+    """The page asks for a map's layers only when they are served: no 404 for an uncut map."""
+    assert read(built, f"commune/{MIONS}.json")["carte"]["decoupee"] is True
+    others = [f for f in (built / "commune").glob("*.json") if f.stem != MIONS]
+    assert others and all(
+        read(built, f"commune/{f.name}")["carte"]["decoupee"] is False for f in others
+    )

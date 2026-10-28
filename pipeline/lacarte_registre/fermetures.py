@@ -46,8 +46,16 @@ def file_name(key: str) -> str:
 class Context:
     """What every file reads, computed once."""
 
-    def __init__(self, reg: Registre, couverture: dict[str, Any], pilot_deps: list[str]):
+    def __init__(
+        self,
+        reg: Registre,
+        couverture: dict[str, Any],
+        pilot_deps: list[str],
+        cartes: frozenset[str] = frozenset(),
+    ):
         self.reg = reg
+        # the communes whose tilted map's layers are served (carte/<insee>.json)
+        self.cartes = cartes
         self.couverture = couverture
         self.pilot_deps = pilot_deps
         p = reg.pilote
@@ -204,6 +212,8 @@ def commune_file(ctx: Context, insee: str) -> dict[str, Any]:
             "n": comptes.carte(reg, insee),
             "pub": p.get("CARTE_PUB", {}).get(insee),
             "all": p.get("CARTE_N_ALL", {}).get(insee),
+            # its layers served: the page asks for them only then (no 404 for an uncut map)
+            "decoupee": insee in ctx.cartes,
         },
         "zones": zones(ctx, insee),
         "mandats": reg.pilote.reg.get("mandats", []),

@@ -65,7 +65,7 @@ export type FichierCommune = {
       depStats: Record<string, number>;
     };
   };
-  carte: { n: number | null; pub: number | null; all: number | null };
+  carte: { n: number | null; pub: number | null; all: number | null; decoupee?: boolean };
   zones: Zones;
   mandats: { mandat: string; second_tour: string }[];
   couverture: Couverture;

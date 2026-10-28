@@ -28,7 +28,10 @@ def run(root: Path | None = None, rules: Path | None = None) -> dict[str, Any]:
     reg = regles.appliquer(pilote, regles.corrections(rules / "registre_corrections.yaml"))
     conf = couverture.rules(rules / "registre_couverture.yaml")
     cov = couverture.build(reg, conf)
-    ctx = fermetures.Context(reg, cov, couverture.pilot_departements(conf))
+    maps = sorted((root / "pilote" / "carte").glob("*.json"))
+    ctx = fermetures.Context(
+        reg, cov, couverture.pilot_departements(conf), frozenset(m.stem for m in maps)
+    )
     summary: dict[str, Any] = {}
 
     def write(tmp: Path) -> None:
@@ -37,7 +40,6 @@ def run(root: Path | None = None, rules: Path | None = None) -> dict[str, Any]:
 
         summary["fichiers"] = fermetures.write_all(ctx, tmp, put)
         # the tilted commune maps' layers, as imported (OpenStreetMap, ODbL)
-        maps = sorted((root / "pilote" / "carte").glob("*.json"))
         if maps:
             (tmp / "carte").mkdir()
             for path in maps:
