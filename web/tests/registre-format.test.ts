@@ -12,7 +12,7 @@ import { calm, plain, proper, sentence, tidy, titleCase } from "../src/registre/
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
 setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
-const N = " "; // the narrow no-break space of French thousands (Intl)
+const N = "\u00a0"; // thousands apart by a full no-break space, as the kit writes them
 
 test("numbers and amounts", () => {
   assert.equal(fr(1233), `1${N}233`);

@@ -19,5 +19,6 @@ export function t(key: string, params: Record<string, string | number> = {}): st
     console.warn(`missing message registre.${key}`);
     return `registre.${key}`;
   }
-  return render(template, params);
+  // a plural's number in the kit's full no-break space, as fr() writes it (format.ts)
+  return render(template, params).replace(/\u202f/g, "\u00a0");
 }

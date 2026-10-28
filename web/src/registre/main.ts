@@ -24,6 +24,8 @@ export type VueModule = {
 };
 // each view's commit adds its line
 const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>> = {
+  registre: () => import("./vues/registre.ts"),
+  chiffres: () => import("./vues/chiffres.ts"),
   introuvable: () => import("./vues/introuvable.ts"),
 };
 

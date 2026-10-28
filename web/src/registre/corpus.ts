@@ -14,7 +14,7 @@ export type AffaireCourte = {
   acheteur_communal?: boolean;
   titre?: string;
 };
-/** The dictionaries a list of documents names; `affaires` only with recherche.json. */
+/** The dictionaries a list of documents names, their affaires included (index.json and recherche.json). */
 export type Lexique = {
   entreprises: Record<string, Entreprise>;
   acheteurs: Record<string, Acheteur>;

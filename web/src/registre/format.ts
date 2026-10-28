@@ -16,9 +16,9 @@ const LONG = Array.from({ length: 12 }, (_, m) =>
   ),
 );
 
-/** An integer, its thousands apart by a narrow no-break space as the catalogue's plurals write
- * them (messages.ts): « 1 233 », never cut. */
-export const fr = (n: number): string => integer.format(Math.round(n));
+/** An integer, its thousands apart by a no-break space as wide as a space, as the kit writes them
+ * (« 1 233 »): Intl's narrow one all but vanishes in Archivo's condensed figures. */
+export const fr = (n: number): string => integer.format(Math.round(n)).replace(/\u202f/g, NBSP);
 
 /** An amount: in euros below a million (« 415 000 € »), in millions above, with one decimal below
  * ten millions (« 4,9 M€ ») and none from ten (« 109 M€ »); none or zero: « non publié ». */
