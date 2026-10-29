@@ -8,6 +8,7 @@
 import { communeHref } from "../commun.ts";
 import type { RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
+import { EI } from "../donnees.ts";
 import { addMonths, fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { capital, sentence, tidy, titleCase } from "../texte.ts";
@@ -77,11 +78,11 @@ export function categorie(f: FichierAcheteur): string {
 /** A company's name as SIRENE gives it; a sole trader is never named. */
 export function entName(f: FichierAcheteur, siren: string): string {
   const x = f.entreprises[siren];
-  if (x?.entrepreneur_individuel) return t("commun.nom_non_publie");
+  if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
   if (!x?.nom) return t("commun.entreprise_siren", { siren });
   return tidy(titleCase(x.nom));
 }
-export const entHref = (siren: string): string => `/registre/entreprise/${siren}`;
+export { entHref } from "../corpus.ts";
 export const contratHref = (affaire: string): string =>
   `/registre/contrat/${encodeURIComponent(affaire)}`;
 

@@ -116,8 +116,8 @@ test("the page's values: figures, running contracts, unknown ends, singulars", (
     [`300${N}000 €`, `300${N}000 €`],
   );
   assert.equal(v.parPhrase, "1 des 3 contrats a été signé avec d'autres entreprises.");
-  // a co-contractor who is a sole trader is not named
-  assert.deepEqual(v.partners, [{ nom: "nom non publié", n: "1 contrat", href: "/registre/entreprise/100000002" }]);
+  // a co-contractor who is a sole trader has no page and is listed by no name (DECISIONS 2026-10-29)
+  assert.deepEqual(v.partners, []);
   assert.equal(v.docsPhrase, "4 documents : 3 contrats et 1 modification, avec la cliente, le montant et la source.");
   assert.equal(v.doublonNote, " Un contrat publié deux fois compte une fois : 3 contrats ici, 4 lignes publiées dans les données de la commande publique.");
   // a commune buyer opens its commune's page
@@ -146,8 +146,8 @@ test("a sole trader is never named, nor its number shown", () => {
     siren: "100000001",
     F: fichier({ nom: null, entrepreneur_individuel: true }),
   }).renderVals() as Record<string, unknown>;
-  assert.equal(v.nom, "nom non publié");
-  assert.equal(v.filIci, "nom non publié");
+  assert.equal(v.nom, "entreprise individuelle, nom non publié");
+  assert.equal(v.filIci, "entreprise individuelle, nom non publié");
   assert.equal(v.sous, "Entreprise individuelle");
   assert.equal(v.parcourir, "/registre/");
 });

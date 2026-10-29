@@ -3,8 +3,9 @@
 // prototype's helpers (app.js, donnees11.js) that its views read — the last decree of each dossier,
 // the contracts of one procedure added up, the beneficiary's label. The rules (counted or not, a
 // copy, the commune's own, a shared decree) are the build's flags, read here, never recomputed.
+
 import type { Acheteur, Affaire, Commune, Evenement, Stats } from "./donnees.ts";
-import { load } from "./donnees.ts";
+import { EI, load } from "./donnees.ts";
 import { fr } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import { tidy, titleCase } from "./texte.ts";
@@ -99,7 +100,8 @@ export class Donnees {
   /** A company's name as SIRENE gives it, in title case; a sole trader is never named. */
   entName(siren: string): string {
     const x = this.f.entreprises[siren];
-    if (!x?.nom || x.entrepreneur_individuel) return t("commun.entreprise_siren", { siren });
+    if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
+    if (!x?.nom) return t("commun.entreprise_siren", { siren });
     return tidy(titleCase(x.nom));
   }
   buyer(e: Evenement): string | null {

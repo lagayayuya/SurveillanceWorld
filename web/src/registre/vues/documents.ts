@@ -16,6 +16,7 @@ import {
 } from "../commun.ts";
 import type { Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
+import { EI } from "../donnees.ts";
 import { addMonths, count, docDate, fr, money, shortDate } from "../format.ts";
 import { t } from "../i18n.ts";
 import type { VueModule } from "../main.ts";
@@ -208,7 +209,9 @@ class Documents extends Vue<Props, State> {
             "→ ",
             ...sirens.flatMap((s, i) => [
               ...(i ? [", "] : []),
-              { a: { href: `/registre/entreprise/${s}`, text: d.entName(s), cls: "nom" } },
+              s === EI
+                ? d.entName(s)
+                : { a: { href: `/registre/entreprise/${s}`, text: d.entName(s), cls: "nom" } },
             ]),
           ]
         : "";
@@ -584,7 +587,7 @@ function exportRows(d: Donnees, es: Evenement[], fmt: "csv" | "json", name: stri
       acheteur: isA ? "" : b ? d.buyerNom(b) : (e.acheteur ?? ""),
       beneficiaire: isA ? benefLabel(e) : "",
       beneficiaire_siren: isA && e.nom_publie !== false ? (e.beneficiaire_siren ?? "") : "",
-      entreprises_siren: (e.entreprises ?? []).join(" "),
+      entreprises_siren: (e.entreprises ?? []).filter((s) => s !== EI).join(" "),
       entreprises: (e.entreprises ?? []).map((s) => d.entName(s)).join(" ; "),
       montant_eur:
         e.t === "attribution" || e.t === "modification" || e.t.startsWith("subvention")

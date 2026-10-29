@@ -21,6 +21,7 @@ import {
 import { corrections } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
+import { EI } from "../donnees.ts";
 import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { capital, sentence, tidy } from "../texte.ts";
@@ -195,7 +196,7 @@ export function fiche(f: Fichier): Fiche | null {
   const entLinks = (sirens: string[]): RichItem[] =>
     sirens.flatMap((s, i) => [
       ...(i ? [", "] : []),
-      { a: { href: `/registre/entreprise/${s}`, text: entName(L, s) } },
+      s === EI ? entName(L, s) : { a: { href: `/registre/entreprise/${s}`, text: entName(L, s) } },
     ]);
   const entNames = (sirens: string[]) =>
     sirens.length

@@ -2078,6 +2078,7 @@
   "registre.chiffres.vues_du_registre": "Vues du registre",
   "registre.commun.acheteur_siren": "acheteur SIREN {siren}",
   "registre.commun.code_insee": "code INSEE {insee}",
+  "registre.commun.entreprise_individuelle": "entreprise individuelle, nom non publié",
   "registre.commun.entreprise_siren": "entreprise SIREN {siren}",
   "registre.commun.fil_registre": "Registre",
   "registre.commun.habitants": "{n} habitants",

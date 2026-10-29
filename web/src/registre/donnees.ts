@@ -116,6 +116,10 @@ export type NonLu = {
   raisons: string[];
 };
 
+/** A sole trader's place among a document's companies (the build's regles.EI): a natural person,
+ * without page, link or SIREN (DECISIONS 2026-10-29). */
+export const EI = "ei";
+
 /** Thrown by a view's donnees() when what its path names is not in the register (an unknown
  * département, company, buyer or document): the page shows « introuvable », not a load error. */
 export class Absent extends Error {}

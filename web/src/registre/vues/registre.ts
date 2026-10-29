@@ -26,7 +26,7 @@ import {
   type Recherche,
 } from "../corpus.ts";
 import type { Rich } from "../dc.ts";
-import { load } from "../donnees.ts";
+import { EI, load } from "../donnees.ts";
 import { count, fr, money } from "../format.ts";
 import { t } from "../i18n.ts";
 import type { VueModule } from "../main.ts";
@@ -111,7 +111,7 @@ function flat(L: Lexique, r: Ligne): Record<Col, string | number | boolean | nul
     hors_totaux: e.hors_totaux || (e.national ? "national" : null),
     cameras: e.cameras ?? null,
     cameras_voie_publique: e.cameras_vp ?? null,
-    entreprises_siren: (e.entreprises ?? []).join(" ") || null,
+    entreprises_siren: (e.entreprises ?? []).filter((s) => s !== EI).join(" ") || null,
     entreprises: (e.entreprises ?? []).map((s) => entName(L, s)).join(" ; ") || null,
     beneficiaire: e.beneficiaire ? r.qui || null : null,
     beneficiaire_siren: e.beneficiaire_siren ?? null,

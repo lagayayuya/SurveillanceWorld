@@ -74,7 +74,8 @@ class Acheteur extends Vue<Props, State> {
   private ents(f: FichierAcheteur, sirens: string[], cls = "nom"): RichItem[] {
     if (!sirens.length) return [t("acheteur.ent_non_publiee")];
     return sirens.flatMap((s, i) => {
-      const a: RichItem = { a: { href: entHref(s), text: entName(f, s), cls } };
+      const href = entHref(s);
+      const a: RichItem = href ? { a: { href, text: entName(f, s), cls } } : entName(f, s);
       return i ? [" + ", a] : [a];
     });
   }
@@ -299,7 +300,7 @@ class Acheteur extends Vue<Props, State> {
         title: entName(f, x.s),
         rows: rowsS,
         foot: t("acheteur.s_foot"),
-        link: { l: t("acheteur.s_lien"), href: entHref(x.s) },
+        link: entHref(x.s) ? { l: t("acheteur.s_lien"), href: entHref(x.s) as string } : undefined,
       };
       return {
         nom: entName(f, x.s),

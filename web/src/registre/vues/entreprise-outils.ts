@@ -4,12 +4,13 @@
 // decides comes from the build (entreprise/<siren>.json): its contracts (a copy never), each one's
 // planned end, the contracts running on the build's date, « Ce qui ressort » as facts, the lead's
 // activity and regions; a total adds the `montant` of the contracts flagged `compte`, nothing else.
-// A sole trader is never named (corpus.ts entName: « nom non publié »).
+// A sole trader is never named (corpus.ts entName: « entreprise individuelle, nom non publié »).
 
 import { depArt } from "../commun.ts";
 import { buyerHref, buyerNom, depNom, docHref, entName, type Lexique } from "../corpus.ts";
 import type { Handler, Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Evenement } from "../donnees.ts";
+import { EI } from "../donnees.ts";
 import { count, fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { type BaseState, type Col, Vue } from "../vue.ts";
@@ -499,6 +500,8 @@ export class Entreprise extends Vue<Props, State> {
       for (const s of c.e.entreprises ?? []) if (s !== siren) par.set(s, (par.get(s) ?? 0) + 1);
     const nPar = CT.filter((c) => (c.e.entreprises ?? []).length > 1).length;
     const partners = [...par.entries()]
+      // a sole trader: no page, listed by no name (the build's token, or a flagged company)
+      .filter(([s]) => s !== EI && !F.entreprises[s]?.entrepreneur_individuel)
       .sort((a, b) => b[1] - a[1] || entName(F, a[0]).localeCompare(entName(F, b[0]), "fr"))
       .map(([s, n]) => ({
         nom: entName(F, s),

@@ -4,6 +4,7 @@
 // sentence that holds a figure in bold or a link is a Rich value, never markup. The tilted map
 // (carte3d.ts) comes after the page: its code, its layers and the basemap are asked for once the
 // content is drawn, and a commune whose map is not cut says so in the map's frame.
+
 import type { Carte, Site as CarteSite, Translate } from "../carte3d.ts";
 import {
   benefLabel,
@@ -18,8 +19,10 @@ import {
   isDrone,
   tete,
 } from "../commun.ts";
+import { entHref } from "../corpus.ts";
 import { type Handler, type Rich, type RichItem, richText } from "../dc.ts";
 import type { Affaire, Evenement, Stats } from "../donnees.ts";
+import { EI } from "../donnees.ts";
 import {
   addMonths,
   count,
@@ -612,7 +615,8 @@ class Commune extends Vue<Props, State> {
 
   /** A company's name, a link to its page. */
   private entA(siren: string): RichItem {
-    return link(`/registre/entreprise/${siren}`, this.prep.d.entName(siren));
+    const href = entHref(siren);
+    return href ? link(href, this.prep.d.entName(siren)) : this.prep.d.entName(siren);
   }
 
   /** What the préfecture authorises: the last act of the mairie's main dossier. */
@@ -938,7 +942,7 @@ class Commune extends Vue<Props, State> {
             title: k0 === "?" ? t("commune.entreprise_non_publiee") : d.entName(k0),
             rows: es.slice(-5).map(([e]) => [shortDate(e.dl), money(e.montant)]),
             links:
-              k0 === "?"
+              k0 === "?" || k0 === EI
                 ? []
                 : [{ l: t("commune.page_entreprise"), href: `/registre/entreprise/${k0}` }],
           };

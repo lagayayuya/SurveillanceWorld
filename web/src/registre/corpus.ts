@@ -3,8 +3,10 @@
 // reader searches, recherche.json (every document and the dictionaries). The prototype's helpers
 // for these two views (donnees11.js: typ, disp, titre, the companies' and buyers' figures): the
 // rules (counted, a copy, a shared decree, an unread one) are the build's flags, read here.
+
 import { communeHref, isArr, sortKey } from "./commun.ts";
 import type { Acheteur, Commune, Entreprise, Evenement } from "./donnees.ts";
+import { EI } from "./donnees.ts";
 import { count, docDate } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import { plain, sentence, tidy, titleCase } from "./texte.ts";
@@ -108,10 +110,14 @@ export function titre(e: Evenement): string {
 
 export const date = (e: Evenement): string => docDate(e.date, e.date_annee);
 
+/** A company's page, or null for a sole trader (it has none). */
+export const entHref = (siren: string): string | null =>
+  siren === EI ? null : `/registre/entreprise/${siren}`;
+
 /** A company's name as SIRENE gives it; a sole trader is never named. */
 export function entName(L: Lexique, siren: string): string {
   const x = L.entreprises[siren];
-  if (x?.entrepreneur_individuel) return t("commun.nom_non_publie");
+  if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
   if (!x?.nom) return t("commun.entreprise_siren", { siren });
   return tidy(titleCase(x.nom));
 }
@@ -258,6 +264,7 @@ export function figures(R: Recherche): Figures {
     // prototype's entStats and buyStats)
     const b = buyerOf(R, e);
     for (const s of e.entreprises ?? []) {
+      if (s === EI) continue; // a sole trader: no ranking
       ents[s] ??= {
         siren: s,
         n: 0,
@@ -281,7 +288,7 @@ export function figures(R: Recherche): Figures {
     o.n++;
     if (e.compte) o.montant += e.montant ?? 0;
     if (e.hors_totaux === "centrale") o.centrale = true;
-    for (const s of e.entreprises ?? []) o.ents.add(s);
+    for (const s of e.entreprises ?? []) if (s !== EI) o.ents.add(s);
   }
   return { ents, buyers, coms };
 }
