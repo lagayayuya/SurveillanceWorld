@@ -21,7 +21,7 @@ PREFECTURE_REGION = "176900009"  # 14 contracts in the Rhône, none counted
 def built(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("registre")
     importer.run(FIXTURE, root)
-    construire.main(root)
+    construire.main(root, sans_corrections=True)
     return root / "site"
 
 

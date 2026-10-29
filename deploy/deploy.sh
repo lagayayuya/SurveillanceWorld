@@ -75,11 +75,14 @@ API="$DEPLOY_PATH/api"
 SITE="$(PREVIEW_ROOT="$DEPLOY_PATH/current" API_PORT="$API_PORT" uv run python deploy/site.py render)"
 
 # The region's tiles and basemap must exist (make build REGION=... and the basemap extract), and
-# the register's files (lacarte registre construire).
+# the register's files (lacarte-registre construire).
 for f in "data/build/$REGION/tiles/meta.json" "data/basemap/$REGION.pmtiles" \
   "data/registre/site/index.json"; do
   [ -e "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
+# The register built by `lacarte-registre construire` with the corrections /revue accepted,
+# exported from the database at that build (not --sans-corrections), and not changed since.
+uv run lacarte-registre verifier
 # The basemap made by the current code (its own id, outside the build's: basemap.py), or stop:
 # strip it again (README).
 uv run lacarte basemap check "data/basemap/$REGION.pmtiles"

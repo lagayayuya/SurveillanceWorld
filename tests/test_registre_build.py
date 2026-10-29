@@ -23,7 +23,7 @@ NO_ZONE = "75-2025-06-19-00003"  # a drone act of the police prefecture, no zone
 def built(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("registre")
     importer.run(FIXTURE, root)
-    construire.main(root)
+    construire.main(root, sans_corrections=True)
     return root / "site"
 
 
@@ -198,7 +198,7 @@ def test_the_build_takes_the_lock(tmp_path):
     token = lock.acquire("another build")
     try:
         with pytest.raises(lock.Busy):
-            construire.main(root)
+            construire.main(root, sans_corrections=True)
     finally:
         lock.release(token)
     assert not (root / "site").exists()
@@ -209,7 +209,7 @@ def test_the_cli_builds(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(registre, "ROOT", tmp_path)
     cli.main(["importer-pilote", str(FIXTURE)])
-    cli.main(["construire"])
+    cli.main(["construire", "--sans-corrections"])
     out = capsys.readouterr().out
     assert '"commune":' in out and (tmp_path / "site" / "commune" / f"{MIONS}.json").exists()
 

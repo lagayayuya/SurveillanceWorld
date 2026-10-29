@@ -37,7 +37,7 @@ def build(root: Path, entries: list[dict] | None) -> Path:
     importer.run(FIXTURE, root)
     if entries is not None:
         exporter.write(root / exporter.FILE, entries)
-    construire.main(root)
+    construire.run(root)
     return root / "site"
 
 
@@ -121,9 +121,14 @@ def test_the_cli_says_why_it_stops(monkeypatch, tmp_path, capsys):
 
     monkeypatch.setattr(registre, "ROOT", tmp_path)
     cli.main(["importer-pilote", str(FIXTURE)])
-    exporter.write(tmp_path / exporter.FILE, synthetic(("e-unknown", "cameras", 3)))
+
+    def export(dsn, ssh, root):  # the database, as if it held that correction
+        exporter.write(root / exporter.FILE, synthetic(("e-unknown", "cameras", 3)))
+        return {"file": exporter.FILE, "corrections": 1}
+
+    monkeypatch.setattr(exporter, "export", export)
     with pytest.raises(SystemExit) as stop:
-        cli.main(["construire"])
+        cli.main(["construire", "--dsn", "dbname=none"])
     assert stop.value.code == 2
     assert "no document 'e-unknown' in the register" in capsys.readouterr().err
 
@@ -202,3 +207,42 @@ def test_the_cli_exports_from_a_local_database(reports, pg_dsn, monkeypatch, tmp
     cli.main(["corrections", "exporter", "--dsn", pg_dsn])
     assert json.loads(capsys.readouterr().out)["corrections"] == 2
     assert (tmp_path / exporter.FILE).exists()
+
+
+# --- construire exports first; the deploy refuses a build without the database's corrections ---
+
+
+def test_construire_exports_then_builds_and_marks_it(reports, pg_dsn, tmp_path):
+    importer.run(FIXTURE, tmp_path)
+    summary = construire.main(tmp_path, dsn=pg_dsn)
+    assert summary["corrections"]["corrections"] == "base"
+    assert summary["corrections"]["exportees"] == 2
+    e = doc(read(tmp_path / "site", "commune/69283.json"), CONTRACT_2020)
+    assert e["montant"] == 250000 and e["corrige"]["montant"]["le"] == "2026-10-02"
+    assert construire.verifier(tmp_path) is None
+    # a site changed since (another build, a hand edit) is not the one marked
+    (tmp_path / "site" / "index.json").write_text("{}")
+    assert "not the one" in construire.verifier(tmp_path)
+
+
+def test_construire_without_the_database_stops_or_says_so(tmp_path, monkeypatch, capsys):
+    import lacarte_registre as registre
+
+    importer.run(FIXTURE, tmp_path)
+    with pytest.raises(construire.NoDatabase):
+        construire.main(tmp_path)
+    assert not (tmp_path / "site").exists()
+    # an older export is never read without the database: --sans-corrections ignores it
+    exporter.write(tmp_path / exporter.FILE, synthetic((CONTRACT_2020, "montant", 1)))
+    construire.main(tmp_path, sans_corrections=True)
+    assert doc(read(tmp_path / "site", "commune/69283.json"), CONTRACT_2020)["montant"] == 200000
+    assert "--sans-corrections" in construire.verifier(tmp_path)
+    # the command says why, and the deploy's check refuses
+    monkeypatch.setattr(registre, "ROOT", tmp_path)
+    monkeypatch.delenv("DEPLOY_TARGET", raising=False)
+    with pytest.raises(SystemExit) as stop:
+        cli.main(["construire"])
+    assert stop.value.code == 2 and "--ssh HOST" in capsys.readouterr().err
+    with pytest.raises(SystemExit) as stop:
+        cli.main(["verifier"])
+    assert stop.value.code == 2 and "sans-corrections" in capsys.readouterr().err

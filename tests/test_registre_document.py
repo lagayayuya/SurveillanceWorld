@@ -29,7 +29,7 @@ NO_COMMUNE = "75-2025-06-19-00003"  # a drone decree of the police prefecture, n
 def built(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("registre")
     importer.run(FIXTURE, root)
-    construire.main(root)
+    construire.main(root, sans_corrections=True)
     return root / "site"
 
 

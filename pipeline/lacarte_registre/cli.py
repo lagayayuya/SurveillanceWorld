@@ -1,7 +1,10 @@
 """`lacarte-registre importer-pilote [DIR]` reads the registre's pilot export (importer.py), DIR
-or LACARTE_REGISTRE_PILOTE; `lacarte-registre construire` writes its site files, under the
-machine's lock (construire.py); `lacarte-registre corrections exporter [--dsn DSN | --ssh HOST]`
-writes the corrections /revue accepted, which construire applies (exporter.py).
+or LACARTE_REGISTRE_PILOTE; `lacarte-registre construire [--dsn DSN | --ssh HOST |
+--sans-corrections]` exports the corrections /revue accepted, then writes its site files, under
+the machine's lock (construire.py); `lacarte-registre verifier` says whether the built site may
+be deployed;
+`lacarte-registre corrections exporter [--dsn DSN | --ssh HOST]` writes the corrections alone
+(exporter.py).
 
 A command of its own, beside `lacarte`: the map's build id covers every source of the lacarte
 package (buildinfo.py), its command line included, and the deploy refuses a build made by
@@ -29,7 +32,19 @@ def main(argv: list[str] | None = None) -> None:
         type=Path,
         help=f"the pilot export's folder (default: {registre.PILOTE_ENV})",
     )
-    sub.add_parser("construire", help="write the site's files (construire.py), under the lock")
+    con = sub.add_parser(
+        "construire",
+        help="export the corrections accepted in /revue, then write the site's files "
+        "(construire.py), under the lock",
+    )
+    src = con.add_mutually_exclusive_group()
+    src.add_argument("--dsn", help="the corrections from a local database")
+    src.add_argument(
+        "--ssh", help="the corrections from the server, over ssh (default: DEPLOY_TARGET)"
+    )
+    src.add_argument("--sans-corrections", action="store_true",
+                     help="build without the database's corrections (never deployed)")  # fmt: skip
+    sub.add_parser("verifier", help="whether the built site may be deployed (deploy.sh)")
     cor = sub.add_parser("corrections", help="the corrections accepted in /revue (exporter.py)")
     cor.add_argument("action", choices=["exporter"])
     where = cor.add_mutually_exclusive_group()
@@ -37,11 +52,18 @@ def main(argv: list[str] | None = None) -> None:
     where.add_argument("--ssh", help="the server, over ssh (default: DEPLOY_TARGET)")
     args = parser.parse_args(argv)
     if args.cmd == "construire":
+        ssh = None if args.dsn else (args.ssh or os.environ.get("DEPLOY_TARGET"))
         try:
-            summary = construire.main()
-        except regles.CorrectionError as e:
+            summary = construire.main(dsn=args.dsn, ssh=ssh, sans_corrections=args.sans_corrections)
+        except (regles.CorrectionError, construire.NoDatabase) as e:
             parser.exit(2, f"lacarte-registre construire: {e}\n")
         print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
+    if args.cmd == "verifier":
+        why = construire.verifier()
+        if why:
+            parser.exit(2, f"lacarte-registre verifier: {why}\n")
+        print("lacarte-registre verifier: built with the database's corrections")
         return
     if args.cmd == "corrections":
         ssh = None if args.dsn else (args.ssh or os.environ.get("DEPLOY_TARGET"))

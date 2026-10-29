@@ -21,7 +21,7 @@ CANUT = "924435951"  # Centrale d'Achat du Numérique et des Télécoms
 def site(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("registre")
     importer.run(FIXTURE, root)
-    construire.main(root)
+    construire.main(root, sans_corrections=True)
     return root / "site"
 
 

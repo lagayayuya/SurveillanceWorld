@@ -553,6 +553,15 @@ def test_deploy_builds_with_the_contact_and_checks_a_route_without_session():
     assert "REVIEW_USER" not in (ROOT / "deploy" / "preview.caddy").read_text()
 
 
+def test_deploy_refuses_a_register_built_without_the_database_s_corrections():
+    """`lacarte-registre verifier` (construire.verifier) before anything is built or sent: the
+    register built with the corrections /revue accepted, exported at that build, unchanged
+    since (owner's answer on lot R1b: never an export older than the last decision)."""
+    text = (ROOT / "deploy" / "deploy.sh").read_text()
+    check = text.index("uv run lacarte-registre verifier")
+    assert check < text.index("npm --prefix web run build") < text.index("rsync -azL")
+
+
 def test_deploy_checks_the_basemap_id_before_anything_is_built():
     """The served basemap made by the current code (`lacarte basemap check`, its own id since
     2026-10-23), checked before the tables are exported, the site built or anything sent."""

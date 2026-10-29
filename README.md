@@ -81,13 +81,15 @@ Les données sont construites hors ligne et servies en fichiers statiques :
 
 ```bash
 uv run lacarte-registre importer-pilote <dossier de l'export pilote>
-uv run lacarte-registre corrections exporter   # sur le serveur : les corrections acceptées
-uv run lacarte-registre construire             # data/registre/site, servi sous /data/registre/
+uv run lacarte-registre construire   # data/registre/site, servi sous /data/registre/
 ```
 
-`corrections exporter` écrit `data/registre/corrections.yaml` (jamais versionné) depuis la base,
-comme `lacarte contrib export` ; `construire` le lit après `rules/registre_corrections.yaml`, et
-s'arrête sur une correction qu'il ne sait pas appliquer. Les données essentielles de la commande publique, le BOAMP et SIRENE sont
+`construire` exporte d'abord, depuis la base (par SSH vers `DEPLOY_TARGET`, ou `--ssh`, ou
+`--dsn`), les corrections acceptées dans `/revue` vers `data/registre/corrections.yaml` (jamais
+versionné, comme `lacarte contrib export`), puis les applique après
+`rules/registre_corrections.yaml` ; il s'arrête sur une correction qu'il ne sait pas appliquer.
+Sans la base, il refuse, sauf `--sans-corrections` (un essai) : un registre ainsi construit n'est
+jamais déployé (`lacarte-registre verifier`, que lance `deploy/deploy.sh`). Les données essentielles de la commande publique, le BOAMP et SIRENE sont
 sous Licence Ouverte 2.0 ; chaque document est cité avec sa source.
 
 ## Vie privée par construction

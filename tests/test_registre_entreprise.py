@@ -21,7 +21,7 @@ SAINT_CYR, VENISSIEUX = "69191", "69259"
 def built(tmp_path_factory) -> Path:
     root = tmp_path_factory.mktemp("registre")
     importer.run(FIXTURE, root)
-    construire.main(root)
+    construire.main(root, sans_corrections=True)
     return root / "site"
 
 
