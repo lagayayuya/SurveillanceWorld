@@ -12,7 +12,7 @@ Nothing is recomputed in the browser: a page reads the flags and the figures giv
 - commune/<insee>.json: one per commune of the pilot's reference (every commune of a pilot
   département, and those of a document elsewhere), with the copies of the acts it shares,
   the figures of its intercommunality and its département, the map's counts, its drone
-  zones and its département's coverage;
+  zones, its slots of flight (drones.py) and its département's coverage;
 - departement/<code>.json: a département's figures, no document (its page lists none): its
   communes and intercommunalities, who sells and who buys in it, its documents per year;
 - entreprise/, acheteur/, document/<affaire>.json: the same closure as a commune's for the
@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from lacarte_registre import comptes, entreprise
+from lacarte_registre import comptes, drones, entreprise
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     Event,
@@ -229,6 +229,8 @@ def commune_file(ctx: Context, insee: str) -> dict[str, Any]:
             "decoupee": insee in ctx.cartes,
         },
         "zones": zones(ctx, insee),
+        # « Carte et drones »: the slots of flight and the acts whose zone was not deduced
+        "drones": drones.commune(p, reg.by_insee.get(insee, []), reg.by_id, insee),
         "mandats": reg.pilote.reg.get("mandats", []),
         "couverture": {
             "maj": ctx.couverture["maj"],
