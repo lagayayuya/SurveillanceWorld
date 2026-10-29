@@ -652,7 +652,6 @@ class Commune extends Vue<Props, State> {
         : t("commune.aut_h3_un");
     const arr = acts.map((e, i) => {
       const key = `a${e.id}`;
-      const sig = signaler(e.id);
       DET[key] = {
         kicker: t("commune.arrete_kicker", { date: shortDate(e.date) }),
         title: t("commune.arrete_titre", { n: e.cameras ?? 0 }),
@@ -672,7 +671,7 @@ class Commune extends Vue<Props, State> {
             href: communeHref(insee, `autorisations/${encodeURIComponent(e.affaire)}`),
           },
           ...(e.url ? [{ l: t("arretes.voir"), href: e.url }] : []),
-          ...(sig ? [{ l: sig.l, href: sig.href }] : []),
+          signaler(e),
         ],
       };
       return {

@@ -92,8 +92,7 @@ function change(a: Evenement, p: Evenement | undefined, dossier: Dossier["a"]): 
 
 /** A decree's two links: its source, and the report of an error. */
 function liens(e: Evenement): { l: string; href: string }[] {
-  const s = signaler(e.id);
-  return [...(e.url ? [{ l: t("arretes.voir"), href: e.url }] : []), ...(s ? [s] : [])];
+  return [...(e.url ? [{ l: t("arretes.voir"), href: e.url }] : []), signaler(e)];
 }
 
 /** A shop's or a company's category, from the decree's type of beneficiary. */

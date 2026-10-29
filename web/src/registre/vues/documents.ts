@@ -514,9 +514,8 @@ class Documents extends Vue<Props, State> {
       });
     if (isA) {
       if (e.url) links.push({ l: t("arretes.voir"), href: e.url });
-      const s = signaler(e.id);
-      if (s) links.push({ l: s.l, href: s.href });
     } else if (e.url) links.push({ l: t("documents.lien_source"), href: e.url });
+    links.push(signaler(e));
 
     // what the panel explains, discreetly: a date to check, the money line
     const foot = [

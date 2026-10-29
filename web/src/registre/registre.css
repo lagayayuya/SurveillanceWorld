@@ -986,6 +986,101 @@ table.t tr.r.on td {
   cursor: pointer;
 }
 
+/* « Signaler une erreur » (signaler.ts): the kit's labels, fields of the page's width, the choices
+   one per line, each a 44 px target */
+.modal .signaler .ref {
+  margin: 0 0 8px;
+  font:
+    13px / 1.4 "Special Elite",
+    monospace;
+  color: var(--muted, #555);
+  overflow-wrap: anywhere;
+}
+.modal .signaler form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.modal .signaler .lbl {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+.modal .signaler fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+.modal .signaler fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.modal .signaler fieldset input {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--fg, #111);
+}
+.modal .signaler .champ {
+  margin: 0;
+}
+.modal .signaler .aide {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--muted, #555);
+}
+.modal .signaler textarea {
+  min-height: 96px;
+  font: 16px / 1.4 Archivo, sans-serif;
+  border: 2px solid var(--fg, #111);
+  background: var(--bg-2, #fff);
+  color: var(--fg, #111);
+}
+.modal .signaler input[type="url"],
+.modal .signaler input[type="text"] {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 8px;
+  font: 16px Archivo, sans-serif;
+  border: 2px solid var(--fg, #111);
+  background: var(--bg-2, #fff);
+  color: var(--fg, #111);
+}
+.modal .signaler .note {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted, #555);
+}
+.modal .signaler .etat {
+  margin: 0;
+  font-weight: 700;
+}
+.modal .signaler .etat:empty {
+  display: none;
+}
+.modal .signaler .actions {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.modal .signaler .btn[type="submit"] {
+  background: var(--fg, #111);
+  color: var(--bg, #fff);
+  border-color: var(--fg, #111);
+}
+.modal .signaler .btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
 /* --- the phone (under 960 px), for the views without a phone mockup (brief § 2, « Au téléphone »): one column;
    the panel becomes the fixed band of v10 (kicker and title, at the bottom of the screen); a table becomes rows
    (the name and two figures), a row touched unfolds the rest; the tabs scroll sideways --- */

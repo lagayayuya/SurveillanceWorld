@@ -543,8 +543,7 @@ function detail(L: Lexique, r: Ligne) {
         : "l_contrat";
   const links: { l: string; href: string }[] = [{ l: t(`registre.${fiche}`), href: r.href }];
   if (e.url) links.push({ l: aut ? t("arretes.voir") : t("registre.l_source"), href: e.url });
-  const s = aut ? signaler(e.id) : null;
-  if (s) links.push(s);
+  links.push(signaler(e));
   return {
     kicker: `${badge(e)} · ${date(e)}`,
     title: r.title,

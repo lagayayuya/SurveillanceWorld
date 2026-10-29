@@ -9,6 +9,8 @@ import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts
 import { Absent, load } from "./donnees.ts";
 import { setMessages, t } from "./i18n.ts";
 import "./registre.css";
+// « Signaler une erreur »: its form opens over any page that links to it
+import "./signaler.ts";
 import { backToMap, type Route, route } from "./routes.ts";
 import { setWords } from "./vue.ts";
 import formats from "./vues/formats.json";
