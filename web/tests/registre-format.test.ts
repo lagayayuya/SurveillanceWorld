@@ -69,7 +69,22 @@ test("paths", () => {
     dossier: "69-20083300",
   });
   assert.deepEqual(route("/registre/commune/abc"), { view: "introuvable" });
-  assert.deepEqual(route("/registre/entreprise/431903954"), { view: "introuvable" });
+  assert.deepEqual(route("/registre/commune/69123/carte"), { view: "carte", insee: "69123", mois: "" });
+  assert.deepEqual(route("/registre/commune/69123/carte", "?mois=2026-03"), {
+    view: "carte",
+    insee: "69123",
+    mois: "2026-03",
+  });
+  assert.deepEqual(route("/registre/commune/69123/carte", "?mois=2026-13"), { view: "carte", insee: "69123", mois: "" });
+  assert.deepEqual(route("/registre/contrat/21690283300013 2020~1"), { view: "contrat", id: "21690283300013 2020~1" });
+  assert.deepEqual(route("/registre/entreprise/431903954"), { view: "entreprise", siren: "431903954" });
+  assert.deepEqual(route("/registre/acheteur/256900994"), { view: "acheteur", siren: "256900994" });
+  assert.deepEqual(route("/registre/departement/69"), { view: "departement", dep: "69" });
+  assert.deepEqual(route("/registre/departement/2A"), { view: "departement", dep: "2A" });
+  assert.deepEqual(route("/registre/glossaire"), { view: "glossaire" });
+  assert.deepEqual(route("/registre/entreprise/4319"), { view: "introuvable" });
+  assert.deepEqual(route("/registre/departement/690"), { view: "introuvable" });
+  assert.deepEqual(route("/registre/contrat/a/b"), { view: "introuvable" });
 });
 
 test("the way back to the map", () => {
