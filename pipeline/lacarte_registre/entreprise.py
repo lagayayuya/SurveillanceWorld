@@ -168,12 +168,14 @@ def activite(reg: Registre, contrats: list[Event]) -> str | None:
 
 def lieux(clientes: list[str], deps: dict[str, str | None]) -> dict[str, Any]:
     """Where its buyers are: Île-de-France as one region, the others by département, the most
-    buyers first; `surtout` when the first holds half of them or more, then the second when it
-    holds 15 % or more."""
+    buyers first; all of them in one: that one; else `surtout` when the first holds half of
+    them or more, then the second when it holds 15 % or more."""
     regions = Counter(
         "idf" if d in IDF else d for s in clientes if (d := deps.get(s))
     ).most_common()
     total = len(clientes) or 1
+    if regions and regions[0][1] == len(clientes):
+        return {"surtout": False, "regions": [regions[0][0]]}
     if regions and regions[0][1] / total >= 0.5:
         keep = [regions[0][0]]
         if len(regions) > 1 and regions[1][1] / total >= 0.15:

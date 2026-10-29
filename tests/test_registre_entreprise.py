@@ -134,3 +134,6 @@ def test_single_offer_and_where_its_buyers_are():
     assert entreprise.lieux(list(deps), deps) == {"surtout": True, "regions": ["69", "idf"]}
     deps = {"a": "69", "b": "13", "c": "93", "d": "01"}
     assert entreprise.lieux(list(deps), deps)["surtout"] is False
+    # all in one: that one, not « surtout »
+    deps = {"a": "77", "b": "93"}
+    assert entreprise.lieux(list(deps), deps) == {"surtout": False, "regions": ["idf"]}
