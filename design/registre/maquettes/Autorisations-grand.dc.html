@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mions — autorisations de la préfecture (proposition v11)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--rule:#c9c4b6;--soft:#e9e5da;--link:#0060a0;--accent:#0060a0;--hover:#ff48b0;--ao:#b38f00;--ao-ink:#111;--aut:#0060a0;--aut-ink:#fff;--sub:#2e7d4f;--sub-ink:#fff;--warn:#fff6bf;--drone:#0089c7;background:var(--page);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#121212;--card:#1b1b1b;--fg:#f2efe6;--muted:#b0ab9f;--rule:#34322e;--soft:#232323;--link:#7fd4ff;--accent:#7fd4ff;--hover:#ff48b0;--ao:#e0b400;--ao-ink:#111;--aut:#7fd4ff;--aut-ink:#111;--sub:#7fd18f;--sub-ink:#111;--warn:#3d3600;--drone:#7fd4ff}
+.th a{color:var(--link)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.h1{margin:0;font-weight:900;font-stretch:62%;font-size:72px;line-height:.9;text-transform:uppercase}
+.h2{margin:0;font-weight:900;font-stretch:66%;font-size:30px;line-height:1;text-transform:uppercase}
+.h3{margin:0;font-weight:900;font-stretch:75%;font-size:20px;line-height:1.1;text-transform:uppercase}
+.lead{margin:0;max-width:860px;font-size:22px;line-height:1.35;font-weight:500}
+.nav{color:#f2efe6 !important;font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav[aria-current="page"]{font-weight:900;text-decoration:underline;text-underline-offset:6px}
+.hdr{width:44px;height:44px;border:0;background:none;color:#f2efe6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crumbs{font-size:14px}
+.crumbs a{text-decoration:none}
+.tag{display:inline-block;padding:2px 8px;color:#111;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.kpis>div{padding:14px 0 14px 20px;border-left:1px solid var(--rule)}
+.kpis>div:first-child{padding-left:0;border-left:0}
+.kv{font-weight:900;font-stretch:64%;font-size:48px;line-height:1}
+.tabs{display:flex;border-bottom:2px solid var(--fg)}
+.tabs a{display:inline-flex;align-items:center;min-height:52px;padding:0 18px;font-weight:800;font-stretch:80%;text-transform:uppercase;text-decoration:none;color:var(--fg)}
+.tabs a[aria-current="page"]{box-shadow:inset 0 -4px 0 var(--fg)}
+.ibtn{width:44px;height:44px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ibtn span{width:22px;height:22px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.note{margin:0;padding:12px;border:1px solid var(--rule);color:var(--muted);font-size:14px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{text-align:left;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.03em;padding:0;border-bottom:2px solid var(--fg)}
+table.t th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;box-sizing:border-box;width:100%}
+table.t th.num button{justify-content:flex-end}
+table.t td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.r{cursor:pointer}
+table.t tr.r:hover td,table.t tr.r.on td{background:var(--soft)}
+.rowlink{color:var(--fg) !important;font-weight:700;text-decoration:none}
+.rowlink:hover{text-decoration:underline}
+.panel{position:sticky;top:20px;border:2px solid var(--fg);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px;min-height:260px;box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.prow span{color:var(--muted)}
+.b{display:inline-block;padding:1px 6px;font-weight:800;font-stretch:80%;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid var(--fg);white-space:nowrap}
+.seg{min-height:44px;padding:0 14px;border:2px solid var(--fg);font:700 15px Archivo,sans-serif;cursor:pointer;margin-left:-2px}
+.more{align-self:flex-start;min-height:44px;padding:0 16px;border:2px solid var(--fg);background:var(--card);color:var(--fg);font:800 14px Archivo,sans-serif;text-transform:uppercase;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+<style>
+.mk{all:unset;cursor:pointer;position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;min-width:64px;text-align:center}
+.mk:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.mk .dot{width:16px;height:16px;border:3px solid var(--fg);background:var(--card);box-sizing:border-box}
+.mk.on .dot,.mk:hover .dot{background:var(--hover);border-color:var(--hover)}
+.mk .n{font-weight:900;font-stretch:66%;font-size:34px;line-height:1}
+.mk .d{font-size:13px;color:var(--muted)}
+.mk .x{font-size:14px;font-weight:800}
+.yes{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--rule)}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 1280px; min-height: 2200px; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+<header style="display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 20px 0 28px; background: #000; color: #f2efe6; border-bottom: 2px solid var(--fg)">
+  <a href="Registre.dc.html" style="color: #f2efe6; text-decoration: none; font-weight: 900; font-stretch: 70%; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; margin-right: auto">Surveillance World</a>
+  <a class="nav" href="CarteTemps-grand.dc.html">Carte</a>
+  <a class="nav" href="Registre.dc.html" aria-current="{{nav.reg}}">Registre</a>
+  <a class="nav" href="Glossaire.dc.html" aria-current="{{nav.glo}}">Glossaire</a>
+  <a class="hdr" href="Registre.dc.html" aria-label="Rechercher dans le registre"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+  <button class="hdr" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}">
+    <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></sc-if>
+    <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg></sc-if>
+  </button>
+</header>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px">
+    <nav class="crumbs" aria-label="Fil d'Ariane"><a href="Registre.dc.html">Registre</a> › <a href="Departement-grand.dc.html">Rhône</a> › <a href="Commune-grand.dc.html">Mions</a> › <span aria-current="page">Autorisations</span></nav>
+    <div style="display: flex; align-items: flex-end; gap: 18px">
+      <div><span class="tag" style="background: #ffe800">Commune</span><h1 class="h1" style="font-size: 60px; margin-top: 6px">Mions</h1></div>
+      <p class="tw" style="margin: 0 0 6px; color: var(--muted); font-size: 14px">Rhône · Métropole de Lyon · 13 843 habitants</p>
+    </div>
+  </div>
+
+  <nav aria-label="Vues de la commune" style="width: 1180px; margin: 16px auto 0">
+    <div class="tabs">
+      <a href="Commune-grand.dc.html">L'essentiel</a>
+      <a href="Documents-grand.dc.html">Documents · 17</a>
+      <a href="Autorisations-grand.dc.html" aria-current="page">Autorisations · 9</a>
+      <a href="CarteTemps-grand.dc.html">Carte et drones</a>
+    </div>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 56px; min-width: 0">
+
+      <div style="display: flex; flex-direction: column; gap: 18px">
+        <p class="lead">Depuis novembre 2025, la préfecture a publié <strong>9 arrêtés</strong> pour Mions : 3 pour les caméras de la mairie, 6 pour des commerces et des entreprises.</p>
+        <div class="kpis">
+          <div><div class="kv">154</div><div>caméras de la mairie</div></div>
+          <div><div class="kv">125</div><div>filment la rue</div></div>
+          <div><div class="kv">37</div><div>caméras de commerces et d'entreprises</div></div>
+          <div><div class="kv">2031</div><div>fin de l'autorisation de la mairie</div></div>
+        </div>
+      </div>
+
+      <section id="mairie" aria-labelledby="a-mairie" style="display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <div><h2 id="a-mairie" class="h2">Les caméras de la mairie</h2><p class="tw" style="margin: 6px 0 0; font-size: 14px; color: var(--muted)">Dossier préfectoral n° 20083300 · ouvert en 2008</p></div>
+          <button class="ibtn" onClick="{{tgl.dos}}" aria-expanded="{{open.dos}}" aria-label="Ce qu'est un dossier préfectoral"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.dos}}" hint-placeholder-val="{{false}}"><p class="note tw">Une autorisation de caméras est un dossier ouvert une fois à la préfecture. Chaque changement (caméras ajoutées, renouvellement) donne un nouvel arrêté, qui remplace le précédent. Le chiffre qui compte est celui du dernier arrêté.</p></sc-if>
+
+        <div role="group" aria-label="Les arrêtés du dossier, dans le temps" style="position: relative; height: 150px; margin: 8px 0 0; border-bottom: 2px solid var(--fg)">
+          <div style="position: absolute; left: 0; width: 20%; bottom: 0; height: 66px; border: 2px dashed var(--muted); border-bottom: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--muted); padding: 0 8px">2008 → 2025 : arrêtés non publiés en ligne</div>
+          <sc-for list="{{marks}}" as="m" hint-placeholder-count="3">
+            <button class="{{m.cls}}" style="{{m.pos}}" onMouseEnter="{{m.hover}}" onFocus="{{m.hover}}" onClick="{{m.hover}}" aria-label="{{m.aria}}"><span class="n">{{m.n}}</span><span class="x">{{m.delta}}</span><span class="dot" aria-hidden="true"></span></button>
+          </sc-for>
+          <span aria-hidden="true" style="position: absolute; left: 86%; bottom: -2px; top: 40px; border-left: 2px dotted var(--muted)"></span>
+          <span style="position: absolute; right: 0; top: 52px; text-align: right; font-size: 13px; color: var(--muted)">valable jusqu'au<br><strong style="color: var(--fg)">30 juin 2031</strong></span>
+        </div>
+        <div class="tw" aria-hidden="true" style="position: relative; height: 20px; font-size: 13px; color: var(--muted)">
+          <span style="position: absolute; left: 0">2008</span>
+          <sc-for list="{{marks}}" as="m" hint-placeholder-count="3"><span style="{{m.lpos}}">{{m.d}}</span></sc-for>
+          <span style="position: absolute; left: 86%; transform: translateX(-50%); color: var(--fg); font-weight: 700">auj.</span>
+        </div>
+
+        <table class="t" style="margin-top: 10px">
+          <caption class="sr">Les 3 arrêtés du dossier de la mairie, avec la répartition des caméras</caption>
+          <thead><tr><th scope="col"><button>Arrêté</button></th><th scope="col" class="num"><button>Caméras</button></th><th scope="col" class="num"><button>Sur la rue</button></th><th scope="col" class="num"><button>Abords des bâtiments</button></th><th scope="col" class="num"><button>Dans les bâtiments</button></th><th scope="col" class="num"><button>Écart</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td><td class="num"><strong>{{r.delta}}</strong></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; margin-top: 14px; align-items: start">
+          <div>
+            <h3 class="h3">Ce que permet l'autorisation en vigueur</h3>
+            <p class="tw" style="margin: 4px 0 8px; font-size: 13px; color: var(--muted)">arrêté du 30 juin 2026</p>
+            <div style="border-top: 2px solid var(--fg)">
+              <div class="yes"><span><strong>Verbaliser grâce aux caméras</strong> : des amendes à partir des images</span><strong>oui</strong></div>
+              <div class="yes"><span><strong>Transmettre les images</strong> à la police ou à la gendarmerie</span><strong>oui</strong></div>
+              <div class="yes"><span><strong>Durée</strong></span><strong>5 ans</strong></div>
+            </div>
+          </div>
+          <div style="border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px">
+            <h3 class="h3">Avant novembre 2025</h3>
+            <p style="margin: 0">Combien de caméras au départ, en 2008, et comment ce nombre a-t-il évolué ? Les arrêtés existent mais ne sont pas en ligne. Tout le monde peut les demander.</p>
+            <a href="Autorisations-grand.dc.html" style="align-self: flex-start; display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; background: var(--fg); color: var(--bg); font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none">Demander à la préfecture</a>
+          </div>
+        </div>
+      </section>
+
+      <section id="prives" aria-labelledby="a-prives" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-prives" class="h2">Commerces et entreprises</h2>
+          <button class="ibtn" onClick="{{tgl.nom}}" aria-expanded="{{open.nom}}" aria-label="Pourquoi certains noms ne sont pas publiés"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.nom}}" hint-placeholder-val="{{false}}"><p class="note tw">Le nom n'est affiché que si le bénéficiaire est une société ou un organisme inscrit au répertoire des entreprises (SIRENE). Les autres (commerçants en nom propre, par exemple) apparaissent sous leur seule catégorie.</p></sc-if>
+        <p style="margin: 0"><strong>37 caméras</strong> autorisées dans 6 arrêtés, de mars à octobre 2026. Chacune de ces autorisations est un dossier à part.</p>
+        <table class="t">
+          <caption class="sr">Arrêtés pour des commerces et entreprises à Mions</caption>
+          <thead><tr><th scope="col"><button>Arrêté</button></th><th scope="col"><button>Bénéficiaire</button></th><th scope="col" class="num"><button>Caméras</button></th><th scope="col" class="num"><button>Abords</button></th><th scope="col" class="num"><button>Intérieur</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{priv}}" as="r" hint-placeholder-count="6">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                <td><span style="{{r.nomStyle}}">{{r.nom}}</span><div style="font-size: 13px; color: var(--muted)">{{r.cat}}</div></td>
+                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px">
+        <h2 id="a-autres" class="h2">Drones, caméras-piétons, analyse algorithmique</h2>
+        <p style="margin: 0">Aucun arrêté trouvé pour Mions. <a href="CarteTemps-grand.dc.html">Exemple à Lyon : 44 autorisations de drones →</a></p>
+        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">Ces 9 arrêtés figurent aussi parmi <a href="Documents-grand.dc.html">les 17 documents de Mions</a>.</p>
+      </section>
+    </main>
+
+    <aside aria-live="polite" aria-label="Détail" class="panel">
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+        <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+      </sc-for>
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.foot}}</span>
+      <sc-if value="{{det.hasLink}}" hint-placeholder-val="{{true}}"><a href="{{det.url}}" class="ghost">Lire l'arrêté (recueil de la préfecture) ↗</a></sc-if>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1280,"height":2200}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { dark: (props.theme ?? 'sombre') === 'sombre', sel: null, open: {} };
+  }
+  renderVals() {
+    const S = this.state, dark = S.dark;
+    const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const fd = (d) => { const [y, m, j] = d.split('-').map(Number); return j + ' ' + MOIS[m - 1] + ' ' + y; };
+    const dash = (v) => v == null ? '—' : String(v);
+    const A = [
+      { id: '69-2025-11-18-00015', date: '2025-11-18', n: 138, vp: 109, ext: 22, int: 7, p: '8', relu: true, url: 'https://www.rhone.gouv.fr/contenu/telechargement/66328/446891/file/RAA_69-2025-307-211125.pdf', ch: 'Premier arrêté publié en ligne pour ce dossier.' },
+      { id: '69-2026-04-24-00007', date: '2026-04-24', n: 151, vp: 122, ext: 22, int: 7, p: '119', relu: false, url: 'https://www.rhone.gouv.fr/contenu/telechargement/68323/459845/file/RAA_69-2026-123-280426.pdf', ch: '13 caméras de plus sur la rue.' },
+      { id: '69-2026-06-30-00021', date: '2026-06-30', n: 154, vp: 125, ext: 20, int: 9, p: '135', relu: false, url: 'https://www.rhone.gouv.fr/contenu/telechargement/69238/465997/file/RAA_69-2026-203-030726.pdf', ch: '3 de plus sur la rue, 2 de plus dans les bâtiments, 2 de moins aux abords. Fixe la fin au 30 juin 2031.' }
+    ];
+    const P = [
+      { id: '69-2026-03-16-00067', date: '2026-03-16', nom: null, cat: 'commerce', n: 5, ext: null, int: 5, p: '13', url: 'https://www.rhone.gouv.fr/contenu/telechargement/68011/457721/file/RAA_69-2026-092-270326.pdf' },
+      { id: '69-2026-06-08-00024', date: '2026-06-08', nom: null, cat: 'commerce', n: 3, ext: 3, int: null, p: '82', url: 'https://www.rhone.gouv.fr/contenu/telechargement/69005/464174/file/RAA_69-2026-178-150626.pdf' },
+      { id: '69-2026-06-19-00009', date: '2026-06-19', nom: 'Société Générale', cat: 'banque', n: 3, ext: 1, int: 2, p: '125', url: 'https://www.rhone.gouv.fr/contenu/telechargement/69088/464689/file/RAA_69-2026-187-220626.pdf' },
+      { id: '69-2026-07-15-00020', date: '2026-07-15', nom: 'Pharmacie des Halles', cat: 'commerce', n: 2, ext: 1, int: 1, p: '103', url: 'https://www.rhone.gouv.fr/contenu/telechargement/69441/467828/file/RAA_69-2026-216-170726.pdf' },
+      { id: '69-2026-09-30-00035', date: '2026-09-30', nom: null, cat: 'banque', n: 8, ext: null, int: 8, p: '138', url: 'https://www.rhone.gouv.fr/contenu/telechargement/70463/474667/file/RAA_69-2026-302-051026.pdf' },
+      { id: '69-2026-10-20-00007', date: '2026-10-20', nom: null, cat: 'commerce', n: 16, ext: 5, int: 11, p: '52', url: 'https://www.rhone.gouv.fr/contenu/telechargement/70744/476380/file/RAA_69-2026-333-211026.pdf' }
+    ];
+    // frise : 0-20 % = 2008-2025 (non publié), 22-86 % = nov. 2025 -> auj. (oct. 2026)
+    const T0 = Date.UTC(2025, 9, 1), T1 = Date.UTC(2026, 9, 25);
+    const X = (d) => { const [y, m, j] = d.split('-').map(Number); return 24 + (Date.UTC(y, m - 1, j) - T0) / (T1 - T0) * 62; };
+    const marks = A.map((a, i) => { const on = S.sel === a.id; const delta = i ? '+' + (a.n - A[i - 1].n) : 'premier publié'; return { n: a.n, delta: delta, d: fd(a.date).replace(/^\d+ /, ''), cls: 'mk' + (on ? ' on' : ''), pos: 'left: ' + X(a.date).toFixed(1) + '%; top: 79px', lpos: 'position: absolute; left: ' + X(a.date).toFixed(1) + '%; transform: translateX(-50%); white-space: nowrap', aria: 'Arrêté du ' + fd(a.date) + ' : ' + a.n + ' caméras', hover: () => this.setState({ sel: a.id }) }; });
+    const rows = A.map((a, i) => ({ date: fd(a.date), n: a.n, vp: a.vp, ext: a.ext, int: a.int, delta: i ? '+' + (a.n - A[i - 1].n) : '—', url: a.url, cls: 'r' + (S.sel === a.id ? ' on' : ''), hover: () => this.setState({ sel: a.id }) }));
+    const CAT = { commerce: 'Commerce', banque: 'Banque' };
+    const priv = P.map((p) => ({ date: fd(p.date), nom: p.nom || 'nom non publié', nomStyle: p.nom ? 'font-weight: 700' : 'font-style: italic; color: var(--muted)', cat: CAT[p.cat], n: p.n, ext: dash(p.ext), int: dash(p.int), url: p.url, cls: 'r' + (S.sel === p.id ? ' on' : ''), hover: () => this.setState({ sel: p.id }) }));
+    let det = { kicker: 'Mions · autorisations en vigueur', title: '191 caméras autorisées', rows: [{ k: 'Mairie', v: '154' }, { k: 'dont sur la rue', v: '125' }, { k: 'Commerces et entreprises', v: '37' }, { k: 'Drones', v: 'aucun' }], foot: 'Survolez un arrêté : son détail s’affiche ici.', hasLink: false, url: '' };
+    const a = A.find((x) => x.id === S.sel), p = P.find((x) => x.id === S.sel);
+    if (a) { const i = A.indexOf(a); det = { kicker: 'Arrêté · ' + fd(a.date), title: a.n + ' caméras pour la mairie', rows: [{ k: 'Sur la rue', v: String(a.vp) }, { k: 'Abords des bâtiments', v: String(a.ext) }, { k: 'Dans les bâtiments', v: String(a.int) }, { k: 'Écart', v: i ? '+' + (a.n - A[i - 1].n) : '—' }, { k: 'Durée', v: '5 ans' }], foot: a.ch + ' Acte ' + a.id + ', p. ' + a.p + ' · ' + (a.relu ? 'relu à la main' : 'lu par programme, à relire'), hasLink: true, url: a.url }; }
+    if (p) { det = { kicker: 'Arrêté · ' + fd(p.date), title: (p.nom || 'Nom non publié') + ' · ' + p.n + (p.n > 1 ? ' caméras' : ' caméra'), rows: [{ k: 'Catégorie', v: CAT[p.cat] }, { k: 'Abords', v: dash(p.ext) }, { k: 'Intérieur', v: dash(p.int) }, { k: 'Durée', v: '5 ans' }], foot: 'Acte ' + p.id + ', p. ' + p.p + ' · lu par programme, à relire', hasLink: true, url: p.url }; }
+    const open = S.open || {};
+    const tg = (k) => () => this.setState({ open: Object.assign({}, open, { [k]: !open[k] }) });
+    return {
+      th: dark ? 'th dark' : 'th', isDark: dark, isLight: !dark, themeLabel: dark ? 'Passer en thème clair' : 'Passer en thème sombre',
+      toggleTheme: () => this.setState({ dark: !this.state.dark }), nav: { reg: 'false', glo: 'false' },
+      marks: marks, rows: rows, priv: priv, det: det,
+      show: { dos: !!open.dos, nom: !!open.nom }, open: { dos: open.dos ? 'true' : 'false', nom: open.nom ? 'true' : 'false' }, tgl: { dos: tg('dos'), nom: tg('nom') }
+    };
+  }
+}
+</script>
+</body>
+</html>

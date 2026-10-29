@@ -1,0 +1,132 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <div style="width: 1180px; margin: 0 auto; padding: 32px 0 0">
+    <dc-include src="fil"></dc-include>
+    <div style="margin-top: 10px"><span style="display: inline-block; padding: 2px 8px; background: #c9b8ff; color: #111; font-weight: 800; font-stretch: 80%; font-size: 13px; text-transform: uppercase; letter-spacing: .06em">Entreprise</span></div>
+    <h1 style="margin: 8px 0 4px; font-weight: 900; font-stretch: 62%; font-size: 72px; line-height: .9; text-transform: uppercase">{{nom}}</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{sous}}</p>
+    <p style="margin: 16px 0 0; max-width: 860px; font-size: 22px; line-height: 1.35; font-weight: 500">{{{lead}}}</p>
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 22px; border-top: 2px solid var(--fg); border-bottom: 2px solid var(--fg)">
+      <sc-for list="{{kpis}}" as="k"><div style="{{k.s}}"><div style="font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
+    </div>
+  </div>
+
+  <nav aria-label="Sections" style="position: sticky; top: 0; z-index: 2; background: var(--page); border-bottom: 2px solid var(--fg); margin-top: 24px">
+    <div style="width: 1180px; margin: 0 auto; display: flex; gap: 0">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+        <a href="{{t.href}}" style="{{t.style}}">{{t.l}}</a>
+      </sc-for>
+    </div>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 60px; min-width: 0">
+
+      <section id="argent" aria-labelledby="g-argent" style="display: flex; flex-direction: column; gap: 14px">
+        <h2 id="g-argent" class="h2">L'argent, année après année</h2>
+        <div role="group" aria-label="{{yearAlt}}" style="display: grid; grid-template-columns: {{yearsCols}}; gap: 10px; align-items: end; height: 230px; border-bottom: 2px solid var(--fg)">
+          <sc-for list="{{years}}" as="y" hint-placeholder-count="9">
+            <button onMouseEnter="{{y.hover}}" onClick="{{y.hover}}" style="all: unset; cursor: pointer; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 4px">
+              <span style="text-align: center; font-weight: 800; font-size: 15px">{{y.v}}</span>
+              <span style="{{y.bar}}"></span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: {{yearsCols}}; gap: 10px; text-align: center">
+          <sc-for list="{{years}}" as="y" hint-placeholder-count="9"><span><span class="tw" style="color: var(--muted)">{{y.y}}</span><br><span style="font-size: 13px; color: var(--muted)">{{y.n}}</span></span></sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; margin-top: 28px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center; justify-content: space-between">
+              <h3 class="h3">En cours aujourd'hui : {{nAct}}</h3>
+              <button class="ibtn" onClick="{{tgl.mt}}" aria-expanded="{{open.mt}}" aria-label="Comment est calculée la fin"><span aria-hidden="true">i</span></button>
+            </div>
+            <sc-if value="{{show.mt}}" hint-placeholder-val="{{false}}"><p class="note tw">Fin prévue = date de signature + durée publiée. Une modification peut l'avoir changée : elle se lit dans l'historique du contrat. Montants : maximums prévus, hors taxes.{{doublonNote}}</p></sc-if>
+            <p style="margin: 0; color: var(--muted)">Les contrats dont la fin prévue n'est pas passée, du plus proche de la fin au plus lointain.</p>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 140px 82px; gap: 12px; font-weight: 800; font-stretch: 80%; font-size: 13px; text-transform: uppercase; border-bottom: 2px solid var(--fg); padding-bottom: 6px"><span>Cliente</span><span>Signé → fin</span><span style="text-align: right">Montant</span></div>
+            <div style="display: flex; flex-direction: column">
+              <sc-for list="{{act}}" as="a" hint-placeholder-count="8">
+                <button class="{{a.cls}}" style="grid-template-columns: minmax(0, 1fr) 140px 82px" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.hover}}">
+                  <span style="font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{a.nom}}</span>
+                  <span style="display: flex; flex-direction: column; gap: 3px"><span class="tw" style="font-size: 13px; color: var(--muted)">{{a.span}}</span><span style="position: relative; height: 6px; background: var(--soft); display: block"><span style="{{a.prog}}"></span></span></span>
+                  <strong style="text-align: right">{{a.amt}}</strong>
+                </button>
+              </sc-for>
+            </div>
+            <sc-if value="{{actMore}}" hint-placeholder-val="{{true}}"><button class="more" onClick="{{toggleAct}}">{{actLabel}}</button></sc-if>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px">
+            <h3 class="h3" style="min-height: 44px; display: flex; align-items: center">Ses plus gros contrats</h3>
+            <p style="margin: 0; color: var(--muted)">Les {{nBig}} premiers des {{nCon}}, par montant maximum.</p>
+            <div style="display: flex; flex-direction: column; border-top: 2px solid var(--fg)">
+              <sc-for list="{{big}}" as="b" hint-placeholder-count="8">
+                <button class="{{b.cls}}" style="grid-template-columns: 180px minmax(0, 1fr)" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.hover}}">
+                  <span style="display: flex; flex-direction: column; line-height: 1.2"><strong style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{b.nom}}</strong><span class="tw" style="font-size: 13px; color: var(--muted)">{{b.y}}</span></span>
+                  <span style="display: flex; align-items: center; gap: 8px"><span style="{{b.bar}}"></span><strong style="white-space: nowrap">{{b.amt}}</strong></span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <h3 class="h3" style="margin-top: 20px">Ce qui ressort</h3>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{faits}}" as="f"><li style="padding: 10px 0; border-bottom: 1px solid var(--rule)">{{{f}}}</li></sc-for>
+        </ul>
+      </section>
+
+      <section id="clientes" aria-labelledby="g-cli" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="g-cli" class="h2">Ses {{nCli}} clientes</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">touchez une ligne : le détail s'affiche à droite</span>
+        </div>
+        <div role="img" aria-label="{{depAlt}}" style="display: flex; height: 34px; border: 2px solid var(--fg)">
+          <sc-for list="{{deps}}" as="d" hint-placeholder-count="6">
+            <span style="{{d.style}}" title="{{d.l}}">{{d.short}}</span>
+          </sc-for>
+        </div>
+        <table class="t">
+          <caption style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Clientes de {{nom}}, triables par colonne</caption>
+          <thead><tr>
+            <sc-for list="{{cols}}" as="c" hint-placeholder-count="5">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{clients}}" as="c" hint-placeholder-count="15">
+              <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onClick="{{c.hover}}">
+                <td><a href="{{c.href}}" style="color: var(--fg); font-weight: 700; text-decoration: none">{{c.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{c.cat}}</div></td>
+                <td>{{c.dep}}</td>
+                <td class="num">{{c.n}}</td>
+                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.amt}}</strong></div></td>
+                <td class="num tw" style="color: var(--muted)">{{c.last}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <button onClick="{{more}}" style="align-self: flex-start; min-height: 44px; padding: 0 16px; border: 2px solid var(--fg); background: var(--card); color: var(--fg); font: 800 14px Archivo, sans-serif; text-transform: uppercase; cursor: pointer">{{moreLabel}}</button>
+      </section>
+
+      <section id="partenaires" aria-labelledby="g-par" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="g-par" class="h2">Contrats signés à plusieurs</h2>
+          <button class="ibtn" onClick="{{tgl.par}}" aria-expanded="{{open.par}}" aria-label="Ce que veut dire signer à plusieurs"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.par}}" hint-placeholder-val="{{false}}"><p class="tw" style="margin: 0; padding: 12px; border: 1px solid var(--rule); color: var(--muted); font-size: 14px">Un contrat peut être attribué à plusieurs entreprises qui répondent ensemble (un groupement) : chacune réalise une partie. Le registre ne sait pas qui fait quoi, ni comment le montant est partagé.</p></sc-if>
+        <p style="margin: 0">{{parPhrase}}</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px">
+          <sc-for list="{{partners}}" as="p" hint-placeholder-count="5">
+            <li style="display: flex; justify-content: space-between; align-items: center; min-height: 48px; border-bottom: 1px solid var(--rule)"><a href="{{p.href}}" style="color: var(--fg); font-weight: 700; text-decoration: none">{{p.nom}}</a><span class="tw" style="color: var(--muted)">{{p.n}}</span></li>
+          </sc-for>
+        </ul>
+      </section>
+
+      <section id="contrats" aria-labelledby="g-con" style="display: flex; align-items: center; justify-content: space-between; padding: 24px; border: 2px solid var(--fg)">
+        <div><h2 id="g-con" class="h2" style="font-size: 26px">Ses contrats</h2><p style="margin: 4px 0 0; color: var(--muted)">{{docsPhrase}}</p></div>
+        <a href="{{parcourir}}" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px; background: var(--fg); color: var(--bg); font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none">Parcourir →</a>
+      </section>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

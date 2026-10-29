@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mions — filtres des documents</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--ghost:#e4e0d4;background:var(--bg);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#141414;--card:#1e1e1e;--fg:#f2efe6;--muted:#b9b4a8;--ghost:#262626}
+.th a{color:var(--fg)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.lg{margin:0 0 8px;font-weight:900;font-stretch:70%;font-size:19px;text-transform:uppercase}
+input[type=radio],input[type=checkbox]{accent-color:#ff48b0}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 390px; height: 844px; position: relative; overflow: hidden; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.4">
+
+  <div aria-hidden="true" style="padding: 70px 16px 0; display: flex; flex-direction: column; gap: 14px">
+    <div style="height: 34px; width: 60%; background: var(--ghost)"></div>
+    <div style="height: 48px; background: var(--ghost)"></div>
+    <div style="height: 48px; background: var(--ghost)"></div>
+    <div style="height: 48px; background: var(--ghost)"></div>
+  </div>
+  <div aria-hidden="true" style="position: absolute; inset: 0; background: rgba(0,0,0,.6)"></div>
+
+  <section role="dialog" aria-modal="true" aria-labelledby="f-titre" style="position: absolute; left: 0; right: 0; bottom: 0; height: 720px; background: var(--bg); border-top: 3px solid var(--fg); display: flex; flex-direction: column">
+    <div aria-hidden="true" style="width: 48px; height: 5px; background: var(--fg); margin: 10px auto 0; border-radius: 3px"></div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 8px 4px 16px">
+      <h2 id="f-titre" style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 30px; text-transform: uppercase">Filtres</h2>
+      <a href="Documents.dc.html" aria-label="Fermer" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 5l14 14M19 5 5 19"></path></svg>
+      </a>
+    </div>
+
+    <div style="flex: 1; overflow-y: auto; padding: 8px 16px 16px; display: flex; flex-direction: column; gap: 22px">
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lg">Qui</legend>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <sc-for list="{{qui}}" as="q" hint-placeholder-count="3">
+            <label style="{{q.style}}">
+              <input type="radio" name="qui" checked="{{q.on}}" onChange="{{q.pick}}" style="width: 22px; height: 22px; margin: 0">
+              <span style="flex: 1">{{q.label}}</span>
+              <span class="tw" style="font-size: 14px; color: var(--muted)">{{q.n}}</span>
+            </label>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lg">Période</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{annees}}" as="a" hint-placeholder-count="5">
+            <button onClick="{{a.pick}}" aria-pressed="{{a.pressed}}" style="{{a.style}}">{{a.label}}</button>
+          </sc-for>
+        </div>
+      </fieldset>
+
+      <div>
+        <label for="f-ent" class="lg" style="display: block">Entreprise</label>
+        <select id="f-ent" style="width: 100%; min-height: 48px; padding: 0 10px; border: 2px solid var(--fg); background: var(--card); color: var(--fg); font: 16px Archivo, sans-serif">
+          <option>Toutes les entreprises</option>
+          <option>Serfim T.I.C. (3 documents)</option>
+        </select>
+      </div>
+
+      <fieldset style="border: 0; margin: 0; padding: 0">
+        <legend class="lg">Contrats qui ne sont pas que de la vidéo</legend>
+        <p style="margin: 0 0 10px; font-size: 15px; color: var(--muted)">Par défaut, on ne compte que les contrats de vidéosurveillance. Certains mêlent la vidéo à autre chose : on ne sait pas quelle part va aux caméras.</p>
+        <label style="display: flex; gap: 12px; align-items: flex-start; min-height: 44px; padding: 10px 12px; background: var(--card); border: 2px solid var(--fg); margin-bottom: 8px">
+          <input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none">
+          <span><strong>Vidéo + alarmes des bâtiments</strong><br><span style="font-size: 14px; color: var(--muted)">intrusion, contrôle d'accès des bâtiments de la mairie</span></span>
+        </label>
+        <label style="display: flex; gap: 12px; align-items: flex-start; min-height: 44px; padding: 10px 12px; background: var(--card); border: 2px solid var(--fg)">
+          <input type="checkbox" style="width: 22px; height: 22px; margin: 0; flex: none">
+          <span><strong>Vidéo + autres prestations</strong><br><span style="font-size: 14px; color: var(--muted)">gardiennage, incendie, éclairage public</span></span>
+        </label>
+      </fieldset>
+    </div>
+
+    <div style="display: flex; gap: 10px; padding: 12px 16px 24px; border-top: 2px solid var(--fg); background: var(--bg)">
+      <button onClick="{{reset}}" style="flex: 1; min-height: 48px; border: 2px solid var(--fg); background: var(--card); color: var(--fg); font: 800 15px Archivo, sans-serif; font-stretch: 80%; text-transform: uppercase">Tout effacer</button>
+      <a href="Documents.dc.html" style="flex: 1.6; min-height: 48px; display: flex; align-items: center; justify-content: center; background: var(--fg); color: var(--bg); border: 2px solid var(--fg); font-weight: 800; font-stretch: 80%; font-size: 15px; text-transform: uppercase; text-decoration: none">{{cta}}</a>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"clair"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { qui: 'mairie', an: 'toutes' };
+  }
+  renderVals() {
+    const S = this.state;
+    const dark = (this.props.theme ?? 'clair') === 'sombre';
+    const Q = [['tous', 'Tout le monde', 17], ['mairie', 'La mairie seulement', 11], ['prives', 'Commerces et entreprises', 6]];
+    const qui = Q.map(([k, label, n]) => {
+      const on = S.qui === k;
+      return {
+        label: label, n: n + ' doc.', on: on,
+        pick: () => this.setState({ qui: k }),
+        style: 'display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 12px; border: 2px solid var(--fg); cursor: pointer; ' + (on ? 'background: var(--card); box-shadow: 3px 3px 0 var(--fg); font-weight: 700' : 'background: var(--bg)')
+      };
+    });
+    const A = [['toutes', 'Toutes'], ['2026', '2026'], ['2025', '2025'], ['2024', '2024'], ['avant', 'Avant 2024']];
+    const annees = A.map(([k, label]) => {
+      const on = S.an === k;
+      return {
+        label: label, pressed: on ? 'true' : 'false',
+        pick: () => this.setState({ an: k }),
+        style: 'min-height: 44px; padding: 0 16px; border: 2px solid var(--fg); border-radius: 22px; font: 700 15px Archivo, sans-serif; cursor: pointer; ' + (on ? 'background: var(--fg); color: var(--bg)' : 'background: var(--card); color: var(--fg)')
+      };
+    });
+    const n = { tous: 17, mairie: 11, prives: 6 }[S.qui];
+    return {
+      th: dark ? 'th dark' : 'th',
+      qui: qui, annees: annees,
+      cta: 'Voir ' + n + ' documents',
+      reset: () => this.setState({ qui: 'tous', an: 'toutes' })
+    };
+  }
+}
+</script>
+</body>
+</html>

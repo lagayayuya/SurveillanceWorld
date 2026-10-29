@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sytral — page acheteur, grand écran (proposition)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--rule:#c9c4b6;--soft:#e9e5da;--link:#0060a0;--accent:#0060a0;--hover:#ff48b0;--ao:#b38f00;--ao-ink:#111;--aut:#0060a0;--aut-ink:#fff;--sub:#2e7d4f;--sub-ink:#fff;--warn:#fff6bf;--drone:#0089c7;background:var(--page);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#121212;--card:#1b1b1b;--fg:#f2efe6;--muted:#b0ab9f;--rule:#34322e;--soft:#232323;--link:#7fd4ff;--accent:#7fd4ff;--hover:#ff48b0;--ao:#e0b400;--ao-ink:#111;--aut:#7fd4ff;--aut-ink:#111;--sub:#7fd18f;--sub-ink:#111;--warn:#3d3600;--drone:#7fd4ff}
+.th a{color:var(--link)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.h1{margin:0;font-weight:900;font-stretch:62%;font-size:72px;line-height:.9;text-transform:uppercase}
+.h2{margin:0;font-weight:900;font-stretch:66%;font-size:30px;line-height:1;text-transform:uppercase}
+.h3{margin:0;font-weight:900;font-stretch:75%;font-size:20px;line-height:1.1;text-transform:uppercase}
+.lead{margin:0;max-width:860px;font-size:22px;line-height:1.35;font-weight:500}
+.nav{color:#f2efe6 !important;font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav[aria-current="page"]{font-weight:900;text-decoration:underline;text-underline-offset:6px}
+.hdr{width:44px;height:44px;border:0;background:none;color:#f2efe6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crumbs{font-size:14px}
+.crumbs a{text-decoration:none}
+.tag{display:inline-block;padding:2px 8px;color:#111;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.kpis>div{padding:14px 0 14px 20px;border-left:1px solid var(--rule)}
+.kpis>div:first-child{padding-left:0;border-left:0}
+.kv{font-weight:900;font-stretch:64%;font-size:48px;line-height:1}
+.tabs{display:flex;border-bottom:2px solid var(--fg)}
+.tabs a{display:inline-flex;align-items:center;min-height:52px;padding:0 18px;font-weight:800;font-stretch:80%;text-transform:uppercase;text-decoration:none;color:var(--fg)}
+.tabs a[aria-current="page"]{box-shadow:inset 0 -4px 0 var(--fg)}
+.ibtn{width:44px;height:44px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ibtn span{width:22px;height:22px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.note{margin:0;padding:12px;border:1px solid var(--rule);color:var(--muted);font-size:14px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{text-align:left;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.03em;padding:0;border-bottom:2px solid var(--fg)}
+table.t th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;box-sizing:border-box;width:100%}
+table.t th.num button{justify-content:flex-end}
+table.t td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.r{cursor:pointer}
+table.t tr.r:hover td,table.t tr.r.on td{background:var(--soft)}
+.rowlink{color:var(--fg) !important;font-weight:700;text-decoration:none}
+.rowlink:hover{text-decoration:underline}
+.panel{position:sticky;top:20px;border:2px solid var(--fg);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px;min-height:260px;box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.prow span{color:var(--muted)}
+.b{display:inline-block;padding:1px 6px;font-weight:800;font-stretch:80%;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid var(--fg);white-space:nowrap}
+.seg{min-height:44px;padding:0 14px;border:2px solid var(--fg);font:700 15px Archivo,sans-serif;cursor:pointer;margin-left:-2px}
+.more{align-self:flex-start;min-height:44px;padding:0 16px;border:2px solid var(--fg);background:var(--card);color:var(--fg);font:800 14px Archivo,sans-serif;text-transform:uppercase;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.gl{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:center;min-height:52px;border-bottom:1px solid var(--rule);cursor:pointer}
+.gl:hover,.gl.on{background:var(--soft)}
+.track{position:relative;height:18px;background:var(--soft)}
+.th.dark .track{background:#202020}
+.sw{display:inline-block;width:18px;height:10px;vertical-align:0}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 1280px; min-height: 3750px; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <header style="display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 20px 0 28px; background: #000; color: #f2efe6; border-bottom: 2px solid var(--fg)">
+    <a href="Registre.dc.html" style="color: #f2efe6; text-decoration: none; font-weight: 900; font-stretch: 70%; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; margin-right: auto">Surveillance World</a>
+    <a class="nav" href="CarteTemps-grand.dc.html">Carte</a>
+    <a class="nav" href="Registre.dc.html" aria-current="{{nav.reg}}">Registre</a>
+    <a class="nav" href="Glossaire.dc.html" aria-current="{{nav.glo}}">Glossaire</a>
+    <a class="hdr" href="Registre.dc.html" aria-label="Rechercher dans le registre"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+    <button class="hdr" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}">
+      <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></sc-if>
+      <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
+    <nav class="crumbs" aria-label="Fil d'Ariane"><a href="Registre.dc.html">Registre</a> › <a href="Departement-grand.dc.html">Rhône</a> › <span aria-current="page">Sytral</span></nav>
+    <div><span class="tag" style="background: #9be7c4">Acheteur · transports</span></div>
+    <h1 class="h1">Sytral</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">Syndicat mixte des transports pour le Rhône et l'agglomération lyonnaise · SIREN 256 900 994 · Lyon (Rhône)</p>
+    <p class="lead" style="margin-top: 6px">L'autorité des transports lyonnais a signé <strong>7 contrats</strong> pour filmer son réseau (métro, tramways, parc relais) entre 2018 et 2021. <strong>Serfim T.I.C. et Roiret Transport en ont obtenu 5.</strong></p>
+    <div class="kpis" style="margin-top: 8px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Sections" style="width: 1180px; margin: 24px auto 0">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <a href="{{t.href}}" aria-current="{{t.cur}}">{{t.l}}</a>
+    </sc-for>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 60px; min-width: 0">
+
+      <section id="temps" aria-labelledby="a-temps" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-temps" class="h2">Ses contrats dans le temps</h2>
+          <button class="ibtn" onClick="{{tgl.tps}}" aria-expanded="{{open.tps}}" aria-label="Comment lire cette frise"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.tps}}" hint-placeholder-val="{{false}}"><p class="note tw">Une ligne par contrat : la barre va de la signature à la fin prévue (signature + durée écrite dans le contrat). En pointillés, la durée ajoutée par une modification. Triangle : l'appel d'offres publié avant. Trait bleu : une modification.</p></sc-if>
+        <div style="border-top: 2px solid var(--fg)">
+          <sc-for list="{{gantt}}" as="g" hint-placeholder-count="7">
+            <div class="{{g.cls}}" onMouseEnter="{{g.hover}}" onClick="{{g.hover}}">
+              <div style="padding: 6px 0; min-width: 0">
+                <a href="Contrat-grand.dc.html" class="rowlink" style="display: block; font-size: 15px; line-height: 1.2">{{g.label}}</a>
+                <span style="font-size: 13px; color: var(--muted)">{{g.ent}} · {{g.amt}}</span>
+              </div>
+              <div class="track" style="margin-right: 8px">
+                <span style="{{g.bar}}"></span>
+                <span style="{{g.ext}}"></span>
+                <span style="{{g.avis}}"></span>
+                <sc-for list="{{g.mods}}" as="m" hint-placeholder-count="2"><span style="{{m.style}}"></span></sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div class="gl" style="min-height: 30px; border-bottom: 0; cursor: default; background: none">
+            <span></span>
+            <div class="tw" style="position: relative; height: 22px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--fg); margin-right: 8px">
+              <sc-for list="{{years}}" as="y" hint-placeholder-count="5"><span style="{{y.style}}">{{y.l}}</span></sc-for>
+            </div>
+          </div>
+        </div>
+        <div aria-label="Légende de la frise" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 14px">
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; background: var(--fg); display: inline-block"></span>durée prévue, de la signature à la fin</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; border: 2px dashed var(--fg); border-left: 0; box-sizing: border-box; display: inline-block"></span>durée ajoutée par une modification</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid var(--ao); display: inline-block"></span>appel d'offres publié</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 3px; height: 18px; background: var(--accent); display: inline-block"></span>modification</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span class="tw" style="font-weight: 700">auj.</span>aujourd'hui, au bord droit</span>
+        </div>
+        <p style="margin: 0">Aucun de ces contrats n'est encore en cours. Les suivants, de 2023 à 2026, sont signés par <a href="#lie">Sytral Mobilités</a>.</p>
+      </section>
+
+      <section id="contrats" aria-labelledby="a-con" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-con" class="h2">Les 7 contrats</h2>
+          <button class="ibtn" onClick="{{tgl.mt}}" aria-expanded="{{open.mt}}" aria-label="Ce que veulent dire ces montants"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.mt}}" hint-placeholder-val="{{false}}"><p class="note tw">Montants maximums prévus au contrat, hors taxes, pas les sommes payées. Une flèche montre le montant après modification. Le contrat de la ligne D est un contrat mixte (d'autres travaux que la vidéoprotection) : il n'est pas compté dans le total de 8,2 M€.</p></sc-if>
+        <table class="t">
+          <caption class="sr">Contrats signés par le Sytral, triables par colonne</caption>
+          <thead><tr>
+            <sc-for list="{{cols}}" as="c" hint-placeholder-count="6">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td class="tw" style="white-space: nowrap">{{r.date}}</td>
+                <td><a href="Contrat-grand.dc.html" class="rowlink">{{r.objet}}</a><sc-if value="{{r.mixte}}" hint-placeholder-val="{{false}}"><div style="margin-top: 3px"><span class="b" style="background: var(--warn); color: var(--fg); border-style: dashed">contrat mixte</span></div></sc-if></td>
+                <td><sc-for list="{{r.ents}}" as="e" hint-placeholder-count="1"><a href="Entreprise-grand.dc.html" class="rowlink" style="display: block">{{e.nom}}</a></sc-for></td>
+                <td class="num"><strong>{{r.amt}}</strong><div style="font-size: 13px; color: var(--muted)">{{r.amt2}}</div></td>
+                <td class="num">{{r.dur}}</td>
+                <td class="num">{{r.off}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vend" aria-labelledby="a-vend" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-vend" class="h2">Qui vend ici</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">5 entreprises · montants à la signature</span>
+        </div>
+        <table class="t">
+          <caption class="sr">Entreprises titulaires des contrats du Sytral</caption>
+          <thead><tr><th scope="col"><button>Entreprise</button></th><th scope="col" class="num"><button>Contrats</button></th><th scope="col" class="num" aria-sort="descending"><button>Montant max. ↓</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{sellers}}" as="s" hint-placeholder-count="5">
+              <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onClick="{{s.hover}}">
+                <td><a href="Entreprise-grand.dc.html" class="rowlink">{{s.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{s.note}}</div></td>
+                <td class="num">{{s.n}}</td>
+                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{s.bar}}"></span><strong>{{s.amt}}</strong></div></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ao" aria-labelledby="a-ao" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-ao" class="h2">Appels d'offres publiés</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">5 consultations depuis 2015 · BOAMP</span>
+        </div>
+        <table class="t">
+          <caption class="sr">Appels d'offres et résultats publiés par le Sytral</caption>
+          <thead><tr><th scope="col" style="width: 120px"><button>Date</button></th><th scope="col"><button>Objet</button></th><th scope="col"><button>Publications</button></th><th scope="col"><button>Contrat</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{aos}}" as="a" hint-placeholder-count="5">
+              <tr class="{{a.cls}}" onMouseEnter="{{a.hover}}" onClick="{{a.hover}}">
+                <td class="tw" style="white-space: nowrap">{{a.date}}</td>
+                <td><a href="Contrat-grand.dc.html" class="rowlink">{{a.objet}}</a></td>
+                <td class="tw" style="font-size: 13px; color: var(--muted)">{{a.refs}}</td>
+                <td><sc-if value="{{a.found}}" hint-placeholder-val="{{true}}"><a href="Contrat-grand.dc.html">{{a.contrat}}</a></sc-if><sc-if value="{{a.missing}}" hint-placeholder-val="{{false}}"><span style="color: var(--muted)">non retrouvé</span></sc-if></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="lie" aria-labelledby="a-lie" style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 2px solid var(--fg); background: var(--card)">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 id="a-lie" class="h2" style="font-size: 26px">Aussi : Sytral Mobilités</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">SIREN 200 096 386 · 4 contrats, 2023 → 2026</span>
+        </div>
+        <p style="margin: 0">Un autre acheteur du même réseau, avec son propre numéro SIREN. Ses contrats sont sur sa page.</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{mob}}" as="m" hint-placeholder-count="4">
+            <li style="display: grid; grid-template-columns: 110px minmax(0, 1fr) 220px 110px; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--rule)">
+              <span class="tw">{{m.date}}</span><span>{{m.objet}}</span><a href="Entreprise-grand.dc.html" class="rowlink">{{m.ent}}</a><strong style="text-align: right">{{m.amt}}</strong>
+            </li>
+          </sc-for>
+        </ul>
+        <a href="Acheteur-grand.dc.html" class="ghost">Sytral Mobilités →</a>
+      </section>
+    </main>
+
+    <aside aria-live="polite" aria-label="Détail" class="panel">
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+        <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+      </sc-for>
+      <p class="tw" style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">{{det.foot}}</p>
+      <a href="{{det.href}}" style="margin-top: 4px; font-weight: 700">{{det.link}}</a>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1280,"height":3750}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { dark: (props.theme ?? 'sombre') === 'sombre', sel: null, sort: 'date', dir: 1, open: {} };
+  }
+  renderVals() {
+    const S = this.state;
+    const dark = S.dark;
+    const fr = (n) => Math.round(n).toLocaleString('fr-FR').replace(/ /g, ' ');
+    const eur = (n) => n == null ? 'non publié' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',') + ' M€' : fr(n) + ' €';
+    const eurx = (n) => fr(n) + ' €';
+    const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const fd = (d) => { const [y, m, j] = d.split('-').map(Number); return (j ? j + ' ' : '') + MOIS[m - 1] + ' ' + y; };
+    const addM = (d, n) => { const [y, m, j] = d.split('-').map(Number); const t = (m - 1) + n; return (y + Math.floor(t / 12)) + '-' + String(t % 12 + 1).padStart(2, '0') + '-' + String(j).padStart(2, '0'); };
+    // Contrats réels du registre v10 (acheteur 256900994)
+    // [signature, libellé court, objet publié, entreprises, montant initial, montant après modif, durée initiale, durée après modif, offres, avis (date, réf), résultat réf, modifications [dates], mixte, réf DECP]
+    const C = [
+      ['2018-06-20', 'Systèmes centraux de vidéoprotection, métro et réseau', 'Marché public de systèmes centraux de videoprotection métro et réseau de transport', ['Roiret Transport'], 5696099.14, 4875941.91, 71, 84, 3, ['2017-07-19', 'BOAMP 17-102157'], 'BOAMP 18-85216', ['2025-02-13'], false, 'DECP 256900994000112018M1800_32323500'],
+      ['2019-04-23', 'Ligne D : courants faibles et caméras', 'Service renforcé ligne D - Travaux de courants faibles - Installations de caméras de vidéo protection', ['Roiret Transport'], 905209.6, null, 20, null, null, null, null, [], true, 'DECP 256900994000112019M19004700_45311000'],
+      ['2019-06-24', 'Interface serveur vidéo – postes de commande lignes A et C', 'Interface entre le serveur vidéo Genetec et les PCC des lignes A et C', ['Compagnie des Signaux'], 267456, null, 18, null, null, null, null, [], false, 'DECP 256900994000112019M19007200_32323500'],
+      ['2020-10-01', 'Vidéosurveillance des stations de tramway T1, T2, T3', 'Vidéosurveillance des stations tramway des lignes T1, T2 et T3', ['Serfim T.I.C.'], 738939.16, 786593.93, 36, null, 1, null, null, ['2024-04-04', '2025-12-23'], false, 'DECP 256900994000112020M20_45300000'],
+      ['2020-10-28', 'Vidéoprotection du parc relais Laurent Bonnevay', 'Renouvellement de l’installation de vidéoprotection du parc relais Laurent Bonnevay', ['Serfim T.I.C.', 'Serpollet'], 180980, null, 9, null, null, null, null, [], false, 'DECP 256900994000112020M20012300_45300000'],
+      ['2021-10-19', 'Vidéoprotection à bord des rames de tramway de 32 m', 'Mise en oeuvre d’un système de vidéoprotection et d’un support de communication sur des rames de tramway 32m du réseau TCL', ['Faiveley Transport Tours'], 1149829.84, 1188993.35, 31, null, null, ['2020-07-19', 'BOAMP 20-91870'], 'BOAMP 21-142497', ['2024-03-11'], false, 'DECP 256900994000112021M210162_32323500'],
+      ['2021-11-22', 'T1, T2, T3 : enregistrement central des images', 'T1, T2, T3 - Mise en oeuvre d’un système d’enregistrement central des images de vidéoprotection', ['Serfim T.I.C.'], 204727.45, null, 24, null, null, null, null, [], false, 'DECP 256900994000112021M21018300_35120000']
+    ];
+    const kpis = [['7', 'contrats signés'], ['5', 'entreprises'], ['8,2 M€', 'au maximum (hors contrat mixte)'], ['3', 'contrats modifiés après signature']].map(([v, l]) => ({ v: v, l: l }));
+    const tabs = [['#temps', 'Dans le temps'], ['#contrats', 'Contrats · 7'], ['#vend', 'Qui vend · 5'], ['#ao', "Appels d'offres · 5"], ['#lie', 'Sytral Mobilités']].map(([h, l], i) => ({ href: h, l: l, cur: i === 0 ? 'page' : 'false' }));
+    // Frise
+    const T0 = Date.parse('2017-01-01'), T1 = Date.parse('2026-10-25');
+    const P = (d) => Math.max(0, Math.min(100, (Date.parse(d) - T0) / (T1 - T0) * 100));
+    const gantt = C.map((c, i) => {
+      const on = S.sel === 'c' + i;
+      const end = addM(c[0], c[6]), end2 = c[7] ? addM(c[0], c[7]) : null;
+      const a = P(c[0]), b = P(end);
+      const col = on ? 'var(--hover)' : 'var(--fg)';
+      return {
+        label: c[1], ent: c[3].join(' + '), amt: eur(c[4]),
+        cls: 'gl' + (on ? ' on' : ''),
+        bar: 'position: absolute; top: 0; bottom: 0; left: ' + a.toFixed(2) + '%; width: ' + Math.max(0.6, b - a).toFixed(2) + '%; background: ' + col,
+        ext: end2 ? 'position: absolute; top: 0; bottom: 0; left: ' + b.toFixed(2) + '%; width: ' + (P(end2) - b).toFixed(2) + '%; border: 2px dashed ' + col + '; border-left: 0; box-sizing: border-box' : 'display: none',
+        avis: c[9] ? 'position: absolute; top: 2px; left: calc(' + P(c[9][0]).toFixed(2) + '% - 7px); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid var(--ao)' : 'display: none',
+        mods: c[11].map((d) => ({ style: 'position: absolute; top: -5px; bottom: -5px; left: ' + P(d).toFixed(2) + '%; width: 3px; background: var(--accent)' })),
+        hover: () => this.setState({ sel: 'c' + i })
+      };
+    });
+    const years = ['2017', '2019', '2021', '2023', '2025'].map((y) => ({ l: y, style: 'position: absolute; top: 4px; left: ' + P(y + '-01-01').toFixed(2) + '%; transform: translateX(-50%)' }))
+      .concat([{ l: 'auj.', style: 'position: absolute; top: 4px; right: 0; color: var(--fg)' }]);
+    // Tableau triable
+    const keyf = { date: (c) => c[0], objet: (c) => c[1], ent: (c) => c[3][0], amt: (c) => c[4], dur: (c) => c[7] || c[6], off: (c) => c[8] == null ? -1 : c[8] };
+    const list = C.map((c, i) => [c, i]).sort((x, y) => { const f = keyf[S.sort]; const va = f(x[0]), vb = f(y[0]); return (va > vb ? 1 : va < vb ? -1 : 0) * S.dir; });
+    const rows = list.map(([c, i]) => ({
+      date: fd(c[0]), objet: c[1], mixte: c[12], ents: c[3].map((n) => ({ nom: n })),
+      amt: eurx(c[4]), amt2: c[5] ? '→ ' + eurx(c[5]) + ' après modification' : '',
+      dur: c[7] ? c[6] + ' → ' + c[7] + ' mois' : c[6] + ' mois', off: c[8] == null ? 'non publié' : String(c[8]),
+      cls: 'r' + (S.sel === 'c' + i ? ' on' : ''), hover: () => this.setState({ sel: 'c' + i })
+    }));
+    const cols = [['date', 'Signature', '', 'width: 120px'], ['objet', 'Objet', '', ''], ['ent', 'Entreprise', '', 'width: 180px'], ['amt', 'Montant max.', 'num', ''], ['dur', 'Durée', 'num', ''], ['off', 'Offres', 'num', '']]
+      .map(([k, l, cls, w]) => ({ l: l, cls: cls, w: w, sort: S.sort === k ? (S.dir < 0 ? 'descending' : 'ascending') : 'none', arrow: S.sort === k ? (S.dir < 0 ? '↓' : '↑') : '', pick: () => this.setState({ sort: k, dir: S.sort === k ? -S.dir : (k === 'amt' || k === 'dur' || k === 'off' ? -1 : 1) }) }));
+    // Qui vend
+    const SE = [['Roiret Transport', 2, 6601308.74, 'dont le contrat mixte de la ligne D'], ['Faiveley Transport Tours', 1, 1149829.84, ''], ['Serfim T.I.C.', 3, 1124646.61, 'dont 1 avec Serpollet'], ['Compagnie des Signaux', 1, 267456, ''], ['Serpollet', 1, 180980, 'avec Serfim T.I.C., montant partagé non publié']];
+    const mxs = SE[0][2];
+    const sellers = SE.map((s, i) => ({ nom: s[0], n: s[1], amt: eur(s[2]), note: s[3], bar: 'display: inline-block; height: 10px; width: ' + Math.max(3, Math.round(s[2] / mxs * 160)) + 'px; background: var(--accent)', cls: 'r' + (S.sel === 's' + i ? ' on' : ''), hover: () => this.setState({ sel: 's' + i }) }));
+    // Appels d'offres
+    const AO = [
+      ['2015-05-15', "Maîtrise d'œuvre et systèmes pour la vidéoprotection embarquée de la ligne de métro D", 'résultat BOAMP 15-73895', null],
+      ['2015-11-17', 'Enregistreurs, caméras supplémentaires et câblages dans les 73 rames de 32 m du tramway', 'résultat BOAMP 15-173782', null],
+      ['2016-02-18', 'Vidéoprotection embarquée de la ligne D et communication sol/bord de la ligne B', 'avis 16-24009 · rectificatif 16-25034 · résultat 16-169529', null],
+      ['2017-07-19', 'Systèmes centraux de vidéoprotection, métro et réseau', 'avis 17-102157 · résultat 18-85216', 'juin 2018 · Roiret Transport'],
+      ['2020-07-19', 'Vidéoprotection et support de communication des rames de tramway de 32 m', 'avis 20-91870 · résultat 21-142497', 'oct. 2021 · Faiveley Transport Tours']
+    ];
+    const aos = AO.map((a, i) => ({ date: fd(a[0]), objet: a[1], refs: a[2], contrat: a[3] || '', found: !!a[3], missing: !a[3], cls: 'r' + (S.sel === 'o' + i ? ' on' : ''), hover: () => this.setState({ sel: 'o' + i }) }));
+    // Sytral Mobilités
+    const mob = [['2023-11-15', 'Communication sol-bord pour la vidéoprotection embarquée de la ligne A', 'Spie Citynetworks + Roiret Transport', 5718733.36], ['2024-02-13', 'Paramétrage de la vidéoprotection (systèmes transverses)', 'Enfrasys', 113090], ['2025-06-30', 'Renouvellement de la vidéoprotection, tramway T4 et extension T1', 'Serfim T.I.C.', 595319.09], ['2026-09-17', 'Caméras de voie sur la ligne A : fourniture, installation, raccordement', 'Spie Citynetworks', 384886.39]]
+      .map((m) => ({ date: fd(m[0]), objet: m[1], ent: m[2], amt: eur(m[3]) }));
+    // Panneau
+    let det = { kicker: 'Acheteur · transports', title: 'Sytral', rows: [{ k: 'Contrats signés', v: '7' }, { k: 'Entreprises', v: '5' }, { k: 'Au maximum', v: '8,2 M€' }, { k: 'Premier contrat', v: '20 juin 2018' }, { k: 'Dernier contrat', v: '22 nov. 2021' }], foot: 'Survolez un contrat, une entreprise ou un appel d\'offres.', link: '', href: 'Acheteur-grand.dc.html' };
+    if (S.sel && S.sel[0] === 'c') {
+      const c = C[+S.sel.slice(1)];
+      const r = [{ k: 'Entreprise', v: c[3].join(' + ') }, { k: 'Montant max. à la signature', v: eurx(c[4]) }];
+      if (c[5]) r.push({ k: 'Après modification', v: eurx(c[5]) });
+      r.push({ k: 'Durée', v: c[7] ? c[6] + ' → ' + c[7] + ' mois' : c[6] + ' mois' });
+      r.push({ k: 'Fin prévue', v: fd(addM(c[0], c[7] || c[6])) });
+      r.push({ k: 'Offres reçues', v: c[8] == null ? 'non publié' : String(c[8]) });
+      if (c[11].length) r.push({ k: 'Modifications', v: c[11].map(fd).join(', ') });
+      det = { kicker: 'Contrat · ' + fd(c[0]) + (c[12] ? ' · contrat mixte' : ''), title: c[2], rows: r, foot: c[13] + (c[9] ? ' · appel d\'offres ' + c[9][1] : ''), link: 'Historique du contrat →', href: 'Contrat-grand.dc.html' };
+    }
+    if (S.sel && S.sel[0] === 's') {
+      const s = SE[+S.sel.slice(1)];
+      det = { kicker: 'Entreprise', title: s[0], rows: [{ k: 'Contrats avec le Sytral', v: String(s[1]) }, { k: 'Au maximum', v: eurx(s[2]) }].concat(s[3] ? [{ k: 'À noter', v: s[3] }] : []), foot: 'Montants à la signature, avant modification.', link: 'Page de l\'entreprise →', href: 'Entreprise-grand.dc.html' };
+    }
+    if (S.sel && S.sel[0] === 'o') {
+      const a = AO[+S.sel.slice(1)];
+      det = { kicker: "Appel d'offres · " + fd(a[0]), title: a[1], rows: [{ k: 'Publications', v: a[2] }, { k: 'Contrat', v: a[3] || 'non retrouvé' }], foot: 'Bulletin officiel des annonces des marchés publics.', link: a[3] ? 'Historique du contrat →' : '', href: 'Contrat-grand.dc.html' };
+    }
+    const open = S.open || {};
+    const tg = (k) => () => this.setState({ open: Object.assign({}, open, { [k]: !open[k] }) });
+    return {
+      th: dark ? 'th dark' : 'th', isDark: dark, isLight: !dark,
+      themeLabel: dark ? 'Passer en thème clair' : 'Passer en thème sombre',
+      toggleTheme: () => this.setState({ dark: !this.state.dark }),
+      nav: { reg: 'page', glo: 'false' },
+      kpis: kpis, tabs: tabs, gantt: gantt, years: years, rows: rows, cols: cols, sellers: sellers, aos: aos, mob: mob, det: det,
+      show: { tps: !!open.tps, mt: !!open.mt }, open: { tps: open.tps ? 'true' : 'false', mt: open.mt ? 'true' : 'false' },
+      tgl: { tps: tg('tps'), mt: tg('mt') }
+    };
+  }
+}
+</script>
+</body>
+</html>

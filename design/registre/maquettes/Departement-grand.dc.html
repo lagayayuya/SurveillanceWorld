@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rhône — page département, grand écran (proposition)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--rule:#c9c4b6;--soft:#e9e5da;--link:#0060a0;--accent:#0060a0;--hover:#ff48b0;--ao:#b38f00;--ao-ink:#111;--aut:#0060a0;--aut-ink:#fff;--sub:#2e7d4f;--sub-ink:#fff;--warn:#fff6bf;--drone:#0089c7;background:var(--page);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#121212;--card:#1b1b1b;--fg:#f2efe6;--muted:#b0ab9f;--rule:#34322e;--soft:#232323;--link:#7fd4ff;--accent:#7fd4ff;--hover:#ff48b0;--ao:#e0b400;--ao-ink:#111;--aut:#7fd4ff;--aut-ink:#111;--sub:#7fd18f;--sub-ink:#111;--warn:#3d3600;--drone:#7fd4ff}
+.th a{color:var(--link)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.h1{margin:0;font-weight:900;font-stretch:62%;font-size:72px;line-height:.9;text-transform:uppercase}
+.h2{margin:0;font-weight:900;font-stretch:66%;font-size:30px;line-height:1;text-transform:uppercase}
+.h3{margin:0;font-weight:900;font-stretch:75%;font-size:20px;line-height:1.1;text-transform:uppercase}
+.lead{margin:0;max-width:860px;font-size:22px;line-height:1.35;font-weight:500}
+.nav{color:#f2efe6 !important;font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav[aria-current="page"]{font-weight:900;text-decoration:underline;text-underline-offset:6px}
+.hdr{width:44px;height:44px;border:0;background:none;color:#f2efe6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crumbs{font-size:14px}
+.crumbs a{text-decoration:none}
+.tag{display:inline-block;padding:2px 8px;color:#111;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.kpis>div{padding:14px 0 14px 20px;border-left:1px solid var(--rule)}
+.kpis>div:first-child{padding-left:0;border-left:0}
+.kv{font-weight:900;font-stretch:64%;font-size:48px;line-height:1}
+.tabs{display:flex;border-bottom:2px solid var(--fg)}
+.tabs a{display:inline-flex;align-items:center;min-height:52px;padding:0 18px;font-weight:800;font-stretch:80%;text-transform:uppercase;text-decoration:none;color:var(--fg)}
+.tabs a[aria-current="page"]{box-shadow:inset 0 -4px 0 var(--fg)}
+.ibtn{width:44px;height:44px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ibtn span{width:22px;height:22px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.note{margin:0;padding:12px;border:1px solid var(--rule);color:var(--muted);font-size:14px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{text-align:left;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.03em;padding:0;border-bottom:2px solid var(--fg)}
+table.t th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;box-sizing:border-box;width:100%}
+table.t th.num button{justify-content:flex-end}
+table.t td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.r{cursor:pointer}
+table.t tr.r:hover td,table.t tr.r.on td{background:var(--soft)}
+.rowlink{color:var(--fg) !important;font-weight:700;text-decoration:none}
+.rowlink:hover{text-decoration:underline}
+.panel{position:sticky;top:20px;border:2px solid var(--fg);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px;min-height:260px;box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.prow span{color:var(--muted)}
+.b{display:inline-block;padding:1px 6px;font-weight:800;font-stretch:80%;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid var(--fg);white-space:nowrap}
+.seg{min-height:44px;padding:0 14px;border:2px solid var(--fg);font:700 15px Archivo,sans-serif;cursor:pointer;margin-left:-2px}
+.more{align-self:flex-start;min-height:44px;padding:0 16px;border:2px solid var(--fg);background:var(--card);color:var(--fg);font:800 14px Archivo,sans-serif;text-transform:uppercase;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+<style>
+.exp{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;min-height:28px;font-weight:700}
+.exp:focus-visible{outline:2px solid var(--accent)}
+.sub td{background:var(--soft);padding:10px 8px 14px 34px;font-size:14px;line-height:1.7}
+.sub a{color:var(--fg);text-decoration:none;font-weight:600;margin-right:4px}
+.sub a:hover{text-decoration:underline}
+.sub .c{color:var(--muted);margin-right:14px}
+.filt{display:flex;align-items:center;gap:10px;height:52px;padding:0 14px;border:2px solid var(--fg);background:var(--card);width:420px;box-sizing:border-box}
+.filt input{flex:1;border:0;background:transparent;color:var(--fg);font:500 17px Archivo,sans-serif}
+.yb{all:unset;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end;height:100%;gap:6px}
+.yb:focus-visible{outline:2px solid var(--accent)}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 1280px; min-height: 4100px; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<header style="display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 20px 0 28px; background: #000; color: #f2efe6; border-bottom: 2px solid var(--fg)">
+  <a href="Registre.dc.html" style="color: #f2efe6; text-decoration: none; font-weight: 900; font-stretch: 70%; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; margin-right: auto">Surveillance World</a>
+  <a class="nav" href="CarteTemps-grand.dc.html">Carte</a>
+  <a class="nav" href="Registre.dc.html" aria-current="{{nav.reg}}">Registre</a>
+  <a class="nav" href="Glossaire.dc.html" aria-current="{{nav.glo}}">Glossaire</a>
+  <a class="hdr" href="Registre.dc.html" aria-label="Rechercher dans le registre"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+  <button class="hdr" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}">
+    <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></sc-if>
+    <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg></sc-if>
+  </button>
+</header>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 0; display: flex; flex-direction: column; gap: 14px">
+    <nav class="crumbs" aria-label="Fil d'Ariane"><a href="Registre.dc.html">Registre</a> › <span aria-current="page">Rhône</span></nav>
+    <div><span class="tag" style="background: #ffb36b">Département</span></div>
+    <h1 class="h1">Rhône</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">69 · 138 communes avec au moins un document · arrêtés de la préfecture collectés depuis septembre 2025</p>
+    <p class="lead">Depuis septembre 2025, la préfecture a signé <strong>1 225 autorisations de caméras</strong> et <strong>60 arrêtés de drones</strong> dans le Rhône : les trois quarts des autorisations et presque tous les drones concernent <strong>la Métropole de Lyon</strong>.</p>
+    <div class="kpis" style="margin-top: 8px">
+      <div><div class="kv">2 020</div><div>documents</div></div>
+      <div><div class="kv">238</div><div>contrats signés</div></div>
+      <div><div class="kv">1 225</div><div>autorisations de caméras</div></div>
+      <div><div class="kv">60</div><div>arrêtés de drones</div></div>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Sections" style="width: 1180px; margin: 24px auto 0">
+    <a href="#d-ic" aria-current="page">Intercommunalités · 13</a>
+    <a href="#d-com">Communes · 138</a>
+    <a href="#d-qui">Qui vend, qui achète</a>
+    <a href="#d-an">Chaque année</a>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 64px; min-width: 0">
+
+      <section id="d-ic" aria-labelledby="h-ic" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="h-ic" class="h2">Par intercommunalité</h2>
+          <button class="ibtn" onClick="{{tgl.ic}}" aria-expanded="{{open.ic}}" aria-label="Comment sont calculés ces chiffres"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.ic}}" hint-placeholder-val="{{false}}"><p class="note tw">Chaque ligne additionne les documents rattachés aux communes de l'intercommunalité qui en ont au moins un. 129 documents du Rhône n'indiquent pas de commune : ils ne sont comptés dans aucune ligne. « Sur la carte » : caméras relevées par les contributeurs OpenStreetMap, pas un inventaire officiel.</p></sc-if>
+        <p style="margin: 0">Touchez une intercommunalité pour voir ses communes.</p>
+        <table class="t">
+          <caption class="sr">Intercommunalités du Rhône, triables par colonne ; une ligne se déplie sur ses communes</caption>
+          <thead><tr>
+            <sc-for list="{{icCols}}" as="c" hint-placeholder-count="7">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ics}}" as="r" hint-placeholder-count="13">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.toggle}}">
+                <td><button class="exp" aria-expanded="{{r.ex}}"><span aria-hidden="true" style="width: 14px">{{r.arrow}}</span>{{r.nom}}</button></td>
+                <td class="num">{{r.n}}</td>
+                <td class="num"><strong>{{r.docs}}</strong></td>
+                <td class="num">{{r.con}}</td>
+                <td class="num">{{r.aut}}</td>
+                <td class="num">{{r.dr}}</td>
+                <td class="num">{{r.cams}}</td>
+              </tr>
+              <tr class="sub" style="{{r.subStyle}}">
+                <td colspan="7"><sc-for list="{{r.subs}}" as="s" hint-placeholder-count="8"><a href="Commune-grand.dc.html" onMouseEnter="{{s.hover}}">{{s.nom}}</a><span class="c">{{s.v}}</span></sc-for></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="d-com" aria-labelledby="h-com" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="h-com" class="h2">Toutes les communes</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{comCount}}</span>
+        </div>
+        <label class="filt">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+          <span class="sr">Filtrer les communes par nom</span>
+          <input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="Filtrer par nom : Mions, Bron…">
+        </label>
+        <table class="t">
+          <caption class="sr">Communes du Rhône avec au moins un document, triables par colonne</caption>
+          <thead><tr>
+            <sc-for list="{{comCols}}" as="c" hint-placeholder-count="6">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{coms}}" as="c" hint-placeholder-count="15">
+              <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onClick="{{c.hover}}">
+                <td><a class="rowlink" href="Commune-grand.dc.html">{{c.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{c.ep}}</div></td>
+                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.docs}}</strong></div></td>
+                <td class="num">{{c.con}}</td>
+                <td class="num">{{c.aut}}</td>
+                <td class="num">{{c.dr}}</td>
+                <td class="num">{{c.cams}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{showMore}}" hint-placeholder-val="{{true}}"><button class="more" onClick="{{more}}">{{moreLabel}}</button></sc-if>
+        <sc-if value="{{noMatch}}" hint-placeholder-val="{{false}}"><p style="margin: 0; color: var(--muted)">Aucune commune du Rhône de ce nom n'a de document dans le registre.</p></sc-if>
+      </section>
+
+      <section id="d-qui" aria-labelledby="h-qui" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="h-qui" class="h2">Qui vend, qui achète</h2>
+          <button class="ibtn" onClick="{{tgl.qui}}" aria-expanded="{{open.qui}}" aria-label="Ce que comptent ces tableaux"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.qui}}" hint-placeholder-val="{{false}}"><p class="note tw">Contrats signés depuis 2018 pour une commune ou un acheteur du Rhône. Une entreprise est comptée pour chaque contrat où elle figure, seule ou avec d'autres. Montant : le maximum prévu au contrat, hors taxes, pas la somme payée. « Non publié » : l'acheteur n'a pas publié de montant.</p></sc-if>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start">
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h3 class="h3">Qui vend dans le Rhône</h3>
+            <table class="t">
+              <caption class="sr">Entreprises titulaires de contrats dans le Rhône</caption>
+              <thead><tr><th scope="col"><button>Entreprise</button></th>
+                <sc-for list="{{vCols}}" as="c" hint-placeholder-count="2"><th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{sellers}}" as="s" hint-placeholder-count="10">
+                  <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onClick="{{s.hover}}"><td><a class="rowlink" href="Entreprise-grand.dc.html">{{s.nom}}</a></td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <h3 class="h3">Qui achète dans le Rhône</h3>
+            <table class="t">
+              <caption class="sr">Acheteurs publics du Rhône</caption>
+              <thead><tr><th scope="col"><button>Acheteur</button></th>
+                <sc-for list="{{bCols}}" as="c" hint-placeholder-count="2"><th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{buyers}}" as="b" hint-placeholder-count="10">
+                  <tr class="{{b.cls}}" onMouseEnter="{{b.hover}}" onClick="{{b.hover}}"><td><a class="rowlink" href="{{b.href}}">{{b.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td></tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="d-an" aria-labelledby="h-an" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="h-an" class="h2">Chaque année</h2>
+          <div style="display: flex; align-items: center; gap: 6px">
+            <div role="group" aria-label="Type de document" style="display: flex">
+              <sc-for list="{{yearTypes}}" as="y" hint-placeholder-count="3"><button class="seg" onClick="{{y.pick}}" aria-pressed="{{y.pressed}}" style="{{y.style}}">{{y.l}}</button></sc-for>
+            </div>
+            <button class="ibtn" onClick="{{tgl.an}}" aria-expanded="{{open.an}}" aria-label="Ce que montrent ces barres"><span aria-hidden="true">i</span></button>
+          </div>
+        </div>
+        <sc-if value="{{show.an}}" hint-placeholder-val="{{false}}"><p class="note tw">Les arrêtés de la préfecture ne sont collectés que depuis septembre 2025 : avant, la barre est absente parce que le registre ne les a pas, pas parce qu'il n'y en avait pas. 2026 est l'année en cours. 99 appels d'offres antérieurs à 2018 ne sont pas montrés.</p></sc-if>
+        <div role="img" aria-label="{{yearAlt}}" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; align-items: end; height: 240px; border-bottom: 2px solid var(--fg)">
+          <sc-for list="{{years}}" as="y" hint-placeholder-count="9">
+            <button class="yb" onMouseEnter="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.alt}}"><span style="text-align: center; font-weight: 800">{{y.v}}</span><span style="{{y.bar}}"></span></button>
+          </sc-for>
+        </div>
+        <div class="tw" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; text-align: center; color: var(--muted)">
+          <sc-for list="{{years}}" as="y" hint-placeholder-count="9"><span>{{y.y}}</span></sc-for>
+        </div>
+      </section>
+    </main>
+
+    <aside aria-live="polite" aria-label="Détail" class="panel">
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+        <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value="{{det.hasLink}}" hint-placeholder-val="{{false}}"><a href="{{det.href}}" style="margin-top: 6px; font-weight: 700">{{det.link}}</a></sc-if>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1280,"height":4100}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { dark: (props.theme ?? 'sombre') === 'sombre', sortI: 'docs', dirI: -1, openI: null, sortC: 'docs', dirC: -1, q: '', allC: false, sortV: 'n', sortB: 'n', yt: 'con', sel: null, open: {} };
+  }
+  renderVals() {
+    const S = this.state;
+    const dark = S.dark;
+    const fr = (n) => Math.round(n).toLocaleString('fr-FR').replace(/\u202f/g, '\u00a0');
+    const eur = (n) => !n ? 'non publié' : n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',') + ' M€' : fr(n) + ' €';
+    const plural = (n, s, p) => fr(n) + ' ' + (n > 1 ? (p || s + 's') : s);
+    const norm = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const COM = [["69123","Lyon",624,87,491,44,"200046977",2113,519127],["69266","Villeurbanne",81,7,59,2,"200046977",651,163684],["69282","Meyzieu",66,16,20,3,"200046977",28,36687],["69290","Saint-Priest",62,9,35,0,"200046977",174,49229],["69264","Villefranche-sur-Saône",61,5,49,2,"200040590",142,36172],["69259","Vénissieux",50,3,35,2,"200046977",137,65502],["69034","Caluire-et-Cuire",41,18,15,0,"200046977",83,43597],["69029","Bron",39,5,27,0,"200046977",314,42982],["69256","Vaulx-en-Velin",39,1,30,1,"200046977",230,53069],["69066","Cours",36,1,30,0,"200040566",1,4306],["69081","Écully",28,7,15,0,"200046977",24,17944],["69149","Oullins-Pierre-Bénite",27,2,25,0,"200046977",95,38168],["69275","Décines-Charpieu",27,3,18,0,"200046977",124,29877],["69286","Rillieux-la-Pape",27,2,18,2,"200046977",5,31389],["69091","Givors",23,1,19,0,"200046977",26,21379],["69199","Saint-Fons",22,2,8,0,"200046977",33,19285],["69204","Saint-Genis-Laval",20,2,12,0,"200046977",20,21212],["69243","Tarare",19,3,13,0,"200040566",4,10893],["69277","Genas",19,4,12,0,"246900575",10,13421],["69244","Tassin-la-Demi-Lune",18,0,12,0,"200046977",35,23200],["69299","Colombier-Saugnieu",18,2,11,0,"246900575",12,2874],["69027","Brignais",17,3,11,0,"246900757",18,12503],["69092","Gleizé",17,5,3,0,"200040590",1,8035],["69273","Corbas",17,3,2,1,"200046977",9,11315],["69283","Mions",17,2,9,0,"200046977",10,13843],["69089","Francheville",16,1,12,0,"200046977",17,15604],["69019","Belleville-en-Beaujolais",15,0,13,0,"200067817",11,14016],["69116","Limonest",14,1,7,0,"200046977",5,4012],["69287","Saint-Bonnet-de-Mure",14,1,6,0,"246900575",58,6984],["69069","Craponne",13,1,10,0,"200046977",8,12084],["69202","Sainte-Foy-lès-Lyon",13,2,11,0,"200046977",15,21692],["69010","L'Arbresle",12,2,6,0,"246900625",0,6537],["69250","La Tour-de-Salvagny",12,3,4,1,"200046977",1,4649],["69271","Chassieu",12,2,8,0,"200046977",65,11208],["69040","Champagne-au-Mont-d'Or",11,0,10,0,"200046977",5,6311],["69096","Grigny-sur-Rhône",11,4,4,0,"200046977",7,10030],["69044","Charbonnières-les-Bains",10,0,5,0,"200046977",27,5383],["69260","Vernaison",10,3,1,0,"200046977",3,5210],["69006","Amplepuis",9,1,3,0,"200040566",4,4876],["69100","Irigny",9,2,2,0,"200046977",5,9034],["69248","Thizy-les-Bourgs",9,0,9,0,"200040566",0,5771],["69043","Chaponost",8,1,4,0,"246900757",10,9382],["69072","Dardilly",8,0,7,0,"200046977",7,9221],["69276","Feyzin",8,1,2,0,"200046977",24,10304],["69291","Saint-Symphorien-d'Ozon",8,0,8,0,"246900765",27,6186],["69115","Limas",7,0,6,0,"200040590",11,4750],["69127","Marcy-l'Étoile",7,2,0,0,"200046977",0,3778],["69141","Mornant",7,1,4,0,"246900740",5,6282],["69279","Jonage",7,0,4,0,"200046977",0,6144],["69288","Saint-Laurent-de-Mure",7,1,5,1,"246900575",8,5791],["69294","Sérézin-du-Rhône",7,0,5,0,"246900765",72,3133],["69009","Anse",6,0,6,0,"200040574",10,8206],["69112","Lentilly",6,1,1,0,"246900625",0,6623],["69143","Neuville-sur-Saône",6,0,6,0,"200046977",24,7812],["69076","Dommartin",5,1,0,0,"246900625",0,2687],["69088","Fontaines-sur-Saône",5,1,2,0,"200046977",1,6957],["69133","Millery",5,2,1,0,"246900757",4,4299],["69142","La Mulatière",5,0,2,0,"200046977",7,6534],["69189","Sainte-Colombe",5,0,5,0,"200077014",5,2036],["69191","Saint-Cyr-au-Mont-d'Or",5,1,3,0,"200046977",3,6327],["69194","Saint-Didier-au-Mont-d'Or",5,0,3,0,"200046977",0,7435],["69241","Taluyers",5,2,1,0,"246900740",0,2686],["69270","Chaponnay",5,0,3,0,"246900765",2,4548],["69278","Genay",5,0,5,0,"200046977",4,5585],["69064","Condrieu",4,0,3,0,"200077014",2,3957],["69086","Fleurieux-sur-l'Arbresle",4,0,2,0,"246900625",0,2361],["69094","Grézieu-la-Varenne",4,1,0,0,"246900724",1,6472],["69121","Lozanne",4,0,4,0,"200040574",0,3182],["69205","Saint-Genis-les-Ollières",4,0,2,0,"200046977",0,5439],["69238","Saint-Symphorien-sur-Coise",4,0,4,0,"200066587",1,3785],["69272","Communay",4,0,3,0,"246900765",37,4540],["69004","Alix",3,1,1,0,"200040574",0,777],["69013","Arnas",3,0,2,0,"200040590",5,4601],["69059","Civrieux-d'Azergues",3,0,3,0,"200040574",0,1675],["69063","Collonges-au-Mont-d'Or",3,0,1,0,"200046977",2,4669],["69136","Montagny",3,1,1,0,"246900757",14,3218],["69171","Sain-Bel",3,0,2,0,"246900625",1,2566],["69220","Saint-Laurent-de-Chamousset",3,0,3,0,"200066587",0,2017],["69228","Chabanière",3,1,1,0,"246900740",0,4323],["69268","Vourles",3,0,2,0,"246900757",2,3332],["69289","Saint-Pierre-de-Chandieu",3,1,2,0,"246900575",8,4616],["69292","Sathonay-Camp",3,1,2,0,"200046977",4,7019],["69297","Ternay",3,0,0,0,"246900765",53,5596],["69003","Albigny-sur-Saône",2,0,0,0,"200046977",0,3057],["69018","Beaujeu",2,0,1,0,"200067817",0,2082],["69028","Brindas",2,0,0,0,"246900724",17,6775],["69045","Charentay",2,0,2,0,"200067817",0,1273],["69050","Châtillon",2,0,2,0,"200040574",1,2252],["69055","Les Chères",2,0,2,0,"200040574",2,1503],["69068","Couzon-au-Mont-d'Or",2,1,0,0,"200046977",2,2619],["69070","Cublize",2,0,2,0,"200040566",1,1360],["69084","Fleurie",2,0,2,0,"200067817",2,1382],["69087","Fontaines-Saint-Martin",2,0,1,0,"200046977",0,3098],["69105","Lacenas",2,0,0,0,"200040590",0,1076],["69107","Lamure-sur-Azergues",2,0,2,0,"200040566",0,1048],["69113","Létra",2,0,2,0,"200040574",0,901],["69131","Messimy",2,0,2,0,"246900724",8,3546],["69148","Orliénas",2,0,2,0,"246900740",0,2675],["69154","Pollionnay",2,0,2,0,"246900724",0,2958],["69157","Vindry-sur-Turdine",2,0,2,0,"200040566",0,5305],["69206","Saint-Georges-de-Reneins",2,0,2,0,"200067817",7,4677],["69249","Thurins",2,0,2,0,"246900724",11,3404],["69255","Vaugneray",2,0,2,0,"246900724",0,6304],["69280","Jons",2,0,1,0,"246900575",3,1647],["69281","Marennes",2,1,1,0,"246900765",9,1992],["69285","Pusignan",2,0,2,0,"246900575",0,4119],["69295","Simandres",2,0,2,0,"246900765",15,1918],["69296","Solaize",2,0,2,0,"200046977",39,3144],["69005","Ambérieux",1,0,1,0,"200040574",2,651],["69007","Ampuis",1,0,1,0,"200077014",4,2769],["69020","Belmont-d'Azergues",1,0,1,0,"200040574",0,720],["69023","Blacé",1,0,1,0,"200040590",0,1715],["69032","Bully",1,0,1,0,"246900625",1,2213],["69033","Cailloux-sur-Fontaines",1,0,1,0,"200046977",1,2989],["69046","Charly",1,0,0,0,"200046977",3,4811],["69049","Chasselay",1,0,1,0,"200040574",0,2973],["69052","Chazay-d'Azergues",1,0,1,0,"200040574",9,4410],["69080","Échalas",1,0,1,0,"200077014",0,1994],["69093","Grandris",1,0,1,0,"200040566",0,1226],["69114","Porte des Pierres Dorées",1,0,1,0,"200040574",0,4185],["69118","Loire-sur-Rhône",1,0,1,0,"200077014",0,2746],["69139","Montrottier",1,0,1,0,"200066587",0,1400],["69140","Morancé",1,0,1,0,"200040574",0,2261],["69161","Propières",1,0,1,0,"200067817",0,484],["69168","Rochetaillée-sur-Saône",1,0,1,0,"200046977",2,1551],["69173","Sarcey",1,0,1,0,"246900625",0,980],["69175","Savigny",1,0,1,0,"246900625",0,1995],["69176","Soucieu-en-Jarrest",1,0,1,0,"246900740",0,4660],["69180","Saint-André-la-Côte",1,0,1,0,"246900740",0,269],["69193","Saint-Cyr-sur-le-Rhône",1,0,0,0,"200077014",1,1286],["69201","Sainte-Foy-l'Argentière",1,0,1,0,"200066587",0,1312],["69218","Saint-Lager",1,0,1,0,"200067817",0,1056],["69219","Saint-Laurent-d'Agny",1,0,1,0,"246900740",0,2111],["69227","Saint-Martin-en-Haut",1,0,1,0,"200066587",1,3942],["69233","Saint-Romain-au-Mont-d'Or",1,0,1,0,"200046977",2,1247],["69235","Saint-Romain-en-Gal",1,0,1,0,"200077014",9,2001],["69267","Villié-Morgon",1,0,1,0,"200067817",0,2148],["69293","Sathonay-Village",1,0,1,0,"200046977",0,2412]];
+    const EP = {"200046977":"Métropole de Lyon","200040590":"CA Villefranche Beaujolais Saône","200040566":"CA de l'Ouest Rhodanien","246900575":"CC de l'Est Lyonnais","246900757":"CC de la Vallée du Garon","246900625":"CC du Pays de l'Arbresle","246900765":"CC du Pays de l'Ozon","200040574":"CC Beaujolais Pierres Dorées","200067817":"CC Saône-Beaujolais","246900740":"CC du Pays Mornantais","200077014":"CA Vienne Condrieu","246900724":"CC des Vallons du Lyonnais","200066587":"CC des Monts du Lyonnais"};
+    const SEL = [["431903954","Serfim T.I.C.",49,32348579],["421207721","Société lyonnaise d'éclairage",20,7904297],["409899127","Ineo Rhône-Alpes Auvergne",19,16675369],["794108878","Electriox City",11,33945616],["832705610","Infracity",8,3755729],["434085395","Spie Citynetworks",6,6854793],["443139605","Alcy",6,2074420],["828691659","Technoman",6,453685],["417614724","Concept Alarme Protection Sécurité",5,3223628],["488658733","Connex IT",5,2235228],["329703946","Télégestion immobilière lyonnaise",4,1350000],["442646543","Activ Ingénierie",4,337126]];
+    const BUY = [["176901205","Services pénitentiaires Lyon Centre-Est","État",24,1689421],["216900340","Commune de Caluire-et-Cuire","commune",18,1815378],["216902825","Commune de Meyzieu","commune",16,9065963],["176900009","Préfecture de région Auvergne-Rhône-Alpes","État",14,0],["216902908","Commune de Saint-Priest","commune",9,2775000],["216901231","Commune de Lyon","commune",8,31661950],["216900811","Commune d'Écully","commune",7,1385220],["256900994","Sytral (transports lyonnais)","transports",7,8238032],["226900017","Département du Rhône","département",6,1650000],["216902668","Commune de Villeurbanne","commune",5,812000],["266900257","Centre hospitalier de Villefranche-sur-Saône","santé",5,2134780],["200096386","Sytral Mobilités","transports",4,6812029]];
+    const YR = {"2018":{"con":3,"ao":25},"2019":{"con":19,"mod":2,"ao":27},"2020":{"con":21,"mod":4,"ao":36},"2021":{"con":27,"ao":26,"sub":1},"2022":{"con":34,"mod":11,"ao":38,"sub":2},"2023":{"mod":10,"con":35,"ao":30},"2024":{"con":37,"mod":42,"ao":23,"sub":3},"2025":{"mod":36,"con":33,"ao":21,"aut":164,"sub":3},"2026":{"mod":29,"con":29,"ao":21,"aut":1128,"sub":1},"<2018":{"ao":99}};
+    const coms = COM.map((c) => ({ insee: c[0], nom: c[1], docs: c[2], con: c[3], aut: c[4] - c[5], dr: c[5], ep: c[6], cams: c[7], pop: c[8] }));
+    const sel = S.sel;
+    const setSel = (k) => () => { if (this.state.sel !== k) this.setState({ sel: k }); };
+    const sortHead = (defs, key, dir, onPick) => defs.map(([k, l, cls, w]) => ({ l: l, cls: cls, w: w, sort: key === k ? (dir < 0 ? 'descending' : 'ascending') : 'none', arrow: key === k ? (dir < 0 ? '↓' : '↑') : '', pick: () => onPick(k) }));
+    const cmp = (k, dir) => (a, b) => { const va = a[k], vb = b[k]; if (typeof va === 'string') return va.localeCompare(vb, 'fr') * dir; return (va - vb) * dir; };
+
+    // intercommunalités
+    const IC = {};
+    coms.forEach((c) => { const o = IC[c.ep] = IC[c.ep] || { code: c.ep, nom: EP[c.ep] || c.ep, n: 0, docs: 0, con: 0, aut: 0, dr: 0, cams: 0, list: [] }; o.n++; o.docs += c.docs; o.con += c.con; o.aut += c.aut; o.dr += c.dr; o.cams += c.cams; o.list.push(c); });
+    const icList = Object.values(IC).sort(cmp(S.sortI, S.dirI));
+    const ics = icList.map((o) => {
+      const ex = S.openI === o.code;
+      return { nom: o.nom, n: o.n, docs: fr(o.docs), con: fr(o.con), aut: fr(o.aut), dr: o.dr, cams: fr(o.cams),
+        cls: 'r' + (sel === 'i' + o.code || ex ? ' on' : ''), ex: ex ? 'true' : 'false', arrow: ex ? '▾' : '▸',
+        subStyle: ex ? '' : 'display: none',
+        subs: ex ? o.list.slice().sort((a, b) => b.docs - a.docs).map((c) => ({ nom: c.nom, v: plural(c.docs, 'doc.', 'doc.'), hover: setSel('c' + c.insee) })) : [],
+        hover: setSel('i' + o.code), toggle: () => this.setState({ openI: ex ? null : o.code, sel: 'i' + o.code }) };
+    });
+    const pickI = (k) => this.setState({ sortI: k, dirI: S.sortI === k ? -S.dirI : (k === 'nom' ? 1 : -1) });
+    const icCols = sortHead([['nom', 'Intercommunalité', '', 'width: 38%'], ['n', 'Communes', 'num', ''], ['docs', 'Documents', 'num', ''], ['con', 'Contrats', 'num', ''], ['aut', 'Autorisations', 'num', ''], ['dr', 'Drones', 'num', ''], ['cams', 'Sur la carte', 'num', '']], S.sortI, S.dirI, pickI);
+
+    // communes
+    const q = norm(S.q.trim());
+    const filtered = coms.filter((c) => !q || norm(c.nom).includes(q)).sort(cmp(S.sortC, S.dirC));
+    const shown = q || S.allC ? filtered : filtered.slice(0, 15);
+    const mxd = Math.max(...coms.map((c) => c.docs));
+    const comsV = shown.map((c) => ({ nom: c.nom, ep: EP[c.ep] || '', docs: fr(c.docs), con: c.con, aut: c.aut, dr: c.dr, cams: c.cams,
+      cls: 'r' + (sel === 'c' + c.insee ? ' on' : ''), hover: setSel('c' + c.insee),
+      bar: 'display: inline-block; height: 10px; width: ' + Math.max(2, Math.round(Math.sqrt(c.docs / mxd) * 110)) + 'px; background: var(--accent)' }));
+    const pickC = (k) => this.setState({ sortC: k, dirC: S.sortC === k ? -S.dirC : (k === 'nom' ? 1 : -1) });
+    const comCols = sortHead([['nom', 'Commune', '', 'width: 34%'], ['docs', 'Documents', 'num', ''], ['con', 'Contrats', 'num', ''], ['aut', 'Autorisations', 'num', ''], ['dr', 'Drones', 'num', ''], ['cams', 'Sur la carte', 'num', '']], S.sortC, S.dirC, pickC);
+    const comCount = q ? plural(filtered.length, 'commune trouvée', 'communes trouvées') : (S.allC ? '138 communes' : '15 sur 138 communes');
+
+    // vend / achète
+    const sv = SEL.slice().sort((a, b) => (S.sortV === 'n' ? b[2] - a[2] || b[3] - a[3] : b[3] - a[3])).slice(0, 10);
+    const sellers = sv.map((s) => ({ nom: s[1], n: s[2], amt: eur(s[3]), cls: 'r' + (sel === 's' + s[0] ? ' on' : ''), hover: setSel('s' + s[0]) }));
+    const vCols = [['n', 'Contrats'], ['amt', 'Montant max.']].map(([k, l]) => ({ l: l, sort: S.sortV === k ? 'descending' : 'none', arrow: S.sortV === k ? '↓' : '', pick: () => this.setState({ sortV: k }) }));
+    const bv = BUY.slice().sort((a, b) => (S.sortB === 'n' ? b[3] - a[3] || b[4] - a[4] : b[4] - a[4])).slice(0, 10);
+    const buyers = bv.map((b) => ({ nom: b[1], cat: b[2], n: b[3], amt: eur(b[4]), href: b[2] === 'commune' ? 'Commune-grand.dc.html' : 'Acheteur-grand.dc.html', cls: 'r' + (sel === 'b' + b[0] ? ' on' : ''), hover: setSel('b' + b[0]) }));
+    const bCols = [['n', 'Contrats'], ['amt', 'Montant max.']].map(([k, l]) => ({ l: l, sort: S.sortB === k ? 'descending' : 'none', arrow: S.sortB === k ? '↓' : '', pick: () => this.setState({ sortB: k }) }));
+
+    // années
+    const yrs = ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026'];
+    const absent = (y) => S.yt === 'aut' && y < '2025';
+    const vals = yrs.map((y) => (YR[y] && YR[y][S.yt]) || 0);
+    const mx = Math.max(...vals);
+    const years = yrs.map((y, i) => {
+      const on = sel === 'y' + y;
+      const h = absent(y) ? 0 : Math.max(vals[i] ? 2 : 0, Math.round(vals[i] / mx * 190));
+      const fill = on ? 'var(--hover)' : 'var(--fg)';
+      return { y: y === '2026' ? '2026*' : y, v: absent(y) ? '—' : fr(vals[i]), alt: y + ' : ' + (absent(y) ? 'non collecté' : fr(vals[i])), hover: setSel('y' + y),
+        bar: 'display: block; height: ' + h + 'px; background: ' + (y === '2026' ? 'repeating-linear-gradient(45deg, ' + fill + ' 0 3px, transparent 3px 7px); border: 2px solid ' + fill + '; box-sizing: border-box' : fill) };
+    });
+    const TL = { con: 'Contrats', ao: "Appels d'offres", aut: 'Autorisations' };
+    const yearTypes = Object.keys(TL).map((k) => ({ l: TL[k], pressed: S.yt === k ? 'true' : 'false', pick: () => this.setState({ yt: k }), style: S.yt === k ? 'background: var(--fg); color: var(--bg)' : 'background: var(--card); color: var(--fg)' }));
+
+    // panneau
+    let det = { kicker: 'Le Rhône', title: 'Survolez une ligne ou une barre', rows: [{ k: 'Documents', v: '2 020' }, { k: 'Communes avec documents', v: '138' }, { k: 'Intercommunalités', v: '13' }, { k: 'Documents sans commune publiée', v: '129' }], hasLink: false, href: '', link: '' };
+    if (sel && sel[0] === 'c') { const c = coms.find((x) => 'c' + x.insee === sel); det = { kicker: 'Commune · ' + (EP[c.ep] || ''), title: c.nom, rows: [{ k: 'Habitants', v: c.pop ? fr(c.pop) : '[à lire]' }, { k: 'Documents', v: fr(c.docs) }, { k: 'Contrats', v: fr(c.con) }, { k: 'Autorisations de caméras', v: fr(c.aut) }, { k: 'Arrêtés de drones', v: fr(c.dr) }, { k: 'Caméras sur la carte', v: fr(c.cams) }], hasLink: true, href: 'Commune-grand.dc.html', link: 'Voir la commune →' }; }
+    if (sel && sel[0] === 'i') { const o = IC[sel.slice(1)]; det = { kicker: 'Intercommunalité', title: o.nom, rows: [{ k: 'Communes avec documents', v: fr(o.n) }, { k: 'Documents', v: fr(o.docs) }, { k: 'Contrats', v: fr(o.con) }, { k: 'Autorisations de caméras', v: fr(o.aut) }, { k: 'Arrêtés de drones', v: fr(o.dr) }, { k: 'Caméras sur la carte', v: fr(o.cams) }], hasLink: false, href: '', link: '' }; }
+    if (sel && sel[0] === 's') { const s = SEL.find((x) => 's' + x[0] === sel); det = { kicker: 'Entreprise · SIREN ' + s[0].replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3'), title: s[1], rows: [{ k: 'Contrats dans le Rhône', v: fr(s[2]) }, { k: 'Au maximum', v: eur(s[3]) }], hasLink: true, href: 'Entreprise-grand.dc.html', link: "Voir l'entreprise →" }; }
+    if (sel && sel[0] === 'b') { const b = BUY.find((x) => 'b' + x[0] === sel); det = { kicker: 'Acheteur · ' + b[2], title: b[1], rows: [{ k: 'Contrats', v: fr(b[3]) }, { k: 'Au maximum', v: eur(b[4]) }], hasLink: true, href: b[2] === 'commune' ? 'Commune-grand.dc.html' : 'Acheteur-grand.dc.html', link: b[2] === 'commune' ? 'Voir la commune →' : "Voir l'acheteur →" }; }
+    if (sel && sel[0] === 'y') { const y = sel.slice(1), o = YR[y] || {}; det = { kicker: y === '2026' ? 'Année en cours' : 'Année', title: y, rows: [{ k: 'Contrats', v: fr(o.con || 0) }, { k: 'Modifications', v: fr(o.mod || 0) }, { k: "Appels d'offres et résultats", v: fr(o.ao || 0) }, { k: 'Arrêtés de la préfecture', v: y < '2025' ? 'non collectés' : fr(o.aut || 0) }, { k: 'Subventions', v: fr(o.sub || 0) }], hasLink: true, href: 'Registre.dc.html', link: 'Les documents de ' + y + ' →' }; }
+
+    const open = S.open || {};
+    const tg = (k) => () => this.setState({ open: Object.assign({}, open, { [k]: !open[k] }) });
+    return {
+      th: dark ? 'th dark' : 'th', isDark: dark, isLight: !dark,
+      themeLabel: dark ? 'Passer en thème clair' : 'Passer en thème sombre',
+      toggleTheme: () => this.setState({ dark: !this.state.dark }),
+      nav: { reg: 'page', glo: 'false' },
+      icCols: icCols, ics: ics,
+      comCols: comCols, coms: comsV, comCount: comCount, q: S.q,
+      onQ: (e) => this.setState({ q: e.target.value }),
+      showMore: !q, noMatch: !!q && filtered.length === 0,
+      more: () => this.setState({ allC: !S.allC }), moreLabel: S.allC ? 'Réduire' : 'Les 138 communes',
+      sellers: sellers, vCols: vCols, buyers: buyers, bCols: bCols,
+      years: years, yearTypes: yearTypes,
+      yearAlt: 'Nombre de ' + ({ con: 'contrats', ao: "appels d'offres", aut: 'autorisations de la préfecture' })[S.yt] + ' dans le Rhône par année, de 2018 à 2026 (2026 en cours).',
+      det: det,
+      show: { ic: !!open.ic, qui: !!open.qui, an: !!open.an },
+      open: { ic: open.ic ? 'true' : 'false', qui: open.qui ? 'true' : 'false', an: open.an ? 'true' : 'false' },
+      tgl: { ic: tg('ic'), qui: tg('qui'), an: tg('an') }
+    };
+  }
+}
+</script>
+</body>
+</html>

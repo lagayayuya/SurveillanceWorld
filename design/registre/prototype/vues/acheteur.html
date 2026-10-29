@@ -1,0 +1,151 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
+    <dc-include src="fil"></dc-include>
+    <div><span class="tag" style="background: #9be7c4">Acheteur · {{cat}}</span></div>
+    <h1 class="h1">{{nom}}</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{sous}}</p>
+    <p class="lead" style="margin-top: 6px">{{{lead}}}</p>
+    <div class="kpis" style="margin-top: 8px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div>
+      </sc-for>
+    </div>
+  </div>
+
+  <nav class="tabs" aria-label="Sections" style="width: 1180px; margin: 24px auto 0">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <a href="{{t.href}}" aria-current="{{t.cur}}">{{t.l}}</a>
+    </sc-for>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 60px; min-width: 0">
+
+      <section id="temps" aria-labelledby="a-temps" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-temps" class="h2">Ses contrats dans le temps</h2>
+          <button class="ibtn" onClick="{{tgl.tps}}" aria-expanded="{{open.tps}}" aria-label="Comment lire cette frise"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.tps}}" hint-placeholder-val="{{false}}"><p class="note tw">Une ligne par contrat : la barre va de la signature à la fin prévue (signature + durée écrite dans le contrat). En pointillés, la durée ajoutée par une modification. Triangle : l'appel d'offres publié avant. Trait bleu : une modification.</p></sc-if>
+        <div style="border-top: 2px solid var(--fg)">
+          <sc-for list="{{gantt}}" as="g" hint-placeholder-count="7">
+            <div class="{{g.cls}}" onMouseEnter="{{g.hover}}" onClick="{{g.hover}}">
+              <div style="padding: 6px 0; min-width: 0">
+                <a href="{{g.href}}" class="rowlink" style="display: block; font-size: 15px; line-height: 1.2">{{g.label}}</a>
+                <span style="font-size: 13px; color: var(--muted)">{{{g.entH}}} · {{g.amt}}</span>
+              </div>
+              <div class="track" style="margin-right: 8px">
+                <span style="{{g.bar}}"></span>
+                <span style="{{g.ext}}"></span>
+                <span style="{{g.avis}}"></span>
+                <sc-for list="{{g.mods}}" as="m" hint-placeholder-count="2"><span style="{{m.style}}"></span></sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div class="gl" style="min-height: 30px; border-bottom: 0; cursor: default; background: none">
+            <span></span>
+            <div class="tw" style="position: relative; height: 22px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--fg); margin-right: 8px">
+              <sc-for list="{{years}}" as="y" hint-placeholder-count="5"><span style="{{y.style}}">{{y.l}}</span></sc-for>
+            </div>
+          </div>
+        </div>
+        <div aria-label="Légende de la frise" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 14px">
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; background: var(--fg); display: inline-block"></span>durée prévue, de la signature à la fin</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; border: 2px dashed var(--fg); border-left: 0; box-sizing: border-box; display: inline-block"></span>durée ajoutée par une modification</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid var(--ao); display: inline-block"></span>appel d'offres publié</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 3px; height: 18px; background: var(--accent); display: inline-block"></span>modification</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span class="tw" style="font-weight: 700">auj.</span>aujourd'hui, au bord droit</span>
+        </div>
+        <p style="margin: 0">{{{tempsPhrase}}}</p>
+      </section>
+
+      <section id="contrats" aria-labelledby="a-con" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-con" class="h2">{{conTitre}}</h2>
+          <button class="ibtn" onClick="{{tgl.mt}}" aria-expanded="{{open.mt}}" aria-label="Ce que veulent dire ces montants"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.mt}}" hint-placeholder-val="{{false}}"><p class="note tw">Montants maximums prévus au contrat, hors taxes, pas les sommes payées. Une flèche montre le montant après modification. {{mtNote}}</p></sc-if>
+        <table class="t">
+          <caption class="sr">Contrats signés par {{nom}}, triables par colonne</caption>
+          <thead><tr>
+            <sc-for list="{{cols}}" as="c" hint-placeholder-count="6">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td class="tw" style="white-space: nowrap">{{r.date}}</td>
+                <td><a href="{{r.href}}" class="rowlink">{{r.objet}}</a><sc-if value="{{r.mixte}}" hint-placeholder-val="{{false}}"><div style="margin-top: 3px"><span class="b" style="background: var(--warn); color: var(--fg); border-style: dashed">contrat mixte</span></div></sc-if></td>
+                <td><sc-for list="{{r.ents}}" as="e" hint-placeholder-count="1"><a href="{{e.href}}" class="rowlink" style="display: block">{{e.nom}}</a></sc-for></td>
+                <td class="num"><strong>{{r.amt}}</strong><div style="font-size: 13px; color: var(--muted)">{{r.amt2}}</div></td>
+                <td class="num">{{r.dur}}</td>
+                <td class="num">{{r.off}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vend" aria-labelledby="a-vend" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-vend" class="h2">Qui vend ici</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{nEnts}} · montants à la signature</span>
+        </div>
+        <table class="t">
+          <caption class="sr">Entreprises titulaires des contrats de {{nom}}</caption>
+          <thead><tr><th scope="col"><button>Entreprise</button></th><th scope="col" class="num"><button>Contrats</button></th><th scope="col" class="num" aria-sort="descending"><button>Montant max. ↓</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{sellers}}" as="s" hint-placeholder-count="5">
+              <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onClick="{{s.hover}}">
+                <td><a href="{{s.href}}" class="rowlink">{{s.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{{s.note}}}</div></td>
+                <td class="num">{{s.n}}</td>
+                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{s.bar}}"></span><strong>{{s.amt}}</strong></div></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ao" aria-labelledby="a-ao" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-ao" class="h2">Appels d'offres publiés</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{aoSous}}</span>
+        </div>
+        <table class="t">
+          <caption class="sr">Appels d'offres et résultats publiés par {{nom}}</caption>
+          <thead><tr><th scope="col" style="width: 120px"><button>Date</button></th><th scope="col"><button>Objet</button></th><th scope="col"><button>Publications</button></th><th scope="col"><button>Contrat</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{aos}}" as="a" hint-placeholder-count="5">
+              <tr class="{{a.cls}}" onMouseEnter="{{a.hover}}" onClick="{{a.hover}}">
+                <td class="tw" style="white-space: nowrap">{{a.date}}</td>
+                <td><a href="{{a.href}}" class="rowlink">{{a.objet}}</a></td>
+                <td class="tw" style="font-size: 13px; color: var(--muted)">{{a.refs}}</td>
+                <td><sc-if value="{{a.found}}" hint-placeholder-val="{{true}}"><a href="{{a.chref}}">{{a.contrat}}</a></sc-if><sc-if value="{{a.missing}}" hint-placeholder-val="{{false}}"><span style="color: var(--muted)">non retrouvé</span></sc-if></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <sc-if value="{{lie}}"><section id="lie" aria-labelledby="a-lie" style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 2px solid var(--fg); background: var(--card)">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 id="a-lie" class="h2" style="font-size: 26px">Aussi : {{lie.nom}}</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{lie.sous}}</span>
+        </div>
+        <p style="margin: 0">Un autre acheteur du même réseau, avec son propre numéro SIREN. Ses contrats sont sur sa page.</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{mob}}" as="m" hint-placeholder-count="4">
+            <li style="display: grid; grid-template-columns: 110px minmax(0, 1fr) 220px 110px; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--rule)">
+              <span class="tw">{{m.date}}</span><span>{{m.objet}}</span><span>{{{m.ent}}}</span><strong style="text-align: right">{{m.amt}}</strong>
+            </li>
+          </sc-for>
+        </ul>
+        <a href="{{lie.href}}" class="ghost">{{lie.nom}} →</a>
+      </section></sc-if>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<!-- The shared pieces of the views (the « socle », kit-grand-ecran.md § 4 and § 4 bis), each written once and
+     included by <dc-include src="…">. Markup taken from the mockups; only the words and links are holes. -->
+
+<dc-part name="fil">
+<nav class="crumbs" aria-label="Fil d'Ariane"><sc-for list="{{fil}}" as="f"><a href="{{f.href}}">{{f.l}}</a> › </sc-for><span aria-current="page">{{filIci}}</span></nav>
+</dc-part>
+
+<!-- a commune's tabs other than L'essentiel: compact head (Documents-grand, Autorisations-grand, CarteTemps-grand) -->
+<dc-part name="tete-commune">
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px">
+    <dc-include src="fil"></dc-include>
+    <div style="display: flex; align-items: flex-end; gap: 18px">
+      <div><span class="tag" style="background: #ffe800">Commune</span><h1 class="h1" style="font-size: 60px; margin-top: 6px">{{com.nom}}</h1></div>
+      <p class="tw" style="margin: 0 0 6px; color: var(--muted); font-size: 14px">{{com.ligne}}</p>
+    </div>
+  </div>
+  <dc-include src="onglets-commune"></dc-include>
+</dc-part>
+
+<dc-part name="onglets-commune">
+  <nav aria-label="Vues de la commune" style="width: 1180px; margin: {{com.ongletsMt}} auto 0">
+    <div class="tabs">
+      <sc-for list="{{com.onglets}}" as="o"><a href="{{o.href}}" aria-current="{{o.cur}}">{{o.l}}</a></sc-for>
+    </div>
+  </nav>
+</dc-part>
+
+<!-- the fixed panel on the right: the element hovered, focused or touched; a summary of the page at rest -->
+<dc-part name="panneau">
+    <aside aria-live="polite" aria-label="Détail" class="panel">
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <sc-for list="{{det.rows}}" as="r">
+        <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value="{{det.note}}"><p class="tw" style="margin: 4px 0 0; padding: 8px; background: var(--warn); border: 1px dashed var(--fg); font-size: 13px">{{det.note}}</p></sc-if>
+      <sc-if value="{{det.foot}}"><span class="tw" style="font-size: 13px; color: var(--muted)">{{det.foot}}</span></sc-if>
+      <sc-for list="{{det.links}}" as="l"><a href="{{l.href}}" onClick="{{l.act}}" style="margin-top: 6px; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center">{{l.l}}</a></sc-for>
+      <sc-if value="{{det.btn}}"><button type="button" onClick="{{det.btn.act}}" class="more" style="margin-top: 6px">{{det.btn.l}}</button></sc-if>
+      <sc-if value="{{det.hint}}"><span style="font-size: 13px; color: var(--muted)">{{det.hint}}</span></sc-if>
+    </aside>
+</dc-part>

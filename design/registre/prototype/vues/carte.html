@@ -1,0 +1,68 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <dc-include src="tete-commune"></dc-include>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 60px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+      <h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 30px; line-height: 1; text-transform: uppercase">Les drones dans le temps</h2>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{layers}}" as="l" hint-placeholder-count="3">
+          <button class="chip" onClick="{{l.pick}}" aria-pressed="{{l.pressed}}" style="{{l.style}}"><span aria-hidden="true" style="{{l.sw}}"></span>{{l.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px">
+      <div style="position: relative; height: 520px; border: 2px solid var(--fg); background: var(--card); overflow: hidden">
+        <div id="carte-tps" data-dc-keep="1" role="img" aria-label="{{alt}}" style="position: absolute; inset: 0"></div>
+        <span class="tw" style="position: absolute; left: 12px; bottom: 8px; font-size: 12px; color: var(--muted); z-index: 3">glisser pour tourner · molette pour zoomer</span>
+        <button class="btn" onClick="{{north}}" aria-label="Remettre le nord en haut" style="position: absolute; right: 10px; top: 10px; width: 44px; padding: 0; z-index: 3">N</button>
+      </div>
+
+      <aside class="panel" aria-live="polite" aria-label="Détail">
+        <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+        <strong style="font-size: 24px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+        <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule)"><span style="color: var(--muted)">{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+        </sc-for>
+        <p style="margin: 4px 0 0; color: var(--muted); font-size: 15px">{{det.note}}</p>
+        <sc-if value="{{det.link}}"><a href="{{det.href}}" style="margin-top: auto; font-weight: 700">{{det.link}}</a></sc-if>
+      </aside>
+    </div>
+
+    <section aria-label="Choisir une période" style="border: 2px solid var(--fg); background: var(--card); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button class="btn" onClick="{{all}}" aria-pressed="{{allPressed}}" style="{{allStyle}}">Toutes les dates</button>
+        <button class="btn" onClick="{{prev}}" aria-label="Créneau précédent" style="width: 44px; padding: 0">◀</button>
+        <button class="btn" onClick="{{play}}" aria-pressed="{{playPressed}}" style="min-width: 110px">{{playText}}</button>
+        <button class="btn" onClick="{{next}}" aria-label="Créneau suivant" style="width: 44px; padding: 0">▶</button>
+        <span style="margin-left: 12px; font-weight: 700">{{rangeLabel}}</span>
+        <button class="ibtn" onClick="{{tglInfo}}" aria-expanded="{{infoOpen}}" aria-label="Comment lire" style="margin-left: auto"><span aria-hidden="true">i</span></button>
+      </div>
+      <sc-if value="{{showInfo}}" hint-placeholder-val="{{false}}"><p class="tw" style="margin: 0; padding: 10px; border: 1px solid var(--rule); color: var(--muted); font-size: 14px">Une barre par créneau de vol autorisé, à sa date et de sa durée réelle. Faites glisser sur la frise pour choisir une période ; la carte additionne les heures autorisées à chaque endroit sur cette période : plus un volume est haut, plus on y a autorisé d'heures de vol. Les arrêtés ne donnent pas d'altitude. Barre pointillée : horaires non précisés dans l'arrêté ; un tel créneau garde la hauteur la plus basse, la même pour tous. Toucher une barre ou un volume affiche le créneau à droite.</p></sc-if>
+      <svg role="img" aria-label="{{tlAlt}}" viewBox="0 0 1144 150" width="1144" height="150" onPointerDown="{{tdown}}" onPointerMove="{{tmove}}" onPointerUp="{{tup}}" style="display: block; cursor: crosshair; touch-action: none">
+        <rect x="{{brush.x}}" y="0" width="{{brush.w}}" height="122" fill="var(--drone)" fill-opacity="0.12" stroke="var(--drone)" stroke-width="1.5"></rect>
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+          <g><line x1="{{m.x}}" x2="{{m.x}}" y1="0" y2="126" stroke="var(--rule)" stroke-width="1"></line><text x="{{m.tx}}" y="142" font-size="12" font-family="Special Elite, monospace" fill="var(--muted)">{{m.l}}</text></g>
+        </sc-for>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="61">
+          <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="11" fill="{{b.fill}}" fill-opacity="{{b.op}}" stroke="{{b.stroke}}" stroke-width="{{b.sw}}" stroke-dasharray="{{b.dash}}" onMouseEnter="{{b.hover}}" onPointerDown="{{b.pick}}" style="cursor: pointer"></rect>
+        </sc-for>
+        <line x1="1140" x2="1140" y1="0" y2="126" stroke="var(--fg)" stroke-width="2"></line>
+        <text x="1136" y="12" text-anchor="end" font-size="12" font-weight="800" font-family="Archivo, sans-serif" fill="var(--fg)">auj.</text>
+      </svg>
+    </section>
+
+    <section aria-label="Liste des créneaux" style="display: flex; flex-direction: column; gap: 0">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px; border-bottom: 2px solid var(--fg)"><h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 26px; text-transform: uppercase">{{listTitle}}</h2><span class="tw" style="color: var(--muted)">du plus récent au plus ancien</span></div>
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+        <button onMouseEnter="{{r.hover}}" onClick="{{r.pick}}" style="{{r.style}}">
+          <span class="tw" style="color: var(--muted)">{{r.d}}</span>
+          <span style="font-weight: 700">{{r.svc}}</span>
+          <span style="color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.fin}}</span>
+          <strong style="text-align: right">{{r.h}}</strong>
+        </button>
+      </sc-for>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,149 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <main style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: flex; flex-direction: column; gap: 64px">
+
+    <section style="display: flex; flex-direction: column; gap: 18px">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between">
+        <h1 class="h1">Le registre</h1>
+        <div style="display: flex; align-items: center; gap: 4px; color: var(--muted)">
+          <span class="tw" style="font-size: 14px">Île-de-France, Rhône, Bouches-du-Rhône · mis à jour le {{maj}}</span>
+          <button class="ibtn" onClick="{{tgl.scope}}" aria-expanded="{{open.scope}}" aria-label="Ce que couvre le registre"><span aria-hidden="true">i</span></button>
+        </div>
+      </div>
+      <sc-if value="{{show.scope}}" hint-placeholder-val="{{false}}"><p class="note tw">Contrats publiés depuis 2019 (données de la commande publique) et appels d'offres (BOAMP) ; subventions de la Région Île-de-France et de l'État ; arrêtés de la préfecture du Rhône depuis septembre 2025. Un document absent ne veut pas dire qu'il n'existe pas.</p></sc-if>
+      <p class="lead">Qui vend, qui achète, où, et ce qui change d'une année à l'autre. Chaque nom ouvre sa page.</p>
+      <nav aria-label="Vues du registre" class="tabs">
+        <a href="#/">Documents · {{ndocs}}</a>
+        <a href="#/registre/chiffres" aria-current="page">Chiffres et classements</a>
+      </nav>
+    </section>
+
+    <section aria-labelledby="r-vend" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="r-vend" class="h2">Qui vend</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{nEnts}} entreprises · les 10 premières</span>
+        </div>
+        <table class="t">
+          <caption class="sr">Entreprises titulaires de contrats, triables</caption>
+          <thead><tr>
+            <th scope="col" style="width: 46%"><button>Entreprise</button></th>
+            <sc-for list="{{entCols}}" as="c" hint-placeholder-count="3">
+              <th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ents}}" as="e" hint-placeholder-count="10">
+              <tr class="r">
+                <td><a class="rowlink" href="{{e.href}}">{{e.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{e.deps}} · depuis {{e.y0}}</div></td>
+                <td class="num">{{e.clients}}</td>
+                <td class="num">{{e.n}}</td>
+                <td class="num"><strong>{{e.amt}}</strong></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 class="h2">Qui achète</h2>
+          <div style="display: flex; align-items: center; gap: 2px">
+            <span class="tw" style="color: var(--muted); font-size: 14px">{{nBuy}} acheteurs · les 10 premiers</span>
+            <button class="ibtn" onClick="{{tgl.ach}}" aria-expanded="{{open.ach}}" aria-label="Lire les montants"><span aria-hidden="true">i</span></button>
+          </div>
+        </div>
+        <sc-if value="{{show.ach}}" hint-placeholder-val="{{false}}"><p class="note tw">Montant maximum prévu aux contrats signés, hors taxes, pas la somme payée. Une centrale d'achat (UGAP) signe des plafonds pour d'autres acheteurs : son montant n'est pas publié.</p></sc-if>
+        <table class="t">
+          <caption class="sr">Acheteurs publics, triables</caption>
+          <thead><tr>
+            <th scope="col" style="width: 50%"><button>Acheteur</button></th>
+            <sc-for list="{{buyCols}}" as="c" hint-placeholder-count="3">
+              <th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{buyers}}" as="b" hint-placeholder-count="10">
+              <tr class="r"><td><a class="rowlink" href="{{b.href}}">{{b.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td><td class="num">{{b.ents}}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+
+    <section aria-labelledby="r-com" style="display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <h2 id="r-com" class="h2">Les communes</h2>
+        <div style="display: flex; align-items: center; gap: 2px">
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{ncom}} communes avec au moins un document · les 12 premières</span>
+          <button class="ibtn" onClick="{{tgl.com}}" aria-expanded="{{open.com}}" aria-label="Lire ce classement"><span aria-hidden="true">i</span></button>
+        </div>
+      </div>
+      <sc-if value="{{show.com}}" hint-placeholder-val="{{false}}"><p class="note tw">Plus de documents ne veut pas dire plus de caméras : cela dépend de ce que chaque administration publie et de ce que le registre a déjà collecté. Les arrêtés de la préfecture ne couvrent pour l'instant que le Rhône.</p></sc-if>
+      <table class="t">
+        <caption class="sr">Communes, triables</caption>
+        <thead><tr>
+          <th scope="col" style="width: 34%"><button>Commune</button></th>
+          <sc-for list="{{comCols}}" as="c" hint-placeholder-count="5">
+            <th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+          </sc-for>
+        </tr></thead>
+        <tbody>
+          <sc-for list="{{coms}}" as="c" hint-placeholder-count="12">
+            <tr class="r"><td><a class="rowlink" href="{{c.href}}">{{c.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{c.dep}}</div></td><td class="num"><strong>{{c.n}}</strong></td><td class="num">{{c.con}}</td><td class="num">{{c.aut}}</td><td class="num">{{c.dr}}</td><td class="num">{{c.cam}}</td></tr>
+          </sc-for>
+        </tbody>
+      </table>
+    </section>
+
+
+    <section aria-labelledby="r-temps" style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <h2 id="r-temps" class="h2">Chaque année</h2>
+        <div role="group" aria-label="Type de document" style="display: flex">
+          <sc-for list="{{yearTypes}}" as="y" hint-placeholder-count="3">
+            <button class="seg" onClick="{{y.pick}}" aria-pressed="{{y.pressed}}" style="{{y.style}}">{{y.l}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div role="img" aria-label="{{yearAlt}}" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; align-items: end; height: 220px; border-bottom: 2px solid var(--fg)">
+        <sc-for list="{{years}}" as="y" hint-placeholder-count="9">
+          <div style="display: flex; flex-direction: column; justify-content: flex-end; height: 100%; gap: 6px"><span style="text-align: center; font-weight: 800">{{y.v}}</span><span style="{{y.bar}}"></span></div>
+        </sc-for>
+      </div>
+      <div class="tw" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; text-align: center; color: var(--muted)">
+        <sc-for list="{{years}}" as="y" hint-placeholder-count="9"><span>{{y.y}}</span></sc-for>
+      </div>
+    </section>
+
+    <section aria-labelledby="r-quoi" style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px">
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="r-quoi" class="h2">Ce qui s'achète</h2>
+        <p style="margin: 0; color: var(--muted)">{{nCon}} contrats signés, par dispositif. Une ligne ouvre ces contrats dans les documents.</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{disp}}" as="d" hint-placeholder-count="8">
+            <li style="border-bottom: 1px solid var(--rule)"><a href="{{d.href}}" style="text-decoration: none; width: 100%; box-sizing: border-box; display: grid; grid-template-columns: 210px minmax(0, 1fr) 60px; gap: 12px; align-items: center; min-height: 44px">
+              <span style="font-weight: 600; color: var(--link)">{{d.l}}</span>
+              <span style="height: 14px; background: var(--soft); position: relative; display: block"><span style="{{d.bar}}"></span></span>
+              <strong style="text-align: right">{{d.n}}</strong>
+            </a></li>
+          </sc-for>
+        </ul>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px">
+        <h2 class="h2">Drones autorisés</h2>
+        <p style="margin: 0; color: var(--muted)">Arrêtés de la préfecture du Rhône, par commune.</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{drones}}" as="d" hint-placeholder-count="8">
+            <li style="display: grid; grid-template-columns: 210px minmax(0, 1fr) 60px; gap: 12px; align-items: center; min-height: 44px; border-bottom: 1px solid var(--rule)">
+              <a href="{{d.href}}" style="color: var(--fg); text-decoration: none; font-weight: 600">{{d.l}}</a>
+              <span style="height: 14px; background: var(--soft); position: relative; display: block"><span style="{{d.bar}}"></span></span>
+              <strong style="text-align: right">{{d.n}}</strong>
+            </li>
+          </sc-for>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+</div>

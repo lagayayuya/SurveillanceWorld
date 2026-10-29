@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mions — l'essentiel, grand écran (proposition)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--rule:#c9c4b6;--soft:#e9e5da;--link:#0060a0;--accent:#0060a0;--hover:#ff48b0;--ao:#b38f00;--ao-ink:#111;--aut:#0060a0;--aut-ink:#fff;--sub:#2e7d4f;--sub-ink:#fff;--warn:#fff6bf;--drone:#0089c7;background:var(--page);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#121212;--card:#1b1b1b;--fg:#f2efe6;--muted:#b0ab9f;--rule:#34322e;--soft:#232323;--link:#7fd4ff;--accent:#7fd4ff;--hover:#ff48b0;--ao:#e0b400;--ao-ink:#111;--aut:#7fd4ff;--aut-ink:#111;--sub:#7fd18f;--sub-ink:#111;--warn:#3d3600;--drone:#7fd4ff}
+.th a{color:var(--link)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.h1{margin:0;font-weight:900;font-stretch:62%;font-size:72px;line-height:.9;text-transform:uppercase}
+.h2{margin:0;font-weight:900;font-stretch:66%;font-size:30px;line-height:1;text-transform:uppercase}
+.h3{margin:0;font-weight:900;font-stretch:75%;font-size:20px;line-height:1.1;text-transform:uppercase}
+.lead{margin:0;max-width:860px;font-size:22px;line-height:1.35;font-weight:500}
+.nav{color:#f2efe6 !important;font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav[aria-current="page"]{font-weight:900;text-decoration:underline;text-underline-offset:6px}
+.hdr{width:44px;height:44px;border:0;background:none;color:#f2efe6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crumbs{font-size:14px}
+.crumbs a{text-decoration:none}
+.tag{display:inline-block;padding:2px 8px;color:#111;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--fg);border-bottom:2px solid var(--fg)}
+.kpis>div{padding:14px 0 14px 20px;border-left:1px solid var(--rule)}
+.kpis>div:first-child{padding-left:0;border-left:0}
+.kv{font-weight:900;font-stretch:64%;font-size:48px;line-height:1}
+.tabs{display:flex;border-bottom:2px solid var(--fg)}
+.tabs a{display:inline-flex;align-items:center;min-height:52px;padding:0 18px;font-weight:800;font-stretch:80%;text-transform:uppercase;text-decoration:none;color:var(--fg)}
+.tabs a[aria-current="page"]{box-shadow:inset 0 -4px 0 var(--fg)}
+.ibtn{width:44px;height:44px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ibtn span{width:22px;height:22px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.note{margin:0;padding:12px;border:1px solid var(--rule);color:var(--muted);font-size:14px}
+table.t{width:100%;border-collapse:collapse;font-size:15px}
+table.t th{text-align:left;font-weight:800;font-stretch:80%;font-size:13px;text-transform:uppercase;letter-spacing:.03em;padding:0;border-bottom:2px solid var(--fg)}
+table.t th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:44px;padding:0 8px;box-sizing:border-box;width:100%}
+table.t th.num button{justify-content:flex-end}
+table.t td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.r{cursor:pointer}
+table.t tr.r:hover td,table.t tr.r.on td{background:var(--soft)}
+.rowlink{color:var(--fg) !important;font-weight:700;text-decoration:none}
+.rowlink:hover{text-decoration:underline}
+.panel{position:sticky;top:20px;border:2px solid var(--fg);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px;min-height:260px;box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--rule)}
+.prow span{color:var(--muted)}
+.b{display:inline-block;padding:1px 6px;font-weight:800;font-stretch:80%;font-size:12px;text-transform:uppercase;letter-spacing:.04em;border:1.5px solid var(--fg);white-space:nowrap}
+.seg{min-height:44px;padding:0 14px;border:2px solid var(--fg);font:700 15px Archivo,sans-serif;cursor:pointer;margin-left:-2px}
+.more{align-self:flex-start;min-height:44px;padding:0 16px;border:2px solid var(--fg);background:var(--card);color:var(--fg);font:800 14px Archivo,sans-serif;text-transform:uppercase;cursor:pointer}
+.ghost{display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.ctl{width:44px;height:44px;display:flex;align-items:center;justify-content:center;border:2px solid var(--fg);background:var(--card);color:var(--fg);cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 14px;border:2px solid var(--fg);background:var(--card);color:var(--fg) !important;font-family:Archivo,sans-serif;font-weight:800;font-stretch:80%;font-size:15px;text-transform:uppercase;text-decoration:none;box-sizing:border-box;cursor:pointer}
+.hv{cursor:pointer}
+.hv:hover,.hv.on{background:var(--soft)}
+.lst{list-style:none;margin:0;padding:0;border-top:2px solid var(--fg)}
+.lst>li{padding:12px 8px;border-bottom:1px solid var(--rule)}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 1280px; min-height: 4500px; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <header style="display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 20px 0 28px; background: #000; color: #f2efe6; border-bottom: 2px solid var(--fg)">
+    <a href="Registre.dc.html" style="color: #f2efe6; text-decoration: none; font-weight: 900; font-stretch: 70%; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; margin-right: auto">Surveillance World</a>
+    <a class="nav" href="CarteTemps-grand.dc.html">Carte</a>
+    <a class="nav" href="Registre.dc.html" aria-current="{{nav.reg}}">Registre</a>
+    <a class="nav" href="Glossaire.dc.html" aria-current="{{nav.glo}}">Glossaire</a>
+    <a class="hdr" href="Registre.dc.html" aria-label="Rechercher dans le registre"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+    <button class="hdr" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}">
+      <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></sc-if>
+      <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg></sc-if>
+    </button>
+  </header>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
+    <nav class="crumbs" aria-label="Fil d'Ariane"><a href="Registre.dc.html">Registre</a> › <a href="Departement-grand.dc.html">Rhône</a> › <a href="Departement-grand.dc.html">Métropole de Lyon</a> › <span aria-current="page">Mions</span></nav>
+    <div><span class="tag" style="background: #ffe800">Commune</span></div>
+    <h1 class="h1">Mions</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">Rhône · Métropole de Lyon · 13 843 habitants · code INSEE 69283</p>
+    <p class="lead" style="margin-top: 6px">En juin 2026, la préfecture a autorisé <strong>154 caméras</strong> à la mairie de Mions. <strong>125</strong> filment la rue. La carte n'en connaît que <strong>10</strong>.</p>
+    <div class="kpis" style="margin-top: 10px">
+      <div><div class="kv">154</div><div>caméras autorisées à la mairie</div></div>
+      <div><div class="kv">10</div><div>caméras sur la carte</div></div>
+      <div><div class="kv">415 000 €</div><div>au maximum depuis 2021</div></div>
+      <div><div class="kv">17</div><div>documents officiels</div></div>
+    </div>
+  </div>
+
+  <nav aria-label="Vues de la commune" style="width: 1180px; margin: 22px auto 0">
+    <div class="tabs">
+      <a href="Commune-grand.dc.html" aria-current="page">L'essentiel</a>
+      <a href="Documents-grand.dc.html">Documents · 17</a>
+      <a href="Autorisations-grand.dc.html">Autorisations · 9</a>
+      <a href="CarteTemps-grand.dc.html">Carte et drones</a>
+    </div>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 32px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 56px; min-width: 0">
+
+      <section aria-labelledby="s-vue" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="s-vue" class="h2">Ce que filment les 10 caméras placées</h2>
+        <div style="position: relative; border: 2px solid var(--fg); background: var(--card)">
+          <svg role="img" aria-label="Carte inclinée de Mions, découpée sur la commune, qui tourne lentement : les 10 caméras placées sur la carte, leurs champs de vision et les rues qu'elles filment. Pas de zone de drones ni d'analyse algorithmique à Mions. Pour explorer, ouvrir l'onglet Carte et drones." viewBox="0 0 816 470" width="100%" height="470" style="display: block">
+            <defs><clipPath id="cmg"><polygon points="{{clip}}"></polygon></clipPath></defs>
+            <polygon points="{{slab}}" fill="{{pal.edge}}"></polygon>
+            <polygon points="{{clip}}" fill="{{pal.ground}}"></polygon>
+            <g clip-path="url(#cmg)">
+              <sc-for list="{{scene}}" as="e" hint-placeholder-count="50">
+                <polygon points="{{e.points}}" fill="{{e.fill}}" fill-opacity="{{e.op}}" stroke="{{e.stroke}}" stroke-width="{{e.sw}}" stroke-linejoin="round"></polygon>
+              </sc-for>
+            </g>
+            <polygon points="{{clip}}" fill="none" stroke="{{pal.line}}" stroke-width="3" stroke-linejoin="round"></polygon>
+            <sc-for list="{{dots}}" as="d" hint-placeholder-count="5">
+              <circle cx="{{d.x}}" cy="{{d.y}}" r="5.5" fill="{{pal.dot}}" stroke="{{pal.dotRing}}" stroke-width="2.6"></circle>
+            </sc-for>
+          </svg>
+          <div style="position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px">
+            <button class="ctl" onClick="{{toggle}}" aria-pressed="{{pressed}}" aria-label="{{toggleLabel}}">
+              <sc-if value="{{playing}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"></rect><rect x="14" y="4" width="5" height="16"></rect></svg></sc-if>
+              <sc-if value="{{paused}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v5h-5"></path></svg></sc-if>
+            </button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start">
+          <ul aria-label="Légende de la carte" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; font-size: 14px">
+            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 50%; background: var(--fg); box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--fg); display: inline-block; margin: 0 3px"></span>caméra placée sur la carte</li>
+            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 12px; background: rgba(255,72,176,.35); border: 1.5px solid #ff48b0; display: inline-block"></span>champ de vision</li>
+            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 6px; background: #ff48b0; display: inline-block"></span>rue filmée</li>
+            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 12px; border: 2px solid var(--fg); display: inline-block; box-sizing: border-box"></span>limite de la commune</li>
+            <li style="display: flex; align-items: center; gap: 8px; color: var(--muted)"><span aria-hidden="true" style="width: 18px; height: 12px; background: repeating-linear-gradient(45deg, var(--drone) 0 2px, transparent 2px 5px); border: 1.5px solid var(--drone); display: inline-block; box-sizing: border-box"></span>zone de drones autorisée · aucune à Mions</li>
+            <li style="display: flex; align-items: center; gap: 8px; color: var(--muted)"><span aria-hidden="true" style="width: 18px; height: 12px; border: 2px dashed var(--fg); display: inline-block; box-sizing: border-box"></span>analyse algorithmique · aucune à Mions</li>
+          </ul>
+          <a href="CarteTemps-grand.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; background: var(--fg); color: var(--bg); font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none; white-space: nowrap">Explorer la carte et les drones →</a>
+        </div>
+        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">Vue d'ensemble qui ne se manipule pas : pour zoomer, tourner ou remonter le temps, ouvrir la carte. Illustration de maquette : la vraie vue est la carte du site, découpée sur Mions, avec ses 10 caméras. Caméras relevées par des contributeurs OpenStreetMap, pas un inventaire officiel.</p>
+      </section>
+
+      <section aria-labelledby="s-ou" style="background: #ff48b0; color: #111; border: 2px solid var(--fg); box-shadow: 6px 6px 0 var(--fg); padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 28px; align-items: center">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <h2 id="s-ou" class="h2" style="font-size: 36px">Où sont les 115 autres ?</h2>
+          <p style="margin: 0; font-size: 17px">La préfecture a autorisé 125 caméras sur la rue. La carte n'en connaît que 10. La liste des emplacements peut être demandée à la mairie, qui peut en refuser une partie pour raison de sécurité.</p>
+        </div>
+        <a href="Autorisations-grand.dc.html" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border: 2px solid #111; background: #fff; color: #111; font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none">Demander la liste à la mairie</a>
+      </section>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start">
+        <section aria-labelledby="s-aut" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="s-aut" class="h2">Ce que la préfecture autorise</h2>
+          <ul class="lst">
+            <li><strong>Verbaliser grâce aux caméras</strong><br>des amendes peuvent être dressées à partir des images.</li>
+            <li><strong>Transmettre les images</strong><br>à la police ou à la gendarmerie.</li>
+            <li><strong>Jusqu'au 30 juin 2031</strong><br>durée inscrite dans l'arrêté.</li>
+          </ul>
+          <h3 class="h3" style="font-size: 16px; margin-top: 6px">Trois arrêtés en sept mois</h3>
+          <div role="list" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 2px solid var(--fg)">
+            <sc-for list="{{arr}}" as="a" hint-placeholder-count="3">
+              <div role="listitem" class="{{a.cls}}" onMouseEnter="{{a.hover}}" onClick="{{a.hover}}" style="{{a.style}}">
+                <div style="font-weight: 900; font-stretch: 64%; font-size: 40px; line-height: 1">{{a.n}}</div>
+                <div class="tw" style="font-size: 13px; color: var(--muted)">{{a.d}}</div>
+              </div>
+            </sc-for>
+          </div>
+          <a href="Autorisations-grand.dc.html" class="ghost">Historique de l'autorisation : 138 → 151 → 154 caméras →</a>
+        </section>
+
+        <section aria-labelledby="s-prives" class="{{prv.cls}}" onMouseEnter="{{prv.hover}}" style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 2px solid var(--fg)">
+          <h2 id="s-prives" class="h2" style="font-size: 24px">Aussi à Mions</h2>
+          <p style="margin: 0; font-size: 18px"><strong>37 caméras</strong> de commerces et d'entreprises autorisées en un an (banque, pharmacie…), dans <strong>6 arrêtés</strong>.</p>
+          <ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule)">
+            <sc-for list="{{priv}}" as="p" hint-placeholder-count="6">
+              <li style="display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 15px"><span><span class="tw" style="color: var(--muted)">{{p.d}}</span> · {{p.who}}</span><strong>{{p.n}}</strong></li>
+            </sc-for>
+          </ul>
+          <a href="Documents-grand.dc.html" class="ghost">Les voir dans les documents →</a>
+        </section>
+      </div>
+
+      <section aria-labelledby="s-argent" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="s-argent" class="h2">L'argent</h2>
+          <button class="ibtn" onClick="{{tgl.arg}}" aria-expanded="{{open.arg}}" aria-label="Comment lire ces montants"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.arg}}" hint-placeholder-val="{{false}}"><p class="note tw">« Au maximum » : le plafond écrit dans le contrat, pas la somme payée. La fin d'un contrat est calculée : date de signature + durée publiée. Aides de la Région Auvergne-Rhône-Alpes pas encore collectées.</p></sc-if>
+        <p style="margin: 0; font-size: 18px"><span style="font-weight: 900; font-stretch: 66%; font-size: 52px; line-height: 1">415 000 €</span> au maximum depuis 2021, soit <strong>30 € par habitant</strong>, versés à <strong>une seule entreprise</strong> : <a href="Entreprise-grand.dc.html">Serfim T.I.C.</a></p>
+
+        <h3 class="h3" style="margin-top: 8px">Les contrats et appels d'offres, dans le temps</h3>
+        <div role="img" aria-label="{{friseAlt}}" style="position: relative; padding: 16px 30px 10px 16px; background: var(--card); border: 2px solid var(--fg); display: flex; flex-direction: column; gap: 16px">
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+            <div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: center; padding: 4px 0">
+              <div style="display: flex; flex-direction: column"><strong style="font-size: 15px">{{r.l1}}</strong><span style="font-size: 14px; color: var(--muted)">{{r.l2}}</span></div>
+              <div style="position: relative; height: 24px; background: var(--soft)">
+                <sc-for list="{{r.bars}}" as="b" hint-placeholder-count="1">
+                  <span style="{{b.style}}"></span>
+                </sc-for>
+                <sc-if value="{{r.arrow}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="{{r.arrowStyle}}"></span></sc-if>
+                <sc-for list="{{r.tris}}" as="t" hint-placeholder-count="2">
+                  <span onMouseEnter="{{t.hover}}" style="{{t.style}}"></span>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px">
+            <span></span>
+            <div class="tw" style="position: relative; height: 20px; font-size: 13px; color: var(--muted); border-top: 2px solid var(--fg)">
+              <sc-for list="{{ticks}}" as="k" hint-placeholder-count="7">
+                <span style="{{k.style}}">{{k.l}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px">
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 22px; height: 10px; background: var(--fg); display: inline-block"></span>durée du contrat</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid var(--fg); display: inline-block"></span>se poursuit après aujourd'hui</span>
+          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid var(--ao); display: inline-block"></span>appel d'offres</span>
+        </div>
+        <p style="margin: 0">Pas de trou entre les deux contrats : la même entreprise entretient les caméras depuis 2021.</p>
+        <dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 2px solid var(--fg)">
+          <dt style="padding: 10px 0; border-bottom: 1px solid var(--rule)">Entreprises différentes depuis 2021</dt><dd style="margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800">1</dd>
+          <dt style="padding: 10px 0; border-bottom: 1px solid var(--rule)">Offres reçues pour le contrat de 2025</dt><dd style="margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800">2</dd>
+          <dt style="padding: 10px 0; border-bottom: 1px solid var(--rule)">Subventions trouvées</dt><dd style="margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800">aucune</dd>
+        </dl>
+      </section>
+
+      <section aria-labelledby="s-temps" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="s-temps" class="h2">Ce qui s'est passé</h2>
+        <ol style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{chrono}}" as="h" hint-placeholder-count="8">
+            <li class="{{h.cls}}" onMouseEnter="{{h.hover}}" onClick="{{h.hover}}" style="display: grid; grid-template-columns: 210px 22px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 11px 8px; border-bottom: 1px solid var(--rule)">
+              <span class="tw" style="color: var(--muted)">{{h.d}}</span>
+              <span aria-hidden="true" style="{{h.mark}}"></span>
+              <span>{{h.t}} <sc-if value="{{h.flag}}" hint-placeholder-val="{{false}}"><span class="tw" style="background: var(--warn); border: 1px dashed var(--fg); padding: 0 4px; font-size: 12px">date à vérifier</span></sc-if></span>
+            </li>
+          </sc-for>
+        </ol>
+        <a href="Documents-grand.dc.html" class="ghost">Les 17 documents →</a>
+      </section>
+
+      <section aria-labelledby="s-metro" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="s-metro" class="h2">Dans la Métropole de Lyon et le Rhône</h2>
+          <button class="ibtn" onClick="{{tgl.met}}" aria-expanded="{{open.met}}" aria-label="Ce que comptent ces chiffres"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.met}}" hint-placeholder-val="{{false}}"><p class="note tw">Documents rattachés à une commune. Plus de documents ne veut pas dire plus de caméras : cela dépend de ce que chaque administration publie. Les arrêtés de la préfecture ne sont collectés que depuis novembre 2025.</p></sc-if>
+        <p style="margin: 0">Mions fait partie de la <strong>Métropole de Lyon</strong> : 58 communes, dont 51 ont au moins un document dans le registre.</p>
+        <table class="t">
+          <caption class="sr">Mions comparée à la Métropole de Lyon et au Rhône</caption>
+          <thead><tr><th scope="col"><button>Territoire</button></th><th scope="col" class="num"><button>Documents</button></th><th scope="col" class="num"><button>Contrats</button></th><th scope="col" class="num"><button>Autorisations</button></th><th scope="col" class="num"><button>dont drones</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{terr}}" as="r" hint-placeholder-count="3">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
+                <td><a href="{{r.href}}" class="rowlink">{{r.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{r.sub}}</div></td>
+                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.con}}</td><td class="num">{{r.aut}}</td><td class="num">{{r.dr}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <p style="margin: 0; font-size: 15px"><strong>La Métropole achète aussi elle-même</strong> : 2 contrats, 290 000 € au maximum, comme acheteur public.</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0 28px">
+          <a href="Departement-grand.dc.html" class="ghost">Les communes de la Métropole →</a>
+          <a href="Departement-grand.dc.html" class="ghost">Le Rhône →</a>
+        </div>
+      </section>
+
+      <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start">
+        <section aria-labelledby="s-bientot" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="s-bientot" class="h2">À surveiller</h2>
+          <ul class="lst">
+            <li style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px"><span class="tw" style="color: var(--muted)">bientôt</span><span><strong>Avec qui Mions va-t-elle signer ?</strong> L'appel d'offres de juillet 2026 n'a pas encore de contrat publié.</span></li>
+            <li style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px"><span class="tw" style="color: var(--muted)">janv. 2028</span><span>Fin prévue du contrat de 2025 avec Serfim T.I.C. (36 mois).</span></li>
+            <li style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px"><span class="tw" style="color: var(--muted)">30/06/2031</span><span>Fin de l'autorisation de la préfecture : un renouvellement devra être publié.</span></li>
+          </ul>
+          <button class="btn" style="align-self: flex-start">Me prévenir (RSS)</button>
+        </section>
+        <section aria-labelledby="s-introuvables" style="display: flex; flex-direction: column; gap: 12px">
+          <h2 id="s-introuvables" class="h2">Documents introuvables</h2>
+          <p style="margin: 0; color: var(--muted)">Ils existent, mais ne sont pas publiés. Tout le monde peut les demander.</p>
+          <div style="border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px">
+            <p style="margin: 0; font-weight: 700; font-size: 18px">Combien de caméras la préfecture a-t-elle autorisées entre 2008 et 2024 ?</p>
+            <a href="Autorisations-grand.dc.html" class="btn" style="align-self: flex-start">Demander à la préfecture</a>
+          </div>
+        </section>
+      </div>
+
+      <footer style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 16px; border-top: 2px solid var(--fg)">
+        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted); max-width: 560px">Montants : maximums prévus aux contrats. Caméras sur la carte : relevées par des contributeurs OpenStreetMap, pas un inventaire officiel.</p>
+        <div style="display: flex; gap: 8px"><button class="btn">Partager l'image</button><button class="btn">Nos sources</button></div>
+      </footer>
+    </main>
+
+    <aside aria-live="polite" aria-label="Détail" class="panel">
+      <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+      <strong style="font-size: 24px; line-height: 1.1; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+        <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value="{{det.hasLink}}" hint-placeholder-val="{{true}}"><a href="{{det.href}}" style="margin-top: 6px; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center">{{det.link}}</a></sc-if>
+      <span style="font-size: 13px; color: var(--muted)">Survolez un contrat, un arrêté, une date ou une ligne : le détail s'affiche ici.</span>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1280,"height":4500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { dark: (props.theme ?? 'sombre') === 'sombre', b: 25, playing: true, sel: null, open: {} };
+    this.drag = null;
+  }
+  componentDidMount() {
+    try { if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) this.setState({ playing: false }); } catch (e) {}
+    this.timer = setInterval(() => { if (this.state.playing && !this.drag) this.setState({ b: (this.state.b + 0.4) % 360 }); }, 50);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+  renderVals() {
+    const S = this.state;
+    const dark = S.dark;
+    // --- carte découpée (reprise de Main.dc.html, agrandie) ---
+    const pal = dark
+      ? { ground: '#262626', edge: '#000000', line: '#f2efe6', bld: '#3a3832', bldLine: '#4a463e', street: '#55534d', park: '#2a3a22', square: '#33302a', dot: '#f2efe6', dotRing: '#111111' }
+      : { ground: '#f2efe6', edge: '#111111', line: '#111111', bld: '#dcd6c6', bldLine: '#c4bda9', street: '#ffffff', park: '#cfe0b8', square: '#e6dfcd', dot: '#111111', dotRing: '#f2efe6' };
+    const br = S.b * Math.PI / 180, cs = Math.cos(br), sn = Math.sin(br);
+    const P = (x, y) => {
+      const dx = x - 50, dy = y - 60, xr = dx * cs - dy * sn, yr = dx * sn + dy * cs;
+      const k = 0.78 + 0.22 * ((yr + 78) / 156);
+      return [408 + xr * 4.1 * k, 228 + yr * 2.55];
+    };
+    const f = (n) => n.toFixed(1);
+    const pts = (w, dy) => w.map((q) => { const p = P(q[0], q[1]); return f(p[0]) + ',' + f(p[1] + (dy || 0)); }).join(' ');
+    const poly = (w, fill, o) => ({ points: pts(w), fill: fill, op: (o && o.op) || 1, stroke: (o && o.stroke) || 'none', sw: (o && o.sw) || 0 });
+    const band = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy), nx = -dy / L * w / 2, ny = dx / L * w / 2; return [[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny], [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny]]; };
+    const CB = [[8,12],[30,3],[55,6],[80,2],[97,18],[99,47],[92,72],[98,100],[78,117],[50,112],[26,118],[6,100],[2,70],[10,44]];
+    const scene = [];
+    scene.push(poly([[78, 37], [98, 37], [98, 54], [78, 57]], pal.park));
+    scene.push(poly([[39, 102], [64, 101], [65, 118], [40, 119]], pal.square));
+    const B = [[2,3,12,10],[16,4,12,9],[3,16,10,9],[16,16,12,9],[38,3,14,10],[55,2,13,11],[39,16,12,10],[54,16,14,10],[78,3,20,11],[79,17,19,10],[2,37,12,14],[16,38,13,12],[3,55,11,13],[17,54,12,12],[38,37,14,12],[55,36,13,13],[39,52,12,8],[55,51,12,8],[2,97,12,10],[16,94,12,7],[3,110,11,9],[17,108,11,10],[38,84,13,10],[54,80,14,12],[78,72,10,12],[90,70,9,13],[78,90,20,12],[79,106,19,11]];
+    B.forEach(([x, y, w, d]) => scene.push(poly([[x, y], [x + w, y], [x + w, y + d], [x, y + d]], pal.bld, { stroke: pal.bldLine, sw: 0.8 })));
+    const ST = [[[0, 92], [100, 58], 7], [[33, 0], [33, 120], 5], [[73, 0], [74, 120], 5], [[0, 30], [100, 32], 4], [[33, 101], [74, 99], 4]];
+    ST.forEach(([a, b, w]) => scene.push(poly(band(a, b, w), pal.street)));
+    const FILM = [[[33, 42], [33, 64], 3.4], [[33, 20], [33, 4], 3.4], [[50, 75], [72, 67.5], 4.6], [[20, 85.2], [4, 90.6], 4.6], [[70, 31.4], [48, 31], 2.8]];
+    FILM.forEach(([a, b, w]) => scene.push(poly(band(a, b, w), '#ff48b0')));
+    const CAM = [[31, 42, 90], [35, 20, 270], [50, 74.5, -19], [20, 84.8, 161], [70, 33.5, 180]];
+    const dots = [];
+    CAM.forEach(([cx, cy, dir]) => {
+      const r = 22, fov = 58, w = [[cx, cy]];
+      for (let i = 0; i <= 6; i++) { const a = (dir - fov / 2 + (i * fov) / 6) * Math.PI / 180; w.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+      scene.push(poly(w, '#ff48b0', { op: 0.3, stroke: '#ff48b0', sw: 1.4 }));
+      const p = P(cx, cy); dots.push({ x: f(p[0]), y: f(p[1]) });
+    });
+    const playing = S.playing;
+
+    // --- détail (panneau fixe) ---
+    const sel = (k) => () => this.setState({ sel: k });
+    const on = (k) => S.sel === k;
+    const DET = {
+      sum: { kicker: 'Mions · en bref', title: "L'essentiel", rows: [['Caméras autorisées (mairie)', '154'], ['dont sur la rue', '125'], ['Sur la carte', '10'], ['Au maximum depuis 2021', '415 000 €'], ['Documents', '17']], link: 'Tous les documents →', href: 'Documents-grand.dc.html' },
+      c1: { kicker: 'Contrat · févr. 2021 (date à vérifier)', title: 'Serfim T.I.C.', rows: [['Objet', 'achat et entretien des caméras'], ['Montant maximum', '200 000 €'], ['Durée publiée', '47 mois'], ['Fin calculée', 'janv. 2025'], ['Offres reçues', '3']], link: 'Historique du contrat →', href: 'Contrat-grand.dc.html' },
+      c2: { kicker: 'Contrat · 30 janv. 2025', title: 'Serfim T.I.C.', rows: [['Objet', 'achat et entretien des caméras'], ['Montant maximum', '215 000 €'], ['Durée publiée', '36 mois'], ['Fin calculée', 'janv. 2028'], ['Offres reçues', '2'], ['Modifié', '30 déc. 2025, montant inchangé']], link: 'Historique du contrat →', href: 'Contrat-grand.dc.html' },
+      ao17: { kicker: "Appel d'offres · 21 nov. 2017", title: "Entretien d'un système de vidéosurveillance", rows: [['Référence', 'BOAMP 17-164514'], ['Contrat qui a suivi', 'non retrouvé']], link: "Voir l'avis →", href: 'Documents-grand.dc.html' },
+      ao20: { kicker: "Appel d'offres · 22 nov. 2020", title: "Achat et entretien d'un système de vidéosurveillance", rows: [['Référence', 'BOAMP 20-142345'], ['Résultat publié', '7 févr. 2021 (BOAMP 21-16838)'], ['Contrat qui a suivi', 'contrat de 2021 (lien probable)']], link: "Historique de l'appel d'offres →", href: 'Contrat-grand.dc.html' },
+      ao24: { kicker: "Appel d'offres · 27 juin 2024", title: "Achat et entretien d'un système de vidéosurveillance", rows: [['Référence', 'BOAMP 24-75505'], ['Contrat qui a suivi', 'contrat du 30 janv. 2025']], link: 'Historique du contrat →', href: 'Contrat-grand.dc.html' },
+      ao26: { kicker: "Appel d'offres · 21 juil. 2026", title: 'Entretien, renouvellement et achat de matériel de vidéoprotection', rows: [['Référence', 'BOAMP 26-71981'], ['Contrat qui a suivi', 'pas encore publié']], link: "Historique de l'appel d'offres →", href: 'Contrat-grand.dc.html' },
+      a1: { kicker: 'Arrêté · 18 nov. 2025', title: '138 caméras autorisées', rows: [['Sur la voie publique', '109'], ['Intérieur', '7'], ['Extérieur', '22'], ['Durée', '5 ans'], ['Référence', 'acte 69-2025-11-18-00015']], link: "Historique de l'autorisation →", href: 'Autorisations-grand.dc.html' },
+      a2: { kicker: 'Arrêté · 24 avr. 2026', title: '151 caméras autorisées', rows: [['Sur la voie publique', '122'], ['Intérieur', '7'], ['Extérieur', '22'], ['Durée', '5 ans'], ['Référence', 'acte 69-2026-04-24-00007']], link: "Historique de l'autorisation →", href: 'Autorisations-grand.dc.html' },
+      a3: { kicker: 'Arrêté · 30 juin 2026', title: '154 caméras autorisées', rows: [['Sur la voie publique', '125'], ['Intérieur', '9'], ['Extérieur', '20'], ['Durée', "5 ans, jusqu'au 30 juin 2031"], ['Référence', 'acte 69-2026-06-30-00021']], link: "Historique de l'autorisation →", href: 'Autorisations-grand.dc.html' },
+      prv: { kicker: 'Autres bénéficiaires · 2026', title: '37 caméras, 6 arrêtés', rows: [['Banque', '3 caméras'], ['Pharmacie', '2 caméras'], ['Nom non publié (4 arrêtés)', '32 caméras']], link: 'Les voir dans les documents →', href: 'Documents-grand.dc.html' },
+      h08: { kicker: '2008', title: "Ouverture du dossier d'autorisation", rows: [['Dossier préfectoral', 'n° 20083300'], ['Arrêtés 2008-2024', 'non publiés en ligne']], link: 'Demander à la préfecture →', href: 'Autorisations-grand.dc.html' },
+      hel: { kicker: 'Mars 2026', title: 'Élections municipales', rows: [['Mandat', '2026-2032'], ['Élus', 'source officielle (répertoire national des élus)']], link: 'Les élus (source officielle) →', href: 'Commune-grand.dc.html' },
+      m0: { kicker: 'Commune', title: 'Mions', rows: [['Documents', '17'], ['Contrats', '2'], ['Autorisations', '9'], ['Rang dans la Métropole', '18e sur 51 (documents)']], link: 'Les 17 documents →', href: 'Documents-grand.dc.html' },
+      m1: { kicker: 'Intercommunalité', title: 'Métropole de Lyon', rows: [['Communes', '58, dont 51 dans le registre'], ['Documents', '1 443'], ['Contrats', '196'], ['Autorisations', '970'], ['dont drones', '56']], link: 'Les communes de la Métropole →', href: 'Departement-grand.dc.html' },
+      m2: { kicker: 'Département', title: 'Rhône', rows: [['Communes dans le registre', '138'], ['Documents', '1 891'], ['Contrats', '238'], ['Autorisations', '1 277'], ['dont drones', '59']], link: 'Le Rhône →', href: 'Departement-grand.dc.html' }
+    };
+    const d0 = DET[S.sel] || DET.sum;
+    const det = { kicker: d0.kicker, title: d0.title, rows: d0.rows.map(([k, v]) => ({ k: k, v: v })), link: d0.link, href: d0.href, hasLink: !!d0.link };
+
+    // --- trois arrêtés ---
+    const arr = [['a1', '138', '18 nov. 2025'], ['a2', '151', '24 avr. 2026'], ['a3', '154', '30 juin 2026']].map(([k, n, d], i) => ({ n: n, d: d, hover: sel(k), cls: 'hv' + (on(k) ? ' on' : ''), style: 'padding: 12px 14px; ' + (i ? 'border-left: 1px solid var(--rule); ' : '') + (on(k) ? 'box-shadow: inset 0 -5px 0 var(--hover)' : '') }));
+    const priv = [['16 mars 2026', 'nom non publié', '5'], ['8 juin 2026', 'nom non publié', '3'], ['19 juin 2026', 'Société Générale', '3'], ['15 juil. 2026', 'Pharmacie des Halles', '2'], ['30 sept. 2026', 'nom non publié', '8'], ['20 oct. 2026', 'nom non publié', '16']].map(([d, who, n]) => ({ d: d, who: who, n: n }));
+
+    // --- frise : janv. 2020 → aujourd'hui (25 oct. 2026), « auj. » au bord droit ---
+    const M0 = 2020 * 12, NOW = 2026 * 12 + 9 + 24 / 31;
+    const X = (y, m) => Math.max(0, Math.min(100, ((y * 12 + m - 1) - M0) / (NOW - M0) * 100));
+    const bar = (a, b, k) => ({ style: 'position: absolute; top: 0; bottom: 0; left: ' + a.toFixed(2) + '%; width: ' + (b - a).toFixed(2) + '%; background: ' + (on(k) ? 'var(--hover)' : 'var(--fg)') });
+    const tri = (x, k) => ({ hover: sel(k), style: 'position: absolute; top: 4px; left: calc(' + x.toFixed(2) + '% - 9px); width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid ' + (on(k) ? 'var(--hover)' : 'var(--ao)') + '; cursor: pointer' });
+    const rows = [
+      { k: 'c1', l1: 'Contrat 1 · 200 000 €', l2: 'févr. 2021 → janv. 2025', bars: [bar(X(2021, 2), X(2025, 1), 'c1')], arrow: false, tris: [] },
+      { k: 'c2', l1: 'Contrat 2 · 215 000 €', l2: 'janv. 2025 → janv. 2028', bars: [bar(X(2025, 1), 100, 'c2')], arrow: true, tris: [] },
+      { k: 'ao', l1: "Appels d'offres", l2: '2020 · 2024 · juillet 2026', bars: [], arrow: false, tris: [tri(X(2020, 11), 'ao20'), tri(X(2024, 6), 'ao24'), tri(X(2026, 7), 'ao26')] }
+    ].map((r) => ({ l1: r.l1, l2: r.l2, bars: r.bars, tris: r.tris, arrow: r.arrow, cls: r.k === 'ao' ? '' : 'hv' + (on(r.k) ? ' on' : ''), hover: r.k === 'ao' ? sel('ao26') : sel(r.k), arrowStyle: 'position: absolute; top: -3px; right: -16px; width: 0; height: 0; border-top: 15px solid transparent; border-bottom: 15px solid transparent; border-left: 16px solid ' + (on(r.k) ? 'var(--hover)' : 'var(--fg)') }));
+    const ticks = [2020, 2021, 2022, 2023, 2024, 2025, 2026].map((y) => ({ l: String(y), style: 'position: absolute; top: 2px; left: ' + X(y, 1).toFixed(2) + '%; transform: translateX(' + (y === 2020 ? '0' : '-50%') + ')' })).concat([{ l: 'auj.', style: 'position: absolute; top: 2px; right: 0; color: var(--fg); font-weight: 700' }]);
+
+    // --- chronologie ---
+    const mk = (kind) => ({ dossier: 'display: inline-block; width: 12px; height: 12px; border: 3px solid var(--fg); border-radius: 50%', contrat: 'display: inline-block; width: 14px; height: 14px; background: var(--fg)', aut: 'display: inline-block; width: 13px; height: 13px; border: 3px solid var(--fg); transform: rotate(45deg); box-sizing: border-box', ao: 'display: inline-block; width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 14px solid var(--ao)', vote: 'display: inline-block; width: 14px; height: 3px; background: var(--muted); vertical-align: middle' })[kind];
+    const CH = [
+      ['h08', '2008', 'dossier', "La mairie ouvre son dossier d'autorisation des caméras.", false],
+      ['ao17', 'novembre 2017', 'ao', "Appel d'offres pour l'entretien des caméras.", false],
+      ['ao20', 'novembre 2020', 'ao', "Appel d'offres : achat et entretien des caméras.", false],
+      ['c1', '2021', 'contrat', 'Premier contrat trouvé avec Serfim T.I.C. : achat et entretien des caméras.', true],
+      ['c2', 'janvier 2025', 'contrat', 'Nouveau contrat avec Serfim T.I.C., modifié en décembre.', false],
+      ['a3', 'nov. 2025 → juin 2026', 'aut', 'La préfecture autorise 138, puis 151, puis 154 caméras : +16 en 7 mois.', false],
+      ['hel', 'mars 2026', 'vote', 'Élections municipales.', false],
+      ['ao26', 'juillet 2026', 'ao', "Nouvel appel d'offres : entretien, renouvellement et achat de caméras.", false]
+    ];
+    const chrono = CH.map(([k, d, kind, t, flag], i) => ({ d: d, t: t, flag: flag, mark: mk(kind), hover: sel(k), cls: 'hv' + (on(k) ? ' on' : '') }));
+
+    // --- territoires ---
+    const terr = [['m0', 'Mions', 'commune · 13 843 habitants', '17', '2', '9', '0', 'Commune-grand.dc.html'], ['m1', 'Métropole de Lyon', '51 communes dans le registre, sur 58', '1 443', '196', '970', '56', 'Departement-grand.dc.html'], ['m2', 'Rhône', '138 communes dans le registre', '1 891', '238', '1 277', '59', 'Departement-grand.dc.html']].map(([k, nom, sub, n, con, aut, dr, href]) => ({ nom: nom, sub: sub, n: n, con: con, aut: aut, dr: dr, href: href, hover: sel(k), cls: 'r' + (on(k) ? ' on' : '') }));
+
+    const open = S.open || {};
+    const tg = (k) => () => this.setState({ open: Object.assign({}, open, { [k]: !open[k] }) });
+    return {
+      th: dark ? 'th dark' : 'th', isDark: dark, isLight: !dark,
+      themeLabel: dark ? 'Passer en thème clair' : 'Passer en thème sombre',
+      toggleTheme: () => this.setState({ dark: !this.state.dark }),
+      nav: { reg: 'false', glo: 'false' },
+      pal: pal, scene: scene, dots: dots, clip: pts(CB), slab: pts(CB, 14),
+      playing: playing, paused: !playing, pressed: playing ? 'false' : 'true',
+      toggleLabel: playing ? 'Arrêter la rotation' : 'Reprendre la rotation',
+      toggle: () => this.setState({ playing: !this.state.playing }),
+      north: () => this.setState({ b: 0, playing: false }),
+      down: (e) => { this.drag = { x: e.clientX, b: this.state.b }; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} this.setState({ playing: false }); },
+      move: (e) => { if (!this.drag) return; this.setState({ b: this.drag.b + (e.clientX - this.drag.x) * 0.6 }); },
+      up: () => { this.drag = null; },
+      det: det, arr: arr, priv: priv,
+      prv: { hover: sel('prv'), cls: 'hv' + (on('prv') ? ' on' : '') },
+      rows: rows, ticks: ticks,
+      friseAlt: "Contrat 1 avec Serfim T.I.C. : 200 000 euros au maximum, de février 2021 à janvier 2025. Contrat 2 avec Serfim T.I.C. : 215 000 euros au maximum, de janvier 2025 à janvier 2028, encore en cours aujourd'hui. Appels d'offres en novembre 2020, juin 2024 et juillet 2026 ; celui de juillet 2026 n'a pas encore de contrat publié.",
+      chrono: chrono, terr: terr,
+      show: { arg: !!open.arg, met: !!open.met }, open: { arg: open.arg ? 'true' : 'false', met: open.met ? 'true' : 'false' },
+      tgl: { arg: tg('arg'), met: tg('met') }
+    };
+  }
+}
+</script>
+</body>
+</html>

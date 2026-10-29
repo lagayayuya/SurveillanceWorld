@@ -1,0 +1,435 @@
+﻿vue,type,maquette,prototype,raison
+registre,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+registre,chiffre,mis à jour le 24/10/2026,mis à jour le {{maj}},date de construction du registre (REG.meta.construit)
+registre,consigne,"contrats, appels d'offres, autorisations de la préfecture, subventions.","contrats, appels d'offres, arrêtés de la préfecture, subventions.",brief v11 § 3 : un mot par périmètre (« arrêtés » pour tout ce que publie la préfecture)
+registre,lien,"<a href=""Registre.dc.html"" aria-current=""page"">Documents · 6 759</a>","<a href=""#/"" aria-current=""page"">Documents · {{ndocs}}</a>",route du prototype ; total compté dans le registre
+registre,lien,"<a href=""Registre-chiffres.dc.html"">Chiffres et classements</a>","<a href=""#/registre/chiffres"">Chiffres et classements</a>",route du prototype
+registre,consigne,"<p class=""tw"" style=""margin: 14px 0 0; font-size: 13px; color: var(--muted)"">Maquette : la liste et la recherche par mot puisent dans un extrait de 250 documents ; sans mot, les compteurs sont ceux des 6 759.</p>",,brief v11 § 2.1 : la recherche porte sur les 6 759 documents ; la note propre à la maquette n'a plus d'objet
+registre,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+          <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+          <strong style=""font-size: 21px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+          <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""4"">
+            <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+          </sc-for>
+          <sc-for list=""{{det.links}}"" as=""l"" hint-placeholder-count=""2"">
+            <a href=""{{l.href}}"" class=""ghost"">{{l.l}}</a>
+          </sc-for>
+        </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues (titre 21 px dans la maquette, 22 px dans le composant commun)"
+chiffres,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+chiffres,chiffre,mis à jour le 24/10/2026,mis à jour le {{maj}},date de construction du registre (REG.meta.construit)
+chiffres,lien,"<a href=""Registre.dc.html"">Documents · 6 759</a>","<a href=""#/"">Documents · {{ndocs}}</a>",route du prototype ; total compté dans le registre
+chiffres,lien,"<a href=""Registre-chiffres.dc.html"" aria-current=""page"">","<a href=""#/registre/chiffres"" aria-current=""page"">",route du prototype
+chiffres,chiffre,>419 entreprises · les 10 premières<,>{{nEnts}} entreprises · les 10 premières<,compté dans le registre
+chiffres,chiffre,>760 acheteurs · les 10 premiers<,>{{nBuy}} acheteurs · les 10 premiers<,compté dans le registre (acheteurs d'au moins un contrat)
+chiffres,lien,"<a class=""rowlink"" href=""Entreprise-grand.dc.html"">{{e.nom}}</a>","<a class=""rowlink"" href=""{{e.href}}"">{{e.nom}}</a>",route de l'entreprise
+chiffres,lien,"<a class=""rowlink"" href=""Commune-grand.dc.html"">{{c.nom}}</a>","<a class=""rowlink"" href=""{{c.href}}"">{{c.nom}}</a>",route de la commune
+chiffres,consigne,Les autorisations de la préfecture ne couvrent pour l'instant que le Rhône.,Les arrêtés de la préfecture ne couvrent pour l'instant que le Rhône.,brief v11 § 3 : un mot par périmètre (« arrêtés » pour tout ce que publie la préfecture)
+chiffres,chiffre,">1 233 contrats signés, par dispositif.",">{{nCon}} contrats signés, par dispositif.",compté dans le registre
+chiffres,lien,"<li style=""border-bottom: 1px solid var(--rule)""><a href=""Registre.dc.html"" style=","<li style=""border-bottom: 1px solid var(--rule)""><a href=""{{d.href}}"" style=","brief § 2.2 : ouvre la vue Documents, filtrée (contrats, ce dispositif)"
+chiffres,lien,"<a href=""CarteTemps-grand.dc.html"" style=""color: var(--fg); text-decoration: none; font-weight: 600"">{{d.l}}</a>","<a href=""{{d.href}}"" style=""color: var(--fg); text-decoration: none; font-weight: 600"">{{d.l}}</a>",la carte des drones de la commune
+commune,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+commune,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <a href=""Departement-grand.dc.html"">Métropole de Lyon</a> › <span aria-current=""page"">Mions</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+commune,chiffre,"<h1 class=""h1"">Mions</h1>","<h1 class=""h1"">{{com.nom}}</h1>",nom de la commune
+commune,chiffre,>Rhône · Métropole de Lyon · 13 843 habitants · code INSEE 69283<,>{{com.ligneLongue}}<,département · intercommunalité · population · code INSEE
+commune,chiffre,"<p class=""lead"" style=""margin-top: 6px"">En juin 2026, la préfecture a autorisé <strong>154 caméras</strong> à la mairie de Mions. <strong>125</strong> filment la rue. La carte n'en connaît que <strong>10</strong>.</p>","<p class=""lead"" style=""margin-top: 6px"">{{{lead}}}</p>","règle écrite dans vues/commune.js (phrase de lecture de la v10, au vocabulaire de la maquette) ; masquée quand elle ne s'applique pas"
+commune,chiffre,"<div><div class=""kv"">154</div><div>caméras autorisées à la mairie</div></div>
+      <div><div class=""kv"">10</div><div>caméras sur la carte</div></div>
+      <div><div class=""kv"">415 000 €</div><div>au maximum depuis 2021</div></div>
+      <div><div class=""kv"">17</div><div>documents officiels</div></div>","<sc-for list=""{{kpis}}"" as=""k""><div><div class=""kv"">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>",les 4 chiffres de la commune ; le premier change quand aucun arrêté n'est publié (contrats signés)
+commune,socle,"<nav aria-label=""Vues de la commune"" style=""width: 1180px; margin: 22px auto 0"">
+    <div class=""tabs"">
+      <a href=""Commune-grand.dc.html"" aria-current=""page"">L'essentiel</a>
+      <a href=""Documents-grand.dc.html"">Documents · 17</a>
+      <a href=""Autorisations-grand.dc.html"">Autorisations · 9</a>
+      <a href=""CarteTemps-grand.dc.html"">Carte et drones</a>
+    </div>
+  </nav>","<dc-include src=""onglets-commune""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues ; comptes de l'onglet calculés (Documents : tous ; Autorisations : les arrêtés)"
+commune,chiffre,"<h2 id=""s-vue"" class=""h2"">Ce que filment les 10 caméras placées</h2>","<h2 id=""s-vue"" class=""h2"">{{vueTitre}}</h2>",nombre de caméras de la carte découpée sur la commune
+commune,consigne,"<svg role=""img"" aria-label=""Carte inclinée de Mions, découpée sur la commune, qui tourne lentement : les 10 caméras placées sur la carte, leurs champs de vision et les rues qu'elles filment. Pas de zone de drones ni d'analyse algorithmique à Mions. Pour explorer, ouvrir l'onglet Carte et drones."" viewBox=""0 0 816 470"" width=""100%"" height=""470"" style=""display: block"">
+            <defs><clipPath id=""cmg""><polygon points=""{{clip}}""></polygon></clipPath></defs>
+            <polygon points=""{{slab}}"" fill=""{{pal.edge}}""></polygon>
+            <polygon points=""{{clip}}"" fill=""{{pal.ground}}""></polygon>
+            <g clip-path=""url(#cmg)"">
+              <sc-for list=""{{scene}}"" as=""e"" hint-placeholder-count=""50"">
+                <polygon points=""{{e.points}}"" fill=""{{e.fill}}"" fill-opacity=""{{e.op}}"" stroke=""{{e.stroke}}"" stroke-width=""{{e.sw}}"" stroke-linejoin=""round""></polygon>
+              </sc-for>
+            </g>
+            <polygon points=""{{clip}}"" fill=""none"" stroke=""{{pal.line}}"" stroke-width=""3"" stroke-linejoin=""round""></polygon>
+            <sc-for list=""{{dots}}"" as=""d"" hint-placeholder-count=""5"">
+              <circle cx=""{{d.x}}"" cy=""{{d.y}}"" r=""5.5"" fill=""{{pal.dot}}"" stroke=""{{pal.dotRing}}"" stroke-width=""2.6""></circle>
+            </sc-for>
+          </svg>","<div id=""carte-ess"" data-dc-keep=""1"" role=""img"" aria-label=""{{carteAlt}}"" style=""height: 470px; position: relative; overflow: hidden""></div>","la maquette dit « Illustration de maquette : la vraie vue est la carte du site » : la carte du site (carte3d.mjs), sans geste, toutes les couches"
+commune,chiffre,"<li style=""display: flex; align-items: center; gap: 8px; color: var(--muted)""><span aria-hidden=""true"" style=""width: 18px; height: 12px; background: repeating-linear-gradient(45deg, var(--drone) 0 2px, transparent 2px 5px); border: 1.5px solid var(--drone); display: inline-block; box-sizing: border-box""></span>zone de drones autorisée · aucune à Mions</li>","<li style=""{{leg.drStyle}}""><span aria-hidden=""true"" style=""width: 18px; height: 12px; background: repeating-linear-gradient(45deg, var(--drone) 0 2px, transparent 2px 5px); border: 1.5px solid var(--drone); display: inline-block; box-sizing: border-box""></span>{{leg.dr}}</li>","brief § 2.3 : une couche absente s'écrit « aucune à <commune> » ; présente, la ligne n'est pas grisée"
+commune,chiffre,"<li style=""display: flex; align-items: center; gap: 8px; color: var(--muted)""><span aria-hidden=""true"" style=""width: 18px; height: 12px; border: 2px dashed var(--fg); display: inline-block; box-sizing: border-box""></span>analyse algorithmique · aucune à Mions</li>","<li style=""{{leg.vsaStyle}}""><span aria-hidden=""true"" style=""width: 18px; height: 12px; border: 2px dashed var(--fg); display: inline-block; box-sizing: border-box""></span>{{leg.vsa}}</li>",brief § 2.3 : une couche absente s'écrit « aucune à <commune> »
+commune,lien,"<a href=""CarteTemps-grand.dc.html"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; background: var(--fg); color: var(--bg); font-weight: 800;","<a href=""{{lien.carte}}"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; background: var(--fg); color: var(--bg); font-weight: 800;",onglet Carte et drones de la commune
+commune,consigne,"pour zoomer, tourner ou remonter le temps, ouvrir la carte. Illustration de maquette : la vraie vue est la carte du site, découpée sur Mions, avec ses 10 caméras. Caméras relevées","pour zoomer, tourner ou remonter le temps, ouvrir la carte. Caméras relevées",la phrase d'illustration de la maquette n'a plus d'objet : c'est la vraie carte
+commune,chiffre,"<section aria-labelledby=""s-ou"" style=""background: #ff48b0;","<sc-if value=""{{ou.show}}""><section aria-labelledby=""s-ou"" style=""background: #ff48b0;","la carte rose n'apparaît que si la règle de la v10 s'applique (autorisation complète, rue précisée, moins de caméras publiques sur la carte)"
+commune,chiffre,"<h2 id=""s-ou"" class=""h2"" style=""font-size: 36px"">Où sont les 115 autres ?</h2>
+          <p style=""margin: 0; font-size: 17px"">La préfecture a autorisé 125 caméras sur la rue. La carte n'en connaît que 10. La liste","<h2 id=""s-ou"" class=""h2"" style=""font-size: 36px"">Où sont les {{ou.k}} autres ?</h2>
+          <p style=""margin: 0; font-size: 17px"">La préfecture a autorisé {{ou.vp}} caméras sur la rue. La carte n'en connaît que {{ou.pub}}. La liste","règle de la 10e passe (décision de Ju) : comparaison aux seules caméras publiques de la carte ; Mions 125 − 7 = 118 (la maquette : 125 − 10 = 115, toutes les caméras)"
+commune,lien,"<a href=""Autorisations-grand.dc.html"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border: 2px solid #111; background: #fff; color: #111; font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none"">Demander la liste à la mairie</a>
+      </section>","<a href=""{{lien.autorisations}}"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border: 2px solid #111; background: #fff; color: #111; font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none"">Demander la liste à la mairie</a>
+      </section></sc-if>",onglet Autorisations de la commune (où se trouve la demande)
+commune,chiffre,"<div style=""display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start"">
+        <section aria-labelledby=""s-aut"" style=""display: flex; flex-direction: column; gap: 12px"">","<div style=""display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start"">
+        <sc-if value=""{{aut.show}}""><section aria-labelledby=""s-aut"" style=""display: flex; flex-direction: column; gap: 12px"">",section présente seulement si un arrêté de la mairie est publié
+commune,chiffre,"<li><strong>Verbaliser grâce aux caméras</strong><br>des amendes peuvent être dressées à partir des images.</li>
+            <li><strong>Transmettre les images</strong><br>à la police ou à la gendarmerie.</li>
+            <li><strong>Jusqu'au 30 juin 2031</strong><br>durée inscrite dans l'arrêté.</li>","<sc-for list=""{{aut.items}}"" as=""i""><li><strong>{{i.a}}</strong><br>{{i.b}}</li></sc-for>","ce que dit le dernier arrêté (verbalisation, transmission, échéance) ; « non mentionné » sinon"
+commune,chiffre,"<h3 class=""h3"" style=""font-size: 16px; margin-top: 6px"">Trois arrêtés en sept mois</h3>
+          <div role=""list"" style=""display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 2px solid var(--fg)"">","<h3 class=""h3"" style=""font-size: 16px; margin-top: 6px"">{{aut.h3}}</h3>
+          <div role=""list"" style=""display: grid; grid-template-columns: repeat({{aut.n}}, minmax(0, 1fr)); border: 2px solid var(--fg)"">",nombre d'arrêtés du dossier de la mairie (les 4 derniers au plus) et leur durée
+commune,lien,"<a href=""Autorisations-grand.dc.html"" class=""ghost"">Historique de l'autorisation : 138 → 151 → 154 caméras →</a>
+        </section>","<a href=""{{lien.dossier}}"" class=""ghost"">{{aut.hist}}</a>
+        </section></sc-if>","onglet Autorisations, sur le dossier ; suite des nombres de caméras du dossier"
+commune,chiffre,"<section aria-labelledby=""s-prives"" class=""{{prv.cls}}""","<sc-if value=""{{prv.show}}""><section aria-labelledby=""s-prives"" class=""{{prv.cls}}""",section présente seulement s'il y a des arrêtés de commerces ou d'entreprises
+commune,chiffre,"<h2 id=""s-prives"" class=""h2"" style=""font-size: 24px"">Aussi à Mions</h2>
+          <p style=""margin: 0; font-size: 18px""><strong>37 caméras</strong> de commerces et d'entreprises autorisées en un an (banque, pharmacie…), dans <strong>6 arrêtés</strong>.</p>","<h2 id=""s-prives"" class=""h2"" style=""font-size: 24px"">Aussi à {{com.nom}}</h2>
+          <p style=""margin: 0; font-size: 18px""><strong>{{prv.cam}}</strong> de commerces et d'entreprises autorisées en un an{{prv.kinds}}, dans <strong>{{prv.arr}}</strong>.</p>",caméras et arrêtés des bénéficiaires privés ; catégories lues dans les arrêtés
+commune,lien,"<a href=""Documents-grand.dc.html"" class=""ghost"">Les voir dans les documents →</a>
+        </section>","<a href=""{{lien.prives}}"" class=""ghost"">Les voir dans les documents →</a>
+        </section></sc-if>","onglet Documents, filtré (autorisations, entreprises et commerces, nom non publié)"
+commune,chiffre,"<p class=""note tw"">« Au maximum » : le plafond écrit dans le contrat, pas la somme payée. La fin d'un contrat est calculée : date de signature + durée publiée. Aides de la Région Auvergne-Rhône-Alpes pas encore collectées.</p>","<p class=""note tw"">« Au maximum » : le plafond écrit dans le contrat, pas la somme payée. La fin d'un contrat est calculée : date de signature + durée publiée.{{arg.couv}}</p>",couverture des subventions selon le département
+commune,chiffre,"<p style=""margin: 0; font-size: 18px""><span style=""font-weight: 900; font-stretch: 66%; font-size: 52px; line-height: 1"">415 000 €</span> au maximum depuis 2021, soit <strong>30 € par habitant</strong>, versés à <strong>une seule entreprise</strong> : <a href=""Entreprise-grand.dc.html"">Serfim T.I.C.</a></p>","<p style=""margin: 0; font-size: 18px""><span style=""font-weight: 900; font-stretch: 66%; font-size: 52px; line-height: 1"">{{arg.total}}</span> {{{arg.phrase}}}</p>","total, année du premier contrat, par habitant, entreprises (chaque nom est un lien)"
+commune,chiffre,"<h3 class=""h3"" style=""margin-top: 8px"">Les contrats et appels d'offres, dans le temps</h3>","<h3 class=""h3"" style=""margin-top: 8px"">{{arg.friseTitre}}</h3>","à partir de 6 contrats, une ligne par entreprise (règle de la 9e passe)"
+commune,lien,"<div style=""display: flex; flex-direction: column""><strong style=""font-size: 15px"">{{r.l1}}</strong><span style=""font-size: 14px; color: var(--muted)"">{{r.l2}}</span></div>","<div style=""display: flex; flex-direction: column""><strong style=""font-size: 15px"">{{{r.l1}}}</strong><span style=""font-size: 14px; color: var(--muted)"">{{r.l2}}</span></div>",le nom de l'entreprise est un lien (relevé des liens)
+commune,chiffre,"<p style=""margin: 0"">Pas de trou entre les deux contrats : la même entreprise entretient les caméras depuis 2021.</p>","<sc-if value=""{{arg.retenir}}""><p style=""margin: 0"">{{{arg.retenir}}}</p></sc-if>","phrase de la v10 (même entreprise, trous) ; masquée sans contrat"
+commune,chiffre,"<dt style=""padding: 10px 0; border-bottom: 1px solid var(--rule)"">Entreprises différentes depuis 2021</dt><dd style=""margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800"">1</dd>
+          <dt style=""padding: 10px 0; border-bottom: 1px solid var(--rule)"">Offres reçues pour le contrat de 2025</dt><dd style=""margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800"">2</dd>
+          <dt style=""padding: 10px 0; border-bottom: 1px solid var(--rule)"">Subventions trouvées</dt><dd style=""margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800"">aucune</dd>","<sc-for list=""{{arg.dl}}"" as=""x""><dt style=""padding: 10px 0; border-bottom: 1px solid var(--rule)"">{{x.k}}</dt><dd style=""margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800"">{{x.v}}</dd></sc-for>",trois lignes calculées
+commune,lien,"<span>{{h.t}} <sc-if value=""{{h.flag}}""","<span>{{{h.t}}} <sc-if value=""{{h.flag}}""",les noms d'entreprises de la chronologie sont des liens
+commune,lien,"<a href=""Documents-grand.dc.html"" class=""ghost"">Les 17 documents →</a>","<a href=""{{lien.documents}}"" class=""ghost"">Les {{nDocs}} documents →</a>",onglet Documents
+commune,chiffre,"<h2 id=""s-metro"" class=""h2"">Dans la Métropole de Lyon et le Rhône</h2>","<h2 id=""s-metro"" class=""h2"">{{ter.titre}}</h2>",brief § 2.3 : « Dans <intercommunalité> et <département> »
+commune,consigne,Les arrêtés de la préfecture ne sont collectés que depuis novembre 2025.</p></sc-if>,{{ter.couv}}</p></sc-if>,"brief § 3 : premier arrêté du Rhône le 30 septembre 2025 ; ailleurs, pas encore collectés"
+commune,chiffre,"<p style=""margin: 0"">Mions fait partie de la <strong>Métropole de Lyon</strong> : 58 communes, dont 51 ont au moins un document dans le registre.</p>","<p style=""margin: 0"">{{com.nom}} fait partie de {{ter.de}}<strong>{{ter.epci}}</strong> : {{ter.nCom}} communes, dont {{ter.nReg}} ont au moins un document dans le registre.</p>",communes de l'intercommunalité (fichier des communes) et celles du registre
+commune,chiffre,"<caption class=""sr"">Mions comparée à la Métropole de Lyon et au Rhône</caption>","<caption class=""sr"">{{ter.caption}}</caption>",noms
+commune,consigne,"<th scope=""col"" class=""num""><button>Autorisations</button></th><th scope=""col"" class=""num""><button>dont drones</button></th>","<th scope=""col"" class=""num""><button>Autorisations</button></th><th scope=""col"" class=""num""><button>Drones</button></th>","brief v11 § 3 : un mot par périmètre (« arrêtés » pour tout ce que publie la préfecture) : « Autorisations » = autorisations de caméras, « Drones » = arrêtés de drones ; un drone n'est pas « dont » une autorisation de caméras"
+commune,chiffre,"<p style=""margin: 0; font-size: 15px""><strong>La Métropole achète aussi elle-même</strong> : 2 contrats, 290 000 € au maximum, comme acheteur public.</p>","<sc-if value=""{{ter.achat}}""><p style=""margin: 0; font-size: 15px""><strong>{{ter.achatQui}} achète aussi elle-même</strong> : {{ter.achat}}, comme <a href=""{{ter.achatHref}}"">acheteur public</a>.</p></sc-if>",contrats signés par l'intercommunalité ; masqué s'il n'y en a pas ; lien vers sa page d'acheteur
+commune,lien,"<a href=""Departement-grand.dc.html"" class=""ghost"">Les communes de la Métropole →</a>
+          <a href=""Departement-grand.dc.html"" class=""ghost"">Le Rhône →</a>","<a href=""{{ter.hrefEpci}}"" class=""ghost"">{{ter.lienEpci}}</a>
+          <a href=""{{ter.hrefDep}}"" class=""ghost"">{{ter.lienDep}}</a>","page du département, l'intercommunalité dépliée ; page du département"
+commune,chiffre,"<ul class=""lst"">
+            <li style=""display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px""><span class=""tw"" style=""color: var(--muted)"">bientôt</span><span><strong>Avec qui Mions va-t-elle signer ?</strong> L'appel d'offres de juillet 2026 n'a pas encore de contrat publié.</span></li>
+            <li style=""display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px""><span class=""tw"" style=""color: var(--muted)"">janv. 2028</span><span>Fin prévue du contrat de 2025 avec Serfim T.I.C. (36 mois).</span></li>
+            <li style=""display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px""><span class=""tw"" style=""color: var(--muted)"">30/06/2031</span><span>Fin de l'autorisation de la préfecture : un renouvellement devra être publié.</span></li>
+          </ul>
+          <button class=""btn"" style=""align-self: flex-start"">Me prévenir (RSS)</button>","<ul class=""lst"">
+            <sc-for list=""{{veille}}"" as=""v""><li style=""display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px""><span class=""tw"" style=""color: var(--muted)"">{{v.w}}</span><span>{{{v.t}}}</span></li></sc-for>
+          </ul>
+          <button class=""btn"" style=""align-self: flex-start"" data-rss=""{{com.insee}}"">Me prévenir (RSS)</button>","échéances calculées (appels d'offres sans contrat, fins de contrat, fin d'autorisation) ; le bouton RSS de la v10"
+commune,chiffre,"<div style=""border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px"">
+            <p style=""margin: 0; font-weight: 700; font-size: 18px"">Combien de caméras la préfecture a-t-elle autorisées entre 2008 et 2024 ?</p>
+            <a href=""Autorisations-grand.dc.html"" class=""btn"" style=""align-self: flex-start"">Demander à la préfecture</a>
+          </div>","<sc-for list=""{{introuvables}}"" as=""q""><div style=""border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px"">
+            <p style=""margin: 0; font-weight: 700; font-size: 18px"">{{q.q}}</p>
+            <a href=""{{q.href}}"" class=""btn"" style=""align-self: flex-start"">{{q.l}}</a>
+          </div></sc-for>","questions de la v10 (missingItems), les 2 premières"
+commune,chiffre,"<section aria-labelledby=""s-bientot"" style=""display: flex; flex-direction: column; gap: 12px"">","<sc-if value=""{{veille.length}}""><section aria-labelledby=""s-bientot"" style=""display: flex; flex-direction: column; gap: 12px"">",section masquée sans échéance
+commune,chiffre,"<button class=""btn"" style=""align-self: flex-start"" data-rss=""{{com.insee}}"">Me prévenir (RSS)</button>
+        </section>","<button class=""btn"" style=""align-self: flex-start"" data-rss=""{{com.insee}}"">Me prévenir (RSS)</button>
+        </section></sc-if>",fin de la condition
+commune,chiffre,"<section aria-labelledby=""s-introuvables"" style=""display: flex; flex-direction: column; gap: 12px"">","<sc-if value=""{{introuvables.length}}""><section aria-labelledby=""s-introuvables"" style=""display: flex; flex-direction: column; gap: 12px"">",section masquée sans question
+commune,chiffre,"<a href=""{{q.href}}"" class=""btn"" style=""align-self: flex-start"">{{q.l}}</a>
+          </div></sc-for>
+        </section>","<a href=""{{q.href}}"" class=""btn"" style=""align-self: flex-start"">{{q.l}}</a>
+          </div></sc-for>
+        </section></sc-if>",fin de la condition
+commune,lien,"<div style=""display: flex; gap: 8px""><button class=""btn"">Partager l'image</button><button class=""btn"">Nos sources</button></div>","<div style=""display: flex; gap: 8px""><button class=""btn"" data-partage=""{{com.insee}}"">Partager l'image</button><button class=""btn"" data-sources=""1"">Nos sources</button></div>","les boutons de la v10 (image à partager, sources)"
+commune,consigne,"<div role=""img"" aria-label=""{{friseAlt}}""","<div role=""group"" aria-label=""{{friseAlt}}""","accessibilité (axe-core, nested-interactive) : un groupe nommé, pas une image, car il contient des boutons ou des liens"
+commune,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 24px; line-height: 1.1; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""5"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value=""{{det.hasLink}}"" hint-placeholder-val=""{{true}}""><a href=""{{det.href}}"" style=""margin-top: 6px; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center"">{{det.link}}</a></sc-if>
+      <span style=""font-size: 13px; color: var(--muted)"">Survolez un contrat, un arrêté, une date ou une ligne : le détail s'affiche ici.</span>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues (titre 24 px dans la maquette, 22 px dans le composant commun)"
+documents,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+documents,socle,"<div style=""width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px"">
+    <nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <a href=""Commune-grand.dc.html"">Mions</a> › <span aria-current=""page"">Documents</span></nav>
+    <div style=""display: flex; align-items: flex-end; gap: 18px"">
+      <div><span class=""tag"" style=""background: #ffe800"">Commune</span><h1 class=""h1"" style=""font-size: 60px; margin-top: 6px"">Mions</h1></div>
+      <p class=""tw"" style=""margin: 0 0 6px; color: var(--muted); font-size: 14px"">Rhône · Métropole de Lyon · 13 843 habitants</p>
+    </div>
+  </div>
+
+  <nav aria-label=""Vues de la commune"" style=""width: 1180px; margin: 16px auto 0"">
+    <div class=""tabs"">
+      <a href=""Commune-grand.dc.html"">L'essentiel</a>
+      <a href=""Documents-grand.dc.html"" aria-current=""page"">Documents · 17</a>
+      <a href=""Autorisations-grand.dc.html"">Autorisations · 9</a>
+      <a href=""CarteTemps-grand.dc.html"">Carte et drones</a>
+    </div>
+  </nav>","<dc-include src=""tete-commune""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues : tête compacte et quatre onglets de la commune (vues/socle.html, « tete-commune »)"
+documents,lien,"<a href=""Documents-grand.dc.html"" style=""font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px"">CSV</a>","<a href=""#"" onClick=""{{dl.csv}}"" style=""font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px"">CSV</a>",télécharge la sélection (exportRows de la v10)
+documents,lien,"<a href=""Documents-grand.dc.html"" style=""font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px"">JSON</a>","<a href=""#"" onClick=""{{dl.json}}"" style=""font-weight: 800; min-height: 44px; display: inline-flex; align-items: center; padding: 0 6px"">JSON</a>",télécharge la sélection (exportRows de la v10)
+documents,chiffre,"<caption class=""sr"">Documents officiels de Mions, filtrés et triables</caption>","<caption class=""sr"">Documents officiels de {{com.nom}}, filtrés et triables</caption>",nom de la commune
+documents,lien,"<span style=""{{r.quiStyle}}"">{{r.qui}}</span><div style=""color: var(--muted)"">{{r.ent}}</div>","<span style=""{{r.quiStyle}}"">{{{r.qui}}}</span><div style=""color: var(--muted)"">{{{r.ent}}}</div>","relevé des liens (brief : chaque nom est un lien) ; mêmes mots, même style muet : l'acheteur et l'entreprise"
+documents,socle,"<aside aria-live=""polite"" aria-label=""Détail du document"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.12; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""6"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value=""{{det.hasNote}}"" hint-placeholder-val=""{{false}}""><p class=""tw"" style=""margin: 4px 0 0; padding: 8px; background: var(--warn); border: 1px dashed var(--fg); font-size: 13px"">{{det.note}}</p></sc-if>
+      <sc-if value=""{{det.hasRef}}"" hint-placeholder-val=""{{false}}"">
+        <div style=""display: flex; flex-direction: column; gap: 0; margin-top: 4px"">
+          <a href=""{{det.href}}"" style=""font-weight: 700; min-height: 40px; display: inline-flex; align-items: center"">{{det.histLabel}}</a>
+          <a href=""Documents-grand.dc.html"" style=""font-weight: 700; min-height: 40px; display: inline-flex; align-items: center"">Source officielle →</a>
+          <button onClick=""{{copy}}"" class=""more"" style=""margin-top: 6px"">{{copyLabel}}</button>
+        </div>
+      </sc-if>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues (la maquette : liens de 40 px, bouton « Copier la référence » ; le composant commun : liens de 44 px, même bouton)"
+autorisations,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+autorisations,socle,"<div style=""width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px"">
+    <nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <a href=""Commune-grand.dc.html"">Mions</a> › <span aria-current=""page"">Autorisations</span></nav>
+    <div style=""display: flex; align-items: flex-end; gap: 18px"">
+      <div><span class=""tag"" style=""background: #ffe800"">Commune</span><h1 class=""h1"" style=""font-size: 60px; margin-top: 6px"">Mions</h1></div>
+      <p class=""tw"" style=""margin: 0 0 6px; color: var(--muted); font-size: 14px"">Rhône · Métropole de Lyon · 13 843 habitants</p>
+    </div>
+  </div>
+
+  <nav aria-label=""Vues de la commune"" style=""width: 1180px; margin: 16px auto 0"">
+    <div class=""tabs"">
+      <a href=""Commune-grand.dc.html"">L'essentiel</a>
+      <a href=""Documents-grand.dc.html"">Documents · 17</a>
+      <a href=""Autorisations-grand.dc.html"" aria-current=""page"">Autorisations · 9</a>
+      <a href=""CarteTemps-grand.dc.html"">Carte et drones</a>
+    </div>
+  </nav>","<dc-include src=""tete-commune""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues : tête compacte et quatre onglets de la commune (vues/socle.html, « tete-commune »)"
+autorisations,chiffre,"<p class=""lead"">Depuis novembre 2025, la préfecture a publié <strong>9 arrêtés</strong> pour Mions : 3 pour les caméras de la mairie, 6 pour des commerces et des entreprises.</p>","<p class=""lead"">{{{lead}}}</p>","date du premier arrêté de la commune ; arrêtés par bénéficiaire (mairie, commerces et entreprises, drones et autres)"
+autorisations,chiffre,"<div><div class=""kv"">154</div><div>caméras de la mairie</div></div>
+          <div><div class=""kv"">125</div><div>filment la rue</div></div>
+          <div><div class=""kv"">37</div><div>caméras de commerces et d'entreprises</div></div>
+          <div><div class=""kv"">2031</div><div>fin de l'autorisation de la mairie</div></div>","<sc-for list=""{{kpis}}"" as=""k""><div><div class=""kv"">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>","les 4 chiffres, du dernier arrêté de chaque dossier"
+autorisations,chiffre,"<section id=""mairie"" aria-labelledby=""a-mairie"" style=""display: flex; flex-direction: column; gap: 16px"">","<sc-if value=""{{mairie.show}}""><section id=""mairie"" aria-labelledby=""a-mairie"" style=""display: flex; flex-direction: column; gap: 16px"">",section présente si la mairie a un dossier publié
+autorisations,chiffre,Dossier préfectoral n° 20083300 · ouvert en 2008</p>,{{mairie.sous}}</p>,numéro du dossier et année d'ouverture (lus dans l'arrêté)
+autorisations,chiffre,"<div style=""position: absolute; left: 0; width: 20%; bottom: 0; height: 66px; border: 2px dashed var(--muted); border-bottom: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--muted); padding: 0 8px"">2008 → 2025 : arrêtés non publiés en ligne</div>","<div style=""position: absolute; left: 0; width: 20%; bottom: 0; height: 66px; border: 2px dashed var(--muted); border-bottom: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--muted); padding: 0 8px"">{{mairie.avant}}</div>",période non publiée du dossier
+autorisations,chiffre,"valable jusqu'au<br><strong style=""color: var(--fg)"">30 juin 2031</strong></span>","{{mairie.jusquaL}}<br><strong style=""color: var(--fg)"">{{mairie.jusqua}}</strong></span>",échéance lue dans le dernier arrêté
+autorisations,chiffre,"<span style=""position: absolute; left: 0"">2008</span>","<span style=""position: absolute; left: 0"">{{mairie.an0}}</span>",année d'ouverture du dossier
+autorisations,chiffre,"<caption class=""sr"">Les 3 arrêtés du dossier de la mairie, avec la répartition des caméras</caption>","<caption class=""sr"">Les {{mairie.n}} arrêtés du dossier de la mairie, avec la répartition des caméras</caption>",nombre d'arrêtés
+autorisations,chiffre,"<p class=""tw"" style=""margin: 4px 0 8px; font-size: 13px; color: var(--muted)"">arrêté du 30 juin 2026</p>
+            <div style=""border-top: 2px solid var(--fg)"">
+              <div class=""yes""><span><strong>Verbaliser grâce aux caméras</strong> : des amendes à partir des images</span><strong>oui</strong></div>
+              <div class=""yes""><span><strong>Transmettre les images</strong> à la police ou à la gendarmerie</span><strong>oui</strong></div>
+              <div class=""yes""><span><strong>Durée</strong></span><strong>5 ans</strong></div>
+            </div>","<p class=""tw"" style=""margin: 4px 0 8px; font-size: 13px; color: var(--muted)"">{{mairie.arrete}}</p>
+            <div style=""border-top: 2px solid var(--fg)"">
+              <sc-for list=""{{mairie.permet}}"" as=""y""><div class=""yes""><span>{{{y.l}}}</span><strong>{{y.v}}</strong></div></sc-for>
+            </div>",ce que dit le dernier arrêté (« non mentionné » sinon)
+autorisations,chiffre,"<h3 class=""h3"">Avant novembre 2025</h3>
+            <p style=""margin: 0"">Combien de caméras au départ, en 2008, et comment ce nombre a-t-il évolué ? Les arrêtés existent mais ne sont pas en ligne. Tout le monde peut les demander.</p>
+            <a href=""Autorisations-grand.dc.html"" style=","<h3 class=""h3"">Avant {{mairie.avantMois}}</h3>
+            <p style=""margin: 0"">{{mairie.avantQ}} Les arrêtés existent mais ne sont pas en ligne. Tout le monde peut les demander.</p>
+            <a href=""{{lien.ici}}"" data-demande=""{{mairie.demande}}"" data-qui=""prefecture"" data-insee=""{{com.insee}}"" style=",mois du premier arrêté publié ; le bouton ouvre le modèle de demande de la v10 (un seul bouton)
+autorisations,chiffre,"Demander à la préfecture</a>
+          </div>
+        </div>
+      </section>","Demander à la préfecture</a>
+          </div>
+        </div>
+        <sc-if value=""{{autres.length}}"">
+        <h3 class=""h3"" style=""margin-top: 14px"">Les autres dossiers de la mairie · {{autres.length}}</h3>
+        <table class=""t"">
+          <caption class=""sr"">Les autres dossiers préfectoraux de la mairie</caption>
+          <thead><tr><th scope=""col""><button>Dossier</button></th><th scope=""col""><button>Dernier arrêté</button></th><th scope=""col"" class=""num""><button>Arrêtés</button></th><th scope=""col"" class=""num""><button>Caméras</button></th><th scope=""col"" class=""num""><button>Sur la rue</button></th></tr></thead>
+          <tbody>
+            <sc-for list=""{{autres}}"" as=""r""><tr class=""{{r.cls}}"" onMouseEnter=""{{r.hover}}"" onClick=""{{r.hover}}"" id=""{{r.ancre}}""><td class=""tw"">{{r.no}}</td><td><a class=""rowlink tw"" href=""{{r.url}}"" style=""font-weight: 400"">{{r.date}}</a></td><td class=""num"">{{r.na}}</td><td class=""num""><strong>{{r.n}}</strong></td><td class=""num"">{{r.vp}}</td></tr></sc-for>
+          </tbody>
+        </table>
+        </sc-if>
+      </section></sc-if>","données : une ville a plusieurs dossiers de mairie (Lyon : 30) ; ils suivent le principal, dans le tableau du kit"
+autorisations,chiffre,"<section id=""prives"" aria-labelledby=""a-prives""","<sc-if value=""{{priv.length}}""><section id=""prives"" aria-labelledby=""a-prives""",section présente s'il y a des arrêtés de commerces ou d'entreprises
+autorisations,chiffre,"<p style=""margin: 0""><strong>37 caméras</strong> autorisées dans 6 arrêtés, de mars à octobre 2026. Chacune de ces autorisations est un dossier à part.</p>","<p style=""margin: 0""><strong>{{prv.cam}}</strong> autorisées dans {{prv.arr}}, {{prv.span}}. Chacune de ces autorisations est un dossier à part.</p>","caméras, arrêtés, période"
+autorisations,chiffre,"<caption class=""sr"">Arrêtés pour des commerces et entreprises à Mions</caption>","<caption class=""sr"">Arrêtés pour des commerces et entreprises à {{com.nom}}</caption>",nom
+autorisations,chiffre,"</tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section aria-labelledby=""a-autres""","</tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value=""{{prv.more}}""><button class=""more"" onClick=""{{prv.moreAct}}"">{{prv.more}}</button></sc-if>
+      </section></sc-if>
+
+      <section aria-labelledby=""a-autres""","données : à Lyon, des centaines d'arrêtés ; 15 d'abord, puis le reste à la demande (le bouton « more » du kit)"
+autorisations,chiffre,"<p style=""margin: 0"">Aucun arrêté trouvé pour Mions. <a href=""CarteTemps-grand.dc.html"">Exemple à Lyon : 44 autorisations de drones →</a></p>","<sc-if value=""{{autresArr.none}}""><p style=""margin: 0"">Aucun arrêté trouvé pour {{com.nom}}. <a href=""{{autresArr.exHref}}"">{{autresArr.ex}}</a></p></sc-if>
+        <sc-if value=""{{autresArr.list.length}}""><ul class=""lst"" style=""list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)""><sc-for list=""{{autresArr.list}}"" as=""x""><li style=""display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--rule)""><span class=""tw"" style=""color: var(--muted)"">{{x.d}}</span><span>{{x.t}}</span><a href=""{{x.href}}"">{{x.l}}</a></li></sc-for></ul></sc-if>
+        <sc-if value=""{{autresArr.multi}}""><p style=""margin: 0"">{{{autresArr.multi}}}</p></sc-if>",§ 3 : « arrêtés de drones » ; la liste quand il y en a ; les arrêtés qui nomment la commune parmi d'autres (données)
+autorisations,chiffre,"Ces 9 arrêtés figurent aussi parmi <a href=""Documents-grand.dc.html"">les 17 documents de Mions</a>.</p>","Ces {{nArr}} arrêtés figurent aussi parmi <a href=""{{lien.documents}}"">les {{nDocs}} documents de {{com.nom}}</a>.</p>",comptes ; onglet Documents
+autorisations,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""5"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.foot}}</span>
+      <sc-if value=""{{det.hasLink}}"" hint-placeholder-val=""{{true}}""><a href=""{{det.url}}"" class=""ghost"">Lire l'arrêté (recueil de la préfecture) ↗</a></sc-if>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues (la maquette : pied puis lien « Lire l'arrêté ↗ » ; le composant : pied puis liens)"
+carte,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+carte,socle,"<div style=""width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px"">
+    <nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <a href=""Commune-grand.dc.html"">Lyon</a> › <span aria-current=""page"">Carte et drones</span></nav>
+    <div style=""display: flex; align-items: flex-end; gap: 18px"">
+      <div><span style=""display: inline-block; padding: 2px 8px; background: #ffe800; color: #111; font-weight: 800; font-stretch: 80%; font-size: 13px; text-transform: uppercase; letter-spacing: .06em"">Commune</span><h1 style=""margin: 6px 0 0; font-weight: 900; font-stretch: 62%; font-size: 60px; line-height: .9; text-transform: uppercase"">Lyon</h1></div>
+      <p class=""tw"" style=""margin: 0 0 6px; color: var(--muted); font-size: 14px"">Rhône · Métropole de Lyon · 519 127 habitants</p>
+    </div>
+  </div>
+  <nav aria-label=""Vues de la commune"" style=""width: 1180px; margin: 16px auto 0"">
+    <div class=""tabs"">
+      <a href=""Commune-grand.dc.html"">L'essentiel</a>
+      <a href=""Documents-grand.dc.html"">Documents · 624</a>
+      <a href=""Autorisations-grand.dc.html"">Autorisations · 491</a>
+      <a href=""CarteTemps-grand.dc.html"" aria-current=""page"">Carte et drones</a>
+    </div>
+  </nav>","<dc-include src=""tete-commune""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues : tête compacte et quatre onglets de la commune (vues/socle.html, « tete-commune ») (la maquette écrit la tête en styles en ligne : mêmes valeurs que .tag et .h1 du kit)"
+carte,consigne,"<svg role=""img"" aria-label=""{{alt}}"" viewBox=""0 0 818 516"" width=""818"" height=""516"" onPointerDown=""{{mdown}}"" onPointerMove=""{{mmove}}"" onPointerUp=""{{mup}}"" onPointerLeave=""{{mup}}"" style=""display: block; cursor: grab"">
+          <polygon points=""{{slab}}"" fill=""#000""></polygon>
+          <polygon points=""{{outline}}"" fill=""var(--ground)"" stroke=""var(--fg)"" stroke-width=""2.5"" stroke-linejoin=""round""></polygon>
+          <sc-for list=""{{rivers}}"" as=""r"" hint-placeholder-count=""2""><polyline points=""{{r.p}}"" fill=""none"" stroke=""var(--water)"" stroke-width=""9"" stroke-linecap=""round"" stroke-linejoin=""round""></polyline></sc-for>
+          <sc-for list=""{{vols}}"" as=""v"" hint-placeholder-count=""20"">
+            <polygon points=""{{v.points}}"" fill=""{{v.fill}}"" fill-opacity=""{{v.op}}"" stroke=""{{v.stroke}}"" stroke-width=""{{v.sw}}"" stroke-dasharray=""{{v.dash}}"" stroke-linejoin=""round"" onMouseEnter=""{{v.hover}}"" onClick=""{{v.pick}}"" style=""cursor: pointer""></polygon>
+          </sc-for>
+        </svg>","<div id=""carte-tps"" data-dc-keep=""1"" role=""img"" aria-label=""{{alt}}"" style=""position: absolute; inset: 0""></div>","brief § 2.6 : la page validée en v10, avec la vraie carte (carte3d.mjs) ; la maquette dessine un contour simplifié"
+carte,consigne,"<span class=""tw"" style=""position: absolute; left: 12px; bottom: 8px; font-size: 12px; color: var(--muted)"">contour et cours d'eau simplifiés · glisser pour tourner</span>","<span class=""tw"" style=""position: absolute; left: 12px; bottom: 8px; font-size: 12px; color: var(--muted); z-index: 3"">glisser pour tourner · molette pour zoomer</span>","la carte n'est plus simplifiée ; ses gestes (v10) : glisser tourne, la molette zoome"
+carte,consigne,"<button class=""btn"" onClick=""{{north}}"" aria-label=""Remettre le nord en haut"" style=""position: absolute; right: 10px; top: 10px; width: 44px; padding: 0"">N</button>","<button class=""btn"" onClick=""{{north}}"" aria-label=""Remettre le nord en haut"" style=""position: absolute; right: 10px; top: 10px; width: 44px; padding: 0; z-index: 3"">N</button>","au-dessus de la carte (z-index), sinon caché par le canevas"
+carte,lien,"<a href=""CarteTemps-grand.dc.html"" style=""margin-top: auto; font-weight: 700"">{{det.link}}</a>","<a href=""{{det.href}}"" style=""margin-top: auto; font-weight: 700"">{{det.link}}</a>",l'arrêté du créneau (recueil de la préfecture)
+carte,consigne,"<a href=""{{det.href}}"" style=""margin-top: auto; font-weight: 700"">{{det.link}}</a>","<sc-if value=""{{det.link}}""><a href=""{{det.href}}"" style=""margin-top: auto; font-weight: 700"">{{det.link}}</a></sc-if>","accessibilité (axe-core, link-name) : pas de lien vide quand le créneau n'en a pas"
+contrat,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+contrat,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <a href=""Commune-grand.dc.html"">Mions</a> › <a href=""Documents-grand.dc.html"">Documents</a> › <span aria-current=""page"">Contrat de janvier 2025</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+contrat,chiffre,"<span class=""b"" style=""background: var(--fg); color: var(--bg)"">Contrat</span>","<span class=""b"" style=""{{badge.s}}"">{{badge.l}}</span>","pastille du type de document (contrat, appel d'offres, subvention, autorisation : même gabarit, brief § 2.7)"
+contrat,chiffre,"<h1 class=""h1"" style=""font-size: 60px"">Achat et entretien des caméras de Mions</h1>","<h1 class=""h1"" style=""font-size: 60px"">{{titre}}</h1>",libellé court de la maquette (libelles.js) sinon l'objet publié
+contrat,chiffre,>Signé le 30 janv. 2025 · DECP 21690283300013202520240600_32323500</p>,>{{sous}}</p>,date et référence
+contrat,chiffre,"<p class=""lead"" style=""margin-top: 10px"">La mairie de Mions a confié l'achat et l'entretien de ses caméras à <a href=""Entreprise-grand.dc.html"">Serfim T.I.C.</a> pour 3 ans, jusqu'à <strong>215 000 €</strong> au maximum.</p>","<p class=""lead"" style=""margin-top: 10px"">{{{lead}}}</p>","acheteur, objet, entreprises (liens), durée, montant ; règle écrite dans vues/contrat.js"
+contrat,chiffre,"<div><div class=""kv"">215 000 €</div><div>au maximum, hors taxes</div></div>
+      <div><div class=""kv"">36 mois</div><div>fin prévue en janv. 2028</div></div>
+      <div><div class=""kv"">2</div><div>offres reçues</div></div>
+      <div><div class=""kv"">1</div><div>modification publiée</div></div>","<sc-for list=""{{kpis}}"" as=""k""><div><div class=""kv"">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>",les 4 chiffres du document
+contrat,chiffre,"<div style=""display: grid; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr) 28px minmax(0, 1fr); gap: 0; align-items: stretch"">","<div style=""display: grid; grid-template-columns: {{grille}}; gap: 0; align-items: stretch"">","autant de colonnes que d'étapes (appel d'offres, contrat, modifications, fin prévue)"
+contrat,lien,"<a href=""Contrat-grand.dc.html"" class=""ghost"">← Contrat précédent : 2021, Serfim T.I.C., 200 000 €</a>
+          <a href=""Documents-grand.dc.html"" class=""ghost"">Appel d'offres suivant : juillet 2026 →</a>","<sc-if value=""{{prec}}""><a href=""{{prec.href}}"" class=""ghost"">{{prec.l}}</a></sc-if><sc-if value=""{{noPrec}}""><span></span></sc-if>
+          <sc-if value=""{{suiv}}""><a href=""{{suiv.href}}"" class=""ghost"">{{suiv.l}}</a></sc-if>","contrat précédent du même acheteur, appel d'offres suivant ; « lien probable » quand il l'est"
+contrat,chiffre,"<h2 id=""c-dit"" class=""h2"">Ce que dit le contrat</h2>","<h2 id=""c-dit"" class=""h2"">{{ditTitre}}</h2>","« le contrat », « l'appel d'offres », « la subvention », « l'arrêté »"
+contrat,chiffre,"<p class=""note tw"">« Au maximum » : le plafond écrit dans le contrat, hors taxes. La somme réellement payée n'est pas publiée. Un accord-cadre fixe ce plafond ; la mairie passe ensuite des commandes.</p>","<p class=""note tw"">{{maxNote}}</p>",le texte de la maquette pour un contrat ; un texte propre aux autres documents
+contrat,chiffre,"<dt>Acheteur</dt><dd><a href=""Commune-grand.dc.html"">Commune de Mions</a></dd>
+          <dt>Entreprise</dt><dd><a href=""Entreprise-grand.dc.html"">Serfim T.I.C.</a> <span style=""color: var(--muted)"">· 65 contrats avec 44 collectivités</span></dd>
+          <dt>Objet publié</dt><dd>Acquisition et maintenance préventive et curative d'un système de vidéosurveillance</dd>
+          <dt>Forme</dt><dd><a href=""Glossaire.dc.html"">Accord-cadre</a></dd>
+          <dt>Dispositif</dt><dd>Vidéoprotection</dd>
+          <dt>Montant maximum</dt><dd><strong>215 000 €</strong>, inchangé par la modification</dd>
+          <dt>Durée</dt><dd>36 mois, inchangée par la modification</dd>
+          <dt>Offres reçues</dt><dd>2</dd>","<sc-for list=""{{dl}}"" as=""x""><dt>{{x.k}}</dt><dd>{{{x.v}}}</dd></sc-for>",les lignes du document ; chaque nom est un lien
+contrat,lien,"<button class=""more"">Copier la référence</button>
+          <button class=""more"">Signaler une erreur</button>","<button class=""more"" data-cite=""{{ev}}"">Copier la référence</button>
+          <button class=""more"" data-signal=""{{ev}}"">Signaler une erreur</button>","les fenêtres de la v10 (référence à copier, signalement) ; une seule fois chacun"
+contrat,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""4"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.foot}}</span>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+entreprise,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+entreprise,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Registre.dc.html"">Entreprises</a> › <span aria-current=""page"">Serfim T.I.C.</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues ; « Entreprises » mène aux classements du registre"
+entreprise,chiffre,"text-transform: uppercase"">Serfim T.I.C.</h1>","text-transform: uppercase"">{{nom}}</h1>",nom de l'entreprise
+entreprise,chiffre,>SIREN 431 903 954 · réseaux électriques et de télécommunications</p>,>{{sous}}</p>,"SIREN et activité (code NAF, répertoire SIRENE)"
+entreprise,chiffre,"Elle installe et entretient des systèmes de vidéosurveillance, <strong>surtout dans le Rhône</strong> et en Île-de-France. <strong>44 collectivités</strong> lui ont signé <strong>65 contrats</strong> depuis 2018.</p>",{{{lead}}}</p>,"ce qu'elle fait (catégories de ses contrats), où (départements de ses clientes), combien ; règle dans vues/entreprise.js"
+entreprise,chiffre,"<div style=""padding: 14px 0""><div style=""font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1"">65</div><div>contrats signés</div></div>
+      <div style=""padding: 14px 0 14px 20px; border-left: 1px solid var(--rule)""><div style=""font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1"">44</div><div>clientes</div></div>
+      <div style=""padding: 14px 0 14px 20px; border-left: 1px solid var(--rule)""><div style=""font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1"">47,5 M€</div><div>au maximum</div></div>
+      <div style=""padding: 14px 0 14px 20px; border-left: 1px solid var(--rule)""><div style=""font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1"">2 sur 27</div><div>contrats avec une seule offre</div></div>","<sc-for list=""{{kpis}}"" as=""k""><div style=""{{k.s}}""><div style=""font-weight: 900; font-stretch: 64%; font-size: 48px; line-height: 1"">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>",les 4 chiffres ; contrats publiés deux fois comptés une fois (règle de la 10e passe)
+entreprise,chiffre,"<p style=""margin: 0; color: var(--muted)"">Les 8 premiers des 65, par montant maximum.</p>","<p style=""margin: 0; color: var(--muted)"">Les {{nBig}} premiers des {{nCon}}, par montant maximum.</p>",comptes
+entreprise,chiffre,"<li style=""padding: 10px 0; border-bottom: 1px solid var(--rule)""><strong>Les mêmes montants reviennent</strong> : 800 000 € à Craponne, Roissy-en-Brie et Colombes ; 200 000 € à Mions et à Tarare.</li>
+          <li style=""padding: 10px 0; border-bottom: 1px solid var(--rule)""><strong>450 000 €</strong> à Saint-Cyr-au-Mont-d'Or et à Vénissieux, à 15 jours d'intervalle.</li>
+          <li style=""padding: 10px 0; border-bottom: 1px solid var(--rule)""><strong>Une seule offre</strong> pour 2 contrats sur les 27 où le nombre d'offres est publié.</li>","<sc-for list=""{{faits}}"" as=""f""><li style=""padding: 10px 0; border-bottom: 1px solid var(--rule)"">{{{f}}}</li></sc-for>","faits calculés en 10e passe (faits.js), mis en forme comme la maquette ; chaque nom est un lien"
+entreprise,chiffre,"<h2 id=""g-cli"" class=""h2"">Ses 44 clientes</h2>","<h2 id=""g-cli"" class=""h2"">Ses {{nCli}} clientes</h2>",compte
+entreprise,chiffre,"Clientes de Serfim T.I.C., triables par colonne</caption>","Clientes de {{nom}}, triables par colonne</caption>",nom
+entreprise,lien,"<td><a href=""Commune-grand.dc.html"" style=""color: var(--fg); font-weight: 700; text-decoration: none"">{{c.nom}}</a>","<td><a href=""{{c.href}}"" style=""color: var(--fg); font-weight: 700; text-decoration: none"">{{c.nom}}</a>","page de la commune, sinon de l'acheteur"
+entreprise,chiffre,"<p style=""margin: 0"">8 des 65 contrats ont été signés avec d'autres entreprises.</p>","<p style=""margin: 0"">{{parPhrase}}</p>",compte
+entreprise,lien,"<a href=""Entreprise-grand.dc.html"" style=""color: var(--fg); font-weight: 700; text-decoration: none"">{{p.nom}}</a>","<a href=""{{p.href}}"" style=""color: var(--fg); font-weight: 700; text-decoration: none"">{{p.nom}}</a>",page de l'entreprise partenaire
+entreprise,chiffre,"112 documents : 65 contrats et 47 modifications, avec la cliente, le montant et la source.</p></div>",{{docsPhrase}}</p></div>,comptes
+entreprise,lien,"<a href=""Registre.dc.html"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px; background: var(--fg); color: var(--bg);","<a href=""{{parcourir}}"" style=""display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px; background: var(--fg); color: var(--bg);","le registre, cherché sur le nom de l'entreprise"
+entreprise,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""4"">
+        <div style=""display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule)""><span style=""color: var(--muted)"">{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <a href=""Commune-grand.dc.html"" style=""margin-top: 6px; font-weight: 700"">{{det.link}}</a>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+entreprise,chiffre,"grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 10px",grid-template-columns: {{yearsCols}}; gap: 10px,"autant de colonnes que d'années depuis le premier contrat (Serfim : 9, de 2018 à 2026)"
+entreprise,consigne,"<div role=""img"" aria-label=""{{yearAlt}}""","<div role=""group"" aria-label=""{{yearAlt}}""","accessibilité (axe-core, nested-interactive) : un groupe nommé, pas une image, car il contient des boutons ou des liens"
+acheteur,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+acheteur,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <a href=""Departement-grand.dc.html"">Rhône</a> › <span aria-current=""page"">Sytral</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+acheteur,chiffre,"<span class=""tag"" style=""background: #9be7c4"">Acheteur · transports</span>","<span class=""tag"" style=""background: #9be7c4"">Acheteur · {{cat}}</span>",catégorie de l'acheteur
+acheteur,chiffre,"<h1 class=""h1"">Sytral</h1>","<h1 class=""h1"">{{nom}}</h1>",nom court (libelles.js) sinon le nom de l'acheteur
+acheteur,chiffre,>Syndicat mixte des transports pour le Rhône et l'agglomération lyonnaise · SIREN 256 900 994 · Lyon (Rhône)</p>,>{{sous}}</p>,"nom publié, SIREN, siège"
+acheteur,chiffre,"<p class=""lead"" style=""margin-top: 6px"">L'autorité des transports lyonnais a signé <strong>7 contrats</strong> pour filmer son réseau (métro, tramways, parc relais) entre 2018 et 2021. <strong>Serfim T.I.C. et Roiret Transport en ont obtenu 5.</strong></p>","<p class=""lead"" style=""margin-top: 6px"">{{{lead}}}</p>","contrats, période, entreprises les plus présentes ; règle dans vues/acheteur.js"
+acheteur,lien,"<a href=""Contrat-grand.dc.html"" class=""rowlink"" style=""display: block; font-size: 15px; line-height: 1.2"">{{g.label}}</a>","<a href=""{{g.href}}"" class=""rowlink"" style=""display: block; font-size: 15px; line-height: 1.2"">{{g.label}}</a>",fiche du contrat
+acheteur,chiffre,"<p style=""margin: 0"">Aucun de ces contrats n'est encore en cours. Les suivants, de 2023 à 2026, sont signés par <a href=""#lie"">Sytral Mobilités</a>.</p>","<p style=""margin: 0"">{{{tempsPhrase}}}</p>",contrats en cours ; l'acheteur lié quand il y en a un
+acheteur,chiffre,"<h2 id=""a-con"" class=""h2"">Les 7 contrats</h2>","<h2 id=""a-con"" class=""h2"">{{conTitre}}</h2>",compte
+acheteur,chiffre,"Le contrat de la ligne D est un contrat mixte (d'autres travaux que la vidéoprotection) : il n'est pas compté dans le total de 8,2 M€.</p>",{{mtNote}}</p>,contrats mixtes de cet acheteur et total
+acheteur,chiffre,"<caption class=""sr"">Contrats signés par le Sytral, triables par colonne</caption>","<caption class=""sr"">Contrats signés par {{nom}}, triables par colonne</caption>",nom
+acheteur,lien,"<td><a href=""Contrat-grand.dc.html"" class=""rowlink"">{{r.objet}}</a>","<td><a href=""{{r.href}}"" class=""rowlink"">{{r.objet}}</a>",fiche du contrat
+acheteur,lien,"<a href=""Entreprise-grand.dc.html"" class=""rowlink"" style=""display: block"">{{e.nom}}</a>","<a href=""{{e.href}}"" class=""rowlink"" style=""display: block"">{{e.nom}}</a>",page de l'entreprise
+acheteur,chiffre,>5 entreprises · montants à la signature</span>,>{{nEnts}} · montants à la signature</span>,compte
+acheteur,chiffre,"<caption class=""sr"">Entreprises titulaires des contrats du Sytral</caption>","<caption class=""sr"">Entreprises titulaires des contrats de {{nom}}</caption>",nom
+acheteur,lien,"<td><a href=""Entreprise-grand.dc.html"" class=""rowlink"">{{s.nom}}</a>","<td><a href=""{{s.href}}"" class=""rowlink"">{{s.nom}}</a>",page de l'entreprise
+acheteur,chiffre,>5 consultations depuis 2015 · BOAMP</span>,>{{aoSous}}</span>,compte
+acheteur,chiffre,"<caption class=""sr"">Appels d'offres et résultats publiés par le Sytral</caption>","<caption class=""sr"">Appels d'offres et résultats publiés par {{nom}}</caption>",nom
+acheteur,lien,"<td><a href=""Contrat-grand.dc.html"" class=""rowlink"">{{a.objet}}</a></td>","<td><a href=""{{a.href}}"" class=""rowlink"">{{a.objet}}</a></td>",fiche de l'appel d'offres
+acheteur,lien,"<a href=""Contrat-grand.dc.html"">{{a.contrat}}</a>","<a href=""{{a.chref}}"">{{a.contrat}}</a>",fiche du contrat qui a suivi
+acheteur,chiffre,"<section id=""lie"" aria-labelledby=""a-lie""","<sc-if value=""{{lie}}""><section id=""lie"" aria-labelledby=""a-lie""",section présente quand un acheteur lié existe (table écrite d'après la maquette)
+acheteur,chiffre,"<h2 id=""a-lie"" class=""h2"" style=""font-size: 26px"">Aussi : Sytral Mobilités</h2>
+          <span class=""tw"" style=""color: var(--muted); font-size: 14px"">SIREN 200 096 386 · 4 contrats, 2023 → 2026</span>","<h2 id=""a-lie"" class=""h2"" style=""font-size: 26px"">Aussi : {{lie.nom}}</h2>
+          <span class=""tw"" style=""color: var(--muted); font-size: 14px"">{{lie.sous}}</span>","nom, SIREN, contrats et période de l'acheteur lié"
+acheteur,lien,"<a href=""Entreprise-grand.dc.html"" class=""rowlink"">{{m.ent}}</a>",<span>{{{m.ent}}}</span>,un lien par entreprise (deux entreprises dans un même contrat)
+acheteur,lien,"<a href=""Acheteur-grand.dc.html"" class=""ghost"">Sytral Mobilités →</a>
+      </section>","<a href=""{{lie.href}}"" class=""ghost"">{{lie.nom}} →</a>
+      </section></sc-if>",page de l'acheteur lié
+acheteur,lien,"<span style=""font-size: 13px; color: var(--muted)"">{{g.ent}} · {{g.amt}}</span>","<span style=""font-size: 13px; color: var(--muted)"">{{{g.entH}}} · {{g.amt}}</span>","relevé des liens (brief : chaque nom est un lien) ; mêmes mots, même style muet : les entreprises du contrat"
+acheteur,lien,"<div style=""font-size: 13px; color: var(--muted)"">{{s.note}}</div>","<div style=""font-size: 13px; color: var(--muted)"">{{{s.note}}}</div>","relevé des liens (brief : chaque nom est un lien) ; mêmes mots, même style muet : les entreprises nommées dans la note"
+acheteur,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""5"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <p class=""tw"" style=""margin: 2px 0 0; font-size: 13px; color: var(--muted)"">{{det.foot}}</p>
+      <a href=""{{det.href}}"" style=""margin-top: 4px; font-weight: 700"">{{det.link}}</a>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+departement,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+departement,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <span aria-current=""page"">Rhône</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+departement,chiffre,"<h1 class=""h1"">Rhône</h1>","<h1 class=""h1"">{{nom}}</h1>",nom du département
+departement,chiffre,>69 · 138 communes avec au moins un document · arrêtés de la préfecture collectés depuis septembre 2025</p>,>{{sous}}</p>,"code, communes du registre, collecte des arrêtés (§ 3 : premier arrêté du Rhône le 30 septembre 2025)"
+departement,chiffre,"<p class=""lead"">Depuis septembre 2025, la préfecture a signé <strong>1 225 autorisations de caméras</strong> et <strong>60 arrêtés de drones</strong> dans le Rhône : les trois quarts des autorisations et presque tous les drones concernent <strong>la Métropole de Lyon</strong>.</p>","<p class=""lead"">{{{lead}}}</p>","§ 3 : « autorisations de caméras », « arrêtés de drones » ; la part de l'intercommunalité la plus concernée, en mots ; règle dans vues/departement.js"
+departement,chiffre,"<div><div class=""kv"">2 020</div><div>documents</div></div>
+      <div><div class=""kv"">238</div><div>contrats signés</div></div>
+      <div><div class=""kv"">1 225</div><div>autorisations de caméras</div></div>
+      <div><div class=""kv"">60</div><div>arrêtés de drones</div></div>","<sc-for list=""{{kpis}}"" as=""k""><div><div class=""kv"">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>",comptes du département
+departement,chiffre,"<a href=""#d-ic"" aria-current=""page"">Intercommunalités · 13</a>
+    <a href=""#d-com"">Communes · 138</a>","<a href=""#d-ic"" aria-current=""page"">Intercommunalités · {{nIc}}</a>
+    <a href=""#d-com"">Communes · {{nCom}}</a>",comptes
+departement,chiffre,129 documents du Rhône n'indiquent pas de commune,{{sansCommune}} n'indiquent pas de commune,compte
+departement,lien,"<a href=""Commune-grand.dc.html"" onMouseEnter=""{{s.hover}}"">{{s.nom}}</a>","<a href=""{{s.href}}"" onMouseEnter=""{{s.hover}}"">{{s.nom}}</a>",page de la commune
+departement,lien,"<td><a class=""rowlink"" href=""Commune-grand.dc.html"">{{c.nom}}</a>","<td><a class=""rowlink"" href=""{{c.href}}"">{{c.nom}}</a>",page de la commune
+departement,lien,"<td><a class=""rowlink"" href=""Entreprise-grand.dc.html"">{{s.nom}}</a></td>","<td><a class=""rowlink"" href=""{{s.href}}"">{{s.nom}}</a></td>",page de l'entreprise
+departement,chiffre,"<p class=""note tw"">Les arrêtés de la préfecture ne sont collectés que depuis septembre 2025 : avant, la barre est absente parce que le registre ne les a pas, pas parce qu'il n'y en avait pas. 2026 est l'année en cours. 99 appels d'offres antérieurs à 2018 ne sont pas montrés.</p>","<p class=""note tw"">{{anNote}}</p>",date de collecte selon le département ; appels d'offres antérieurs à 2018 comptés
+departement,chiffre,dans le Rhône,{{dans}},nom du département avec sa préposition (toutes les occurrences)
+departement,chiffre,du Rhône,{{du}},nom du département avec son article (toutes les occurrences)
+departement,consigne,"<div role=""img"" aria-label=""{{yearAlt}}""","<div role=""group"" aria-label=""{{yearAlt}}""","accessibilité (axe-core, nested-interactive) : un groupe nommé, pas une image, car il contient des boutons ou des liens"
+departement,lien,"<div style=""font-size: 13px; color: var(--muted)"">{{c.ep}}</div></td>","<div style=""font-size: 13px; color: var(--muted)""><a href=""{{c.epHref}}"" style=""color: var(--muted)"">{{c.ep}}</a></div></td>","relevé des liens (brief : chaque nom est un lien) ; mêmes mots, même style muet : l'intercommunalité de la commune"
+departement,socle,"<aside aria-live=""polite"" aria-label=""Détail"" class=""panel"">
+      <span class=""tw"" style=""font-size: 13px; color: var(--muted)"">{{det.kicker}}</span>
+      <strong style=""font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%"">{{det.title}}</strong>
+      <sc-for list=""{{det.rows}}"" as=""r"" hint-placeholder-count=""5"">
+        <div class=""prow""><span>{{r.k}}</span><strong style=""text-align: right"">{{r.v}}</strong></div>
+      </sc-for>
+      <sc-if value=""{{det.hasLink}}"" hint-placeholder-val=""{{false}}""><a href=""{{det.href}}"" style=""margin-top: 6px; font-weight: 700"">{{det.link}}</a></sc-if>
+    </aside>","<dc-include src=""panneau""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"
+glossaire,cadre,width: 1280px; min-height: …,(retiré),taille du plan de travail de la maquette ; la page suit l'écran (≥ 960 px : colonne de 1180 px au plus)
+glossaire,socle,"<nav class=""crumbs"" aria-label=""Fil d'Ariane""><a href=""Registre.dc.html"">Registre</a> › <span aria-current=""page"">Glossaire</span></nav>","<dc-include src=""fil""></dc-include>","brief v11 § 1 : composant du socle, écrit une fois (vues/socle.html) et partagé par toutes les vues"

@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Lyon — drones dans le temps, grand écran (proposition)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--card:#ffffff;--fg:#111111;--muted:#5a5650;--rule:#c9c4b6;--soft:#e9e5da;--link:#0060a0;--drone:#0b6fa8;--hover:#ff48b0;--ground:#f2efe6;--water:#bfe6ff;background:var(--page);color:var(--fg)}
+.th.dark{--page:#050505;--bg:#121212;--card:#1b1b1b;--fg:#f2efe6;--muted:#b0ab9f;--rule:#34322e;--soft:#262626;--link:#7fd4ff;--drone:#7fd4ff;--hover:#ff48b0;--ground:#232323;--water:#1f3a4d}
+.th a{color:var(--link)}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.btn{min-height:44px;padding:0 14px;border:2px solid var(--fg);background:var(--card);color:var(--fg);font:800 14px Archivo,sans-serif;font-stretch:80%;text-transform:uppercase;cursor:pointer}
+.chip{min-height:44px;padding:0 14px;border:2px solid var(--fg);border-radius:22px;font:700 15px Archivo,sans-serif;cursor:pointer}
+.panel{border:2px solid var(--fg);background:var(--card);padding:16px;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;height:520px;overflow:hidden}
+.ibtn{width:44px;height:44px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.ibtn span{width:22px;height:22px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.nav{color:#f2efe6 !important;font-weight:700;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+.nav[aria-current="page"]{font-weight:900;text-decoration:underline;text-underline-offset:6px}
+.hdr{width:44px;height:44px;border:0;background:none;color:#f2efe6;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.crumbs{font-size:14px}
+.crumbs a{text-decoration:none}
+.tabs{display:flex;border-bottom:2px solid var(--fg)}
+.tabs a{display:inline-flex;align-items:center;min-height:52px;padding:0 18px;font-weight:800;font-stretch:80%;text-transform:uppercase;text-decoration:none;color:var(--fg)}
+.tabs a[aria-current="page"]{box-shadow:inset 0 -4px 0 var(--fg)}
+</style>
+</helmet>
+<div class="{{th}}" style="width: 1280px; min-height: 1700px; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <header style="display: flex; align-items: center; gap: 24px; height: 60px; padding: 0 20px 0 28px; background: #000; color: #f2efe6; border-bottom: 2px solid var(--fg)">
+  <a href="Registre.dc.html" style="color: #f2efe6; text-decoration: none; font-weight: 900; font-stretch: 70%; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; margin-right: auto">Surveillance World</a>
+  <a class="nav" href="CarteTemps-grand.dc.html" aria-current="page">Carte</a>
+  <a class="nav" href="Registre.dc.html" aria-current="{{nav.reg}}">Registre</a>
+  <a class="nav" href="Glossaire.dc.html" aria-current="{{nav.glo}}">Glossaire</a>
+  <a class="hdr" href="Registre.dc.html" aria-label="Rechercher dans le registre"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></a>
+  <button class="hdr" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}">
+    <sc-if value="{{isDark}}" hint-placeholder-val="{{true}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"></path></svg></sc-if>
+    <sc-if value="{{isLight}}" hint-placeholder-val="{{false}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11z"></path></svg></sc-if>
+  </button>
+</header>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px">
+    <nav class="crumbs" aria-label="Fil d'Ariane"><a href="Registre.dc.html">Registre</a> › <a href="Departement-grand.dc.html">Rhône</a> › <a href="Commune-grand.dc.html">Lyon</a> › <span aria-current="page">Carte et drones</span></nav>
+    <div style="display: flex; align-items: flex-end; gap: 18px">
+      <div><span style="display: inline-block; padding: 2px 8px; background: #ffe800; color: #111; font-weight: 800; font-stretch: 80%; font-size: 13px; text-transform: uppercase; letter-spacing: .06em">Commune</span><h1 style="margin: 6px 0 0; font-weight: 900; font-stretch: 62%; font-size: 60px; line-height: .9; text-transform: uppercase">Lyon</h1></div>
+      <p class="tw" style="margin: 0 0 6px; color: var(--muted); font-size: 14px">Rhône · Métropole de Lyon · 519 127 habitants</p>
+    </div>
+  </div>
+  <nav aria-label="Vues de la commune" style="width: 1180px; margin: 16px auto 0">
+    <div class="tabs">
+      <a href="Commune-grand.dc.html">L'essentiel</a>
+      <a href="Documents-grand.dc.html">Documents · 624</a>
+      <a href="Autorisations-grand.dc.html">Autorisations · 491</a>
+      <a href="CarteTemps-grand.dc.html" aria-current="page">Carte et drones</a>
+    </div>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 60px; display: flex; flex-direction: column; gap: 16px">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
+      <h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 30px; line-height: 1; text-transform: uppercase">Les drones dans le temps</h2>
+      <div style="display: flex; gap: 8px">
+        <sc-for list="{{layers}}" as="l" hint-placeholder-count="3">
+          <button class="chip" onClick="{{l.pick}}" aria-pressed="{{l.pressed}}" style="{{l.style}}"><span aria-hidden="true" style="{{l.sw}}"></span>{{l.l}}</button>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px">
+      <div style="position: relative; height: 520px; border: 2px solid var(--fg); background: var(--card); overflow: hidden">
+        <svg role="img" aria-label="{{alt}}" viewBox="0 0 818 516" width="818" height="516" onPointerDown="{{mdown}}" onPointerMove="{{mmove}}" onPointerUp="{{mup}}" onPointerLeave="{{mup}}" style="display: block; cursor: grab">
+          <polygon points="{{slab}}" fill="#000"></polygon>
+          <polygon points="{{outline}}" fill="var(--ground)" stroke="var(--fg)" stroke-width="2.5" stroke-linejoin="round"></polygon>
+          <sc-for list="{{rivers}}" as="r" hint-placeholder-count="2"><polyline points="{{r.p}}" fill="none" stroke="var(--water)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"></polyline></sc-for>
+          <sc-for list="{{vols}}" as="v" hint-placeholder-count="20">
+            <polygon points="{{v.points}}" fill="{{v.fill}}" fill-opacity="{{v.op}}" stroke="{{v.stroke}}" stroke-width="{{v.sw}}" stroke-dasharray="{{v.dash}}" stroke-linejoin="round" onMouseEnter="{{v.hover}}" onClick="{{v.pick}}" style="cursor: pointer"></polygon>
+          </sc-for>
+        </svg>
+        <span class="tw" style="position: absolute; left: 12px; bottom: 8px; font-size: 12px; color: var(--muted)">contour et cours d'eau simplifiés · glisser pour tourner</span>
+        <button class="btn" onClick="{{north}}" aria-label="Remettre le nord en haut" style="position: absolute; right: 10px; top: 10px; width: 44px; padding: 0">N</button>
+      </div>
+
+      <aside class="panel" aria-live="polite" aria-label="Détail">
+        <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
+        <strong style="font-size: 24px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+        <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
+          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule)"><span style="color: var(--muted)">{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
+        </sc-for>
+        <p style="margin: 4px 0 0; color: var(--muted); font-size: 15px">{{det.note}}</p>
+        <a href="CarteTemps-grand.dc.html" style="margin-top: auto; font-weight: 700">{{det.link}}</a>
+      </aside>
+    </div>
+
+    <section aria-label="Choisir une période" style="border: 2px solid var(--fg); background: var(--card); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <button class="btn" onClick="{{all}}" aria-pressed="{{allPressed}}" style="{{allStyle}}">Toutes les dates</button>
+        <button class="btn" onClick="{{prev}}" aria-label="Créneau précédent" style="width: 44px; padding: 0">◀</button>
+        <button class="btn" onClick="{{play}}" aria-pressed="{{playPressed}}" style="min-width: 110px">{{playText}}</button>
+        <button class="btn" onClick="{{next}}" aria-label="Créneau suivant" style="width: 44px; padding: 0">▶</button>
+        <span style="margin-left: 12px; font-weight: 700">{{rangeLabel}}</span>
+        <button class="ibtn" onClick="{{tglInfo}}" aria-expanded="{{infoOpen}}" aria-label="Comment lire" style="margin-left: auto"><span aria-hidden="true">i</span></button>
+      </div>
+      <sc-if value="{{showInfo}}" hint-placeholder-val="{{false}}"><p class="tw" style="margin: 0; padding: 10px; border: 1px solid var(--rule); color: var(--muted); font-size: 14px">Une barre par créneau de vol autorisé, à sa date et de sa durée réelle. Faites glisser sur la frise pour choisir une période ; la carte additionne les heures autorisées à chaque endroit sur cette période : plus un volume est haut, plus on y a autorisé d'heures de vol. Les arrêtés ne donnent pas d'altitude. Barre pointillée : heures non lues dans l'arrêté. Toucher une barre ou un volume affiche le créneau à droite.</p></sc-if>
+      <svg role="img" aria-label="{{tlAlt}}" viewBox="0 0 1144 150" width="1144" height="150" onPointerDown="{{tdown}}" onPointerMove="{{tmove}}" onPointerUp="{{tup}}" style="display: block; cursor: crosshair; touch-action: none">
+        <rect x="{{brush.x}}" y="0" width="{{brush.w}}" height="122" fill="var(--drone)" fill-opacity="0.12" stroke="var(--drone)" stroke-width="1.5"></rect>
+        <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
+          <g><line x1="{{m.x}}" x2="{{m.x}}" y1="0" y2="126" stroke="var(--rule)" stroke-width="1"></line><text x="{{m.tx}}" y="142" font-size="12" font-family="Special Elite, monospace" fill="var(--muted)">{{m.l}}</text></g>
+        </sc-for>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="61">
+          <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="11" fill="{{b.fill}}" fill-opacity="{{b.op}}" stroke="{{b.stroke}}" stroke-width="{{b.sw}}" stroke-dasharray="{{b.dash}}" onMouseEnter="{{b.hover}}" onPointerDown="{{b.pick}}" style="cursor: pointer"></rect>
+        </sc-for>
+        <line x1="1140" x2="1140" y1="0" y2="126" stroke="var(--fg)" stroke-width="2"></line>
+        <text x="1136" y="12" text-anchor="end" font-size="12" font-weight="800" font-family="Archivo, sans-serif" fill="var(--fg)">auj.</text>
+      </svg>
+    </section>
+
+    <section aria-label="Liste des créneaux" style="display: flex; flex-direction: column; gap: 0">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px; border-bottom: 2px solid var(--fg)"><h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 26px; text-transform: uppercase">{{listTitle}}</h2><span class="tw" style="color: var(--muted)">du plus récent au plus ancien</span></div>
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+        <button onMouseEnter="{{r.hover}}" onClick="{{r.pick}}" style="{{r.style}}">
+          <span class="tw" style="color: var(--muted)">{{r.d}}</span>
+          <span style="font-weight: 700">{{r.svc}}</span>
+          <span style="color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.fin}}</span>
+          <strong style="text-align: right">{{r.h}}</strong>
+        </button>
+      </sc-for>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1280,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { dark: (props.theme ?? 'sombre') === 'sombre', r0: null, r1: null, sel: -1, hov: -1, playing: false, b: -20, info: false, drones: true, cams: true, vsa: true };
+    this.drag = null; this.mdrag = null;
+  }
+  componentDidMount() { this.player = setInterval(() => { if (this.state.playing) { const n = (this.state.sel + 1) % 61; this.setState({ sel: n, hov: -1 }); } }, 1400); }
+  componentWillUnmount() { clearInterval(this.player); }
+  renderVals() {
+    const S = this.state;
+    const dark = this.state.dark;
+    const D = [["2025-11-11T07:00",6,"i",2,"Armées","rétablissement de l'ordre public, prévention du terrorisme",1,4.8452,45.7748],["2025-11-13T23:00",96,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.8341,45.7566],["2025-11-13T23:00",96,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.837,45.7636],["2025-11-13T23:00",96,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.8358,45.7671],["2025-11-13T23:00",96,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.8266,45.7603],["2025-11-13T23:00",96,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.8178,45.7584],["2025-11-18T23:00",24,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.8341,45.7566],["2025-11-18T23:00",24,"r",1,"Police nationale","préparation des dispositifs terrestres",0,4.837,45.7636],["2025-12-02T09:00",7,"r",1,"Police nationale","journée d'action nationale interprofessionnelle",1,4.8363,45.7638],["2025-12-04T23:00",24,"i",1,"Armées","rétablissement de l'ordre public, prévention du terrorisme",0,4.8384,45.7618],["2025-12-06T23:00",24,"i",1,"Armées","rétablissement de l'ordre public, prévention du terrorisme",0,4.8384,45.7618],["2025-12-07T13:00",4,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8544,45.774],["2025-12-08T16:00",7,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8322,45.7637],["2025-12-18T10:00",7,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8404,45.7562],["2025-12-31T17:00",8,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.8591,45.7794],["2026-02-03T13:00",3,"r",1,"Police nationale","opération de voie publique",1,4.834,45.7278],["2026-02-17T23:00",24,"r",1,"Police nationale","encadrement d'une manifestation",0,4.8341,45.7458],["2026-02-21T12:00",6,"i",1,"Police nationale","encadrement d'une manifestation",1,4.8227,45.769],["2026-03-14T12:30",6,"r",1,"Police nationale","encadrement d'une manifestation",1,4.8388,45.7501],["2026-03-30T08:00",6,"i",1,"Police nationale","semaine olympique et paralympique",1,4.7967,45.7842],["2026-03-30T13:00",3,"r",1,"Police nationale","opération Ville sécurité renforcée",1,4.834,45.7278],["2026-03-31T22:00",168,"i",2,"Police nationale","prévention des actes terroristes",0,4.8507,45.7788],["2026-04-07T05:00",17,"i",1,"Police nationale","dispositif pour un évènement",1,4.8441,45.7616],["2026-04-28T13:00",3,"r",1,"Police nationale","opération Ville sécurité renforcée",1,4.834,45.7278],["2026-05-01T07:00",8,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.8382,45.7514],["2026-05-18T22:00",24,"i",1,"Police nationale","opération Ville sécurité renforcée",0,4.8876,45.7507],["2026-05-18T22:00",24,"i",1,"Police nationale","opération Ville sécurité renforcée",0,4.8434,45.7552],["2026-05-30T10:30",6,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8402,45.7512],["2026-06-06T11:30",6,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8425,45.7506],["2026-07-01T07:00",4,"r",1,"Police nationale","adaptation des dispositifs",1,4.8253,45.7609],["2026-07-11T10:00",6,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8397,45.7639],["2026-07-12T22:00",24,"r",1,"Police nationale","fête nationale et match de football",0,4.8324,45.7595],["2026-07-12T22:00",24,"r",1,"Police nationale","fête nationale et match de football",0,4.8681,45.7552],["2026-07-13T22:00",48,"r",1,"Police nationale","fête nationale et match de football",0,4.8681,45.7552],["2026-07-29T14:00",1,"i",1,"Police nationale","finalité non lue",1,4.7954,45.7843],["2026-08-03T08:00",4,"r",1,"Police nationale","préparation des dispositifs terrestres",1,4.8492,45.7801],["2026-09-01T22:00",48,"i",1,"Police nationale","finalité non lue",0,4.8874,45.721],["2026-09-09T11:00",4,"r",1,"Police nationale","opération Ville sécurité renforcée",1,4.834,45.7278],["2026-09-10T12:00",3,"r",1,"Police nationale","opération Ville sécurité renforcée",1,4.834,45.7278],["2026-09-11T14:00",3,"i",1,"Police nationale","finalité non lue",1,4.8309,45.7269],["2026-09-29T11:30",6,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8474,45.7543],["2026-10-01T06:45",14,"r",1,"Police nationale","procédure judiciaire",1,4.86,45.745],["2026-10-01T06:58",14,"r",1,"Police nationale","procédure judiciaire",1,4.8711,45.758],["2026-10-02T06:00",15,"r",1,"Police nationale","procédure judiciaire",1,4.8716,45.7508],["2026-10-02T06:30",15,"r",2,"Police nationale","procédure judiciaire",1,4.8415,45.7655],["2026-10-05T06:45",14,"r",1,"Police nationale","procédure judiciaire",1,4.8739,45.7271],["2026-10-06T07:00",10,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8385,45.7557],["2026-10-08T07:00",7,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.8974,45.7506],["2026-10-10T11:00",6,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.849,45.7733],["2026-10-13T08:00",9,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8579,45.7633],["2026-10-15T07:00",5,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.8274,45.7306],["2026-10-15T12:00",5,"r",1,"Police nationale","rétablissement de l'ordre public",1,4.8305,45.7686],["2026-10-16T06:55",14,"r",1,"Police nationale","procédure judiciaire",1,4.7913,45.752],["2026-10-16T22:00",24,"r",1,"Police nationale","rétablissement de l'ordre public",0,4.8259,45.7484],["2026-10-16T22:00",24,"r",1,"Police nationale","rétablissement de l'ordre public",0,4.8594,45.76],["2026-10-16T22:00",24,"r",1,"Police nationale","rétablissement de l'ordre public",0,4.8375,45.7598],["2026-10-16T22:00",24,"r",1,"Police nationale","rétablissement de l'ordre public",0,4.8671,45.73],["2026-10-20T07:30",8,"i",1,"Police nationale","rétablissement de l'ordre public",1,4.8678,45.7313],["2026-10-22T11:00",6,"r",1,"Police nationale","mouvement lycéen et étudiant",1,4.8605,45.7493],["2026-10-22T11:00",6,"r",1,"Police nationale","mouvement lycéen et étudiant",1,4.8476,45.7591],["2026-10-23T19:00",36,"r",1,"Gendarmerie nationale","rétablissement de l'ordre public",1,4.8197,45.7461]];
+    const T = D.map((d) => { const t0 = Date.parse(d[0] + ':00Z'); return { t0: t0, t1: t0 + d[1] * 36e5, h: d[1], st: d[2], n: d[3], svc: d[4], fin: d[5], sure: !!d[6], lon: d[7], lat: d[8] }; });
+    const A = Date.UTC(2025, 10, 1), Bd = Date.UTC(2026, 9, 25);
+    const r0 = S.r0 ?? A, r1 = S.r1 ?? Bd;
+    const allMode = S.r0 == null && S.sel < 0;
+    const inRange = (t) => t.t1 > r0 && t.t0 < r1;
+    const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const fd = (ms, withH) => { const d = new Date(ms); let s = d.getUTCDate() + ' ' + MOIS[d.getUTCMonth()] + ' ' + d.getUTCFullYear(); if (withH) s += ', ' + String(d.getUTCHours()).padStart(2, '0') + ' h ' + String(d.getUTCMinutes()).padStart(2, '0'); return s; };
+    // frise
+    const X = (ms) => 4 + (ms - A) / (Bd - A) * 1136;
+    const lanesEnd = [];
+    const bars = T.map((t, i) => {
+      const x = X(t.t0), w = Math.max(4, X(t.t1) - x);
+      let lane = 0; while (lanesEnd[lane] != null && lanesEnd[lane] > x - 2) lane++; lanesEnd[lane] = x + w;
+      const on = S.sel === i || S.hov === i; const vis = S.sel >= 0 ? S.sel === i : inRange(t);
+      return { x: x.toFixed(1), y: 112 - lane * 15, w: w.toFixed(1), fill: on ? 'var(--hover)' : 'var(--drone)', op: vis ? 1 : 0.3, stroke: t.sure ? 'none' : 'var(--fg)', sw: t.sure ? 0 : 1.2, dash: t.sure ? 'none' : '3 2', hover: () => this.setState({ hov: i }), pick: (e) => { e.stopPropagation(); this.setState({ sel: i, playing: false }); } };
+    });
+    const months = []; for (let m = 0; m < 12; m++) { const ms = Date.UTC(2025, 10 + m, 1); months.push({ x: X(ms).toFixed(1), tx: (X(ms) + 4).toFixed(1), l: MOIS[(10 + m) % 12] + (m === 2 ? ' 2026' : '') }); }
+    const brush = { x: X(r0).toFixed(1), w: Math.max(2, X(r1) - X(r0)).toFixed(1) };
+    const toMs = (px) => A + (px - 4) / 1136 * (Bd - A);
+    const svgX = (e) => { const r = e.currentTarget.getBoundingClientRect(); return (e.clientX - r.left) * 1144 / r.width; };
+    // carte
+    const br = S.b * Math.PI / 180, cs = Math.cos(br), sn = Math.sin(br);
+    const L0 = 4.836, P0 = 45.758;
+    const P = (lon, lat, z) => { const dx = (lon - L0) * 70 * 1.0, dy = -(lat - P0) * 100; const xr = dx * cs - dy * sn, yr = dx * sn + dy * cs; const k = 0.8 + 0.2 * ((yr + 6) / 12); return [409 + xr * 58 * k, 285 + yr * 58 * 0.62 - (z || 0) * 2.2]; };
+    const pp = (arr, dz) => arr.map((q) => { const p = P(q[0], q[1], q[2]); return p[0].toFixed(1) + ',' + (p[1] + (dz || 0)).toFixed(1); }).join(' ');
+    const OUT = [[4.773,45.787],[4.79,45.80],[4.81,45.808],[4.835,45.806],[4.86,45.80],[4.875,45.792],[4.898,45.776],[4.90,45.757],[4.895,45.735],[4.882,45.716],[4.86,45.707],[4.84,45.71],[4.82,45.72],[4.80,45.735],[4.79,45.75],[4.775,45.765]];
+    const rivers = [{ p: pp([[4.812,45.808],[4.815,45.785],[4.822,45.77],[4.826,45.755],[4.829,45.74],[4.832,45.72],[4.835,45.708]]) }, { p: pp([[4.899,45.78],[4.875,45.776],[4.852,45.77],[4.843,45.76],[4.838,45.745],[4.835,45.73],[4.835,45.708]]) }];
+    const act = T.map((t, i) => ({ t: t, i: i })).filter((o) => (S.sel >= 0 ? o.i === S.sel : inRange(o.t)) && S.drones);
+    const groups = {};
+    act.forEach((o) => { const k = o.t.lon.toFixed(3) + ',' + o.t.lat.toFixed(3); if (!groups[k]) groups[k] = { lon: o.t.lon, lat: o.t.lat, h: 0, n: 0, ids: [], unsure: 0, ind: 0 }; const g = groups[k]; g.h += Math.max(0, Math.min(o.t.t1, r1) - Math.max(o.t.t0, r0)) / 36e5 || o.t.h; g.n++; g.ids.push(o.i); if (!o.t.sure) g.unsure++; if (o.t.st === 'i') g.ind++; });
+    const G = Object.values(groups);
+    const maxH = Math.max(1, ...G.map((g) => g.h));
+    const vols = [];
+    const R = 0.0042;
+    G.sort((a, b) => P(b.lon, b.lat)[1] - P(a.lon, a.lat)[1]).reverse().forEach((g) => {
+      const H = 4 + (g.h / maxH) * 60; const ring = []; for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; ring.push([g.lon + R * Math.cos(a) * 1.4, g.lat + R * Math.sin(a)]); }
+      const on = g.ids.includes(S.hov) || g.ids.includes(S.sel);
+      const first = g.ids[g.ids.length - 1];
+      const hover = () => this.setState({ hov: first });
+      const pick = () => this.setState({ sel: first, playing: false });
+      const dash = g.ind === g.n ? '5 3' : 'none';
+      for (let k = 0; k < 6; k++) { const a = ring[k], b = ring[(k + 1) % 6]; vols.push({ points: pp([[a[0], a[1], 0], [b[0], b[1], 0], [b[0], b[1], H], [a[0], a[1], H]]), fill: on ? 'var(--hover)' : 'var(--drone)', op: on ? 0.55 : 0.28, stroke: 'none', sw: 0, dash: 'none', hover: hover, pick: pick }); }
+      vols.push({ points: pp(ring.map((q) => [q[0], q[1], H])), fill: on ? 'var(--hover)' : 'var(--drone)', op: on ? 0.95 : 0.75, stroke: 'var(--fg)', sw: on ? 2 : 1, dash: dash, hover: hover, pick: pick });
+    });
+    const rangeH = Math.round(G.reduce((a, g) => a + g.h, 0));
+    const nAct = act.length, nUnsure = act.filter((o) => !o.t.sure).length;
+    // panneau
+    const focus = S.hov >= 0 ? S.hov : S.sel;
+    let det;
+    if (focus >= 0) { const t = T[focus]; det = { kicker: 'Créneau ' + (focus + 1) + ' sur 61' + (t.st === 'i' ? ' · tracé indicatif' : ' · tracé relu'), title: fd(t.t0, true), rows: [{ k: 'Durée', v: t.sure ? t.h + ' h' : 'non lue dans l’arrêté' }, { k: 'Service', v: t.svc }, { k: 'Arrêtés', v: String(t.n) }, { k: 'Fin', v: fd(t.t1, true) }], note: 'Pour : ' + t.fin + '.', link: 'Voir l’arrêté ↗' }; }
+    else det = { kicker: allMode ? 'Toutes les dates collectées' : 'Période choisie', title: fd(r0) + ' → ' + fd(r1), rows: [{ k: 'Créneaux de vol', v: String(nAct) }, { k: 'Heures autorisées', v: rangeH + ' h' }, { k: 'Endroits', v: String(G.length) }], note: 'Survolez un volume ou une barre de la frise pour voir le créneau.', link: '' };
+    const listIdx = T.map((t, i) => i).filter((i) => (S.sel >= 0 ? true : inRange(T[i]))).reverse().slice(0, 8);
+    const rows = listIdx.map((i) => { const t = T[i]; const on = i === S.sel || i === S.hov; return { d: fd(t.t0, true), svc: t.svc, fin: t.fin, h: t.sure ? t.h + ' h' : 'durée non lue', hover: () => this.setState({ hov: i }), pick: () => this.setState({ sel: i, playing: false }), style: 'all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 210px 180px minmax(0, 1fr) 110px; gap: 14px; align-items: center; min-height: 46px; padding: 0 8px; border-bottom: 1px solid var(--rule); ' + (on ? 'background: var(--soft); box-shadow: inset 4px 0 0 var(--hover)' : '') }; });
+    const L = [['cams', 'Caméras placées', 'background: #111; box-shadow: 0 0 0 2px #f2efe6, 0 0 0 3px #111'], ['vsa', 'Analyse algorithmique', 'background: repeating-linear-gradient(45deg, #ffe800 0 3px, #111 3px 6px)'], ['drones', 'Drones', 'background: #7fd4ff']];
+    const layers = L.map(([k, l, sw]) => ({ l: l, pressed: S[k] ? 'true' : 'false', pick: () => this.setState({ [k]: !S[k] }), sw: 'display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; vertical-align: -2px; ' + sw + (S[k] ? '' : '; opacity: .35'), style: S[k] ? 'background: var(--fg); color: var(--bg)' : 'background: var(--card); color: var(--fg)' }));
+    return {
+      th: dark ? 'th dark' : 'th', isDark: dark, isLight: !dark, themeLabel: dark ? 'Passer en thème clair' : 'Passer en thème sombre', toggleTheme: () => this.setState({ dark: !this.state.dark }), nav: { reg: 'false', glo: 'false' }, layers: layers,
+      outline: pp(OUT), slab: pp(OUT, 10), rivers: rivers, vols: vols, det: det, bars: bars, months: months, brush: brush, rows: rows,
+      alt: 'Carte inclinée de Lyon : ' + G.length + ' endroits où des vols de drone ont été autorisés sur la période, la hauteur de chaque volume étant proportionnelle aux heures autorisées.',
+      tlAlt: 'Frise des 61 créneaux de vol autorisés à Lyon, de novembre 2025 à octobre 2026.',
+      rangeLabel: S.sel >= 0 ? 'Créneau ' + (S.sel + 1) + ' sur 61' : (allMode ? 'Toutes les dates · ' + nAct + ' créneaux · ' + rangeH + ' h' : fd(r0) + ' → ' + fd(r1) + ' · ' + nAct + ' créneaux · ' + rangeH + ' h'),
+      listTitle: S.sel >= 0 ? 'Créneau choisi et précédents' : (allMode ? 'Les 61 créneaux' : nAct + ' créneaux sur la période'),
+      all: () => this.setState({ r0: null, r1: null, sel: -1, hov: -1, playing: false }), allPressed: allMode ? 'true' : 'false',
+      allStyle: allMode ? 'background: var(--fg); color: var(--bg)' : '',
+      prev: () => this.setState({ sel: S.sel <= 0 ? 60 : S.sel - 1, playing: false, hov: -1 }),
+      next: () => this.setState({ sel: (S.sel + 1) % 61, playing: false, hov: -1 }),
+      play: () => this.setState({ playing: !S.playing, sel: S.sel < 0 ? 0 : S.sel, hov: -1 }),
+      playText: S.playing ? '❚❚ Pause' : '▶ Lire', playPressed: S.playing ? 'true' : 'false',
+      showInfo: S.info, infoOpen: S.info ? 'true' : 'false', tglInfo: () => this.setState({ info: !S.info }),
+      tdown: (e) => { const x = svgX(e); this.drag = x; try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) {} },
+      tmove: (e) => { if (this.drag == null) return; const x = svgX(e); const a = Math.min(this.drag, x), b = Math.max(this.drag, x); if (b - a > 4) this.setState({ r0: toMs(a), r1: toMs(b), sel: -1, playing: false }); },
+      tup: () => { this.drag = null; },
+      mdown: (e) => { this.mdrag = { x: e.clientX, b: this.state.b }; },
+      mmove: (e) => { if (!this.mdrag) return; this.setState({ b: this.mdrag.b + (e.clientX - this.mdrag.x) * 0.4 }); },
+      mup: () => { this.mdrag = null; },
+      north: () => this.setState({ b: 0 })
+    };
+  }
+}
+</script>
+</body>
+</html>
