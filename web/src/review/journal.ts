@@ -6,7 +6,8 @@
 // (?vue=journal&type=…&qui=…). A line says the day, who (« compte supprimé », a test
 // account tagged), what in a short sentence, and on what: a camera by the queue's label
 // (« Fixe · Avenue de l'Arche, Courbevoie »), its id after it as a link to its view, an
-// account by its pseudonym, a setting — never a contribution's uuid, an hour or an address.
+// account by its pseudonym, a setting, a register document by its id — never a
+// contribution's uuid, an hour or an address.
 import { has, t } from "../i18n";
 import { call } from "../participate/api";
 import { type AdminNav, button, frame, shortDay } from "./admin";
@@ -171,6 +172,15 @@ export function actionText(e: Entry): string {
         t(`review.feed.${e.action}`) +
         (d.known === false && !e.label ? ` (${t("review.log.unknown")})` : "")
       );
+    case "registre_accept":
+      return t("review.feed.registre_accept", {
+        field: has(`review.registre.field.${d.field}`)
+          ? t(`review.registre.field.${d.field}`).toLocaleLowerCase("fr")
+          : String(d.field ?? ""),
+        id: String(e.target ?? ""),
+      });
+    case "registre_refuse":
+      return t("review.feed.registre_refuse", { id: String(e.target ?? "") });
     case "setting":
       return t("review.feed.setting", {
         what: has(`review.settings.${e.target}`)

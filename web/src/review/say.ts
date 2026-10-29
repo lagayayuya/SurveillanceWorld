@@ -46,6 +46,9 @@ export function errorText(e: unknown): string {
       "not_hidden",
       "admin",
       "no_live_client",
+      "decided",
+      "unknown_report",
+      "value",
     ];
     if (known.includes(e.code)) return t(`review.error.${e.code}`);
     return t("review.error.server", { status: String(e.status) });

@@ -9,7 +9,10 @@ import { errorText, fail } from "./say";
 
 export const ADMIN_VIEWS = ["comptes", "retraits", "reglages", "statistiques", "journal"] as const;
 export type AdminView = (typeof ADMIN_VIEWS)[number];
-export type Tab = "queue" | AdminView;
+/** The views a reviewer has too, beside « File »: the register's reports (registre.ts). */
+export const STAFF_VIEWS = ["registre"] as const;
+export type StaffView = (typeof STAFF_VIEWS)[number];
+export type Tab = "queue" | StaffView | AdminView;
 
 export type AdminNav = {
   readonly who: Who;

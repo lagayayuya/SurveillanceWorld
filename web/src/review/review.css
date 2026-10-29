@@ -1287,3 +1287,55 @@ body:has(.review-foot) .review-toast-host {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
+
+/* « Registre » (lot R1b): one block per reported document, a box per report, its decision. */
+.review-registre-doc {
+  margin: 16px 0 8px;
+  padding-top: 4px;
+  border-top: var(--border-w) solid var(--line);
+}
+.review-registre-doc-head {
+  margin: 8px 0 0;
+  font-size: 15px;
+}
+.review-registre-doc-head code,
+.review-registre-source {
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+.review-registre-doc-line {
+  margin: 0;
+}
+.review-registre-report h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.review-registre-correction {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.review-registre-source {
+  font-size: 14px;
+}
+.review-registre-form fieldset {
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+.review-registre-form .review-field {
+  margin: 6px 0;
+}
+.review-registre-form select {
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 10px;
+  border: var(--border-w) solid var(--line);
+  border-radius: var(--radius-panel);
+  background: var(--bg-2);
+  color: var(--fg);
+  font: inherit;
+}
+.review-registre-hint {
+  margin: 0 0 6px;
+}

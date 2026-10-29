@@ -2,7 +2,8 @@
 // and P2; lot 2 « Administrer », boards P3, P4, P5: a drawing of its own on the punk tokens,
 // not the mockup's). It opens by its own entry (POST /api/review/session: auth.ts); any
 // other session, or none, reads « Connexion à la revue » and its form. Its tabs follow the
-// role GET /api/review/me gives: a reviewer has « File »; an administrator also « Comptes »,
+// role GET /api/review/me gives: a reviewer has « File » and « Registre » (lot R1b: the
+// register's reports, registre.ts, ?vue=registre); an administrator also « Comptes »,
 // « Retraits », « Réglages », « Statistiques » (lot 4) and « Journal ». Each view has its
 // address and one h1, focused when it opens, the browser's back button between them:
 // « File » (queue.ts: what waits, in which order; ?file=conflicts&q=…), a camera
@@ -20,13 +21,21 @@ import { t } from "../i18n";
 import { ApiError } from "../participate/api";
 import { followMode, initTheme, themeFonts } from "../theme";
 import { accountsView, accountView } from "./accounts";
-import { ADMIN_VIEWS, type AdminNav, type AdminView, type Tab } from "./admin";
+import {
+  ADMIN_VIEWS,
+  type AdminNav,
+  type AdminView,
+  STAFF_VIEWS,
+  type StaffView,
+  type Tab,
+} from "./admin";
 import { fetchWho, signIn, type Who } from "./auth";
 import { CameraView } from "./camera";
 import { hiddenView } from "./hidden";
 import { journalView } from "./journal";
 import { ReviewMap } from "./map";
 import { fetchQueue, type QueueNav, queueView } from "./queue";
+import { registreView } from "./registre";
 import { el, FILTERS, type Filter } from "./rows";
 import { settingsView } from "./settings";
 import { statsView } from "./stats";
@@ -60,7 +69,7 @@ function readQuery(): {
   q: string;
   camera: string | null;
   account: string | null;
-  view: AdminView | null;
+  view: AdminView | StaffView | null;
 } {
   const p = new URLSearchParams(window.location.search);
   const asked = p.get("file") as Filter | null;
@@ -70,13 +79,14 @@ function readQuery(): {
       : p.get("status") === "conflict"
         ? "conflicts"
         : "todo";
-  const view = p.get("vue") as AdminView | null;
+  const view = p.get("vue") as AdminView | StaffView | null;
+  const known: readonly string[] = [...ADMIN_VIEWS, ...STAFF_VIEWS];
   return {
     filter,
     q: (p.get("q") ?? "").slice(0, 64),
     camera: p.get("camera"),
     account: p.get("compte"),
-    view: view && (ADMIN_VIEWS as readonly string[]).includes(view) ? view : null,
+    view: view && known.includes(view) ? view : null,
   };
 }
 
@@ -223,6 +233,7 @@ const camera = new CameraView(app, map, {
 
 const TABS: { tab: Tab; key: string; params: Record<string, string> }[] = [
   { tab: "queue", key: "review.tab.queue", params: {} },
+  { tab: "registre", key: "review.tab.registre", params: { vue: "registre" } },
   { tab: "comptes", key: "review.tab.accounts", params: { vue: "comptes" } },
   { tab: "retraits", key: "review.tab.hidden", params: { vue: "retraits" } },
   { tab: "reglages", key: "review.tab.settings", params: { vue: "reglages" } },
@@ -230,15 +241,15 @@ const TABS: { tab: Tab; key: string; params: Record<string, string> }[] = [
   { tab: "journal", key: "review.tab.journal", params: { vue: "journal" } },
 ];
 
-/** The head: « Revue », its tabs (a reviewer: « File »; an administrator: the six), who
- * is signed in and « Se déconnecter ». On a phone the tabs take a row of their own, which
- * scrolls sideways when it must. */
+/** The head: « Revue », its tabs (a reviewer: « File » and « Registre »; an administrator:
+ * the seven), who is signed in and « Se déconnecter ». On a phone the tabs take a row of
+ * their own, which scrolls sideways when it must. */
 function head(current: Tab): HTMLElement {
   const top = el("header", "", "review-top");
   const brand = el("p", t("review.brand"), "review-brand");
   const tabs = el("nav", "", "review-tabs");
   tabs.setAttribute("aria-label", t("review.nav"));
-  const shown = who?.role === "admin" ? TABS : TABS.slice(0, 1);
+  const shown = who?.role === "admin" ? TABS : TABS.slice(0, 2);
   tabs.classList.toggle("many", shown.length > 1);
   for (const { tab, key, params } of shown) {
     const a = el("a", t(key), "review-tab");
@@ -280,6 +291,10 @@ async function route(note: string | null = null): Promise<void> {
   if (q.camera) {
     nav.lastCamera = q.camera;
     await camera.show(q.camera);
+    return;
+  }
+  if (q.view === "registre") {
+    await registreView(app, admin, note);
     return;
   }
   if (q.account || q.view) {
