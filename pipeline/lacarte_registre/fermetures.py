@@ -28,7 +28,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
-from lacarte_registre import comptes
+from lacarte_registre import comptes, entreprise
 from lacarte_registre.regles import (
     Event,
     Registre,
@@ -336,11 +336,15 @@ def departement_file(ctx: Context, dep: str) -> dict[str, Any]:
 def entreprise_file(ctx: Context, siren: str) -> dict[str, Any]:
     reg = ctx.reg
     evs = [e for e in reg.evenements if siren in (e.get("entreprises") or [])]
+    stats = ctx.ent_stats.get(siren)
+    deps = {s: (ctx.acheteurs.get(s) or {}).get("dep") for s in (stats or {}).get("clientes", [])}
     return {
         "v": 1,
         "entreprise": reg.pilote.reg["entreprises"].get(siren) or {"siren": siren},
         **Closure(ctx).add(evs).close(),
-        "stats": ctx.ent_stats.get(siren),
+        "stats": stats,
+        # what the page shows that a rule decides (entreprise.py): ends, running, facts, lead
+        "page": entreprise.page(reg, stats, ctx.couverture["maj"], deps),
     }
 
 
