@@ -78,8 +78,9 @@ def test_no_portion_off_the_axes_below_z16(ci_tiles):
 
 def test_every_zoom_colours_what_is_filmed(ci_tiles):
     # Per zoom and per tile, the coloured length is within max(1 m, 5 %) of the length
-    # filmed on the segments drawn at that zoom, and nothing is coloured more than 1 m off
-    # a filmed interval: z12-13 and z14 say what z15+ says.
+    # filmed on the segments drawn at that zoom (10 % at z11, on its coarser grid), and
+    # nothing is coloured more than 1 m off a filmed interval: z12-13 and z14 say what z15+
+    # says.
     for est in optics.shown_estimates():
         for z in range(tiles.STREETS_MIN, 17):
             got = ci_tiles[f"z{z}_b{est}"]
@@ -114,3 +115,8 @@ def test_the_off_limit_is_the_same_share_of_a_grid_unit_on_coarser_zooms():
     assert streetaudit.outside_limit_m(12, 4096) == streetaudit.OUTSIDE_MERGED_M == 2.5
     assert streetaudit.outside_limit_m(11, 1024) == 20.0  # z11 at tiles.LOW_DETAIL
     assert streetaudit.outside_limit_m(15, 4096) == streetaudit.OUTSIDE_MIN_M
+
+
+def test_the_length_tolerance_widens_only_on_the_coarser_grid():
+    assert streetaudit.tolerance_rel(4096) == streetaudit.TOL_REL == 0.05
+    assert streetaudit.tolerance_rel(2**tiles.LOW_DETAIL) == 0.10
