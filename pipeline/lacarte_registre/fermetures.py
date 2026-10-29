@@ -27,8 +27,10 @@ from collections import Counter
 from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
+from weakref import WeakKeyDictionary
 
 from lacarte_registre import comptes, entreprise
+from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     Event,
     Registre,
@@ -403,8 +405,28 @@ def acheteur_file(ctx: Context, siren: str) -> dict[str, Any]:
     }
 
 
+_PARCOURS: WeakKeyDictionary[Context, Parcours] = WeakKeyDictionary()
+
+
+def _parcours(ctx: Context) -> Parcours:
+    """The corpus indexed by buyer, once per build (every document file reads it)."""
+    if ctx not in _PARCOURS:
+        _PARCOURS[ctx] = Parcours(ctx.reg, ctx.lots, ctx.ent_stats, ctx.couverture["maj"])
+    return _PARCOURS[ctx]
+
+
 def document_file(ctx: Context, affaire: str) -> dict[str, Any]:
-    return {"v": 1, "affaire": ctx.reg.affaires[affaire], **Closure(ctx).close([affaire])}
+    """A document's record: its affaire closed with the affaires it is probably linked to (the
+    pilot's `avis_probables`, `contrat_probable`), and its place in the corpus (parcours.py),
+    the companies of its previous contract named."""
+    reg = ctx.reg
+    a = reg.affaires[affaire]
+    linked = [*(a.get("avis_probables") or []), a.get("contrat_probable")]
+    body = Closure(ctx).close([affaire, *(x for x in linked if x)])
+    par = _parcours(ctx)(affaire)
+    for s in (par["precedent"] or {}).get("entreprises") or []:
+        body["entreprises"].setdefault(s, ctx.entreprise(s))
+    return {"v": 1, "affaire": a, **body, "parcours": par}
 
 
 def _dico(ctx: Context, events: list[Event]) -> dict[str, Any]:
