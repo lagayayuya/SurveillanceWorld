@@ -110,3 +110,9 @@ limits:
   # reviewer decides a few a minute, a burst of « Valider » on a send's cards stays well
   # under; it caps what a stolen reviewer session can change. [TO ADJUST]
   review_per_minute: 60
+  # The register's « Signaler une erreur » (POST /api/registre/signalement), per minute:
+  # one bucket for every reader not signed in (no account needed, and nothing tells two
+  # readers apart: no address is read), one per account signed in. A reader writes one
+  # report in a minute or more; it caps what a script can pour into /revue's « Registre ».
+  # [TO ADJUST]
+  reports_per_minute: 20

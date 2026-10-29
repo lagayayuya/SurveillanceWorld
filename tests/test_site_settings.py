@@ -25,6 +25,8 @@ LISTED = {
     ("POST", "/api/operators"), ("POST", "/api/preview"), ("POST", "/api/modify/preview"),
     ("GET", "/api/osm/login"), ("POST", "/api/osm/link"), ("GET", "/api/osm/signup"),
     ("POST", "/api/osm/signup"),
+    # Lot R1b: the register's « Signaler une erreur ».
+    ("POST", "/api/registre/signalement"),
 }  # fmt: skip
 
 

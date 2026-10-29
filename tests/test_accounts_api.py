@@ -86,7 +86,8 @@ def signed(token: str, **extra) -> dict:
 
 PUBLIC = {("GET", "/api/proposals"), ("GET", "/api/config"), ("POST", "/api/session"),
           ("DELETE", "/api/session"), ("POST", "/api/review/session"),
-          ("POST", "/api/hit"), ("GET", "/api/history")}  # fmt: skip
+          ("POST", "/api/hit"), ("GET", "/api/history"),
+          ("POST", "/api/registre/signalement")}  # fmt: skip
 PRIVILEGED = {"error": "privileged"}
 
 

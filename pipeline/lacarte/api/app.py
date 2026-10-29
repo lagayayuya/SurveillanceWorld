@@ -42,6 +42,7 @@ import math
 import os
 import re
 import secrets
+import sys
 import threading
 import time
 import unicodedata
@@ -62,7 +63,18 @@ from pydantic import BaseModel, Field, model_validator
 from starlette.concurrency import run_in_threadpool
 
 from lacarte import buildings, direction, participation
-from lacarte.api import auth, confirm, leaderboard, live, osm, publish, retention, stats, sync
+from lacarte.api import (
+    auth,
+    confirm,
+    leaderboard,
+    live,
+    osm,
+    publish,
+    registre,
+    retention,
+    stats,
+    sync,
+)
 from lacarte.api.auth import Account
 from lacarte.regions import CAMERA_ID
 
@@ -298,6 +310,8 @@ CLOSED_ROUTES = {
     ("POST", "/api/operators"), ("POST", "/api/preview"), ("POST", "/api/modify/preview"),
     ("GET", "/api/osm/login"), ("POST", "/api/osm/link"), ("GET", "/api/osm/signup"),
     ("POST", "/api/osm/signup"),
+    # The register's « Signaler une erreur » (lacarte.api.registre): a reader's write too.
+    ("POST", "/api/registre/signalement"),
 }  # fmt: skip
 # Choosing to publish on OSM is closed too (POST /api/osm/sync on: true answers 403 closed
 # itself): going back to « Rester sur Surveillance World » never is.
@@ -4394,3 +4408,8 @@ def review_setting(body: SettingIn, who: Annotated[Account, Depends(reauthed)]):
         answer = site_settings_answer(conn)
     switches.forget()
     return answer
+
+
+# --- the register's reports (lot R1b « Signaler une erreur », lacarte.api.registre) --------
+
+registre.install(sys.modules[__name__])
