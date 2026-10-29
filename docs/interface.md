@@ -917,7 +917,10 @@ The register is the site's second part: the public documents on video surveillan
 and subsidies — tied to communes, companies and buyers. A page of its own, `registre.html`, served
 for every `/registre` path (`deploy/preview.caddy`), not indexed until its public opening; its
 code in `src/registre/`, its data the static files `lacarte-registre construire` writes under
-`/data/registre/` (`pipeline/lacarte_registre/`). Its rules are DECISIONS 2026-10-28.
+`/data/registre/` (`pipeline/lacarte_registre/`), after exporting the corrections accepted in
+`/revue` from the database; it marks the build (`data/registre/construction.json`, not served) and
+the deploy refuses a register built without them (`lacarte-registre verifier`). Its rules are
+DECISIONS 2026-10-28.
 
 - **The pages.** `/registre/` (Documents: the search, the filters, the latest documents),
   `/registre/chiffres` (figures and rankings), `/registre/couverture` (what the register covers:
@@ -942,12 +945,13 @@ code in `src/registre/`, its data the static files `lacarte-registre construire`
   that an error is possible; a decree's panel links its source (« Voir l'arrêté (recueil de la
   préfecture) »).
 - **« Signaler une erreur »** (lot R1b, `src/registre/signaler.ts`): every document's panel links
-  its record's form (`/registre/contrat/<affaire>?doc=<id>#signaler`), the record has the button
+  its record's form (`/registre/contrat/<affaire>?doc=<id>#signaler`), on a phone the row unfolded
+  by a touch (Documents, Autorisations) with « Voir l'arrêté » or the source; the record has the button
   beside « Copier la référence »; a click opens the form in a dialog: what is wrong (nine
   choices), the correction, an optional source and contact, no account; posted to
   `POST /api/registre/signalement` (`pipeline/lacarte/api/registre.py`). A reviewer accepts or
   refuses it in `/revue` « Registre »; an accepted correction is applied at the next build and
-  the record says « Corrigé le <date> », the value read now and the source's value struck
+  the record, and the document's panel, say « Corrigé le <date> », the value read now and the source's value struck
   (`src/registre/corrige.ts`). The decrees that could not be read entirely are counted on the home
   and listed on the coverage page with what failed; an unreadable camera count counts in the
   decrees, never in the cameras.
@@ -1800,7 +1804,7 @@ mockup's render, outside the repository (no bench script yet: « — »).
 Mockups: the direction mockups kept in `design/registre/maquettes/` (CarteTemps-grand,
 Contrat-grand, Entreprise-grand, Acheteur-grand, Departement-grand, Glossaire), their renders in
 `design/registre/captures/` (1 280 px, light and dark). Test data: the CI extract of the pilot
-(`tests/fixtures/registre/`, `lacarte-registre importer-pilote` then `construire`): it has no
+(`tests/fixtures/registre/`, `lacarte-registre importer-pilote` then `construire --sans-corrections`): it has no
 period of flight, no duration, no offer and no linked buyer, so the states that need them were
 seen on synthetic data in the tests only (« synthetic »). Compared with the captures at 1 280 and
 390, light and dark, in a cloud session; the captures beside the boards on the real data are the
@@ -1828,13 +1832,15 @@ owner's machine's to make (« — »).
 | `reg-contrat-aut` | A decree without a commune: its département, why it was not read entirely, the line on decrees read by a program, « Voir l'arrêté » | registre/vues/contrat.ts | Contrat-grand | `/registre/contrat/75-2025-06-19-00003` | — | yes |
 | `reg-contrat-aut-commune` | A decree attached to a commune: the address replaced by its commune's Autorisations at its dossier, the record never drawn | registre/vues/contrat.ts donnees | IMPROVISED (DECISIONS 2026-10-29) | `/registre/contrat/69-20083026` | — | yes |
 | `reg-contrat-corrige` | A document corrected in /revue: under « Ce que dit … », « Corrigé le <date> », the field and the value read now, « publié par la source : » and its value struck | registre/corrige.ts; registre/vues/contrat-outils.ts | IMPROVISED (DECISIONS 2026-10-29) | web/tests/registre-corrige.test.ts; a local data/registre/corrections.yaml | — | yes |
+| `reg-panel-corrige` | A corrected document's row hovered, focused or touched: the panel's rich line « Corrigé le <date> », the field, the value read now and the source's struck (Autorisations, Documents, the register's list) | registre/vues/socle.html (det.corr); registre/corrige.ts | IMPROVISED (DECISIONS 2026-10-29) | a local data/registre/corrections.yaml (a decree of Mions corrected) | — | yes |
+| `reg-row-phone-links` | On a phone, a document's row touched: it unfolds with « Voir l'arrêté (recueil de la préfecture) » or « Source officielle → », and « Signaler une erreur », 44 px targets; folded, the links are not rendered; hidden on a wide screen (the panel has them) | registre/vues/documents.ts, autorisations.ts; registre.css (td.liens-tel) | IMPROVISED (DECISIONS 2026-10-29) | `/registre/commune/69283/documents`, 390 px, a row | — | yes |
 | `reg-signaler` | « Signaler une erreur »: the dialog over the page (« Document <id> », the line on reading by a program, nine choices, the correction, the source, the contact, what the site keeps and « Confidentialité », Envoyer · Annuler); Escape or Annuler gives the focus back | registre/signaler.ts | IMPROVISED (no board) | a panel's « Signaler une erreur », or `/registre/contrat/<affaire>?doc=<id>#signaler` | — | yes |
 | `reg-signaler-sent` | Sent: « Merci : votre signalement est enregistré. Il sera relu avant d'être appliqué au registre. », Fermer | registre/signaler.ts | IMPROVISED | the API answering 201 | — | yes |
 | `reg-signaler-refused` | Not sent, said in the form (role status): nothing chosen or written, too many reports (429), closed (403 closed), a source or a contact refused (422), any other failure | registre/signaler.ts issue | IMPROVISED | web/tests/registre-signaler.test.ts | — | yes |
 | `reg-entreprise` | A company: its lead, four figures, the money year by year with the money line, « En cours aujourd'hui : N contrats » and « Ses plus gros contrats », « Ce qui ressort » (facts only), its customers by département and sortable, « Contrats signés à plusieurs », « Ses contrats »; the panel sticky under the tabs | registre/vues/entreprise.ts, entreprise-outils.ts; pipeline entreprise.py | Entreprise-grand (without its scatter) | `/registre/entreprise/431903954` | — | yes |
 | `reg-entreprise-detail` | The panel filled by a year, a contract or a customer (hovered, focused or touched) | registre/vues/entreprise-outils.ts | Entreprise-grand | the same, a bar | — | yes |
 | `reg-entreprise-ends-unknown` | No duration published: « En cours aujourd'hui : non connu », « N contrats n'ont pas de durée publiée » | registre/vues/entreprise-outils.ts | IMPROVISED | `/registre/entreprise/431903954` (extract) | — | yes |
-| `reg-entreprise-sole-trader` | A sole trader: « nom non publié », « Entreprise individuelle », no SIREN, no search link | registre/vues/entreprise-outils.ts | IMPROVISED (DECISIONS 2026-10-28) | web/tests/registre-entreprise.test.ts | — | yes |
+| `reg-entreprise-sole-trader` | A sole trader: no page (the build serves none, its address is « PAGE INTROUVABLE »); wherever a document names it, « entreprise individuelle, nom non publié », no link, no SIREN (the build's token `ei`), in no ranking, seller list nor export | registre/corpus.ts (entName, entHref); pipeline regles.py masquer_ei | IMPROVISED (DECISIONS 2026-10-29) | tests/test_registre_ei.py (two companies of the extract made sole traders); web/tests/registre-ei.test.ts | — | yes |
 | `reg-entreprise-one` | The single cases in words: every contract counted, every contract shared, no modification, one customer | registre/vues/entreprise-outils.ts | IMPROVISED | web/tests/registre-entreprise.test.ts | — | yes |
 | `reg-acheteur` | A buyer: its tag, title and lead, four figures and the money line, the frieze with its legend, the sortable contracts, « Qui vend ici », the calls for tenders, « Aussi : <linked buyer> », the panel | registre/vues/acheteur.ts, acheteur-outils.ts | Acheteur-grand | `/registre/acheteur/256900994` | — | yes |
 | `reg-acheteur-no-duration` | No published duration: a mark at the signature, not a bar; « La durée de ces contrats n'est pas publiée… » | registre/vues/acheteur.ts | IMPROVISED | `/registre/acheteur/256900994` (extract) | — | yes |
@@ -2267,7 +2273,7 @@ the rows below are what R1b adds.
 | CarteTemps-grand: always a frieze | no frieze and a sentence saying why when there is no slot | data that does not fit (the extract has no period; a commune without any) |
 | CarteTemps-grand: « contour et cours d'eau simplifiés · glisser pour tourner » | « glisser pour tourner · molette pour zoomer »; no hint nor N without a map | the real map is not simplified |
 | CarteTemps-grand: « auj. » at the right edge | at today's place | a slot may end after today |
-| CarteTemps-grand: every volume drawn, the indicative ones dashed | an indicative volume shown when pointed at or selected (carte3d « survol », lot R1a) | not yet decided (question to the owner, lot R1b's report) |
+| CarteTemps-grand: every volume drawn, the indicative ones dashed | an indicative volume shown when pointed at or selected (carte3d « survol », lot R1a) | the owner's decision in v10: Lyon's map was unreadable with every zone and its label (DECISIONS 2026-10-29) |
 | CarteTemps-grand: « Lire » always active | disabled under prefers-reduced-motion | WCAG 2.3.3 (the prototype's own rule) |
 | Commune-grand (Paris): a ringed point per camera at every count | beyond 300 cameras a plain 3 px point, beyond 2,000 the filmed streets over a light density, in the whole view | DECISIONS 2026-10-29 (5,653 ringed points covered the commune) |
 | Contrat-grand: « jusqu'à 215 000 € au maximum », « au maximum, hors taxes », « Montant maximum » | « un contrat de 215 000 € », « prévus au contrat, hors taxes », « Montant » | DECISIONS 2026-10-28 « Discreet mentions » |
@@ -2301,4 +2307,4 @@ the rows below are what R1b adds.
 | Glossaire: the word reached by an anchor not marked | marked (`.entry.on`), focused | the owner: the anchor shows its word |
 | (no board) « Signaler une erreur » | a dialog in the kit's vocabulary (.modal of R1a's request dialog) | no board draws it |
 | (no board) a page whose subject the register does not hold | « PAGE INTROUVABLE » | DECISIONS 2026-10-29 |
-| Every view at 390 px: the panel's links | not reachable on a phone (R1a's panel band shows its kicker and title only); the record's « Signaler une erreur » button is | lot R1a's phone panel; to settle with the owner |
+| Every view at 390 px: the panel's links | in the row unfolded by a touch (Documents, Autorisations): « Voir l'arrêté » or the source, « Signaler une erreur »; the panel band shows its kicker and title only | the phone's panel is a band (lot R1a); the owner's decision (DECISIONS 2026-10-29) |
