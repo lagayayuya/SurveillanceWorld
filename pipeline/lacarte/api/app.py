@@ -3771,8 +3771,12 @@ def review_stats():
 ADMIN_ACTIONS = (
     "decide", "undo", "on_site", "role", "disable", "enable", "cut", "reset", "delete",
     "export_account", "export_csv", "suspend", "hide", "unhide", "setting", "signin_refused",
+    "registre_accept", "registre_refuse",
 )  # fmt: skip
 DECISION_ACTIONS = ("decide", "undo", "on_site")  # on a contribution: its camera
+# A decision on a report of the register (migration 026, lacarte.api.registre): `target` is
+# the document's id. « Décisions » in the journal, with those on contributions.
+REGISTRE_ACTIONS = ("registre_accept", "registre_refuse")
 CAMERA_ACTIONS = ("hide", "unhide")  # on a camera: `target` is its id
 LOG_TYPES = ("all", "contributions", "decisions", "admin")
 LOG_PAGE = 100
@@ -3806,10 +3810,10 @@ def journal_keys(conn, kind: str, actor: str | None, cursor: tuple | None, n: in
     where, args = ["true"], []
     if kind == "decisions":
         where.append("action = ANY(%s)")
-        args.append(list(DECISION_ACTIONS))
+        args.append([*DECISION_ACTIONS, *REGISTRE_ACTIONS])
     elif kind == "admin":
         where.append("NOT action = ANY(%s)")
-        args.append(list(DECISION_ACTIONS))
+        args.append([*DECISION_ACTIONS, *REGISTRE_ACTIONS])
     if actor:
         where.append("lower(actor) = lower(%s)")
         args.append(actor)
@@ -3920,9 +3924,10 @@ def review_log(
     """« Journal » (administrators), an activity feed: the journal's lines and the sends
     received, by day newest first, in a day the journal's lines (newest first) then the
     sends (camera, send), 100 a page. `type`: all, contributions, decisions (decide, undo,
-    on_site), admin (the other actions); `actor` a pseudonym (any case; for a send its
-    author); `before` the `next` of the previous page. No time of day: contributions have
-    none. An entry on a camera carries the queue's label of it (labels())."""
+    on_site, and the register's registre_accept, registre_refuse), admin (the other
+    actions); `actor` a pseudonym (any case; for a send its author); `before` the `next` of
+    the previous page. No time of day: contributions have none. An entry on a camera carries
+    the queue's label of it (labels())."""
     cursor = read_cursor(before) if before else None
     n = LOG_PAGE + 1
     with pool.connection() as conn:

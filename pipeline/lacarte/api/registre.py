@@ -39,11 +39,48 @@ even signed in; the day only, never a time), and nothing is logged of a report.
                                                 them apart), one per account signed in
       500 {"error": "internal"}
 
-/revue (« Registre », a reviewer's or an administrator's privileged session, app.staff):
-- GET /api/review/registre: the reports waiting, one row per reported document.
-- POST /api/review/registre: a decision, accept (with the field and value the build applies
-  and the reason) or refuse; journalled; review_per_minute as every review decision.
-Their contracts are on the routes below.
+/revue « Registre » (a reviewer's or an administrator's privileged session, app.staff;
+anything else 401 privileged, as every /api/review/* route):
+
+GET /api/review/registre — the reports waiting, one row per reported document, the one
+waiting longest first:
+    200 {"pending": 3,                         reports waiting, every document
+         "documents": [{
+           "evenement": "…~0", "affaire": "…",   the page: /registre/contrat/<affaire>
+           "age_days": 12,                     its oldest report's age, in days
+           "reports": [{"id": "<uuid>", "category": "date", "correction": "…",
+                        "source": "https://…" | null, "contact": "…" | null,
+                        "received_on": "2026-10-17", "age_days": 12}, …]  oldest first
+         }, …],
+         "fields": ["montant", "date", …]}     what an acceptance may change (FIELDS)
+
+POST /api/review/registre — a decision on one report (Origin and JSON, as every write):
+    {"id": "<uuid>", "decision": "accept" | "refuse",
+     "field": "montant",      accept only: what the build changes on the document — montant,
+                              date, entreprises, insee, beneficiaire, cameras or affaire
+     "value": 12000,          accept only: what it puts there, by field: a number of euros
+                              (0 to 1e11), "YYYY-MM-DD", a list of SIREN (9 digits each,
+                              distinct, at most 50), an INSEE code, a name (one line, 200
+                              characters), a whole number of cameras, an affaire's id
+     "reason": "…"}           accept only: why (1 to 500 characters, one line), the
+                              correction's rationale in the build
+    Answers:
+      200 {"id": …, "state": "accepted", "field": …, "value": …}  (the value as kept)
+      200 {"id": …, "state": "refused"}
+      the reader's contact is erased by either; the decision is journalled
+      (registre_accept with {report, field}, registre_refuse with {report}; the document's
+      id as target, never the reader's text)
+      422 {"error": "invalid", "fields": [...]}  a field missing or wrong (an acceptance
+                                                 without field, value or reason names them)
+      422 {"error": "value"}                     the value does not fit the field
+      422 {"error": "uuid"} / {"error": "uuid_v4_only"}
+      404 {"error": "unknown_report"}            no such report (or deleted since)
+      409 {"error": "decided"}                   decided already (by someone else)
+      429 {"error": "rate"}                      limits.review_per_minute, the bucket every
+                                                 review decision shares
+An accepted report is a correction: `lacarte-registre corrections exporter` writes it to
+data/registre/corrections.yaml (db/export_registre_corrections.sql), which `lacarte-registre
+construire` applies.
 """
 
 import unicodedata
@@ -53,6 +90,8 @@ from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
 from fastapi import Depends, Request
+from fastapi.responses import JSONResponse
+from psycopg.types.json import Jsonb
 from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
 
 from lacarte import participation
@@ -110,6 +149,10 @@ Contact = Annotated[str, Field(max_length=4 * CONTACT_MAX),
                     AfterValidator(bounded(CONTACT_MAX, lines=False))]  # fmt: skip
 
 
+Reason = Annotated[str, Field(max_length=4 * REASON_MAX),
+                   AfterValidator(bounded(REASON_MAX, lines=False))]  # fmt: skip
+
+
 class ReportIn(BaseModel):
     evenement: str = Field(pattern=ID_PATTERN)
     affaire: str = Field(pattern=ID_PATTERN)
@@ -117,6 +160,33 @@ class ReportIn(BaseModel):
     correction: Correction
     source: Annotated[Source | None, BeforeValidator(optional)] = None
     contact: Annotated[Contact | None, BeforeValidator(optional)] = None
+
+
+class DecisionIn(BaseModel):
+    id: str = Field(max_length=40)
+    decision: Literal["accept", "refuse"]
+    field: Literal[corrections.FIELDS] | None = None
+    value: Any = None
+    reason: Annotated[Reason | None, BeforeValidator(optional)] = None
+
+
+def pending(conn, today: date) -> dict:
+    """GET /api/review/registre's answer: the reports waiting, by document."""
+    rows = conn.execute(
+        "SELECT id::text, evenement, affaire, category, correction, source, contact,"
+        " received_on FROM registre_reports WHERE state = 'pending'"
+        " ORDER BY received_on, evenement, id"
+    ).fetchall()
+    docs: dict[str, dict] = {}
+    for rid, ev, aff, cat, corr, src, contact, day in rows:
+        age = (today - day).days
+        d = docs.setdefault(ev, {"evenement": ev, "affaire": aff, "age_days": age,
+                                 "reports": []})  # fmt: skip
+        d["reports"].append({"id": rid, "category": cat, "correction": corr, "source": src,
+                             "contact": contact, "received_on": day.isoformat(),
+                             "age_days": age})  # fmt: skip
+    return {"pending": len(rows), "documents": list(docs.values()),
+            "fields": list(corrections.FIELDS)}  # fmt: skip
 
 
 def install(api: ModuleType) -> None:
@@ -144,3 +214,52 @@ def install(api: ModuleType) -> None:
                  body.contact, date.today()),
             )  # fmt: skip
         return {"ok": True}
+
+    @r.get("/api/review/registre", dependencies=[Depends(api.staff)])
+    def review_registre():
+        """« Registre » in /revue: the reports waiting (the contract above)."""
+        with api.pool.connection() as conn:
+            return pending(conn, date.today())
+
+    @r.post("/api/review/registre")
+    def review_registre_decide(body: DecisionIn,
+                               who: Annotated[Account, Depends(api.staff)]):  # fmt: skip
+        """Accept a report (the field and value the build applies, and why) or refuse it;
+        either erases the reader's contact (the contract above)."""
+        rid = api.v4(body.id)
+        accept = body.decision == "accept"
+        value = None
+        if accept:
+            missing = [k for k in ("field", "value", "reason") if getattr(body, k) is None]
+            if missing:
+                return JSONResponse({"error": "invalid", "fields": missing}, status_code=422)
+            try:
+                value = corrections.value(body.field, body.value)
+            except ValueError:
+                api.fail(422, "value")
+        api.review_rate(who)
+        with api.pool.connection() as conn, conn.transaction():
+            row = conn.execute("SELECT evenement, state FROM registre_reports WHERE id = %s"
+                               " FOR UPDATE", (rid,)).fetchone()  # fmt: skip
+            if row is None:
+                api.fail(404, "unknown_report")
+            if row[1] != "pending":
+                api.fail(409, "decided")
+            if accept:
+                conn.execute(
+                    "UPDATE registre_reports SET state = 'accepted', decided_on = %s,"
+                    " decided_by_id = %s, decided_by = %s, field = %s, value = %s,"
+                    " reason = %s, contact = NULL WHERE id = %s",
+                    (date.today(), who.id, who.pseudonym, body.field, Jsonb(value),
+                     body.reason, rid),
+                )  # fmt: skip
+                api.journal(conn, who, "registre_accept", target=row[0],
+                            detail={"report": rid, "field": body.field})  # fmt: skip
+                return {"id": rid, "state": "accepted", "field": body.field, "value": value}
+            conn.execute(
+                "UPDATE registre_reports SET state = 'refused', decided_on = %s,"
+                " decided_by_id = %s, decided_by = %s, contact = NULL WHERE id = %s",
+                (date.today(), who.id, who.pseudonym, rid),
+            )
+            api.journal(conn, who, "registre_refuse", target=row[0], detail={"report": rid})
+        return {"id": rid, "state": "refused"}
