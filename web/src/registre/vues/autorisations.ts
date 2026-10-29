@@ -477,7 +477,7 @@ class Autorisations extends Vue<Props, State> {
 
     // drones, body cameras, algorithmic analysis
     const lyonDr = D.f.stats.communes["69123"]?.dr ?? 0;
-    const carte = `/?insee=${insee}`;
+    const carte = communeHref(insee, "carte");
     const list = d.autres
       .slice()
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
@@ -529,7 +529,7 @@ class Autorisations extends Vue<Props, State> {
         lyonDr && insee !== "69123"
           ? t("autorisations.exemple_lyon", { arr: t("n.arrete", { n: lyonDr }) })
           : "",
-      exHref: "/?insee=69123",
+      exHref: communeHref("69123", "carte"),
       list,
       multi,
     };

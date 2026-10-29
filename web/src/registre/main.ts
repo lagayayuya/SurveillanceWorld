@@ -32,6 +32,7 @@ const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>
   commune: () => import("./vues/commune.ts"),
   documents: () => import("./vues/documents.ts"),
   autorisations: () => import("./vues/autorisations.ts"),
+  carte: () => import("./vues/carte.ts"),
   couverture: () => import("./vues/couverture.ts"),
   departement: () => import("./vues/departement.ts"),
   glossaire: () => import("./vues/glossaire.ts"),

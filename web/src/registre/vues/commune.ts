@@ -584,7 +584,7 @@ class Commune extends Vue<Props, State> {
       det,
       nDocs: s.all.length,
       lien: {
-        carte: `/?insee=${encodeURIComponent(insee)}`,
+        carte: communeHref(insee, "carte"),
         dossier: P.main
           ? communeHref(insee, `autorisations/${encodeURIComponent(P.main.id)}`)
           : auts,

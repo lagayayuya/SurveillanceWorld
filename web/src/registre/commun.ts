@@ -272,8 +272,7 @@ export function tete(d: Donnees, cur: "ess" | "doc" | "aut" | "carte") {
       t("commun.onglet_autorisations", { n: fr(d.all.filter(isArr).length) }),
       communeHref(insee, "autorisations"),
     ],
-    // Carte et drones is lot R1b's: the map's own page on the commune until then
-    ["carte", t("commun.onglet_carte"), `/?insee=${insee}`],
+    ["carte", t("commun.onglet_carte"), communeHref(insee, "carte")],
   ];
   return {
     insee,
