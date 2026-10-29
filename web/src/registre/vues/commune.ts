@@ -153,6 +153,8 @@ function prepare(d: Donnees): Prep {
       (a) =>
         a.insee === insee &&
         a.kind === "contrat_non_retrouve" &&
+        // a notice the export left undated cannot be placed in time (the CI extract keeps no `debut`)
+        typeof a.debut === "string" &&
         a.events.some((i) => ev(i)?.t === "avis"),
     )
     .sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
