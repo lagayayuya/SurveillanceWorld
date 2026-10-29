@@ -258,8 +258,7 @@ class Chiffres extends Vue<Props, State> {
     const drones = drl.map(([k, n]) => ({
       l: R.communes[k].nom,
       n: fr(n),
-      // Carte et drones is lot R1b's: the map's own page on the commune until then
-      href: `/?insee=${k}`,
+      href: communeHref(k, "carte"),
       bar: `position: absolute; left: 0; top: 0; bottom: 0; width: ${Math.round((n / dmx) * 100)}%; background: var(--drone)`,
     }));
 
