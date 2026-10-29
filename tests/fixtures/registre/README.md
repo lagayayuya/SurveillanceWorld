@@ -14,7 +14,8 @@ What it holds, its records trimmed to the fields the rules read:
   State's grants listed by the préfecture du Rhône;
 - the lots and doublons, buyers, companies, communes, intercommunalities and drone zones
   (ids and review status only, no outline) these documents name; Mions' and the Sytral's
-  short labels, written for the project.
+  short labels, the Sytral's linked buyer (Sytral Mobilités, its own SIREN) and its page's
+  lead, written for the project.
 
 Every beneficiary of an act that is not a public body is masked (`[non retenu]`); companies
 are legal persons as named in SIRENE.

@@ -18,3 +18,5 @@ window.LIBELLES = {
   "20009638600020202625M128_45233292": { court: "caméras de voie sur la ligne A : fourniture, installation, raccordement", titre: "Caméras de voie sur la ligne A : fourniture, installation, raccordement" },
 };
 window.NOMS_COURTS = {"256900994":"Sytral (transports lyonnais)"};
+window.ACHETEURS_LIES = {"256900994":"200096386","200096386":"256900994"};
+window.LEADS_ACHETEURS = {"256900994":{"sujet":"L'autorité des transports lyonnais","pour":"pour filmer son réseau (métro, tramways, parc relais)"}};

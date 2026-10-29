@@ -348,21 +348,58 @@ def entreprise_file(ctx: Context, siren: str) -> dict[str, Any]:
     }
 
 
+def _linked_affaires(reg: Registre, affaires: Iterable[str]) -> list[str]:
+    """The affaires a buyer's affaires point to: the notices probably behind a contract
+    (`avis_probables`) and the contract probably behind a notice (`contrat_probable`)."""
+    out: list[str] = []
+    for a in affaires:
+        x = reg.affaires.get(a) or {}
+        out += [k for k in x.get("avis_probables") or [] if k in reg.affaires]
+        if (k := x.get("contrat_probable")) and k in reg.affaires:
+            out.append(k)
+    return out
+
+
 def acheteur_file(ctx: Context, siren: str) -> dict[str, Any]:
+    """A buyer's page: its documents, those of the buyer linked to it (one network, two
+    SIRENs: ACHETEURS_LIES) and the figures the page reads, decided here: its commune's
+    page when the buyer is a commune whose page exists, a central purchasing body, the
+    département's name."""
     reg = ctx.reg
     evs = [e for e in reg.evenements if reg.buyer(e) == siren]
     p = reg.pilote
+    a = ctx.acheteurs.get(siren) or {}
+    lie = p.get("ACHETEURS_LIES", {}).get(siren)
+    lie_stats = ctx.buy_stats.get(lie or "")
+    cl = Closure(ctx).add(evs)
+    if lie_stats:
+        cl.add(reg.by_id[i] for i in lie_stats["contrats"])
+        cl.buyers.add(lie)
+    siege = a.get("insee_siege")
+    if siege in reg.communes:
+        cl.communes.add(siege)
+    body = cl.close(_linked_affaires(reg, {e["affaire"] for e in evs}))
     return {
         "v": 1,
         "acheteur": {
             "siren": siren,
-            **(ctx.acheteurs.get(siren) or {}),
+            **a,
             "nom_court": ctx.nom_court(siren),
-            "lie": p.get("ACHETEURS_LIES", {}).get(siren),
+            "dep_nom": ctx.dep_names.get(a.get("dep") or ""),
+            # a commune buys for itself: its page is the commune's
+            "page_commune": siege
+            if a.get("categorie") == "commune" and siege in reg.communes
+            else None,
+            # it signs ceilings for other buyers (its contracts stay out of the totals)
+            "centrale": any(
+                e.get("hors_totaux") == "centrale" for e in evs if e["t"] == "attribution"
+            ),
+            "lie": lie,
             "lead": p.get("LEADS_ACHETEURS", {}).get(siren),
         },
-        **Closure(ctx).add(evs).close(),
+        **body,
         "stats": ctx.buy_stats.get(siren),
+        "stats_lie": lie_stats,
     }
 
 
