@@ -44,6 +44,8 @@ export type Evenement = {
   insee0?: string;
   non_lu?: string[];
   nom_publie?: boolean;
+  /** what a correction accepted in /revue changed: the source's value and the day (corrige.ts) */
+  corrige?: Record<string, { source: unknown; le: string }>;
   [field: string]: unknown;
 };
 

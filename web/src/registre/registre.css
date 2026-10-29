@@ -986,6 +986,11 @@ table.t tr.r.on td {
   cursor: pointer;
 }
 
+/* a value a correction replaced (corrige.ts): the source's, struck, named in words beside it */
+.barre {
+  text-decoration: line-through;
+  color: var(--muted, #555);
+}
 /* « Signaler une erreur » (signaler.ts): the kit's labels, fields of the page's width, the choices
    one per line, each a 44 px target */
 .modal .signaler .ref {

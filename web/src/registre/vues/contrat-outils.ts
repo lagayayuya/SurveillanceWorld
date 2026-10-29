@@ -18,6 +18,7 @@ import {
   titre,
   typ,
 } from "../corpus.ts";
+import { corrections } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
 import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "../format.ts";
@@ -790,6 +791,21 @@ export function fiche(f: Fichier): Fiche | null {
     };
     titreDoc = t("contrat.doc_aut", { date: e0 ? shortDate(e0.date) : "" });
   }
+
+  // the corrections accepted in /revue: when, what the page reads now, the source's value struck
+  const noms = {
+    entreprise: (siren: string) => entName(L, siren),
+    commune: (k: string) => f.communes[k]?.nom ?? k,
+  };
+  for (const e of [main, ...f.evenements.filter((x) => x !== main)])
+    if (e)
+      for (const c of corrections(e, noms))
+        dl.push({
+          k: c.k,
+          v: e === main ? c.v : [`${reference(e)} · `, ...(c.v as RichItem[])],
+          note: "",
+          m: "",
+        });
 
   // what the page's marks mean, said once in the panel at rest
   const marks = [
