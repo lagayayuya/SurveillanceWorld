@@ -653,6 +653,30 @@ table.t tr.r.on td {
 .v-entreprise .bar2.on {
   background: var(--soft);
 }
+/* the panel stays in view below the sticky section tabs, and a section opened by its tab starts below them */
+.v-entreprise .panel {
+  top: 74px;
+}
+.v-entreprise section[id] {
+  scroll-margin-top: 74px;
+}
+/* the phone: the years' nine columns fit (their figures smaller, no wrap); the partners in one column */
+@media (max-width: 959px) {
+  .v-entreprise [role="group"],
+  .v-entreprise [role="group"] + div {
+    gap: 2px !important;
+  }
+  .v-entreprise [role="group"] button > span:first-child {
+    font-size: 10px !important;
+    white-space: nowrap;
+  }
+  .v-entreprise [role="group"] + div {
+    font-size: 11px;
+  }
+  .v-entreprise #partenaires ul {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
 
 /* --- acheteur (its mockup's own rules) --- */
 .v-acheteur .gl {

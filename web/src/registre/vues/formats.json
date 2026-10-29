@@ -133,5 +133,21 @@
   },
   "glossaire.exemple": {
     "g_ex": "g.ex"
+  },
+  "entreprise.en_cours_aujourd_hui": {
+    "nAct": "nAct"
+  },
+  "entreprise.fin_prevue_date_de_signature": {
+    "doublonNote": "doublonNote"
+  },
+  "entreprise.les_premiers_des_par_montant": {
+    "nBig": "nBig",
+    "nCon": "nCon"
+  },
+  "entreprise.ses_clientes": {
+    "nCli": "nCli"
+  },
+  "entreprise.clientes_de_triables_par_colonne": {
+    "nom": "nom"
   }
 }
