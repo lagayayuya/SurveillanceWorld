@@ -132,7 +132,7 @@ test("the lead and the facts say what the build found, nothing more", () => {
   const fs = faits(F, CT).map((f) => richText(f));
   assert.deepEqual(fs, [
     `Les mêmes montants reviennent : 300${N}000 € à Une et Deux.`,
-    "Une seule offre pour 1 contrat sur les 1 où le nombre d'offres est publié.",
+    "Une seule offre pour 1 contrat sur le seul où le nombre d'offres est publié.",
   ]);
   // every place is a link to its buyer's page
   const links = JSON.stringify(faits(F, CT)[0]);
@@ -150,4 +150,27 @@ test("a sole trader is never named, nor its number shown", () => {
   assert.equal(v.filIci, "nom non publié");
   assert.equal(v.sous, "Entreprise individuelle");
   assert.equal(v.parcourir, "/registre/");
+});
+
+test("one buyer, every contract shared, no modification, no known end: said as such", () => {
+  const F = fichier();
+  // SYNTHETIC: keep a and b only, both signed with another company, no duration published
+  F.stats = { ...(F.stats as NonNullable<FichierEntreprise["stats"]>), contrats: ["a~0", "b~0"] };
+  for (const e of F.evenements) e.entreprises = ["100000001", "100000002"];
+  F.page = {
+    ...F.page,
+    fins: {
+      "a~0": { debut: "2024-03-01", duree: null, fin: null },
+      "b~0": { debut: "2025-05-01", duree: null, fin: null },
+    },
+    en_cours: [],
+    sans_fin: 2,
+    modifications: 0,
+  };
+  const v = new Entreprise({ siren: "100000001", F }).renderVals() as Record<string, unknown>;
+  // no end known: not « 0 contrat »
+  assert.equal(v.nAct, "non connu");
+  assert.equal(v.bigPhrase, "Ses 2 contrats, par montant.");
+  assert.equal(v.parPhrase, "Ses 2 contrats ont été signés avec d'autres entreprises.");
+  assert.equal(v.docsPhrase, "2 contrats, avec la cliente, le montant et la source.");
 });

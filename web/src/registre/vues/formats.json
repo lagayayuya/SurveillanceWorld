@@ -140,10 +140,6 @@
   "entreprise.fin_prevue_date_de_signature": {
     "doublonNote": "doublonNote"
   },
-  "entreprise.les_premiers_des_par_montant": {
-    "nBig": "nBig",
-    "nCon": "nCon"
-  },
   "entreprise.ses_clientes": {
     "nCli": "nCli"
   },

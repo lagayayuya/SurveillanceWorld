@@ -60,7 +60,7 @@
           </div>
           <div style="display: flex; flex-direction: column; gap: 10px">
             <h3 class="h3" style="min-height: 44px; display: flex; align-items: center">{{t.entreprise.ses_plus_gros_contrats}}</h3>
-            <p style="margin: 0; color: var(--muted)">{{f.entreprise.les_premiers_des_par_montant}}</p>
+            <p style="margin: 0; color: var(--muted)">{{bigPhrase}}</p>
             <div style="display: flex; flex-direction: column; border-top: 2px solid var(--fg)">
               <sc-for list="{{big}}" as="b" hint-placeholder-count="8">
                 <button class="{{b.cls}}" style="grid-template-columns: 180px minmax(0, 1fr)" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.hover}}">

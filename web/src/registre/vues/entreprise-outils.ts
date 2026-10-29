@@ -195,7 +195,7 @@ export function faits(F: FichierEntreprise, CT: Ct[]): RichItem[][] {
     out.push([
       strong(t("entreprise.fait_memes_montants")),
       " : ",
-      ...groups.flatMap((g, i) => (i ? ["; ", ...g] : g)),
+      ...groups.flatMap((g, i) => (i ? ["\u00a0; ", ...g] : g)),
       ".",
     ]);
   }
@@ -241,9 +241,10 @@ export function buyerCat(F: FichierEntreprise, c: Cl): string {
     : t("chiffres.cat_acheteur");
 }
 
-/** An amount in millions, one decimal, as the mockup's bars write them (« 5,2 M€ »). */
+/** An amount in millions, one decimal, as the mockup's bars write them (« 5,2 M€ »); below
+ * 100 000 € in euros (never « 0,0 M€ »); none: « — ». */
 const meur = (n: number): string =>
-  n ? t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") }) : "—";
+  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
 export type Props = { siren: string; F: FichierEntreprise };
 export type State = BaseState & { sort: string; dir: number; all: boolean; allAct: boolean };
@@ -564,9 +565,16 @@ export class Entreprise extends Vue<Props, State> {
       yearAlt: t("entreprise.annees_alt", { de: yrs[0], a: yrs[yrs.length - 1] }),
       act,
       big,
-      nBig: big.length,
-      nCon: fr(counted.length),
-      nAct: count(actAll.length, "contrat"),
+      bigPhrase:
+        big.length === counted.length
+          ? t("entreprise.big_tous", { n: big.length })
+          : t("entreprise.les_premiers_des_par_montant", {
+              nBig: big.length,
+              nCon: fr(counted.length),
+            }),
+      // none running while some ends are unknown: not a zero
+      nAct:
+        !actAll.length && P.sans_fin ? t("entreprise.n_inconnu") : count(actAll.length, "contrat"),
       actMore: actAll.length > 8,
       actLabel: S.allAct
         ? t("entreprise.reduire")
@@ -575,7 +583,7 @@ export class Entreprise extends Vue<Props, State> {
       sansFin: P.sans_fin ? t("entreprise.sans_fin", { n: P.sans_fin }) : "",
       faits: faits(F, CT),
       faitsShow: P.faits.identiques.length > 0 || !!P.faits.rapproche || !!of?.renseignes,
-      nCli: fr(CL.length),
+      nCli: CL.length,
       deps,
       depAlt: t("entreprise.deps_alt", {
         liste: dl.map(([d, n]) => `${depLabel(d)} ${fr(n)}`).join(", "),
@@ -588,15 +596,19 @@ export class Entreprise extends Vue<Props, State> {
       doublonNote: copies
         ? ` ${t("entreprise.doublon_note", { contrats: count(CT.length, "contrat"), lignes: CT.length + copies })}`
         : "",
-      parPhrase: nPar
-        ? t("entreprise.par_phrase", { n: nPar, total: fr(CT.length) })
-        : t("entreprise.par_aucun"),
+      parPhrase: !nPar
+        ? t("entreprise.par_aucun")
+        : nPar === CT.length
+          ? t("entreprise.par_tous", { n: nPar })
+          : t("entreprise.par_phrase", { n: nPar, total: fr(CT.length) }),
       partners,
-      docsPhrase: t("entreprise.docs_phrase", {
-        docs: count(nDocs, "document"),
-        contrats: count(CT.length, "contrat"),
-        mods: t("entreprise.n_modifications", { n: P.modifications }),
-      }),
+      docsPhrase: P.modifications
+        ? t("entreprise.docs_phrase", {
+            docs: count(nDocs, "document"),
+            contrats: count(CT.length, "contrat"),
+            mods: t("entreprise.n_modifications", { n: P.modifications }),
+          })
+        : t("entreprise.docs_sans_modification", { contrats: count(CT.length, "contrat") }),
       parcourir: qNom ? `/registre/?${new URLSearchParams({ q: qNom })}` : "/registre/",
       det,
     };

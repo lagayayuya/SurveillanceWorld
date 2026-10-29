@@ -676,6 +676,13 @@ table.t tr.r.on td {
   .v-entreprise #partenaires ul {
     grid-template-columns: minmax(0, 1fr) !important;
   }
+  /* a long name wraps, its count stays on one line beside it */
+  .v-entreprise #partenaires li {
+    gap: 12px;
+  }
+  .v-entreprise #partenaires li > span {
+    white-space: nowrap;
+  }
 }
 
 /* --- acheteur (its mockup's own rules) --- */
