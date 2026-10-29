@@ -1,0 +1,72 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 10px">
+    <dc-include src="fil"></dc-include>
+    <div style="display: flex; gap: 8px; align-items: center"><span class="tag" style="background: #a8d8ff">{{t.contrat.document}}</span><span class="b" style="{{badge.s}}">{{badge.l}}</span></div>
+    <h1 class="h1" style="font-size: 60px">{{titre}}</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{sous.a}}<sc-if value="{{sous.m}}"><sup role="img" aria-label="{{sous.m}}" title="{{sous.m}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if>{{sous.b}}</p>
+    <p class="lead" style="margin-top: 10px">{{{lead}}}</p>
+    <div class="kpis" style="margin-top: 8px">
+      <sc-for list="{{kpis}}" as="k"><div><div class="kv">{{k.v}}<sc-if value="{{k.m}}"><sup role="img" aria-label="{{k.m}}" title="{{k.m}}" style="margin-left: 2px; font-size: 20px; color: var(--muted)">?</sup></sc-if></div><div>{{k.l}}</div></div></sc-for>
+    </div>
+  </div>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 40px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 52px; min-width: 0">
+
+      <section aria-labelledby="c-par" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="c-par" class="h2">{{parTitre}}</h2>
+          <button class="ibtn" onClick="{{tgl.par}}" aria-expanded="{{open.par}}" aria-label="{{t.contrat.comment_ces_documents_sont_relies}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.par}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.contrat.l_appel_d_offres_le}}</p></sc-if>
+        <div style="display: grid; grid-template-columns: {{grille}}; gap: 0; align-items: stretch">
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="4">
+            <button class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}">
+              <span class="b" style="{{s.badge}}; align-self: flex-start">{{s.type}}</span>
+              <span class="tw" style="font-size: 14px; color: var(--muted)">{{s.date}}<sc-if value="{{s.dm}}"><sup role="img" aria-label="{{s.dm}}" title="{{s.dm}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></span>
+              <strong style="line-height: 1.25">{{s.what}}<sc-if value="{{s.lm}}"><sup role="img" aria-label="{{s.lm}}" title="{{s.lm}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></strong>
+            </button>
+            <sc-if value="{{s.next}}" hint-placeholder-val="{{true}}"><span class="arrow" aria-hidden="true">→</span></sc-if>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: space-between; gap: 20px; margin-top: 4px">
+          <sc-if value="{{prec}}"><a href="{{prec.href}}" class="ghost"><span>{{prec.l}}<sc-if value="{{prec.m}}"><sup role="img" aria-label="{{prec.m}}" title="{{prec.m}}" style="margin-left: 2px; font-size: 12px">?</sup></sc-if></span></a></sc-if><sc-if value="{{noPrec}}"><span></span></sc-if>
+          <sc-if value="{{suiv}}"><a href="{{suiv.href}}" class="ghost"><span>{{suiv.l}}<sc-if value="{{suiv.m}}"><sup role="img" aria-label="{{suiv.m}}" title="{{suiv.m}}" style="margin-left: 2px; font-size: 12px">?</sup></sc-if></span></a></sc-if>
+        </div>
+      </section>
+
+      <section aria-labelledby="c-dit" style="display: flex; flex-direction: column; gap: 14px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="c-dit" class="h2">{{ditTitre}}</h2>
+          <button class="ibtn" onClick="{{tgl.max}}" aria-expanded="{{open.max}}" aria-label="{{t.contrat.comment_lire}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.max}}" hint-placeholder-val="{{false}}"><p class="note tw">{{maxNote}}</p></sc-if>
+        <dl class="f">
+          <sc-for list="{{dl}}" as="x"><dt>{{x.k}}</dt><dd>{{{x.v}}}<sc-if value="{{x.m}}"><sup role="img" aria-label="{{x.m}}" title="{{x.m}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if><sc-if value="{{x.note}}"> <span style="color: var(--muted)">{{x.note}}</span></sc-if></dd></sc-for>
+        </dl>
+        <sc-if value="{{argent}}"><p class="tw" style="margin: 0; font-size: 14px; color: var(--muted)">{{t.argent.enveloppe}}</p></sc-if>
+      </section>
+
+      <section aria-labelledby="c-src" style="display: flex; flex-direction: column; gap: 12px">
+        <h2 id="c-src" class="h2">{{t.contrat.sources}}</h2>
+        <table class="t">
+          <caption class="sr">{{t.contrat.les_documents_publics_de_ce}}</caption>
+          <thead><tr><th scope="col"><button>{{t.contrat.date}}</button></th><th scope="col"><button>{{t.contrat.document}}</button></th><th scope="col"><button>{{t.contrat.reference}}</button></th></tr></thead>
+          <tbody>
+            <sc-for list="{{src}}" as="r" hint-placeholder-count="3">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}"><td class="tw" style="white-space: nowrap">{{r.date}}<sc-if value="{{r.dm}}"><sup role="img" aria-label="{{r.dm}}" title="{{r.dm}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></td><td><span class="b" style="{{r.badge}}">{{r.type}}</span></td><td><sc-if value="{{r.url}}"><a href="{{r.url}}" class="tw">{{r.ref}} ↗</a></sc-if><sc-if value="{{r.texte}}"><span class="tw">{{r.ref}}</span></sc-if></td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <sc-if value="{{arretes}}"><p style="margin: 0; font-size: 14px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p></sc-if>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <button class="more" onClick="{{copier}}">{{copierL}}</button>
+          <button class="more" onClick="{{sig.ouvrir}}">{{sig.l}}</button>
+        </div>
+      </section>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

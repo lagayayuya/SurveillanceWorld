@@ -37,6 +37,7 @@ const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>
   glossaire: () => import("./vues/glossaire.ts"),
   entreprise: () => import("./vues/entreprise.ts"),
   acheteur: () => import("./vues/acheteur.ts"),
+  contrat: () => import("./vues/contrat.ts"),
   introuvable: () => import("./vues/introuvable.ts"),
 };
 
