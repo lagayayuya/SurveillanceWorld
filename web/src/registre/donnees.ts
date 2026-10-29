@@ -114,6 +114,10 @@ export type NonLu = {
   raisons: string[];
 };
 
+/** Thrown by a view's donnees() when what its path names is not in the register (an unknown
+ * département, company, buyer or document): the page shows « introuvable », not a load error. */
+export class Absent extends Error {}
+
 /** The JSON of a file under /data/registre/, asked once per page (kept while the page lives). */
 const cache = new Map<string, Promise<unknown>>();
 export function load<T>(file: string): Promise<T> {

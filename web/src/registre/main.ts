@@ -6,7 +6,7 @@
 import catalogue from "virtual:registre-catalogue";
 import { render } from "../messages.ts";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
-import { load } from "./donnees.ts";
+import { Absent, load } from "./donnees.ts";
 import { setMessages, t } from "./i18n.ts";
 import "./registre.css";
 import { backToMap, type Route, route } from "./routes.ts";
@@ -155,10 +155,18 @@ async function show(): Promise<void> {
   // 4.3 s → 3.8 s until its documents show); the view reads it from the same cache
   if ("insee" in r) void load(`commune/${r.insee}.json`).catch(() => {});
   const view = VUES[r.view] ?? VUES.introuvable;
-  if (!view) return;
+  if (!view || !VUES.introuvable) return;
+  const absent = VUES.introuvable;
   try {
-    const { default: m } = await view();
-    const props = { ...r, ...(m.donnees ? await m.donnees(r) : {}) } as Record<string, unknown>;
+    let { default: m } = await view();
+    let props: Record<string, unknown>;
+    try {
+      props = { ...r, ...(m.donnees ? await m.donnees(r) : {}) };
+    } catch (e) {
+      if (!(e instanceof Absent)) throw e;
+      ({ default: m } = await absent());
+      props = { view: "introuvable" };
+    }
     if (ask !== asked) return; // a later path was asked meanwhile
     mounted?.unmount();
     mounted = mount(root, m.Vue, props, m.template, { parts, afterRender, format });

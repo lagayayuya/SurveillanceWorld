@@ -9,7 +9,7 @@ import { etatDepartement } from "../collecte.ts";
 import { communeHref } from "../commun.ts";
 import { buyerHref, buyerNom, depGroup, entName, type Lexique } from "../corpus.ts";
 import type { Couverture } from "../donnees.ts";
-import { load } from "../donnees.ts";
+import { Absent, load } from "../donnees.ts";
 import { fr, longDate, longMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import type { VueModule } from "../main.ts";
@@ -529,7 +529,8 @@ async function donnees(r: Route): Promise<Record<string, unknown>> {
     );
     const row = couv.departements[dep];
     const absent = e instanceof SyntaxError || /: 404$/.test(String((e as Error).message));
-    if (!row || !absent) throw e;
+    if (!absent) throw e;
+    if (!row) throw new Absent(dep);
     f = vide(dep, couv.maj, row);
   }
   return { dep, f, ic };
