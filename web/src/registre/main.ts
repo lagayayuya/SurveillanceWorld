@@ -74,8 +74,12 @@ function header(r: Route): void {
   for (const a of kit.querySelectorAll<HTMLAnchorElement>("[data-nav]")) {
     const k = a.dataset.nav;
     if (k === "carte" || k === "carte-ic") a.href = back;
-    const glossaire = location.pathname.startsWith("/registre/glossaire");
-    if ((k === "registre" && r.view !== "introuvable") || (k === "glossaire" && glossaire))
+    // one current page: the glossary is « Glossaire », every other register page « Registre »
+    const glossaire = r.view === "glossaire";
+    if (
+      (k === "registre" && r.view !== "introuvable" && !glossaire) ||
+      (k === "glossaire" && glossaire)
+    )
       a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
   }
