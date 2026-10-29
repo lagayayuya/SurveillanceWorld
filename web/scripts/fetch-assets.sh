@@ -30,7 +30,13 @@ if [ ! -e "../data/basemap/$REGION.pmtiles" ] && [ -e "$FIXTURE" ]; then
 fi
 ln -sfn "$BASEMAP" "$PUB/basemap/basemap.pmtiles"
 ln -sfn "../../data/build/$REGION/tiles" "$PUB/tiles"
-# The register's files (lacarte registre construire), served under /data/registre/.
+# The register's files (lacarte registre construire), served under /data/registre/, linked
+# only once built: Vite copies public/ and stops on a link to nothing (CI builds no register;
+# the deploy requires its files itself).
 mkdir -p "$PUB/data"
-ln -sfn "../../../data/registre/site" "$PUB/data/registre"
+if [ -d ../data/registre/site ]; then
+  ln -sfn "../../../data/registre/site" "$PUB/data/registre"
+else
+  rm -f "$PUB/data/registre"
+fi
 echo "assets ready for region $REGION"
