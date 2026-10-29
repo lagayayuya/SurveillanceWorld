@@ -792,6 +792,16 @@ table.t tr.r.on td {
   line-height: 1.5;
   max-width: 820px;
 }
+/* the word an address points at (#g-<id>): marked as a chosen row is (.on), its rule kept */
+.v-glossaire .entry.on {
+  background: var(--soft);
+  box-shadow:
+    -12px 0 0 var(--soft),
+    12px 0 0 var(--soft);
+}
+.v-glossaire .entry.on:focus {
+  outline: none;
+}
 
 /* --- prototype additions (not in the mockups) --- */
 /* the shell: the kit's header is drawn once, outside the views */
@@ -1017,6 +1027,10 @@ table.t tr.r.on td {
   .v-departement .filt,
   .v-glossaire .filt {
     width: 100% !important;
+  }
+  /* one column: the index above the words, not stuck over them */
+  .v-glossaire nav[style*="position: sticky"] {
+    position: static !important;
   }
   .th main[style*="gap: 64px"],
   .th main[style*="gap: 60px"],

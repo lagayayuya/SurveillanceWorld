@@ -1,0 +1,35 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 0; display: flex; flex-direction: column; gap: 14px">
+    <dc-include src="fil"></dc-include>
+    <h1 class="h1">{{t.glossaire.les_mots_du_registre}}</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{f.glossaire.entrees_chaque_mot_renvoie_vers}}</p>
+  </div>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 30px 0 80px; display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 48px; align-items: start">
+    <nav aria-label="{{t.glossaire.index_du_glossaire}}" style="position: sticky; top: 20px; display: flex; flex-direction: column; gap: 10px">
+      <label class="filt">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+        <span class="sr">{{t.glossaire.filtrer_le_glossaire}}</span>
+        <input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.glossaire.filtrer_drone_contrat}}">
+      </label>
+      <span class="tw" role="status" style="font-size: 13px; color: var(--muted)">{{countLabel}}</span>
+      <div class="idx" style="display: flex; flex-direction: column; border-top: 2px solid var(--fg); padding-top: 6px">
+        <sc-for list="{{items}}" as="g" hint-placeholder-count="56">
+          <a href="{{g.anchor}}">{{g.t}}</a>
+        </sc-for>
+      </div>
+    </nav>
+
+    <main style="min-width: 0; border-top: 2px solid var(--fg)">
+      <sc-for list="{{items}}" as="g" hint-placeholder-count="56">
+        <article class="{{g.cls}}" id="{{g.id}}" tabindex="{{g.tab}}">
+          <h2 class="h3">{{g.t}}</h2>
+          <p>{{g.d}}</p>
+          <sc-if value="{{g.hasEx}}" hint-placeholder-val="{{true}}"><a class="ghost" href="{{g.href}}">{{f.glossaire.exemple}}</a></sc-if>
+        </article>
+      </sc-for>
+      <sc-if value="{{none}}" hint-placeholder-val="{{false}}"><p style="margin: 18px 0 0; color: var(--muted)">{{t.glossaire.aucun_mot_ne_correspond_essayez}}</p></sc-if>
+    </main>
+  </div>
+</div>

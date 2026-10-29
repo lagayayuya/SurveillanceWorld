@@ -127,5 +127,11 @@
   },
   "departement.aucun_contrat": {
     "dans": "dans"
+  },
+  "glossaire.entrees_chaque_mot_renvoie_vers": {
+    "total": "total"
+  },
+  "glossaire.exemple": {
+    "g_ex": "g.ex"
   }
 }
