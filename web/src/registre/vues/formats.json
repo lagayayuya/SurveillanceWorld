@@ -145,5 +145,26 @@
   },
   "entreprise.clientes_de_triables_par_colonne": {
     "nom": "nom"
+  },
+  "acheteur.acheteur": {
+    "cat": "cat"
+  },
+  "acheteur.montants_maximums_prevus_au_contrat": {
+    "mtNote": "mtNote"
+  },
+  "acheteur.contrats_signes_par_triables_par": {
+    "nom": "nom"
+  },
+  "acheteur.montants_a_la_signature": {
+    "nEnts": "nEnts"
+  },
+  "acheteur.entreprises_titulaires_des_contrats_de": {
+    "nom": "nom"
+  },
+  "acheteur.appels_d_offres_et_resultats": {
+    "nom": "nom"
+  },
+  "acheteur.aussi": {
+    "lie_nom": "lie.nom"
   }
 }

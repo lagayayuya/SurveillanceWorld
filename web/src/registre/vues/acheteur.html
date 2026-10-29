@@ -1,0 +1,156 @@
+<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+
+  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
+    <dc-include src="fil"></dc-include>
+    <div><span class="tag" style="background: #9be7c4">{{f.acheteur.acheteur}}</span></div>
+    <h1 class="h1">{{nom}}</h1>
+    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{sous}}</p>
+    <p class="lead" style="margin-top: 6px">{{{lead}}}</p>
+    <div class="kpis" style="margin-top: 8px">
+      <sc-for list="{{kpis}}" as="k" hint-placeholder-count="4">
+        <div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div>
+      </sc-for>
+    </div>
+    <p class="tw" style="margin: 0; font-size: 14px; color: var(--muted)">{{t.argent.enveloppe}}</p>
+  </div>
+
+  <nav class="tabs" aria-label="{{t.acheteur.sections}}" style="width: 1180px; margin: 24px auto 0">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <a href="{{t.href}}" aria-current="{{t.cur}}">{{t.l}}</a>
+    </sc-for>
+  </nav>
+
+  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
+    <main style="display: flex; flex-direction: column; gap: 60px; min-width: 0">
+
+      <section id="temps" aria-labelledby="a-temps" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-temps" class="h2">{{t.acheteur.ses_contrats_dans_le_temps}}</h2>
+          <button class="ibtn" onClick="{{tgl.tps}}" aria-expanded="{{open.tps}}" aria-label="{{t.acheteur.comment_lire_cette_frise}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.tps}}" hint-placeholder-val="{{false}}"><p class="note tw">{{t.acheteur.une_ligne_par_contrat_la}}</p></sc-if>
+        <div style="border-top: 2px solid var(--fg)">
+          <sc-for list="{{gantt}}" as="g" hint-placeholder-count="7">
+            <div class="{{g.cls}}" onMouseEnter="{{g.hover}}" onClick="{{g.hover}}" onFocus="{{g.hover}}">
+              <div style="padding: 6px 0; min-width: 0">
+                <a href="{{g.href}}" class="rowlink" style="display: block; font-size: 15px; line-height: 1.2">{{g.label}}</a>
+                <span style="font-size: 13px; color: var(--muted)">{{{g.entH}}} · {{g.amt}}</span>
+              </div>
+              <div class="track" style="margin-right: 8px">
+                <span style="{{g.bar}}"></span>
+                <span style="{{g.ext}}"></span>
+                <span style="{{g.avis}}"></span>
+                <sc-for list="{{g.mods}}" as="m" hint-placeholder-count="2"><span style="{{m.style}}"></span></sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div class="gl" style="min-height: 30px; border-bottom: 0; cursor: default; background: none">
+            <span></span>
+            <div class="tw" style="position: relative; height: 22px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--fg); margin-right: 8px">
+              <sc-for list="{{years}}" as="y" hint-placeholder-count="5"><span style="{{y.style}}">{{y.l}}</span></sc-for>
+            </div>
+          </div>
+        </div>
+        <div aria-label="{{t.acheteur.legende_de_la_frise}}" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-size: 14px">
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; background: var(--fg); display: inline-block"></span>{{t.acheteur.duree_prevue_de_la_signature}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 26px; height: 12px; border: 2px dashed var(--fg); border-left: 0; box-sizing: border-box; display: inline-block"></span>{{t.acheteur.duree_ajoutee_par_une_modification}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid var(--ao); display: inline-block"></span>{{t.acheteur.appel_d_offres_publie}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 3px; height: 18px; background: var(--blue); display: inline-block"></span>{{t.acheteur.modification}}</span>
+          <span style="display: inline-flex; align-items: center; gap: 8px"><span class="tw" style="font-weight: 700">{{t.acheteur.auj}}</span>{{t.acheteur.aujourd_hui_au_bord_droit}}</span>
+        </div>
+        <p style="margin: 0">{{{tempsPhrase}}}</p>
+      </section>
+
+      <section id="contrats" aria-labelledby="a-con" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <h2 id="a-con" class="h2">{{conTitre}}</h2>
+          <button class="ibtn" onClick="{{tgl.mt}}" aria-expanded="{{open.mt}}" aria-label="{{t.acheteur.ce_que_veulent_dire_ces}}"><span aria-hidden="true">i</span></button>
+        </div>
+        <sc-if value="{{show.mt}}" hint-placeholder-val="{{false}}"><p class="note tw">{{f.acheteur.montants_maximums_prevus_au_contrat}}</p></sc-if>
+        <table class="t">
+          <caption class="sr">{{f.acheteur.contrats_signes_par_triables_par}}</caption>
+          <thead><tr>
+            <sc-for list="{{cols}}" as="c" hint-placeholder-count="6">
+              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+            </sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="7">
+              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" onFocus="{{r.hover}}">
+                <td class="tw" style="white-space: nowrap">{{r.date}}<sc-if value="{{r.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></td>
+                <td><a href="{{r.href}}" class="rowlink">{{r.objet}}</a><sc-if value="{{r.mixte}}" hint-placeholder-val="{{false}}"><div style="margin-top: 3px"><span class="b" style="background: var(--warn-bg); color: var(--fg); border-style: dashed">{{t.acheteur.contrat_mixte}}</span></div></sc-if></td>
+                <td><sc-for list="{{r.ents}}" as="e" hint-placeholder-count="1"><a href="{{e.href}}" class="rowlink" style="display: block">{{e.nom}}</a></sc-for></td>
+                <td class="num"><strong>{{r.amt}}</strong><div style="font-size: 13px; color: var(--muted)">{{r.amt2}}</div></td>
+                <td class="num">{{r.dur}}</td>
+                <td class="num">{{r.off}}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="vend" aria-labelledby="a-vend" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-vend" class="h2">{{t.acheteur.qui_vend_ici}}</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{f.acheteur.montants_a_la_signature}}</span>
+        </div>
+        <table class="t">
+          <caption class="sr">{{f.acheteur.entreprises_titulaires_des_contrats_de}}</caption>
+          <thead><tr>
+            <sc-for list="{{colsV}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{sellers}}" as="s" hint-placeholder-count="5">
+              <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onClick="{{s.hover}}" onFocus="{{s.hover}}">
+                <td><a href="{{s.href}}" class="rowlink">{{s.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{{s.note}}}</div></td>
+                <td class="num">{{s.n}}</td>
+                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{s.bar}}"></span><strong>{{s.amt}}</strong></div></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="ao" aria-labelledby="a-ao" style="display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h2 id="a-ao" class="h2">{{t.acheteur.appels_d_offres_publies}}</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{aoSous}}</span>
+        </div>
+        <sc-if value="{{aos.length}}"><table class="t">
+          <caption class="sr">{{f.acheteur.appels_d_offres_et_resultats}}</caption>
+          <thead><tr>
+            <sc-for list="{{colsA}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{aos}}" as="a" hint-placeholder-count="5">
+              <tr class="{{a.cls}}" onMouseEnter="{{a.hover}}" onClick="{{a.hover}}" onFocus="{{a.hover}}">
+                <td class="tw" style="white-space: nowrap">{{a.date}}</td>
+                <td><a href="{{a.href}}" class="rowlink">{{a.objet}}</a></td>
+                <td class="tw" style="font-size: 13px; color: var(--muted)">{{a.refs}}</td>
+                <td><sc-if value="{{a.found}}" hint-placeholder-val="{{true}}"><a href="{{a.chref}}">{{a.contrat}}</a><sc-if value="{{a.probable}}"><sup role="img" aria-label="{{t.repere.lien}}" title="{{t.repere.lien}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></sc-if><sc-if value="{{a.missing}}" hint-placeholder-val="{{false}}"><span style="color: var(--muted)">{{a.manque}}</span></sc-if></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table></sc-if>
+      </section>
+
+      <sc-if value="{{lie}}"><section id="lie" aria-labelledby="a-lie" style="display: flex; flex-direction: column; gap: 12px; padding: 22px; border: 2px solid var(--fg); background: var(--bg-2)">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <h2 id="a-lie" class="h2" style="font-size: 26px">{{f.acheteur.aussi}}</h2>
+          <span class="tw" style="color: var(--muted); font-size: 14px">{{lie.sous}}</span>
+        </div>
+        <p style="margin: 0">{{t.acheteur.un_autre_acheteur_du_meme}}</p>
+        <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
+          <sc-for list="{{mob}}" as="m" hint-placeholder-count="4">
+            <li style="display: grid; grid-template-columns: 110px minmax(0, 1fr) 220px 110px; gap: 12px; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--rule)">
+              <span class="tw">{{m.date}}</span><span>{{m.objet}}</span><span>{{{m.ent}}}</span><strong style="text-align: right">{{m.amt}}</strong>
+            </li>
+          </sc-for>
+        </ul>
+        <a href="{{lie.href}}" class="ghost">{{lie.nom}} →</a>
+      </section></sc-if>
+    </main>
+
+    <dc-include src="panneau"></dc-include>
+  </div>
+</div>

@@ -713,6 +713,10 @@ table.t tr.r.on td {
   height: 10px;
   vertical-align: 0;
 }
+/* the companies named in a row are links in the text's own colour (the mockup's style="color: inherit") */
+.v-acheteur a.nom {
+  color: inherit;
+}
 
 /* --- departement (its mockup's own rules) --- */
 .v-departement .exp {
