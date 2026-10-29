@@ -358,6 +358,13 @@ class Documents extends Vue<Props, State> {
                 ]
               : "") as Rich,
         cls: `r${S.sel === r.id ? " on" : ""}`,
+        // on a phone, in the row unfolded (the panel is a band there): its source, the report
+        tel: [
+          ...(e.url
+            ? [{ l: t(isArr(e) ? "arretes.voir" : "documents.lien_source"), href: e.url }]
+            : []),
+          signaler(e),
+        ],
         hover: () => {
           if (S.sel !== r.id) this.setState({ sel: r.id, copied: "" });
         },

@@ -53,6 +53,7 @@
               <td><span class="b" style="{{r.bs}}">{{r.type}}</span><br><a href="{{r.href}}" class="rowlink" style="font-weight: 600; display: inline-block; margin-top: 4px">{{r.objet}}</a></td>
               <td style="font-size: 14px"><span style="{{r.quiStyle}}">{{{r.qui}}}</span><div style="color: var(--muted)">{{{r.ent}}}</div></td>
               <td class="num"><strong>{{r.fig}}</strong><div style="font-size: 13px; color: var(--muted)">{{{r.figL}}}</div></td>
+              <td class="liens-tel"><sc-for list="{{r.tel}}" as="l"><a href="{{l.href}}">{{l.l}}</a></sc-for></td>
             </tr>
           </sc-for>
         </tbody>

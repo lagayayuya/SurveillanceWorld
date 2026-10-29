@@ -323,6 +323,7 @@ class Autorisations extends Vue<Props, State> {
           int: dash(e.cameras_int),
           delta: lu(e) && p ? signed((e.cameras ?? 0) - (p.cameras ?? 0)) : "—",
           url: e.url ?? "",
+          tel: liens(e),
           cls: `r${S.sel === e.id ? " on" : ""}`,
           hover: this.pick(e.id),
         };
@@ -407,6 +408,7 @@ class Autorisations extends Vue<Props, State> {
           no: x.id.split("-")[1] ?? x.id,
           date: shortDate(e.date),
           url: e.url ?? "",
+          tel: liens(e),
           na: fr(x.es.length),
           n: dash(n),
           vp: dash(x.lu?.cameras_vp),
@@ -447,6 +449,7 @@ class Autorisations extends Vue<Props, State> {
         ext: dash(e.cameras_ext),
         int: dash(e.cameras_int),
         url: e.url ?? "",
+        tel: liens(e),
         cls: `r${S.sel === e.id ? " on" : ""}`,
         hover: this.pick(e.id),
       };

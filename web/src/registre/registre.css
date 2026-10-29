@@ -211,6 +211,10 @@ table.t td.num {
   text-align: right;
   white-space: nowrap;
 }
+/* a document's links in its row: the phone's (the wide screen has the panel) */
+table.t td.liens-tel {
+  display: none;
+}
 table.t tr.r {
   cursor: pointer;
 }
@@ -1426,6 +1430,28 @@ table.t tr.r.on td {
   }
   .th table.t tbody tr {
     position: relative;
+  }
+  /* a document's links in its row, shown when the row unfolds (the panel is a band here); folded,
+     they are not there at all, so that no link is focused unseen */
+  .th table.t tr:not(.ouvert) td.liens-tel {
+    display: none !important;
+  }
+  .th table.t tr.ouvert td.liens-tel {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 0 16px;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+  .th table.t td.liens-tel a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
   }
 }
 @media (max-width: 959px) {
