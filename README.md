@@ -64,17 +64,30 @@ répertoire SIRENE (INSEE) ; un particulier ou un commerçant en nom propre n'es
 
 - **Lu par un programme.** Personne ne relit les arrêtés ; le site le dit, publie la liste de
   ceux qui n'ont pas pu être lus entièrement, et chaque document mène à sa source. « Signaler
-  une erreur » corrige le registre.
+  une erreur » corrige le registre : un formulaire sans compte, relu dans `/revue`, et une
+  correction acceptée est appliquée à la construction suivante ; la page du document dit
+  « corrigé le … » et garde, barrée, la valeur publiée par la source. Rien n'est gardé sur
+  l'expéditeur, sauf le contact s'il en donne un (effacé à la décision, au plus tard après
+  90 jours).
 - **Daté.** La page « Ce que couvre le registre » dit, source par source, jusqu'à quelle date
   vont les documents et quand ils ont été collectés.
 - **Une règle de calcul.** Un total additionne le montant prévu de chaque contrat signé, sans
   les contrats d'acheteurs nationaux, les plafonds de centrales d'achat, les contrats mixtes,
-  les montants à vérifier ni les doublons (`pipeline/lacarte/registre/`).
+  les montants à vérifier ni les doublons (`pipeline/lacarte_registre/`).
 - **Aucun PDF hébergé** : l'identifiant de l'acte, l'adresse du recueil, sa page et son
   empreinte seulement. Aucun croisement avec la délinquance.
 
-Les données sont construites hors ligne par `lacarte registre construire` et servies en
-fichiers statiques. Les données essentielles de la commande publique, le BOAMP et SIRENE sont
+Les données sont construites hors ligne et servies en fichiers statiques :
+
+```bash
+uv run lacarte-registre importer-pilote <dossier de l'export pilote>
+uv run lacarte-registre corrections exporter   # sur le serveur : les corrections acceptées
+uv run lacarte-registre construire             # data/registre/site, servi sous /data/registre/
+```
+
+`corrections exporter` écrit `data/registre/corrections.yaml` (jamais versionné) depuis la base,
+comme `lacarte contrib export` ; `construire` le lit après `rules/registre_corrections.yaml`, et
+s'arrête sur une correction qu'il ne sait pas appliquer. Les données essentielles de la commande publique, le BOAMP et SIRENE sont
 sous Licence Ouverte 2.0 ; chaque document est cité avec sa source.
 
 ## Vie privée par construction
