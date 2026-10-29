@@ -12,6 +12,12 @@ Each document (`evenements[]` of the pilot) gets the flags the pages read:
   (true when unknown).
 - `date_lue`: the date read by a review (rules/registre_corrections.yaml), beside the
   source's own date, which the record keeps.
+- `corrige`: what a correction accepted in /revue changed (data/registre/corrections.yaml,
+  `lacarte-registre corrections exporter`): {field: {"source": the value as published,
+  "le": the day it was accepted}}. Such a correction replaces the value the pages read (a
+  date also sets `date_lue`), before every flag and index that depends on it: a commune's
+  documents and counts follow a corrected `insee`, a copy its `affaire`, `nom_publie` its
+  `beneficiaire`, `non_lu` its `cameras`.
 - `partage`: an act naming several communes (zones.js AUTORISATIONS): the other communes.
   The act is placed in each of them as a copy with that commune's `insee` and `insee0`, the
   commune of the original; a territory counts it once (comptes.uniq). An act the registre
@@ -39,6 +45,8 @@ from typing import Any
 
 import yaml
 
+from lacarte_registre import corrections as fields
+
 Event = dict[str, Any]
 
 AO = ("avis", "resultat", "rectificatif")
@@ -54,7 +62,9 @@ DISP = {
     "drones": "dr",
 }
 MASQUE = "[non retenu]"
-CORRECTED_FIELDS = {"date": "date_lue"}
+# A correction without its acceptance day (the rules file's, a review's reading): the flag it
+# sets beside the source's value, which stays.
+READ_FLAGS = {"date": "date_lue"}
 
 
 def typ(e: Event) -> str:
@@ -122,16 +132,78 @@ def charger(folder: Path) -> Pilote:
     return Pilote(reg=found.pop("REG"), globals=found)
 
 
-def corrections(path: Path) -> dict[str, dict[str, Any]]:
-    """{event id: {flag: value}} from rules/registre_corrections.yaml."""
-    out: dict[str, dict[str, Any]] = {}
-    for c in yaml.safe_load(path.read_text())["corrections"]:
-        if not (c.get("id") and c.get("rationale") and c.get("source")):
-            raise ValueError(f"{path.name}: a correction needs id, rationale and source: {c}")
-        if c["field"] not in CORRECTED_FIELDS:
-            raise ValueError(f"{path.name}: {c['id']}: no flag for the field {c['field']}")
-        out.setdefault(c["evenement"], {})[CORRECTED_FIELDS[c["field"]]] = c["value"]
+class CorrectionError(ValueError):
+    """A correction the build cannot apply: `lacarte-registre construire` stops and says it."""
+
+
+@dataclass(frozen=True)
+class Correction:
+    id: str
+    evenement: str
+    field: str
+    value: Any
+    le: str | None  # the day accepted in /revue; None: a reading (READ_FLAGS)
+
+
+def corrections(*paths: Path) -> list[Correction]:
+    """The corrections of rules/registre_corrections.yaml then of data/registre/
+    corrections.yaml, in their order; each checked (its field, its value)."""
+    out = []
+    for path in paths:
+        for c in yaml.safe_load(path.read_text(encoding="utf-8"))["corrections"] or []:
+            if not (c.get("id") and c.get("rationale") and c.get("source")):
+                raise CorrectionError(
+                    f"{path.name}: a correction needs id, rationale and source: {c}"
+                )
+            where = f"{path.name}: {c['id']}"
+            field = c.get("field")
+            if field not in fields.FIELDS:
+                raise CorrectionError(f"{where}: unknown field {field!r} (one of {fields.FIELDS})")
+            le = c.get("le")
+            if le is None and field not in READ_FLAGS:
+                raise CorrectionError(f"{where}: no acceptance day (le) for a {field} correction")
+            le = le.isoformat() if hasattr(le, "isoformat") else le
+            if le is not None and not (isinstance(le, str) and fields.DAY.fullmatch(le)):
+                raise CorrectionError(f"{where}: le is a day, YYYY-MM-DD: {le!r}")
+            try:
+                value = fields.value(field, c.get("value"))
+            except ValueError as e:
+                raise CorrectionError(f"{where}: {e}") from None
+            out.append(Correction(c["id"], str(c.get("evenement")), field, value, le))
     return out
+
+
+def corriger(reg: Registre, corr: list[Correction]) -> None:
+    """Apply the corrections to the documents, in order (a later one on the same field wins;
+    `corrige` keeps the value as published). An unknown document, commune or affaire stops
+    the build."""
+    for c in corr:
+        e = reg.by_id.get(c.evenement)
+        if e is None:
+            raise CorrectionError(f"{c.id}: no document {c.evenement!r} in the register")
+        if c.le is None:
+            e[READ_FLAGS[c.field]] = c.value
+            continue
+        record = e.setdefault("corrige", {})
+        source = record[c.field]["source"] if c.field in record else e.get(c.field)
+        if c.field == "insee":
+            if c.value not in reg.communes:
+                raise CorrectionError(f"{c.id}: no commune {c.value} in the register's reference")
+            e["dep"] = reg.communes[c.value]["dep"]
+        elif c.field == "affaire":
+            if c.value not in reg.affaires:
+                raise CorrectionError(f"{c.id}: no affaire {c.value!r} in the register")
+            old = reg.affaires.get(e["affaire"])
+            if old and e["id"] in old.get("events", []):
+                old["events"] = [i for i in old["events"] if i != e["id"]]
+            new = reg.affaires[c.value].setdefault("events", [])
+            if e["id"] not in new:
+                new.append(e["id"])
+        elif c.field == "date":
+            e["date_lue"] = c.value
+            e.pop("date_annee", None)  # a full day now, no longer a year
+        e[c.field] = c.value
+        record[c.field] = {"source": source, "le": c.le}
 
 
 @dataclass
@@ -217,8 +289,8 @@ def _unread(e: Event, zones_of: dict[str, list[str]], statut: dict[str, str]) ->
     return why
 
 
-def appliquer(p: Pilote, corr: dict[str, dict[str, Any]]) -> Registre:
-    """Flag every document of the pilot and index them."""
+def appliquer(p: Pilote, corr: list[Correction]) -> Registre:
+    """Correct, flag every document of the pilot and index them."""
     affaires = p.reg["affaires"]
     events = unique_events(p.reg["evenements"])
     reg = Registre(
@@ -231,6 +303,7 @@ def appliquer(p: Pilote, corr: dict[str, dict[str, Any]]) -> Registre:
     for siren, x in p.reg.get("entreprises", {}).items():
         if x.get("entrepreneur_individuel") and x.get("nom"):
             raise ValueError(f"the sole trader {siren} is named: the export must mask it")
+    corriger(reg, corr)
     autorisations = p.get("AUTORISATIONS", [])
     shares = _shares(reg, autorisations)
     lots, groupes = p.get("LOTS", {}), p.get("LOTS_GROUPES", {})
@@ -245,7 +318,6 @@ def appliquer(p: Pilote, corr: dict[str, dict[str, Any]]) -> Registre:
             and not e["copie"]
         )
         e["communal"] = communal(e, affaires)
-        e.update(corr.get(e["id"], {}))
         if "beneficiaire" in e:
             e["nom_publie"] = e["beneficiaire"] != MASQUE
         why = _unread(e, zones_of, statut)

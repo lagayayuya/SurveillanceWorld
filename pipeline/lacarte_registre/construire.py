@@ -1,7 +1,8 @@
 """`lacarte-registre construire`: the registre's site files from the imported pilot.
 
-Reads data/registre/pilote/ (importer.py), rules/registre_corrections.yaml and
-rules/registre_couverture.yaml; flags every document (regles.py), measures the coverage
+Reads data/registre/pilote/ (importer.py), rules/registre_corrections.yaml then, when
+present, data/registre/corrections.yaml (the corrections accepted in /revue: exporter.py),
+and rules/registre_couverture.yaml; flags every document (regles.py), measures the coverage
 (couverture.py) and writes each page's file (fermetures.py) and the commune maps' layers into
 data/registre/site/, served
 at /data/registre/. It holds the machine's lock (lacarte.lock), as `lacarte build` does, and
@@ -17,7 +18,7 @@ from typing import Any
 
 import lacarte_registre as registre
 from lacarte import lock
-from lacarte_registre import couverture, fermetures, regles, sortie
+from lacarte_registre import couverture, exporter, fermetures, regles, sortie
 
 
 def run(root: Path | None = None, rules: Path | None = None) -> dict[str, Any]:
@@ -25,7 +26,10 @@ def run(root: Path | None = None, rules: Path | None = None) -> dict[str, Any]:
     root = root or registre.ROOT
     rules = rules or registre.RULES
     pilote = regles.charger(root / "pilote")
-    reg = regles.appliquer(pilote, regles.corrections(rules / "registre_corrections.yaml"))
+    accepted = root / exporter.FILE
+    corr = regles.corrections(rules / "registre_corrections.yaml",
+                              *([accepted] if accepted.is_file() else []))  # fmt: skip
+    reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     cov = couverture.build(reg, conf)
     maps = sorted((root / "pilote" / "carte").glob("*.json"))

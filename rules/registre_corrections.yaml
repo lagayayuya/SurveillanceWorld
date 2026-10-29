@@ -3,6 +3,10 @@
 # review beside it (`date_lue` for a date), which the timelines use. Each correction names
 # the document (`evenement`, its id in the registre), the field, the value read, why, and
 # the document that gives it. Not in buildinfo's hashed rules: no map build depends on it.
+# The corrections accepted in /revue « Registre » come after these, from
+# data/registre/corrections.yaml (`lacarte-registre corrections exporter`, never versioned):
+# the same format plus `le`, the day accepted; such a correction replaces the value and
+# records it under `corrige`. An entry here has no `le`: it is a reading (a date only).
 version: 1
 
 corrections:
