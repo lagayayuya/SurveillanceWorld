@@ -9,7 +9,7 @@
 // The map at http://127.0.0.1:4470/ as ivo; ?as=rev (or ?as=rvw, ?as=ivo) on any page
 // signs in as that account (POST /api/session; rev and rvw by /revue's privileged entry,
 // POST /api/review/session, as /revue's form does), ?as= signs out; /revue as rev (every
-// tab) or rvw (« File » only). The servers are the state captures' (states/
+// tab) or rvw (« File » and « Registre »). The servers are the state captures' (states/
 // harness.mjs) on ports of their own (4470, 4471, 8797), so that captures and the gate run
 // beside it. It builds in build/try/ (ignored by git), never in web/dist nor web/public.
 // Without the CI extract (data/build/ci) it builds it first, from the CI fixture, as CI does.

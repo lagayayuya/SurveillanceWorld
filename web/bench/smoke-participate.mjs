@@ -1860,10 +1860,10 @@ try {
   await gate.waitForSelector(".review-row", { timeout: 60000 });
   const tabs = await gate.locator(".review-tab").allInnerTexts();
   check(
-    "review: the privileged entry by /revue's form, the address kept; an administrator's six tabs",
+    "review: the privileged entry by /revue's form, the address kept; an administrator's seven tabs",
     gate.url().includes("file=all") &&
       tabs.map((x) => x.toLowerCase()).join(",") ===
-        "file,comptes,retraits,réglages,statistiques,journal",
+        "file,registre,comptes,retraits,réglages,statistiques,journal",
     `${gate.url()} ${tabs.join(",")}`,
   );
   /** The password dialog, answered (the first destructive action of this session). */
