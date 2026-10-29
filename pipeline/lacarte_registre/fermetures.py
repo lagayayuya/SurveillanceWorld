@@ -13,7 +13,9 @@ Nothing is recomputed in the browser: a page reads the flags and the figures giv
   département, and those of a document elsewhere), with the copies of the acts it shares,
   the figures of its intercommunality and its département, the map's counts, its drone
   zones and its département's coverage;
-- departement/, entreprise/, acheteur/, document/<affaire>.json: the same closure for the
+- departement/<code>.json: a département's figures, no document (its page lists none): its
+  communes and intercommunalities, who sells and who buys in it, its documents per year;
+- entreprise/, acheteur/, document/<affaire>.json: the same closure as a commune's for the
   pages of the next lot.
 A file is named after its id as is (a space or an accent included); the page asks for it
 through encodeURIComponent and the server decodes the path.
@@ -27,7 +29,16 @@ from pathlib import Path
 from typing import Any
 
 from lacarte_registre import comptes
-from lacarte_registre.regles import Event, Registre, disp, sort_key, typ, year_group
+from lacarte_registre.regles import (
+    Event,
+    Registre,
+    disp,
+    is_camera_act,
+    is_drone_act,
+    sort_key,
+    typ,
+    year_group,
+)
 
 Writer = Callable[[str, dict[str, Any]], None]
 ENT_DICO = ("nom", "entrepreneur_individuel", "naf", "naf_libelle", "verifie_sirene")
@@ -225,29 +236,98 @@ def commune_file(ctx: Context, insee: str) -> dict[str, Any]:
     }
 
 
+def _contracts_ranked(rows: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(rows.values(), key=lambda o: (-o["n"], -o["montant"], o["siren"]))
+
+
+def _contract_row(rows: dict[str, dict[str, Any]], siren: str, e: Event) -> dict[str, Any]:
+    o = rows.setdefault(siren, {"siren": siren, "n": 0, "montant": 0.0, "hors_totaux": 0})
+    o["n"] += 1
+    if e["compte"]:
+        o["montant"] += e.get("montant") or 0
+    else:
+        o["hors_totaux"] += 1
+    return o
+
+
+def sellers_and_buyers(reg: Registre, events: Iterable[Event]) -> dict[str, list[dict[str, Any]]]:
+    """Who sells and who buys in a territory: its signed contracts (a copy never), per company
+    (a contract with several companies counts for each) and per buyer; `montant` adds the
+    counted ones (`compte`), `hors_totaux` counts the others (a central purchasing body's
+    ceiling, a mixed contract, an amount to check, a national buyer's)."""
+    sellers: dict[str, dict[str, Any]] = {}
+    buyers: dict[str, dict[str, Any]] = {}
+    for e in events:
+        if e["t"] != "attribution" or e["copie"]:
+            continue
+        for s in dict.fromkeys(e.get("entreprises") or []):
+            _contract_row(sellers, s, e)
+        if b := reg.buyer(e):
+            o = _contract_row(buyers, b, e)
+            o["centrale"] = o.get("centrale", False) or e.get("hors_totaux") == "centrale"
+    return {"vendeurs": _contracts_ranked(sellers), "acheteurs": _contracts_ranked(buyers)}
+
+
+YEAR_KINDS = ("con", "mod", "ao", "sub", "cam", "dr")
+
+
+def per_year(events: Iterable[Event]) -> dict[str, dict[str, int]]:
+    """A territory's documents per year of their date and kind: contracts, modifications,
+    tender notices and results, subsidies, camera authorisations (`arrete` only), drone acts."""
+    out: dict[str, dict[str, int]] = {}
+    for e in events:
+        y = (e.get("date") or "")[:4]
+        if not y.isdigit():
+            continue
+        k = "cam" if is_camera_act(e) else "dr" if is_drone_act(e) else typ(e)
+        if k in YEAR_KINDS:
+            row = out.setdefault(y, dict.fromkeys(YEAR_KINDS, 0))
+            row[k] += 1
+    return dict(sorted(out.items()))
+
+
 def departement_file(ctx: Context, dep: str) -> dict[str, Any]:
+    """A département's page: its figures only, no document (the page lists none): its
+    communes with a document and their intercommunalities (each document once), who sells
+    and who buys in it, its documents per year, and the collection of its decrees."""
     reg = ctx.reg
+    evs = reg.by_dep.get(dep, [])
     ks = comptes.communes_dep(reg, dep)
-    cl = Closure(ctx).add(reg.by_dep.get(dep, []))
+    groups: dict[str, list[str]] = {}
     for k in ks:
-        cl.add(reg.by_insee[k])
-    epcis: dict[str, list[str]] = {}
-    for k in ks:
-        if reg.communes[k].get("epci"):
-            epcis.setdefault(reg.communes[k]["epci"], []).append(k)
-    cl.communes.update(ks)
+        # the communes without an intercommunality under "" (none in the pilot's reference)
+        groups.setdefault(reg.communes[k].get("epci") or "", []).append(k)
+    money = sellers_and_buyers(reg, evs)
+    buyers = [o["siren"] for o in money["acheteurs"]]
+    seats = {
+        s
+        for b in buyers
+        if (a := ctx.acheteurs.get(b) or {}).get("categorie") == "commune"
+        and (s := a.get("insee_siege")) in reg.communes
+    }
     return {
-        "v": 1,
+        "v": 2,
+        "maj": ctx.couverture["maj"],
         "departement": {"code": dep, "nom": ctx.dep_names.get(dep)},
-        **cl.close(),
+        "communes": {k: ctx.commune(k) for k in sorted({*ks, *seats})},
+        "entreprises": {o["siren"]: ctx.entreprise(o["siren"]) for o in money["vendeurs"]},
+        "acheteurs": {b: ctx.acheteur(b) for b in sorted({*buyers, *(g for g in groups if g)})},
         "stats": {
             "depStats": comptes.departement(reg, dep),
             "uniq": comptes.uniq(reg, ks),
             "communes": {k: ctx.commune_stats(k) for k in ks},
             "epcis": {
-                code: {"nom": ctx.epcis.get(code), "communes": v, "uniq": comptes.uniq(reg, v)}
-                for code, v in epcis.items()
+                code: {
+                    "nom": ctx.epcis.get(code) if code else None,
+                    "communes": v,
+                    "uniq": comptes.uniq(reg, v),
+                    # its own page (a buyer of a signed contract) or its row here
+                    "acheteur": bool(code) and code in ctx.buy_stats,
+                }
+                for code, v in groups.items()
             },
+            **money,
+            "annees": per_year(evs),
         },
         "couverture": _dep_row(ctx, dep),
     }
