@@ -17,6 +17,12 @@ export type Noms = {
   commune: (insee: string) => string;
 };
 
+/** The names a commune's file gives (commun.ts Donnees). */
+export const nomsDe = (d: {
+  entName(siren: string): string;
+  commune(insee: string): { nom: string };
+}): Noms => ({ entreprise: (s) => d.entName(s), commune: (k) => d.commune(k).nom });
+
 /** A field's value as the pages write it; « — » for none. */
 export function valeur(champ: string, v: unknown, noms: Noms): string {
   if (v == null || v === "" || (Array.isArray(v) && !v.length)) return "—";

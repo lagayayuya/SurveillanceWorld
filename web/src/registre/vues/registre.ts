@@ -25,6 +25,7 @@ import {
   ligne,
   type Recherche,
 } from "../corpus.ts";
+import { corrections } from "../corrige.ts";
 import type { Rich } from "../dc.ts";
 import { EI, load } from "../donnees.ts";
 import { count, fr, money } from "../format.ts";
@@ -545,6 +546,10 @@ function detail(L: Lexique, r: Ligne) {
   if (e.url) links.push({ l: aut ? t("arretes.voir") : t("registre.l_source"), href: e.url });
   links.push(signaler(e));
   return {
+    corr: corrections(e, {
+      entreprise: (x) => entName(L, x),
+      commune: (x) => L.communes[x]?.nom ?? x,
+    }),
     kicker: `${badge(e)} · ${date(e)}`,
     title: r.title,
     rows: [

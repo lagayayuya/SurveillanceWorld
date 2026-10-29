@@ -14,6 +14,7 @@ import {
   sortKey,
   tete,
 } from "../commun.ts";
+import { corrections, nomsDe } from "../corrige.ts";
 import type { Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
@@ -534,6 +535,7 @@ class Documents extends Vue<Props, State> {
       kicker: `${typeLabel(e)} · ${docDate(e.date, e.date_annee)}`,
       title: r.objet,
       rows: rows.map(([k, v]) => ({ k, v })),
+      corr: corrections(e, nomsDe(d)),
       foot,
       links,
       btn: ref

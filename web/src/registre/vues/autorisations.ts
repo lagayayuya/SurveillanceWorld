@@ -14,6 +14,7 @@ import {
   filCommune,
   tete,
 } from "../commun.ts";
+import { corrections, nomsDe } from "../corrige.ts";
 import type { Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import "../demande.ts";
@@ -536,8 +537,15 @@ class Autorisations extends Vue<Props, State> {
 
     const d0 = S.sel ? DET[S.sel] : undefined;
     const nDr = d.autres.filter((e) => e.t === "arrete_drone").length + d.multi.length;
+    const e0 = S.sel ? D.ev.get(S.sel) : undefined;
     const det = d0
-      ? { ...d0, rows: d0.rows.map(([k, v]) => ({ k, v })), note: d0.note ?? "" }
+      ? {
+          ...d0,
+          rows: d0.rows.map(([k, v]) => ({ k, v })),
+          note: d0.note ?? "",
+          // a decree corrected in /revue: « Corrigé le … », the source's value struck
+          corr: e0 ? corrections(e0, nomsDe(D)) : [],
+        }
       : couv.etat !== "collecte"
         ? {
             kicker: t("autorisations.repos_kicker", { nom }),
