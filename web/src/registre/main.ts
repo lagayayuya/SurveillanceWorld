@@ -114,7 +114,11 @@ kit.querySelector("[data-theme-btn]")?.addEventListener("click", () => {
 // --- the phone: a title shrinks until its longest word fits; a touched row unfolds ----------
 function fitTitles(scope: Element): void {
   for (const h of scope.querySelectorAll<HTMLElement>("h1")) {
-    h.style.removeProperty("font-size");
+    // from the template's own size when it sets one (Contrat-grand: 60 px), else the class's
+    if (h.dataset.taille === undefined) h.dataset.taille = h.style.getPropertyValue("font-size");
+    const base = h.dataset.taille;
+    if (base) h.style.setProperty("font-size", base);
+    else h.style.removeProperty("font-size");
     let px = Number.parseFloat(getComputedStyle(h).fontSize);
     while (h.scrollWidth > h.clientWidth + 1 && px > 22) {
       px -= 2;

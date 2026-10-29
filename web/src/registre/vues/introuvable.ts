@@ -6,7 +6,7 @@ import type { VueModule } from "../main.ts";
 import { Vue } from "../vue.ts";
 import template from "./introuvable.html?raw";
 
-const A_VENIR = /^\/registre\/(contrat|commune\/[^/]+\/carte)(\/|$)/;
+const A_VENIR = /^\/registre\/(commune\/[^/]+\/carte)(\/|$)/;
 
 class Introuvable extends Vue {
   titre(): string {
