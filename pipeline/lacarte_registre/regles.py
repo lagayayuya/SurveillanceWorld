@@ -30,6 +30,11 @@ Each document (`evenements[]` of the pilot) gets the flags the pages read:
 - `nom_publie`: false when an act's beneficiary is masked (`[non retenu]`: a natural
   person, or a name not verified in SIRENE); the pilot export masks them, the build keeps
   the mask and refuses a named sole trader.
+- `ei` (EI): a sole trader is a natural person and has no page (DECISIONS 2026-10-29): its
+  SIREN, which names the person in SIRENE, leaves every document, affaire, correction and
+  dictionary for this token, after the corrections, before anything is counted or written;
+  the pages say « entreprise individuelle, nom non publié », and no ranking, no « who sells »
+  list and no company page counts it.
 
 The pilot lists 242 BOAMP notices twice, identical: a document is kept once (by id); two
 different records under one id stop the build.
@@ -206,6 +211,42 @@ def corriger(reg: Registre, corr: list[Correction]) -> None:
         record[c.field] = {"source": source, "le": c.le}
 
 
+# A sole trader's place in a document's companies: a natural person has no page, and its
+# SIREN names it in SIRENE, so it never leaves the build (masquer_ei).
+EI = "ei"
+EI_DICO = {"nom": None, "entrepreneur_individuel": True}
+
+
+def masquer_ei(reg: Registre) -> int:
+    """Replace every sole trader's SIREN by EI: the documents' and the affaires' companies,
+    a correction's source value, any `*_siren` field; the dictionary keeps one EI entry and
+    no sole trader's own. Returns how many sole traders were masked."""
+    ents = reg.pilote.reg.get("entreprises", {})
+    ei = {s for s, x in ents.items() if x.get("entrepreneur_individuel")}
+    if not ei:
+        return 0
+
+    def mask(v: Any) -> Any:
+        return [EI if s in ei else s for s in v] if isinstance(v, list) else v
+
+    for e in reg.evenements:
+        if e.get("entreprises"):
+            e["entreprises"] = mask(e["entreprises"])
+        for k in [k for k in e if k.endswith("_siren")]:
+            if e[k] in ei:
+                e[k] = None
+        corr = (e.get("corrige") or {}).get("entreprises")
+        if corr:
+            corr["source"] = mask(corr.get("source"))
+    for a in reg.affaires.values():
+        if a.get("entreprises"):
+            a["entreprises"] = mask(a["entreprises"])
+    for s in ei:
+        del ents[s]
+    ents[EI] = dict(EI_DICO)
+    return len(ei)
+
+
 @dataclass
 class Registre:
     """The flagged documents and the indexes every page is cut from."""
@@ -304,6 +345,7 @@ def appliquer(p: Pilote, corr: list[Correction]) -> Registre:
         if x.get("entrepreneur_individuel") and x.get("nom"):
             raise ValueError(f"the sole trader {siren} is named: the export must mask it")
     corriger(reg, corr)
+    masquer_ei(reg)
     autorisations = p.get("AUTORISATIONS", [])
     shares = _shares(reg, autorisations)
     lots, groupes = p.get("LOTS", {}), p.get("LOTS_GROUPES", {})

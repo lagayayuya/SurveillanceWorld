@@ -32,6 +32,7 @@ from weakref import WeakKeyDictionary
 from lacarte_registre import comptes, drones, entreprise
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
+    EI,
     Event,
     Registre,
     disp,
@@ -265,7 +266,8 @@ def sellers_and_buyers(reg: Registre, events: Iterable[Event]) -> dict[str, list
         if e["t"] != "attribution" or e["copie"]:
             continue
         for s in dict.fromkeys(e.get("entreprises") or []):
-            _contract_row(sellers, s, e)
+            if s != EI:  # a sole trader: listed nowhere by its own
+                _contract_row(sellers, s, e)
         if b := reg.buyer(e):
             o = _contract_row(buyers, b, e)
             o["centrale"] = o.get("centrale", False) or e.get("hors_totaux") == "centrale"
@@ -520,7 +522,7 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     deps = sorted(d for d in reg.by_dep if d)
     for d in deps:
         write(f"departement/{file_name(d)}.json", departement_file(ctx, d))
-    sirens = sorted({s for e in reg.evenements for s in e.get("entreprises") or []})
+    sirens = sorted({s for e in reg.evenements for s in e.get("entreprises") or []} - {EI})
     for s in sirens:
         write(f"entreprise/{file_name(s)}.json", entreprise_file(ctx, s))
     buyers = sorted({b for e in reg.evenements if (b := reg.buyer(e))})

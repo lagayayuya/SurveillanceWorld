@@ -13,7 +13,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from lacarte_registre.regles import Event, Registre, is_act, is_camera_act, is_drone_act
+from lacarte_registre.regles import EI, Event, Registre, is_act, is_camera_act, is_drone_act
 
 
 def _counts(events: Iterable[Event]) -> dict[str, int]:
@@ -82,6 +82,8 @@ def entreprises(reg: Registre) -> dict[str, dict[str, Any]]:
         if e["t"] != "attribution":
             continue
         for s in e.get("entreprises") or []:
+            if s == EI:  # a sole trader: no page, no ranking
+                continue
             o = out.setdefault(
                 s,
                 {
@@ -127,6 +129,6 @@ def acheteurs(reg: Registre) -> dict[str, dict[str, Any]]:
         if not e.get("hors_totaux") and not e.get("national"):
             o["montant"] += e.get("montant") or 0
         for s in e.get("entreprises") or []:
-            if s not in o["ents"]:
+            if s != EI and s not in o["ents"]:
                 o["ents"].append(s)
     return out
