@@ -38,6 +38,19 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "ok  " : "FAIL"} ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
+// A duration's limit, as smoke-mobile.mjs has it: binding here and in the local gate; with
+// BENCH_TIMING=report (CI's shared machines, whose timings vary) measured and printed, over
+// the limit a warning in the run's annotations, never a failure. What happened is checked
+// either way.
+const TIMING_REPORT = process.env.BENCH_TIMING === "report";
+function within(name, ms, limit) {
+  const ok = ms !== null && ms <= limit;
+  if (!TIMING_REPORT) return ok;
+  console.log(`time ${name}: ${ms} ms, limit ${limit} ms${ok ? "" : " (over)"}`);
+  if (!ok) console.log(`::warning::desktop: ${name} took ${ms} ms (limit ${limit} ms)`);
+  return ms !== null;
+}
+
 // The estimate the map draws (band index of the style's "bands" filter): 1 Standard, the
 // one the map opens on; 2 Prudent.
 async function chosenBand(page) {
@@ -515,8 +528,7 @@ try {
     "click a camera where the sheet comes: one move, <= 400 ms, the camera left of the sheet, same zoom",
     freed.focus &&
       freed.starts === 1 &&
-      freed.ms !== null &&
-      freed.ms <= 400 &&
+      within("click a camera where the sheet comes", freed.ms, 400) &&
       freed.zoom === right.zoom &&
       freed.sheetLeft !== null &&
       freed.x <= freed.sheetLeft - 20 &&

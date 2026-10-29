@@ -78,6 +78,24 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "ok  " : "FAIL"} [${engine}] ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
+// How far the podium had risen by the first frame seen depends on the machine's pace: with
+// BENCH_TIMING=report (CI's shared machines) printed, over the limit a warning, never a
+// failure, as smoke-mobile.mjs does with durations; binding in the local gate. The steps'
+// final heights and their 0.55 s transition are checked either way.
+const TIMING_REPORT = process.env.BENCH_TIMING === "report";
+function risesFromLow(where, low) {
+  const ok = low < 0.5;
+  if (!TIMING_REPORT) return ok;
+  console.log(
+    `time [${engine}] ${where}: the podium's lowest step at ${low} of its height, limit 0.5${ok ? "" : " (over)"}`,
+  );
+  if (!ok)
+    console.log(
+      `::warning::${engine}: ${where}: the podium was at ${low} of its height at its first frame seen (limit 0.5)`,
+    );
+  return true;
+}
+
 /** The account square: --open's selector, else the button named « Votre profil ». */
 const square = (page) =>
   OPEN ? page.locator(OPEN).first() : page.getByRole("button", { name: "Votre profil" }).first();
@@ -194,7 +212,7 @@ async function boardChecks(page, api, where, reduced, phone = false) {
   else
     check(
       `${where}: the podium rises from the floor to its scores' height (550 ms, the names there at once)`,
-      low < 0.5 && atHeight(settled) && settled.every((s) => s.duration === "0.55s"),
+      risesFromLow(where, low) && atHeight(settled) && settled.every((s) => s.duration === "0.55s"),
       JSON.stringify({ low, settled }),
     );
   const board = await page.evaluate(() => ({
