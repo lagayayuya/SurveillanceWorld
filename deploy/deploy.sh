@@ -167,7 +167,7 @@ ssh "$DEPLOY_TARGET" "set -e
   # they were before it: the test accounts (a table until 014), the migrations applied, and
   # what publishing to OSM keeps (016: the sealed write tokens, the publications, the nodes),
   # the cameras kept off the map (018), the journal and the site's settings (020), the
-  # site's counters by hour, day and month (021).
+  # site's counters by hour, day and month (021), the register's reports (026).
   # A -t naming no table is no error while another matches (pg_dump: only none matching
   # fails). The deploy user's alone: it holds the accounts' password hashes and the tokens.
   install -d -m 700 '$API/backups' && chmod 700 '$API/backups'
@@ -176,6 +176,7 @@ ssh "$DEPLOY_TARGET" "set -e
       pg_dump -Fc -t contributions -t accounts -t test_authors -t schema_migrations \\
         -t osm_write -t osm_publications -t osm_nodes -t hidden_cameras -t admin_log \\
         -t site_settings -t site_counters_hour -t site_counters -t site_counters_month \\
+        -t registre_reports \\
         '$DB_DSN' \\
         -f '$API/backups/contributions-$STAMP.dump' )
   fi

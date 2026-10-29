@@ -449,13 +449,14 @@ put /usr/local/sbin/preview-backup 755 root:root <<'BACKUP'
 # Contributions and the accounts they point at (migration 014; never the sessions), what
 # became of them on OpenStreetMap (016: publications, nodes; never the write tokens, which
 # choosing to publish again recovers), the cameras kept off the map (018), the journal and
-# the site's settings (020), the site's counters, by the hour too (021): the build's tables
-# are reloaded at each deploy.
+# the site's settings (020), the site's counters, by the hour too (021), the register's
+# reports (026): the build's tables are reloaded at each deploy.
 set -eu
 out="/var/backups/preview/contributions-$(date +%F).dump"
 pg_dump -Fc -d preview -t contributions -t accounts -t schema_migrations -t meta \
   -t osm_publications -t osm_nodes -t hidden_cameras -t admin_log -t site_settings \
-  -t site_counters -t site_counters_month -t site_counters_hour -f "$out.tmp"
+  -t site_counters -t site_counters_month -t site_counters_hour -t registre_reports \
+  -f "$out.tmp"
 mv "$out.tmp" "$out"
 find /var/backups/preview -name 'contributions-*.dump' -mtime +13 -delete
 BACKUP

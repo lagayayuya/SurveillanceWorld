@@ -1061,7 +1061,7 @@ def test_the_deploy_s_dump_takes_the_publishing_tables():
     for table in ("contributions", "accounts", "schema_migrations", "osm_write",
                   "osm_publications", "osm_nodes", "hidden_cameras", "admin_log",
                   "site_settings", "site_counters_hour", "site_counters",
-                  "site_counters_month"):  # fmt: skip
+                  "site_counters_month", "registre_reports"):  # fmt: skip
         assert f"-t {table} " in dump, table
     assert text.index("pg_dump -Fc -t contributions") < text.index("db/migrate.sh '$DB_DSN'")
 
@@ -1104,6 +1104,7 @@ def test_bootstrap_s_daily_backup_takes_publications_and_nodes_never_tokens():
     assert "-t admin_log" in script and "-t site_settings" in script  # migration 020
     assert "-t site_counters " in script and "-t site_counters_month " in script  # 021
     assert "-t site_counters_hour " in script  # 021's hours: up to 8 days not yet folded
+    assert "-t registre_reports " in script  # 026
     assert "osm_write" not in script
 
 

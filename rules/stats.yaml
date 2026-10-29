@@ -71,6 +71,13 @@ retention_months: 13
 # The journal (migration 020): this many months, the CNIL's recommendation n° 2021-122 on
 # logging (6 months to a year); older lines deleted.
 journal_retention_months: 12
+# The register's reports (« Signaler une erreur », migration 026): the reader's contact, when
+# one was left, is erased when the report is decided, and at the latest this many days after
+# the day received (time for a reviewer to ask a question); a refused report is deleted this
+# many months after its decision, as the journal line that records it. An accepted report
+# stays: it is the correction, applied again at every build.
+report_contact_days: 90
+report_refused_months: 12
 # The API's thread (lacarte.api.retention): its first run this long after the start, then a
 # look every check_minutes for a new Paris day.
 retention_thread:

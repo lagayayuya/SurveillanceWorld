@@ -187,7 +187,8 @@ def connect(dsn):
 def test_a_run_logs_counts_at_warning_only_when_it_did_something(pg_dsn, caplog):
     with caplog.at_level(logging.DEBUG, logger="lacarte.api"):
         assert retention.once(connect(pg_dsn)) == {"ran": True, "journal": 0, "hours": 0,
-                                                   "days": 0}  # fmt: skip
+                                                   "days": 0, "contacts": 0,
+                                                   "reports": 0}  # fmt: skip
         with psycopg.connect(pg_dsn, autocommit=True) as conn:
             conn.execute("INSERT INTO site_counters_hour VALUES ('2020-01-01 10:00+00',"
                          " 'map', 3)")  # fmt: skip
@@ -195,7 +196,8 @@ def test_a_run_logs_counts_at_warning_only_when_it_did_something(pg_dsn, caplog)
     quiet, busy = [r for r in caplog.records if r.getMessage().startswith("retention")]
     assert quiet.levelno == logging.INFO and busy.levelno == logging.WARNING
     assert busy.getMessage() == ("retention: 0 journal lines deleted, 1 counter hours and"
-                                 " 1 counter days folded")  # fmt: skip
+                                 " 1 counter days folded, 0 report contacts erased, 0 refused"
+                                 " reports deleted")  # fmt: skip
 
 
 def test_while_another_api_runs_it_a_run_does_nothing(pg_dsn):
@@ -203,7 +205,8 @@ def test_while_another_api_runs_it_a_run_does_nothing(pg_dsn):
         assert other.execute("SELECT pg_try_advisory_xact_lock(%s)",
                              (retention.LOCK,)).fetchone() == (True,)  # fmt: skip
         assert retention.once(connect(pg_dsn)) == {"ran": False, "journal": 0, "hours": 0,
-                                                   "days": 0}  # fmt: skip
+                                                   "days": 0, "contacts": 0,
+                                                   "reports": 0}  # fmt: skip
     # The lock went with the other's transaction.
     assert retention.once(connect(pg_dsn))["ran"] is True
 

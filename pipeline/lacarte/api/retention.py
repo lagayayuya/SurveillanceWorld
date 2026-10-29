@@ -1,8 +1,9 @@
 """What is kept and for how long, applied by the API every Paris day (the « go » of 17/10,
 migration 023): the journal 12 months, the counters' hours 7 days, their days 13 whole
-months (rules/stats.yaml). The work is the database's, lacarte_retention(), which the
-API's role may run (SECURITY DEFINER) though it may neither delete a journal line nor fold
-a counter itself.
+months; since migration 026, a register report's contact 90 days at most and a refused
+report 12 months after its decision (rules/stats.yaml). The work is the database's,
+lacarte_retention(), which the API's role may run (SECURITY DEFINER) though it may neither
+delete a journal line nor fold a counter itself.
 
 A thread in the API's process (no timer of the system, no root step): one run
 retention_thread.first_pass_s after the start, then a look every check_minutes, and a run
@@ -27,25 +28,24 @@ log = logging.getLogger("lacarte.api")
 # pg_try_advisory_xact_lock's key, the one lacarte_retention_at() waits on (migration 023):
 # b"lcRetain" read as a big-endian integer; any constant other than sync.LOCK would do.
 LOCK = 7810176774488287598
+# What a run counts: lacarte_retention()'s columns (migrations 023 and 026).
+COUNTS = ("journal", "hours", "days", "contacts", "reports")
 
 
 def once(connect: Callable) -> dict:
     """One run on a connection of its own (`connect()`: autocommit, closed after), in one
     transaction under the lock — on an autocommit connection, transaction() runs BEGIN on
     entry and COMMIT on exit (psycopg 3 docs, « Transactions management »): {ran, journal,
-    hours, days}; busy: ran False."""
+    hours, days, contacts, reports}; busy: ran False."""
     with connect() as conn, conn.transaction():
         if not conn.execute("SELECT pg_try_advisory_xact_lock(%s)", (LOCK,)).fetchone()[0]:
             log.info("retention: busy")
-            return {"ran": False, "journal": 0, "hours": 0, "days": 0}
-        journal, hours, days = conn.execute(
-            "SELECT journal, hours, days FROM lacarte_retention()"
-        ).fetchone()
-    did = journal or hours or days
-    log.log(logging.WARNING if did else logging.INFO,
-            "retention: %d journal lines deleted, %d counter hours and %d counter days folded",
-            journal, hours, days)  # fmt: skip
-    return {"ran": True, "journal": journal, "hours": hours, "days": days}
+            return {"ran": False, **dict.fromkeys(COUNTS, 0)}
+        counts = conn.execute(f"SELECT {', '.join(COUNTS)} FROM lacarte_retention()").fetchone()
+    log.log(logging.WARNING if any(counts) else logging.INFO,
+            "retention: %d journal lines deleted, %d counter hours and %d counter days folded,"
+            " %d report contacts erased, %d refused reports deleted", *counts)  # fmt: skip
+    return {"ran": True, **dict(zip(COUNTS, counts, strict=True))}
 
 
 class Daily:

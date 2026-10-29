@@ -67,7 +67,8 @@ echo "restored: $(echo $tables)"
 
 "${psql[@]}" -At -c "SELECT 'last migration: ' || max(version) FROM schema_migrations"
 for t in accounts contributions osm_write osm_publications osm_nodes hidden_cameras \
-  admin_log site_settings site_counters_hour site_counters site_counters_month meta; do
+  admin_log site_settings site_counters_hour site_counters site_counters_month \
+  registre_reports meta; do
   "${psql[@]}" -At -c "SELECT '$t: ' || count(*) FROM $t"
 done
 echo "next: the contributions export reads it; a deploy then loads the build and settles them"
