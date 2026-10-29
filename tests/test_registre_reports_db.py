@@ -122,6 +122,17 @@ def test_the_rules_and_the_migration_say_the_same_durations():
     assert f"today - interval '{conf['journal_retention_months']} months'" in text
 
 
+def test_the_privacy_page_says_the_same_durations():
+    """« Confidentialité » (fr.json legal.privacy.registre.*) promises what the rules keep."""
+    import json
+
+    conf = stats.rules()
+    fr = json.loads((regions.ROOT / "web" / "src" / "locales" / "fr.json").read_text())
+    said = " ".join(v for k, v in fr.items() if k.startswith("legal.privacy.registre."))
+    assert f"au plus tard {conf['report_contact_days']}\u00a0jours après son envoi" in said
+    assert f"effacé {conf['report_refused_months']}\u00a0mois après la décision" in said
+
+
 def test_the_api_role_receives_lists_and_decides_never_deletes(pg_dsn, pg_loaded):
     """On a database set up as bootstrap.sh sets the server's, migrated to 026: the API's
     role inserts a report, reads it, writes a decision and erases a contact, never deletes

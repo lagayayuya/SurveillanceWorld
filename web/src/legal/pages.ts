@@ -54,6 +54,8 @@ export const PAGES: Page[] = [
       section("privacy", "purpose", 2, "open"),
       section("privacy", "recipients", [null, null, null, "publish", null], "open"),
       section("privacy", "duration", 3, "open"),
+      // The register's « Signaler une erreur » (lot R1b): no account, kept open or closed.
+      section("privacy", "registre", 4),
       section("privacy", "rights", ["open", null, null]),
       section("privacy", "cameras", 2),
     ],
