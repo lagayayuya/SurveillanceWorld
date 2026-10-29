@@ -29,6 +29,10 @@ import {
   rings,
   type Translate,
   volumeHeight,
+  camLayers,
+  densite,
+  densityLayers,
+  OVERVIEW_DZ,
 } from "../src/registre/carte3d.ts";
 
 const src = (f: string) => readFileSync(new URL(`../src/${f}`, import.meta.url), "utf8");
@@ -257,4 +261,38 @@ test("the source: MapLibre, its CSS and the basemap's layers are loaded by the f
   assert.match(SOURCE, /import\("@protomaps\/basemaps"\)/);
   assert.match(SOURCE, /import\("maplibre-gl\/dist\/maplibre-gl-worker\.mjs\?worker&url"\)/);
   assert.match(SOURCE, /import\("maplibre-gl\/dist\/maplibre-gl\.css"\)/);
+});
+
+// Paris's 5,653 ringed points covered the commune (lot R1b): beyond 300 cameras the whole view
+// draws plain 3 px points, beyond 2,000 the filmed streets and a light density; closer than the
+// whole view by OVERVIEW_DZ, the ringed points come back.
+test("a commune's cameras by their number, in its whole view", () => {
+  assert.equal(densite(300), "cercles");
+  assert.equal(densite(301), "points");
+  assert.equal(densite(2000), "points");
+  assert.equal(densite(5653), "rues");
+  const ids = (m: Parameters<typeof camLayers>[0]) =>
+    camLayers(m, 13.5, "#111", "#eee").map((l) => [l.id, l.minzoom ?? null, l.maxzoom ?? null, l.type]);
+  assert.deepEqual(ids("cercles"), [
+    ["cams-o", null, null, "circle"],
+    ["cams", null, null, "circle"],
+  ]);
+  assert.deepEqual(ids("points"), [
+    ["cams-o", 13.5, null, "circle"],
+    ["cams", 13.5, null, "circle"],
+    ["cams-p", null, 13.5, "circle"],
+  ]);
+  assert.deepEqual(ids("rues"), [
+    ["cams-o", 13.5, null, "circle"],
+    ["cams", 13.5, null, "circle"],
+  ]);
+  // the density under the filmed streets (the style puts it before them), the whole view only
+  assert.deepEqual(densityLayers("points", 13.5, "#111"), []);
+  assert.deepEqual(
+    densityLayers("rues", 13.5, "#111").map((l) => [l.id, l.maxzoom, l.type]),
+    [["cams-h", 13.5, "heatmap"]],
+  );
+  const p = camLayers("points", 13.5, "#111", "#eee")[2];
+  assert.deepEqual(p.type === "circle" && p.paint, { "circle-radius": 1.5, "circle-color": "#111" });
+  assert.equal(OVERVIEW_DZ, 1.5);
 });

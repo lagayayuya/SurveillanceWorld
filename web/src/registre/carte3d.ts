@@ -235,6 +235,88 @@ export function exag(z: number): number {
   return 1;
 }
 
+// A commune's cameras in its whole view (lot R1b, Paris: 5,653 ringed points covered the commune):
+// up to CAMS_POINTS, the ringed point; beyond, a plain point of 3 px; beyond CAMS_RUES, the filmed
+// streets alone and the cameras as a light density. Closer than the whole view by OVERVIEW_DZ, the
+// ringed points come back.
+export const CAMS_POINTS = 300;
+export const CAMS_RUES = 2000;
+export const OVERVIEW_DZ = 1.5;
+export type Densite = "cercles" | "points" | "rues";
+export const densite = (n: number): Densite =>
+  n > CAMS_RUES ? "rues" : n > CAMS_POINTS ? "points" : "cercles";
+
+/** The cameras' layers for a drawing (densite) whose whole view ends at zoom `split`. */
+export function camLayers(
+  mode: Densite,
+  split: number,
+  dot: string,
+  ring: string,
+): LayerSpecification[] {
+  const near = mode === "cercles" ? {} : { minzoom: split };
+  const layers: LayerSpecification[] = [
+    // a dark point, a light ring, a dark outer ring (the mockups' « caméra placée »)
+    {
+      id: "cams-o",
+      type: "circle",
+      source: "cams",
+      ...near,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3.2, 13, 4.6, 14, 6, 16, 8],
+        "circle-color": dot,
+      },
+    },
+    {
+      id: "cams",
+      type: "circle",
+      source: "cams",
+      ...near,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 1.4, 13, 2.2, 14, 3.2, 16, 4.6],
+        "circle-color": dot,
+        "circle-stroke-color": ring,
+        "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 11, 1, 13, 1.4, 16, 2.2],
+      },
+    },
+  ];
+  if (mode === "points")
+    layers.push({
+      id: "cams-p",
+      type: "circle",
+      source: "cams",
+      maxzoom: split,
+      paint: { "circle-radius": 1.5, "circle-color": dot },
+    });
+  return layers;
+}
+
+/** Beyond CAMS_RUES, the cameras' light density in the whole view, under the filmed streets. */
+export function densityLayers(mode: Densite, split: number, dot: string): LayerSpecification[] {
+  if (mode !== "rues") return [];
+  return [
+    {
+      id: "cams-h",
+      type: "heatmap",
+      source: "cams",
+      maxzoom: split,
+      paint: {
+        "heatmap-radius": 6,
+        "heatmap-intensity": 0.25,
+        "heatmap-opacity": 0.3,
+        "heatmap-color": [
+          "interpolate",
+          ["linear"],
+          ["heatmap-density"],
+          0,
+          "rgba(0, 0, 0, 0)",
+          1,
+          dot,
+        ],
+      },
+    },
+  ];
+}
+
 /** Every catalogue key the map uses (the register's fr.json carries them). */
 export const KEYS = [
   "registre.carte.titre",
@@ -526,6 +608,9 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
   const insee = d.insee;
   const read = (name: string) => getComputedStyle(el).getPropertyValue(name);
   let P = palette(theme, read);
+  const mode = densite(d.cams.length);
+  // the whole view's last zoom, known once the frame is fitted (homeZoom): until then all of it
+  let split = 24;
   const units: Unit[] = (o.sites ?? []).map((u) => {
     const p = u.parts?.[insee] ?? {};
     return {
@@ -649,6 +734,7 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
         minzoom: FOV_FROM,
         paint: { "line-color": PINK, "line-width": 1.2 },
       },
+      ...densityLayers(mode, split, P.dot),
       {
         id: "rues",
         type: "line",
@@ -659,39 +745,7 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
           "line-width": ["interpolate", ["linear"], ["zoom"], 10, 3, 12, 4.5, 14, 5.5, 16, 8],
         },
       },
-      // a dark point, a light ring, a dark outer ring (the mockups' « caméra placée »)
-      {
-        id: "cams-o",
-        type: "circle",
-        source: "cams",
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 3.2, 13, 4.6, 14, 6, 16, 8],
-          "circle-color": P.dot,
-        },
-      },
-      {
-        id: "cams",
-        type: "circle",
-        source: "cams",
-        paint: {
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            11,
-            1.4,
-            13,
-            2.2,
-            14,
-            3.2,
-            16,
-            4.6,
-          ],
-          "circle-color": P.dot,
-          "circle-stroke-color": P.ring,
-          "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 11, 1, 13, 1.4, 16, 2.2],
-        },
-      },
+      ...camLayers(mode, split, P.dot, P.ring),
       {
         id: "mask",
         type: "fill",
@@ -843,6 +897,13 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
     }
     return out;
   };
+  /** The cameras' layers to the whole view's zooms (camLayers), once `split` is known. */
+  function zoomRanges(): void {
+    if (mode === "cercles") return;
+    for (const id of ["cams-o", "cams"]) map.setLayerZoomRange(id, split, 24);
+    const far = mode === "points" ? "cams-p" : "cams-h";
+    if (map.getLayer(far)) map.setLayerZoomRange(far, 0, split);
+  }
   function frame(): number {
     map.jumpTo({ center: [(w + e) / 2, (s + n) / 2], zoom: 12, pitch: PITCH, bearing: 0 });
     const W = box.clientWidth;
@@ -853,6 +914,8 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
     return map.getZoom();
   }
   const homeZoom = frame();
+  split = homeZoom + OVERVIEW_DZ;
+  zoomRanges();
   map.setMinZoom(homeZoom - 3);
   map.setMaxZoom(18);
 
@@ -889,8 +952,9 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
       : NONE;
     map.setFilter("zin-drf", flat);
     map.setFilter("zin-drl", flat);
-    for (const id of ["fov", "fov-l", "rues", "cams", "cams-o"])
-      map.setLayoutProperty(id, "visibility", couches.cams ? "visible" : "none");
+    for (const id of ["fov", "fov-l", "rues", "cams", "cams-o", "cams-p", "cams-h"])
+      if (map.getLayer(id))
+        map.setLayoutProperty(id, "visibility", couches.cams ? "visible" : "none");
     map.triggerRepaint();
   }
 
