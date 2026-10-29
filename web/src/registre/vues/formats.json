@@ -90,5 +90,42 @@
   },
   "autorisations.aucun_arrete_trouve_pour": {
     "com_nom": "com.nom"
+  },
+  "departement.intercommunalites": {
+    "nIc": "nIc"
+  },
+  "departement.communes": {
+    "nCom": "nCom"
+  },
+  "departement.intercommunalites_triables_par_colonne_une": {
+    "du": "du"
+  },
+  "departement.communes_avec_au_moins_un": {
+    "du": "du"
+  },
+  "departement.aucune_commune_de_ce_nom": {
+    "du": "du"
+  },
+  "departement.contrats_signes_depuis_2018_pour": {
+    "an": "conY0",
+    "dans": "dans"
+  },
+  "departement.qui_vend": {
+    "dans": "dans"
+  },
+  "departement.entreprises_titulaires_de_contrats": {
+    "dans": "dans"
+  },
+  "departement.qui_achete": {
+    "dans": "dans"
+  },
+  "departement.acheteurs_publics": {
+    "du": "du"
+  },
+  "departement.aucune_commune": {
+    "du": "du"
+  },
+  "departement.aucun_contrat": {
+    "dans": "dans"
   }
 }
