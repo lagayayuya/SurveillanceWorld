@@ -630,7 +630,7 @@ export async function carte(el: HTMLElement, o: CarteOptions): Promise<Carte> {
   const hVis = (u: Unit) => volumeHeight(u.heures, maxH, diagM);
 
   // the elements, built through the DOM (no markup string)
-  el.classList.add("c3");
+  el.classList.add("c3d");
   const box = document.createElement("div");
   box.className = "c3-map";
   const over = document.createElement("canvas");

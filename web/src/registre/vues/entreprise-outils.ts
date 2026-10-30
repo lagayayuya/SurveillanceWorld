@@ -9,11 +9,20 @@
 import { depArt } from "../commun.ts";
 import { buyerHref, buyerNom, depNom, docHref, entName, type Lexique } from "../corpus.ts";
 import type { Handler, Rich, RichItem } from "../dc.ts";
-import type { Acheteur, Affaire, Evenement } from "../donnees.ts";
+import type { Acheteur, Affaire, Couverture, Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { count, fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import { type BaseState, type Col, Vue } from "../vue.ts";
+import {
+  lienAcheteur,
+  lienCommune,
+  lienDepartement,
+  lienDocument,
+  lienEntreprise,
+} from "../liens.ts";
+import { sources } from "../sources.ts";
+import { couleur, icone } from "../types.ts";
+import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
 export type Faits = {
@@ -68,7 +77,6 @@ export type Ct = {
 export type Cl = { s: string; n: number; amt: number; last: string; centrale: boolean };
 
 const strong = (s: Rich): RichItem => ({ strong: s });
-const link = (href: string, text: Rich): RichItem => ({ a: { href, text } });
 const ym = (s: string) => +s.slice(0, 4) * 12 + +s.slice(5, 7);
 const numDate = (d: string) => d.split("-").reverse().join("/");
 
@@ -180,9 +188,7 @@ export function faits(F: FichierEntreprise, CT: Ct[]): RichItem[][] {
   const by = new Map(CT.map((c) => [c.e.id, c]));
   const place = (id: string): RichItem => {
     const c = by.get(id);
-    if (!c) return "";
-    const nom = placeOf(F, c);
-    return c.b ? link(buyerHref(F, c.b), nom) : nom;
+    return c ? placeLien(F, c) : "";
   };
   const out: RichItem[][] = [];
   const x = F.page.faits;
@@ -233,6 +239,15 @@ export function placeOf(F: FichierEntreprise, c: Ct): string {
     : buyerNom(F, c.b);
 }
 
+/** A contract's place as a link to its fiche: its commune's when the build knows it, else its
+ * buyer's (a commune buyer's is its commune's); no buyer published, its words only. */
+export function placeLien(F: FichierEntreprise, c: Ct, liste = false): RichItem {
+  const k = c.e.insee;
+  if (k && F.communes[k]) return lienCommune(F, k, undefined, liste);
+  if (!c.b) return t("entreprise.acheteur_non_publie");
+  return lienAcheteur(F, c.b, placeOf(F, c), liste);
+}
+
 /** The buyer's kind, in the words of the rankings (« commune », « centrale d'achat »). */
 export function buyerCat(F: FichierEntreprise, c: Cl): string {
   if (c.centrale) return t("chiffres.cat_centrale");
@@ -247,8 +262,14 @@ export function buyerCat(F: FichierEntreprise, c: Cl): string {
 const meur = (n: number): string =>
   !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
-export type Props = { siren: string; F: FichierEntreprise };
-export type State = BaseState & { sort: string; dir: number; all: boolean; allAct: boolean };
+export type Props = { siren: string; F: FichierEntreprise; couverture?: Couverture };
+export type State = BaseState & {
+  sort: string;
+  dir: number;
+  all: boolean;
+  allAct: boolean;
+  allDocs: boolean;
+};
 type Det = {
   kicker: string;
   title: string;
@@ -258,19 +279,27 @@ type Det = {
   foot?: string;
 };
 
+// one colour for the measure, the fiche's type's; yellow for the selection alone (v2 § 8)
 const COLOURS = {
-  on: "var(--accent-fill)",
-  bar: "var(--fg)",
-  prog: "var(--blue)",
+  on: "var(--type-territoire)",
+  bar: "var(--type-entreprise)",
+  prog: "var(--type-entreprise)",
 };
 
 export class Entreprise extends Vue<Props, State> {
   private memo: { CT: Ct[]; CL: Cl[] } | null = null;
   protected init(): Partial<State> {
-    return { sort: "amt", dir: -1, all: false, allAct: false };
+    return { sort: "amt", dir: -1, all: false, allAct: false, allDocs: false };
   }
   titre(): string {
     return entName(this.props.F, this.props.siren);
+  }
+  type() {
+    return "entreprise" as const;
+  }
+  partage(): Partage | null {
+    // a sole trader is never shared by its name: its page is not one either
+    return this.props.F.entreprise.entrepreneur_individuel ? null : { titre: this.titre() };
   }
   private data() {
     this.memo ??= prepare(this.props.F);
@@ -288,17 +317,15 @@ export class Entreprise extends Vue<Props, State> {
     const total = CT.reduce((s, c) => s + c.amt, 0);
     const of = P.faits.offres;
 
-    const ks = "padding: 14px 0 14px 20px; border-left: 1px solid var(--rule)";
     const kpis = [
-      { v: fr(CT.length), l: t("entreprise.kpi_contrats", { n: CT.length }), s: "padding: 14px 0" },
-      { v: fr(CL.length), l: t("entreprise.kpi_clientes", { n: CL.length }), s: ks },
-      { v: total ? money(total) : "—", l: t("entreprise.kpi_montant"), s: ks },
+      { v: fr(CT.length), l: t("entreprise.kpi_contrats", { n: CT.length }) },
+      { v: fr(CL.length), l: t("entreprise.kpi_clientes", { n: CL.length }) },
+      { v: total ? money(total) : "—", l: t("entreprise.kpi_montant") },
       {
         v: of?.renseignes
           ? t("entreprise.kpi_offre_v", { a: fr(of.une_offre), b: fr(of.renseignes) })
           : "—",
         l: t("entreprise.kpi_offre"),
-        s: ks,
       },
     ];
 
@@ -335,7 +362,9 @@ export class Entreprise extends Vue<Props, State> {
         y,
         v: meur(sums[i]),
         n: count(ya[i].length, "contrat"),
-        bar: `display: block; height: ${Math.max(2, Math.round((sums[i] / mxs) * 180))}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}`,
+        label: t("entreprise.annee_label", { y, v: meur(sums[i]), n: ya[i].length }),
+        on: String(this.on(k)),
+        bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}`,
         hover: this.pick(k),
       };
     });
@@ -392,11 +421,12 @@ export class Entreprise extends Vue<Props, State> {
         Math.min(100, Math.round(((now - ym(c.d)) / Math.max(1, ym(end) - ym(c.d))) * 100)),
       );
       return {
-        nom: placeOf(F, c),
+        nom: placeLien(F, c),
         span: `${c.d.slice(0, 4)} → ${shortMonth(end)}`,
         amt: money(c.raw),
         prog: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; background: ${on ? COLOURS.on : COLOURS.prog}`,
-        cls: `bar2${on ? " on" : ""}`,
+        progLabel: t("entreprise.ecoule", { pct }),
+        cls: `bar2 rg2${on ? " on" : ""}`,
         hover: this.pick(k),
       };
     });
@@ -413,12 +443,12 @@ export class Entreprise extends Vue<Props, State> {
       const on = this.on(k);
       cDet(c, k);
       return {
-        nom: placeOf(F, c),
+        nom: placeLien(F, c),
         y: shortDate(c.d),
         rep: !!c.e.date_lue && c.e.date_lue !== c.e.date,
         amt: money(c.amt),
-        bar: `display: inline-block; height: 14px; width: ${Math.max(4, Math.round((c.amt / bmx) * 150))}px; background: ${on ? COLOURS.on : COLOURS.bar}`,
-        cls: `bar2${on ? " on" : ""}`,
+        bar: `display: inline-block; height: 14px; width: ${Math.max(4, Math.round((c.amt / bmx) * 150))}px; background: ${on ? COLOURS.on : COLOURS.bar}; border: 1.5px solid #111`,
+        cls: `bar2 rg2b${on ? " on" : ""}`,
         hover: this.pick(k),
       };
     });
@@ -429,14 +459,10 @@ export class Entreprise extends Vue<Props, State> {
     for (const c of CL) dc.set(depOf(c.s), (dc.get(depOf(c.s)) ?? 0) + 1);
     const dl = [...dc.entries()].sort((a, b) => b[1] - a[1]);
     const depLabel = (d: string) => (d ? depNom(d) : t("entreprise.dep_inconnu"));
-    const deps = dl.map(([d, n], i) => ({
-      l: t("entreprise.dep_titre", { dep: depLabel(d), n }),
-      short: `${i === 0 ? depLabel(d) : d || "?"} · ${fr(n)}`,
-      style: `display: flex; align-items: center; padding: 0 8px; overflow: hidden; white-space: nowrap; font-size: 13px; font-weight: 700; flex: ${n} 1 0; ${
-        i === 0
-          ? "background: var(--fg); color: var(--bg)"
-          : "border-left: 2px solid var(--fg); background: var(--soft); color: var(--fg)"
-      }`,
+    // where its clients are, each département a link to its fiche (in place of R1's stacked strip)
+    const depLine = dl.map(([d, n]) => ({
+      lien: d ? lienDepartement(d, depLabel(d)) : depLabel(d),
+      n: t("entreprise.n_clientes", { n }),
     }));
     const key: Record<string, (c: Cl) => string | number> = {
       nom: (c) => buyerNom(F, c.s),
@@ -469,15 +495,15 @@ export class Entreprise extends Vue<Props, State> {
         href: buyerHref(F, c.s),
       };
       return {
-        nom: buyerNom(F, c.s),
+        nom: lienAcheteur(F, c.s),
         cat: buyerCat(F, c),
-        dep: depNom(depOf(c.s)) || "—",
+        dep: depOf(c.s) ? lienDepartement(depOf(c.s)) : "—",
         n: fr(c.n),
         amt: c.amt ? money(c.amt) : "—",
         last: c.last.slice(0, 4),
         href: buyerHref(F, c.s),
         cls: `r${this.on(k) ? " on" : ""}`,
-        bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: var(--blue)`,
+        bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${COLOURS.bar}; border: 1px solid #111`,
         hover: this.pick(k),
       };
     });
@@ -504,12 +530,27 @@ export class Entreprise extends Vue<Props, State> {
       .filter(([s]) => s !== EI && !F.entreprises[s]?.entrepreneur_individuel)
       .sort((a, b) => b[1] - a[1] || entName(F, a[0]).localeCompare(entName(F, b[0]), "fr"))
       .map(([s, n]) => ({
-        nom: entName(F, s),
+        lien: lienEntreprise(F, s),
         n: count(n, "contrat"),
-        href: `/registre/entreprise/${s}`,
       }));
 
     const nDocs = CT.length + P.modifications;
+    // its documents, the most recent first (V2-Entreprise): each its record
+    const recent = CT.slice().sort((a, b) => b.d.localeCompare(a.d));
+    const docs = (S.allDocs ? recent : recent.slice(0, 8)).map((c) => {
+      const k = `c${c.i}`;
+      cDet(c, k);
+      return {
+        cls: `drow${this.on(k) ? " on" : ""}`,
+        c: `--c: ${couleur("con")}`,
+        i: icone("con"),
+        d: shortDate(c.d),
+        qui: placeLien(F, c),
+        amt: lienDocument(F, c.e, money(c.raw)),
+        dur: c.duree ? t("entreprise.duree_mois", { n: fr(c.duree) }) : "",
+        hover: this.pick(k),
+      };
+    });
     const d0 = this.state.sel ? DET[this.state.sel] : undefined;
     const det = d0
       ? {
@@ -531,38 +572,39 @@ export class Entreprise extends Vue<Props, State> {
           links: [],
           foot: "",
         };
-    const tabs = [
-      ["#argent", t("entreprise.tab_argent")],
-      ["#clientes", t("entreprise.tab_clientes", { n: fr(CL.length) })],
-      ["#partenaires", t("entreprise.tab_plusieurs", { n: fr(nPar) })],
-      ["#contrats", t("entreprise.tab_contrats", { n: fr(nDocs) })],
-    ].map(([href, l], i) => ({
-      href,
-      l,
-      style: `display: inline-flex; align-items: center; min-height: 52px; padding: 0 18px; font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none; color: var(--fg); ${i === 0 ? "box-shadow: inset 0 -4px 0 var(--fg)" : ""}`,
-    }));
     const sirenTxt = siren.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
     const naf = x.naf_libelle ? x.naf_libelle.charAt(0).toLowerCase() + x.naf_libelle.slice(1) : "";
     const copies = F.stats?.copies ?? 0;
 
+    // a sole trader: neither its name nor its number (the number names the person in SIRENE)
+    const sous = ei
+      ? t("entreprise.sous_ei")
+      : naf
+        ? t("entreprise.sous_naf", { siren: sirenTxt, naf })
+        : t("entreprise.sous", { siren: sirenTxt });
+    const secs = this.sections({
+      essentiel: true,
+      temps: yrs.length > 0 && CT.length > 0,
+      avecqui: CL.length > 0 || partners.length > 0,
+      documents: CT.length > 0,
+      sources: true,
+    });
+    const wide = large();
     return {
       ...this.base("entreprise"),
       ...this.info("mt", "par"),
-      fil: [
-        { l: t("commun.fil_registre"), href: "/registre/" },
-        { l: t("entreprise.fil_entreprises"), href: "/registre/chiffres" },
-      ],
-      filIci: nom,
+      tete: this.tete("entreprise", nom, sous),
+      band: this.bandeau("entreprise", nom, secs),
+      secs,
+      lay: {
+        inner: wide ? "inner" : "tin",
+        tickets: wide ? "tickets" : "tickets t2",
+        deux: wide ? "deux" : "deux un",
+      },
+      sources: sources(this.props.couverture, ["contrats", "avis"], !ei),
       nom,
-      // a sole trader: neither its name nor its number (the number names the person in SIRENE)
-      sous: ei
-        ? t("entreprise.sous_ei")
-        : naf
-          ? t("entreprise.sous_naf", { siren: sirenTxt, naf })
-          : t("entreprise.sous", { siren: sirenTxt }),
       lead: lead(F, CT.length, CL.length),
       kpis,
-      tabs,
       years,
       yearsCols: `repeat(${yrs.length}, minmax(0, 1fr))`,
       yearAlt: t("entreprise.annees_alt", { de: yrs[0], a: yrs[yrs.length - 1] }),
@@ -587,10 +629,7 @@ export class Entreprise extends Vue<Props, State> {
       faits: faits(F, CT),
       faitsShow: P.faits.identiques.length > 0 || !!P.faits.rapproche || !!of?.renseignes,
       nCli: CL.length,
-      deps,
-      depAlt: t("entreprise.deps_alt", {
-        liste: dl.map(([d, n]) => `${depLabel(d)} ${fr(n)}`).join(", "),
-      }),
+      depLine,
       cols,
       clients,
       more: (() => this.setState({ all: !S.all })) as Handler,
@@ -605,6 +644,12 @@ export class Entreprise extends Vue<Props, State> {
           ? t("entreprise.par_tous", { n: nPar })
           : t("entreprise.par_phrase", { n: nPar, total: fr(CT.length) }),
       partners,
+      docs,
+      docsMore: recent.length > 8,
+      docsLabel: S.allDocs
+        ? t("entreprise.reduire")
+        : t("entreprise.les_contrats", { n: recent.length }),
+      togDocs: (() => this.setState({ allDocs: !S.allDocs })) as Handler,
       docsPhrase: P.modifications
         ? t("entreprise.docs_phrase", {
             docs: count(nDocs, "document"),

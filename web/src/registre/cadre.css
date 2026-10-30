@@ -6,8 +6,11 @@
    --bg2 is --bg-2, --link is --blue, --linkline, --shticket, --shtitle and --serif are the
    --reg-* tokens, theme/punk/tokens.css); their .th.dark is the page's dark mode. Each type's
    colour --c (and the frame's --tc) is a --type-* token, given by the markup (registre/types.ts).
-   After the R1 kit (registre.css): where both name a rule, the v2 boards' wins. What the site adds
-   to the boards closes the file. */
+   After the R1 kit (registre.css): where both name a rule, the v2 boards' wins. Three of the
+   boards' classes are renamed because the map's own stylesheets give the same names generic rules
+   that would reach the register (theme/punk/machine.css .cut and .drawer, style.css .share): .cut
+   is .rg-cut, .drawer .rg-drawer, .share .rg-share. What the site adds to the boards closes the
+   file. */
 
 /* --- every board --- */
 .rg .th a {
@@ -208,11 +211,11 @@
   gap: 6px 2px;
   margin: 14px 0 10px;
 }
-.rg .cut {
+.rg .rg-cut {
   display: inline-flex;
   padding: 2px 5px 1px;
 }
-.rg .cut.c0 {
+.rg .rg-cut.c0 {
   background: #111;
   color: #f2efe6;
   font:
@@ -220,7 +223,7 @@
     sans-serif;
   font-stretch: 62%;
 }
-.rg .cut.c1 {
+.rg .rg-cut.c1 {
   background: #ff48b0;
   color: #111;
   font:
@@ -228,14 +231,14 @@
     sans-serif;
   font-stretch: 125%;
 }
-.rg .cut.c2 {
+.rg .rg-cut.c2 {
   background: #7fd4ff;
   color: #111;
   font:
     400 46px / 1 "Special Elite",
     monospace;
 }
-.rg .cut.c3 {
+.rg .rg-cut.c3 {
   border: 1.5px solid var(--line);
   background: var(--bg-2);
   color: var(--fg);
@@ -244,7 +247,7 @@
     sans-serif;
   font-stretch: 100%;
 }
-.rg .cut.c4 {
+.rg .rg-cut.c4 {
   color: var(--reg-serif);
   font:
     italic 700 52px / 1 Georgia,
@@ -253,19 +256,19 @@
 .rg .gap {
   width: 14px;
 }
-.rg .cutout.s .cut.c0 {
+.rg .cutout.s .rg-cut.c0 {
   font-size: 30px;
 }
-.rg .cutout.s .cut.c1 {
+.rg .cutout.s .rg-cut.c1 {
   font-size: 25px;
 }
-.rg .cutout.s .cut.c2 {
+.rg .cutout.s .rg-cut.c2 {
   font-size: 27px;
 }
-.rg .cutout.s .cut.c3 {
+.rg .cutout.s .rg-cut.c3 {
   font-size: 28px;
 }
-.rg .cutout.s .cut.c4 {
+.rg .cutout.s .rg-cut.c4 {
   font-size: 30px;
 }
 .rg .cutout.s .gap {
@@ -737,7 +740,7 @@
   width: 16px;
   height: 16px;
 }
-.rg .share {
+.rg .rg-share {
   position: absolute;
   top: 140px;
   right: 34px;
@@ -1083,7 +1086,7 @@
   color: var(--fg);
   font-size: 14px;
 }
-.rg .drawer {
+.rg .rg-drawer {
   position: absolute;
   left: 0;
   right: 0;
@@ -1283,5 +1286,80 @@
 @media (prefers-reduced-motion: reduce) {
   .rg > .th > .sheet {
     transition: none;
+  }
+}
+/* A section's top stays under the band (52 px) when its link brings it in; the share window's head. */
+.rg .sec[id] {
+  scroll-margin-top: 60px;
+}
+.rg .partage-haut {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rg .ogimg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 2px solid var(--line);
+}
+.rg .rg-drawer.partage {
+  gap: 8px;
+  /* over the phone's band of the panel (registre.css, z 30) */
+  z-index: 40;
+}
+
+/* --- the fiches on the v2 skeleton: what the boards leave to the site --- */
+/* Two lists side by side in a section (Entreprise: running today, the largest), one on a phone. */
+.rg .deux {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 36px;
+  margin-top: 18px;
+  align-items: start;
+}
+.rg .deux.un {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rg .bar2.rg2 {
+  grid-template-columns: minmax(0, 1fr) 140px 82px;
+}
+.rg .bar2.rg2b {
+  grid-template-columns: 180px minmax(0, 1fr);
+}
+.rg .prog {
+  position: relative;
+  display: block;
+  height: 6px;
+  background: var(--soft);
+  border: 1px solid var(--rule);
+}
+@media (max-width: 959px) {
+  .rg .grid2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rg .drow {
+    grid-template-columns: 24px 92px minmax(0, 1fr) 76px;
+  }
+  .rg .drow .m {
+    display: none;
+  }
+  .rg .src {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+  .rg .tin > .yb,
+  .rg .tin .yb {
+    height: 120px;
+    gap: 5px;
+  }
+  .rg .yb .n {
+    font-size: 13px;
+  }
+  .rg .yl span {
+    font-size: 10.5px;
+  }
+  .rg .yl span em {
+    display: none;
   }
 }

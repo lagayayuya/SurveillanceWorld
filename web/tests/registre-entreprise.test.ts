@@ -5,7 +5,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { richText } from "../src/registre/dc.ts";
+import { type Rich, richText } from "../src/registre/dc.ts";
 import { setMessages } from "../src/registre/i18n.ts";
 import {
   Entreprise,
@@ -100,7 +100,7 @@ test("the contracts: the build's list (no copy), oldest first; a total adds `com
 test("the page's values: figures, running contracts, unknown ends, singulars", () => {
   const v = new Entreprise({ siren: "100000001", F: fichier() }).renderVals() as Record<string, unknown>;
   assert.equal(v.nom, "Acme Video");
-  assert.equal(v.sous, "SIREN 100 000 001");
+  assert.equal((v.tete as { ligne: string }).ligne, "SIREN 100 000 001");
   const kpis = v.kpis as { v: string; l: string }[];
   assert.deepEqual(
     kpis.map((k) => k.v),
@@ -109,7 +109,7 @@ test("the page's values: figures, running contracts, unknown ends, singulars", (
   assert.equal(kpis[0].l, "contrats signés");
   assert.equal(v.nAct, "1 contrat");
   assert.equal(v.sansFin, "1 contrat n'a pas de durée publiée : sa fin n'est pas connue.");
-  assert.equal((v.act as { nom: string }[])[0].nom, "Deux");
+  assert.equal(richText((v.act as { nom: Rich }[])[0].nom), "Deux");
   // the largest: the counted ones only, never the ceiling for other buyers
   assert.deepEqual(
     (v.big as { amt: string }[]).map((b) => b.amt),
@@ -120,8 +120,10 @@ test("the page's values: figures, running contracts, unknown ends, singulars", (
   assert.deepEqual(v.partners, []);
   assert.equal(v.docsPhrase, "4 documents : 3 contrats et 1 modification, avec la cliente, le montant et la source.");
   assert.equal(v.doublonNote, " Un contrat publié deux fois compte une fois : 3 contrats ici, 4 lignes publiées dans les données de la commande publique.");
-  // a commune buyer opens its commune's page
-  assert.equal((v.clients as { href: string }[]).find((c) => c.href.includes("69001"))?.href, "/registre/commune/69001");
+  // a commune buyer opens its commune's page, its link the territories' (design/registre/v2)
+  const client = (v.clients as { nom: Rich }[]).map((c) => JSON.stringify(c.nom)).find((c) => c.includes("69001"));
+  assert.match(client ?? "", /"href":"\/registre\/commune\/69001"/);
+  assert.match(client ?? "", /"c":"var\(--type-territoire\)"/);
 });
 
 test("the lead and the facts say what the build found, nothing more", () => {
@@ -147,8 +149,8 @@ test("a sole trader is never named, nor its number shown", () => {
     F: fichier({ nom: null, entrepreneur_individuel: true }),
   }).renderVals() as Record<string, unknown>;
   assert.equal(v.nom, "entreprise individuelle, nom non publié");
-  assert.equal(v.filIci, "entreprise individuelle, nom non publié");
-  assert.equal(v.sous, "Entreprise individuelle");
+  assert.equal((v.tete as { nom: string }).nom, "entreprise individuelle, nom non publié");
+  assert.equal((v.tete as { ligne: string }).ligne, "Entreprise individuelle");
   assert.equal(v.parcourir, "/registre/");
 });
 

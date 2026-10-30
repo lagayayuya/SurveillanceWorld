@@ -874,7 +874,7 @@
   box-sizing: border-box;
 }
 /* the map (carte3d.mjs) inside a view: it fills the mockup's frame; its own rules from style.css */
-.rg .th .c3 {
+.rg .th .c3d {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -908,7 +908,7 @@
 .rg .th .c3-ctl[hidden] {
   display: none;
 }
-.rg .th .c3 .ctl {
+.rg .th .c3d .ctl {
   width: 44px;
   height: 44px;
   display: flex;

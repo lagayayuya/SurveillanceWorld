@@ -18,7 +18,18 @@ export type RichItem =
   | string
   | { strong: Rich }
   | { em: Rich }
-  | { a: { href: string; text: Rich; cls?: string; label?: string } }
+  | {
+      a: {
+        href: string;
+        text: Rich;
+        cls?: string;
+        label?: string;
+        /** a type's colour (a --type-* token, registre/types.ts): the link and its square take it */
+        c?: string;
+        /** a type's pictogram (a path's d): drawn in its square (.mini) before the words */
+        i?: string;
+      };
+    }
   | { br: true }
   | { span: Rich; cls: string };
 
@@ -290,6 +301,17 @@ function pushText(out: VNode[], s: string) {
   else out.push(s);
 }
 
+/** A type's pictogram as the v2 boards draw it: 24 × 24, stroked, hidden from screen readers. */
+const PICTO: [string, string][] = [
+  ["viewBox", "0 0 24 24"],
+  ["fill", "none"],
+  ["stroke", "currentColor"],
+  ["stroke-width", "2"],
+  ["stroke-linecap", "round"],
+  ["stroke-linejoin", "round"],
+  ["aria-hidden", "true"],
+];
+
 const vel = (name: string, attrs: [string, string][], kids: VNode[]): VEl => ({
   name,
   ns: HTML,
@@ -335,7 +357,20 @@ function richInto(v: unknown, out: VNode[], depth: number) {
     else {
       const attrs: [string, string][] = [["href", href], ...cls(a.cls)];
       if (typeof a.label === "string") attrs.push(["aria-label", a.label]);
-      out.push(vel("a", attrs, text));
+      const link = vel("a", attrs, text);
+      // a type's colour is a --type-* token, nothing else (the CSSOM gets it as --c)
+      const c =
+        typeof a.c === "string" && /^var\(--type-[a-z]+\)$/.test(a.c) ? `--c: ${a.c}` : null;
+      link.style = c;
+      if (typeof a.i === "string" && /^[\d\s.,a-zA-Z-]+$/.test(a.i)) {
+        const svg = vel("svg", [...PICTO], [vel("path", [["d", a.i]], [])]);
+        svg.ns = SVG;
+        (svg.kids[0] as VEl).ns = SVG;
+        const mini = vel("span", [["class", "mini"]], [svg]);
+        mini.style = c;
+        link.kids.unshift(mini);
+      }
+      out.push(link);
     }
   }
 }

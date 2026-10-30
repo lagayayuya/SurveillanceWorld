@@ -112,7 +112,7 @@ export function decoupe(nom: string): Lettre[] {
     }
     out.push({
       ch,
-      cls: `cut c${i % 5}`,
+      cls: `rg-cut c${i % 5}`,
       st: `transform: rotate(${TILT[i % 12]}deg) translateY(${LIFT[i % 12]}px)`,
     });
     i++;

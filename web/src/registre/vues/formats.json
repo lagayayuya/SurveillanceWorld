@@ -166,5 +166,8 @@
   },
   "acheteur.aussi": {
     "lie_nom": "lie.nom"
+  },
+  "entreprise.a_plusieurs_titre": {
+    "n": "partners.length"
   }
 }

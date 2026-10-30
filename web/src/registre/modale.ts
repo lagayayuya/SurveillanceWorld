@@ -17,11 +17,12 @@ import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts
 import { Absent, load } from "./donnees.ts";
 import { fermer } from "./hote.ts";
 import { setMessages, t } from "./i18n.ts";
+import { boutonPartage, fermerPartage } from "./partage.ts";
 // « Signaler une erreur »: its form opens over any page that links to it
 import "./signaler.ts";
 import { type Route, route } from "./routes.ts";
 import { couleur, icone, pluriel, type TypeCle } from "./types.ts";
-import { setWords } from "./vue.ts";
+import { type Partage, setWords } from "./vue.ts";
 import formats from "./vues/formats.json";
 import socle from "./vues/socle.html?raw";
 
@@ -35,6 +36,7 @@ export type Miette = { k: TypeCle; l: string; href: string };
  * shows (the frame's colour), the breadcrumb above it. */
 export type VueCadre = View<Record<string, unknown>> & {
   titre?(): string;
+  partage?(): Partage | null;
   type?(): TypeCle;
   fil?(): Miette[];
 };
@@ -254,7 +256,15 @@ function entete(r: Route): void {
         return s;
       })();
   haut.className = "ttop";
-  haut.replaceChildren(debut, el("span", { class: "flex" }), boutonTheme(), boutonFermer());
+  const vue = mounted?.view;
+  const share = vue?.partage ? boutonPartage(vue as { partage(): Partage | null }) : null;
+  haut.replaceChildren(
+    debut,
+    el("span", { class: "flex" }),
+    ...(share ? [share] : []),
+    boutonTheme(),
+    boutonFermer(),
+  );
 }
 
 /** The phone's sheet: its handle (dragged or touched) lowers it to half the screen, the map seen
@@ -357,6 +367,8 @@ function ouvrirCadre(): void {
 /** The register leaves the page (the map's address again): the map gets its focus back. */
 export function cacher(): void {
   if (!ouvert) return;
+  fermerPartage();
+  observateur?.disconnect();
   ouvert = false;
   rg.hidden = true;
   for (const x of inertes.splice(0)) x.inert = false;
@@ -371,7 +383,7 @@ export function cacher(): void {
 
 // --- the phone: a title shrinks until its longest word fits; a touched row unfolds ----------
 function fitTitles(scope: Element): void {
-  for (const h of scope.querySelectorAll<HTMLElement>("h1")) {
+  for (const h of scope.querySelectorAll<HTMLElement>("h1:not(.sr)")) {
     // from the template's own size when it sets one (Contrat-grand: 60 px), else the class's
     if (h.dataset.taille === undefined) h.dataset.taille = h.style.getPropertyValue("font-size");
     const base = h.dataset.taille;
@@ -387,6 +399,7 @@ function fitTitles(scope: Element): void {
 const unfolded = new WeakSet<Element>();
 function afterRender(scope: Element): void {
   fitTitles(scope);
+  marquerSection();
   if (WIDE.matches) return;
   for (const table of scope.querySelectorAll("table.t")) {
     const heads = [...table.querySelectorAll("thead th")].map((th) =>
@@ -414,6 +427,36 @@ addEventListener("resize", () => {
   if (ouvert) fitTitles(root);
 });
 
+// --- the band's current section: the one at the top of the frame, read as one scrolls -------------
+let observateur: IntersectionObserver | null = null;
+let section = "";
+/** The band's links say which section is at the top (aria-current), again after each render. */
+function marquerSection(): void {
+  for (const a of root.querySelectorAll<HTMLElement>("[data-sec]"))
+    a.setAttribute("aria-current", String(a.dataset.sec === section));
+}
+function suivreSections(): void {
+  observateur?.disconnect();
+  const secs = [...root.querySelectorAll<HTMLElement>("section.sec[id]")];
+  section = secs[0]?.id ?? "";
+  marquerSection();
+  if (!secs.length) return;
+  const vus = new Map<string, boolean>();
+  observateur = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) vus.set(e.target.id, e.isIntersecting);
+      const first = secs.find((x) => vus.get(x.id));
+      if (first && first.id !== section) {
+        section = first.id;
+        marquerSection();
+      }
+    },
+    // the band (52 px) covers the frame's top: a section counts once it is under it
+    { root: scroll, rootMargin: "-60px 0px -55% 0px" },
+  );
+  for (const x of secs) observateur.observe(x);
+}
+
 // --- the router -------------------------------------------------------------------------------
 let mounted: Mounted<VueCadre> | null = null;
 let shown = "";
@@ -431,6 +474,7 @@ export async function afficher(): Promise<void> {
   const r = route(location.pathname, location.search);
   courant = r;
   ouvrirCadre();
+  fermerPartage();
   disposer();
   const key = `${location.pathname}${location.search}|${WIDE.matches}`;
   if (key === shown) {
@@ -457,6 +501,7 @@ export async function afficher(): Promise<void> {
     if (ask !== asked) return; // a later path was asked meanwhile
     mounted?.unmount();
     mounted = mount(root, m.Vue, props, m.template, { parts, afterRender, format });
+    suivreSections();
     shown = key;
     ici = mounted.view.titre?.() ?? "";
     const k = mounted.view.type?.() ?? typeDe(r);

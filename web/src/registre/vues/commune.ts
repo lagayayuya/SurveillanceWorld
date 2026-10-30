@@ -306,7 +306,7 @@ class Commune extends Vue<Props, State> {
     const p = document.createElement("p");
     p.textContent = t(key, { nom });
     p.style.cssText = "margin: 0; padding: 20px; color: var(--muted)";
-    el.classList.remove("c3");
+    el.classList.remove("c3d");
     el.replaceChildren(p);
     el.style.setProperty("height", "auto", "important");
     this.setState({ carte: "absente" });

@@ -2,7 +2,10 @@
 // the theme's class, the catalogue's words (`t`), the « i » buttons, the selection shown in the
 // panel, the sortable column heads.
 import { nest, type Texts } from "./catalogue.ts";
-import { type Handler, View } from "./dc.ts";
+import { type Handler, type Rich, View } from "./dc.ts";
+import { t } from "./i18n.ts";
+import { partager } from "./partage.ts";
+import { decoupe, type Lettre, type Repere, repere, type TypeCle } from "./types.ts";
 
 let words: Texts = {};
 /** The catalogue as the templates read it ({{t.<view>.<key>}}), set once by the page. */
@@ -14,6 +17,22 @@ export type BaseState = { sel: string | null; open: Record<string, boolean> };
 
 /** A sortable column head: [key, label, class, width]; no key, not sortable. */
 export type Col = [key: string, label: string, cls?: string, width?: string];
+
+/** The skeleton every fiche follows, in this order (design/registre/v2, V2-Types): identity (the
+ * head), then these; an empty section is left out, the others numbered in turn. */
+export const SECTIONS = ["essentiel", "temps", "avecqui", "documents", "sources"] as const;
+export type Section = (typeof SECTIONS)[number];
+export type Sections = {
+  /** the sections shown, in order: { k, n, l, href } */
+  liste: { k: Section; n: number; l: string; href: string }[];
+} & Partial<Record<Section, { n: number; l: string }>>;
+
+/** What a fiche shares (partage.ts): its title, and the text R3's build writes for it, if any. */
+export type Partage = { titre: string; texte?: string; image?: string };
+
+/** A wide screen (the boards' 960 px and up): the frame, the head and the band differ on a phone. */
+export const large = (): boolean =>
+  typeof matchMedia === "function" && matchMedia("(min-width: 960px)").matches;
 
 export abstract class Vue<
   P extends object = Record<string, unknown>,
@@ -32,6 +51,49 @@ export abstract class Vue<
   /** The tab's title: « <titre> · Le registre · Surveillance World ». */
   titre(): string {
     return "";
+  }
+
+  /** What « Partager » shares; a fiche says it (null: the page has no « Partager »). */
+  partage(): Partage | null {
+    return null;
+  }
+
+  /** A fiche's head (socle's tete-fiche): its type's sticker, its name cut out, its identity. */
+  protected tete(k: TypeCle, nom: string, ligne: Rich) {
+    const isLarge = large();
+    return {
+      r: repere(k),
+      nom,
+      lettres: decoupe(nom) as Lettre[],
+      ligne,
+      cls: isLarge ? "inner" : "tin",
+      stk: isLarge ? "stk big" : "stk",
+    };
+  }
+
+  /** The fiche's sections, the empty ones left out: `present` says which have something. */
+  protected sections(present: Partial<Record<Section, boolean>>): Sections {
+    const out: Sections = { liste: [] };
+    for (const k of SECTIONS) {
+      if (!present[k]) continue;
+      const s = { k, n: out.liste.length + 1, l: t(`cadre.sec.${k}`), href: `#${k}` };
+      out.liste.push(s);
+      out[k] = { n: s.n, l: s.l };
+    }
+    return out;
+  }
+
+  /** The type's band (socle's bandeau): stuck at the top, the sections, « Partager ». */
+  protected bandeau(k: TypeCle, nom: string, secs: Sections) {
+    const isLarge = large();
+    return {
+      r: repere(k) as Repere,
+      nom,
+      secs: secs.liste,
+      large: isLarge,
+      tel: !isLarge,
+      partager: ((ev: { currentTarget: Element }) => partager(this, ev.currentTarget)) as Handler,
+    };
   }
 
   /** The theme's scope (.th .v-<name>) and the words. */

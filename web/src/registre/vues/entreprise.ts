@@ -4,6 +4,7 @@
 import { Absent, load } from "../donnees.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
+import { couverture } from "../sources.ts";
 import template from "./entreprise.html?raw";
 import { Entreprise, type FichierEntreprise } from "./entreprise-outils.ts";
 
@@ -11,8 +12,9 @@ async function donnees(r: Route): Promise<Record<string, unknown>> {
   const siren = r.view === "entreprise" ? r.siren : "";
   // a company outside the register has no file (404; the dev server answers its page instead,
   // not JSON): « introuvable », not a load error
+  const cv = couverture().catch(() => undefined);
   try {
-    return { F: await load<FichierEntreprise>(`entreprise/${siren}.json`) };
+    return { F: await load<FichierEntreprise>(`entreprise/${siren}.json`), couverture: await cv };
   } catch (e) {
     if (e instanceof SyntaxError || /: 404$/.test(String((e as Error).message)))
       throw new Absent(siren);

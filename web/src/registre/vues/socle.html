@@ -43,3 +43,44 @@
       <sc-if value="{{det.hint}}"><span style="font-size: 13px; color: var(--muted)">{{det.hint}}</span></sc-if>
     </aside>
 </dc-part>
+
+<!-- v2 (design/registre/v2, V2-Entreprise and V2-Tel-Entreprise): a fiche's head, its type's sticker and its
+     name in cut-out letters (the real h1 read, the scraps hidden), its identity line; `tete` from Vue.tete() -->
+<dc-part name="tete-fiche">
+  <div class="{{tete.cls}}" style="padding-bottom: 18px">
+    <span class="{{tete.stk}}" style="{{tete.r.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{tete.r.i}}"></path></svg>{{tete.r.l}}</span>
+    <h1 class="sr">{{tete.nom}}</h1><div class="cutout s" aria-hidden="true"><sc-for list="{{tete.lettres}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
+    <p class="idline tw">{{{tete.ligne}}}</p>
+  </div>
+</dc-part>
+
+<!-- the type's band, stuck at the top when one scrolls down: the type, the name, the fiche's sections, « Partager »
+     (the phone's band has no « Partager »: the sheet's top has it); `band` from Vue.bandeau() -->
+<dc-part name="bandeau">
+  <sc-if value="{{band.large}}">
+    <div class="band" style="{{band.r.c}}">
+      <span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span>
+      <span class="bname">{{band.nom}}</span>
+      <nav aria-label="{{t.cadre.sections}}"><sc-for list="{{band.secs}}" as="s"><a href="{{s.href}}" data-sec="{{s.k}}">{{s.l}}</a></sc-for></nav><button class="bshare" type="button" onClick="{{band.partager}}" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7"></path></svg>{{t.cadre.partager}}</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{band.tel}}">
+    <div class="tband" style="{{band.r.c}}">
+      <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b>{{band.nom}}</b></div>
+      <nav aria-label="{{t.cadre.sections}}"><sc-for list="{{band.secs}}" as="s"><a href="{{s.href}}" data-sec="{{s.k}}">{{s.l}}</a></sc-for></nav>
+    </div>
+  </sc-if>
+</dc-part>
+
+
+<!-- a fiche's « Sources » (V2-Entreprise): each source, who publishes it, how far the register has read it,
+     then what the register covers; `sources` from sources.ts, `secs.sources` its number -->
+<dc-part name="sources">
+  <section id="sources" class="sec">
+    <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
+    <div style="border-top: 2px solid var(--line)">
+      <sc-for list="{{sources}}" as="s"><div class="src"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}</span></div></sc-for>
+    </div>
+    <p class="sober" style="margin: 0"><a href="/registre/couverture">{{t.sources.couverture}}</a></p>
+  </section>
+</dc-part>
