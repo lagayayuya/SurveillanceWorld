@@ -340,7 +340,8 @@ function regler(p: boolean): void {
     cadre.setAttribute("role", "region");
     cadre.removeAttribute("aria-modal");
   } else {
-    if (!inertes.length) inerter();
+    // every panel of the map, those it made after the register opened too (a cold open)
+    inerter();
     cadre.setAttribute("role", "dialog");
     cadre.setAttribute("aria-modal", "true");
   }
@@ -405,6 +406,8 @@ function inerter(): void {
 
 /** The register leaves the page (the map's address again): the map gets its focus back. */
 export function cacher(): void {
+  // a page still loading when the register closes is not drawn (it would make the map inert again)
+  asked++;
   if (!ouvert) return;
   fermerPartage();
   observateur?.disconnect();
@@ -520,6 +523,8 @@ export async function afficher(force = false): Promise<void> {
   disposer();
   const key = `${location.pathname}${location.search}|${WIDE.matches}`;
   if (key === shown && !force) {
+    // the map's own panels may have come since (a page opened cold, before the map booted)
+    if (!panneau) inerter();
     entete(r);
     return;
   }
@@ -540,7 +545,7 @@ export async function afficher(force = false): Promise<void> {
       ({ default: m } = await absent());
       props = { view: "introuvable" };
     }
-    if (ask !== asked) return; // a later path was asked meanwhile
+    if (ask !== asked || !ouvert) return; // a later path was asked meanwhile, or the register closed
     mounted?.unmount();
     mounted = mount(root, m.Vue, props, m.template, { parts, afterRender, format });
     suivreSections();
@@ -559,7 +564,8 @@ export async function afficher(force = false): Promise<void> {
       if (!cadre.contains(document.activeElement)) root.focus({ preventScroll: true });
     });
   } catch (e) {
-    if (ask !== asked) return;
+    if (ask !== asked || !ouvert) return;
+    regler(false);
     mounted?.unmount();
     mounted = null;
     shown = "";

@@ -270,3 +270,11 @@ test("the API, when it answers as such; else none is asked again", async () => {
   assert.equal(after, null);
   assert.equal(asked, false);
 });
+
+test("a published text a spreadsheet would read as a formula stays text in the CSV", async () => {
+  const { sansFormule } = await import("../src/registre/listes.ts");
+  assert.equal(sansFormule('=HYPERLINK("http://x","clic")'), `'=HYPERLINK("http://x","clic")`);
+  for (const s of ["+1", "-1", "@SUM(1+1)", "\tx", "\rx"]) assert.equal(sansFormule(s), `'${s}`);
+  assert.equal(sansFormule("Vidéoprotection - lot 2"), "Vidéoprotection - lot 2");
+  assert.equal(sansFormule(null), "");
+});

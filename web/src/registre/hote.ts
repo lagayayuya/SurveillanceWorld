@@ -23,7 +23,12 @@ export const carteDuSite = (): MlMap | null => carte;
 
 /** Asked as early as the page opens on a register path, beside the map's own code. */
 export function prefetchRegistre(): void {
-  if (REGISTRE.test(location.pathname)) void charger();
+  if (!REGISTRE.test(location.pathname)) return;
+  // a register page opened cold shows at once, without waiting for the map to boot; Carte et drones
+  // draws on the map, and waits for it (brancher)
+  void charger().then((m) => {
+    if (!/\/carte$/.test(location.pathname)) m.afficher();
+  });
 }
 
 /** The map exists: the register follows the address from now on. */

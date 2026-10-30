@@ -19,6 +19,7 @@ import { signaler } from "../signaler.ts";
 import { plain } from "../texte.ts";
 import { type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
+import { sansFormule } from "../listes.ts";
 import {
   filCommune,
   lexique,
@@ -560,7 +561,8 @@ function exportRows(d: Donnees, es: Evenement[], fmt: "csv" | "json", name: stri
   });
   let blob: Blob;
   if (fmt === "csv") {
-    const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+    const q = (v: unknown) =>
+      `"${(typeof v === "number" ? String(v) : sansFormule(v)).replace(/"/g, '""')}"`;
     const lines = [COLS.join(","), ...flat.map((r) => COLS.map((c) => q(r[c])).join(","))];
     blob = new Blob([`﻿${lines.join("\r\n")}\r\n`], { type: "text/csv;charset=utf-8" });
   } else {
