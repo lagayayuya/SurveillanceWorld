@@ -28,8 +28,8 @@
 <!-- the fixed panel on the right: the element hovered, focused or touched; a summary of the page at rest -->
 <dc-part name="panneau">
     <aside aria-live="polite" aria-label="{{t.socle.detail}}" class="{{ps.cls}}">
-      <div class="pan-haut"><span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span><sc-if value="{{ps.fermer}}"><button type="button" class="ibtn" onClick="{{ps.fermer}}" aria-label="{{t.cadre.fermer_detail}}"><span aria-hidden="true">✕</span></button></sc-if></div>
-      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
+      <div class="pan-haut"><span class="tw" style="font-size: 13px; color: var(--muted)">{{{det.kicker}}}</span><sc-if value="{{ps.fermer}}"><button type="button" class="ibtn" onClick="{{ps.fermer}}" aria-label="{{t.cadre.fermer_detail}}"><span aria-hidden="true">✕</span></button></sc-if></div>
+      <strong style="font-size: 22px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{{det.title}}}</strong>
       <sc-for list="{{det.rows}}" as="r">
         <div class="prow"><span>{{r.k}}</span><strong style="text-align: right">{{{r.v}}}</strong></div>
       </sc-for>
