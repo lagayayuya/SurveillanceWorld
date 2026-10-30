@@ -45,6 +45,7 @@ import "./departement.css";
 import template from "./departement.html?raw";
 import {
   achatsPropres,
+  aides,
   annees,
   type ComRow,
   communes,
@@ -219,19 +220,30 @@ class Departement extends Vue<Props, State> {
             ...this.ligne(k, "epci"),
           };
         });
-    const icCols = this.cols(
+    const icCols = aides(
+      this.cols(
+        [
+          ["nom", t("departement.col_intercommunalite"), "", "width: 38%"],
+          ["n", t("departement.col_communes"), "num"],
+          ["docs", t("departement.col_documents"), "num"],
+          ["con", t("departement.col_contrats"), "num"],
+          ["aut", t("departement.col_autorisations"), "num"],
+          ["dr", t("departement.col_drones"), "num"],
+          ["cams", t("departement.col_carte"), "num"],
+        ] as Col[],
+        "sortI",
+        "dirI",
+        nameFirst,
+      ),
       [
-        ["nom", t("departement.col_intercommunalite"), "", "width: 38%"],
-        ["n", t("departement.col_communes"), "num"],
-        ["docs", t("departement.col_documents"), "num"],
-        ["con", t("departement.col_contrats"), "num"],
-        ["aut", t("departement.col_autorisations"), "num"],
-        ["dr", t("departement.col_drones"), "num"],
-        ["cams", t("departement.col_carte"), "num"],
-      ] as Col[],
-      "sortI",
-      "dirI",
-      nameFirst,
+        undefined,
+        t("departement.aide_communes"),
+        t("departement.aide_documents"),
+        t("departement.aide_contrats"),
+        t("departement.aide_autorisations"),
+        t("departement.aide_drones"),
+        t("departement.aide_carte"),
+      ],
     );
 
     // --- every commune, filtered by name; each a link, its intercommunality a link under it
@@ -270,18 +282,28 @@ class Departement extends Vue<Props, State> {
       // linear (R1's was a square root, a hidden scale: v2 § 8)
       bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.docs / mxd) * 110))}px; background: ${this.on(`c${c.insee}`) ? ON : BAR}; border: 1px solid #111`,
     }));
-    const comCols = this.cols(
+    const comCols = aides(
+      this.cols(
+        [
+          ["nom", t("departement.col_commune"), "", "width: 34%"],
+          ["docs", t("departement.col_documents"), "num"],
+          ["con", t("departement.col_contrats"), "num"],
+          ["aut", t("departement.col_autorisations"), "num"],
+          ["dr", t("departement.col_drones"), "num"],
+          ["cams", t("departement.col_carte"), "num"],
+        ] as Col[],
+        "sortC",
+        "dirC",
+        nameFirst,
+      ),
       [
-        ["nom", t("departement.col_commune"), "", "width: 34%"],
-        ["docs", t("departement.col_documents"), "num"],
-        ["con", t("departement.col_contrats"), "num"],
-        ["aut", t("departement.col_autorisations"), "num"],
-        ["dr", t("departement.col_drones"), "num"],
-        ["cams", t("departement.col_carte"), "num"],
-      ] as Col[],
-      "sortC",
-      "dirC",
-      nameFirst,
+        undefined,
+        t("departement.aide_documents"),
+        t("departement.aide_contrats"),
+        t("departement.aide_autorisations"),
+        t("departement.aide_drones"),
+        t("departement.aide_carte"),
+      ],
     );
     const nC = coms.length;
     const comCount = q
@@ -338,6 +360,8 @@ class Departement extends Vue<Props, State> {
         ] as const
       ).map(([k, l]) => ({
         l,
+        ac: k === "amt" ? "aide" : "",
+        aide: k === "amt" ? t("departement.aide_montant") : "",
         sort: cur === k ? "descending" : "none",
         arrow: cur === k ? "↓" : "",
         pick: (() => this.setState({ [key]: k } as Partial<State>)) as Handler,

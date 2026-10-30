@@ -57,7 +57,7 @@
             <caption class="sr">{{t.departement.intercommunalites_triables}}</caption>
             <thead><tr>
               <sc-for list="{{icCols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
@@ -92,7 +92,7 @@
             <caption class="sr">{{f.departement.communes_avec_au_moins_un}}</caption>
             <thead><tr>
               <sc-for list="{{comCols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
@@ -125,7 +125,7 @@
               <table class="t">
                 <caption class="sr">{{f.departement.entreprises_titulaires_de_contrats}}</caption>
                 <thead><tr><th scope="col">{{t.departement.entreprise}}</th>
-                  <sc-for list="{{vCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+                  <sc-for list="{{vCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
                 </tr></thead>
                 <tbody onPointerLeave="{{quitter}}">
                   <sc-for list="{{sellers}}" as="s">
@@ -139,7 +139,7 @@
               <table class="t">
                 <caption class="sr">{{f.departement.acheteurs_publics}}</caption>
                 <thead><tr><th scope="col">{{t.departement.acheteur}}</th>
-                  <sc-for list="{{bCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+                  <sc-for list="{{bCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
                 </tr></thead>
                 <tbody onPointerLeave="{{quitter}}">
                   <sc-for list="{{buyers}}" as="b">
@@ -157,7 +157,7 @@
           <h3 class="h3" style="margin-top: 14px">{{t.departement.qui_lui_vend}}</h3>
           <table class="t">
             <caption class="sr">{{t.departement.qui_lui_vend_legende}}</caption>
-            <thead><tr><th scope="col">{{t.departement.entreprise}}</th><th scope="col" class="num">{{t.departement.col_contrats}}</th><th scope="col" class="num">{{t.departement.col_montant}}</th></tr></thead>
+            <thead><tr><th scope="col">{{t.departement.entreprise}}</th><th scope="col" class="num">{{t.departement.col_contrats}}</th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.departement.aide_montant}}">{{t.departement.col_montant}}</span></th></tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{ventes}}" as="s">
                 <tr class="{{s.cls}}" aria-selected="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>

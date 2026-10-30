@@ -73,7 +73,7 @@
             <caption class="sr">{{f.entreprise.clientes_de_triables_par_colonne}}</caption>
             <thead><tr>
               <sc-for list="{{cols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">

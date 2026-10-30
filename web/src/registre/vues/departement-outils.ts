@@ -218,6 +218,15 @@ export function enLigne(x: RichItem): RichItem {
   return typeof x === "object" && x && "a" in x ? { a: { ...x.a, cls: "rl" } } : x;
 }
 
+/** Column heads that do not read alone (v2.1, A6): each one's sentence, in the order of the
+ * heads (none: the head reads alone), its button or its words then `.aide` (cadre.css). */
+export function aides<T extends object>(
+  cols: T[],
+  phrases: (string | undefined)[],
+): (T & { ac: string; aide: string })[] {
+  return cols.map((c, i) => ({ ...c, ac: phrases[i] ? "aide" : "", aide: phrases[i] ?? "" }));
+}
+
 /** The type of the fiche a mention leads to, read from its address (a row's bar takes its colour,
  * cadre.css « rows »); a mention without a fiche, none. */
 export function typeDe(x: RichItem): TypeCle | undefined {

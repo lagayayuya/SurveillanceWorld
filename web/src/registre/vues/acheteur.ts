@@ -50,7 +50,7 @@ import {
   trier,
   vendeurs,
 } from "./acheteur-outils.ts";
-import { enLigne, type FichierDepartement } from "./departement-outils.ts";
+import { aides, enLigne, type FichierDepartement } from "./departement-outils.ts";
 
 type Props = Extract<Route, { view: "acheteur" }> & { f: FichierAcheteur; couverture?: Couverture };
 type State = BaseState & {
@@ -297,15 +297,18 @@ class Acheteur extends Vue<Props, State> {
         ...this.ligne(k, "entreprise"),
       };
     });
-    const colsV = this.cols(
-      [
-        ["nom", t("acheteur.entreprise"), "", ""],
-        ["n", t("acheteur.contrats"), "num", ""],
-        ["amt", t("acheteur.col_montant"), "num", ""],
-      ] as Col[],
-      "sortV",
-      "dirV",
-      first,
+    const colsV = aides(
+      this.cols(
+        [
+          ["nom", t("acheteur.entreprise"), "", ""],
+          ["n", t("acheteur.contrats"), "num", ""],
+          ["amt", t("acheteur.col_montant"), "num", ""],
+        ] as Col[],
+        "sortV",
+        "dirV",
+        first,
+      ),
+      [undefined, undefined, t("acheteur.aide_montant")],
     );
 
     // where its contracts are placed, and its département
@@ -363,18 +366,29 @@ class Acheteur extends Vue<Props, State> {
         ...this.ligne(`c${i}`, "con"),
       };
     });
-    const cols = this.cols(
+    const cols = aides(
+      this.cols(
+        [
+          ["date", t("acheteur.col_signature"), "", "width: 120px"],
+          ["objet", t("acheteur.objet"), "", ""],
+          ["ent", t("acheteur.entreprise"), "", "width: 180px"],
+          ["amt", t("acheteur.col_montant"), "num", ""],
+          ["dur", t("acheteur.col_duree"), "num", ""],
+          ["off", t("acheteur.col_offres"), "num", ""],
+        ] as Col[],
+        "sort",
+        "dir",
+        first,
+      ),
+      // a contract's amount: one envelope (the catalogue's sentence for it)
       [
-        ["date", t("acheteur.col_signature"), "", "width: 120px"],
-        ["objet", t("acheteur.objet"), "", ""],
-        ["ent", t("acheteur.entreprise"), "", "width: 180px"],
-        ["amt", t("acheteur.col_montant"), "num", ""],
-        ["dur", t("acheteur.col_duree"), "num", ""],
-        ["off", t("acheteur.col_offres"), "num", ""],
-      ] as Col[],
-      "sort",
-      "dir",
-      first,
+        undefined,
+        undefined,
+        undefined,
+        t("argent.enveloppe"),
+        undefined,
+        t("acheteur.aide_offres"),
+      ],
     );
 
     // the calls for tenders: those of its contracts, and those no contract was found for
@@ -426,15 +440,18 @@ class Acheteur extends Vue<Props, State> {
       manque: x.manque,
       ...this.ligne(x.k, "ao"),
     }));
-    const colsA = this.cols(
-      [
-        ["date", t("acheteur.date"), "", "width: 120px"],
-        ["objet", t("acheteur.objet"), "", ""],
-        ["pub", t("acheteur.publications"), "", ""],
-        ["contrat", t("acheteur.contrat"), "", ""],
-      ] as Col[],
-      "sortA",
-      "dirA",
+    const colsA = aides(
+      this.cols(
+        [
+          ["date", t("acheteur.date"), "", "width: 120px"],
+          ["objet", t("acheteur.objet"), "", ""],
+          ["pub", t("acheteur.col_avis"), "", ""],
+          ["contrat", t("acheteur.col_contrat_suivi"), "", ""],
+        ] as Col[],
+        "sortA",
+        "dirA",
+      ),
+      [undefined, undefined, t("acheteur.aide_avis"), t("acheteur.aide_contrat_suivi")],
     );
     const nMods = C.reduce((s, c) => s + c.mods.length, 0);
 

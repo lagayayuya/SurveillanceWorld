@@ -150,7 +150,7 @@
           <sc-if value="{{ter.epci}}"><p class="sober" style="margin: 0">{{f.commune.fait_partie_de}}{{{ter.epciLien}}} {{f.commune.communes_dont_ont_au_moins}}</p></sc-if>
           <table class="t">
             <caption class="sr">{{{ter.caption}}}</caption>
-            <thead><tr><th scope="col">{{t.commune.territoire}}</th><th scope="col" class="num">{{t.commune.documents}}</th><th scope="col" class="num">{{t.commune.contrats}}</th><th scope="col" class="num">{{t.commune.autorisations}}</th><th scope="col" class="num">{{t.commune.drones}}</th></tr></thead>
+            <thead><tr><th scope="col">{{t.commune.territoire}}</th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.commune.aide_documents}}">{{t.commune.documents}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.commune.aide_contrats}}">{{t.commune.contrats}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.commune.aide_autorisations}}">{{t.commune.autorisations}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.commune.aide_drones}}">{{t.commune.drones}}</span></th></tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{terr}}" as="r">
                 <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">

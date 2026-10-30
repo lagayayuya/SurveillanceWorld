@@ -38,7 +38,7 @@
           <table class="t">
             <caption class="sr">{{f.acheteur.entreprises_titulaires_des_contrats_de}}</caption>
             <thead><tr>
-              <sc-for list="{{colsV}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+              <sc-for list="{{colsV}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{sellers}}" as="s">
@@ -89,7 +89,7 @@
             <caption class="sr">{{f.acheteur.contrats_signes_par_triables_par}}</caption>
             <thead><tr>
               <sc-for list="{{cols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
@@ -117,7 +117,7 @@
           <table class="t">
             <caption class="sr">{{f.acheteur.appels_d_offres_et_resultats}}</caption>
             <thead><tr>
-              <sc-for list="{{colsA}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+              <sc-for list="{{colsA}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{aos}}" as="a">

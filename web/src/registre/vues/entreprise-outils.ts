@@ -22,6 +22,7 @@ import {
 import { sources } from "../sources.ts";
 import { icone } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
+import { aides } from "./departement-outils.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
 /** The build's facts: the page reads how many contracts had one offer among those whose number of
@@ -465,17 +466,20 @@ export class Entreprise extends Vue<Props, State> {
         bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}; border: 1px solid #111`,
       };
     });
-    const cols = this.cols(
-      [
-        ["nom", t("entreprise.col_cliente"), "", "width: 44%"],
-        ["dep", t("entreprise.col_departement"), "", ""],
-        ["n", t("entreprise.col_contrats"), "num", ""],
-        ["amt", t("entreprise.col_montant"), "num", ""],
-        ["last", t("entreprise.col_dernier"), "num", ""],
-      ] as Col[],
-      "sort",
-      "dir",
-      (k) => (k === "nom" || k === "dep" ? 1 : -1),
+    const cols = aides(
+      this.cols(
+        [
+          ["nom", t("entreprise.col_cliente"), "", "width: 44%"],
+          ["dep", t("entreprise.col_departement"), "", ""],
+          ["n", t("entreprise.col_contrats"), "num", ""],
+          ["amt", t("entreprise.col_montant"), "num", ""],
+          ["last", t("entreprise.col_dernier"), "num", ""],
+        ] as Col[],
+        "sort",
+        "dir",
+        (k) => (k === "nom" || k === "dep" ? 1 : -1),
+      ),
+      [undefined, undefined, undefined, t("entreprise.aide_montant"), t("entreprise.aide_dernier")],
     );
 
     // signed together with other companies

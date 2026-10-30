@@ -94,3 +94,13 @@
     font-size: 13px;
   }
 }
+
+/* a sortable head (v2.1, A6): an arrow only when sorted, no room kept for it otherwise; a column
+   of numbers has it on the left of its words, so that they end where its values end */
+.rg .v-departement table.t th button > span[aria-hidden="true"]:empty {
+  display: none;
+}
+.rg .v-departement table.t th.num button {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
