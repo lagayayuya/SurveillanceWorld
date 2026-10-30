@@ -1,157 +1,190 @@
-<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<div class="{{th}}">
+  <dc-include src="tete-fiche"></dc-include>
+  <dc-include src="bandeau"></dc-include>
 
-  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 0; display: flex; flex-direction: column; gap: 14px">
-    <dc-include src="fil"></dc-include>
-    <div><span class="tag" style="background: #ffb36b">{{t.departement.departement}}</span></div>
-    <h1 class="h1">{{nom}}</h1>
-    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{sous}}</p>
-    <p class="lead">{{{lead}}}</p>
-    <div class="kpis" style="margin-top: 8px">
-      <sc-for list="{{kpis}}" as="k"><div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
-    </div>
-  </div>
+  <div class="{{lay.inner}}" style="padding-top: 0">
+    <div class="grid2">
+      <div style="min-width: 0">
 
-  <nav class="tabs" aria-label="{{t.departement.sections}}" style="width: 1180px; margin: 24px auto 0">
-    <a href="#d-ic" aria-current="page">{{f.departement.intercommunalites}}</a>
-    <a href="#d-com">{{f.departement.communes}}</a>
-    <a href="#d-qui">{{t.departement.qui_vend_qui_achete}}</a>
-    <a href="#d-an">{{t.departement.chaque_annee}}</a>
-  </nav>
-
-  <div style="width: 1180px; margin: 0 auto; padding: 36px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
-    <main style="display: flex; flex-direction: column; gap: 64px; min-width: 0">
-
-      <section id="d-ic" aria-labelledby="h-ic" style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <h2 id="h-ic" class="h2">{{t.departement.par_intercommunalite}}</h2>
-          <button class="ibtn" onClick="{{tgl.ic}}" aria-expanded="{{open.ic}}" aria-label="{{t.departement.comment_sont_calcules_ces_chiffres}}"><span aria-hidden="true">i</span></button>
-        </div>
-        <sc-if value="{{show.ic}}" hint-placeholder-val="{{false}}"><p class="note tw">{{icNote}}</p></sc-if>
-        <p style="margin: 0">{{t.departement.touchez_une_intercommunalite_pour_voir}}</p>
-        <table class="t">
-          <caption class="sr">{{f.departement.intercommunalites_triables_par_colonne_une}}</caption>
-          <thead><tr>
-            <sc-for list="{{icCols}}" as="c" hint-placeholder-count="7">
-              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
-            </sc-for>
-          </tr></thead>
-          <tbody>
-            <sc-for list="{{ics}}" as="r" hint-placeholder-count="13">
-              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.toggle}}">
-                <td><button class="exp" aria-expanded="{{r.ex}}"><span aria-hidden="true" style="width: 14px">{{r.arrow}}</span>{{r.nom}}</button></td>
-                <td class="num">{{r.n}}</td>
-                <td class="num"><strong>{{r.docs}}</strong></td>
-                <td class="num">{{r.con}}</td>
-                <td class="num">{{r.aut}}</td>
-                <td class="num">{{r.dr}}</td>
-                <td class="num">{{r.cams}}</td>
-              </tr>
-              <tr class="sub" style="{{r.subStyle}}">
-                <td colspan="7"><sc-for list="{{r.subs}}" as="s" hint-placeholder-count="8"><a href="{{s.href}}" onMouseEnter="{{s.hover}}">{{s.nom}}</a><span class="c">{{s.v}}</span></sc-for></td>
-              </tr>
-            </sc-for>
-          </tbody>
-        </table>
-        <sc-if value="{{noCom}}"><p style="margin: 0; color: var(--muted)">{{f.departement.aucune_commune}}</p></sc-if>
-      </section>
-
-      <section id="d-com" aria-labelledby="h-com" style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; align-items: baseline; justify-content: space-between">
-          <h2 id="h-com" class="h2">{{t.departement.toutes_les_communes}}</h2>
-          <span class="tw" style="color: var(--muted); font-size: 14px">{{comCount}}</span>
-        </div>
-        <label class="filt">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-          <span class="sr">{{t.departement.filtrer_les_communes_par_nom}}</span>
-          <input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.departement.filtrer_par_nom_mions_bron}}">
-        </label>
-        <table class="t">
-          <caption class="sr">{{f.departement.communes_avec_au_moins_un}}</caption>
-          <thead><tr>
-            <sc-for list="{{comCols}}" as="c" hint-placeholder-count="6">
-              <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
-            </sc-for>
-          </tr></thead>
-          <tbody>
-            <sc-for list="{{coms}}" as="c" hint-placeholder-count="15">
-              <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onClick="{{c.hover}}">
-                <td><a class="rowlink" href="{{c.href}}">{{c.nom}}</a><div style="font-size: 13px; color: var(--muted)"><a href="{{c.epHref}}" style="color: var(--muted)">{{c.ep}}</a></div></td>
-                <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.docs}}</strong></div></td>
-                <td class="num">{{c.con}}</td>
-                <td class="num">{{c.aut}}</td>
-                <td class="num">{{c.dr}}</td>
-                <td class="num">{{c.cams}}</td>
-              </tr>
-            </sc-for>
-          </tbody>
-        </table>
-        <sc-if value="{{showMore}}" hint-placeholder-val="{{true}}"><button class="more" onClick="{{more}}">{{moreLabel}}</button></sc-if>
-        <sc-if value="{{noMatch}}" hint-placeholder-val="{{false}}"><p style="margin: 0; color: var(--muted)">{{f.departement.aucune_commune_de_ce_nom}}</p></sc-if>
-        <sc-if value="{{noCom}}"><p style="margin: 0; color: var(--muted)">{{f.departement.aucune_commune}}</p></sc-if>
-      </section>
-
-      <section id="d-qui" aria-labelledby="h-qui" style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <h2 id="h-qui" class="h2">{{t.departement.qui_vend_qui_achete}}</h2>
-          <button class="ibtn" onClick="{{tgl.qui}}" aria-expanded="{{open.qui}}" aria-label="{{t.departement.ce_que_comptent_ces_tableaux}}"><span aria-hidden="true">i</span></button>
-        </div>
-        <sc-if value="{{show.qui}}" hint-placeholder-val="{{false}}"><p class="note tw">{{f.departement.contrats_signes_depuis_2018_pour}}</p></sc-if>
-        <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: start">
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <h3 class="h3">{{f.departement.qui_vend}}</h3>
-            <table class="t">
-              <caption class="sr">{{f.departement.entreprises_titulaires_de_contrats}}</caption>
-              <thead><tr><th scope="col"><button>{{t.departement.entreprise}}</button></th>
-                <sc-for list="{{vCols}}" as="c" hint-placeholder-count="2"><th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
-              </tr></thead>
-              <tbody>
-                <sc-for list="{{sellers}}" as="s" hint-placeholder-count="10">
-                  <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onClick="{{s.hover}}"><td><a class="rowlink" href="{{s.href}}">{{s.nom}}</a></td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
-                </sc-for>
-              </tbody>
-            </table>
+        <section id="essentiel" class="sec" style="padding-top: 26px">
+          <h2 class="h2"><span class="num">{{secs.essentiel.n}}</span>{{secs.essentiel.l}}</h2>
+          <p class="lead" style="margin: 0">{{{lead}}}</p>
+          <div class="{{lay.tickets}}" style="margin-top: 4px">
+            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
           </div>
-          <div style="display: flex; flex-direction: column; gap: 8px">
-            <h3 class="h3">{{f.departement.qui_achete}}</h3>
-            <table class="t">
-              <caption class="sr">{{f.departement.acheteurs_publics}}</caption>
-              <thead><tr><th scope="col"><button>{{t.departement.acheteur}}</button></th>
-                <sc-for list="{{bCols}}" as="c" hint-placeholder-count="2"><th scope="col" class="num" aria-sort="{{c.sort}}"><button onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
-              </tr></thead>
-              <tbody>
-                <sc-for list="{{buyers}}" as="b" hint-placeholder-count="10">
-                  <tr class="{{b.cls}}" onMouseEnter="{{b.hover}}" onClick="{{b.hover}}"><td><a class="rowlink" href="{{b.href}}">{{b.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td></tr>
-                </sc-for>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <sc-if value="{{noMoney}}"><p style="margin: 0; color: var(--muted)">{{f.departement.aucun_contrat}}</p></sc-if>
-        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{enveloppe}}</p>
-      </section>
+          <p class="money" style="margin: 0">{{enveloppe}}</p>
+        </section>
 
-      <section id="d-an" aria-labelledby="h-an" style="display: flex; flex-direction: column; gap: 14px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <h2 id="h-an" class="h2">{{t.departement.chaque_annee}}</h2>
-          <div style="display: flex; align-items: center; gap: 6px">
-            <div role="group" aria-label="{{t.departement.type_de_document}}" style="display: flex">
-              <sc-for list="{{yearTypes}}" as="y" hint-placeholder-count="3"><button class="seg" onClick="{{y.pick}}" aria-pressed="{{y.pressed}}" style="{{y.style}}">{{y.l}}</button></sc-for>
+        <sc-if value="{{secs.temps}}">
+        <section id="temps" class="sec">
+          <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
+          <sc-if value="{{modeDep}}">
+          <div class="an-tete">
+            <h3 class="h3">{{yearTitre}}</h3>
+            <div style="display: flex; align-items: center; gap: 6px">
+              <div role="group" aria-label="{{t.departement.type_de_document}}" class="segs">
+                <sc-for list="{{yearTypes}}" as="y"><button type="button" class="seg" onClick="{{y.pick}}" aria-pressed="{{y.pressed}}">{{y.l}}</button></sc-for>
+              </div>
+              <button class="ibtn" type="button" onClick="{{tgl.an}}" aria-expanded="{{open.an}}" aria-label="{{t.departement.ce_que_montrent_ces_barres}}"><span aria-hidden="true">i</span></button>
             </div>
-            <button class="ibtn" onClick="{{tgl.an}}" aria-expanded="{{open.an}}" aria-label="{{t.departement.ce_que_montrent_ces_barres}}"><span aria-hidden="true">i</span></button>
           </div>
-        </div>
-        <sc-if value="{{show.an}}" hint-placeholder-val="{{false}}"><p class="note tw">{{anNote}}</p></sc-if>
-        <div role="group" aria-label="{{yearAlt}}" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; align-items: end; height: 240px; border-bottom: 2px solid var(--fg)">
-          <sc-for list="{{years}}" as="y" hint-placeholder-count="9">
-            <button class="yb" onMouseEnter="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.alt}}"><span style="text-align: center; font-weight: 800">{{y.v}}</span><span style="{{y.bar}}"></span></button>
-          </sc-for>
-        </div>
-        <div class="tw" style="display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 14px; text-align: center; color: var(--muted)">
-          <sc-for list="{{years}}" as="y" hint-placeholder-count="9"><span>{{y.y}}</span></sc-for>
-        </div>
-      </section>
-    </main>
+          <sc-if value="{{show.an}}"><p class="note tw">{{anNote}}</p></sc-if>
+          <p class="sober" style="margin: 0; color: var(--muted)">{{t.departement.temps_aide}}</p>
+          <div class="{{lay.yb}}" role="group" aria-label="{{yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}</span></sc-for></div>
+          </sc-if>
+          <sc-if value="{{modeIc}}">
+          <h3 class="h3">{{t.departement.achats_temps_titre}}</h3>
+          <p class="sober" style="margin: 0; color: var(--muted)">{{t.departement.temps_aide}}</p>
+          <div class="{{lay.yb}}" role="group" aria-label="{{achatsAlt}}"><sc-for list="{{achatsAn}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{achatsAn}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
+          <p class="money" style="margin: 0">{{enveloppe}}</p>
+          </sc-if>
+        </section>
+        </sc-if>
 
-    <dc-include src="panneau"></dc-include>
+        <sc-if value="{{secs.avecqui}}">
+        <section id="avecqui" class="sec">
+          <h2 class="h2"><span class="num">{{secs.avecqui.n}}</span>{{secs.avecqui.l}}</h2>
+
+          <sc-if value="{{ics.length}}">
+          <div style="display: flex; align-items: center; justify-content: space-between">
+            <h3 class="h3">{{f.departement.intercommunalites}}</h3>
+            <button class="ibtn" type="button" onClick="{{tgl.ic}}" aria-expanded="{{open.ic}}" aria-label="{{t.departement.comment_sont_calcules_ces_chiffres}}"><span aria-hidden="true">i</span></button>
+          </div>
+          <sc-if value="{{show.ic}}"><p class="note tw">{{icNote}}</p></sc-if>
+          <table class="t">
+            <caption class="sr">{{t.departement.intercommunalites_triables}}</caption>
+            <thead><tr>
+              <sc-for list="{{icCols}}" as="c">
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+              </sc-for>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{ics}}" as="r">
+                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                  <td>{{{r.nom}}}</td>
+                  <td class="num">{{r.n}}</td>
+                  <td class="num"><strong>{{r.docs}}</strong></td>
+                  <td class="num">{{r.con}}</td>
+                  <td class="num">{{r.aut}}</td>
+                  <td class="num">{{r.dr}}</td>
+                  <td class="num">{{r.cams}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          </sc-if>
+
+          <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px">
+            <h3 class="h3">{{f.departement.communes}}</h3>
+            <span class="tw" style="color: var(--muted); font-size: 14px">{{comCount}}</span>
+          </div>
+          <sc-if value="{{filtre}}">
+          <label class="filt">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+            <span class="sr">{{t.departement.filtrer_les_communes_par_nom}}</span>
+            <input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.departement.filtrer_par_nom_mions_bron}}">
+          </label>
+          </sc-if>
+          <sc-if value="{{coms.length}}">
+          <table class="t">
+            <caption class="sr">{{f.departement.communes_avec_au_moins_un}}</caption>
+            <thead><tr>
+              <sc-for list="{{comCols}}" as="c">
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+              </sc-for>
+            </tr></thead>
+            <tbody>
+              <sc-for list="{{coms}}" as="c">
+                <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.hover}}">
+                  <td>{{{c.nom}}}<div style="font-size: 13px; margin-top: 2px">{{{c.ep}}}</div></td>
+                  <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.docs}}</strong></div></td>
+                  <td class="num">{{c.con}}</td>
+                  <td class="num">{{c.aut}}</td>
+                  <td class="num">{{c.dr}}</td>
+                  <td class="num">{{c.cams}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          </sc-if>
+          <sc-if value="{{showMore}}"><button class="more" type="button" onClick="{{more}}">{{moreLabel}}</button></sc-if>
+          <sc-if value="{{noMatch}}"><p class="sober" style="margin: 0; color: var(--muted)">{{f.departement.aucune_commune_de_ce_nom}}</p></sc-if>
+          <sc-if value="{{noCom}}"><p class="sober" style="margin: 0; color: var(--muted)">{{f.departement.aucune_commune}}</p></sc-if>
+
+          <sc-if value="{{modeDep}}">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px">
+            <h3 class="h3">{{t.departement.qui_vend_qui_achete}}</h3>
+            <button class="ibtn" type="button" onClick="{{tgl.qui}}" aria-expanded="{{open.qui}}" aria-label="{{t.departement.ce_que_comptent_ces_tableaux}}"><span aria-hidden="true">i</span></button>
+          </div>
+          <sc-if value="{{show.qui}}"><p class="note tw">{{f.departement.contrats_signes_depuis_2018_pour}}</p></sc-if>
+          <div class="{{lay.deux}}" style="margin-top: 0">
+            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+              <h3 class="h3" style="font-size: 15px">{{f.departement.qui_vend}}</h3>
+              <table class="t">
+                <caption class="sr">{{f.departement.entreprises_titulaires_de_contrats}}</caption>
+                <thead><tr><th scope="col">{{t.departement.entreprise}}</th>
+                  <sc-for list="{{vCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{sellers}}" as="s">
+                    <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+              <h3 class="h3" style="font-size: 15px">{{f.departement.qui_achete}}</h3>
+              <table class="t">
+                <caption class="sr">{{f.departement.acheteurs_publics}}</caption>
+                <thead><tr><th scope="col">{{t.departement.acheteur}}</th>
+                  <sc-for list="{{bCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{buyers}}" as="b">
+                    <tr class="{{b.cls}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.hover}}"><td>{{{b.nom}}}<div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td></tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <sc-if value="{{noMoney}}"><p class="sober" style="margin: 0; color: var(--muted)">{{f.departement.aucun_contrat}}</p></sc-if>
+          <p class="money" style="margin: 0">{{enveloppe}}</p>
+          </sc-if>
+
+          <sc-if value="{{ventes.length}}">
+          <h3 class="h3" style="margin-top: 14px">{{t.departement.qui_lui_vend}}</h3>
+          <table class="t">
+            <caption class="sr">{{t.departement.qui_lui_vend_legende}}</caption>
+            <thead><tr><th scope="col">{{t.departement.entreprise}}</th><th scope="col" class="num">{{t.departement.col_contrats}}</th><th scope="col" class="num">{{t.departement.col_montant}}</th></tr></thead>
+            <tbody>
+              <sc-for list="{{ventes}}" as="s">
+                <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
+              </sc-for>
+            </tbody>
+          </table>
+          </sc-if>
+        </section>
+        </sc-if>
+
+        <sc-if value="{{secs.documents}}">
+        <section id="documents" class="sec">
+          <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
+          <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
+          <sc-if value="{{docs.length}}">
+          <h3 class="h3">{{t.departement.achats_titre}}</h3>
+          <p class="sober" style="margin: 0; color: var(--muted)">{{achatsSous}}</p>
+          <div style="border-top: 2px solid var(--line)"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}} achat" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.objet}}}</span><span style="min-width: 0">{{{d.ents}}}</span><span class="a">{{d.amt}}</span></div></sc-for></div>
+          <sc-if value="{{docsMore}}"><button class="more" type="button" onClick="{{togDocs}}">{{docsLabel}}</button></sc-if>
+          </sc-if>
+          <sc-if value="{{parcourir}}"><p class="sober" style="margin: 0"><a href="{{parcourir}}">{{t.departement.parcourir_tout}}</a></p></sc-if>
+        </section>
+        </sc-if>
+
+        <dc-include src="sources"></dc-include>
+      </div>
+      <dc-include src="panneau"></dc-include>
+    </div>
   </div>
 </div>

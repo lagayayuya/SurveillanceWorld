@@ -9,15 +9,20 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { setMessages } from "../src/registre/i18n.ts";
 import {
+  achatsPropres,
   annees,
   communes,
+  epciDe,
+  epciHref,
   epciLa,
   type FichierDepartement,
   filtrer,
   intercommunalites,
+  lienEpci,
   montant,
   noms,
   part,
+  sourcesIds,
   trier,
   vide,
 } from "../src/registre/vues/departement-outils.ts";
@@ -142,4 +147,38 @@ test("a département with no document: empty figures, its collection kept", () =
   assert.equal(f.couverture.etat, "impossible");
   assert.equal(f.stats.depStats.docs, 0);
   assert.deepEqual(intercommunalites(f, communes(f)), []);
+});
+
+test("one fiche per territory: an intercommunality's by its code, a link of its type", () => {
+  const f = fichier();
+  assert.equal(epciDe(f, "200046977"), "200046977");
+  // an unknown code is the département's fiche, not an error
+  assert.equal(epciDe(f, "999999999"), "");
+  assert.equal(epciDe(f, ""), "");
+  assert.equal(epciHref("69", "200046977"), "/registre/departement/69?ic=200046977");
+  const a = lienEpci(f, "200046977") as { a: { href: string; text: string; c: string } };
+  assert.equal(a.a.href, "/registre/departement/69?ic=200046977");
+  assert.equal(a.a.text, "Métropole de Lyon");
+  assert.equal(a.a.c, "var(--type-territoire)");
+  // no row in the file: its words only
+  assert.deepEqual(lienEpci(f, "247800584", "CA Versailles Grand Parc"), { span: "CA Versailles Grand Parc", cls: "" });
+});
+
+test("its own purchases: the intercommunality's buyer file, the département's own buyers", () => {
+  const f = fichier();
+  assert.deepEqual(achatsPropres(f, "200046977"), ["200046977"]);
+  f.stats.epcis["200046977"].acheteur = false;
+  assert.deepEqual(achatsPropres(f, "200046977"), []);
+  f.acheteurs = {
+    "226900017": { nom: "Département du Rhône", categorie: "departement", dep: "69" },
+    "221300015": { nom: "Département des Bouches-du-Rhône", categorie: "departement", dep: "13" },
+    "216902825": { nom: "Commune de Vénissieux", categorie: "commune", dep: "69" },
+  };
+  assert.deepEqual(achatsPropres(f, ""), ["226900017"]);
+});
+
+test("the sources of a territory: its prefecture's decrees, its region's subsidies", () => {
+  assert.deepEqual(sourcesIds("69"), ["contrats", "avis", "arretes_69", "subventions_etat_69"]);
+  assert.deepEqual(sourcesIds("93").slice(-1), ["subventions_region_idf"]);
+  assert.deepEqual(sourcesIds("13").slice(-1), ["subventions_region_sud"]);
 });

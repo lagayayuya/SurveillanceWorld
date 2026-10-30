@@ -1,0 +1,81 @@
+/* A territory's fiche on the v2 skeleton (design/registre/v2, V2-Entreprise), a département's or an
+   intercommunality's: what its own content needs beside the kit (cadre.css). Every selector starts
+   with .rg .v-departement: the map is behind. */
+
+/* the panel stays in view below the sticky band, and a section opened by its tab starts below it */
+.rg .v-departement .panel {
+  top: 74px;
+}
+.rg .v-departement section[id] {
+  scroll-margin-top: 74px;
+}
+/* the years' chart is the kit's (.yb): R1's rule for its own year buttons (registre.css, the same
+   class) unset the container, so it is set again here */
+.rg .v-departement .yb {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  justify-content: normal;
+  gap: 10px;
+  height: 190px;
+  border-bottom: 2px solid var(--line);
+  cursor: auto;
+}
+.rg .v-departement .yb.t {
+  height: 120px;
+  gap: 5px;
+}
+.rg .v-departement .yb button:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+/* the chart's title and its three kinds (R1's segmented buttons): the pressed one in ink */
+.rg .v-departement .an-tete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rg .v-departement .segs {
+  display: flex;
+  padding-left: 2px;
+}
+.rg .v-departement .seg {
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.rg .v-departement .seg[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .v-departement .seg:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+/* its own purchases: date, the contract, its companies, the amount */
+.rg .v-departement .drow.achat {
+  grid-template-columns: 110px minmax(0, 1fr) 200px 100px;
+  padding: 6px 0;
+}
+@media (max-width: 959px) {
+  .rg .v-departement .drow.achat {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rg .v-departement .drow.achat > :nth-child(2),
+  .rg .v-departement .drow.achat > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  .rg .v-departement .drow.achat > .a {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  .rg .v-departement .yb.t .n {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+  .rg .v-departement .an-tete .seg {
+    padding: 0 10px;
+    font-size: 13px;
+  }
+}

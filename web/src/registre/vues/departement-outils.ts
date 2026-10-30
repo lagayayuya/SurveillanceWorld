@@ -1,12 +1,16 @@
 // The département page's pure helpers (view 10, the prototype's vues/departement.js): its file's
 // shape (fermetures.py departement_file), the département's name with its prepositions, the rows of
 // its intercommunalities and communes, a filter by name, an amount cell, the share of the most
-// concerned intercommunality in words, the years shown. The figures are the build's: a total adds
-// `montant` of counted contracts only (`compte`), never recomputed here.
+// concerned intercommunality in words, the years shown; one fiche per territory (an
+// intercommunality's at `?ic=<its code>`, its typed link, the territory's own buyer files, its
+// sources). The figures are the build's: a total adds `montant` of counted contracts only
+// (`compte`), never recomputed here.
 import { departementArt } from "../collecte.ts";
+import type { Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Commune, Entreprise, Stats } from "../donnees.ts";
 import { money } from "../format.ts";
 import { has, t } from "../i18n.ts";
+import { departementHref, lien } from "../liens.ts";
 import { plain } from "../texte.ts";
 
 export type Comptes = { docs: number; con: number; cam: number; dr: number; arr: number };
@@ -199,6 +203,60 @@ export function trier<T extends Record<string, unknown>>(rows: T[], k: string, d
         : Number(va ?? -1) - Number(vb ?? -1);
     return d * dir || Number(b.docs ?? 0) - Number(a.docs ?? 0);
   });
+}
+
+// --- one fiche per territory (design/registre/v2): a département's, an intercommunality's -------
+
+/** An intercommunality's fiche: its département's page with `?ic=<its code>` (its SIREN). */
+export const epciHref = (dep: string, code: string): string =>
+  `${departementHref(dep)}?ic=${encodeURIComponent(code)}`;
+
+/** An intercommunality's mention: a link to its fiche when the département's file has its row. */
+export function lienEpci(
+  f: Pick<FichierDepartement, "departement" | "stats">,
+  code: string,
+  text?: Rich,
+  liste = false,
+): RichItem {
+  const row = code ? f.stats.epcis[code] : undefined;
+  return lien(
+    "epci",
+    row ? epciHref(f.departement.code, code) : null,
+    text ?? nomEpci(code, row?.nom),
+    liste,
+  );
+}
+
+/** The fiche the path shows: an intercommunality's when `?ic=` names a row of the file, else the
+ * département's (an unknown code is not an error: the département is there). */
+export const epciDe = (f: Pick<FichierDepartement, "stats">, ic: string): string =>
+  ic && f.stats.epcis[ic] ? ic : "";
+
+/** The territory's own purchases, the buyer files to read beside it (« une collectivité a une
+ * seule fiche »): an intercommunality's own SIREN when it signed a contract (`acheteur`), a
+ * département's buyers filed as a département of this one (the build's `categorie`, `dep`). */
+export function achatsPropres(f: FichierDepartement, ic: string): string[] {
+  if (ic) return f.stats.epcis[ic]?.acheteur ? [ic] : [];
+  return Object.entries(f.acheteurs)
+    .filter(([, a]) => a.categorie === "departement" && a.dep === f.departement.code)
+    .map(([s]) => s)
+    .sort();
+}
+
+/** The sources a territory's fiche reads (couverture.json's ids; sources.ts skips one it lacks):
+ * the contracts, the notices, its prefecture's decrees, the State's and its region's subsidies. */
+const REGION: Record<string, string> = {
+  ...Object.fromEntries(["75", "77", "78", "91", "92", "93", "94", "95"].map((d) => [d, "idf"])),
+  ...Object.fromEntries(["04", "05", "06", "13", "83", "84"].map((d) => [d, "sud"])),
+};
+export function sourcesIds(dep: string): string[] {
+  return [
+    "contrats",
+    "avis",
+    `arretes_${dep}`,
+    `subventions_etat_${dep}`,
+    ...(REGION[dep] ? [`subventions_region_${REGION[dep]}`] : []),
+  ];
 }
 
 /** The nine years the chart shows, the last the build's (in progress). */
