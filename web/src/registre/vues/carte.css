@@ -183,6 +183,17 @@
   white-space: nowrap;
 }
 
+/* « ← Le registre »: the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
+   modes; cadre.css's .mback is drawn for the dark head of the frame, its ground left out (B7) */
+.rg .v-carte .maptag .mback {
+  background: #111;
+  color: #f2efe6;
+}
+.rg .v-carte .maptag .mback:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 3px;
+}
+
 /* the wide screen: the overlays over the map, fixed beside the panel */
 @media (min-width: 960px) {
   .rg .v-carte .maptag {
@@ -224,11 +235,13 @@
   .rg .v-carte .leg {
     max-width: none;
   }
+  /* the map's four commands on the map, at its right, above the sheet (B7) */
   .rg .v-carte .ctl {
-    position: static;
-    order: 1;
-    flex-direction: row;
-    padding: 12px 16px 0;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    left: auto;
+    z-index: 2;
   }
   .rg .v-carte .band,
   .rg .v-carte .tband {
