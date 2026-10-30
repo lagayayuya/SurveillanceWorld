@@ -65,6 +65,8 @@ type Det = {
   kicker: string;
   title: string;
   rows: [string, string][];
+  /** rows that name a company or a place: rich, each mention a link */
+  corr?: [string, RichItem[]][];
   foot: string;
   link?: { l: string; href: string };
 };
@@ -127,7 +129,6 @@ class Acheteur extends Vue<Props, State> {
     const DET: Record<string, Det> = {};
     const entsAll = [...new Set(C.flatMap((c) => c.ents))];
     const mixtes = T.hors.filter((c) => c.mixte);
-    const names = (ss: string[]) => ss.map((s) => entName(f, s)).join(" + ");
     const wide = large();
 
     // L'essentiel: the total is the counted contracts' (compte), the others said beside it
@@ -149,10 +150,7 @@ class Acheteur extends Vue<Props, State> {
 
     // a contract in the panel
     for (const [i, c] of C.entries()) {
-      const rows: [string, string][] = [
-        [t("acheteur.entreprise"), names(c.ents) || t("acheteur.ent_non_publiee")],
-        [t("acheteur.c_montant"), moneyFull(c.m0)],
-      ];
+      const rows: [string, string][] = [[t("acheteur.c_montant"), moneyFull(c.m0)]];
       if (c.m1) rows.push([t("acheteur.c_apres"), moneyFull(c.m1)]);
       rows.push([t("acheteur.c_duree"), this.dur(c) || t("acheteur.c_non_publiee")]);
       const end = fin(c);
@@ -165,6 +163,8 @@ class Acheteur extends Vue<Props, State> {
         }),
         title: c.objet,
         rows,
+        // its companies, each a link (the panel's rich line)
+        corr: [[t("acheteur.entreprise"), this.ents(c.ents)]],
         foot: [c.ref, c.avis?.ref ? t("acheteur.c_ao", { ref: c.avis.ref }) : ""]
           .filter(Boolean)
           .join(" · "),
@@ -381,16 +381,27 @@ class Acheteur extends Vue<Props, State> {
     const AO = appels(f, C);
     const aoRows = AO.map((a, i) => {
       const k = `o${i}`;
-      const contrat = a.contrat ? `${shortMonth(a.dContrat)} · ${names(a.ents)}` : "";
+      // the contract that followed: its date a link to its record, its companies each a link
+      const contrat: RichItem[] = a.contrat
+        ? [
+            lien("con", contratHref(a.contrat), shortMonth(a.dContrat), true),
+            " · ",
+            ...this.ents(a.ents),
+          ]
+        : [];
       const manque = a.d >= RECENT ? t("acheteur.pas_encore_publie") : t("acheteur.non_retrouve");
       DET[k] = {
         kicker: t("acheteur.o_kicker", { date: shortDate(a.d) }),
         title: a.objet,
-        rows: [
-          [t("acheteur.publications"), a.refs || "—"],
+        rows: [[t("acheteur.publications"), a.refs || "—"]],
+        corr: [
           [
             t("acheteur.contrat"),
-            contrat ? (a.probable ? `${contrat} (${t("repere.lien")})` : contrat) : manque,
+            contrat.length
+              ? a.probable
+                ? [...contrat, ` (${t("repere.lien")})`]
+                : contrat
+              : [manque],
           ],
         ],
         foot: t("acheteur.o_foot"),
@@ -408,9 +419,9 @@ class Acheteur extends Vue<Props, State> {
       date: shortDate(x.a.d),
       objet: lien("ao", x.a.href, x.a.objet, true),
       refs: x.a.refs,
-      contrat: x.contrat ? lien("con", contratHref(x.a.contrat), x.contrat, true) : "",
-      found: !!x.contrat,
-      missing: !x.contrat,
+      contrat: x.contrat,
+      found: x.contrat.length > 0,
+      missing: !x.contrat.length,
       probable: x.a.probable,
       manque: x.manque,
       cls: `r${this.on(x.k) ? " on" : ""}`,
@@ -447,6 +458,7 @@ class Acheteur extends Vue<Props, State> {
           kicker: d0.kicker,
           title: d0.title,
           rows: d0.rows.map(([k, v]) => ({ k, v })),
+          corr: (d0.corr ?? []).map(([k, v]) => ({ k, v })),
           foot: d0.foot,
           links: d0.link ? [d0.link] : [],
         }
