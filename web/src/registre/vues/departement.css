@@ -104,3 +104,10 @@
   flex-direction: row-reverse;
   justify-content: flex-start;
 }
+/* a sortable head that does not read alone: its sentence (.aide, cadre.css), which the heads'
+   reset (all: unset) would take away */
+.rg .v-departement table.t th button.aide {
+  position: relative;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
