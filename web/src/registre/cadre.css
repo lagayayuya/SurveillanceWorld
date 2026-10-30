@@ -1426,3 +1426,88 @@ body.registre-ouvert .maplibregl-ctrl-top-right {
   /* hidden, not removed: the map keeps measuring its ticket (machine.ts place) */
   visibility: hidden !important;
 }
+/* v2.1's rows, the same everywhere (A2, A3, A6): the contract the views follow.
+   · A row that leads somewhere (`.r`: a table's `tr`, a list's or a rail's line) is the target
+     of its main link (`a.rl`) across its whole width: the link's ::after covers the row; any
+     other link or button of the row stays above it.
+   · Hovered: the title underlined, the row tinted. Chosen (`.on`, `aria-selected="true"`): a
+     ground, and a bar of its type's colour at its left (`--c`, from types.ts repere(k).c).
+   · A column of numbers (`.num`): its head and its values right, with the same inset; a column
+     of text, both left. A head that does not read alone: `.aide` with `data-aide`, its sentence
+     shown on hover and on focus. */
+.rg .r {
+  position: relative;
+}
+.rg .r a.rl::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.rg .r :is(a:not(.rl), button, input, select) {
+  position: relative;
+  z-index: 1;
+}
+.rg .r:hover > *,
+.rg div.r:hover {
+  background: var(--soft);
+}
+.rg .r:hover a.rl,
+.rg .r:focus-within a.rl {
+  text-decoration: underline wavy var(--reg-link-line);
+}
+.rg .r.on > *,
+.rg div.r.on,
+.rg .r[aria-selected="true"] > * {
+  background: var(--soft);
+}
+.rg tr.r.on > :first-child,
+.rg tr.r[aria-selected="true"] > :first-child,
+.rg div.r.on,
+.rg div.r[aria-selected="true"] {
+  box-shadow: inset 5px 0 0 var(--c, var(--fg));
+}
+.rg tr.r.on > :first-child,
+.rg tr.r[aria-selected="true"] > :first-child {
+  padding-left: 13px;
+}
+.rg table.t th:not(:has(> button)) {
+  padding: 10px 8px;
+}
+.rg table.t th.num {
+  text-align: right;
+}
+.rg .aide {
+  position: relative;
+  cursor: help;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.rg .aide::after {
+  content: attr(data-aide);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 3;
+  display: none;
+  width: max-content;
+  max-width: 240px;
+  padding: 6px 8px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+  font:
+    400 12.5px / 1.35 "Special Elite",
+    monospace;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  text-align: left;
+}
+.rg .num .aide::after {
+  left: auto;
+  right: 0;
+}
+.rg .aide:hover::after,
+.rg .aide:focus-visible::after {
+  display: block;
+}

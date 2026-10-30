@@ -13,7 +13,9 @@ export function setWords(catalogue: Record<string, string>): void {
   words = nest(catalogue);
 }
 
-export type BaseState = { sel: string | null; open: Record<string, boolean> };
+/** `sel`: the row chosen (a click, Enter, a tap; the panel's content, `aria-selected`); `vu`: the
+ * row hovered or focused, shown in the panel meanwhile, never a selection (v2.1, A3 and B3). */
+export type BaseState = { sel: string | null; vu?: string | null; open: Record<string, boolean> };
 
 /** A sortable column head: [key, label, class, width]; no key, not sortable. */
 export type Col = [key: string, label: string, cls?: string, width?: string];
@@ -133,15 +135,61 @@ export abstract class Vue<
     };
   }
 
-  /** Hovered, focused or touched: shown in the panel. */
+  /** R1's: hovered, focused or touched, chosen at once. A view under the v2.1 contract uses
+   * `survol` and `choisir` instead (then `ligne` and `affiche`). */
   protected pick(k: string): Handler {
     return () => {
       if (this.state.sel !== k) this.setState({ sel: k } as Partial<S>);
     };
   }
 
+  /** Hovered or focused: shown in the panel while the pointer or the focus is there, never
+   * chosen; the state moves only when the row changes (no render per mouse move). */
+  protected survol(k: string): Handler {
+    return () => {
+      if (this.state.vu !== k) this.setState({ vu: k } as Partial<S>);
+    };
+  }
+
+  /** The pointer or the focus left the list: the panel goes back to the row chosen. */
+  protected quitter(): Handler {
+    return () => {
+      if (this.state.vu) this.setState({ vu: null } as Partial<S>);
+    };
+  }
+
+  /** Clicked, tapped or Enter: chosen (`aria-selected`, the type's bar), the panel scrolled
+   * into view whole and its arrival marked once (`arriver`). */
+  protected choisir(k: string): Handler {
+    return (ev?: { currentTarget?: Element }) => {
+      const root = ev?.currentTarget?.closest?.(".rg") ?? null;
+      if (this.state.sel !== k || this.state.vu) this.setState({ sel: k, vu: null } as Partial<S>);
+      if (root) queueMicrotask(() => arriver(root));
+    };
+  }
+
+  /** What the panel shows: the row hovered or focused, else the one chosen, else nothing (the
+   * panel then says what to hover or choose, B3). */
+  protected affiche(): string | null {
+    return this.state.vu ?? this.state.sel;
+  }
+
+  /** The row chosen (its state: `on`, `aria-selected`). */
   protected on(k: string): boolean {
     return this.state.sel === k;
+  }
+
+  /** A row's attributes under the contract (cadre.css « rows »): its class, `aria-selected`,
+   * and its type's colour for the bar at its left. */
+  protected ligne(k: string, type?: TypeCle, cls = "r") {
+    const on = this.on(k);
+    return {
+      cls: on ? `${cls} on` : cls,
+      sel: on ? "true" : "false",
+      c: type ? repere(type).c : "",
+      hover: this.survol(k),
+      pick: this.choisir(k),
+    };
   }
 
   /** Sortable heads: a click on the current key flips the order. */
@@ -167,4 +215,22 @@ export abstract class Vue<
         : () => {}) as Handler,
     }));
   }
+}
+
+/** The detail panel's arrival (A3): scrolled to be seen whole, then a flash of its outline of
+ * 400 ms at most, none under prefers-reduced-motion. */
+export function arriver(root: Element): void {
+  const panel = root.querySelector<HTMLElement>(".panel, .cd-panel");
+  if (!panel) return;
+  const calm =
+    typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  panel.scrollIntoView?.({ block: "nearest", behavior: calm ? "auto" : "smooth" });
+  if (calm || typeof panel.animate !== "function") return;
+  panel.animate(
+    [
+      { outline: "3px solid var(--fg)", outlineOffset: "3px" },
+      { outline: "3px solid transparent", outlineOffset: "3px" },
+    ],
+    { duration: 400, easing: "ease-out" },
+  );
 }
