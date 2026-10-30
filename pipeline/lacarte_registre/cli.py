@@ -21,7 +21,7 @@ import os
 from pathlib import Path
 
 import lacarte_registre as registre
-from lacarte_registre import collecter, construire, exporter, fetch, importer, regles
+from lacarte_registre import collecter, construire, exporter, fetch, importer, pages, regles
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -55,6 +55,10 @@ def main(argv: list[str] | None = None) -> None:
     src.add_argument("--sans-corrections", action="store_true",
                      help="build without the database's corrections (never deployed)")  # fmt: skip
     sub.add_parser("verifier", help="whether the built site may be deployed (deploy.sh)")
+    pag = sub.add_parser("pages", help="the records' entry pages into the web build (pages.py)")
+    pag.add_argument("shell", type=Path, help="the built map's page (web/dist/index.html)")
+    pag.add_argument("out", type=Path, help="the web build's folder (web/dist)")
+    pag.add_argument("--site", required=True, help="the site's address (VITE_SITE_URL)")
     cor = sub.add_parser("corrections", help="the corrections accepted in /revue (exporter.py)")
     cor.add_argument("action", choices=["exporter"])
     where = cor.add_mutually_exclusive_group()
@@ -79,6 +83,13 @@ def main(argv: list[str] | None = None) -> None:
         except (regles.CorrectionError, construire.NoDatabase) as e:
             parser.exit(2, f"lacarte-registre construire: {e}\n")
         print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
+    if args.cmd == "pages":
+        try:
+            n = pages.run(args.shell, registre.ROOT / "site", args.out, args.site)
+        except (ValueError, FileNotFoundError) as e:
+            parser.exit(2, f"lacarte-registre pages: {e}\n")
+        print(f"lacarte-registre pages: {n} entry pages")
         return
     if args.cmd == "verifier":
         why = construire.verifier()

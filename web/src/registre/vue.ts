@@ -3,6 +3,7 @@
 // panel, the sortable column heads.
 import { nest, type Texts } from "./catalogue.ts";
 import { type Handler, type Rich, View } from "./dc.ts";
+import type { PartageFichier } from "./donnees.ts";
 import { t } from "./i18n.ts";
 import { partager } from "./partage.ts";
 import { decoupe, decoupeMots, type Lettre, type Repere, repere, type TypeCle } from "./types.ts";
@@ -31,6 +32,17 @@ export type Sections = {
 
 /** What a fiche shares (partage.ts): its title, and the text R3's build writes for it, if any. */
 export type Partage = { titre: string; texte?: string; image?: string };
+
+/** A fiche's share from its file (lot R3): the build's text under this page's own name and
+ * without its address (the share window adds the page's, absolute, at the section read), its
+ * image; the title alone when the build wrote none. */
+export function partageDe(titre: string, p?: PartageFichier | null): Partage {
+  if (!p?.texte) return { titre };
+  let texte = p.texte;
+  if (texte.endsWith(p.url)) texte = texte.slice(0, -p.url.length).trimEnd();
+  if (texte.startsWith(`${p.titre} : `)) texte = `${titre} : ${texte.slice(p.titre.length + 3)}`;
+  return { titre, texte, image: p.image };
+}
 
 /** A wide screen (the boards' 960 px and up): the frame, the head and the band differ on a phone. */
 export const large = (): boolean =>

@@ -4,7 +4,7 @@
 // the contracts of one procedure added up, the beneficiary's label. The rules (counted or not, a
 // copy, the commune's own, a shared decree) are the build's flags, read here, never recomputed.
 
-import type { Acheteur, Affaire, Commune, Evenement, Stats } from "./donnees.ts";
+import type { Acheteur, Affaire, Commune, Evenement, PartageFichier, Stats } from "./donnees.ts";
 import { Absent, EI, load } from "./donnees.ts";
 import { fr } from "./format.ts";
 import { has, t } from "./i18n.ts";
@@ -43,6 +43,7 @@ export type Couverture = {
 };
 export type FichierCommune = {
   v: number;
+  partage?: PartageFichier;
   commune: Commune & { insee: string };
   evenements: Evenement[];
   affaires: Record<string, Affaire>;

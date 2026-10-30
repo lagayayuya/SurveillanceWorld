@@ -16,7 +16,14 @@ import { benefLabel, byDateAsc, communeHref, emetteur, isArr } from "../commun.t
 import { buyerNom, depNom, disp, entName, type Lexique, titre, typ } from "../corpus.ts";
 import { corrections } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
-import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
+import type {
+  Acheteur,
+  Affaire,
+  Commune,
+  Entreprise,
+  Evenement,
+  PartageFichier,
+} from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
@@ -40,6 +47,7 @@ export type Parcours = {
 };
 export type Fichier = {
   v: number;
+  partage?: PartageFichier;
   affaire: Affaire & { id: string };
   evenements: Evenement[];
   affaires: Record<string, Affaire & { id?: string }>;
@@ -85,6 +93,8 @@ export type Fiche = {
   titre: string;
   /** the fiche's name: « Contrat de juin 2022 », « Arrêté du 19 juin 2025 » */
   titreDoc: string;
+  /** the record's share as the build wrote it (lot R3) */
+  partage: PartageFichier | null;
   sous: { a: string; m: Mark; b: string };
   lead: Rich;
   kpis: { v: string; l: string; m: Mark }[];
@@ -864,6 +874,7 @@ export function fiche(f: Fichier): Fiche | null {
     type: TYPE_ETAPE[kind],
     titre: head,
     titreDoc,
+    partage: f.partage ?? null,
     sous:
       kind === "con"
         ? {

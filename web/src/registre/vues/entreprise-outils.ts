@@ -8,7 +8,7 @@
 import { depArt } from "../commun.ts";
 import { buyerHref, buyerNom, depNom, docHref, entName, type Lexique } from "../corpus.ts";
 import type { Handler, Rich, RichItem } from "../dc.ts";
-import type { Acheteur, Affaire, Couverture, Evenement } from "../donnees.ts";
+import type { Acheteur, Affaire, Couverture, Evenement, PartageFichier } from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { count, fr, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
@@ -21,7 +21,7 @@ import {
 } from "../liens.ts";
 import { sources } from "../sources.ts";
 import { icone } from "../types.ts";
-import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
 import { aides } from "./departement-outils.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
@@ -42,6 +42,7 @@ export type Page = {
 };
 export type FichierEntreprise = Lexique & {
   v: number;
+  partage?: PartageFichier;
   entreprise: {
     siren?: string;
     nom?: string | null;
@@ -254,7 +255,9 @@ export class Entreprise extends Vue<Props, State> {
   }
   partage(): Partage | null {
     // a sole trader is never shared by its name: its page is not one either
-    return this.props.F.entreprise.entrepreneur_individuel ? null : { titre: this.titre() };
+    return this.props.F.entreprise.entrepreneur_individuel
+      ? null
+      : partageDe(this.titre(), this.props.F.partage);
   }
   private data() {
     this.memo ??= prepare(this.props.F);

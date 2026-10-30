@@ -22,6 +22,9 @@ os.environ.pop("LACARTE_LOCK_TOKEN", None)
 os.environ["OSM_SYNC_THREAD"] = "off"
 # Nor the retention's (lacarte.api.retention): a test runs lacarte_retention() itself.
 os.environ["RETENTION_THREAD"] = "off"
+# The register's preview images, drawn once for the whole run: every test that builds the
+# extract shows the same ones (apercu.py, kept by fingerprint).
+os.environ["LACARTE_REGISTRE_APERCUS"] = tempfile.mkdtemp(prefix="lacarte-test-apercus-")
 
 
 @dataclasses.dataclass(frozen=True)

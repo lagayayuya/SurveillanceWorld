@@ -242,6 +242,23 @@ def test_the_password_opens_the_preview(caddy_server):
 
 
 @needs_caddy
+def test_a_record_s_address_serves_its_entry_page_else_the_map_s(public_server, tmp_path):
+    """A register path with an entry page (lacarte-registre pages: registre/<ref>.html in the
+    web build) gets it, with the register's CSP; any other the map's page (index.html), which
+    the register opens over (lot R3 on the v2)."""
+    page = tmp_path / "web" / "registre" / "entreprise" / "431903954.html"
+    page.parent.mkdir(parents=True)
+    page.write_text('<meta property="og:title" content="Serfim T.I.C.">')
+    status, headers, body = authed(public_server + "/registre/entreprise/431903954", None)
+    assert status == 200 and b"Serfim" in body
+    assert headers["Content-Security-Policy"] == site.REGISTRE_CSP
+    for path in ("/registre/entreprise/999999999", "/registre/commune/69283/documents",
+                 "/registre/", "/registre/entreprises"):  # fmt: skip
+        status, _, body = authed(public_server + path, None)
+        assert status == 200 and b"la-carte" in body, path
+
+
+@needs_caddy
 def test_public_mode_is_open_indexable_and_keeps_the_review_behind_a_password(public_server):
     """No password for the site, its tiles and its API; /revue and /api/review/* behind
     their own; the review page's sign-in (POST /api/session) outside it."""

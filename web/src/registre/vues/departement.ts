@@ -28,7 +28,7 @@ import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
 import { capital } from "../texte.ts";
 import { pluriel } from "../types.ts";
-import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
 import {
   appels,
   buyerNom,
@@ -170,7 +170,7 @@ class Departement extends Vue<Props, State> {
     ];
   }
   partage(): Partage | null {
-    return { titre: this.titre() };
+    return partageDe(this.titre(), this.props.f.partage);
   }
 
   renderVals() {

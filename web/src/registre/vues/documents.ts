@@ -18,7 +18,7 @@ import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { plain } from "../texte.ts";
 import { typeDocument } from "../types.ts";
-import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
 import { sansFormule } from "../listes.ts";
@@ -137,7 +137,10 @@ class Documents extends Vue<Props, State> {
     return filCommune(this.props.d);
   }
   partage(): Partage | null {
-    return { titre: t("documents.titre", { nom: this.props.d.f.commune.nom }) };
+    return partageDe(
+      t("documents.titre", { nom: this.props.d.f.commune.nom }),
+      this.props.d.f.partage,
+    );
   }
 
   /** The commune's head and band (its fiche's), its one section « Documents ». */

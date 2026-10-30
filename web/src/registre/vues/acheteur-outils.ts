@@ -11,7 +11,14 @@
 import { communeHref } from "../commun.ts";
 import type { Lexique } from "../corpus.ts";
 import type { RichItem } from "../dc.ts";
-import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
+import type {
+  Acheteur,
+  Affaire,
+  Commune,
+  Entreprise,
+  Evenement,
+  PartageFichier,
+} from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { addMonths, fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
@@ -28,6 +35,7 @@ export type StatsAcheteur = {
 };
 export type FichierAcheteur = {
   v: number;
+  partage?: PartageFichier;
   acheteur: Acheteur & {
     siren: string;
     nom?: string;

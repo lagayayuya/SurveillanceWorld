@@ -19,7 +19,7 @@ import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { capital } from "../texte.ts";
 import { repere, typeDocument } from "../types.ts";
-import { arriver, type BaseState, large, type Partage, Vue } from "../vue.ts";
+import { arriver, type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
 import template from "./autorisations.html?raw";
@@ -106,7 +106,10 @@ class Autorisations extends Vue<Props, State> {
     return filCommune(this.props.d);
   }
   partage(): Partage | null {
-    return { titre: t("autorisations.titre_onglet", { nom: this.props.d.f.commune.nom }) };
+    return partageDe(
+      t("autorisations.titre_onglet", { nom: this.props.d.f.commune.nom }),
+      this.props.d.f.partage,
+    );
   }
 
   /** The commune's head and band (its fiche's), its one section « Documents ». */

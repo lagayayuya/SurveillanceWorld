@@ -1,0 +1,88 @@
+{
+ "taille": [
+  1200,
+  630
+ ],
+ "etiquettes": {
+  "commune": {
+   "mot": "Commune",
+   "famille": "territoire",
+   "couleur": "#ffe800",
+   "x": 47,
+   "y": 181,
+   "nom_y": 258
+  },
+  "intercommunalite": {
+   "mot": "Intercommunalité",
+   "famille": "territoire",
+   "couleur": "#ffe800",
+   "x": 47,
+   "y": 178,
+   "nom_y": 258
+  },
+  "departement": {
+   "mot": "Département",
+   "famille": "territoire",
+   "couleur": "#ffe800",
+   "x": 47,
+   "y": 180,
+   "nom_y": 258
+  },
+  "acheteur": {
+   "mot": "Acheteur",
+   "famille": "acheteur",
+   "couleur": "#9be7c4",
+   "x": 47,
+   "y": 181,
+   "nom_y": 258
+  },
+  "entreprise": {
+   "mot": "Entreprise",
+   "famille": "entreprise",
+   "couleur": "#c9b8ff",
+   "x": 47,
+   "y": 180,
+   "nom_y": 258
+  },
+  "contrat": {
+   "mot": "Contrat",
+   "famille": "document",
+   "couleur": "#7fd4ff",
+   "x": 47,
+   "y": 181,
+   "nom_y": 258
+  },
+  "modification": {
+   "mot": "Modification",
+   "famille": "document",
+   "couleur": "#7fd4ff",
+   "x": 47,
+   "y": 180,
+   "nom_y": 258
+  },
+  "appel_offres": {
+   "mot": "Appel d'offres",
+   "famille": "document",
+   "couleur": "#7fd4ff",
+   "x": 47,
+   "y": 179,
+   "nom_y": 258
+  },
+  "arrete": {
+   "mot": "Arrêté",
+   "famille": "document",
+   "couleur": "#7fd4ff",
+   "x": 47,
+   "y": 181,
+   "nom_y": 258
+  },
+  "subvention": {
+   "mot": "Subvention",
+   "famille": "document",
+   "couleur": "#7fd4ff",
+   "x": 47,
+   "y": 180,
+   "nom_y": 258
+  }
+ }
+}

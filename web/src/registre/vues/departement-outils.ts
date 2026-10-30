@@ -7,7 +7,7 @@
 // (`compte`), never recomputed here.
 import { departementArt } from "../collecte.ts";
 import type { Rich, RichItem } from "../dc.ts";
-import type { Acheteur, Commune, Entreprise, Stats } from "../donnees.ts";
+import type { Acheteur, Commune, Entreprise, PartageFichier, Stats } from "../donnees.ts";
 import { money } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { departementHref, lien } from "../liens.ts";
@@ -33,6 +33,7 @@ export type EtatCollecte = {
 };
 export type FichierDepartement = {
   v: number;
+  partage?: PartageFichier;
   maj: string;
   departement: { code: string; nom: string | null };
   communes: Record<string, Commune>;

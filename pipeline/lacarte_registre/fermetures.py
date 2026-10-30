@@ -30,7 +30,7 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from lacarte_registre import comptes, drones, entreprise, refs
+from lacarte_registre import comptes, drones, entreprise, partage, refs
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     EI,
@@ -523,9 +523,44 @@ def non_lus_file(ctx: Context) -> dict[str, Any]:
     return {"v": 1, "non_lus": rows}
 
 
-def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
-    """Write every file under `out` through write(relative path, data); counts per kind."""
+def _shared(ctx: Context, out: Path, data: dict[str, Any], p: dict[str, Any] | None,
+            previews: list[dict[str, Any]]) -> dict[str, Any]:  # fmt: skip
+    """A record's file with its share (partage.py), its entry page written beside it, its
+    preview's specification kept for apercu.py."""
+    if p is None:
+        return data
+    ref = p["url"].removeprefix("/registre/")
+    partage.write_entree(out, ref, partage.entree(p, partage.liens(data, ref)))
+    if p.get("etiquette"):
+        previews.append(
+            {"ref": ref, **{k: p[k] for k in ("titre", "identite", "chiffres", "etiquette")}}
+        )
+    return {**data, "partage": p}
+
+
+def _names(ctx: Context, a: dict[str, Any], events: list[Event]) -> dict[str, str]:
     reg = ctx.reg
+    b = a.get("acheteur_siren") or next((x for e in events if (x := reg.buyer(e))), None)
+    ach = ctx.acheteur(b) if b else {}
+    ents = [
+        x.get("nom")
+        for s in a.get("entreprises") or []
+        if s != EI and (x := ctx.entreprise(s)).get("nom")
+    ]
+    return {
+        "acheteur": partage.nom(ach.get("nom_court") or ach.get("nom") or ""),
+        "commune": (reg.communes.get(a.get("insee") or "") or {}).get("nom") or "",
+        "entreprises": ", ".join(ents[:3]),
+    }
+
+
+def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
+    """Write every file under `out` through write(relative path, data), each record with its
+    share and its entry page; counts per kind. The previews' specifications go to
+    ctx.apercus (apercu.py draws them)."""
+    reg = ctx.reg
+    previews: list[dict[str, Any]] = []
+    ctx.apercus = previews
     from lacarte_registre import recherche  # recherche reads this module's dictionaries
 
     lists = recherche.listes(ctx)
@@ -538,18 +573,41 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     f = ctx.fiches
     insees = sorted(f.communes)
     for k in insees:
-        write(f"commune/{file_name(k)}.json", commune_file(ctx, k))
+        data = commune_file(ctx, k)
+        p = partage.commune(ctx, k, reg.by_insee.get(k, []))
+        write(f"commune/{file_name(k)}.json", _shared(ctx, out, data, p, previews))
     deps = sorted(f.departements)
     for d in deps:
-        write(f"departement/{file_name(d)}.json", departement_file(ctx, d))
+        data = departement_file(ctx, d)
+        evs = reg.by_dep.get(d, [])
+        p = partage.departement(ctx, d, evs, len(data["stats"]["communes"]),
+                                data["stats"]["depStats"]["montant"])  # fmt: skip
+        write(f"departement/{file_name(d)}.json", _shared(ctx, out, data, p, previews))
     sirens = sorted(f.entreprises)
     for s in sirens:
-        write(f"entreprise/{file_name(s)}.json", entreprise_file(ctx, s))
+        data = entreprise_file(ctx, s)
+        evs = [e for e in reg.evenements if s in (e.get("entreprises") or [])]
+        name = partage.nom(data["entreprise"].get("nom") or s)
+        p = partage.entreprise(ctx, s, name, evs)
+        write(f"entreprise/{file_name(s)}.json", _shared(ctx, out, data, p, previews))
     buyers = sorted(f.acheteurs)
     for b in buyers:
-        write(f"acheteur/{file_name(b)}.json", acheteur_file(ctx, b))
+        data = acheteur_file(ctx, b)
+        evs = [e for e in reg.evenements if reg.buyer(e) == b]
+        name = partage.nom(data["acheteur"].get("nom_court") or data["acheteur"].get("nom") or b)
+        p = partage.acheteur(ctx, b, name, evs)
+        write(f"acheteur/{file_name(b)}.json", _shared(ctx, out, data, p, previews))
+    by_kind: dict[str, list[Event]] = {}
+    for e in reg.evenements:
+        by_kind.setdefault(partage.DOC_TYPES.get(typ(e), ""), []).append(e)
+    for kind, evs in by_kind.items():
+        if kind:
+            previews.append({"ref": f"document/{kind}", **partage.type_document(ctx, kind, evs)})
     for a in sorted(reg.affaires):
-        write(f"document/{file_name(a)}.json", document_file(ctx, a))
+        data = document_file(ctx, a)
+        evs = [reg.by_id[i] for i in reg.affaires[a]["events"]]
+        p = partage.document(ctx, reg.affaires[a], evs, _names(ctx, reg.affaires[a], evs))
+        write(f"document/{file_name(a)}.json", _shared(ctx, out, data, p, previews))
     return {
         "commune": len(insees),
         "departement": len(deps),

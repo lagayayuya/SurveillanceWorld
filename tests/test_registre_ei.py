@@ -64,8 +64,9 @@ def test_no_served_file_holds_a_sole_trader_s_siren(site):
     assert len(files) > 100
     for p in files:
         assert EI_A not in p.name and EI_B not in p.name, p
-        text = p.read_text(encoding="utf-8")
-        assert EI_A not in text and EI_B not in text, p.relative_to(site)
+        # every file, the preview images and entry pages too (lot R3), byte for byte
+        data = p.read_bytes()
+        assert EI_A.encode() not in data and EI_B.encode() not in data, p.relative_to(site)
     assert not (site / "entreprise" / f"{EI_A}.json").exists()
     assert not (site / "entreprise" / f"{regles.EI}.json").exists()
 

@@ -23,7 +23,7 @@ import {
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
-import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./acheteur.css";
 import template from "./acheteur.html?raw";
 import {
@@ -101,7 +101,7 @@ class Acheteur extends Vue<Props, State> {
     return "acheteur" as const;
   }
   partage(): Partage | null {
-    return { titre: this.titre() };
+    return partageDe(this.titre(), this.props.f.partage);
   }
 
   /** The companies of a contract, each a link to its fiche (a sole trader's words only). */

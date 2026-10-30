@@ -94,6 +94,14 @@ export type Commune = {
   epci_ref?: Ref;
   dep_ref?: Ref;
 };
+/** A record's share as the build writes it in its file (lot R3, partage.py): its address
+ * (relative), its title, its text (ending with that address), its preview image. */
+export type PartageFichier = {
+  url: string;
+  titre: string;
+  texte: string;
+  image?: string;
+};
 /** A name read in a free text and linked to its record (character offsets in that text). */
 export type Mention = { debut: number; fin: number; ref: Ref };
 export type Dico = {

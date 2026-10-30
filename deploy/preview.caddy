@@ -72,6 +72,14 @@ ${GATE_ACCOUNTS}
 	# and the register's template engine builds the DOM itself (web/src/registre/dc.ts).
 	@registre path /registre /registre/*
 	header @registre Content-Security-Policy "${REGISTRE_CSP}"
+	# A record's entry page (lacarte-registre pages: its share tags, its content without
+	# JavaScript) when the build wrote one; the map's page otherwise. Only the first matching
+	# rewrite runs: @entree's, before @registre's.
+	@entree {
+		path /registre/*/*
+		file {path}.html
+	}
+	rewrite @entree {path}.html
 	rewrite @registre /index.html
 
 	# PMTiles are read with HTTP Range requests (file_server answers 206): they must be sent

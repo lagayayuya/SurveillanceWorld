@@ -375,3 +375,21 @@ test("v2: the département or commune a text is about is a link inside the regis
   f.evenements[1].objet = "Caméras à Synthèse-la-Ville";
   assert.match(json(fiche(f)?.dl.find((x) => x.k === "Objet publié")?.v), /"href":"\/registre\/commune\/69999"/);
 });
+
+test("a fiche's share: the build's text under the page's own name, without its relative address", async () => {
+  const { partageDe } = await import("../src/registre/vue.ts");
+  const p = {
+    url: "/registre/contrat/x1",
+    titre: "Vidéoprotection urbaine",
+    texte: "Vidéoprotection urbaine : contrat signé du 08/10/2021, acheteur Commune de Synthèse. Registre mis à jour le 24/10/2026. /registre/contrat/x1",
+    image: "/data/registre/apercu/document/contrat.png",
+  };
+  assert.deepEqual(partageDe("Contrat d'octobre 2021", p), {
+    titre: "Contrat d'octobre 2021",
+    texte: "Contrat d'octobre 2021 : contrat signé du 08/10/2021, acheteur Commune de Synthèse. Registre mis à jour le 24/10/2026.",
+    image: "/data/registre/apercu/document/contrat.png",
+  });
+  // a page of the fiche (« Documents de … ») keeps the fiche's words; without a share, the title alone
+  assert.equal(partageDe("Documents de Synthèse", { ...p, titre: "Synthèse", texte: "Synthèse (Rhône) : 3 documents. /registre/contrat/x1" }).texte, "Synthèse (Rhône) : 3 documents.");
+  assert.deepEqual(partageDe("Synthèse", null), { titre: "Synthèse" });
+});

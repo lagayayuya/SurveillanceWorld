@@ -31,6 +31,7 @@ from typing import Any
 import lacarte_registre as registre
 from lacarte import lock
 from lacarte_registre import (
+    apercu,
     couverture,
     exporter,
     fermetures,
@@ -78,6 +79,8 @@ def run(
             sortie.dump(tmp / rel, data)
 
         summary["fichiers"] = fermetures.write_all(ctx, tmp, put)
+        # the records' preview images, drawn again only when what they show changed
+        summary["apercus"] = apercu.write(ctx.apercus, tmp, root / "apercu-cache")
         # the tilted commune maps' layers, as imported (OpenStreetMap, ODbL)
         if maps:
             (tmp / "carte").mkdir()

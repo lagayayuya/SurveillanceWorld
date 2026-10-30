@@ -51,7 +51,7 @@ import { signaler } from "../signaler.ts";
 import { type Source, sources } from "../sources.ts";
 import { calm, capital, proper, sentence } from "../texte.ts";
 import { couleur, icone, type TypeCle, typeDocument } from "../types.ts";
-import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
 import template from "./commune.html?raw";
 import {
@@ -230,7 +230,7 @@ export class Commune extends Vue<Props, State> {
     return "commune" as const;
   }
   partage(): Partage | null {
-    return { titre: this.titre() };
+    return partageDe(this.titre(), this.props.d.f.partage);
   }
   private get prep(): Prep {
     this.p ??= prepare(this.props.d);

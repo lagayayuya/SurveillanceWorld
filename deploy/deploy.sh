@@ -125,6 +125,10 @@ web/scripts/fetch-assets.sh "$REGION"
 # The share tags' absolute addresses (og:url, og:image) from the host (vite.config.ts).
 VITE_CNIL_SIGNAL=true VITE_CONTACT_EMAIL="$CONTACT_EMAIL" VITE_SITE_URL="https://$PREVIEW_HOST" \
   npm --prefix web run build
+# The register's records' entry pages (their share tags and a page readable without
+# JavaScript, lot R3), put into the map's page as built, which the register opens over:
+# served at /registre/<ref>.
+uv run lacarte-registre pages web/dist/index.html web/dist --site "https://$PREVIEW_HOST"
 # Vite copies public/ with the build's time: each copy gets its source's back, or rsync's
 # quick check (size and time) never finds the basemap unchanged and sends it again whole.
 (cd web/public && find -L . -type f) | while IFS= read -r f; do

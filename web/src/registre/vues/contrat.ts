@@ -16,7 +16,7 @@ import type { Route } from "../routes.ts";
 import { HASH, ouvrir, signaler } from "../signaler.ts";
 import { couverture, sources } from "../sources.ts";
 import { icone, repere, type TypeCle } from "../types.ts";
-import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./contrat.css";
 import template from "./contrat.html?raw";
 import {
@@ -68,7 +68,7 @@ class Contrat extends Vue<Props, State> {
   }
 
   partage(): Partage | null {
-    return { titre: this.titre() };
+    return partageDe(this.titre(), this.props.F.partage);
   }
 
   /** Opened at its form's address (a panel's link followed without the script, or shared): the
