@@ -40,7 +40,7 @@ for (const path of PAGES) {
       const r = { l: Infinity, r: -Infinity };
       const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-        if (!n.textContent.trim() || n.parentElement.closest("[aria-hidden='true']")) continue;
+        if (!n.textContent.trim() || n.parentElement.closest("[aria-hidden='true'], .sr, .sr-only")) continue;
         const range = document.createRange();
         range.selectNodeContents(n);
         for (const b of range.getClientRects()) {
@@ -52,6 +52,11 @@ for (const path of PAGES) {
       // a value's pictogram (a link's square) is where its words start
       for (const svg of el.querySelectorAll("svg")) {
         const b = (svg.closest(".mini") ?? svg).getBoundingClientRect();
+        if (b.width) r.l = Math.min(r.l, b.left);
+      }
+      // so is a chip's edge (a département's code in its box), not its words inside
+      for (const chip of el.querySelectorAll(".deps span")) {
+        const b = chip.getBoundingClientRect();
         if (b.width) r.l = Math.min(r.l, b.left);
       }
       return Number.isFinite(r.l) ? r : null;
