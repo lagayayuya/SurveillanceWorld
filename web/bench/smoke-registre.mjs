@@ -253,7 +253,10 @@ try {
       .or(page.locator("#registre").getByRole("button", { name: /Signaler une erreur/ }));
     // B4 puts it in the panel of the chosen arrêté: an arrêté chosen first, when no row has one
     if (!(await signaler.first().isVisible())) {
-      await page.locator("#registre table.t tr.r td.num").first().click();
+      // the row's link covers the row (the rows' contract) and the band may lie over it once
+      // scrolled: the keyboard's way, Enter on the row's link, chooses it
+      await page.locator("#registre table.t tr.r a.rl").first().focus();
+      await page.keyboard.press("Enter");
       await page.waitForTimeout(600);
     }
     const found = await signaler.first().isVisible();
@@ -326,6 +329,8 @@ try {
           const s = n.textContent;
           const i = s.search(/\S/);
           if (i < 0) continue;
+          // words read by a screen reader only (.sr: a head's help) are not on the edge
+          if (n.parentElement?.closest(".sr, .sr-only")) continue;
           const r = document.createRange();
           r.setStart(n, i);
           r.setEnd(n, s.length - (s.length - s.trimEnd().length));
