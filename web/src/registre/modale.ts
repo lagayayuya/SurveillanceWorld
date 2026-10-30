@@ -239,10 +239,16 @@ function entete(r: Route): void {
       el("span", { class: "here", "aria-current": "page" }, ici || t("cadre.registre")),
     );
     haut.className = "mtop";
+    // the panel beside the map (V2-CarteDrones): its breadcrumb, the theme, ✕; the map is there
+    const cote = mounted?.view.panneau?.() ?? false;
     haut.replaceChildren(
-      el("a", { class: "mback", href: mapAddress(), "data-fermer": "" }, t("cadre.carte")),
-      crumbs,
-      recherche(),
+      ...(cote
+        ? [crumbs]
+        : [
+            el("a", { class: "mback", href: mapAddress(), "data-fermer": "" }, t("cadre.carte")),
+            crumbs,
+            recherche(),
+          ]),
       boutonTheme(),
       boutonFermer(),
     );

@@ -845,6 +845,13 @@ let lastTapAt = -Infinity;
 // Communes and départements answer a tap below the street level.
 const AREA_LAYERS = ["communes", "communes-none", "deps", "deps-none"];
 const selectAt = (point: { x: number; y: number }, how: string) => {
+  // Carte et drones' volumes (registre/drones.ts, layers rg-cd-*) answer a tap themselves: the map
+  // opens no sheet under the register's panel then.
+  if (
+    document.body.classList.contains("registre-panneau") &&
+    map.queryRenderedFeatures([point.x, point.y]).some((f) => f.layer.id.startsWith("rg-cd-"))
+  )
+    return;
   // A tap on the map is a gesture: no position moves the map after it (locate.ts).
   locate.release();
   // Tap targets (20 px) overlap where cameras are dense: the one nearest the finger wins,

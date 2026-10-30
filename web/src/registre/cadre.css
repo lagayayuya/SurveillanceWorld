@@ -1409,3 +1409,19 @@
   min-width: 0;
   white-space: nowrap;
 }
+
+/* --- the map's own interface while the register is a panel beside it (V2-CarteDrones) ---
+   The board shows the map with the register's own pieces on it alone: the map's ticket and
+   filters, its buttons and its zoom are put away while Carte et drones is open (its attribution
+   stays: ODbL). The only rules of this file outside .rg. */
+body.registre-panneau #ticket,
+body.registre-panneau #camlist,
+body.registre-panneau #filters-empty,
+body.registre-panneau #queue-count,
+body.registre-panneau #filters,
+body.registre-panneau #fabs,
+body.registre-panneau #estimate,
+body.registre-panneau #sheet,
+body.registre-panneau .maplibregl-ctrl-top-right {
+  display: none !important;
+}
