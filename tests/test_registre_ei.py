@@ -24,6 +24,7 @@ SERFIM = "431903954"
 EI_A, EI_B = "393040571", "508837564"
 CONTRACT_A = "176901205000112569036_45110000~0"
 CONTRACT_B = "176901205000112021151043296700_71000000~0"
+SYTRAL, GROUP = "256900994", "G69029-2019-10-10-1"
 
 
 @pytest.fixture(scope="module")
@@ -35,6 +36,15 @@ def site(tmp_path_factory) -> Path:
     for s in (EI_A, EI_B):
         data["entreprises"][s].update(entrepreneur_individuel=True, nom=None)
     reg.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    # The full pilot also names companies in a buyer's entry and in a group of lots, which
+    # the extract leaves out: put the sole traders there too (a SIRET for one of them).
+    for name, put in (("ACHETEURS", lambda j: j[SYTRAL].update(entreprises=[SERFIM, EI_A])),
+                      ("LOTS_GROUPES", lambda j: j[GROUP].update(
+                          entreprises=[EI_B], titulaire_siret=EI_B + "00017"))):  # fmt: skip
+        path = root / "pilote" / f"{name}.json"
+        j = json.loads(path.read_text(encoding="utf-8"))
+        put(j)
+        path.write_text(json.dumps(j, ensure_ascii=False), encoding="utf-8")
     exporter.write(root / exporter.FILE, [{
         "id": "registre_reports:test-ei", "evenement": CONTRACT_B, "field": "entreprises",
         "value": [SERFIM], "source": "synthetic, for the tests", "rationale": "synthetic",
@@ -77,3 +87,12 @@ def test_no_ranking_or_seller_list_counts_it(site):
     lyon = read(site, "commune/69123.json")
     assert regles.EI in lyon["entreprises"]  # the dictionary says what the token is
     assert lyon["entreprises"][regles.EI]["entrepreneur_individuel"] is True
+
+
+def test_a_buyer_s_companies_and_a_group_s_say_ei(site):
+    entry = read(site, f"acheteur/{SYTRAL}.json")["acheteur"]
+    assert entry["entreprises"] == [SERFIM, regles.EI]
+    lots = [json.loads(p.read_text(encoding="utf-8")).get("lots", {}) for p in site.rglob("*.json")]
+    groups = [x[GROUP] for x in lots if GROUP in x]
+    assert groups and all(g["entreprises"] == [regles.EI] and g["titulaire_siret"] is None
+                          for g in groups)  # fmt: skip

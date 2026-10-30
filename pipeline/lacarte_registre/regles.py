@@ -244,7 +244,35 @@ def masquer_ei(reg: Registre) -> int:
     for s in ei:
         del ents[s]
     ents[EI] = dict(EI_DICO)
+    # Then every other place of the pilot, known or not (a buyer's companies in ACHETEURS,
+    # a group's and its members' in LOTS_GROUPES…): the full pilot served three sole
+    # traders' SIREN there when only the fields above were masked.
+    for name, value in reg.pilote.globals.items():
+        reg.pilote.globals[name] = _sans_ei(value, ei)
+    for k, value in reg.pilote.reg.items():
+        if k != "entreprises":
+            reg.pilote.reg[k] = _sans_ei(value, ei)
     return len(ei)
+
+
+def _ei_id(v: Any, ei: set[str]) -> bool:
+    """A sole trader's SIREN, or a SIRET of one of its establishments (SIREN + 5 digits)."""
+    return isinstance(v, str) and (v in ei or (len(v) == 14 and v.isdigit() and v[:9] in ei))
+
+
+def _sans_ei(v: Any, ei: set[str]) -> Any:
+    """`v` with every sole trader's id gone: EI in a list, None as a value, a key dropped.
+    Containers are changed in place (the documents are shared between indexes)."""
+    if isinstance(v, list):
+        for i, x in enumerate(v):
+            v[i] = EI if _ei_id(x, ei) else _sans_ei(x, ei)
+    elif isinstance(v, dict):
+        for k in list(v):
+            if _ei_id(k, ei):
+                del v[k]
+            else:
+                v[k] = None if _ei_id(v[k], ei) else _sans_ei(v[k], ei)
+    return v
 
 
 @dataclass
