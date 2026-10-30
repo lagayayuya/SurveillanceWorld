@@ -1,8 +1,8 @@
 """Every mention that has its fiche is a link (design/registre/v2, the owner's rule, « partout et
 sans exception »): every page of the register rendered on the fixture's build by its own view
 (web/tests/registre-liens/rendre.ts: Node, no browser), every text outside a link searched for the
-name of a fiche the build holds (a commune, a département, a buyer, a company). The result is printed
-view by view; the test fails on any name left as text, or a page that does not render."""
+name of a fiche the build holds (a commune, a département, a buyer, a company). The result is
+printed view by view; the test fails on any name left as text, or a page that does not render."""
 
 import json
 import shutil
@@ -50,10 +50,13 @@ def pages(site: Path) -> list[str]:
         c = f.stem
         out += [f"/registre/commune/{c}", f"/registre/commune/{c}/documents"]
         out += [f"/registre/commune/{c}/autorisations", f"/registre/commune/{c}/carte"]
-    out += [f"/registre/departement/{f.stem}" for f in sorted((site / "departement").glob("*.json"))]
-    out += [f"/registre/entreprise/{f.stem}" for f in sorted((site / "entreprise").glob("*.json"))]
-    out += [f"/registre/acheteur/{f.stem}" for f in sorted((site / "acheteur").glob("*.json"))]
-    out += [f"/registre/contrat/{f.stem}" for f in sorted((site / "document").glob("*.json"))]
+    for folder, page in (
+        ("departement", "departement"),
+        ("entreprise", "entreprise"),
+        ("acheteur", "acheteur"),
+        ("document", "contrat"),
+    ):
+        out += [f"/registre/{page}/{f.stem}" for f in sorted((site / folder).glob("*.json"))]
     return out
 
 
@@ -85,7 +88,8 @@ def test_every_mention_that_has_its_fiche_is_a_link(built, capsys):
     with capsys.disabled():
         print("\nToute mention qui a sa fiche est un lien — vue par vue (fixture) :")
         for name, v in sorted(by_view.items()):
-            print(f"  {name:14} {v['pages']:4} pages {v['textes']:6} textes lus  {v['non']:3} non liés")
+            nb, lus, non = v["pages"], v["textes"], v["non"]
+            print(f"  {name:14} {nb:4} pages {lus:6} textes lus  {non:3} non liés")
     errors = [f"{r['chemin']}: {r['erreur']}" for r in results if r.get("erreur")]
     assert not errors, "\n".join(errors[:20])
     unlinked = [
