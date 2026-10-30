@@ -12,7 +12,7 @@ import { depGroup, type Lexique, buyerNom as nomAcheteur } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import type { Couverture } from "../donnees.ts";
 import { Absent, load } from "../donnees.ts";
-import { count, fr, longDate, longMonth, money, moneyFull, shortDate } from "../format.ts";
+import { count, fr, longMonth, money, moneyFull, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import {
   departementHref,
@@ -724,38 +724,15 @@ class Departement extends Vue<Props, State> {
           links: d0.link ? [{ l: d0.link[0], href: d0.link[1] }] : [],
           foot: d0.foot ?? "",
         }
-      : ic && ep
-        ? {
-            kicker: t("departement.k_intercommunalite"),
-            title: ep.nom,
-            rows: [
-              { k: t("departement.p_communes"), v: fr(ep.n) },
-              { k: t("departement.p_documents"), v: fr(ep.docs) },
-              { k: t("departement.p_contrats"), v: fr(ep.con) },
-              { k: t("departement.p_autorisations"), v: v(ep.aut) },
-              { k: t("departement.p_drones"), v: v(ep.dr) },
-              { k: t("departement.p_carte"), v: carte(ep.cams) },
-            ],
-            foot: etat,
-            links: [],
-          }
-        : {
-            kicker: capital(N.art),
-            title: t("departement.repos_titre"),
-            rows: [
-              { k: t("departement.p_documents"), v: fr(st.docs) },
-              { k: t("departement.p_communes"), v: fr(nC) },
-              { k: t("departement.p_intercommunalites"), v: fr(IC.filter((o) => o.code).length) },
-              { k: t("departement.p_sans_commune"), v: fr(st.sansCommune) },
-              ...(col && couv.dernier_recueil
-                ? [{ k: t("departement.p_dernier_recueil"), v: longDate(couv.dernier_recueil) }]
-                : []),
-            ],
-            foot: etat,
-            links: col
-              ? []
-              : [{ l: t("departement.voir_couverture"), href: "/registre/couverture" }],
-          };
+      : {
+          // at rest: what to hover or choose, never the figures beside it (B3)
+          kicker: t("departement.det_detail"),
+          title: t("departement.repos_titre"),
+          rows: [],
+          corr: [],
+          links: [],
+          foot: "",
+        };
 
     const sans = st.sansCommune;
     const nDocs = ic && ep ? ep.docs : st.docs;

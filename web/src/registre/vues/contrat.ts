@@ -228,31 +228,20 @@ class Contrat extends Vue<Props, State> {
     };
   }
 
-  /** The panel at rest: the document in four lines, whom it names (links), its marks, its source. */
+  /** The panel at rest (B3): the document's type and what to hover or choose, never the figures
+   * beside it; what the page's marks mean and its source and « Signaler » links, said nowhere else. */
   private rest(F: Fiche) {
     return {
       kicker: F.sum.kicker,
-      title: F.sum.title,
-      rows: F.sum.rows.map(([k, v]) => ({ k, v })),
-      corr: this.mentions(F),
-      foot: [t("contrat.survolez"), ...F.reperes].join(" "),
+      title: t("contrat.survolez"),
+      rows: [],
+      corr: [],
+      foot: F.reperes.join(" "),
       links: [
         ...(F.source ? [{ l: t("arretes.voir"), href: F.source }] : []),
         signaler({ id: F.main.id, affaire: this.props.id }),
       ],
     };
-  }
-
-  /** The panel at rest names, as links, whom the fiche names and where it is (its kicker and title are
-   * text: socle's panneau), unless a row above says them already or another link opens the same. */
-  private mentions(F: Fiche): { k: string; v: Rich }[] {
-    const qui = F.qui.filter(
-      (x) => JSON.stringify(x.v).includes('"a":') && !F.sum.rows.some(([k]) => k === x.k),
-    );
-    const ou = F.ou;
-    const href = ou ? /"href":"([^"]+)"/.exec(JSON.stringify(ou.v))?.[1] : undefined;
-    const deja = href && JSON.stringify(qui).includes(`"href":"${href}"`);
-    return [...(ou && !deja ? [ou] : []), ...qui].map((x) => ({ k: x.k, v: x.v }));
   }
 
   /** The panel of a step: its facts, the companies and the record it links to, its source, the report. */

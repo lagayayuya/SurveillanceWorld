@@ -514,14 +514,10 @@ export class Entreprise extends Vue<Props, State> {
           foot: d0.foot ?? "",
         }
       : {
+          // at rest: what to hover or choose, never the figures beside it (B3)
           kicker: t("entreprise.det_detail"),
           title: t("entreprise.det_survolez"),
-          rows: [
-            { k: t("entreprise.det_contrats_signes"), v: fr(CT.length) },
-            { k: t("entreprise.det_clientes"), v: fr(CL.length) },
-            { k: t("entreprise.det_montant"), v: total ? money(total) : "—" },
-            { k: t("entreprise.det_premier"), v: CT[0] ? shortDate(CT[0].d) : "—" },
-          ],
+          rows: [],
           links: [],
           foot: "",
         };

@@ -463,20 +463,12 @@ class Acheteur extends Vue<Props, State> {
           links: d0.link ? [d0.link] : [],
         }
       : {
-          kicker: t("acheteur.acheteur", { cat: categorie(f) }),
-          title: nom,
-          rows: [
-            { k: t("acheteur.p_contrats"), v: fr(C.length) },
-            { k: t("acheteur.p_entreprises"), v: fr(entsAll.length) },
-            { k: t("acheteur.col_montant"), v: totalV },
-            ...(C.length
-              ? [
-                  { k: t("acheteur.p_premier"), v: shortDate(C[0].d) },
-                  { k: t("acheteur.p_dernier"), v: shortDate(C[C.length - 1].d) },
-                ]
-              : []),
-          ],
-          foot: t("acheteur.p_survol"),
+          // at rest: what to hover or choose, never the figures beside it (B3)
+          kicker: t("acheteur.det_detail"),
+          title: t("acheteur.p_survol"),
+          rows: [],
+          corr: [],
+          foot: "",
           links: [],
         };
 

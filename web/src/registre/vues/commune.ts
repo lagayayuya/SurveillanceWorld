@@ -308,22 +308,6 @@ export class Commune extends Vue<Props, State> {
         : { v: "—", l: t("commune.kpi_aucun_contrat") },
       { v: fr(s.all.length), l: t("commune.kpi_documents", { n: s.all.length }) },
     ];
-    DET.sum = {
-      kicker: t("commune.sum_kicker", { nom }),
-      title: t("commune.sum_titre"),
-      rows: [
-        s.camAut ? ([t("commune.sum_aut"), fr(s.camAut)] as [string, string]) : null,
-        s.vpAut != null ? ([t("commune.sum_rue"), fr(s.vpAut)] as [string, string]) : null,
-        [t("commune.sum_carte"), n == null ? "—" : fr(n)] as [string, string],
-        [
-          counted.length ? t("commune.sum_contrats_depuis", { y0 }) : t("commune.sum_contrats"),
-          counted.length ? money(total) : t("commune.sum_aucun"),
-        ] as [string, string],
-        [t("commune.sum_documents"), fr(s.all.length)] as [string, string],
-      ].filter((r): r is [string, string] => !!r),
-      links: [{ l: t("commune.sum_lien"), href: docs }],
-    };
-
     // in place of R1's tilted map: « Carte et drones », and the commune on the site's map
     const carteLiens: RichItem[] = [
       lien("commune", communeHref(insee, "carte"), t("commune.carte_et_drones")),
@@ -419,15 +403,25 @@ export class Commune extends Vue<Props, State> {
         act: (() => demander(objet, qui, nom, dep)) as Handler,
       }));
 
-    const d0 = (S.sel && DET[S.sel]) || DET.sum;
-    const det = {
-      kicker: d0.kicker,
-      title: d0.title,
-      rows: d0.rows.map(([k, v]) => ({ k, v })),
-      note: d0.note ?? "",
-      links: d0.links ?? [],
-      hint: t("commune.panneau_aide"),
-    };
+    // at rest the panel says only what to hover or choose, never the figures beside it (B3)
+    const d0 = S.sel ? DET[S.sel] : undefined;
+    const det = d0
+      ? {
+          kicker: d0.kicker,
+          title: d0.title,
+          rows: d0.rows.map(([k, v]) => ({ k, v })),
+          note: d0.note ?? "",
+          links: d0.links ?? [],
+          hint: t("commune.panneau_aide"),
+        }
+      : {
+          kicker: t("commune.det_detail"),
+          title: t("commune.det_survolez"),
+          rows: [],
+          note: "",
+          links: [],
+          hint: "",
+        };
     const com = tete(d, "ess");
     const secs = this.sections({
       essentiel: true,

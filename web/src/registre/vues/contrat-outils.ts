@@ -106,13 +106,12 @@ export type Fiche = {
   sources: string[];
   /** its département's code, when the build knows it */
   dep: string | null;
-  /** where it is: its commune, else its département, as a link (the panel at rest) */
-  ou: Ligne | null;
   /** the money line under the amounts (a contract) */
   argent: boolean;
   /** the line on decrees read by a program (a decree) */
   arretes: boolean;
-  sum: { kicker: string; title: string; rows: [string, string][] };
+  /** the panel at rest: the document's type, above what to hover or choose (B3) */
+  sum: { kicker: string };
   /** what the marks of the page mean, said in the panel at rest */
   reperes: string[];
   /** the document « Signaler une erreur » and « Copier la référence » name */
@@ -514,17 +513,7 @@ export function fiche(f: Fichier): Fiche | null {
         ),
       );
     argent = att.montant != null;
-    sum = {
-      // the panel's kicker and title are text: the place and the company are its rows, as links
-      kicker: t("contrat.type_attribution"),
-      title: money(att.montant),
-      rows: [
-        [t("contrat.p_signe"), shortDate(att.date)],
-        [t("contrat.p_fin"), fin ? t("contrat.fin_date", { date: shortMonth(fin.date) }) : "—"],
-        [t("contrat.p_offres"), offres != null ? fr(offres) : t("format.non_publie")],
-        [t("contrat.p_modifications"), fr(mods.length)],
-      ],
-    };
+    sum = { kicker: t("contrat.type_attribution") };
     titreDoc = t("contrat.doc_contrat", { mois: longMonth(lue(att)) });
   } else if (a.kind === "contrat_non_retrouve" || (e0 && AO.test(e0.t))) {
     kind = "ao";
@@ -660,22 +649,7 @@ export function fiche(f: Fichier): Fiche | null {
         pe ? LIEN : "",
       ),
     ];
-    sum = {
-      kicker: t("contrat.type_avis"),
-      title: lib?.titre ?? (objet(e0) || t("format.non_publie")),
-      rows: [
-        [t("contrat.p_publie"), e0 ? fd(e0) : "—"],
-        [t("contrat.p_resultat"), res.length ? fd(res[0]) : t("format.non_publie")],
-        [
-          t("contrat.p_contrat"),
-          pe
-            ? entNames(pe.entreprises ?? [])
-            : P.contrat === "attendu"
-              ? t("contrat.pas_encore_publie")
-              : t("contrat.non_retrouve"),
-        ],
-      ],
-    };
+    sum = { kicker: t("contrat.type_avis") };
     titreDoc = t("contrat.doc_ao", { mois: debut ? longMonth(debut) : "" });
   } else if (a.kind === "subvention" || e0?.t.startsWith("subvention")) {
     kind = "sub";
@@ -774,15 +748,7 @@ export function fiche(f: Fichier): Fiche | null {
         : `subventions_etat_${String(dep ?? "")}`,
       ...(pe ? ["contrats"] : []),
     ];
-    sum = {
-      kicker: t("contrat.type_subvention"),
-      title: money(tot),
-      rows: [
-        [t("contrat.p_accordee"), e0 ? fd(e0) : "—"],
-        [t("contrat.p_cameras"), cams ? fr(cams) : "—"],
-        [t("contrat.p_contrat"), pe ? entNames(pe.entreprises ?? []) : t("contrat.non_designe")],
-      ],
-    };
+    sum = { kicker: t("contrat.type_subvention") };
     titreDoc = t("contrat.doc_sub", { date: e0.date_annee ? fd(e0) : longMonth(lue(e0)) });
   } else {
     // a decree the register cannot place in a commune: what the préfecture authorises
@@ -851,15 +817,7 @@ export function fiche(f: Fichier): Fiche | null {
       line(t("contrat.d_lieu"), e0?.objet ? tidy(e0.objet) : t("contrat.non_precise")),
       ...(why.length ? [line(t("contrat.d_non_lu"), why.join(" · "))] : []),
     ];
-    sum = {
-      kicker: t("contrat.type_arrete"),
-      title: e0 ? titre(e0) : "",
-      rows: [
-        [t("contrat.p_date"), e0 ? fd(e0) : "—"],
-        [t("contrat.p_beneficiaire"), e0 ? benefLabel(e0) : "—"],
-        ...(why.length ? ([[t("contrat.p_non_lu"), why.join(" · ")]] as [string, string][]) : []),
-      ],
-    };
+    sum = { kicker: t("contrat.type_arrete") };
     titreDoc = t("contrat.doc_aut", { date: e0 ? shortDate(e0.date) : "" });
   }
 
@@ -932,12 +890,6 @@ export function fiche(f: Fichier): Fiche | null {
     emetteur: emet,
     sources: srcs,
     dep: depCode,
-    ou:
-      c && insee
-        ? line(t("contrat.d_commune"), [lienCommune(L, insee)])
-        : typeof dep === "string" && dep && depName
-          ? line(t("contrat.d_departement"), [lienDepartement(dep, depName)])
-          : null,
     argent,
     arretes,
     sum,
