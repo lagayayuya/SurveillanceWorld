@@ -86,8 +86,20 @@ Les données sont construites hors ligne et servies en fichiers statiques :
 
 ```bash
 uv run lacarte-registre importer-pilote <dossier de l'export pilote>
+LACARTE_ROBOT_CONTACT=<contact> uv run lacarte-registre collecter   # la France entière
 uv run lacarte-registre construire   # data/registre/site, servi sous /data/registre/
 ```
+
+`collecter` lit les sources nationales (DECP, BOAMP, SIRENE, communes) par un seul module
+(`fetch.py`) qui respecte les `robots.txt` (RFC 9309), dit qui il est
+(`SurveillanceWorld/<version> (+<contact>)`, le contact venant de `LACARTE_ROBOT_CONTACT`), va
+à une requête par seconde et s'arrête sur un refus ; `--resume` reprend une collecte coupée.
+Les sorties ne sont mises en place que si toutes les sources ont répondu. `construire` reste
+hors ligne : il fusionne la commande publique nationale et ce qui vient du pilote (arrêtés,
+zones de drones, subventions), écrit les fichiers servis, la page d'entrée et l'image d'aperçu
+de chaque fiche, et les lignes de la recherche, chargées dans la base au déploiement
+(`db/load_registre.sh`). `lacarte-registre comparer AVANT APRÈS` sort le tableau des chiffres
+du pilote avant et après une construction.
 
 `construire` exporte d'abord, depuis la base (par SSH vers `DEPLOY_TARGET`, ou `--ssh`, ou
 `--dsn`), les corrections acceptées dans `/revue` vers `data/registre/corrections.yaml` (jamais

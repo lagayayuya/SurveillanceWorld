@@ -910,7 +910,7 @@ point is written where it applies:
 - publishing in one's own name offered on the public site once /revue switches writing to
   OSM's live server (1.7, 1.10; `board-sync-not-offered`).
 
-### 1.12 The register (lots R0, R1a, R1b, 2026-10-28 and 29; v2 and v2.1, 2026-10-30)
+### 1.12 The register (lots R0, R1a, R1b, 2026-10-28 and 29; v2 and v2.1, 2026-10-30; R3, 2026-10-31)
 
 The register is the site's second part: the public documents on video surveillance — contracts
 (DECP), tender notices (BOAMP), prefectural decrees (the préfectures' recueils, the Rhône's first)
@@ -1041,6 +1041,17 @@ DECISIONS 2026-10-28.
   commune file's slots; measured (`web/bench/registre-carte.mjs`, Apple M3): Lyon 5.3 MB cold,
   1.4 MB with the map loaded, 449 images/s tilting, 358 turning; Paris 7.4 MB and 3.4 MB, 494 and
   435.
+
+- **All of France (lot R3).** The contracts, modifications and notices come from their sources
+  for all of France (`lacarte-registre collecter`: the DECP, the BOAMP, SIRENE and the communes,
+  the network through `fetch.py` only); the decrees, drone zones and subsidies still from the
+  pilot. Every name a page shows carries its record's reference when the record exists
+  (`ref`, `*_ref`, `mentions`: the data contract, PR « Registre R3 »); the current pages link a
+  company, a buyer or a commune as before, and no link leads to a record not written (a commune
+  without a document has none). Each record's file holds its share (`partage`: its text, its
+  three figures, its image), its entry page is served at its address with its Open Graph tags
+  and its content readable without JavaScript, and its preview image (1200 × 630) is drawn at
+  build over the V2-Partage mockup's layers; the share button and its window are the redesign's.
 
 ## 2. State catalogue
 
@@ -1858,7 +1869,7 @@ mockup's render, outside the repository (no bench script yet: « — »).
 | `commune-aut-unread` | A mairie's decree with an unreadable count: in the dossier's table with « — », out of the frieze, counted in the decrees and not in the cameras, its panel says why | registre/vues/autorisations.ts | IMPROVISED | `/registre/commune/69044/autorisations` | — | yes |
 | `commune-aut-one` | One decree: the singular everywhere (« Cet arrêté figure aussi parmi le document d'Ampuis. ») | registre/vues/autorisations.ts | IMPROVISED | `/registre/commune/69007/autorisations` | — | yes |
 | `commune-request` | « Demander à la préfecture / à la mairie »: the dialog with the request's text to copy, Escape closes it and gives the focus back | registre/demande.ts | partly IMPROVISED: the prototype's | `/registre/commune/69283/autorisations`, « Demander à la préfecture » | — | yes |
-| `commune-ess-no-document` | A commune with no document: its lead « Aucun document trouvé pour … », the frieze and « Ce qui s'est passé » absent (no empty frame) | registre/vues/commune.ts | IMPROVISED | `/registre/commune/69182` | — | yes |
+| `commune-ess-no-document` | A commune with no document has no file since lot R3 (a file per commune with a document, DECISIONS 2026-10-30): its four tabs say « Page introuvable », as a buyer or a company the register does not hold; no link leads there (its name has no reference) | registre/commun.ts | IMPROVISED | `/registre/commune/69182` | — | yes |
 | `commune-ess-map-not-cut` | A commune whose map is not cut (the build's `carte.decoupee`): « La carte de <commune> », a sentence in the frame, no pause button nor attribution, nothing asked | registre/vues/commune.ts | IMPROVISED | `/registre/commune/95176` | — | yes |
 | `commune-ess-no-webgl` | A device without WebGL 2: « La carte de <commune> ne peut pas s'afficher sur cet appareil. » in the frame | registre/vues/commune.ts | IMPROVISED | a browser without WebGL 2 | — | no (not on the bench's browsers) |
 | `commune-ess-share` | « Partager l'image »: a 1200 × 630 image of the commune's figures drawn in the browser, downloaded | registre/vues/commune-outils.ts | partly IMPROVISED: the prototype's | `/registre/commune/69283`, « Partager l'image » | — | yes |
@@ -1949,6 +1960,17 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-carte` | Drones et algorithmes: the register a panel on the right, the map live and tilted, its outline and drone volumes, « 3D », ↺, ↻, N, the legend, « Heures de vol autorisées, par semaine »; the map's own panels put away | registre/vues/carte.ts; drones.ts | V2-CarteDrones | `/registre/commune/69123/carte` | — | yes |
 | `reg2-carte-chosen` | A volume pointed at: a thin ink outline; chosen: full, a thick ink outline, its label, the others aside, its week full of ink on the chart, the decree's detail in the panel (places, slots, service, purpose, devices, the zone's status, act, page) | registre/vues/carte.ts; drones.ts | V2-CarteDrones | a Lyon slot | — | yes |
 | `reg2-carte-week` | A week or a month clicked (or chosen with the arrows and Enter): the map, the tickets and the list filtered to it; « Toute la période » | registre/vues/carte.ts | V2-CarteDrones | Lyon, a week of October | — | yes |
+
+### The register (lot R3)
+
+No new screen: the v2 draws the share button, its window and the links' colours; R3 gives
+them the build's text, image and references. Test data: the CI extract of the pilot, and the
+Rhône's real DECP rows (`tests/fixtures/registre/national/`).
+
+| State | What it shows | Where | Mockup | How to see it | Capture | Checked |
+|---|---|---|---|---|---|---|
+| `reg-entry-page` | A record's address served with its entry page: its share tags (Open Graph, Twitter, canonical, noindex) and, without JavaScript, its name, line, three figures, text and neighbours' links; the app draws the page otherwise | lacarte_registre/partage.py, pages.py; deploy/preview.caddy | V2-Partage's text (the share's) | `/registre/entreprise/431903954`, JavaScript off | — | tests only |
+| `reg-preview-image` | The record's preview image, 1200 × 630: the dark map, the logo, « Le registre », the type's label, the name in two lines at most, its line, three figures | lacarte_registre/apercu.py | V2-Partage (capture 06) | `/data/registre/apercu/entreprise/431903954.png` | the build's own | yes, against capture 06 (an entreprise, a long buyer's name) |
 
 ## 3. Deviations from the mockup (« Écarts à la maquette »)
 
@@ -2435,3 +2457,9 @@ rows above hold for the content of the fiches.
 | A territory's charts in its yellow | the measure in ink, the selection full of ink | DECISIONS 2026-10-30; Ju's review A1 (yellow is the territories') |
 | Documents-grand: the filters in a left column | above the table | beside the panel a 220 px column left about 600 px to the table |
 
+### The register (lot R3)
+
+| Mockup | Code | Reason |
+|---|---|---|
+| V2-Partage: each card shows another crop of the dark map | one crop (the commune card's) for every image, cut once from the mockup (`apercu/fond.png`) | « Un seul gabarit pour tous les types » (the lot's brief): the image differs by what it says, not by its background; one layer drawn once keeps an image's drawing at 35 ms |
+| V2-Partage: the text rendered by the browser | the name, line and figures drawn by FreeType (Pillow) with the site's own fonts and the mockup's sizes, axes and colours; one palette of 256 colours | no browser in the build (the VPS has none); the palette keeps an image near 80 kB (DECISIONS 2026-10-30) |
