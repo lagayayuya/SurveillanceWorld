@@ -186,6 +186,7 @@ test("the outline from the head of the map file: read as soon as it has come, no
 test("the words: dates, hours, the chart's tooltip, the tickets, the list's title", () => {
   assert.equal(dateTxt(at("2026-10-23", 19)), `23${N}oct.${N}2026`);
   assert.equal(dateTxt(at("2026-10-23", 19), true), `23${N}oct.${N}2026, 19 h 00`);
+  assert.equal(dateTxt(Date.UTC(2025, 10, 1)), `1er${N}nov.${N}2025`);
   assert.equal(heuresTxt(2.5), "2,5 h");
   assert.equal(heuresTxt(1367), `1${N}367 h`);
   assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");

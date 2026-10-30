@@ -34,7 +34,7 @@
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
 
-    <section class="frise" aria-labelledby="cd-frise-t">
+    <sc-if value="{{hasFrise}}"><section class="frise" aria-labelledby="cd-frise-t">
       <div class="frise-h">
         <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.frise_titre}}</h2>
         <span class="tw" style="font-size: 13px; color: var(--muted)">{{rangeL}}</span>
@@ -53,7 +53,7 @@
         <p class="sr" aria-live="polite">{{tipLive}}</p>
       </div>
       <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
-    </section>
+    </section></sc-if>
 
     <sc-if value="{{hasDet}}" hint-placeholder-val="{{false}}">
       <div class="cd-det" aria-live="polite">

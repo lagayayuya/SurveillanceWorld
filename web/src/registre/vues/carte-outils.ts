@@ -47,10 +47,14 @@ const hours = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
 /** The chart's start when the commune has no slot (the prototype's: the first collected acts). */
 export const DEBUT = Date.UTC(2025, 10, 1);
 
-/** « 23 oct. 2026 », with the hour: « 23 oct. 2026, 19 h 00 ». */
+/** The day of the month, « 1er » for the first (format.ts longDate's). */
+const quantieme = (d: Date): string =>
+  d.getUTCDate() === 1 ? t("format.premier") : String(d.getUTCDate());
+
+/** « 23 oct. 2026 », « 1er nov. 2025 »; with the hour: « 23 oct. 2026, 19 h 00 ». */
 export function dateTxt(ms: number, withHour = false): string {
   const d = new Date(ms);
-  const day = `${d.getUTCDate()}${NBSP}${MONTH[d.getUTCMonth()]}${NBSP}${d.getUTCFullYear()}`;
+  const day = `${quantieme(d)}${NBSP}${MONTH[d.getUTCMonth()]}${NBSP}${d.getUTCFullYear()}`;
   if (!withHour) return day;
   const pad = (n: number) => String(n).padStart(2, "0");
   return t("carte.date_heure", { date: day, h: pad(d.getUTCHours()), m: pad(d.getUTCMinutes()) });
@@ -58,7 +62,7 @@ export function dateTxt(ms: number, withHour = false): string {
 /** « 23 oct. », the year left out (a week's tooltip, whose year the axis gives). */
 export function jourTxt(ms: number): string {
   const d = new Date(ms);
-  return `${d.getUTCDate()}${NBSP}${MONTH[d.getUTCMonth()]}`;
+  return `${quantieme(d)}${NBSP}${MONTH[d.getUTCMonth()]}`;
 }
 
 /** « 4 h », « 2,5 h », « 1 367 h ». */

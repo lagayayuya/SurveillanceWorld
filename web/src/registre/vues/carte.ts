@@ -81,6 +81,18 @@ const today = (): number => {
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 const DAY = 86_400_000;
+/** A place outside the view widened by its own size on each side: too far to fly to. */
+function loin(map: MlMap, [lng, lat]: [number, number]): boolean {
+  const b = map.getBounds();
+  const dx = b.getEast() - b.getWest();
+  const dy = b.getNorth() - b.getSouth();
+  return (
+    lng < b.getWest() - dx ||
+    lng > b.getEast() + dx ||
+    lat < b.getSouth() - dy ||
+    lat > b.getNorth() + dy
+  );
+}
 
 class CarteDrones extends Vue<Props, State> {
   private map: MlMap | null = null;
@@ -250,7 +262,10 @@ class CarteDrones extends Vue<Props, State> {
       { padding, pitch, bearing: map.getBearing() },
     );
     if (!cam) return;
-    map.flyTo({ ...cam, pitch, duration, essential: true });
+    // from far away (a cold open of the page: the map starts at its default place) a jump, not a
+    // flight that would load every tile on its way
+    if (loin(map, [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])) map.jumpTo({ ...cam, pitch });
+    else map.flyTo({ ...cam, pitch, duration, essential: true });
   }
   componentWillUnmount(): void {
     this.dead = true;
@@ -262,7 +277,10 @@ class CarteDrones extends Vue<Props, State> {
     map.off("pitchend", this.onPitch);
     this.layer?.retirer();
     this.layer = null;
-    if (this.saved) map.easeTo({ ...this.saved, duration: reduced() ? 0 : MOVE_MS });
+    const back = this.saved;
+    if (back)
+      if (loin(map, back.center)) map.jumpTo(back);
+      else map.easeTo({ ...back, duration: reduced() ? 0 : MOVE_MS });
     this.map = null;
   }
   componentDidUpdate(): void {
@@ -556,6 +574,7 @@ class CarteDrones extends Vue<Props, State> {
         tel: !isLarge,
       },
       hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length),
+      hasFrise: drone.length > 0,
       is3d: S.is3d ? "true" : "false",
       tog3d: (() => this.ease({ pitch: S.is3d ? 0 : PITCH })) as Handler,
       rotL: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) + TURN })) as Handler,
