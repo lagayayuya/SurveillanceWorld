@@ -21,7 +21,16 @@ import os
 from pathlib import Path
 
 import lacarte_registre as registre
-from lacarte_registre import collecter, construire, exporter, fetch, importer, pages, regles
+from lacarte_registre import (
+    collecter,
+    comparer,
+    construire,
+    exporter,
+    fetch,
+    importer,
+    pages,
+    regles,
+)
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -55,6 +64,12 @@ def main(argv: list[str] | None = None) -> None:
     src.add_argument("--sans-corrections", action="store_true",
                      help="build without the database's corrections (never deployed)")  # fmt: skip
     sub.add_parser("verifier", help="whether the built site may be deployed (deploy.sh)")
+    cmp_ = sub.add_parser("comparer", help="the pilot's figures before and after (comparer.py)")
+    cmp_.add_argument("avant", type=Path, help="a built site before (a copy of the served one)")
+    cmp_.add_argument("apres", type=Path, help="a built site after (data/registre/site)")
+    cmp_.add_argument(
+        "--fiche", action="append", help="a record, <type>/<id> (default: the pilot's six)"
+    )
     pag = sub.add_parser("pages", help="the records' entry pages into the web build (pages.py)")
     pag.add_argument("shell", type=Path, help="the built map's page (web/dist/index.html)")
     pag.add_argument("out", type=Path, help="the web build's folder (web/dist)")
@@ -83,6 +98,9 @@ def main(argv: list[str] | None = None) -> None:
         except (regles.CorrectionError, construire.NoDatabase) as e:
             parser.exit(2, f"lacarte-registre construire: {e}\n")
         print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
+    if args.cmd == "comparer":
+        print(comparer.table(args.avant, args.apres, tuple(args.fiche or comparer.FICHES)), end="")
         return
     if args.cmd == "pages":
         try:
