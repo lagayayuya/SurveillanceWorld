@@ -51,8 +51,9 @@ export type VueModule = {
   donnees?: (r: Route) => Promise<Record<string, unknown>>;
 };
 const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>> = {
-  registre: () => import("./vues/registre.ts"),
-  chiffres: () => import("./vues/chiffres.ts"),
+  registre: () => import("./vues/sommaire.ts"),
+  // the old « Chiffres et classements »: the summary's module replaces it with its list (listes.ts)
+  chiffres: () => import("./vues/sommaire.ts"),
   liste: () => import("./vues/liste.ts"),
   commune: () => import("./vues/commune.ts"),
   documents: () => import("./vues/documents.ts"),

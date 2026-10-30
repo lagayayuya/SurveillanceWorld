@@ -30,6 +30,10 @@
   margin-top: 16px;
   flex-wrap: wrap;
 }
+.rg .v-liste table.t th button,
+.rg .v-liste table.t th .th-fixe {
+  white-space: nowrap;
+}
 /* a head that sorts nothing: the buttons' box, without the button */
 .rg .v-liste table.t th .th-fixe {
   display: flex;

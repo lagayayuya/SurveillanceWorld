@@ -1,0 +1,145 @@
+/* The register's summary (V2-Sommaire, V2-Tel-Sommaire): the boards' inline styles of the search,
+   its results, the families and « Comment lire le registre », named here once. */
+.rg .v-sommaire .cherche label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 62px;
+  margin-top: 22px;
+  padding: 0 18px;
+  border: 3px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 4px 4px 0 #ff48b0;
+}
+.rg .v-sommaire .cherche input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    500 20px Archivo,
+    sans-serif;
+  outline-offset: 4px;
+}
+.rg .v-sommaire .cherche.tel label {
+  gap: 8px;
+  height: 50px;
+  margin-top: 0;
+  padding: 0 12px;
+  border-width: 2.5px;
+  box-shadow: 3px 3px 0 #ff48b0;
+}
+.rg .v-sommaire .cherche.tel input {
+  font-size: 16px;
+}
+.rg .v-sommaire .res {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 10px;
+}
+.rg .v-sommaire .groupe {
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.rg .v-sommaire .rrow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0 10px;
+  min-height: 30px;
+}
+.rg .v-sommaire .rrow a {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+/* a long name (a document's object) takes the line, its few words go under it, on the right */
+.rg .v-sommaire .rrow .tw {
+  margin-left: auto;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: right;
+  white-space: nowrap;
+}
+.rg .v-sommaire .nw {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.rg .v-sommaire .tout {
+  align-self: flex-end;
+  font-size: 13px;
+  margin-top: 4px;
+}
+.rg .v-sommaire .etat {
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.rg .v-sommaire .deps-indispo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+}
+.rg .v-sommaire .fams {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+.rg .v-sommaire .phrase {
+  margin: 0;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+  font:
+    500 19px / 2.1 Archivo,
+    sans-serif;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+/* a sticker is a link to its type's list: it keeps the sticker's ink, not a link's */
+.rg .th.v-sommaire a.stk {
+  color: #111;
+}
+.rg .th.v-sommaire a.stk:hover,
+.rg .th.v-sommaire a.stk:focus-visible {
+  box-shadow: 3px 3px 0 var(--fg);
+}
+.rg .v-sommaire .phrase-tel {
+  margin: 0;
+  line-height: 2.2;
+}
+.rg .v-sommaire .phrase-tel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+}
+.rg .v-sommaire .phrase-tel .stk {
+  font-size: 11.5px;
+}
+.rg .v-sommaire .tfam > div {
+  display: flex;
+  flex-direction: column;
+}
+.rg .v-sommaire .trow > span[aria-hidden] {
+  margin-left: 0;
+}
+@media (max-width: 959px) {
+  .rg .v-sommaire .res {
+    grid-template-columns: minmax(0, 1fr);
+    margin-top: 0;
+  }
+}
