@@ -910,7 +910,7 @@ point is written where it applies:
 - publishing in one's own name offered on the public site once /revue switches writing to
   OSM's live server (1.7, 1.10; `board-sync-not-offered`).
 
-### 1.12 The register (lots R0, R1a, R1b, 2026-10-28 and 29; v2, 2026-10-30)
+### 1.12 The register (lots R0, R1a, R1b, 2026-10-28 and 29; v2 and v2.1, 2026-10-30)
 
 The register is the site's second part: the public documents on video surveillance — contracts
 (DECP), tender notices (BOAMP), prefectural decrees (the préfectures' recueils, the Rhône's first)
@@ -932,7 +932,8 @@ DECISIONS 2026-10-28.
   without itself, a text filter, « Afficher plus », the CSV; their state in the address),
   `/registre/couverture` (what the register covers), `/registre/glossaire[#g-<mot>]`, and the
   fiches: `/registre/commune/<insee>` (with `…/documents` and `…/autorisations[/<dossier>]`, its
-  pages, and `…/carte[?mois=YYYY-MM]`, « Carte et drones » on the site's map),
+  pages, `…/autorisations/<id>` a decree chosen at its section, and
+  `…/carte[?mois=…&semaine=…&genre=…&acte=…&creneau=…]`, « Drones et algorithmes » on the site's map),
   `/registre/departement/<code>[?ic=<epci>]` (a département, an intercommunality),
   `/registre/acheteur/<siren>`, `/registre/entreprise/<siren>`, `/registre/contrat/<affaire>`
   (a document's fiche, of its type). `/registre/chiffres` and the old documents' search are replaced
@@ -947,15 +948,22 @@ DECISIONS 2026-10-28.
   the map, 56 px from its left and right edges, 24 px from its top and bottom, its content at most
   1 200 px wide, its offset shadow the colour of the open fiche's type; on a phone a sheet over the
   map (44 px of map above a fiche, 64 px above the summary) with a handle: touched or dragged it
-  goes down to half the screen, dragged far down it closes. Its head: « ← Carte », the breadcrumb
+  goes down to half the screen, dragged far down it closes. Its head: « ← Retour » (one step back in
+  the register's own history, its filters, section and scroll kept; « ← Carte » when there is none
+  before, which closes to the map), the breadcrumb
   (each step with its type's square), the search, the sun / moon (the map's own toggle, both
   repaint), ✕; on a phone « ‹ <up one step> », « Partager » on a fiche, the theme, ✕. The map
   behind is inert and the focus stays in the register; Escape closes it (a share window or a
   dialog first), the browser's back goes up one step, the focus goes back where it came from. The
   map keeps its own address aside meanwhile (`url.ts`) and gets it back; a commune's page shows
-  that commune on the map behind. Carte et drones asks for a panel instead (`panneau()`): the
-  register on the right (about 470 px), the map live, no trap.
-- **The doors from the map** (`src/registre/hote.ts`): « Le registre → », a link of the ticket under « Filtres et légende » (17a's links; the row of squares has no room for a fifth);
+  that commune on the map behind. Drones et algorithmes asks for a panel instead (`panneau()`): the
+  register on the right (about 470 px), the map live, no trap. One modal at a time, in one order of
+  layers written at the head of `registre.css` (the map 0, its panels 1–9, the register 50, what
+  opens from it 60, the legal pages 61): opening the register closes the site's other modals; a
+  dialog opened from it (« Signaler une erreur ») goes above it, the focus in it. Open, every child
+  of the page but the map, the register and what opens above it is hidden, the map's controls and
+  popups too; the ODbL attribution stays readable.
+- **The doors from the map** (`src/registre/hote.ts`): « Le registre → », a link of the ticket on the row of « Filtres et légende » (17a's links; the row of squares has no room for a fifth, a line of its own covered the map);
   « Voir dans le registre » in a commune's or a département's sheet when the register holds its
   page. Every link to a register page, on the map or in the register, moves the page's history
   without reloading it.
@@ -975,7 +983,30 @@ DECISIONS 2026-10-28.
 - **One skeleton** for every fiche: identity (its head), L'essentiel, Dans le temps, Avec qui,
   Documents, Sources, always in this order, an empty section left out, the others numbered. A
   collectivité has one fiche, its territory and its purchases. The panel of the detail stays on
-  the right on a wide screen; on a phone it rises as a drawer once something is touched.
+  the right on a wide screen; on a phone it rises as a drawer once something is chosen. At rest it
+  says only what to hover or choose; a row hovered or focused is shown in it, a row chosen (click,
+  Enter, tap) is selected (`aria-selected`, a ground, its type's bar at its left), the panel
+  scrolled to be seen whole and its arrival marked by a 400 ms flash of its outline (none under
+  reduced motion); the lists have it too (`src/registre/vue.ts`: `survol`, `choisir`, `affiche`).
+- **Rows and columns** (`cadre.css`, « rows »): a row that leads somewhere is its main link's
+  target across its width (`.r`, `a.rl`; rails, summary, search results, tables, breadcrumb),
+  hovered its title underlined; no link repeated on every row (« Voir l'arrêté », « Signaler une
+  erreur », « Sur la carte » are in the panel). A column of numbers has its head and values right
+  on one edge, a column of text both left; a head that does not read alone carries a sentence
+  (`.aide`). `web/bench/smoke-registre.mjs` (a gate step per engine) and
+  `web/bench/smoke-colonnes-registre.mjs` (any register page, against a server with the data)
+  check the edges.
+- **Drones et algorithmes** (« Surveillance par drones et par algorithmes »,
+  `src/registre/vues/carte.ts`, `drones.ts`): the drone zones and the algorithmic-analysis decrees
+  in one view, a filter « drones » / « algorithmes », both in the documents' colour, drones solid,
+  algorithms hatched; a zone over 80 % of its commune or more a hatched band on the ground
+  (« toute la commune »), the others opaque volumes; the hover a feature state, the selection in
+  ink (a thin outline hovered, full with a thick outline and its label chosen, the others aside;
+  the week chosen full of ink on the chart); its tickets « arrêtés », « heures autorisées, hors
+  créneaux sans horaires », « créneaux aux horaires non précisés » (and « zones non déduites » when
+  there are some); « N créneaux, dans M arrêtés »; a decree opens in its panel, the view's state in
+  its address. Opening it frames the commune and tilts the map; closing the register leaves the
+  map there.
 - **« Partager »** (`src/registre/partage.ts`): a small window on a wide screen (the fiche's
   preview image when the build has made it, « Copier le lien », « Copier le texte » when the build
   has written one), a drawer on a phone (the image, « Partager… » through the device's own share
@@ -985,8 +1016,8 @@ DECISIONS 2026-10-28.
   that an error is possible; a decree's panel links its source (« Voir l'arrêté (recueil de la
   préfecture) »).
 - **« Signaler une erreur »** (lot R1b, `src/registre/signaler.ts`): every document's panel links
-  its record's form (`/registre/contrat/<affaire>?doc=<id>#signaler`), on a phone the row unfolded
-  by a touch (Documents, Autorisations) with « Voir l'arrêté » or the source; the record has the button
+  its record's form (`/registre/contrat/<affaire>?doc=<id>#signaler`), on a phone in the drawer of
+  the row touched, with « Voir l'arrêté » or the source; the record has the button
   beside « Copier la référence »; a click opens the form in a dialog: what is wrong (nine
   choices), the correction, an optional source and contact, no account; posted to
   `POST /api/registre/signalement` (`pipeline/lacarte/api/registre.py`). A reviewer accepts or
@@ -1903,17 +1934,20 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-modal` | A register page over the map on a wide screen: the frame 56 px from the sides and 24 px from the top and bottom, its shadow the open fiche's type's colour; the map inert | registre/modale.ts; cadre.css | V2-Sommaire, V2-Entreprise | `/registre/entreprise/431903954` | — | yes |
 | `reg2-sheet` | The same on a phone: the sheet under 44 px of map (64 above the summary), its handle; « ‹ <up one step> », « Partager » on a fiche, the theme, ✕ | registre/modale.ts | V2-Tel-Sommaire, V2-Tel-Entreprise | the same at 390 px | — | yes |
 | `reg2-sheet-low` | The handle touched or dragged: the sheet at half the screen, the map above; dragged far down: the register closes | registre/modale.ts | IMPROVISED (the boards draw the handle only) | any page at 390 px | — | yes |
-| `reg2-closed` | « ← Carte », ✕ or Escape: the map again at its own address, the focus where it was; the back button reopens the register | registre/hote.ts; url.ts | IMPROVISED | from the map, a door, then Escape | — | yes |
-| `reg2-doors` | « Le registre → » under « Filtres et légende » in the ticket; « Voir dans le registre » in a commune's or a département's sheet when the register holds its page | registre/hote.ts; areapunk.ts; main.ts | IMPROVISED (the boards draw no door) | `/?insee=69283` | — | yes |
+| `reg2-closed` | ✕, Escape, or « ← Carte » with no step before: the map again at its own address (from Drones et algorithmes, where that view left it), the focus where it was; the back button reopens the register | registre/hote.ts; url.ts | IMPROVISED | from the map, a door, then Escape | — | yes |
+| `reg2-back` | « ← Retour »: the register's previous step, its filters, section and scroll | registre/modale.ts; hote.ts | IMPROVISED (the boards draw « ← Carte ») | a fiche, then another, then « ← » | — | yes |
+| `reg2-one-modal` | The register opened while the welcome, a legal page or the account is open: they close, the register alone with the focus; « Signaler une erreur » from it: the dialog above, the register inert | registre/modale.ts; registre.css | IMPROVISED | `web/bench/smoke-registre.mjs` | — | yes |
+| `reg2-row-chosen` | A row chosen: its ground, its type's bar at its left, `aria-selected`; the panel in view, its outline flashed once | vue.ts; cadre.css | IMPROVISED | a decree of Mions | — | yes |
+| `reg2-doors` | « Le registre → » on the row of « Filtres et légende » in the ticket; « Voir dans le registre » in a commune's or a département's sheet when the register holds its page | registre/hote.ts; areapunk.ts; main.ts | IMPROVISED (the boards draw no door) | `/?insee=69283` | — | yes |
 | `reg2-summary` | The summary: the cut-out title, the coverage and update line, the search, the four families with their counts (each a list), « Comment lire le registre », the update and the decrees not read | registre/vues/sommaire.ts | V2-Sommaire, V2-Tel-Sommaire | `/registre/` | — | yes |
 | `reg2-search` | Typed: the results grouped by type, each a typed link, « Les N → » to the list filtered by the same words | registre/vues/sommaire.ts; listes.ts | V2-Sommaire | `/registre/?q=mions` | — | yes |
 | `reg2-search-off` | Neither the API nor `recherche.json` answers: « recherche indisponible » and the départements' list | registre/vues/sommaire.ts | IMPROVISED | `recherche.json` blocked | — | yes |
-| `reg2-list` | A list: the rail, its title, « classer par » with the rank, the filters with their counts, the rows (the pictogram alone), « Afficher plus », the CSV; a document listed with « Voir l'arrêté » (or its source) and « Signaler une erreur » | registre/vues/liste.ts; listes.ts | V2-Liste | `/registre/entreprises`, `/registre/arretes?dep=69` | — | yes |
+| `reg2-list` | A list: the rail, its title, « classer par » with the rank, the filters with their counts, the rows (the pictogram alone), « Afficher plus », the CSV; the detail panel on the right, a document's « Voir l'arrêté » (or its source) and « Signaler une erreur » in it | registre/vues/liste.ts; listes.ts | V2-Liste | `/registre/entreprises`, `/registre/arretes?dep=69` | — | yes |
 | `reg2-fiche` | A fiche: its type's sticker, its name cut out, its identity; the band stuck at the top with its sections (the one read marked) and « Partager »; the sections in order, numbered; the panel on the right | vues/socle.html; vue.ts | V2-Entreprise | Serfim T.I.C., Lyon, Mions, Sytral, the Rhône | — | yes |
 | `reg2-detail-drawer` | On a phone, something touched: the detail rises as a drawer with its ✕; at rest no panel | vues/socle.html; registre.css | V2-Tel-Entreprise (08b) | a year of Serfim at 390 px | — | yes |
 | `reg2-share` | « Partager »: on a wide screen a window (« Copier le lien », « Copier le texte » when the build wrote one, the image when the build made it); on a phone a drawer (« Partager… » when the device has a share sheet, « Copier le lien »); the link keeps the section; « Lien copié » | registre/partage.ts | V2-Entreprise (share), V2-Tel-Entreprise | Serfim's band | — | yes |
-| `reg2-carte` | Carte et drones: the register a panel on the right, the map live and tilted, its outline and drone volumes, « 3D », ↺, ↻, N, the legend, « Heures de vol autorisées, par semaine »; the map's own panels put away | registre/vues/carte.ts; drones.ts | V2-CarteDrones | `/registre/commune/69123/carte` | — | yes |
-| `reg2-carte-chosen` | A volume pointed at or chosen: yellow, « 6 h · 1 arrêté », its week yellow in the chart, its detail in the panel | registre/vues/carte.ts; drones.ts | V2-CarteDrones | a Lyon slot | — | yes |
+| `reg2-carte` | Drones et algorithmes: the register a panel on the right, the map live and tilted, its outline and drone volumes, « 3D », ↺, ↻, N, the legend, « Heures de vol autorisées, par semaine »; the map's own panels put away | registre/vues/carte.ts; drones.ts | V2-CarteDrones | `/registre/commune/69123/carte` | — | yes |
+| `reg2-carte-chosen` | A volume pointed at: a thin ink outline; chosen: full, a thick ink outline, its label, the others aside, its week full of ink on the chart, the decree's detail in the panel (places, slots, service, purpose, devices, the zone's status, act, page) | registre/vues/carte.ts; drones.ts | V2-CarteDrones | a Lyon slot | — | yes |
 | `reg2-carte-week` | A week or a month clicked (or chosen with the arrows and Enter): the map, the tickets and the list filtered to it; « Toute la période » | registre/vues/carte.ts | V2-CarteDrones | Lyon, a week of October | — | yes |
 
 ## 3. Deviations from the mockup (« Écarts à la maquette »)
@@ -2370,27 +2404,34 @@ rows above hold for the content of the fiches.
 |---|---|---|
 | The boards' classes `.cut`, `.drawer`, `.share` | `.rg-cut`, `.rg-drawer`, `.rg-share` | the map's own stylesheets give those names generic rules that reached the register |
 | A cut-out name broken at any letter | broken between its words only | the boards' names are short; a long one (a buyer's) broke inside a word at 390 px |
-| (no board) the doors from the map | « Le registre → », a link of the ticket in 17a's face, « Voir dans le registre » in a sheet | the brief's doors; the map had none |
+| (no board) the doors from the map | « Le registre → », a link of the ticket in 17a's face on the row of « Filtres et légende », « Voir dans le registre » in a sheet | the brief's doors; the map had none; the phone's ticket keeps its height |
 | (no board) a fiche of a commune, a buyer, a département, a document | V2-Entreprise's frame, their R1 content in the five sections | the brief: the content does not change, the frame does |
 | V2-Tel-Entreprise: no panel at rest | the same; a drawer once something is touched, with its ✕ | — (the board's own state, 08b) |
-| V2-Liste: no panel | « Voir l'arrêté » (or the source) and « Signaler une erreur » under a document listed, « Corrigé le » in its line | DECISIONS 2026-10-28 and 29 (where documents are listed) |
+| V2-Liste: no panel | the detail panel, « Voir l'arrêté » (or the source) and « Signaler une erreur » in it | Ju's review B4 (kit-grand-ecran.md: no link repeated per row), DECISIONS 2026-10-30 |
 | V2-Liste: « 69 Rhône », « 75 Paris » on two keys | the number on every key, its name read by assistive technologies | the board names two keys only, arbitrarily |
 | V2-Liste: the rail on a phone | a horizontal band of the same rows, stuck at the top, the list shown centred | no phone board for the lists |
 | V2-Tel-Sommaire: « Transports, santé, autres 107 » | four rows, one list each | a row opens one category |
 | V2-Sommaire: « … pas pu être lus » | « … pas pu être lus entièrement » | DECISIONS 2026-10-28 |
 | V2-Sommaire: counts (905 communes, 289 companies) | the build's (906, 412…) | real data |
 | V2-CarteDrones: « Les arrêtés de la période » | « Les créneaux de la période · N », every slot | DECISIONS 2026-10-29 (a slot per row, the list the map's text alternative) |
-| V2-CarteDrones: « Voir l'arrêté → » | « Voir l'arrêté (recueil de la préfecture) » | DECISIONS 2026-10-28 |
-| V2-CarteDrones: a row « Drones » in the detail | none | data: the build has no drone count per act (asked of R3) |
-| V2-CarteDrones: separate prisms | the part of each zone inside the commune, the chosen one also drawn flat in yellow | data: real zones nest (one covers all of Lyon) |
+| V2-CarteDrones: « Voir l'arrêté → » | « Voir l'arrêté (recueil de la préfecture) », in the panel | DECISIONS 2026-10-28; Ju's review B4 |
+| V2-CarteDrones: a row « Drones » in the detail | the devices of the decree (« 2 drones »), « non précisé » when it does not say | data: the zone's or the decree's `cameras` |
+| V2-CarteDrones: separate prisms | the part of each zone inside the commune; one covering 80 % of it or more a hatched band on the ground | data: real zones nest (one covers all of Lyon); Ju's review B1 |
+| V2-CarteDrones: yellow on the volume chosen and its week | ink (a thin outline hovered; chosen full, a thick outline, the others aside) | Ju's review A1: yellow is the territories' |
+| V2-CarteDrones: « zones non déduites · 21 » | « créneaux aux horaires non précisés » (13 at Lyon), « zones non déduites » only when there are some | Ju's review B2: the board's 21 counted unread hours |
+| V2-CarteDrones: the panel « en bref » | what to hover or choose; filled on a choice only | Ju's review B3; a hover that filled it moved the row under the pointer |
+| V2-* « ← Carte » | « ← Retour » when the register has a step before | Ju's review A4 |
+| V2-*: the breadcrumb's steps 19 px high | 40 px rows, their ground on hover | Ju's review A2 (the row is the target); on the black bar a lighter ink (#2e2b33), the soft ground unreadable under light words |
+| A sorted number column's arrow after its words | before them (« ↓ MONTANT ») | Ju's review A6: the words end where the values end |
 | V2-CarteDrones: the map's pieces at fixed x | anchored to the panel's left edge | the page has any width |
 | V2-CarteDrones: the legend « champs des caméras » | what the map shows at that zoom | the fields show from z15 only |
-| Commune-grand: the tilted commune map | a link to Carte et drones and one to the commune on the site's map | DECISIONS 2026-10-30 |
+| Commune-grand: the tilted commune map | a link to Drones et algorithmes, unframed | DECISIONS 2026-10-30; Ju's review A5 (no link to the site's map) |
 | Commune-grand: the frieze of contracts and calls in lanes | the amounts signed per year (bars), the contracts and the calls as lists | brief § 8 (one measure, an axis from zero, no lanes) |
 | Acheteur-grand: the frieze of contracts | the amounts signed per year | brief § 8 |
 | Departement-grand: the communes' bar on a square-root scale | a linear one | brief § 8 (no hidden scale) |
 | Registre-chiffres: its three charts | the counts of the lists' filters (year, dispositif) and a « Drones » column | brief § 5 (the lists replace the figures) |
+| Entreprise-grand: « Ce qui ressort » | removed | Ju's review B5: a juxtaposition that suggests without saying is an insinuation (facts with their source only) |
 | Entreprise-grand: the stacked strip of départements | « Ses clientes sont dans » with each département a link | brief § 8 and § 3 |
-| A territory's charts in its yellow | the measure in ink, the selection yellow | DECISIONS 2026-10-30 (yellow is the selection's) |
+| A territory's charts in its yellow | the measure in ink, the selection full of ink | DECISIONS 2026-10-30; Ju's review A1 (yellow is the territories') |
 | Documents-grand: the filters in a left column | above the table | beside the panel a 220 px column left about 600 px to the table |
 
