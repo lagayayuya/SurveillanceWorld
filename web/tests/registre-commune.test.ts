@@ -81,7 +81,7 @@ test("the band: the fiche's sections then « Carte et drones »; « Fiche » fir
     [
       ["fiche", "Fiche"],
       ["documents", "Documents"],
-      ["carte", "Carte et drones"],
+      ["carte", "Drones et algorithmes"],
     ],
   );
 });
