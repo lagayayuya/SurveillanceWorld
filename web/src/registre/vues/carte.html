@@ -33,8 +33,8 @@
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
       <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures_hors}}</div></div>
-      <div class="ticket"><div class="v">{{nSH}}</div><div class="l">{{lSH}}</div></div>
-      <sc-if value="{{hasND}}"><div class="ticket"><div class="v">{{nND}}</div><div class="l">{{lND}}</div></div></sc-if>
+      <div class="ticket"><div class="v">{{nSH}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_sans_horaires}}">{{lSH}}</span></div></div>
+      <sc-if value="{{hasND}}"><div class="ticket"><div class="v">{{nND}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_nd}}">{{lND}}</span></div></div></sc-if>
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
 
@@ -73,7 +73,7 @@
       </sc-if>
     </div>
 
-    <h3 class="h3" style="margin-top: 6px">{{listT}}</h3>
+    <h3 class="h3" style="margin-top: 6px"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_creneau}}">{{listT}}</span></h3>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
       <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h num">{{r.h}}</span></div></sc-for>
     </div>
