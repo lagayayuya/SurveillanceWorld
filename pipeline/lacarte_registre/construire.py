@@ -36,6 +36,7 @@ from lacarte_registre import (
     fermetures,
     fusion,
     national,
+    recherche,
     regles,
     sortie,
 )
@@ -85,6 +86,8 @@ def run(
         summary["fichiers"]["carte"] = len(maps)
 
     sortie.replace_dir(root / "site", write)
+    # the search's rows, for the database (migration 027), beside the site: not served
+    recherche.write_tsv(root / "recherche.tsv.gz", recherche.rows(ctx))
     summary["documents"] = len(reg.evenements)
     # the names served without a reference to a record, by type and reason (refs.py)
     summary["sans_reference"] = {
@@ -125,6 +128,7 @@ def main(
             "exportees": export["corrections"] if export else None,
             "le": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
             "index_sha256": _sha256(root / "site" / "index.json"),
+            "recherche_sha256": _sha256(root / "recherche.tsv.gz"),
         }
         sortie.dump(root / MARK, mark)
         summary["corrections"] = mark
@@ -144,4 +148,7 @@ def verifier(root: Path | None = None) -> str | None:
     index = root / "site" / "index.json"
     if not index.is_file() or _sha256(index) != mark.get("index_sha256"):
         return "the site is not the one the last construire built: build it again"
+    rows = root / "recherche.tsv.gz"
+    if not rows.is_file() or _sha256(rows) != mark.get("recherche_sha256"):
+        return "the search's rows are not the last construire's: build it again"
     return None

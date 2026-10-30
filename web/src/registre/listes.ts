@@ -1,35 +1,30 @@
 // The register's lists, one per type (design/registre/v2, V2-Liste), and what the summary reads of
 // them (V2-Sommaire): each list's rows, its sort keys, its filters, its count; the search across the
-// register; the old addresses that now open a list. One function makes a list's rows and the
-// summary counts them (a count and its list cannot disagree). The figures and rules are those of
-// « Chiffres et classements » (corpus.ts figures: a contract counted once, an amount the build counts,
-// `compte`) and of the old documents' search (corpus.ts ligne: the facets, the amount it ranks), read
-// from recherche.json; a figure the build should write for the whole register is asked of it (R3),
-// read here when it is there (index.json `comptes`).
+// register; the old addresses that now open a list. The lists of names (communes,
+// intercommunalities, départements, buyers, companies) are listes.json's rows, every one, filtered
+// and sorted here; the lists of documents and the documents the summary's search finds are the
+// search API's (GET /api/registre/recherche, lot R3: all of France does not fit in one file),
+// page by page, filtered, counted and sorted by it. The counts of every list are the build's
+// (index.json and listes.json `comptes`): the function that writes a list's rows counts them. The
+// figures and rules are those of « Chiffres et classements » (a contract counted once, an amount
+// the build counts, `compte`), now computed by the build (recherche.py listes).
 
-import { communeHref } from "./commun.ts";
 import {
   badge,
   benef,
   buyerOf,
-  DEPS,
   DISPS,
-  type Ligne as Doc,
   date,
-  depGroup,
   depNom,
   entName,
-  type Figures,
-  figures,
   type Index,
   type Kind,
   type Lexique,
+  type Ligne,
   ligne,
-  type Recherche,
 } from "./corpus.ts";
 import type { Rich, RichItem } from "./dc.ts";
 import type { Acheteur, Couverture, Evenement } from "./donnees.ts";
-import { EI } from "./donnees.ts";
 import { count, fr, money } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import {
@@ -86,7 +81,8 @@ const LISTE_KIND: Record<Kind, Liste> = {
 
 /** The buyers' list holds the buyers that are not a collectivité (a commune, an intercommunality,
  * a métropole, a département are territories: their fiche is the territory's or their own), in
- * four categories; a buyer without category (an unnamed entry of the dictionary) is in none. */
+ * four categories; a buyer without category (an unnamed entry of the dictionary) is in none. The
+ * build groups them the same way (recherche.py LISTE_CAT). */
 export const CATS = ["etat", "bailleur", "transports", "autres"] as const;
 export type Cat = (typeof CATS)[number];
 const CAT_DE: Record<string, Cat> = {
@@ -110,23 +106,37 @@ export type CouvertureX = Couverture & {
 };
 type AcheteurX = Acheteur & { dep?: string };
 
-/** Every document and the dictionaries (recherche.json), their figures, and the coverage. */
-export type Corpus = {
-  R: Recherche;
-  fig: Figures;
-  docs: Doc[];
-  couverture: CouvertureX;
+export type Comptes = { listes: Record<Liste, number>; categories: Record<Cat, number> };
+
+/** listes.json (recherche.py listes): every row of the lists of names by its id, its figures as
+ * the build counts them, the names the rows need with their references, every list's count. */
+export type Listes = {
+  v: number;
   maj: string;
+  lignes: {
+    communes: Record<
+      string,
+      { docs: number; con: number; cam: number; dr: number; carte?: number | null }
+    >;
+    acheteurs: Record<string, { n: number; amt: number; ents: number; centrale: boolean }>;
+    entreprises: Record<
+      string,
+      { n: number; clientes: number; amt: number; y0: string; deps: Record<string, number> }
+    >;
+    departements: Record<string, { n: number; con: number; aut: number; amt: number }>;
+  };
+  comptes: Comptes;
+  dico: Lexique;
 };
-const memo = new WeakMap<Recherche, { fig: Figures; docs: Doc[] }>();
-export function corpus(R: Recherche, couverture: CouvertureX, maj: string): Corpus {
-  let m = memo.get(R);
-  if (!m) {
-    m = { fig: figures(R), docs: R.evenements.map((e) => ligne(R, e)) };
-    memo.set(R, m);
-  }
-  return { R, ...m, couverture, maj };
-}
+
+/** What the lists of names read: listes.json's names and rows, the coverage, the update day. */
+export type Corpus = { L: Lexique; X: Listes["lignes"]; couverture: CouvertureX; maj: string };
+export const corpus = (X: Listes, couverture: CouvertureX): Corpus => ({
+  L: X.dico,
+  X: X.lignes,
+  couverture,
+  maj: X.maj,
+});
 
 /** A département's name: the build's (couverture.json), else the catalogue's, else its code. */
 export const nomDep = (C: Pick<Corpus, "couverture">, code: string): string =>
@@ -183,7 +193,10 @@ export type Def = {
   argent: boolean;
   /** the CSV's columns after the rank and the name: [key of Rang.csv, words] */
   csv: [string, string][];
-  rangs(C: Corpus): Rang[];
+  /** a list of names: its rows from listes.json */
+  rangs?(C: Corpus): Rang[];
+  /** a list of documents: its kind, its rows the search API's (pageDocuments) */
+  kind?: Kind;
 };
 
 const W = (k: string) => t(`liste.${k}`);
@@ -193,7 +206,7 @@ const csvCol = (k: string): [string, string] => [k, W(`csv.${k}`)];
 /** « — »: a figure the register does not have (a département whose decrees are not collected). */
 const NA = "—";
 
-function collectes(C: Corpus): Set<string> {
+function collectes(C: Pick<Corpus, "couverture">): Set<string> {
   return new Set(
     Object.entries(C.couverture.departements)
       .filter(([, d]) => d.etat === "collecte")
@@ -203,14 +216,14 @@ function collectes(C: Corpus): Set<string> {
 
 function rangsCommunes(C: Corpus): Rang[] {
   const lus = collectes(C);
-  return Object.values(C.fig.coms).map((c) => {
-    const x = C.R.communes[c.insee];
+  return Object.entries(C.X.communes).map(([insee, c]) => {
+    const x = C.L.communes[insee];
     const ok = lus.has(x.dep);
-    const carte = x.carte ?? null;
+    const carte = c.carte ?? null;
     return {
-      id: c.insee,
+      id: insee,
       nom: x.nom,
-      lien: lienCommune(C.R, c.insee, x.nom, true),
+      lien: lienCommune(C.L, insee, x.nom, true),
       sous: [lienDepartement(x.dep, nomDep(C, x.dep), true)],
       cells: [
         fr(c.docs),
@@ -220,7 +233,7 @@ function rangsCommunes(C: Corpus): Rang[] {
         carte == null ? NA : fr(carte),
       ],
       mots: plain(`${x.nom} ${nomDep(C, x.dep)}`),
-      f: { dep: [depGroup(x.dep)] },
+      f: { dep: [x.dep] },
       v: {
         docs: c.docs,
         con: c.con,
@@ -230,7 +243,7 @@ function rangsCommunes(C: Corpus): Rang[] {
         nom: x.nom,
       },
       csv: {
-        id: c.insee,
+        id: insee,
         departement: x.dep,
         documents: c.docs,
         contrats: c.con,
@@ -243,50 +256,50 @@ function rangsCommunes(C: Corpus): Rang[] {
 }
 
 /** The intercommunalities of the register's communes (each commune's `epci`). A name and a fiche
- * only for one that buys (its buyer's fiche): the build writes no list of them yet (asked of R3). */
+ * only for one that buys (its buyer's fiche). */
 function rangsEpci(C: Corpus): Rang[] {
   const by = new Map<string, string[]>();
-  for (const c of Object.values(C.fig.coms)) {
-    const e = C.R.communes[c.insee]?.epci;
+  for (const insee of Object.keys(C.X.communes)) {
+    const e = C.L.communes[insee]?.epci;
     if (!e) continue;
-    by.set(e, [...(by.get(e) ?? []), c.insee]);
+    by.set(e, [...(by.get(e) ?? []), insee]);
   }
   return [...by].map(([siren, coms]) => {
-    const a = C.R.acheteurs[siren];
+    const a = C.L.acheteurs[siren];
     const nom = a ? a.nom_court || a.nom || "" : "";
     const label = nom || t("liste.epci_siren", { siren });
-    const noms = coms.map((k) => C.R.communes[k].nom).sort((x, y) => x.localeCompare(y, "fr"));
-    const deps = [...new Set(coms.map((k) => C.R.communes[k].dep))];
-    const b = C.fig.buyers[siren];
+    const noms = coms.map((k) => C.L.communes[k].nom).sort((x, y) => x.localeCompare(y, "fr"));
+    const deps = [...new Set(coms.map((k) => C.L.communes[k].dep))];
+    const b = C.X.acheteurs[siren];
     return {
       id: siren,
       nom: label,
-      lien: nom ? lienAcheteur(C.R, siren, nom, true) : lien("epci", null, label, true),
+      lien: nom ? lienAcheteur(C.L, siren, nom, true) : lien("epci", null, label, true),
       sous: [
         ...coms
           .slice()
-          .sort((x, y) => C.R.communes[x].nom.localeCompare(C.R.communes[y].nom, "fr"))
+          .sort((x, y) => C.L.communes[x].nom.localeCompare(C.L.communes[y].nom, "fr"))
           .slice(0, 3)
-          .flatMap((k, i) => [...(i ? [", "] : []), lienCommune(C.R, k, undefined, true)]),
+          .flatMap((k, i) => [...(i ? [", "] : []), lienCommune(C.L, k, undefined, true)]),
         ...(noms.length > 3 ? ["…"] : []),
       ],
-      cells: [fr(coms.length), fr(b?.n ?? 0), b?.montant ? money(b.montant) : NA],
+      cells: [fr(coms.length), fr(b?.n ?? 0), b?.amt ? money(b.amt) : NA],
       mots: plain(`${label} ${noms.join(" ")}`),
-      f: { dep: [...new Set(deps.map(depGroup))] },
-      v: { communes: coms.length, con: b?.n ?? 0, amt: b?.montant ?? 0, nom: label },
+      f: { dep: deps },
+      v: { communes: coms.length, con: b?.n ?? 0, amt: b?.amt ?? 0, nom: label },
       csv: {
         id: siren,
         departement: deps.join(" "),
         communes: coms.length,
         contrats: b?.n ?? 0,
-        montant: b?.montant ?? "",
+        montant: b?.amt ?? "",
       },
     };
   });
 }
 
 /** Etat label of a département's decrees (couverture.json). */
-function etatDep(C: Corpus, code: string): string {
+function etatDep(C: Pick<Corpus, "couverture">, code: string): string {
   const d = C.couverture.departements[code];
   if (!d) return "";
   if (d.etat === "collecte") return t("couverture.etat_collecte");
@@ -295,24 +308,13 @@ function etatDep(C: Corpus, code: string): string {
 }
 
 function rangsDepartements(C: Corpus): Rang[] {
-  const docs: Record<string, { n: number; con: number; aut: number; amt: number }> = {};
-  for (const e of C.R.evenements) {
-    if (!e.dep) continue;
-    docs[e.dep] ??= { n: 0, con: 0, aut: 0, amt: 0 };
-    const o = docs[e.dep];
-    o.n++;
-    // a contract counted once (a copy is the second publication), its amount when the build counts it
-    if (e.t === "attribution" && !e.copie) o.con++;
-    if (e.t.startsWith("arrete")) o.aut++;
-    if (e.compte) o.amt += e.montant ?? 0;
-  }
   const coms: Record<string, number> = {};
-  for (const c of Object.values(C.fig.coms)) {
-    const d = C.R.communes[c.insee].dep;
+  for (const insee of Object.keys(C.X.communes)) {
+    const d = C.L.communes[insee].dep;
     coms[d] = (coms[d] ?? 0) + 1;
   }
   return Object.entries(C.couverture.departements).map(([code, d]) => {
-    const o = docs[code] ?? { n: 0, con: 0, aut: 0, amt: 0 };
+    const o = C.X.departements[code] ?? { n: 0, con: 0, aut: 0, amt: 0 };
     const nom = nomDep(C, code);
     const ok = d.etat === "collecte";
     return {
@@ -360,29 +362,29 @@ function motCategorie(a: Acheteur | undefined, centrale: boolean): string {
 
 function rangsAcheteurs(C: Corpus): Rang[] {
   const out: Rang[] = [];
-  for (const [s, a] of Object.entries(C.R.acheteurs) as [string, AcheteurX][]) {
+  for (const [s, a] of Object.entries(C.L.acheteurs) as [string, AcheteurX][]) {
     const cat = catAcheteur(a);
     if (!cat) continue;
-    const b = C.fig.buyers[s];
+    const b = C.X.acheteurs[s];
     const nom = a.nom_court || a.nom || s;
     const dep = a.dep ?? "";
     const catMot = motCategorie(a, !!b?.centrale);
     out.push({
       id: s,
       nom,
-      lien: lienAcheteur(C.R, s, nom, true),
+      lien: lienAcheteur(C.L, s, nom, true),
       sous: dep ? [`${catMot} · `, lienDepartement(dep, nomDep(C, dep), true)] : catMot,
-      cells: [fr(b?.n ?? 0), b?.montant ? money(b.montant) : NA, fr(b?.ents.size ?? 0)],
+      cells: [fr(b?.n ?? 0), b?.amt ? money(b.amt) : NA, fr(b?.ents ?? 0)],
       mots: plain(`${a.nom ?? ""} ${a.nom_court ?? ""} ${catMot}`),
-      f: { cat: [cat], dep: dep ? [depGroup(dep)] : [] },
-      v: { con: b?.n ?? 0, amt: b?.montant ?? 0, ents: b?.ents.size ?? 0, nom },
+      f: { cat: [cat], dep: dep ? [dep] : [] },
+      v: { con: b?.n ?? 0, amt: b?.amt ?? 0, ents: b?.ents ?? 0, nom },
       csv: {
         id: s,
         categorie: a.categorie ?? "",
         departement: dep,
         contrats: b?.n ?? 0,
-        montant: b?.montant ?? "",
-        entreprises: b?.ents.size ?? 0,
+        montant: b?.amt ?? "",
+        entreprises: b?.ents ?? 0,
       },
     });
   }
@@ -390,38 +392,35 @@ function rangsAcheteurs(C: Corpus): Rang[] {
 }
 
 function rangsEntreprises(C: Corpus): Rang[] {
-  return Object.values(C.fig.ents)
-    .filter((o) => o.n > 0 && o.siren !== EI && !C.R.entreprises[o.siren]?.entrepreneur_individuel)
-    .map((o) => {
-      const nom = entName(C.R, o.siren);
-      const naf =
-        (C.R.entreprises[o.siren] as { naf_libelle?: string | null } | undefined)?.naf_libelle ??
-        "";
-      const deps = Object.entries(o.deps)
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-        .map(([k]) => k);
-      const y0 = o.y0 === "9999" ? "" : o.y0;
-      return {
-        id: o.siren,
-        nom,
-        lien: lienEntreprise(C.R, o.siren, nom, true),
-        sous: naf,
-        deps: deps.slice().sort((a, b) => a.localeCompare(b)),
-        cells: [fr(o.n), fr(o.clientes.size), o.montant ? money(o.montant) : NA, y0 || NA],
-        mots: plain(`${nom} ${naf}`),
-        f: { dep: [...new Set(deps.map(depGroup))] },
-        v: { n: o.n, cl: o.clientes.size, amt: o.montant, y: y0 || "9999", nom },
-        csv: {
-          id: o.siren,
-          activite: naf,
-          departements: deps.join(" "),
-          contrats: o.n,
-          clientes: o.clientes.size,
-          montant: o.montant || "",
-          depuis: y0,
-        },
-      };
-    });
+  return Object.entries(C.X.entreprises).map(([siren, o]) => {
+    const nom = entName(C.L, siren);
+    const naf =
+      (C.L.entreprises[siren] as { naf_libelle?: string | null } | undefined)?.naf_libelle ?? "";
+    const deps = Object.entries(o.deps)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([k]) => k);
+    const y0 = o.y0 === "9999" ? "" : o.y0;
+    return {
+      id: siren,
+      nom,
+      lien: lienEntreprise(C.L, siren, nom, true),
+      sous: naf,
+      deps: deps.slice().sort((a, b) => a.localeCompare(b)),
+      cells: [fr(o.n), fr(o.clientes), o.amt ? money(o.amt) : NA, y0 || NA],
+      mots: plain(`${nom} ${naf}`),
+      f: { dep: deps },
+      v: { n: o.n, cl: o.clientes, amt: o.amt, y: y0 || "9999", nom },
+      csv: {
+        id: siren,
+        activite: naf,
+        departements: deps.join(" "),
+        contrats: o.n,
+        clientes: o.clientes,
+        montant: o.amt || "",
+        depuis: y0,
+      },
+    };
+  });
 }
 
 /** A beneficiary published by its name alone (« Roissy-en-Brie », « Commune de Mions »): the commune
@@ -438,7 +437,7 @@ function communeNommee(L: Lexique, dep: string | null | undefined, nom: string):
 }
 
 /** A document's « qui »: its buyer (a link), a decree's beneficiary, a subsidy's. */
-function qui(L: Lexique, d: Doc): RichItem {
+function qui(L: Lexique, d: Ligne): RichItem {
   const e = d.e;
   if (d.k === "aut") {
     // a decree's beneficiary: its fiche when it is a buyer the register holds (a mairie: its commune)
@@ -470,7 +469,7 @@ function qui(L: Lexique, d: Doc): RichItem {
 }
 
 /** A document's companies, each a link (a sole trader its words only). */
-function entreprises(L: Lexique, d: Doc): Rich {
+function entreprises(L: Lexique, d: Ligne): Rich {
   const xs = d.e.entreprises ?? [];
   if (!xs.length) return NA;
   const out: RichItem[] = [];
@@ -481,81 +480,77 @@ function entreprises(L: Lexique, d: Doc): Rich {
   return out;
 }
 
-function rangsDocuments(C: Corpus, k: Kind): Rang[] {
-  const L = C.R;
+/** A document as a row of its list (the search API's page: its names in `L`). */
+export function rangDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evenement): Rang {
+  const d = ligne(L, e);
+  const k = d.k as Kind;
   const zone = t("arretes.zone_non_deduite");
-  return C.docs
-    .filter((d) => d.k === k)
-    .map((d) => {
-      const e = d.e;
-      const where: Rich =
-        e.insee && L.communes[e.insee]
-          ? [lienCommune(L, e.insee, undefined, true)]
-          : e.dep
-            ? [lienDepartement(e.dep, nomDep(C, e.dep), true)]
-            : NA;
-      const cams = e.cameras ?? null;
-      // a decree of drones or body cameras counts its devices, with their word (« 2 drones »,
-      // v2.1 B4); the act's own words when it gives no number (« non précisé »)
-      const amount: Rich =
-        k !== "aut"
-          ? money(e.montant)
-          : cams == null
-            ? e.cameras_lib && e.t !== "arrete"
-              ? String(e.cameras_lib)
-              : NA
-            : e.t === "arrete"
-              ? fr(cams)
-              : appareils(e);
-      const cells: Rich[] =
-        k === "aut" || k === "sub"
-          ? [where, [qui(L, d)], amount]
-          : [where, [qui(L, d)], entreprises(L, d), amount];
-      // a correction accepted in /revue says so where the document is listed (DECISIONS 2026-10-29)
-      const le = Object.values((e.corrige ?? {}) as Record<string, { le?: string }>)
-        .map((x) => x?.le ?? "")
-        .filter(Boolean)
-        .sort()
-        .pop();
-      const sous = [
-        date(e) + (e.date_lue ? "*" : ""),
-        e.non_lu?.includes("zone_non_deduite") ? zone : "",
-        le ? t("corrige.le", { date: le.split("-").reverse().join("/") }) : "",
-      ]
-        .filter(Boolean)
-        .join(" · ");
-      return {
-        id: e.id,
-        nom: d.title,
-        lien: lienDocument(L, e, d.title, true),
-        sous,
-        liens: [
-          ...(e.url
-            ? [{ l: k === "aut" ? t("arretes.voir") : t("liste.source"), href: e.url }]
-            : []),
-          signaler(e),
-        ],
-        e,
-        cells,
-        mots: d.words,
-        f: { dep: [d.key[1]], annee: [d.key[2]], disp: [d.key[3]] },
-        v: { date: d.date, amt: k === "aut" ? (cams ?? -1) : d.rank, nom: d.title },
-        csv: {
-          id: e.id,
-          date: e.date_annee ? (e.date ?? "").slice(0, 4) : (e.date ?? ""),
-          nature: badge(e),
-          commune: d.com,
-          insee: e.insee ?? "",
-          departement: e.dep ?? "",
-          qui: d.qui,
-          entreprises: d.ents,
-          montant: e.montant ?? "",
-          cameras: e.cameras ?? "",
-          reference: e.ref ?? "",
-          url: e.url ?? "",
-        },
-      };
-    });
+  const where: Rich =
+    e.insee && L.communes[e.insee]
+      ? [lienCommune(L, e.insee, undefined, true)]
+      : e.dep
+        ? [lienDepartement(e.dep, nomDep(C, e.dep), true)]
+        : NA;
+  const cams = e.cameras ?? null;
+  // a decree of drones or body cameras counts its devices, with their word (« 2 drones »,
+  // v2.1 B4); the act's own words when it gives no number (« non précisé »)
+  const amount: Rich =
+    k !== "aut"
+      ? money(e.montant)
+      : cams == null
+        ? e.cameras_lib && e.t !== "arrete"
+          ? String(e.cameras_lib)
+          : NA
+        : e.t === "arrete"
+          ? fr(cams)
+          : appareils(e);
+  const cells: Rich[] =
+    k === "aut" || k === "sub"
+      ? [where, [qui(L, d)], amount]
+      : [where, [qui(L, d)], entreprises(L, d), amount];
+  // a correction accepted in /revue says so where the document is listed (DECISIONS 2026-10-29)
+  const le = Object.values((e.corrige ?? {}) as Record<string, { le?: string }>)
+    .map((x) => x?.le ?? "")
+    .filter(Boolean)
+    .sort()
+    .pop();
+  const sous = [
+    date(e) + (e.date_lue ? "*" : ""),
+    e.non_lu?.includes("zone_non_deduite") ? zone : "",
+    le ? t("corrige.le", { date: le.split("-").reverse().join("/") }) : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    id: e.id,
+    nom: d.title,
+    lien: lienDocument(L, e, d.title, true),
+    sous,
+    liens: [
+      ...(e.url ? [{ l: k === "aut" ? t("arretes.voir") : t("liste.source"), href: e.url }] : []),
+      signaler(e),
+    ],
+    e,
+    cells,
+    mots: d.words,
+    // the filters and the sorts are the search API's
+    f: {},
+    v: { date: d.date, amt: k === "aut" ? (cams ?? -1) : d.rank, nom: d.title },
+    csv: {
+      id: e.id,
+      date: e.date_annee ? (e.date ?? "").slice(0, 4) : (e.date ?? ""),
+      nature: badge(e),
+      commune: d.com,
+      insee: e.insee ?? "",
+      departement: e.dep ?? "",
+      qui: d.qui,
+      entreprises: d.ents,
+      montant: e.montant ?? "",
+      cameras: e.cameras ?? "",
+      reference: e.ref ?? "",
+      url: e.url ?? "",
+    },
+  };
 }
 
 const DOC_CSV = ["date", "nature", "commune", "insee", "departement", "qui", "entreprises"];
@@ -579,7 +574,7 @@ function defDocument(liste: Liste, k: Kind): Def {
     filtres: ["dep", "annee", ...(k === "ao" ? [] : (["disp"] as Filtre[]))],
     argent: k === "con" || k === "mod",
     csv: [...DOC_CSV, aut ? "cameras" : "montant", "reference", "url"].map(csvCol),
-    rangs: (C) => rangsDocuments(C, k),
+    kind: k,
   };
 }
 
@@ -722,35 +717,48 @@ export const DEFS: Record<Liste, Def> = {
   },
 };
 
-/** A list's rows, once per page and corpus. */
-const rangsMemo = new WeakMap<Recherche, Partial<Record<Liste, Rang[]>>>();
+/** A list of names' rows, once per page and file. */
+const rangsMemo = new WeakMap<Listes["lignes"], Partial<Record<Liste, Rang[]>>>();
 export function rangs(C: Corpus, l: Liste): Rang[] {
-  let m = rangsMemo.get(C.R);
+  const def = DEFS[l];
+  if (!def.rangs) return [];
+  let m = rangsMemo.get(C.X);
   if (!m) {
     m = {};
-    rangsMemo.set(C.R, m);
+    rangsMemo.set(C.X, m);
   }
-  m[l] ??= DEFS[l].rangs(C);
+  m[l] ??= def.rangs(C);
   return m[l];
 }
 
 // --- the filters -------------------------------------------------------------------------------
 
 const YEARS = ["2026", "2025", "2024", "2023", "2022", "2021", "2020", "2019", "2018", "<2018"];
+/** The départements of France in their order (01 … 19, 2A, 2B, 21 … 95, then overseas): a list
+ * shows those its rows have. */
+export const DEPARTEMENTS = [
+  ...Array.from({ length: 95 }, (_, i) => String(i + 1).padStart(2, "0")).flatMap((d) =>
+    d === "20" ? ["2A", "2B"] : [d],
+  ),
+  "971",
+  "972",
+  "973",
+  "974",
+  "976",
+];
 
 /** A filter's values, in the keys' order. */
 export function valeurs(f: Filtre): string[] {
-  // the pilot's départements as V2-Liste orders them (the Rhône, then the Bouches-du-Rhône), then the others
-  if (f === "dep") return ["69", "13", ...DEPS.filter((d) => d !== "69" && d !== "13"), "xx"];
+  if (f === "dep") return DEPARTEMENTS;
   if (f === "cat") return [...CATS];
   if (f === "annee") return YEARS;
   if (f === "disp") return DISPS;
   return ["collecte", "non_collecte", "impossible"];
 }
 
-/** A filter value's words on its key (« 69 », « Hors pilote », « État », « 2025 »). */
+/** A filter value's words on its key (« 69 », « État », « 2025 »). */
 export function motValeur(f: Filtre, v: string): string {
-  if (f === "dep") return v === "xx" ? W("hors_pilote") : v;
+  if (f === "dep") return v;
   if (f === "cat") return W(`cat.${v}`);
   if (f === "annee") return v === "<2018" ? t("registre.annee_avant_2018") : v;
   if (f === "disp") return t(`registre.disp_${v}`);
@@ -819,6 +827,94 @@ export function appliquer(def: Def, all: Rang[], e: Etat): Resultat {
   return { list, comptes };
 }
 
+// --- a list of documents: the search API's ------------------------------------------------------
+
+/** GET /api/registre/recherche's answer (pipeline/lacarte/api/registre.py). */
+export type Page = {
+  total: number;
+  page: number;
+  n: number;
+  facettes: Record<"t" | "d" | "p" | "y", Record<string, number>>;
+  par_type: Partial<Record<Kind, number>>;
+  evenements: Evenement[];
+  dico: Lexique;
+};
+/** A filter's family in the API. */
+const FAMILLE: Partial<Record<Filtre, "d" | "y" | "p">> = { dep: "d", annee: "y", disp: "p" };
+/** The most rows the API gives at once (its N_MAX). */
+export const N_MAX = 500;
+
+/** The API's question for a list of documents in a state, its page of `n` rows. */
+export function question(def: Def, e: Etat, page: number, n: number): URLSearchParams {
+  const p = new URLSearchParams();
+  if (e.q.trim()) p.set("q", e.q.trim());
+  if (def.kind) p.set("t", def.kind);
+  for (const f of def.filtres) {
+    const fam = FAMILLE[f];
+    if (fam && e.f[f]) p.set(fam, e.f[f] as string);
+  }
+  if (e.tri === "amt") p.set("tri", "montant");
+  if (e.dir > 0) p.set("ordre", "asc");
+  p.set("page", String(page));
+  p.set("n", String(n));
+  return p;
+}
+
+/** One page of the search API; throws when it does not answer as such (no API, the dev server's
+ * page, a timeout). */
+export async function demander(p: URLSearchParams, doFetch: typeof fetch = fetch): Promise<Page> {
+  const r = await doFetch(`/api/registre/recherche?${p}`, {
+    headers: { accept: "application/json" },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!r.ok || !/json/.test(r.headers.get("content-type") ?? "")) throw new Error("no api");
+  const j = (await r.json()) as Page;
+  if (!Array.isArray(j.evenements) || typeof j.total !== "number") throw new Error("no api");
+  j.dico ??= { entreprises: {}, acheteurs: {}, communes: {} };
+  return j;
+}
+
+/** A page's filters counted as a list counts them: each value without its own filter (the API's
+ * facets), "" every value. */
+export function comptesPage(def: Def, P: Page, e: Etat): Resultat["comptes"] {
+  const out: Resultat["comptes"] = {};
+  for (const f of def.filtres) {
+    const fam = FAMILLE[f];
+    if (!fam) continue;
+    const c: Record<string, number> = { ...(P.facettes[fam] ?? {}) };
+    c[""] = e.f[f] ? Object.values(c).reduce((a, b) => a + b, 0) : P.total;
+    out[f] = c;
+  }
+  return out;
+}
+
+/** Two lexicons as one (a list's pages, each with the names its rows need). */
+export function fondre(a: Lexique, b: Lexique): Lexique {
+  return {
+    entreprises: { ...a.entreprises, ...b.entreprises },
+    acheteurs: { ...a.acheteurs, ...b.acheteurs },
+    communes: { ...a.communes, ...b.communes },
+    affaires: { ...(a.affaires ?? {}), ...(b.affaires ?? {}) },
+  };
+}
+
+/** Every row of a list of documents in a state, page by page (the CSV): at most `max` rows. */
+export async function toutDemander(
+  def: Def,
+  e: Etat,
+  C: Pick<Corpus, "couverture">,
+  max = 20_000,
+  doFetch: typeof fetch = fetch,
+): Promise<Rang[]> {
+  const out: Rang[] = [];
+  for (let page = 1; out.length < max; page++) {
+    const P = await demander(question(def, e, page, N_MAX), doFetch);
+    out.push(...P.evenements.map((x) => rangDocument(P.dico, C, x)));
+    if (P.evenements.length < N_MAX || out.length >= P.total) break;
+  }
+  return out;
+}
+
 /** The list as a CSV file's text (the browser makes the file): its rank, name, then its columns,
  * the heads in the catalogue's words; every value quoted, an amount to the cent (a sum of amounts
  * carries the floats' dust: 91437049.75000001). */
@@ -841,23 +937,10 @@ export function csv(def: Def, list: Rang[]): string {
 
 // --- the counts the summary and the rail show ----------------------------------------------------
 
-export type Comptes = { listes: Record<Liste, number>; categories: Record<Cat, number> };
-
-/** The counts the build writes (index.json `comptes`, asked of R3), when it does. */
+/** The counts the build writes (index.json `comptes`). */
 export function comptesIndex(I: Index): Comptes | null {
   const c = (I as Index & { comptes?: Comptes }).comptes;
   return c?.listes && c.categories ? c : null;
-}
-
-/** The counts of every list: its rows, one function for both. */
-export function comptes(C: Corpus): Comptes {
-  const listes = Object.fromEntries(LISTES.map((l) => [l, rangs(C, l).length])) as Record<
-    Liste,
-    number
-  >;
-  const categories = Object.fromEntries(CATS.map((c) => [c, 0])) as Record<Cat, number>;
-  for (const r of rangs(C, "acheteurs")) for (const c of r.f.cat ?? []) categories[c as Cat]++;
-  return { listes, categories };
 }
 
 // --- the old addresses ---------------------------------------------------------------------------
@@ -910,54 +993,26 @@ const ORDRE: TypeCle[] = [
   "aut",
   "sub",
 ];
-const TYPES = new Set<string>([...ORDRE, "registre"]);
+const KINDS_ORDRE: Kind[] = ["con", "mod", "ao", "aut", "sub"];
 
-/** The register's search through the build's API (R3: GET /api/registre/recherche?q=, answering
- * { resultats: [{ type, id, nom, detail, href }] }). null when it does not answer as such (no API,
- * the dev server's page, a timeout): the page then searches recherche.json and asks the API no more. */
-let sansApi = false;
-export async function chercherApi(
-  q: string,
-  doFetch: typeof fetch = fetch,
-): Promise<Trouve[] | null> {
-  if (sansApi) return null;
-  try {
-    const r = await doFetch(`/api/registre/recherche?${new URLSearchParams({ q })}`, {
-      headers: { accept: "application/json" },
-      signal: AbortSignal.timeout(2500),
-    });
-    if (!r.ok || !/json/.test(r.headers.get("content-type") ?? "")) throw new Error("no api");
-    const j = (await r.json()) as { resultats?: unknown };
-    if (!Array.isArray(j.resultats)) throw new Error("no api");
-    return j.resultats.filter(
-      (x): x is Trouve =>
-        !!x &&
-        typeof x === "object" &&
-        TYPES.has((x as Trouve).type) &&
-        typeof (x as Trouve).nom === "string" &&
-        typeof (x as Trouve).href === "string" &&
-        (x as Trouve).href.startsWith("/registre/"),
-    );
-  } catch {
-    sansApi = true;
-    return null;
-  }
-}
+/** A name's fiche, from its reference (only a fiche the build wrote has one). */
+const parRef = (ref: string | undefined): string => (ref ? `/registre/${ref}` : "");
 
-/** The same search over recherche.json: names that contain the words (a commune whose name starts
- * so first), documents whose words do. */
-export function chercherLocal(C: Corpus, q0: string): Trouve[] {
+/** The names that contain the words (listes.json: a commune whose name starts so first), each with
+ * its fiche; a name without a fiche is no result. */
+export function chercherNoms(C: Corpus, q0: string): Trouve[] {
   const q = plain(q0.trim());
   if (q.length < 2) return [];
-  const R = C.R;
+  const { L, X } = C;
   const out: Trouve[] = [];
   const debut = (s: string) => (plain(s).startsWith(q) ? 0 : 1);
-  const coms = Object.entries(R.communes)
-    .filter(([, c]) => plain(c.nom).includes(q))
+  const coms = Object.keys(X.communes)
+    .map((insee) => [insee, L.communes[insee]] as const)
+    .filter(([, c]) => c?.ref && plain(c.nom).includes(q))
     .sort(
       ([a, x], [b, y]) =>
         debut(x.nom) - debut(y.nom) ||
-        (C.fig.coms[b]?.docs ?? 0) - (C.fig.coms[a]?.docs ?? 0) ||
+        (X.communes[b]?.docs ?? 0) - (X.communes[a]?.docs ?? 0) ||
         x.nom.localeCompare(y.nom, "fr"),
     );
   for (const [insee, c] of coms)
@@ -965,17 +1020,17 @@ export function chercherLocal(C: Corpus, q0: string): Trouve[] {
       type: "commune",
       id: insee,
       nom: c.nom,
-      detail: `${nomDep(C, c.dep)} · ${count(C.fig.coms[insee]?.docs ?? 0, "document")}`,
-      href: communeHref(insee),
+      detail: `${nomDep(C, c.dep)} · ${count(X.communes[insee]?.docs ?? 0, "document")}`,
+      href: parRef(c.ref),
     });
   for (const r of rangs(C, "intercommunalites"))
-    if (R.acheteurs[r.id] && plain(r.nom).includes(q))
+    if (L.acheteurs[r.id]?.ref && plain(r.nom).includes(q))
       out.push({
         type: "epci",
         id: r.id,
         nom: r.nom,
         detail: count(Number(r.v.communes), "commune"),
-        href: `/registre/acheteur/${r.id}`,
+        href: parRef(L.acheteurs[r.id].ref),
       });
   for (const [code, d] of Object.entries(C.couverture.departements))
     if (plain(d.nom ?? "").includes(q) || code === q)
@@ -986,46 +1041,75 @@ export function chercherLocal(C: Corpus, q0: string): Trouve[] {
         detail: code,
         href: `/registre/departement/${code}`,
       });
-  const buyers = (Object.entries(R.acheteurs) as [string, AcheteurX][])
+  const buyers = (Object.entries(L.acheteurs) as [string, AcheteurX][])
     .filter(
       ([, a]) =>
+        a.ref &&
         a.categorie !== "commune" &&
         !EPCI.has(a.categorie ?? "") &&
         (a.nom || a.nom_court) &&
         plain(`${a.nom ?? ""} ${a.nom_court ?? ""}`).includes(q),
     )
-    .sort(([a], [b]) => (C.fig.buyers[b]?.n ?? 0) - (C.fig.buyers[a]?.n ?? 0));
+    .sort(([a], [b]) => (X.acheteurs[b]?.n ?? 0) - (X.acheteurs[a]?.n ?? 0));
   for (const [s, a] of buyers)
     out.push({
       type: "acheteur",
       id: s,
       nom: a.nom_court || a.nom || s,
-      detail: `${motCategorie(a, !!C.fig.buyers[s]?.centrale)} · ${count(C.fig.buyers[s]?.n ?? 0, "contrat")}`,
-      href: `/registre/acheteur/${s}`,
+      detail: `${motCategorie(a, !!X.acheteurs[s]?.centrale)} · ${count(X.acheteurs[s]?.n ?? 0, "contrat")}`,
+      href: parRef(a.ref),
     });
-  const ents = Object.entries(R.entreprises)
-    .filter(([s, x]) => s !== EI && !x.entrepreneur_individuel && x.nom && plain(x.nom).includes(q))
-    .sort(([a], [b]) => (C.fig.ents[b]?.n ?? 0) - (C.fig.ents[a]?.n ?? 0));
-  for (const [s] of ents)
+  const ents = Object.keys(X.entreprises)
+    .filter((s) => L.entreprises[s]?.ref && plain(L.entreprises[s].nom ?? "").includes(q))
+    .sort((a, b) => X.entreprises[b].n - X.entreprises[a].n);
+  for (const s of ents)
     out.push({
       type: "entreprise",
       id: s,
-      nom: entName(R, s),
-      detail: count(C.fig.ents[s]?.n ?? 0, "contrat"),
-      href: `/registre/entreprise/${s}`,
-    });
-  const docs = C.docs
-    .filter((d) => d.k !== "?" && d.words.includes(q))
-    .sort((a, b) => b.date.localeCompare(a.date));
-  for (const d of docs)
-    out.push({
-      type: d.k as TypeCle,
-      id: d.id,
-      nom: d.title,
-      detail: [date(d.e), d.com || nomDep(C, d.e.dep ?? "")].filter(Boolean).join(" · "),
-      href: d.href,
+      nom: entName(L, s),
+      detail: count(X.entreprises[s].n, "contrat"),
+      href: parRef(L.entreprises[s].ref),
     });
   return out;
+}
+
+/** A document found, as a result. */
+function trouveDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evenement): Trouve {
+  const d = ligne(L, e);
+  return {
+    type: d.k as TypeCle,
+    id: d.id,
+    nom: d.title,
+    detail: [date(e), d.com || nomDep(C, e.dep ?? "")].filter(Boolean).join(" · "),
+    href: d.href,
+  };
+}
+
+/** The documents the words find, by kind (the search API: how many of each, the latest `par`):
+ * null when the API does not answer. */
+export async function chercherDocuments(
+  q0: string,
+  C: Pick<Corpus, "couverture">,
+  par = 4,
+  doFetch: typeof fetch = fetch,
+): Promise<Groupe[] | null> {
+  const q = q0.trim();
+  if (plain(q).length < 2) return [];
+  try {
+    const all = await demander(new URLSearchParams({ q, n: "1" }), doFetch);
+    const kinds = KINDS_ORDRE.filter((k) => (all.par_type[k] ?? 0) > 0);
+    const pages = await Promise.all(
+      kinds.map((k) => demander(new URLSearchParams({ q, t: k, n: String(par) }), doFetch)),
+    );
+    return kinds.map((k, i) => ({
+      k: k as TypeCle,
+      n: all.par_type[k] ?? 0,
+      rows: pages[i].evenements.map((e) => trouveDocument(pages[i].dico, C, e)),
+      tout: `${listeHref(k as TypeCle)}?${new URLSearchParams({ q })}`,
+    }));
+  } catch {
+    return null;
+  }
 }
 
 /** The results by type, in the summary's order: the first `par` of each, how many, and the list
@@ -1043,6 +1127,11 @@ export function grouper(res: Trouve[], q: string, par = 4): Groupe[] {
       tout: base === "/registre/" ? base : `${base}?${new URLSearchParams({ q: q.trim() })}`,
     };
   });
+}
+
+/** The names' groups and the documents', in the summary's order. */
+export function ordonner(groupes: Groupe[]): Groupe[] {
+  return groupes.slice().sort((a, b) => ORDRE.indexOf(a.k) - ORDRE.indexOf(b.k));
 }
 
 /** A result as a typed link (the pictogram alone, it is a list). */

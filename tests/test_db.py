@@ -44,7 +44,7 @@ def test_migrations_apply_once(pg_dsn):
         "014_accounts", "015_osm", "016_osm_publish", "017_height_operator",
         "018_hidden_cameras", "019_review_labels", "020_admin", "021_site_counters",
         "022_osm_sync", "023_retention", "024_history_pseudonym", "025_multidome",
-        "026_registre_reports"]  # fmt: skip
+        "026_registre_reports", "027_registre_recherche"]  # fmt: skip
 
 
 def test_004_moves_confirmed_rows_back_to_pending_and_names_its_checks(pg_dsn, pg_loaded):
@@ -75,7 +75,8 @@ def test_004_moves_confirmed_rows_back_to_pending_and_names_its_checks(pg_dsn, p
         "013_position_source", "014_accounts", "015_osm", "016_osm_publish",
         "017_height_operator", "018_hidden_cameras", "019_review_labels", "020_admin",
         "021_site_counters", "022_osm_sync", "023_retention",
-        "024_history_pseudonym", "025_multidome", "026_registre_reports"]  # fmt: skip
+        "024_history_pseudonym", "025_multidome", "026_registre_reports",
+        "027_registre_recherche"]  # fmt: skip
     assert sql(other, "SELECT status FROM contributions ORDER BY uuid") == [
         ["pending"],
         ["rejected"],

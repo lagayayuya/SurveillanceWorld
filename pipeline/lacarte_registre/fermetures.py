@@ -7,8 +7,9 @@ Nothing is recomputed in the browser: a page reads the flags and the figures giv
 
 - index.json: the home, small and always loaded (totals, facets, the latest and the
   largest documents);
-- recherche.json: every document, loaded by the search, a filter, the second sort and the
-  rankings;
+- listes.json: the lists of names, uncut (recherche.py); every document goes to the
+  search's table instead (recherche.tsv.gz beside the site, migration 027), the national
+  register being too large for one file;
 - commune/<insee>.json: one per commune of the pilot's reference (every commune of a pilot
   département, and those of a document elsewhere), with the copies of the acts it shares,
   the figures of its intercommunality and its département, the map's counts, its drone
@@ -510,25 +511,6 @@ def index_file(ctx: Context) -> dict[str, Any]:
     }
 
 
-def recherche_file(ctx: Context) -> dict[str, Any]:
-    reg = ctx.reg
-    buyers = sorted(set(ctx.acheteurs) | {b for e in reg.evenements if (b := reg.buyer(e))})
-    return {
-        "v": 1,
-        "evenements": reg.evenements,
-        "entreprises": {s: ctx.entreprise(s) for s in sorted(reg.pilote.reg["entreprises"])},
-        "acheteurs": {b: ctx.acheteur(b) for b in buyers},
-        # each commune with its map's count (« Sur la carte » in the rankings)
-        "communes": {
-            k: {**ctx.commune(k), "carte": ctx.commune_stats(k).get("carte")}
-            for k in sorted(reg.communes)
-        },
-        "affaires": {
-            a: {k: x[k] for k in AFF_SHORT if x.get(k) is not None} for a, x in reg.affaires.items()
-        },
-    }
-
-
 def non_lus_file(ctx: Context) -> dict[str, Any]:
     rows = []
     for e in ctx.reg.non_lus:
@@ -544,8 +526,11 @@ def non_lus_file(ctx: Context) -> dict[str, Any]:
 def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     """Write every file under `out` through write(relative path, data); counts per kind."""
     reg = ctx.reg
-    write("index.json", index_file(ctx))
-    write("recherche.json", recherche_file(ctx))
+    from lacarte_registre import recherche  # recherche reads this module's dictionaries
+
+    lists = recherche.listes(ctx)
+    write("index.json", {**index_file(ctx), "comptes": lists["comptes"]})
+    write("listes.json", lists)
     write("non_lus.json", non_lus_file(ctx))
     write("couverture.json", ctx.couverture)
     # a file per commune with a document (its own, or an act it shares), per département,

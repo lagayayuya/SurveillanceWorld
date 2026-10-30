@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+from registre_docs import documents
 
 from lacarte_registre import construire, drones, importer
 
@@ -51,7 +52,7 @@ def test_every_commune_file_has_its_drones(built):
 
 
 def test_the_police_prefecture_act_without_a_zone_is_listed_not_drawn(built):
-    events = read(built, "recherche.json")["evenements"]
+    events = documents(built)
     rows = {r["acte"]: r for r in drones.non_deduits(events)}
     r = rows[NO_ZONE]
     assert r["kind"] == "drone" and r["date"] == "2025-06-19"

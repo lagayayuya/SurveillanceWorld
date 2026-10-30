@@ -2,13 +2,13 @@
 // what it covers and when it was updated, the search across the register with its results by type
 // (each one a typed link), the four families and their lists with their counts, « Comment lire le
 // registre » in three sentences whose types are their lists' stickers (the glossary one link away),
-// then the update, the coverage and the decrees that could not be read. It opens on index.json and
-// couverture.json; every document (recherche.json) follows, for the counts the build does not write
-// yet (index.json `comptes`, asked of R3) and for the search when the API (R3) does not answer.
+// then the update, the coverage and the decrees that could not be read. It opens on index.json (its
+// counts the build's, `comptes`) and couverture.json; a search reads the names in listes.json (asked
+// once, at the first search) and asks the documents of the search API (lot R3).
 // The old addresses (/registre/chiffres, /registre/?t=…) are replaced by their list's before
 // anything is drawn (listes.ts redirection).
 
-import { depNom, type Index, type Recherche } from "../corpus.ts";
+import { depNom, type Index } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
@@ -19,17 +19,18 @@ import {
   type Comptes,
   type Corpus,
   type CouvertureX,
-  chercherApi,
-  chercherLocal,
-  comptes,
+  chercherDocuments,
+  chercherNoms,
   comptesIndex,
   corpus,
   type Groupe,
   grouper,
   type Liste,
+  type Listes,
   lienTrouve,
   listeHref,
   nomDep,
+  ordonner,
   redirection,
   TYPE_DE,
 } from "../listes.ts";
@@ -169,12 +170,12 @@ class Sommaire extends Vue<Props, State> {
     return "registre";
   }
 
-  /** Every document, asked once (the counts, the search without the API). */
+  /** The lists' names (listes.json), asked once, at the first search. */
   private corpus(): Promise<Corpus> {
     if (this.state.C) return Promise.resolve(this.state.C);
     if (!this.demande) {
-      this.demande = load<Recherche>("recherche.json").then((R) => {
-        const C = corpus(R, this.props.couverture, this.props.I.maj);
+      this.demande = load<Listes>("listes.json").then((X) => {
+        const C = corpus(X, this.props.couverture);
         this.setState({ C });
         return C;
       });
@@ -186,7 +187,6 @@ class Sommaire extends Vue<Props, State> {
   }
 
   componentDidMount(): void {
-    if (!comptesIndex(this.props.I)) void this.corpus().catch(() => {});
     if (this.state.q) void this.chercher(this.state.q);
   }
   componentWillUnmount(): void {
@@ -201,17 +201,25 @@ class Sommaire extends Vue<Props, State> {
       return;
     }
     this.setState({ cherche: true });
-    let found = await chercherApi(q.trim());
-    if (!found) {
-      try {
-        found = chercherLocal(await this.corpus(), q);
-      } catch {
-        if (id === this.n) this.setState({ res: null, cherche: false, indispo: true });
-        return;
-      }
-    }
+    // the names (listes.json) and the documents (the search API) at once; the documents not
+    // answered: the names found and « recherche indisponible »
+    const [noms, docs] = await Promise.all([
+      this.corpus().then(
+        (C) => grouper(chercherNoms(C, q), q),
+        () => null,
+      ),
+      chercherDocuments(q, this.props),
+    ]);
     if (id !== this.n) return;
-    this.setState({ res: grouper(found, q), cherche: false, indispo: false });
+    if (!noms && !docs) {
+      this.setState({ res: null, cherche: false, indispo: true });
+      return;
+    }
+    this.setState({
+      res: ordonner([...(noms ?? []), ...(docs ?? [])]),
+      cherche: false,
+      indispo: !docs,
+    });
   }
 
   private onQ: Handler = (ev) => {
@@ -228,7 +236,7 @@ class Sommaire extends Vue<Props, State> {
     const S = this.state;
     const { I, couverture: cv } = this.props;
     const wide = large();
-    const n = comptesIndex(I) ?? (S.C ? comptes(S.C) : null);
+    const n = comptesIndex(I);
     const maj = t("sommaire.maj", { date: numDate(I.maj) });
     // how far each source has been read (couverture.json): the contracts, each collected département's decrees
     const con = cv.sources.find((s) => s.id === "contrats")?.jusqu_au;

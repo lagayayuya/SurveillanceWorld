@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+from registre_docs import documents
 
 from lacarte import lock
 from lacarte_registre import cli, construire, fermetures, importer, regles
@@ -59,7 +60,7 @@ def test_the_reviewed_date_is_beside_the_source_date(built):
 
 def test_a_shared_act_is_in_each_of_its_communes_files_and_counted_once(built):
     for act in (DRONES_6, DRONES_3):
-        [orig] = [e for e in read(built, "recherche.json")["evenements"] if e["id"] == act]
+        [orig] = [e for e in documents(built) if e["id"] == act]
         communes = [orig["insee"], *orig["partage"]]
         for k in communes:
             [e] = [e for e in read(built, f"commune/{k}.json")["evenements"] if e["id"] == act]
@@ -89,7 +90,7 @@ def test_sytral_works_with_5_companies(built):
 
 
 def test_the_rhone_counts_108_7_million_over_194_contracts(built):
-    events = read(built, "recherche.json")["evenements"]
+    events = documents(built)
     rhone = [e for e in events if e["dep"] == "69" and e["t"] == "attribution"]
     counted = [e for e in rhone if e["compte"]]
     assert (len(rhone), len(counted)) == (238, 194)
@@ -140,7 +141,7 @@ def test_coverage_from_the_data_and_the_rules(built):
     assert cov["defaut"] == {"etat": "non_collecte"}
     src = {s["id"]: s for s in cov["sources"]}
     acts = [
-        e for e in read(built, "recherche.json")["evenements"]
+        e for e in documents(built)
         if e["t"].startswith("arrete") and e["dep"] == "69"
     ]  # fmt: skip
     # the last collection read, the date in its file name: published after its last act
@@ -159,7 +160,7 @@ def test_coverage_from_the_data_and_the_rules(built):
 
 def test_the_home_is_small_and_complete(built):
     idx = read(built, "index.json")
-    docs = read(built, "recherche.json")["evenements"]
+    docs = documents(built)
     assert idx["totaux"]["docs"] == len(docs) == sum(idx["facettes"]["t"].values())
     assert len(idx["recents"]) == len(idx["gros"]) == 10
     assert all(e["compte"] for e in idx["gros"])
@@ -169,7 +170,7 @@ def test_the_home_is_small_and_complete(built):
 
 
 def test_masked_names_stay_masked(built):
-    docs = read(built, "recherche.json")["evenements"]
+    docs = documents(built)
     masked = [e for e in docs if e.get("beneficiaire") == regles.MASQUE]
     assert masked and all(e["nom_publie"] is False for e in masked)
 
@@ -189,7 +190,7 @@ def test_an_interrupted_build_leaves_the_previous_site(built, monkeypatch, tmp_p
         construire.run(root)
     assert sorted(p.relative_to(root).as_posix() for p in (root / "site").rglob("*")) == before
     assert (root / "site" / "index.json").read_bytes() == stamp
-    assert sorted(p.name for p in root.iterdir()) == ["pilote", "site"]
+    assert sorted(p.name for p in root.iterdir()) == ["pilote", "recherche.tsv.gz", "site"]
 
 
 def test_the_build_takes_the_lock(tmp_path):
@@ -222,16 +223,27 @@ def test_the_commune_maps_layers_are_served_as_imported(built):
     ).read_bytes()
 
 
-def test_the_home_names_its_rows_buyers_and_the_search_the_map_counts(built):
+def test_the_home_names_its_rows_buyers_and_the_lists_the_map_counts(built):
     """The home's latest and largest documents come with their affaires (a contract's buyer is
-    often its affaire's), and the search's communes with their map count (the rankings)."""
+    often its affaire's); the lists' communes with their map count (listes.json), every list
+    counted as many rows as it holds, in listes.json and index.json alike."""
     index = read(built, "index.json")
     rows = index["recents"] + index["gros"]
     assert {e["affaire"] for e in rows if e.get("affaire")} <= set(index["dico"]["affaires"])
-    recherche = read(built, "recherche.json")
-    assert (
-        recherche["communes"][MIONS]["carte"] == read(built, f"commune/{MIONS}.json")["carte"]["n"]
-    )
+    listes = read(built, "listes.json")
+    rows = listes["lignes"]
+    assert rows["communes"][MIONS]["carte"] == read(built, f"commune/{MIONS}.json")["carte"]["n"]
+    n = listes["comptes"]["listes"]
+    assert index["comptes"] == listes["comptes"]
+    for k in ("communes", "acheteurs", "entreprises"):
+        assert (k == "acheteurs") or n[k] == len(rows[k]), k
+    assert n["acheteurs"] == sum(listes["comptes"]["categories"].values())
+    assert n["contrats"] == index["totaux"]["con"] and n["arretes"] == index["totaux"]["aut"]
+    # every name a row needs, with its reference when its fiche exists
+    for k in rows["communes"]:
+        assert listes["dico"]["communes"][k]["ref"] == f"commune/{k}"
+    for s in rows["entreprises"]:
+        assert listes["dico"]["entreprises"][s]["ref"] == f"entreprise/{s}"
 
 
 def test_the_unread_decrees_name_their_commune_and_the_coverage_its_departements(built):

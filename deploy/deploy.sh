@@ -75,9 +75,9 @@ API="$DEPLOY_PATH/api"
 SITE="$(PREVIEW_ROOT="$DEPLOY_PATH/current" API_PORT="$API_PORT" uv run python deploy/site.py render)"
 
 # The region's tiles and basemap must exist (make build REGION=... and the basemap extract), and
-# the register's files (lacarte-registre construire).
+# the register's files and its search's rows (lacarte-registre construire).
 for f in "data/build/$REGION/tiles/meta.json" "data/basemap/$REGION.pmtiles" \
-  "data/registre/site/index.json"; do
+  "data/registre/site/index.json" "data/registre/recherche.tsv.gz"; do
   [ -e "$f" ] || { echo "missing $f" >&2; exit 1; }
 done
 # The register built by `lacarte-registre construire` with the corrections /revue accepted,
@@ -103,6 +103,9 @@ if [ -f "data/build/$REGION/contrib_outcome.json" ]; then
     { echo "the contribution outcome's build differs from the tiles' ($BUILD_ID)" >&2; exit 1; }
   cp "data/build/$REGION/contrib_outcome.json" "$EXPORT/"
 fi
+# The register's search rows (migration 027), loaded with the build's tables
+# (db/load_registre.sh): the same construire as the files verifier checked above.
+cp data/registre/recherche.tsv.gz "$EXPORT/registre-recherche.tsv.gz"
 # The hidden cameras this build left out (its extract's list): settle marks them gone from
 # the map with this build (migration 020, /revue's « Retraits »).
 rm -f "$EXPORT/hidden-applied.txt"
@@ -186,6 +189,7 @@ ssh "$DEPLOY_TARGET" "set -e
   db/migrate.sh '$DB_DSN'
   db/test_authors.sh '$TEST_LIST' '$DB_DSN'
   db/load.sh '$API/exports/$STAMP' '$DB_DSN'
+  db/load_registre.sh '$API/exports/$STAMP/registre-recherche.tsv.gz' '$DB_DSN'
   db/settle.sh '$API/exports/$STAMP' '$DB_DSN'
   psql -X -q -At -v ON_ERROR_STOP=1 '$DB_DSN' -f db/retention.sql
   cd '$API'

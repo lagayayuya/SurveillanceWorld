@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import pytest
+from registre_docs import documents
 
 from lacarte_registre import construire, importer
 
@@ -30,7 +31,7 @@ def read(site: Path, rel: str) -> dict:
 
 
 def rhone_contracts(site: Path) -> list[dict]:
-    events = read(site, "recherche.json")["evenements"]
+    events = documents(site)
     return [e for e in events if e["dep"] == "69" and e["t"] == "attribution"]
 
 

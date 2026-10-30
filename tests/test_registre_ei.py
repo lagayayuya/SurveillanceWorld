@@ -15,6 +15,7 @@ import json
 from pathlib import Path
 
 import pytest
+from registre_docs import rows
 
 from lacarte_registre import construire, exporter, importer, regles
 
@@ -70,12 +71,13 @@ def test_no_served_file_holds_a_sole_trader_s_siren(site):
 
 
 def test_its_documents_say_a_sole_trader_whose_name_is_not_published(site):
-    rech = read(site, "recherche.json")
-    [a] = [e for e in rech["evenements"] if e["id"] == CONTRACT_A]
+    found = {r["id"]: r for r in rows(site)}
+    a = json.loads(found[CONTRACT_A]["doc"])
     assert a["entreprises"] == [regles.EI]
-    assert rech["entreprises"][regles.EI] == {"nom": None, "entrepreneur_individuel": True}
+    ents = json.loads(found[CONTRACT_A]["dico"])["entreprises"]
+    assert ents[regles.EI] == {"nom": None, "entrepreneur_individuel": True}
     # the correction's source value, as published, is masked too
-    [b] = [e for e in rech["evenements"] if e["id"] == CONTRACT_B]
+    b = json.loads(found[CONTRACT_B]["doc"])
     assert b["entreprises"] == [SERFIM]
     assert b["corrige"]["entreprises"] == {"source": [regles.EI], "le": "2026-10-29"}
 

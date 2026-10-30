@@ -81,15 +81,43 @@ POST /api/review/registre — a decision on one report (Origin and JSON, as ever
 An accepted report is a correction: `lacarte-registre corrections exporter` writes it to
 data/registre/corrections.yaml (db/export_registre_corrections.sql), which `lacarte-registre
 construire` applies.
+
+GET /api/registre/recherche?q=&t=&d=&p=&y=&tri=&ordre=&page=&n= — the register's search, all of
+France (lot R3, migration 027: one row per document, written by `lacarte-registre
+construire`, loaded at the deploy). Read only; no account; nothing of a request is kept or
+logged (no query, no address), as the rest of the API.
+
+    q     words (at most 200 characters): every word, accents and case aside, as the start of
+          a word of the document (its objet, title, commune, buyer or beneficiary, companies,
+          reference), French stemming (PostgreSQL's full text search)
+    t     kinds, comma-separated: con, mod, ao, aut, sub
+    d     départements: 01 … 95, 2A, 2B, 971 …
+    p     devices: vp, csu, vsa, lapi, pi, vv, dr, na
+    y     year groups: 2018 … (four digits), <2018
+    tri   date (default: the latest first) or montant (the largest counted amount first; a
+          decree's cameras, the list of decrees' second sort)
+    ordre desc (default) or asc: the sort the other way
+    page  1 … 1000 (default 1); n: rows per page, 1 … 500 (default 20)
+    Answers:
+      200 {"total": 1234, "page": 1, "n": 20,
+           "facettes": {"t": {"con": 900, …}, "d": {…}, "p": {…}, "y": {…}},  each family's
+                        counts without its own filter (the others and q applied), as the
+                        register's home counts its filters
+           "par_type": {"con": 12, …},         the selection's documents by kind
+           "evenements": [{…}, …],             the page's documents, as the files serve them
+           "dico": {"entreprises": {…}, "acheteurs": {…}, "communes": {…},
+                    "affaires": {…}}}          the names they need, with their references
+      422 {"error": "invalid", "fields": ["t", …]}  a parameter out of its values
 """
 
+import re
 import unicodedata
 from datetime import date
 from types import ModuleType
 from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
-from fastapi import Depends, Request
+from fastapi import Depends, Query, Request
 from fastapi.responses import JSONResponse
 from psycopg.types.json import Jsonb
 from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
@@ -189,6 +217,73 @@ def pending(conn, today: date) -> dict:
             "fields": list(corrections.FIELDS)}  # fmt: skip
 
 
+FAMILIES = {
+    "t": re.compile(r"^(con|mod|ao|aut|sub)$"),
+    "d": re.compile(r"^(\d[\dAB]|97\d)$"),
+    "p": re.compile(r"^(vp|csu|vsa|lapi|pi|vv|dr|na)$"),
+    "y": re.compile(r"^(\d{4}|<2018)$"),
+}
+Q_MAX = 200
+PAGE_MAX = 1000
+N_MAX = 500
+
+
+def _words(q: str) -> list[str]:
+    q = unicodedata.normalize("NFKD", q).encode("ascii", "ignore").decode().lower()
+    return re.findall(r"[a-z0-9]+", q)[:12]
+
+
+def _where(words: list[str], f: dict[str, list[str]], skip: str | None = None):
+    parts, args = [], []
+    if words:
+        # each word as the start of a word of the document (to_tsquery's prefix match)
+        parts.append("texte @@ to_tsquery('french', %s)")
+        args.append(" & ".join(f"{w}:*" for w in words))
+    for k in FAMILIES:
+        if k != skip and f[k]:
+            parts.append(f"{k} = ANY(%s)")
+            args.append(f[k])
+    return (" AND ".join(parts) or "TRUE"), args
+
+
+def search(
+    conn, q: str, f: dict[str, list[str]], tri: str, page: int, n: int, ordre: str = "desc"
+) -> dict:
+    """The search's answer (the contract above), from registre_recherche."""
+    words = _words(q)
+    facets = {}
+    for k in FAMILIES:
+        where, args = _where(words, f, skip=k)
+        rows = conn.execute(
+            f"SELECT {k}, count(*) FROM registre_recherche WHERE {where} GROUP BY {k}", args
+        ).fetchall()
+        facets[k] = {v: c for v, c in rows if v}
+    where, args = _where(words, f)
+    par_type = dict(conn.execute(
+        f"SELECT t, count(*) FROM registre_recherche WHERE {where} GROUP BY t", args
+    ).fetchall())  # fmt: skip
+    way = "ASC" if ordre == "asc" else "DESC"
+    order = f"rang {way}, date DESC, id" if tri == "montant" else f"date {way}, id"
+    rows = conn.execute(
+        f"SELECT doc, dico FROM registre_recherche WHERE {where} ORDER BY {order}"
+        " LIMIT %s OFFSET %s",
+        [*args, n, (page - 1) * n],
+    ).fetchall()
+    dico: dict[str, dict] = {"entreprises": {}, "acheteurs": {}, "communes": {}, "affaires": {}}
+    for _doc, d in rows:
+        for kind, entries in d.items():
+            dico.setdefault(kind, {}).update(entries)
+    return {
+        "total": sum(par_type.values()),
+        "page": page,
+        "n": n,
+        "facettes": facets,
+        "par_type": par_type,
+        "evenements": [doc for doc, _ in rows],
+        "dico": dico,
+    }
+
+
 def install(api: ModuleType) -> None:
     """The routes, added to the API's app with its own guards and helpers (`api`:
     lacarte.api.app, which calls this at its end; its pool and limits read at each request,
@@ -196,6 +291,37 @@ def install(api: ModuleType) -> None:
     FastAPI 0.141 an included router is one opaque entry of app.routes, and the tests walk
     app.routes for every route (CLOSED_ROUTES among them)."""
     r = api.app
+
+    @r.get("/api/registre/recherche")
+    def registre_search(
+        q: Annotated[str, Query(max_length=Q_MAX)] = "",
+        t: str = "",
+        d: str = "",
+        p: str = "",
+        y: str = "",
+        tri: str = "date",
+        ordre: str = "desc",
+        page: int = 1,
+        n: int = 20,
+    ):
+        """The register's search (the contract above): read only, nothing kept or logged."""
+        f = {
+            k: [v for v in raw.split(",") if v]
+            for k, raw in zip(FAMILIES, (t, d, p, y), strict=True)
+        }
+        bad = [k for k, vs in f.items() if any(not FAMILIES[k].match(v) for v in vs)]
+        if tri not in ("date", "montant"):
+            bad.append("tri")
+        if ordre not in ("desc", "asc"):
+            bad.append("ordre")
+        if not 1 <= page <= PAGE_MAX:
+            bad.append("page")
+        if not 1 <= n <= N_MAX:
+            bad.append("n")
+        if bad:
+            return JSONResponse({"error": "invalid", "fields": bad}, status_code=422)
+        with api.pool.connection() as conn:
+            return search(conn, q, f, tri, page, n, ordre)
 
     @r.post("/api/registre/signalement", status_code=201)
     def report(body: ReportIn, request: Request,

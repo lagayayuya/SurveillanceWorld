@@ -40,6 +40,7 @@
             </tbody>
           </table>
           <sc-if value="{{empty}}"><p class="note" style="margin-top: 14px">{{t.liste.aucun}} <button type="button" class="lienbtn" onClick="{{reset}}">{{t.liste.effacer}}</button></p></sc-if>
+          <sc-if value="{{etat}}"><p class="note" role="status" style="margin-top: 14px">{{etat}}</p></sc-if>
           <div class="pied">
             <sc-if value="{{hasMore}}"><button type="button" class="more" onClick="{{showMore}}">{{moreL}}</button></sc-if>
             <span class="tw" style="font-size: 13px; color: var(--muted)">{{shown}} · <button type="button" class="lienbtn tw" onClick="{{exporter}}">{{t.liste.csv_lien}}</button></span>
