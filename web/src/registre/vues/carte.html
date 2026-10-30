@@ -29,7 +29,7 @@
 
   <div class="cd-in">
     <h2 class="h3 cd-titre">{{titreLong}}</h2>
-    <div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div>
+    <sc-if value="{{hasGenres}}"><div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div></sc-if>
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
       <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures_hors}}</div></div>
@@ -59,7 +59,7 @@
       <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
     </section></sc-if>
 
-    <div class="cd-det cd-panel">
+    <sc-if value="{{hasPanel}}"><div class="cd-det cd-panel">
       <sc-if value="{{noDet}}"><p class="tw cd-vide">{{t.carte.panneau_vide}}</p></sc-if>
       <sc-if value="{{hasDet}}" hint-placeholder-val="{{false}}">
         <div style="display: flex; justify-content: space-between; align-items: center"><span class="stk" style="{{det.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.i}}"></path></svg>{{det.k}}</span><button class="ibtn" type="button" onClick="{{clear}}" aria-label="{{t.carte.fermer_detail}}"><span aria-hidden="true">✕</span></button></div>
@@ -71,7 +71,7 @@
         <sc-if value="{{det.note}}"><p class="tw" style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">{{det.note}}</p></sc-if>
         <div class="cd-liens"><sc-for list="{{det.links}}" as="l"><a class="{{l.cls}}" style="{{l.c}}" href="{{l.href}}">{{l.l}}</a></sc-for></div>
       </sc-if>
-    </div>
+    </div></sc-if>
 
     <h3 class="h3" style="margin-top: 6px"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_creneau}}">{{listT}}</span></h3>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">

@@ -833,7 +833,10 @@ class CarteDrones extends Vue<Props, State> {
       }) as Handler,
       months,
       hasDet: det !== null,
-      noDet: det === null,
+      // nothing to choose: no hint about choosing (Paris, a period without a flight)
+      noDet: det === null && rows.length > 0,
+      hasGenres: T.length + ND.length > 0,
+      hasPanel: det !== null || rows.length > 0,
       det,
       clear: (() => this.setState({ sel: null, vu: null })) as Handler,
       unhover: this.quitter(),
