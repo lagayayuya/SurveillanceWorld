@@ -11,9 +11,9 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
-import type { Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
 import {
+  type BBox,
   type Calque,
   type Contour,
   calque,
@@ -25,37 +25,46 @@ import {
 } from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
 import { carteDuSite } from "../hote.ts";
-import { t } from "../i18n.ts";
-import { departementHref, lienDocument } from "../liens.ts";
+import { has, t } from "../i18n.ts";
+import { departementHref } from "../liens.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
-import { type BaseState, large, Vue } from "../vue.ts";
+import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import template from "./carte.html?raw";
 import "./carte.css";
 import {
+  appareils,
   type Creneau,
+  cles,
   dansPeriode,
   dateTxt,
+  deAdresse,
   deGenre,
   drones,
   type Genre,
   genre,
   heuresTxt,
   jourTxt,
+  lieux,
   mois,
   moisAxe,
   type NonDeduit,
   overlaps,
   type Periode,
+  plage,
   repere,
   type Semaine,
+  semaineDe,
   semaines,
   sitesHours,
   span,
   tickets,
+  versAdresse,
   volLabel,
+  type ZoneLue,
+  zonesDe,
 } from "./carte-outils.ts";
 
 /** The tilt of the map in 3D, degrees (R1a's tilted map's). */
@@ -75,10 +84,6 @@ type Props = Extract<Route, { view: "carte" }> & { d: Donnees };
 type State = BaseState & {
   r0: number | null;
   r1: number | null;
-  /** the chosen slot, the hovered one, the chosen act without a slot (-1: none) */
-  cur: number;
-  hov: number;
-  nd: number;
   /** the week shown in the chart's tooltip (-1: none) */
   wk: number;
   /** the chart's width, CSS px */
@@ -141,19 +146,16 @@ class CarteDrones extends Vue<Props, State> {
   };
 
   protected init(p: Props): Partial<State> {
-    const r = mois(p.mois);
+    const q = new URLSearchParams(typeof location === "object" ? location.search : "");
+    const r = mois(p.mois) ?? semaineDe(q.get("semaine"));
     return {
       r0: r?.[0] ?? null,
       r1: r?.[1] ?? null,
-      cur: -1,
-      hov: -1,
-      nd: -1,
+      sel: deAdresse(q.get("acte"), q.get("creneau")),
       wk: -1,
       fw: large() ? 868 : 340,
       ent: [],
-      k: genre(
-        new URLSearchParams(typeof location === "object" ? location.search : "").get("genre"),
-      ),
+      k: genre(q.get("genre")),
       is3d: true,
     };
   }
@@ -249,7 +251,10 @@ class CarteDrones extends Vue<Props, State> {
           teintes: this.teintes(),
           onChoix: (id) => {
             const i = this.slotOf(id);
-            if (i >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
+            if (i >= 0) {
+              this.setState({ sel: this.K[i], vu: null });
+              this.arrivee();
+            }
           },
         });
         if (contour) this.layer.contour(contour);
@@ -275,8 +280,8 @@ class CarteDrones extends Vue<Props, State> {
     this.voler(map);
   }
   /** To the commune, tilted, in the part of the map the panel and the chart leave free. */
-  private voler(map: MlMap): void {
-    const box = this.layer?.cadre();
+  private voler(map: MlMap, zone?: BBox): void {
+    const box = zone ?? this.layer?.cadre();
     const pitch = this.state.is3d ? PITCH : 0;
     const duration = reduced() ? 0 : MOVE_MS * 1.6;
     this.parti = performance.now();
@@ -324,12 +329,63 @@ class CarteDrones extends Vue<Props, State> {
   }
   componentDidUpdate(): void {
     this.syncMap();
+    this.adresse();
+  }
+  /** The view's state in its address (A4): the period, the kind, the act chosen, so that a step
+   * back to it, or the link copied, shows the same; replaced, never a new step. */
+  private adresse(): void {
+    if (typeof history !== "object" || !/\/carte$/.test(location.pathname)) return;
+    const want = this.requete(this.state.sel);
+    if (want === location.search) return;
+    history.replaceState(history.state, "", `${location.pathname}${want}${location.hash}`);
+  }
+  /** The query of the view's state with `sel` chosen (« ?mois=2026-10&acte=… »). */
+  private requete(sel: string | null): string {
+    const S = this.state;
+    const q = new URLSearchParams();
+    const r = this.periode();
+    if (r) {
+      const a = new Date(r[0]).toISOString();
+      if (r[1] - r[0] === 7 * DAY) q.set("semaine", a.slice(0, 10));
+      else q.set("mois", a.slice(0, 7));
+    }
+    if (S.k) q.set("genre", S.k);
+    if (sel) {
+      const x = versAdresse(sel);
+      q.set("acte", x.acte);
+      if (x.creneau) q.set("creneau", x.creneau);
+    }
+    const s = q.toString();
+    return s ? `?${s}` : "";
+  }
+  /** The slots' keys (carte-outils cles), the same order as T. */
+  private get K(): string[] {
+    const T = this.T;
+    if (this.kT !== T) {
+      this.kT = T;
+      this.kK = cles(T);
+    }
+    return this.kK;
+  }
+  private kT: Creneau[] | null = null;
+  private kK: string[] = [];
+  /** A key's slot (-1: none, or an act without a slot). */
+  private idx(k: string | null | undefined): number {
+    return k ? this.K.indexOf(k) : -1;
+  }
+  /** The panel's arrival, after the render that fills it (vue.ts arriver). */
+  private arrivee(): void {
+    queueMicrotask(() => {
+      const root = document.querySelector(".rg .v-carte")?.closest(".rg");
+      if (root) requestAnimationFrame(() => arriver(root));
+    });
   }
   /** The first slot over a site: the chosen one if it is, else the latest in the period. */
   private slotOf(site: string): number {
     const S = this.state;
     const T = this.T;
-    if (S.cur >= 0 && T[S.cur].sites.includes(site)) return S.cur;
+    const cur = this.idx(S.sel);
+    if (cur >= 0 && T[cur].sites.includes(site)) return cur;
     for (let i = T.length - 1; i >= 0; i--)
       if (T[i].sites.includes(site) && this.inP(T[i])) return i;
     return -1;
@@ -341,7 +397,7 @@ class CarteDrones extends Vue<Props, State> {
     if (!L) return;
     const S = this.state;
     const T = this.T;
-    const hoursKey = `${S.r0}|${S.r1}`;
+    const hoursKey = `${S.r0}|${S.r1}|${S.k}`;
     if (hoursKey !== this.synced) {
       const hs = sitesHours(
         T.filter((c) => this.inP(c)),
@@ -352,23 +408,33 @@ class CarteDrones extends Vue<Props, State> {
       );
       this.synced = hoursKey;
     }
-    L.survoler(S.hov >= 0 ? T[S.hov].sites : []);
-    L.choisir(S.cur >= 0 ? T[S.cur].sites : []);
+    const hov = this.idx(S.vu);
+    const cur = this.idx(S.sel);
+    L.survoler(hov >= 0 ? T[hov].sites : []);
+    L.choisir(cur >= 0 ? T[cur].sites : []);
   }
 
   // --- the page --------------------------------------------------------------------------------
-  private pickSlot(i: number): Handler {
-    return () => {
-      if (this.state.cur !== i || this.state.nd >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
-    };
-  }
-  private hoverSlot(i: number): Handler {
-    return () => {
-      if (this.state.hov !== i) this.setState({ hov: i });
+  /** A row chosen (a click, Enter, a tap): its link is the view's own address with the act, so
+   * that it opens in a new tab too; here the view stays and its panel fills (A4). */
+  private choix(k: string): Handler {
+    const f = this.choisir(k);
+    return (e) => {
+      const a = (e.target as Element | null)?.closest?.("a");
+      if (a && !a.classList.contains("rl")) return;
+      e.preventDefault();
+      f(e);
     };
   }
   private setPeriode(r: Periode): void {
-    this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, cur: -1, hov: -1, nd: -1 });
+    this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, sel: null, vu: null });
+  }
+  /** « Voir sur la carte »: the zone framed, as the commune is at the opening. */
+  private voir(site: string): Handler {
+    return () => {
+      const b = this.layer?.boite(site);
+      if (this.map && b) this.voler(this.map, b);
+    };
   }
   private ease(o: { pitch?: number; bearing?: number }): void {
     this.map?.easeTo({ ...o, duration: reduced() ? 0 : MOVE_MS }, NOTRE);
@@ -377,11 +443,6 @@ class CarteDrones extends Vue<Props, State> {
   renderVals() {
     const S = this.state;
     const d = this.props.d;
-    const L: Lexique = {
-      entreprises: d.f.entreprises,
-      acheteurs: d.f.acheteurs,
-      communes: d.f.communes,
-    };
     const insee = d.insee;
     const nom = d.f.commune.nom;
     const T = this.T;
@@ -403,14 +464,16 @@ class CarteDrones extends Vue<Props, State> {
     const top = repere(Math.max(0, ...weeks.map((w) => w.heures)));
     const yOf = (h: number) => AXE - (h / top) * (AXE - HAUT);
     const xOf = (ms: number) => 2 + ((ms - A) / (B - A)) * (W - 4);
-    const focus = S.hov >= 0 ? S.hov : S.cur;
+    const cur = this.idx(S.sel);
+    const hov = this.idx(S.vu);
+    const focus = hov >= 0 ? hov : cur;
     const weekOf = (i: number) =>
       i >= 0 ? weeks.findIndex((w) => T[i].t0 >= w.t0 && T[i].t0 < w.t1) : -1;
     const selWeek = weekOf(focus);
     // chosen: the week of the slot chosen, or the week the period is; hovered: the week of the row
     // hovered or the bar pointed at (v2.1 A1: ink, never yellow)
-    const choisie = weekOf(S.cur);
-    const pointee = S.hov >= 0 ? weekOf(S.hov) : S.wk;
+    const choisie = weekOf(cur);
+    const pointee = hov >= 0 ? weekOf(hov) : S.wk;
     const inR = (w: Semaine) => !r || (w.t1 > r[0] && w.t0 < r[1]);
     const wk = weeks.map((w, i) => {
       const h = w.heures > 0 ? Math.max(2, AXE - yOf(w.heures)) : 0;
@@ -476,85 +539,137 @@ class CarteDrones extends Vue<Props, State> {
       if (k !== S.wk) this.setState({ wk: k });
     };
 
-    // the detail: the chosen (or hovered) slot, or the chosen act without a slot
+    // the detail (A8, B3): the slot chosen or the act chosen without a slot, all its act says;
+    // by default the panel only says what to hover or choose. A hover fills it not (B3: « il ne se
+    // remplit qu'à la sélection »): the panel stands above the list, a hover that changed its
+    // height would move the row under the pointer, again and again; a hover shows the zone on the
+    // map and the week in the chart.
+    const shownKey = S.sel;
+    const shownNd = shownKey && cur < 0 ? (ND.find((a) => a.acte === shownKey) ?? null) : null;
+    const zones = d.f.zones.zones as unknown as ZoneLue[];
     type Lien = { l: string; href: string; cls: string; c: string };
+    const aut = repereType("aut");
+    const voirArrete = (url: string | null | undefined): Lien[] =>
+      url ? [{ l: t("arretes.voir"), href: url, cls: "lk", c: `--c: ${couleur("aut")}` }] : [];
+    const ligne = (k: string, v: string | null | undefined) => (v ? [{ k: t(k), v }] : []);
     let det: {
       c: string;
       i: string;
       k: string;
-      title: Rich;
+      title: string;
+      sub: string;
+      lieux: { l: string; voir: Handler | null; has: boolean }[];
+      hasLieux: boolean;
+      creneaux: { l: string; cur: string; href: string; pick: Handler }[];
+      hasCreneaux: boolean;
       rows: { k: string; v: string }[];
       note: string;
       links: Lien[];
     } | null = null;
-    const aut = repereType("aut");
-    const voir = (url: string | null): Lien[] =>
-      url ? [{ l: t("arretes.voir"), href: url, cls: "lk", c: `--c: ${couleur("aut")}` }] : [];
-    if (focus >= 0) {
-      const c = T[focus];
-      const e = d.ev.get(c.actes[0]);
-      const sig = signaler(e ?? { id: c.actes[0], affaire: c.actes[0] });
+    if (cur >= 0 || shownNd) {
+      const c = cur >= 0 ? T[cur] : null;
+      const a = shownNd;
+      const acte = c ? c.actes[0] : (a?.acte ?? "");
+      const e = d.ev.get(acte);
+      const vsa = (c?.kind ?? a?.kind) === "vsa";
+      const zs = c ? zonesDe(c, zones) : zones.filter((z) => z.acte === acte);
+      const n = appareils(zs, e?.cameras);
+      const statut = c?.sites.length ? c.statut : null;
+      const uniques = (xs: (string | null | undefined)[]) =>
+        [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))].join(" ; ");
+      const haut = zs.find((z) => z.hauteur_lue && z.hauteur);
+      const dateActe = e?.date
+        ? dateTxt(Date.parse(`${e.date}T00:00:00Z`))
+        : a?.date
+          ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
+          : null;
+      const ref = e?.ref ?? a?.ref ?? null;
+      const page = e?.page ?? a?.page ?? null;
+      const nature = typeof e?.nature_vol === "string" ? e.nature_vol : "";
+      const natureK = `carte.nature_${nature.replace(/\W+/g, "_")}`;
+      const autres = (e?.partage ?? []).map((i) => d.f.communes[i]?.nom ?? i);
+      const sig = signaler(e ?? { id: acte, affaire: acte });
+      const freres = c
+        ? T.map((x, i) => [x, i] as const)
+            .filter(([x]) => x.actes[0] === acte)
+            .sort(([x], [y]) => x.t0 - y.t0)
+        : [];
       det = {
         c: aut.c,
         i: icone("aut"),
-        k: t(c.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
-        title: e ? [lienDocument(L, e, dateTxt(c.t0, true))] : dateTxt(c.t0, true),
+        k: t(vsa ? "carte.det_vsa" : "carte.det_drone"),
+        title: c ? plage(c) : (dateActe ?? t("format.date_non_publiee")),
+        sub: dateActe ? t("carte.det_acte_du", { date: dateActe }) : "",
+        lieux: lieux(zs).map((x) => ({
+          l: x.l,
+          voir: x.site ? this.voir(x.site) : null,
+          has: !!x.site && !!this.layer,
+        })),
+        hasLieux: false,
+        creneaux:
+          freres.length > 1
+            ? freres.map(([x, i]) => ({
+                l: plage(x),
+                cur: i === cur ? "true" : "false",
+                href: `${communeHref(insee, "carte")}${this.requete(this.K[i])}`,
+                pick: this.choix(this.K[i]),
+              }))
+            : [],
+        hasCreneaux: freres.length > 1,
         rows: [
-          { k: t("carte.service"), v: c.service ?? t("commun.non_precise") },
-          { k: t("carte.pour_k"), v: c.finalite ?? t("carte.finalite_non_lue") },
-          {
-            k: t("carte.duree"),
-            v: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises_arrete"),
-          },
-          {
-            k: t("carte.zone"),
-            v: c.sites.length
-              ? t(c.statut === "relu" ? "carte.zone_relue" : "carte.zone_indicative")
-              : t("arretes.zone_non_deduite"),
-          },
-          ...(c.actes.length > 1 ? [{ k: t("carte.arretes"), v: String(c.actes.length) }] : []),
-        ],
-        note: "",
-        links: [...voir(c.url), { ...sig, cls: "", c: "" }],
-      };
-    } else if (S.nd >= 0 && ND[S.nd]) {
-      const a = ND[S.nd];
-      const e = d.ev.get(a.acte);
-      const sig = signaler(e ?? { id: a.acte, affaire: a.acte });
-      const when = a.date
-        ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
-        : t("format.date_non_publiee");
-      det = {
-        c: aut.c,
-        i: icone("aut"),
-        k: t(a.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
-        title: e ? [lienDocument(L, e, when)] : when,
-        rows: [
-          { k: t("carte.service"), v: e ? benefLabel(e) : t("commun.non_precise") },
-          { k: t("carte.zone"), v: t("arretes.zone_non_deduite") },
-          ...(a.ref
-            ? [
-                {
-                  k: t("carte.source"),
-                  v: a.page ? t("carte.ref_page", { ref: a.ref, page: String(a.page) }) : a.ref,
-                },
-              ]
+          ...ligne("carte.service", c?.service ?? (e ? benefLabel(e) : null)),
+          ...ligne("carte.pour_k", c?.finalite ?? e?.objet ?? t("carte.finalite_non_lue")),
+          ...(vsa
+            ? ligne(
+                "carte.cameras_k",
+                n ? count(n, "camera") : (e?.cameras_lib as string) || t("commun.non_precise"),
+              )
+            : ligne("carte.appareils_k", n ? t("carte.n_drones", { n }) : t("commun.non_precise"))),
+          ...(nature
+            ? ligne("carte.nature_k", has(`registre.${natureK}`) ? t(natureK) : nature)
             : []),
+          ...(c
+            ? ligne(
+                "carte.duree",
+                c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises_arrete"),
+              )
+            : []),
+          ...ligne(
+            "carte.zone",
+            statut
+              ? t(
+                  statut === "relu"
+                    ? "carte.zone_relue"
+                    : statut === "relecture"
+                      ? "carte.zone_relecture"
+                      : "carte.zone_indicative",
+                )
+              : t("arretes.zone_non_deduite"),
+          ),
+          ...ligne("carte.methode_k", uniques(zs.map((z) => z.methode))),
+          ...(haut ? ligne("carte.hauteur_k", t("carte.hauteur_m", { n: haut.hauteur ?? 0 })) : []),
+          ...ligne("carte.type_acte_k", e?.sous_type),
+          ...ligne("carte.communes_k", autres.join(", ")),
+          ...ligne(
+            "carte.source",
+            ref ? (page ? t("carte.ref_page", { ref, page: String(page) }) : ref) : null,
+          ),
         ],
-        note: t("carte.nd_note"),
-        links: [...voir(a.url), { ...sig, cls: "", c: "" }],
+        note: c ? uniques(zs.map((z) => z.alerte)) : t("carte.nd_note"),
+        links: [...voirArrete(c?.url ?? e?.url ?? a?.url), { ...sig, cls: "", c: "" }],
       };
+      det.hasLieux = det.lieux.length > 0;
     }
 
     // the list: every slot of the period (DECISIONS 2026-10-29), newest first, the acts listed
-    // without a slot among them by their date
+    // without a slot among them by their date; each row's link is the view's own address with
+    // its act (A4), the row the contract's (cadre.css « rows »)
     type Row = { at: number; row: Record<string, unknown> };
     const rows: Row[] = [];
+    const href = (k: string) => `${communeHref(insee, "carte")}${this.requete(k)}`;
     T.forEach((c, i) => {
       if (!this.inP(c)) return;
-      const e = d.ev.get(c.actes[0]);
-      const when = dateTxt(c.t0);
-      const on = i === S.cur || i === S.hov;
+      const k = this.K[i];
       const toute = c.sites.length > 0 && c.sites.every((s) => S.ent.includes(s));
       const fin = [
         ...(c.sites.length ? [] : [t("carte.zone_non_deduite_court")]),
@@ -565,17 +680,17 @@ class CarteDrones extends Vue<Props, State> {
       rows.push({
         at: c.t0,
         row: {
-          cls: on ? "zrow on" : "zrow",
-          d: e ? [lienDocument(L, e, when, true)] : when,
+          ...this.ligne(k, "aut", "r zrow"),
+          pick: this.choix(k),
+          href: href(k),
+          d: dateTxt(c.t0),
           svc: c.service ?? t("commun.non_precise"),
           fin,
           h: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises"),
-          hover: this.hoverSlot(i),
-          pick: this.pickSlot(i),
         },
       });
     });
-    ND.forEach((a, i) => {
+    ND.forEach((a) => {
       if (!deGenre(S.k, a.kind) || !dansPeriode(a.date, r)) return;
       const e = d.ev.get(a.acte);
       const when = a.date
@@ -584,13 +699,13 @@ class CarteDrones extends Vue<Props, State> {
       rows.push({
         at: a.date ? Date.parse(`${a.date}T00:00:00Z`) : 0,
         row: {
-          cls: S.nd === i && focus < 0 ? "zrow on" : "zrow",
-          d: e ? [lienDocument(L, e, when, true)] : when,
+          ...this.ligne(a.acte, "aut", "r zrow"),
+          pick: this.choix(a.acte),
+          href: href(a.acte),
+          d: when,
           svc: e ? benefLabel(e) : t("commun.non_precise"),
           fin: [t("carte.zone_non_deduite_court"), a.ref].filter(Boolean).join(" · "),
           h: t("carte.non_dessine"),
-          hover: (() => {}) as Handler,
-          pick: (() => this.setState({ nd: i, cur: -1, hov: -1 })) as Handler,
         },
       });
     });
@@ -635,8 +750,7 @@ class CarteDrones extends Vue<Props, State> {
         on: S.k === k ? "true" : "false",
         off: n === 0 && S.k !== k ? "true" : "false",
         pick: (() => {
-          if (S.k !== k && (n > 0 || k === null))
-            this.setState({ k, cur: -1, hov: -1, nd: -1, wk: -1 });
+          if (S.k !== k && (n > 0 || k === null)) this.setState({ k, sel: null, vu: null, wk: -1 });
         }) as Handler,
       };
     });
@@ -719,11 +833,10 @@ class CarteDrones extends Vue<Props, State> {
       }) as Handler,
       months,
       hasDet: det !== null,
+      noDet: det === null,
       det,
-      clear: (() => this.setState({ cur: -1, hov: -1, nd: -1 })) as Handler,
-      unhover: (() => {
-        if (S.hov >= 0) this.setState({ hov: -1 });
-      }) as Handler,
+      clear: (() => this.setState({ sel: null, vu: null })) as Handler,
+      unhover: this.quitter(),
       listT: rows.length
         ? `${t("carte.liste_t2", { n: nSlots, arr: count(nActes, "arrete") })}${
             nNd ? t("carte.liste_nd", { n: nNd }) : ""

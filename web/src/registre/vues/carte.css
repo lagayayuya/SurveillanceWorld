@@ -101,6 +101,69 @@
   gap: 8px;
   box-sizing: border-box;
 }
+.rg .v-carte .cd-vide,
+.rg .v-carte .cd-sub {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.rg .v-carte .cd-bloc {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid var(--rule);
+  padding-top: 8px;
+}
+.rg .v-carte .cd-k {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.rg .v-carte .cd-lieux,
+.rg .v-carte .cd-cren {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rg .v-carte .cd-lieux li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font-weight: 700;
+}
+.rg .v-carte .cd-lieux button.lk {
+  all: unset;
+  box-sizing: border-box;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  cursor: pointer;
+  font-weight: 700;
+  border-bottom: 3px solid var(--type-document);
+}
+.rg .v-carte .cd-lieux button.lk:hover {
+  background: var(--type-document);
+  color: #111;
+}
+.rg .v-carte .cd-lieux button.lk:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .v-carte .zrow a.rl {
+  color: inherit;
+  text-decoration: none;
+  font-size: 12.5px;
+}
+.rg .v-carte .cd-cren a[aria-current="true"] {
+  font-weight: 700;
+}
 .rg .v-carte .cd-liens {
   display: flex;
   flex-wrap: wrap;

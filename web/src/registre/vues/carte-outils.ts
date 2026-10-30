@@ -80,6 +80,14 @@ export function mois(m: string): [number, number] | null {
   return [Date.UTC(y, k, 1), Date.UTC(y, k + 1, 1)];
 }
 
+/** ?semaine=YYYY-MM-DD (its Monday): that week, [start, end[ in ms. */
+export function semaineDe(s: string | null | undefined): [number, number] | null {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const t0 = Date.parse(`${s}T00:00:00Z`);
+  if (Number.isNaN(t0) || lundi(t0) !== t0) return null;
+  return [t0, t0 + WEEK];
+}
+
 export const overlaps = (c: Creneau, r0: number, r1: number): boolean => c.t1 > r0 && c.t0 < r1;
 const inPeriod = (c: Creneau, r: Periode): boolean => !r || overlaps(c, r[0], r[1]);
 
@@ -237,4 +245,81 @@ export function volLabel(v: { heures: number; n: number }): string {
 export function drones(d: Donnees): Drones {
   const x = (d.f as { drones?: Partial<Drones> }).drones;
   return { creneaux: x?.creneaux ?? [], non_deduits: x?.non_deduits ?? [] };
+}
+
+// --- a slot's keys, its zones, its words (v2.1 A4, A8) -----------------------------------------
+
+/** Each slot's key in the view's state and address: its act's id, « ~n » for the act's n-th slot
+ * by start (n > 1); an act listed without a slot is its id alone. */
+export function cles(T: Creneau[]): string[] {
+  const rang = new Map<string, number>();
+  const ordre = T.map((_, i) => i).sort((a, b) => T[a].t0 - T[b].t0 || a - b);
+  const out: string[] = new Array(T.length);
+  for (const i of ordre) {
+    const a = T[i].actes[0] ?? "";
+    const n = (rang.get(a) ?? 0) + 1;
+    rang.set(a, n);
+    out[i] = n > 1 ? `${a}~${n}` : a;
+  }
+  return out;
+}
+/** A key to the address's ?acte= and ?creneau= (the n-th slot, when not the first). */
+export function versAdresse(k: string): { acte: string; creneau: string | null } {
+  const m = /^(.*)~(\d+)$/.exec(k);
+  return m ? { acte: m[1], creneau: m[2] } : { acte: k, creneau: null };
+}
+export const deAdresse = (acte: string | null, creneau: string | null): string | null =>
+  acte ? (creneau && /^\d+$/.test(creneau) && +creneau > 1 ? `${acte}~${+creneau}` : acte) : null;
+
+/** A zone of the commune file (zones.zones), as the panel reads it. */
+export type ZoneLue = {
+  acte: string;
+  t0: number;
+  t1: number;
+  detail?: string | null;
+  site?: string | null;
+  statut?: string | null;
+  methode?: string | null;
+  cameras?: number | null;
+  hauteur?: number | null;
+  hauteur_lue?: boolean;
+  alerte?: string | null;
+};
+/** The zones a slot comes from: its acts' zones whose time meets it (the build merges the zones
+ * of one act and one time into one slot, drones.py). */
+export function zonesDe(c: Creneau, zones: ZoneLue[]): ZoneLue[] {
+  return zones.filter((z) => c.actes.includes(z.acte) && z.t0 < c.t1 && z.t1 > c.t0);
+}
+/** The places the act names, each once, in its order, with the site that draws it (none: not
+ * drawn). */
+export function lieux(zs: ZoneLue[]): { l: string; site: string | null }[] {
+  const out = new Map<string, string | null>();
+  for (const z of zs) {
+    const l = (z.detail ?? "").replace(/\s+/g, " ").trim();
+    if (!l) continue;
+    if (!out.has(l) || (!out.get(l) && z.site)) out.set(l, z.site ?? null);
+  }
+  return [...out].map(([l, site]) => ({ l, site }));
+}
+/** The devices the act authorises for the slot: the most its zones state, else the act's own
+ * figure; null: not stated. */
+export function appareils(zs: ZoneLue[], acte: number | null | undefined): number | null {
+  const n = zs.map((z) => z.cameras).filter((x): x is number => typeof x === "number" && x > 0);
+  return n.length ? Math.max(...n) : typeof acte === "number" && acte > 0 ? acte : null;
+}
+/** « 11 nov. 2025, 7 h 00 → 11 h 00 », the end's date too when it is another day; the date
+ * alone when the act states no hours. */
+export function plage(c: Creneau): string {
+  if (c.heures == null) return t("carte.plage_sans_heures", { date: dateTxt(c.t0) });
+  const a = new Date(c.t0);
+  const b = new Date(c.t1 - 1);
+  const memeJour = a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fin = new Date(c.t1);
+  return t("carte.plage", {
+    de: dateTxt(c.t0, true),
+    a: memeJour
+      ? t("carte.heure", { h: pad(fin.getUTCHours()), m: pad(fin.getUTCMinutes()) })
+      : dateTxt(c.t1, true),
+  });
 }

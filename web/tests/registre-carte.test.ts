@@ -10,8 +10,16 @@ import type { Donnees } from "../src/registre/commun.ts";
 import { bboxOf, centroid, tete, valeur, volumeHeight } from "../src/registre/drones.ts";
 import { setMessages, t } from "../src/registre/i18n.ts";
 import {
+  appareils,
   type Creneau,
+  cles,
   DEBUT,
+  deAdresse,
+  lieux,
+  plage,
+  versAdresse,
+  type ZoneLue,
+  zonesDe,
   dansPeriode,
   dateTxt,
   drones,
@@ -213,4 +221,39 @@ test("a commune file without `drones` (an older build) has no slot and no act li
   assert.deepEqual(drones({ f: {} } as unknown as Donnees), { creneaux: [], non_deduits: [] });
   const f = { drones: { creneaux: [slot({ t0: 0, t1: H })], non_deduits: [] } };
   assert.equal(drones({ f } as unknown as Donnees).creneaux.length, 1);
+});
+
+test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () => {
+  const T = [
+    slot({ t0: at("2026-10-07", 9), t1: at("2026-10-07", 13), heures: 4, actes: ["a1"] }),
+    slot({ t0: at("2026-10-06", 9), t1: at("2026-10-06", 17), heures: 8, actes: ["a1"] }),
+    slot({ t0: at("2026-10-06", 22), t1: at("2026-10-07", 2), heures: 4, actes: ["a2"] }),
+  ];
+  assert.deepEqual(cles(T), ["a1~2", "a1", "a2"]);
+  assert.deepEqual(versAdresse("a1~2"), { acte: "a1", creneau: "2" });
+  assert.deepEqual(versAdresse("a2"), { acte: "a2", creneau: null });
+  assert.equal(deAdresse("a1", "2"), "a1~2");
+  assert.equal(deAdresse("a1", "1"), "a1");
+  assert.equal(deAdresse("a1", "x"), "a1");
+  assert.equal(deAdresse(null, "2"), null);
+  const z = (o: Partial<ZoneLue>): ZoneLue => ({ acte: "a1", t0: at("2026-10-06", 9), t1: at("2026-10-06", 17), ...o });
+  const zs = [
+    z({ detail: "Parc de la Tête d’Or", site: "s1", cameras: 1 }),
+    z({ detail: " Parc de la  Tête d’Or ", site: "s1", cameras: 2 }),
+    z({ detail: "Place Bellecour", site: null }),
+    z({ detail: "Ailleurs", t0: at("2026-10-07", 9), t1: at("2026-10-07", 13) }),
+    z({ acte: "a2", detail: "Autre acte" }),
+  ];
+  const mine = zonesDe(T[1], zs);
+  assert.equal(mine.length, 3);
+  assert.deepEqual(lieux(mine), [
+    { l: "Parc de la Tête d’Or", site: "s1" },
+    { l: "Place Bellecour", site: null },
+  ]);
+  assert.equal(appareils(mine, 4), 2);
+  assert.equal(appareils([z({ cameras: null })], 4), 4);
+  assert.equal(appareils([z({ cameras: null })], null), null);
+  assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
+  assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
+  assert.equal(plage(slot({ t0: at("2026-10-06", 0), t1: at("2026-10-07", 0) })), `6${N}oct.${N}2026, horaires non précisés`);
 });

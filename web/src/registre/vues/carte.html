@@ -59,19 +59,23 @@
       <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
     </section></sc-if>
 
-    <sc-if value="{{hasDet}}" hint-placeholder-val="{{false}}">
-      <div class="cd-det" aria-live="polite">
+    <div class="cd-det cd-panel">
+      <sc-if value="{{noDet}}"><p class="tw cd-vide">{{t.carte.panneau_vide}}</p></sc-if>
+      <sc-if value="{{hasDet}}" hint-placeholder-val="{{false}}">
         <div style="display: flex; justify-content: space-between; align-items: center"><span class="stk" style="{{det.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.i}}"></path></svg>{{det.k}}</span><button class="ibtn" type="button" onClick="{{clear}}" aria-label="{{t.carte.fermer_detail}}"><span aria-hidden="true">✕</span></button></div>
-        <h3 class="h3" style="font-size: 20px; margin-top: 4px">{{{det.title}}}</h3>
+        <h3 class="h3" style="font-size: 20px; margin-top: 4px">{{det.title}}</h3>
+        <sc-if value="{{det.sub}}"><p class="tw cd-sub">{{det.sub}}</p></sc-if>
+        <sc-if value="{{det.hasLieux}}"><div class="cd-bloc"><h4 class="cd-k">{{t.carte.lieux_k}}</h4><ul class="cd-lieux"><sc-for list="{{det.lieux}}" as="x"><li><span>{{x.l}}</span><sc-if value="{{x.has}}"><button class="lk" type="button" onClick="{{x.voir}}">{{t.carte.voir_carte}}</button></sc-if></li></sc-for></ul></div></sc-if>
+        <sc-if value="{{det.hasCreneaux}}"><div class="cd-bloc"><h4 class="cd-k">{{t.carte.creneaux_k}}</h4><ul class="cd-cren"><sc-for list="{{det.creneaux}}" as="x"><li><a href="{{x.href}}" aria-current="{{x.cur}}" onClick="{{x.pick}}">{{x.l}}</a></li></sc-for></ul></div></sc-if>
         <sc-for list="{{det.rows}}" as="r"><div class="prow"><span>{{r.k}}</span><b style="text-align: right">{{r.v}}</b></div></sc-for>
         <sc-if value="{{det.note}}"><p class="tw" style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">{{det.note}}</p></sc-if>
         <div class="cd-liens"><sc-for list="{{det.links}}" as="l"><a class="{{l.cls}}" style="{{l.c}}" href="{{l.href}}">{{l.l}}</a></sc-for></div>
-      </div>
-    </sc-if>
+      </sc-if>
+    </div>
 
     <h3 class="h3" style="margin-top: 6px">{{listT}}</h3>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
-      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.pick}}" onClick="{{r.pick}}"><span class="tw" style="font-size: 12.5px">{{{r.d}}}</span><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h">{{r.h}}</span></div></sc-for>
+      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h num">{{r.h}}</span></div></sc-for>
     </div>
     <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>
