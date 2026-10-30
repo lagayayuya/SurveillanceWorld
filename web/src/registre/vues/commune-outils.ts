@@ -1,8 +1,90 @@
-// The commune page's tools (the prototype's app.js `modal`, `demande` and the « Partager l'image »
-// button): a dialog over the page, the request letter to copy (« Demander à la mairie / à la
-// préfecture »), and the page's share image drawn on a canvas in the browser and downloaded. Every
-// node is made with createElement, every word comes from the catalogue: nothing is sent anywhere.
+// The commune's family of pages (its fiche, its Documents, its Autorisations), what they share on the
+// v2 skeleton (design/registre/v2): the identity line with its typed links, the band's links to the
+// commune's other pages (« Fiche », « Carte et drones », as V2-CarteDrones' band), the breadcrumb,
+// a document's title and kind in words; and the prototype's tools (app.js `modal`, `demande`): a
+// dialog over the page, the request letter to copy (« Demander à la mairie / à la préfecture »).
+// Every node is made with createElement, every word comes from the catalogue: nothing is sent
+// anywhere. R1's share image (a canvas, downloaded) is gone: « Partager » is the band's
+// (partage.ts), its image the build's (lot R3).
+import { communeHref, type Donnees } from "../commun.ts";
+import type { Lexique } from "../corpus.ts";
+import type { RichItem } from "../dc.ts";
+import type { Evenement } from "../donnees.ts";
+import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
+import { lien, lienDepartement } from "../liens.ts";
+import type { Miette } from "../modale.ts";
+import { sentence } from "../texte.ts";
+
+/** The commune's file read as a lexicon (corpus.ts): its companies, buyers and communes have pages. */
+export const lexique = (d: Donnees): Lexique => d.f as unknown as Lexique;
+
+/** The intercommunality's address: it has no fiche of its own, its row on its département's page
+ * (`?ic=`, departement.ts) shows it. */
+export const epciHref = (dep: string, code: string): string =>
+  `/registre/departement/${dep}?ic=${encodeURIComponent(code)}`;
+
+/** The head's identity line: its département and its intercommunality as links, its population,
+ * its INSEE code (V2-Entreprise's `idline`). */
+export function ligneCommune(d: Donnees): RichItem[] {
+  const c = d.f.commune;
+  const dep = d.f.stats.dep;
+  const epci = d.f.stats.epci;
+  const parts: RichItem[][] = [[lienDepartement(c.dep, dep.nom ?? c.dep)]];
+  if (epci) parts.push([lien("epci", epciHref(c.dep, epci.code), epci.nom ?? epci.code)]);
+  if (c.pop) parts.push([t("commun.habitants", { n: fr(c.pop) })]);
+  parts.push([t("commun.code_insee", { insee: d.insee })]);
+  return parts.flatMap((p, i) => (i ? [" · ", ...p] : p));
+}
+
+/** A band link: one of the page's sections (`k` its id), or another page of the commune. */
+export type LienBande = { k: string; n: number; l: string; href: string };
+
+/** The band's links: on the fiche its sections then « Carte et drones »; on Documents and
+ * Autorisations « Fiche » first (V2-CarteDrones: « Fiche | Carte et drones »). A link to another
+ * page carries a `data-sec` that no section has: the band never marks it current. */
+export function liensBande(secs: LienBande[], insee: string, fiche: boolean): LienBande[] {
+  return [
+    ...(fiche ? [] : [{ k: "fiche", n: 0, l: t("commune.bande_fiche"), href: communeHref(insee) }]),
+    ...secs,
+    { k: "carte", n: 0, l: t("commune.carte_et_drones"), href: communeHref(insee, "carte") },
+  ];
+}
+
+/** The breadcrumb of Documents and Autorisations: Registre › Communes › <commune>; the last step,
+ * « Documents » or « Autorisations », is the view's title. */
+export function filCommune(d: Donnees): Miette[] {
+  return [
+    { k: "registre", l: t("types.registre.l"), href: "/registre/" },
+    { k: "commune", l: t("types.commune.p"), href: "/registre/" },
+    { k: "commune", l: d.f.commune.nom, href: communeHref(d.insee) },
+  ];
+}
+
+/** A document's kind in words (« Contrat », « Arrêté »…), the Documents table's badge. */
+export const typeLabel = (e: Evenement): string =>
+  t(
+    `documents.type_${e.t.startsWith("arrete") ? "arrete" : e.t.startsWith("subvention") ? "subvention" : e.t}`,
+  );
+
+/** A document's title: a decree by what it authorises, anything else by its published object. */
+export function titreDocument(e: Evenement): string {
+  if (e.t === "arrete_drone") {
+    const n = e.partage?.length ?? 0;
+    return n
+      ? `${t("documents.titre_drones")} · ${t("documents.partage", { n })}`
+      : t("documents.titre_drones");
+  }
+  if (e.t === "arrete_pietons") return t("documents.titre_pietons");
+  if (e.t === "arrete_vsa") return t("documents.titre_vsa");
+  if (e.t === "arrete")
+    return e.cameras != null
+      ? t("documents.titre_cameras", { n: e.cameras })
+      : t("documents.titre_cameras_nc");
+  return sentence(e.objet) || t("documents.objet_non_publie");
+}
+
+// --- the dialog and the request letter ----------------------------------------------------------
 
 type Attrs = Record<string, string>;
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -41,6 +123,7 @@ export function dialogue(titre: string, corps: (Node | string)[], focus?: HTMLEl
   const key = (ev: KeyboardEvent) => {
     if (ev.key === "Escape") {
       ev.preventDefault();
+      ev.stopPropagation();
       close();
     } else if (ev.key === "Tab") {
       // the focus stays in the dialog
@@ -91,7 +174,7 @@ export function demander(objet: string, qui: "mairie" | "prefecture", nom: strin
       dit.textContent = t("commune.demande_copie_main");
     }
   });
-  const [avant, apres] = t("commune.demande_madada", { lien: "\uE000" }).split("\uE000");
+  const [avant, apres] = t("commune.demande_madada", { lien: "" }).split("");
   const madada = el(
     "a",
     { href: "https://madada.fr/", target: "_blank", rel: "noopener" },
@@ -115,134 +198,4 @@ export function demander(objet: string, qui: "mairie" | "prefecture", nom: strin
     texte,
   );
   texte.select();
-}
-
-// --- the share image ---------------------------------------------------------------------------
-
-export type Partage = {
-  nom: string;
-  ligne: string;
-  lead: string;
-  kpis: { v: string; l: string }[];
-  /** The page's address, written at the bottom. */
-  url: string;
-  /** The element whose theme tokens colour the image. */
-  scope: Element;
-  fichier: string;
-};
-
-/** Words cut into lines that fit `width` (canvas measure). */
-function lines(g: CanvasRenderingContext2D, text: string, width: number): string[] {
-  const out: string[] = [];
-  let cur = "";
-  for (const w of text.split(/\s+/)) {
-    const next = cur ? `${cur} ${w}` : w;
-    if (cur && g.measureText(next).width > width) {
-      out.push(cur);
-      cur = w;
-    } else cur = next;
-  }
-  if (cur) out.push(cur);
-  return out;
-}
-
-/** The page's share image (1200 × 630, the size link previews use), drawn here and downloaded. */
-export async function partagerImage(o: Partage): Promise<void> {
-  const W = 1200;
-  const H = 630;
-  const css = getComputedStyle(o.scope);
-  const tok = (name: string, d: string) => css.getPropertyValue(name).trim() || d;
-  const page = tok("--page", "#e6eef0");
-  const fg = tok("--fg", "#111111");
-  const muted = tok("--muted", "#555555");
-  try {
-    await Promise.all([
-      document.fonts.load('900 extra-condensed 80px "Archivo"'),
-      document.fonts.load('400 26px "Archivo"'),
-      document.fonts.load('16px "Special Elite"'),
-    ]);
-  } catch {
-    // the system's font then
-  }
-  const c = document.createElement("canvas");
-  c.width = W;
-  c.height = H;
-  const g = c.getContext("2d");
-  if (!g) return;
-  // the kit's condensed capitals: the stretch is part of the font shorthand (setting `font` alone
-  // would reset a separate fontStretch)
-  const font = (weight: number, stretch: string, px: number, family = '"Archivo", sans-serif') => {
-    g.font = `${weight} ${stretch} ${px}px ${family}`;
-  };
-  /** The largest size up to `px` at which `text` fits `width`. */
-  const fit = (text: string, weight: number, stretch: string, px: number, width: number) => {
-    let size = px;
-    font(weight, stretch, size);
-    while (g.measureText(text).width > width && size > 20) {
-      size -= 2;
-      font(weight, stretch, size);
-    }
-    return size;
-  };
-  g.fillStyle = page;
-  g.fillRect(0, 0, W, H);
-  // the header band
-  g.fillStyle = "#000";
-  g.fillRect(0, 0, W, 64);
-  g.fillStyle = "#f2efe6";
-  font(900, "condensed", 28);
-  g.textBaseline = "middle";
-  g.fillText(t("commune.image_marque").toUpperCase(), 48, 33);
-  // the tag and the name
-  g.textBaseline = "alphabetic";
-  font(800, "semi-condensed", 18);
-  const tag = t("commune.commune").toUpperCase();
-  const tw = g.measureText(tag).width + 20;
-  g.fillStyle = "#ffe800";
-  g.fillRect(48, 92, tw, 30);
-  g.fillStyle = "#111";
-  g.fillText(tag, 58, 114);
-  const size = fit(o.nom.toUpperCase(), 900, "extra-condensed", 104, W - 96);
-  g.fillStyle = fg;
-  g.fillText(o.nom.toUpperCase(), 44, 130 + size * 0.85);
-  let y = 130 + size * 0.85 + 34;
-  font(400, "normal", 18, '"Special Elite", monospace');
-  g.fillStyle = muted;
-  g.fillText(o.ligne, 48, y);
-  y += 44;
-  font(500, "normal", 28);
-  g.fillStyle = fg;
-  for (const l of lines(g, o.lead, W - 96).slice(0, 3)) {
-    g.fillText(l, 48, y);
-    y += 38;
-  }
-  // the four figures
-  const top = Math.max(y + 10, 430);
-  g.fillRect(48, top, W - 96, 3);
-  const cw = (W - 96) / o.kpis.length;
-  o.kpis.forEach((k, i) => {
-    const x = 48 + i * cw + (i ? 18 : 0);
-    fit(k.v, 900, "extra-condensed", 60, cw - 30);
-    g.fillStyle = fg;
-    g.fillText(k.v, x, top + 66);
-    font(400, "normal", 20);
-    lines(g, k.l, cw - 24)
-      .slice(0, 2)
-      .forEach((l, j) => {
-        g.fillText(l, x, top + 98 + j * 24);
-      });
-  });
-  font(400, "normal", 15, '"Special Elite", monospace');
-  g.fillStyle = muted;
-  g.fillText(o.url, 48, H - 22);
-  const src = t("commune.image_sources");
-  g.fillText(src, W - 48 - g.measureText(src).width, H - 22);
-  const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/png"));
-  if (!blob) return;
-  const href = URL.createObjectURL(blob);
-  const a = el("a", { href, download: o.fichier });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(href), 10_000);
 }

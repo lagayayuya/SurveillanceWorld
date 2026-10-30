@@ -1,194 +1,206 @@
-<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<div class="{{th}}">
+  <dc-include src="tete-fiche"></dc-include>
+  <dc-include src="bandeau"></dc-include>
 
-  <div style="width: 1180px; margin: 0 auto; padding: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
-    <dc-include src="fil"></dc-include>
-    <div><span class="tag" style="background: #ffe800">{{t.commune.commune}}</span></div>
-    <h1 class="h1">{{com.nom}}</h1>
-    <p class="tw" style="margin: 0; color: var(--muted); font-size: 14px">{{com.ligneLongue}}</p>
-    <p class="lead" style="margin-top: 6px">{{{lead}}}</p>
-    <div class="kpis" style="margin-top: 10px">
-      <sc-for list="{{kpis}}" as="k"><div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
-    </div>
-  </div>
+  <div class="{{lay.inner}}" style="padding-top: 0">
+    <div class="grid2">
+      <div style="min-width: 0">
 
-  <dc-include src="onglets-commune"></dc-include>
+        <section id="essentiel" class="sec" style="padding-top: 26px">
+          <h2 class="h2"><span class="num">{{secs.essentiel.n}}</span>{{secs.essentiel.l}}</h2>
+          <p class="lead" style="margin: 0">{{{lead}}}</p>
+          <div class="{{lay.tickets}}" style="margin-top: 4px">
+            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
+          </div>
+          <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
+          <div class="cartes">
+            <p class="sober" style="margin: 0">{{{carteLiens}}}</p>
+            <p class="tw osm">{{t.commune.carte_note}}</p>
+          </div>
 
-  <div style="width: 1180px; margin: 0 auto; padding: 32px 0 80px; display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start">
-    <main style="display: flex; flex-direction: column; gap: 56px; min-width: 0">
-
-      <section aria-labelledby="s-vue" style="display: flex; flex-direction: column; gap: 12px">
-        <h2 id="s-vue" class="h2">{{vueTitre}}</h2>
-        <div style="position: relative; border: 2px solid var(--fg); background: var(--bg-2)">
-          <div id="carte-ess" data-dc-keep="1" role="{{carteRole}}" aria-label="{{carteAlt}}" style="height: 470px; position: relative; overflow: hidden"></div>
-          <sc-if value="{{ctlShow}}"><div style="position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px">
-            <button class="ctl" onClick="{{toggle}}" aria-pressed="{{pressed}}" aria-label="{{toggleLabel}}">
-              <sc-if value="{{playing}}" hint-placeholder-val="{{true}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="4" width="5" height="16"></rect><rect x="14" y="4" width="5" height="16"></rect></svg></sc-if>
-              <sc-if value="{{paused}}" hint-placeholder-val="{{false}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6"></path><path d="M20 4v5h-5"></path></svg></sc-if>
-            </button>
+          <sc-if value="{{ou.show}}"><div class="ou">
+            <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+              <div style="display: flex; align-items: center; gap: 4px"><h3 class="h3">{{f.commune.ou_sont_les_autres}}</h3><button class="ibtn" type="button" onClick="{{tgl.ou}}" aria-expanded="{{open.ou}}" aria-label="{{t.commune.d_ou_vient_ce_nombre}}"><span aria-hidden="true">i</span></button></div>
+              <sc-if value="{{show.ou}}"><p class="note tw">{{ou.note}}</p></sc-if>
+              <p class="sober" style="margin: 0">{{f.commune.la_prefecture_a_autorise_cameras}}</p>
+            </div>
+            <button type="button" class="btn" onClick="{{ou.demander}}">{{t.commune.demander_la_liste_a_la}}</button>
           </div></sc-if>
-        </div>
-        <sc-if value="{{attrib}}"><p class="tw" style="margin: 0; font-size: 12px; color: var(--muted)">{{{attrib}}}</p></sc-if>
-        <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 20px; align-items: start">
-          <ul aria-label="{{t.commune.legende_de_la_carte}}" style="list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 24px; font-size: 14px">
-            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 50%; background: var(--fg); box-shadow: 0 0 0 2px var(--bg-2), 0 0 0 3px var(--fg); display: inline-block; margin: 0 3px"></span>{{t.commune.camera_placee_sur_la_carte}}</li>
-            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 12px; background: rgba(255,72,176,.35); border: 1.5px solid #ff48b0; display: inline-block"></span>{{t.commune.champ_de_vision_de_pres}}</li>
-            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 6px; background: #ff48b0; display: inline-block"></span>{{t.commune.rue_filmee}}</li>
-            <li style="display: flex; align-items: center; gap: 8px"><span aria-hidden="true" style="width: 18px; height: 12px; border: 2px solid var(--fg); display: inline-block; box-sizing: border-box"></span>{{t.commune.limite_de_la_commune}}</li>
-            <li style="{{leg.drStyle}}"><span aria-hidden="true" style="width: 18px; height: 12px; background: repeating-linear-gradient(45deg, var(--drone) 0 2px, transparent 2px 5px); border: 1.5px solid var(--drone); display: inline-block; box-sizing: border-box"></span>{{leg.dr}}</li>
-            <li style="{{leg.vsaStyle}}"><span aria-hidden="true" style="width: 18px; height: 12px; border: 2px dashed var(--fg); display: inline-block; box-sizing: border-box"></span>{{leg.vsa}}</li>
-          </ul>
-          <a href="{{lien.carte}}" style="display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; background: var(--fg); color: var(--bg); font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none; white-space: nowrap">{{t.commune.explorer_la_carte_et_les}}</a>
-        </div>
-        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.commune.vue_d_ensemble_qui_ne}}</p>
-      </section>
 
-      <sc-if value="{{ou.show}}"><section aria-labelledby="s-ou" style="background: #ff48b0; color: #111; border: 2px solid var(--fg); box-shadow: 6px 6px 0 var(--fg); padding: 22px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px 28px; align-items: center">
-        <div style="display: flex; flex-direction: column; gap: 8px">
-          <div style="display: flex; align-items: center; gap: 4px"><h2 id="s-ou" class="h2" style="font-size: 36px">{{f.commune.ou_sont_les_autres}}</h2><button class="ibtn" onClick="{{tgl.ou}}" aria-expanded="{{open.ou}}" aria-label="{{t.commune.d_ou_vient_ce_nombre}}" style="color: #111"><span aria-hidden="true">i</span></button></div>
-          <sc-if value="{{show.ou}}"><p class="note tw" style="color: #111; border-color: #111">{{ou.note}}</p></sc-if>
-          <p style="margin: 0; font-size: 17px">{{f.commune.la_prefecture_a_autorise_cameras}}</p>
-        </div>
-        <button type="button" onClick="{{ou.demander}}" style="font: inherit; cursor: pointer; display: inline-flex; align-items: center; min-height: 48px; padding: 0 18px; border: 2px solid #111; background: #fff; color: #111; font-weight: 800; font-stretch: 80%; text-transform: uppercase; text-decoration: none">{{t.commune.demander_la_liste_a_la}}</button>
-      </section></sc-if>
-
-      <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start">
-        <sc-if value="{{aut.show}}"><section aria-labelledby="s-aut" style="display: flex; flex-direction: column; gap: 12px">
-          <h2 id="s-aut" class="h2">{{t.commune.ce_que_la_prefecture_autorise}}</h2>
-          <ul class="lst">
-            <sc-for list="{{aut.items}}" as="i"><li><strong>{{i.a}}</strong><br>{{i.b}}</li></sc-for>
-          </ul>
-          <h3 class="h3" style="font-size: 16px; margin-top: 6px">{{aut.h3}}</h3>
-          <div role="list" style="display: grid; grid-template-columns: repeat({{aut.n}}, minmax(0, 1fr)); border: 2px solid var(--fg)">
-            <sc-for list="{{arr}}" as="a" hint-placeholder-count="3">
-              <div role="listitem" class="{{a.cls}}" onMouseEnter="{{a.hover}}" onClick="{{a.hover}}" style="{{a.style}}">
-                <div style="font-weight: 900; font-stretch: 64%; font-size: 40px; line-height: 1">{{a.n}}</div>
-                <div class="tw" style="font-size: 13px; color: var(--muted)">{{a.d}}</div>
+          <div class="{{lay.deux}}" style="margin-top: 6px">
+            <sc-if value="{{aut.show}}"><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+              <h3 class="h3">{{t.commune.ce_que_la_prefecture_autorise}}</h3>
+              <ul class="lst">
+                <sc-for list="{{aut.items}}" as="i"><li><strong>{{i.a}}</strong><br>{{i.b}}</li></sc-for>
+              </ul>
+              <h3 class="h3" style="font-size: 16px; margin-top: 6px">{{aut.h3}}</h3>
+              <div class="cells" role="list" style="{{aut.cols}}">
+                <sc-for list="{{arr}}" as="a">
+                  <div role="listitem" class="{{a.cls}}" tabindex="0" aria-label="{{a.label}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.hover}}">
+                    <div class="cv" aria-hidden="true">{{a.n}}</div>
+                    <div class="tw cd" aria-hidden="true">{{a.d}}</div>
+                  </div>
+                </sc-for>
               </div>
-            </sc-for>
+              <p class="sober" style="margin: 0">{{{aut.hist}}}</p>
+            </div></sc-if>
+
+            <sc-if value="{{prv.show}}"><div class="{{prv.cls}}" onMouseEnter="{{prv.hover}}" onFocus="{{prv.hover}}" onClick="{{prv.hover}}">
+              <h3 class="h3">{{f.commune.aussi_a}}</h3>
+              <p class="sober" style="margin: 0"><strong>{{prv.cam}}</strong> {{f.commune.de_commerces_et_d_entreprises}} <strong>{{prv.arr}}</strong>.</p>
+              <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--line)">
+                <sc-for list="{{priv}}" as="p">
+                  <li class="pl"><span>{{{p.d}}} · {{p.who}}</span><strong>{{p.n}}</strong></li>
+                </sc-for>
+              </ul>
+              <p class="sober" style="margin: 0">{{{prv.voir}}}</p>
+            </div></sc-if>
           </div>
-          <a href="{{lien.dossier}}" class="ghost">{{aut.hist}}</a>
-        </section></sc-if>
 
-        <sc-if value="{{prv.show}}"><section aria-labelledby="s-prives" class="{{prv.cls}}" onMouseEnter="{{prv.hover}}" style="display: flex; flex-direction: column; gap: 10px; padding: 18px; border: 2px solid var(--fg)">
-          <h2 id="s-prives" class="h2" style="font-size: 24px">{{f.commune.aussi_a}}</h2>
-          <p style="margin: 0; font-size: 18px"><strong>{{prv.cam}}</strong> {{f.commune.de_commerces_et_d_entreprises}} <strong>{{prv.arr}}</strong>.</p>
-          <ul style="list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule)">
-            <sc-for list="{{priv}}" as="p" hint-placeholder-count="6">
-              <li style="display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--rule); font-size: 15px"><span><span class="tw" style="color: var(--muted)">{{p.d}}</span> · {{p.who}}</span><strong>{{p.n}}</strong></li>
-            </sc-for>
-          </ul>
-          <a href="{{lien.prives}}" class="ghost">{{t.commune.les_voir_dans_les_documents}}</a>
-        </section></sc-if>
-      </div>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px">
+            <h3 class="h3">{{t.commune.l_argent}}</h3>
+            <button class="ibtn" type="button" onClick="{{tgl.arg}}" aria-expanded="{{open.arg}}" aria-label="{{t.commune.comment_lire_ces_montants}}"><span aria-hidden="true">i</span></button>
+          </div>
+          <sc-if value="{{show.arg}}"><p class="note tw">{{arg.note}}</p></sc-if>
+          <p class="sober" style="margin: 0; font-size: 18px"><span class="tot">{{arg.total}}</span> {{{arg.phrase}}}</p>
+          <dl class="dl">
+            <sc-for list="{{arg.dl}}" as="x"><dt>{{x.k}}</dt><dd>{{x.v}}</dd></sc-for>
+          </dl>
+        </section>
 
-      <section aria-labelledby="s-argent" style="display: flex; flex-direction: column; gap: 14px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <h2 id="s-argent" class="h2">{{t.commune.l_argent}}</h2>
-          <button class="ibtn" onClick="{{tgl.arg}}" aria-expanded="{{open.arg}}" aria-label="{{t.commune.comment_lire_ces_montants}}"><span aria-hidden="true">i</span></button>
-        </div>
-        <sc-if value="{{show.arg}}" hint-placeholder-val="{{false}}"><p class="note tw">{{arg.note}}</p></sc-if>
-        <p style="margin: 0; font-size: 18px"><span style="font-weight: 900; font-stretch: 66%; font-size: 52px; line-height: 1">{{arg.total}}</span> {{{arg.phrase}}}</p>
-        <p class="tw" style="margin: 0; font-size: 14px; color: var(--muted)">{{t.argent.enveloppe}}</p>
+        <sc-if value="{{secs.temps}}">
+        <section id="temps" class="sec">
+          <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
+          <sc-if value="{{years.length}}">
+            <h3 class="h3">{{t.commune.temps_titre}}</h3>
+            <p class="sober" style="margin: 0; color: var(--muted)">{{t.commune.temps_aide}}</p>
+            <div class="{{lay.yb}}" role="group" aria-label="{{arg.yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}" title="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+            <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
+            <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
+          </sc-if>
 
-        <sc-if value="{{rows.length}}"><h3 class="h3" style="margin-top: 8px">{{arg.friseTitre}}</h3>
-        <div role="group" aria-label="{{friseAlt}}" style="position: relative; padding: 16px 30px 10px 16px; background: var(--bg-2); border: 2px solid var(--fg); display: flex; flex-direction: column; gap: 16px">
-          <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
-            <div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px; align-items: center; padding: 4px 0">
-              <div style="display: flex; flex-direction: column"><strong style="font-size: 15px">{{{r.l1}}}</strong><span style="font-size: 14px; color: var(--muted)">{{r.l2}}<sc-if value="{{r.rep}}"><sup style="color: var(--muted); font-size: 0.8em; margin-left: 2px; cursor: help" title="{{t.repere.date}}"><span aria-hidden="true">?</span><span class="sr">{{t.repere.date}}</span></sup></sc-if>{{r.l2b}}</span></div>
-              <div style="position: relative; height: 24px; background: var(--soft)">
-                <sc-for list="{{r.bars}}" as="b" hint-placeholder-count="1">
-                  <span style="{{b.style}}"></span>
-                </sc-for>
-                <sc-if value="{{r.arrow}}" hint-placeholder-val="{{false}}"><span aria-hidden="true" style="{{r.arrowStyle}}"></span></sc-if>
-                <sc-for list="{{r.tris}}" as="t" hint-placeholder-count="2">
-                  <span onMouseEnter="{{t.hover}}" style="{{t.style}}"></span>
+          <div class="{{lay.deux}}">
+            <sc-if value="{{arg.ctr.length}}"><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+              <h3 class="h3">{{arg.ctrTitre}}</h3>
+              <div style="border-top: 2px solid var(--line)">
+                <sc-for list="{{ctr}}" as="c">
+                  <div class="{{c.cls}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.hover}}">
+                    <span style="min-width: 0">{{{c.l1}}}<span class="tw sub">{{c.l2}}<sc-if value="{{c.rep}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if>{{c.l2b}}</span></span>
+                    <span class="tw cours">{{c.cours}}</span>
+                  </div>
                 </sc-for>
               </div>
-            </div>
-          </sc-for>
-          <div style="display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 14px">
-            <span></span>
-            <div class="tw" style="position: relative; height: 20px; font-size: 13px; color: var(--muted); border-top: 2px solid var(--fg)">
-              <sc-for list="{{ticks}}" as="k" hint-placeholder-count="7">
-                <span class="{{k.cls}}" style="{{k.style}}">{{k.l}}</span>
+              <sc-if value="{{arg.retenir}}"><p class="sober" style="margin: 0">{{{arg.retenir}}}</p></sc-if>
+            </div></sc-if>
+            <sc-if value="{{aoL.length}}"><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
+              <h3 class="h3">{{t.commune.frise_aos}}</h3>
+              <div style="border-top: 2px solid var(--line)">
+                <sc-for list="{{aoL}}" as="o">
+                  <div class="{{o.cls}}" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.hover}}">
+                    <span class="tw sub">{{o.date}}</span>
+                    <span style="min-width: 0">{{{o.l}}}<span class="tw sub">{{o.suite}}</span></span>
+                  </div>
+                </sc-for>
+              </div>
+            </div></sc-if>
+          </div>
+
+          <sc-if value="{{drones.show}}">
+            <h3 class="h3" style="margin-top: 10px">{{t.commune.drones_titre}}</h3>
+            <p class="sober" style="margin: 0">{{drones.phrase}} {{{drones.lien}}}</p>
+          </sc-if>
+
+          <sc-if value="{{chrono.length}}">
+            <h3 class="h3" style="margin-top: 10px">{{t.commune.ce_qui_s_est_passe}}</h3>
+            <ol class="chrono">
+              <sc-for list="{{chrono}}" as="h">
+                <li class="{{h.cls}}" onMouseEnter="{{h.hover}}" onFocus="{{h.hover}}" onClick="{{h.hover}}">
+                  <span class="tw cdate">{{h.d}}<sc-if value="{{h.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if></span>
+                  <sc-if value="{{h.doc}}"><span class="mini" style="{{h.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{h.p.i}}"></path></svg></span></sc-if>
+                  <sc-if value="{{h.mark}}"><span class="{{h.mark}}" aria-hidden="true"></span></sc-if>
+                  <span>{{{h.t}}}</span>
+                </li>
               </sc-for>
+            </ol>
+          </sc-if>
+
+          <sc-if value="{{veille.length}}">
+            <h3 class="h3" style="margin-top: 10px">{{t.commune.a_surveiller}}</h3>
+            <ul class="lst">
+              <sc-for list="{{veille}}" as="v"><li class="veille"><span class="tw" style="color: var(--muted)">{{v.w}}</span><span>{{{v.t}}}</span></li></sc-for>
+            </ul>
+          </sc-if>
+        </section>
+        </sc-if>
+
+        <section id="avecqui" class="sec">
+          <h2 class="h2"><span class="num">{{secs.avecqui.n}}</span>{{secs.avecqui.l}}</h2>
+          <sc-if value="{{ents.length}}">
+            <h3 class="h3">{{t.commune.ses_entreprises}}</h3>
+            <div style="border-top: 2px solid var(--line)">
+              <sc-for list="{{ents}}" as="e"><div class="{{e.cls}}" onMouseEnter="{{e.hover}}" onFocus="{{e.hover}}" onClick="{{e.hover}}"><span class="mini" style="{{e.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{e.p.i}}"></path></svg></span><span style="min-width: 0">{{{e.nom}}}</span><span class="tw" style="font-size: 13.5px">{{e.ans}}</span><span class="m">{{e.n}}</span><span class="a">{{e.amt}}</span></div></sc-for>
             </div>
+          </sc-if>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px">
+            <h3 class="h3">{{ter.titre}}</h3>
+            <button class="ibtn" type="button" onClick="{{tgl.met}}" aria-expanded="{{open.met}}" aria-label="{{t.commune.ce_que_comptent_ces_chiffres}}"><span aria-hidden="true">i</span></button>
           </div>
-        </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px">
-          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 22px; height: 10px; background: var(--fg); display: inline-block"></span>{{t.commune.duree_du_contrat}}</span>
-          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 9px solid var(--fg); display: inline-block"></span>{{t.commune.se_poursuit_apres_aujourd_hui}}</span>
-          <span style="display: inline-flex; align-items: center; gap: 6px"><span aria-hidden="true" style="width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid var(--ao); display: inline-block"></span>{{t.commune.appel_d_offres}}</span>
-        </div></sc-if>
-        <sc-if value="{{arg.retenir}}"><p style="margin: 0">{{{arg.retenir}}}</p></sc-if>
-        <dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; border-top: 2px solid var(--fg)">
-          <sc-for list="{{arg.dl}}" as="x"><dt style="padding: 10px 0; border-bottom: 1px solid var(--rule)">{{x.k}}</dt><dd style="margin: 0; padding: 10px 0; border-bottom: 1px solid var(--rule); font-weight: 800">{{x.v}}</dd></sc-for>
-        </dl>
-      </section>
+          <sc-if value="{{show.met}}"><p class="note tw">{{f.commune.documents_rattaches_a_une_commune}}</p></sc-if>
+          <sc-if value="{{ter.epci}}"><p class="sober" style="margin: 0">{{f.commune.fait_partie_de}}{{{ter.epciLien}}} {{f.commune.communes_dont_ont_au_moins}}</p></sc-if>
+          <table class="t">
+            <caption class="sr">{{ter.caption}}</caption>
+            <thead><tr><th scope="col">{{t.commune.territoire}}</th><th scope="col" class="num">{{t.commune.documents}}</th><th scope="col" class="num">{{t.commune.contrats}}</th><th scope="col" class="num">{{t.commune.autorisations}}</th><th scope="col" class="num">{{t.commune.drones}}</th></tr></thead>
+            <tbody>
+              <sc-for list="{{terr}}" as="r">
+                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                  <td>{{{r.nom}}}<div style="font-size: 13px; color: var(--muted)">{{r.sub}}</div></td>
+                  <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.con}}</td><td class="num">{{r.aut}}</td><td class="num">{{r.dr}}</td>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <sc-if value="{{ter.achat}}"><p class="sober" style="margin: 0"><strong>{{f.commune.achete_aussi_elle_meme}}</strong> {{f.commune.comme}} {{{ter.achatLien}}}.</p></sc-if>
+          <p class="sober liens" style="margin: 0">{{{ter.liens}}}</p>
 
-      <sc-if value="{{chrono.length}}"><section aria-labelledby="s-temps" style="display: flex; flex-direction: column; gap: 12px">
-        <h2 id="s-temps" class="h2">{{t.commune.ce_qui_s_est_passe}}</h2>
-        <ol style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--fg)">
-          <sc-for list="{{chrono}}" as="h" hint-placeholder-count="8">
-            <li class="{{h.cls}}" onMouseEnter="{{h.hover}}" onClick="{{h.hover}}" style="display: grid; grid-template-columns: 210px 22px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 11px 8px; border-bottom: 1px solid var(--rule)">
-              <span class="tw" style="color: var(--muted)">{{h.d}}<sc-if value="{{h.flag}}"><sup style="color: var(--muted); font-size: 0.8em; margin-left: 2px; cursor: help" title="{{t.repere.date}}"><span aria-hidden="true">?</span><span class="sr">{{t.repere.date}}</span></sup></sc-if></span>
-              <span aria-hidden="true" style="{{h.mark}}"></span>
-              <span>{{{h.t}}}</span>
-            </li>
-          </sc-for>
-        </ol>
-        <a href="{{lien.documents}}" class="ghost">{{f.commune.les_documents}}</a>
-      </section></sc-if>
+          <sc-if value="{{vois.length}}">
+            <h3 class="h3" style="margin-top: 10px">{{ter.voisTitre}}</h3>
+            <ul class="vois"><sc-for list="{{vois}}" as="v"><li>{{{v.lien}}} <span class="tw">{{v.n}}</span></li></sc-for></ul>
+            <sc-if value="{{voisMore}}"><button class="more" type="button" onClick="{{togVois}}">{{voisLabel}}</button></sc-if>
+          </sc-if>
+        </section>
 
-      <section aria-labelledby="s-metro" style="display: flex; flex-direction: column; gap: 12px">
-        <div style="display: flex; align-items: center; justify-content: space-between">
-          <h2 id="s-metro" class="h2">{{ter.titre}}</h2>
-          <button class="ibtn" onClick="{{tgl.met}}" aria-expanded="{{open.met}}" aria-label="{{t.commune.ce_que_comptent_ces_chiffres}}"><span aria-hidden="true">i</span></button>
-        </div>
-        <sc-if value="{{show.met}}" hint-placeholder-val="{{false}}"><p class="note tw">{{f.commune.documents_rattaches_a_une_commune}}</p></sc-if>
-        <p style="margin: 0">{{f.commune.fait_partie_de}}<strong>{{ter.epci}}</strong> {{f.commune.communes_dont_ont_au_moins}}</p>
-        <table class="t">
-          <caption class="sr">{{ter.caption}}</caption>
-          <thead><tr><th scope="col"><button>{{t.commune.territoire}}</button></th><th scope="col" class="num"><button>{{t.commune.documents}}</button></th><th scope="col" class="num"><button>{{t.commune.contrats}}</button></th><th scope="col" class="num"><button>{{t.commune.autorisations}}</button></th><th scope="col" class="num"><button>{{t.commune.drones}}</button></th></tr></thead>
-          <tbody>
-            <sc-for list="{{terr}}" as="r" hint-placeholder-count="3">
-              <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}">
-                <td><a href="{{r.href}}" class="rowlink">{{r.nom}}</a><div style="font-size: 13px; color: var(--muted)">{{r.sub}}</div></td>
-                <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.con}}</td><td class="num">{{r.aut}}</td><td class="num">{{r.dr}}</td>
-              </tr>
-            </sc-for>
-          </tbody>
-        </table>
-        <sc-if value="{{ter.achat}}"><p style="margin: 0; font-size: 15px"><strong>{{f.commune.achete_aussi_elle_meme}}</strong> {{f.commune.comme}} <a href="{{ter.achatHref}}">{{t.commune.acheteur_public}}</a>.</p></sc-if>
-        <div style="display: flex; flex-wrap: wrap; gap: 0 28px">
-          <a href="{{ter.hrefEpci}}" class="ghost">{{ter.lienEpci}}</a>
-          <a href="{{ter.hrefDep}}" class="ghost">{{ter.lienDep}}</a>
-        </div>
-      </section>
+        <sc-if value="{{secs.documents}}">
+        <section id="documents" class="sec">
+          <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
+          <sc-if value="{{nDocs}}">
+            <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
+            <div style="border-top: 2px solid var(--line)"><sc-for list="{{docsL}}" as="d"><div class="{{d.cls}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="mini" style="{{d.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.p.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.titre}}}</span><span class="a">{{d.fig}}</span></div></sc-for></div>
+            <p class="sober liens" style="margin: 0">{{{tous}}}</p>
+          </sc-if>
+          <sc-if value="{{introuvables.length}}">
+            <h3 class="h3" style="margin-top: 10px">{{t.commune.documents_introuvables}}</h3>
+            <p class="sober" style="margin: 0; color: var(--muted)">{{t.commune.ils_existent_mais_ne_sont}}</p>
+            <sc-for list="{{introuvables}}" as="q"><div class="intro">
+              <p style="margin: 0; font-weight: 700; font-size: 17px">{{q.q}}</p>
+              <button type="button" class="btn" onClick="{{q.act}}" style="align-self: flex-start">{{q.l}}</button>
+            </div></sc-for>
+          </sc-if>
+        </section>
+        </sc-if>
 
-      <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: start">
-        <sc-if value="{{veille.length}}"><section aria-labelledby="s-bientot" style="display: flex; flex-direction: column; gap: 12px">
-          <h2 id="s-bientot" class="h2">{{t.commune.a_surveiller}}</h2>
-          <ul class="lst">
-            <sc-for list="{{veille}}" as="v"><li style="display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 10px"><span class="tw" style="color: var(--muted)">{{v.w}}</span><span>{{{v.t}}}</span></li></sc-for>
-          </ul>
-        </section></sc-if>
-        <sc-if value="{{introuvables.length}}"><section aria-labelledby="s-introuvables" style="display: flex; flex-direction: column; gap: 12px">
-          <h2 id="s-introuvables" class="h2">{{t.commune.documents_introuvables}}</h2>
-          <p style="margin: 0; color: var(--muted)">{{t.commune.ils_existent_mais_ne_sont}}</p>
-          <sc-for list="{{introuvables}}" as="q"><div style="border: 2px dashed var(--fg); padding: 16px; display: flex; flex-direction: column; gap: 10px">
-            <p style="margin: 0; font-weight: 700; font-size: 18px">{{q.q}}</p>
-            <button type="button" class="btn" onClick="{{q.act}}" style="align-self: flex-start">{{q.l}}</button>
-          </div></sc-for>
-        </section></sc-if>
+        <section id="sources" class="sec">
+          <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
+          <p class="tw" style="margin: 0; color: var(--muted)">{{maj}}</p>
+          <div style="border-top: 2px solid var(--line)">
+            <sc-for list="{{sources}}" as="s"><div class="src"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}</span></div></sc-for>
+          </div>
+          <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.commune.montants_maximums_prevus_aux_contrats}}</p>
+          <p class="sober" style="margin: 0">{{{signalerPhrase}}}</p>
+          <p class="sober" style="margin: 0"><a href="/registre/couverture">{{t.sources.couverture}}</a></p>
+        </section>
       </div>
-
-      <footer style="display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-top: 16px; border-top: 2px solid var(--fg)">
-        <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted); max-width: 560px">{{t.commune.montants_maximums_prevus_aux_contrats}}</p>
-        <div style="display: flex; gap: 8px"><button type="button" class="btn" onClick="{{partager}}">{{t.commune.partager_l_image}}</button><a class="btn" href="{{lien.sources}}" style="text-align: center">{{t.commune.nos_sources}}</a></div>
-      </footer>
-    </main>
-
-    <dc-include src="panneau"></dc-include>
+      <dc-include src="panneau"></dc-include>
+    </div>
   </div>
 </div>

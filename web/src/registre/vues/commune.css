@@ -1,0 +1,297 @@
+/* The commune's family of pages on the v2 skeleton (commune.html, documents.html, autorisations.html):
+   what V2-Entreprise's kit (cadre.css) does not draw. Every selector starts with `.rg .v-<view>`: the
+   map is behind, nothing here is global. The commune's type colour is the selection's yellow: a
+   measure takes the ink (--fg), the selection alone yellow. */
+
+/* the band: « Fiche » and « Carte et drones » are other pages of the commune, set apart from the
+   sections (V2-CarteDrones' band: « Fiche | Carte et drones ») */
+.rg .v-commune .band nav a[data-sec="carte"],
+.rg .v-documents .band nav a[data-sec="carte"],
+.rg .v-autorisations .band nav a[data-sec="carte"] {
+  margin-left: 10px;
+  border-left: 2px solid #111;
+}
+.rg .v-documents .band nav a[data-sec="fiche"],
+.rg .v-autorisations .band nav a[data-sec="fiche"] {
+  border-right: 2px solid #111;
+  margin-right: 10px;
+}
+
+/* in place of R1's tilted map: two typed links and the map's caveat */
+.rg .v-commune .cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .v-commune .cartes .sober {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+}
+.rg .v-commune .cartes .osm {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* « Où sont les N autres ? »: R1's pink box (pink is the frame's and the map's) in the kit's ticket */
+.rg .v-commune .ou {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px 24px;
+  align-items: center;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--reg-shadow-ticket);
+}
+.rg .v-commune .ou .btn {
+  min-height: 44px;
+}
+
+/* the decrees of the main dossier: three values written, a list (not a chart) */
+.rg .v-commune .cells {
+  display: grid;
+  border: 2px solid var(--line);
+}
+.rg .v-commune .cells .cell {
+  padding: 10px 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+.rg .v-commune .cells .cell + .cell {
+  border-left: 1px solid var(--rule);
+}
+.rg .v-commune .cells .cell:hover,
+.rg .v-commune .cells .cell.on {
+  background: var(--soft);
+  box-shadow: inset 0 -5px 0 var(--type-territoire);
+}
+.rg .v-commune .cells .cv {
+  font:
+    900 36px / 1 Archivo,
+    sans-serif;
+  font-stretch: 64%;
+}
+.rg .v-commune .cells .cd {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* « Aussi à »: the shops' and companies' decrees */
+.rg .v-commune .prv {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 2px solid var(--line);
+  min-width: 0;
+}
+.rg .v-commune .prv.on {
+  background: var(--soft);
+}
+.rg .v-commune .prv .pl {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15px;
+}
+
+/* the money */
+.rg .v-commune .tot {
+  font:
+    900 52px / 1 Archivo,
+    sans-serif;
+  font-stretch: 66%;
+}
+.rg .v-commune .dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  border-top: 2px solid var(--line);
+}
+.rg .v-commune .dl dt,
+.rg .v-commune .dl dd {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.rg .v-commune .dl dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+
+/* the years: one measure in ink, the selected year yellow (cadre.css's .yb draws the rest) */
+.rg .v-commune .yb button[aria-pressed="true"] span.b {
+  outline-color: var(--type-territoire);
+}
+.rg .v-commune .yb button:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* the contracts from signature to end, the calls for tenders */
+.rg .v-commune .ct,
+.rg .v-commune .ao {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.rg .v-commune .ao {
+  grid-template-columns: 96px minmax(0, 1fr);
+  align-items: baseline;
+}
+.rg .v-commune .ct:hover,
+.rg .v-commune .ct.on,
+.rg .v-commune .ao:hover,
+.rg .v-commune .ao.on {
+  background: var(--soft);
+}
+.rg .v-commune .ct .sub,
+.rg .v-commune .ao .sub {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+.rg .v-commune .ao .sub:first-child {
+  display: inline;
+}
+.rg .v-commune .ct .cours {
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+/* « Ce qui s'est passé »: each fact's type by its pictogram */
+.rg .v-commune .chrono {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--line);
+}
+.rg .v-commune .chrono li {
+  display: grid;
+  grid-template-columns: 190px 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+  padding: 10px 6px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+}
+.rg .v-commune .chrono li:hover,
+.rg .v-commune .chrono li.on {
+  background: var(--soft);
+}
+.rg .v-commune .chrono .cdate {
+  color: var(--muted);
+}
+.rg .v-commune .chrono .mini {
+  align-self: center;
+}
+.rg .v-commune .chrono .mk {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  align-self: center;
+  justify-self: center;
+}
+.rg .v-commune .chrono .mk.vote {
+  background: var(--muted);
+}
+.rg .v-commune .chrono .mk.an {
+  background: var(--fg);
+}
+.rg .v-commune .veille {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 10px;
+}
+
+/* Avec qui: its companies, its neighbours */
+.rg .v-commune .drow.ent {
+  grid-template-columns: 24px minmax(0, 1fr) 110px 90px 100px;
+}
+.rg .v-commune .vois {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 20px;
+}
+.rg .v-commune .vois li {
+  min-width: 0;
+  line-height: 1.9;
+}
+.rg .v-commune .vois .tw {
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rg .v-commune .liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  line-height: 2;
+}
+
+/* Documents: the commune's list, the documents to ask for */
+.rg .v-commune #documents .drow {
+  grid-template-columns: 24px 120px minmax(0, 1fr) 110px;
+}
+.rg .v-commune .intro {
+  border: 2px dashed var(--line);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (max-width: 959px) {
+  .rg .v-commune .ou {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rg .v-commune .tot {
+    font-size: 40px;
+  }
+  .rg .v-commune .chrono li {
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 4px 10px;
+  }
+  .rg .v-commune .chrono .cdate {
+    grid-column: 1 / -1;
+    font-size: 13px;
+  }
+  .rg .v-commune .drow.ent {
+    grid-template-columns: 24px minmax(0, 1fr) 80px;
+  }
+  .rg .v-commune .drow.ent > :nth-child(3),
+  .rg .v-commune .drow.ent > :nth-child(4) {
+    display: none;
+  }
+  .rg .v-commune #documents .drow {
+    grid-template-columns: 24px 92px minmax(0, 1fr);
+  }
+  .rg .v-commune #documents .drow .a {
+    grid-column: 3;
+    text-align: left;
+    font-size: 13.5px;
+  }
+  .rg .v-commune .vois {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rg .v-commune .ao {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+  .rg .v-commune .veille {
+    grid-template-columns: 80px minmax(0, 1fr);
+  }
+}
