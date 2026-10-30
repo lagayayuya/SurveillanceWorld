@@ -3,7 +3,7 @@
     <nav class="{{railCls}}" aria-label="{{t.liste.rail}}">
       <sc-for list="{{rail}}" as="f">
         <p class="rf">{{f.l}}</p>
-        <sc-for list="{{f.rows}}" as="r"><a class="{{r.cls}}" style="{{r.c}}" href="{{r.href}}" aria-current="{{r.cur}}"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.l}}<em>{{r.n}}</em></a></sc-for>
+        <sc-for list="{{f.rows}}" as="r"><a class="{{r.cls}}" style="{{r.c}}" href="{{r.href}}" aria-current="{{r.cur}}" onClick="{{r.go}}"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.l}}<em>{{r.n}}</em></a></sc-for>
       </sc-for>
     </nav>
     <div class="{{lay.inner}}">

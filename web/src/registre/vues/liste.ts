@@ -136,6 +136,16 @@ export class ListeVue extends Vue<Props, State> {
       history.replaceState(history.state, "", `${href}${location.hash}`);
   }
 
+  /** A rail link to the list shown (its own words, another category): the state its address says,
+   * here, since the router keeps a view whose address it already drew (modale.ts `shown`) and
+   * this one replaced its address as it changed. */
+  private ici: Handler = (ev) => {
+    const u = new URL((ev.currentTarget as HTMLAnchorElement).href, location.href);
+    if (u.pathname !== location.pathname) return;
+    ev.preventDefault();
+    this.setState({ e: etatDe(this.def, Object.fromEntries(u.searchParams)), lim: PAS });
+  };
+
   private set(e: Partial<Etat>): void {
     this.setState({ e: { ...this.state.e, ...e }, lim: PAS });
   }
@@ -244,7 +254,10 @@ export class ListeVue extends Vue<Props, State> {
       tel: !wide,
       lay: { inner: wide ? "inner" : "tin", stk: wide ? "stk big" : "stk" },
       railCls: wide ? "rail" : "rail tel",
-      rail: rail(liste, e, n),
+      rail: rail(liste, e, n).map((f) => ({
+        ...f,
+        rows: f.rows.map((r) => ({ ...r, go: this.ici })),
+      })),
       ty: repere(k),
       title: pluriel(k),
       letters: decoupe(pluriel(k)),
