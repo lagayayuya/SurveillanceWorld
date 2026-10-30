@@ -96,12 +96,15 @@ test("the page's values: figures, running contracts, unknown ends, singulars", (
   const v = new Entreprise({ siren: "100000001", F: fichier() }).renderVals() as Record<string, unknown>;
   assert.equal(v.nom, "Acme Video");
   assert.equal((v.tete as { ligne: string }).ligne, "SIREN 100 000 001");
-  const kpis = v.kpis as { v: string; l: string }[];
+  const kpis = v.kpis as { v: string; l: string; aide?: string }[];
   assert.deepEqual(
     kpis.map((k) => k.v),
-    ["3", "3", `600${N}000 €`, "1 sur 1"],
+    ["3", "3", `600${N}000 €`, "1"],
   );
   assert.equal(kpis[0].l, "contrats signés");
+  // « 1 contrat sur 1 n'a reçu qu'une offre », its help saying which contracts count (B7)
+  assert.equal(kpis[3].l, "contrat sur 1 n'a reçu qu'une offre");
+  assert.equal(kpis[3].aide, "Le contrat compté est le seul dont le nombre d'offres reçues est publié.");
   assert.equal(v.nAct, "1 contrat");
   assert.equal(v.sansFin, "1 contrat n'a pas de durée publiée : sa fin n'est pas connue.");
   assert.equal(richText((v.act as { nom: Rich }[])[0].nom), "Deux");
@@ -142,6 +145,17 @@ test("a sole trader is never named, nor its number shown", () => {
   assert.equal((v.tete as { nom: string }).nom, "entreprise individuelle, nom non publié");
   assert.equal((v.tete as { ligne: string }).ligne, "Entreprise individuelle");
   assert.equal(v.parcourir, "/registre/");
+});
+
+test("the single-offer ticket: plural, its help, and none published", () => {
+  const F = fichier();
+  F.page = { ...F.page, faits: { offres: { une_offre: 2, renseignes: 27 } } };
+  let k = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string; aide?: string }[] }).kpis[3];
+  assert.equal(`${k.v} ${k.l}`, "2 contrats sur 27 n'ont reçu qu'une offre");
+  assert.equal(k.aide, "Les 27 sont les contrats dont le nombre d'offres reçues est publié ; pour les autres, il ne l'est pas.");
+  F.page = { ...F.page, faits: { offres: null } };
+  k = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string; aide?: string }[] }).kpis[3];
+  assert.deepEqual([k.v, k.l, k.aide], ["—", "nombre d'offres reçues non publié", undefined]);
 });
 
 test("one buyer, every contract shared, no modification, no known end: said as such", () => {

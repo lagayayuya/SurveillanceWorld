@@ -10,7 +10,7 @@
           <h2 class="h2"><span class="num">{{secs.essentiel.n}}</span>{{secs.essentiel.l}}</h2>
           <p class="lead" style="margin: 0">{{{lead}}}</p>
           <div class="{{lay.tickets}}" style="margin-top: 4px">
-            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
+            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l"><span class="{{k.ac}}" tabindex="{{k.ti}}" data-aide="{{k.aide}}">{{k.l}}</span></div></div></sc-for>
           </div>
           <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
           <sc-if value="{{depLine.length}}"><p class="sober" style="margin: 4px 0 0; line-height: 2.1">{{t.entreprise.clientes_dans}}

@@ -274,12 +274,18 @@ export class Entreprise extends Vue<Props, State> {
       { v: fr(CT.length), l: t("entreprise.kpi_contrats", { n: CT.length }) },
       { v: fr(CL.length), l: t("entreprise.kpi_clientes", { n: CL.length }) },
       { v: total ? money(total) : "—", l: t("entreprise.kpi_montant") },
-      {
-        v: of?.renseignes
-          ? t("entreprise.kpi_offre_v", { a: fr(of.une_offre), b: fr(of.renseignes) })
-          : "—",
-        l: t("entreprise.kpi_offre"),
-      },
+      // « 2 contrats sur 27 n'ont reçu qu'une offre », the 27 said in its help: those whose number
+      // of offers is published (B7)
+      of?.renseignes
+        ? {
+            v: fr(of.une_offre),
+            l: t("entreprise.kpi_offre", { a: of.une_offre, b: fr(of.renseignes) }),
+            // the ticket's label carries its sentence (cadre.css .aide)
+            ac: "aide",
+            ti: "0",
+            aide: t("entreprise.kpi_offre_aide", { b: of.renseignes }),
+          }
+        : { v: "—", l: t("entreprise.kpi_offre_inconnu") },
     ];
 
     // the years, from its first contract to the build's year
