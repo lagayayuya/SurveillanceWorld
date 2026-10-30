@@ -36,6 +36,8 @@ export type Miette = { k: TypeCle; l: string; href: string };
  * shows (the frame's colour), the breadcrumb above it. */
 export type VueCadre = View<Record<string, unknown>> & {
   titre?(): string;
+  /** true: the register shrinks to a panel beside the map, which stays live (Carte et drones) */
+  panneau?(): boolean;
   partage?(): Partage | null;
   type?(): TypeCle;
   fil?(): Miette[];
@@ -302,9 +304,12 @@ function placerFeuille(): void {
   poignee.addEventListener("pointercancel", fin);
 }
 
+/** A panel beside the map (V2-CarteDrones: about 470 px on the right, the map live behind it) or
+ * the modal; on a phone the sheet, lowered to half the screen over a live map. */
+let panneau = false;
 function disposer(): void {
   if (WIDE.matches) {
-    cadre.className = "modal";
+    cadre.className = panneau ? "side" : "modal";
     poignee.remove();
     cadre.style.removeProperty("top");
   } else {
@@ -312,6 +317,23 @@ function disposer(): void {
     cadre.prepend(poignee);
     placerFeuille();
   }
+}
+
+/** The panel's map is live: nothing inert, no trap, a region rather than a dialog. */
+function regler(p: boolean): void {
+  if (p !== panneau) bas = p;
+  panneau = p;
+  if (p) {
+    for (const x of inertes.splice(0)) x.inert = false;
+    cadre.setAttribute("role", "region");
+    cadre.removeAttribute("aria-modal");
+  } else {
+    if (!inertes.length) inerter();
+    cadre.setAttribute("role", "dialog");
+    cadre.setAttribute("aria-modal", "true");
+  }
+  document.body.classList.toggle("registre-panneau", p);
+  disposer();
 }
 
 // --- open, inert, focus, Escape ---------------------------------------------------------------
@@ -335,7 +357,7 @@ rg.addEventListener("keydown", (ev) => {
     fermer();
     return;
   }
-  if (ev.key !== "Tab") return;
+  if (ev.key !== "Tab" || panneau) return;
   // the focus stays in the register
   const f = focusables();
   if (!f.length) return;
@@ -355,13 +377,18 @@ function ouvrirCadre(): void {
   ouvert = true;
   avant = document.activeElement as HTMLElement | null;
   titreCarte = document.title;
+  inerter();
+  document.body.classList.add("registre-ouvert");
+  rg.hidden = false;
+}
+
+/** The map behind a modal is inert (its later dialogs, appended after, are not). */
+function inerter(): void {
   for (const x of document.body.children) {
     if (x === rg || !(x instanceof HTMLElement) || x.inert) continue;
     x.inert = true;
     inertes.push(x);
   }
-  document.body.classList.add("registre-ouvert");
-  rg.hidden = false;
 }
 
 /** The register leaves the page (the map's address again): the map gets its focus back. */
@@ -372,7 +399,8 @@ export function cacher(): void {
   ouvert = false;
   rg.hidden = true;
   for (const x of inertes.splice(0)) x.inert = false;
-  document.body.classList.remove("registre-ouvert");
+  document.body.classList.remove("registre-ouvert", "registre-panneau");
+  panneau = false;
   document.title = titreCarte;
   mounted?.unmount();
   mounted = null;
@@ -502,6 +530,7 @@ export async function afficher(): Promise<void> {
     mounted?.unmount();
     mounted = mount(root, m.Vue, props, m.template, { parts, afterRender, format });
     suivreSections();
+    regler(mounted.view.panneau?.() ?? false);
     shown = key;
     ici = mounted.view.titre?.() ?? "";
     const k = mounted.view.type?.() ?? typeDe(r);

@@ -1263,6 +1263,7 @@
   color: var(--fg);
 }
 .rg > .th > .modal,
+.rg > .th > .side,
 .rg > .th > .sheet {
   position: fixed;
   z-index: 50;
