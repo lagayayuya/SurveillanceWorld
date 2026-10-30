@@ -3399,7 +3399,7 @@
   "registre.liste.exemple.departements": "Filtrer par nom ou numéro",
   "registre.liste.exemple.acheteurs": "Filtrer par nom ou catégorie",
   "registre.liste.exemple.entreprises": "Filtrer par nom ou activité",
-  "registre.liste.exemple.documents": "Filtrer par commune, entreprise, objet, référence",
+  "registre.liste.exemple.documents": "Filtrer par commune ou objet",
   "registre.liste.ligne.communes": "{n, plural, one {# commune nommée} other {# communes nommées}} par au moins un document · mis à jour le {maj}",
   "registre.liste.ligne.intercommunalites": "{n, plural, one {# intercommunalité} other {# intercommunalités}} des communes du registre · un nom et une fiche pour celles qui achètent · mis à jour le {maj}",
   "registre.liste.ligne.departements": "{n, plural, one {# département} other {# départements}} où le registre a des documents · mis à jour le {maj}",

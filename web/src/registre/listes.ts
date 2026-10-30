@@ -748,9 +748,11 @@ export function appliquer(def: Def, all: Rang[], e: Etat): Resultat {
 }
 
 /** The list as a CSV file's text (the browser makes the file): its rank, name, then its columns,
- * the heads in the catalogue's words; every value quoted. */
+ * the heads in the catalogue's words; every value quoted, an amount to the cent (a sum of amounts
+ * carries the floats' dust: 91437049.75000001). */
 export function csv(def: Def, list: Rang[]): string {
-  const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const q = (v: unknown) =>
+    `"${String(typeof v === "number" ? Math.round(v * 100) / 100 : (v ?? "")).replace(/"/g, '""')}"`;
   const head = [W("csv.rang"), def.nom, W("csv.id"), ...def.csv.map(([, l]) => l)];
   const lines = list.map((r, i) =>
     [i + 1, r.nom, r.csv.id ?? r.id, ...def.csv.map(([k]) => r.csv[k])].map(q).join(","),

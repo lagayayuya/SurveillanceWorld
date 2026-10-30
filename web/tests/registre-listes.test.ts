@@ -197,6 +197,9 @@ test("the CSV is the list shown, its heads in the catalogue's words", () => {
   assert.ok(head.includes('"Entreprise"'));
   assert.ok(head.includes('"montant prévu (euros)"'));
   assert.match(first, /^"1","Acme Video","100000001","Installation","69 91","2","2","6000","2024"$/);
+  // an amount to the cent, whatever the sum's floats say
+  const r = { ...list[0], csv: { ...list[0].csv, montant: 91437049.75000001 } };
+  assert.ok(csv(def, [r]).includes('"91437049.75"'));
 });
 
 test("the lists' addresses, and the old ones", () => {
