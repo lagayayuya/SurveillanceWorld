@@ -582,7 +582,7 @@ async function donnees(r: Route): Promise<Record<string, unknown>> {
   if (to) {
     // a collectivité has one fiche, its territory's. The path is replaced (no new entry in the
     // history) and the router asked again: it draws the territory and drops this view unmounted.
-    history.replaceState(null, "", `${to}${location.hash}`);
+    history.replaceState(history.state, "", `${to}${location.hash}`);
     dispatchEvent(new PopStateEvent("popstate"));
   }
   return { f, couverture: await cv };

@@ -160,6 +160,8 @@ function clic(ev: MouseEvent): void {
     return;
   }
   ev.preventDefault();
+  // the page shown itself (« Le registre » on the summary): no second step of the same address
+  if (url.pathname === location.pathname && url.search === location.search && !url.hash) return;
   ouvrir(url);
 }
 

@@ -421,6 +421,9 @@ class CarteDrones extends Vue<Props, State> {
   private choix(k: string): Handler {
     const f = this.choisir(k);
     return (e) => {
+      // a modified click opens the act's address elsewhere, as the comment above promises
+      const n = e.nativeEvent as MouseEvent;
+      if (n.metaKey || n.ctrlKey || n.shiftKey || n.altKey) return;
       const a = (e.target as Element | null)?.closest?.("a");
       if (a && !a.classList.contains("rl")) return;
       e.preventDefault();

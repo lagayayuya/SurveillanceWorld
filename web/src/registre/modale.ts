@@ -470,6 +470,8 @@ export function cacher(): void {
   for (const x of inertes.splice(0)) x.inert = false;
   document.body.classList.remove("registre-ouvert", "registre-panneau");
   panneau = false;
+  // the phone's sheet opens whole again (Drones et algorithmes left it low)
+  bas = false;
   document.title = titreCarte;
   mounted?.unmount();
   mounted = null;
