@@ -1,0 +1,13 @@
+/* « Introuvable » in the v2 frame: its title's cut-out letters, a word's scraps on one line
+   (decoupe-outils.ts); scoped to .rg .v-introuvable. */
+.rg .v-introuvable .cutout {
+  column-gap: 18px;
+}
+.rg .v-introuvable .cutout.s {
+  column-gap: 12px;
+}
+.rg .v-introuvable .mot {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}

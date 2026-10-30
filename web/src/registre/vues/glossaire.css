@@ -1,0 +1,82 @@
+/* The glossary in the v2 frame (glossaire.html): its own rules, scoped to .rg .v-glossaire (the map is
+   behind). R1's .filt, .idx and .entry stay registre.css's. */
+
+/* the title's cut-out letters, a word's scraps on one line (decoupe-outils.ts) */
+.rg .v-glossaire .cutout {
+  column-gap: 18px;
+}
+.rg .v-glossaire .cutout.s {
+  column-gap: 12px;
+}
+.rg .v-glossaire .mot {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* the index beside the words, stuck while they scroll */
+.rg .v-glossaire .gl {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 44px;
+  align-items: start;
+  margin-top: 26px;
+}
+.rg .v-glossaire .glnav {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rg .v-glossaire .filt {
+  border-color: var(--line);
+}
+.rg .v-glossaire .idx {
+  display: flex;
+  flex-direction: column;
+  border-top: 2px solid var(--line);
+  padding-top: 6px;
+  max-height: calc(100vh - 300px);
+  overflow: auto;
+}
+.rg .v-glossaire .glmots {
+  min-width: 0;
+  border-top: 2px solid var(--line);
+}
+.rg .v-glossaire .gltete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+/* a type's sticker, as V2-Types draws the types under their family */
+.rg .v-glossaire .stk.sm {
+  transform: none;
+  box-shadow: none;
+  font-size: 12.5px;
+  padding: 2px 8px 2px 5px;
+}
+.rg .v-glossaire .stk.sm svg {
+  width: 16px;
+  height: 16px;
+}
+.rg .v-glossaire .entry p.glex {
+  margin-top: 8px;
+  font-size: 15px;
+}
+
+@media (max-width: 959px) {
+  /* one column: the index above the words, not stuck over them */
+  .rg .v-glossaire .gl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    margin-top: 6px;
+  }
+  .rg .v-glossaire .glnav {
+    position: static;
+  }
+  .rg .v-glossaire .idx {
+    max-height: none;
+  }
+}

@@ -2,9 +2,12 @@
 // anchor (#g-<id>, which the other views link, e.g. /registre/glossaire#g-accord-cadre) and the
 // path of its example, a page of the register. Its words are the catalogue's
 // registre.glossaire.mot.<key>.{terme,definition,exemple}, <key> the id with « _ » for « - ». The
-// order on the page is the terms' alphabetical order, whatever this list's. Pure: the tests read it.
+// order on the page is the terms' alphabetical order, whatever this list's. A term that names a type of
+// fiche wears its sticker (TYPES_MOTS); an example that is a fiche is a link of its type (typeExemple).
+// Pure: the tests read it.
 
 import { plain } from "../texte.ts";
+import type { TypeCle } from "../types.ts";
 
 export const MOTS: readonly (readonly [id: string, href: string])[] = [
   ["accord-cadre", "/registre/commune/69290/documents?t=con"],
@@ -64,6 +67,38 @@ export const MOTS: readonly (readonly [id: string, href: string])[] = [
   ["vsa", "/registre/commune/93066/carte"],
   ["zone-collectee", "/registre/couverture"],
 ];
+
+/** The terms that name a type of fiche (V2-Types): each wears that type's sticker on the page. */
+export const TYPES_MOTS: Readonly<Record<string, TypeCle>> = {
+  acheteur: "acheteur",
+  titulaire: "entreprise",
+  contrat: "con",
+  avenant: "mod",
+  "appel-offres": "ao",
+  acte: "aut",
+  subvention: "sub",
+};
+
+/** The type of the fiche an example opens (its path), null for a page that is no fiche (a list, the
+ * coverage). A document's record by its id's kind: a call for tenders `avis-`, a subsidy `sub-` or
+ * `region-`, else a contract; a dossier in a commune's Autorisations opens the commune's fiche. */
+export function typeExemple(href: string): TypeCle | null {
+  const [, vue, id] = href.split(/[?#]/)[0].split("/").filter(Boolean);
+  switch (vue) {
+    case "commune":
+      return "commune";
+    case "departement":
+      return "departement";
+    case "acheteur":
+      return "acheteur";
+    case "entreprise":
+      return "entreprise";
+    case "contrat":
+      return /^avis-/.test(id ?? "") ? "ao" : /^(sub|region)-/.test(id ?? "") ? "sub" : "con";
+    default:
+      return null;
+  }
+}
 
 /** A term's catalogue key under registre.glossaire.mot (a template path takes no hyphen). */
 export const cle = (id: string): string => id.replace(/-/g, "_");

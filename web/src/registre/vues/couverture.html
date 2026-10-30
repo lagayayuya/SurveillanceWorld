@@ -1,17 +1,13 @@
-<!-- « Ce que couvre le registre » (/registre/couverture): no mockup draws it; the kit's own vocabulary (the
-     crumbs of the socle, h1, lead, h2, kpis, table.t, tw notes), as registre.html and autorisations.html write it. -->
-<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<!-- « Ce que couvre le registre » (/registre/couverture): no mockup draws it. A page of the register in the v2
+     frame: its title in cut-out letters as the summary's (V2-Sommaire), then the kit's own vocabulary (h2,
+     tickets, table.t, tw notes); every département, commune and dossier that has its fiche a typed link. -->
+<div class="{{th}}">
+  <div class="{{lay.inner}}">
+    <h1 class="sr">{{t.couverture.titre}}</h1><div class="{{lay.cut}}" aria-hidden="true"><sc-for list="{{mots}}" as="m"><span class="mot"><sc-for list="{{m.lettres}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></span></sc-for></div>
+    <p class="idline tw">{{maj}}</p>
+    <p class="lead">{{t.couverture.lead}}</p>
 
-  <main style="width: 1180px; margin: 0 auto; padding: 24px 0 80px; display: flex; flex-direction: column; gap: 56px">
-
-    <section style="display: flex; flex-direction: column; gap: 14px">
-      <dc-include src="fil"></dc-include>
-      <h1 class="h1">{{t.couverture.titre}}</h1>
-      <p class="tw" style="margin: 0; font-size: 14px; color: var(--muted)">{{maj}}</p>
-      <p class="lead">{{t.couverture.lead}}</p>
-    </section>
-
-    <section aria-labelledby="c-sources" style="display: flex; flex-direction: column; gap: 14px">
+    <section aria-labelledby="c-sources" class="sec">
       <h2 id="c-sources" class="h2">{{t.couverture.sources}}</h2>
       <table class="t">
         <caption class="sr">{{t.couverture.sources_legende}}</caption>
@@ -23,33 +19,33 @@
       <sc-if value="{{anneeNote}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{anneeNote}}</p></sc-if>
     </section>
 
-    <section aria-labelledby="c-deps" style="display: flex; flex-direction: column; gap: 14px">
+    <section aria-labelledby="c-deps" class="sec">
       <h2 id="c-deps" class="h2">{{t.couverture.departements}}</h2>
-      <p style="margin: 0">{{t.couverture.departements_phrase}}</p>
+      <p class="sober" style="margin: 0">{{t.couverture.departements_phrase}}</p>
       <table class="t">
         <caption class="sr">{{t.couverture.departements_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_departement}}</th><th scope="col">{{t.couverture.col_etat}}</th></tr></thead>
         <tbody>
-          <sc-for list="{{deps}}" as="d"><tr><td><strong>{{d.l}}</strong><sc-if value="{{d.codes}}"><div class="tw" style="font-size: 13px; color: var(--muted)">{{d.codes}}</div></sc-if></td><td>{{d.etat}}</td></tr></sc-for>
+          <sc-for list="{{deps}}" as="d"><tr><td><strong>{{{d.l}}}</strong><sc-if value="{{d.codes.length}}"><div class="codes"><sc-for list="{{d.codes}}" as="c"><span>{{{c}}}</span></sc-for></div></sc-if></td><td>{{d.etat}}</td></tr></sc-for>
         </tbody>
       </table>
     </section>
 
-    <section id="non-lus" aria-labelledby="c-non-lus" style="display: flex; flex-direction: column; gap: 14px">
+    <section id="non-lus" aria-labelledby="c-non-lus" class="sec">
       <h2 id="c-non-lus" class="h2">{{t.couverture.non_lus}}</h2>
-      <p class="lead">{{nonLus.phrase}}</p>
+      <p class="lead" style="margin: 0">{{nonLus.phrase}}</p>
       <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p>
-      <sc-if value="{{nonLus.kpis.length}}"><div class="kpis">
-        <sc-for list="{{nonLus.kpis}}" as="k"><div><div class="kv">{{k.v}}</div><div>{{k.l}}</div></div></sc-for>
+      <sc-if value="{{nonLus.kpis.length}}"><div class="{{lay.tickets}}">
+        <sc-for list="{{nonLus.kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
       </div></sc-if>
       <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.couverture.plusieurs_raisons}}</p>
       <table class="t">
         <caption class="sr">{{t.couverture.non_lus_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_arrete}}</th><th scope="col">{{t.couverture.col_commune}}</th><th scope="col">{{t.couverture.col_raison}}</th><th scope="col">{{t.couverture.col_lien}}</th></tr></thead>
         <tbody>
-          <sc-for list="{{nonLus.rows}}" as="r"><tr><td class="tw">{{r.date}}<div style="font-size: 13px; color: var(--muted)">{{r.acte}}</div></td><td><sc-if value="{{r.href}}"><a href="{{r.href}}">{{r.commune}}</a></sc-if><sc-if value="{{r.sans}}">{{r.sans}}</sc-if></td><td>{{r.raisons}}</td><td><sc-if value="{{r.url}}"><a href="{{r.url}}">{{r.source}}</a></sc-if></td></tr></sc-for>
+          <sc-for list="{{nonLus.rows}}" as="r"><tr><td class="tw">{{r.date}}<div style="font-size: 13px; color: var(--muted)">{{{r.acte}}}</div></td><td>{{{r.commune}}}</td><td>{{r.raisons}}</td><td><sc-if value="{{r.url}}"><a href="{{r.url}}">{{r.source}}</a></sc-if></td></tr></sc-for>
         </tbody>
       </table>
     </section>
-  </main>
+  </div>
 </div>

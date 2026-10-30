@@ -2,12 +2,27 @@
 // the sticky index, a filter (accents and case ignored, in the word or its definition), each word's
 // definition and an example, a page of the register. An address #g-<id> (the other views link
 // /registre/glossaire#g-accord-cadre) shows its word marked; the page's router scrolls to it.
+// v2 (design/registre/v2): a page of the register in its frame (its pink, its breadcrumb), its title in
+// cut-out letters as the summary's; a word that names a type of fiche wears its sticker (V2-Types), an
+// example that is a fiche is a link of its type.
 
+import type { RichItem } from "../dc.ts";
 import { t } from "../i18n.ts";
+import { lien } from "../liens.ts";
 import type { VueModule } from "../modale.ts";
-import { type BaseState, Vue } from "../vue.ts";
+import { repere, type TypeCle } from "../types.ts";
+import { type BaseState, large, Vue } from "../vue.ts";
+import "./glossaire.css";
+import { motsDecoupes } from "./decoupe-outils.ts";
 import template from "./glossaire.html?raw";
-import { ancre, filtrer, type Mot, mots } from "./glossaire-mots.ts";
+import { ancre, filtrer, type Mot, mots, TYPES_MOTS, typeExemple } from "./glossaire-mots.ts";
+
+/** « Exemple : Sytral Mobilités → », a link of its fiche's type; a list or a page, a plain one. */
+function exemple(m: Mot): RichItem {
+  const text = t("glossaire.exemple", { g_ex: m.exemple });
+  const k = typeExemple(m.href);
+  return k ? lien(k, m.href, text) : { a: { href: m.href, text, cls: "ghost" } };
+}
 
 type State = BaseState & { q: string; ici: string };
 
@@ -20,6 +35,10 @@ class Glossaire extends Vue<Record<string, unknown>, State> {
 
   titre(): string {
     return t("glossaire.les_mots_du_registre");
+  }
+
+  type(): TypeCle {
+    return "registre";
   }
 
   /** A link to another word of the page (the index, an address typed): that word marked, and shown
@@ -55,8 +74,8 @@ class Glossaire extends Vue<Record<string, unknown>, State> {
     const hit = filtrer(this.all, S.q);
     return {
       ...this.base("glossaire"),
-      fil: [{ l: t("commun.fil_registre"), href: "/registre/" }],
-      filIci: t("entete.glossaire"),
+      lay: large() ? { inner: "inner", cut: "cutout" } : { inner: "tin", cut: "cutout s" },
+      mots: motsDecoupes(t("glossaire.les_mots_du_registre")),
       total: this.all.length,
       q: S.q,
       onQ: (e: { value: string }) => this.setState({ q: e.value }),
@@ -68,8 +87,8 @@ class Glossaire extends Vue<Record<string, unknown>, State> {
         t: m.terme,
         d: m.definition,
         hasEx: !!m.exemple,
-        ex: m.exemple,
-        href: m.href,
+        exemple: exemple(m),
+        r: TYPES_MOTS[m.id] ? repere(TYPES_MOTS[m.id]) : null,
       })),
       none: hit.length === 0,
       countLabel: S.q.trim()

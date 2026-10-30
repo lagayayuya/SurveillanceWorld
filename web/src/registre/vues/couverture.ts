@@ -2,17 +2,25 @@
 // and non_lus.json: the date of the last update, each source's last document and collection, each
 // département's state for its prefecture's decrees, and the decrees the program could not read entirely
 // (what failed, where to read them). Every date is the data's; the words are the catalogue's.
+// v2 (design/registre/v2): a page of the register in its frame (its pink, its breadcrumb), its title in
+// cut-out letters as the summary's; each département (every one listed here has its fiche), each
+// commune of the register and each decree whose dossier it holds is a typed link (liens.ts).
 
 import { departementArt, raison } from "../collecte.ts";
-import { communeHref } from "../commun.ts";
-import type { Couverture, Dico, NonLu } from "../donnees.ts";
+import type { Lexique } from "../corpus.ts";
+import type { RichItem } from "../dc.ts";
+import type { Couverture, Dico, Evenement, NonLu } from "../donnees.ts";
 import { load } from "../donnees.ts";
 import { fr, longDate, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
+import { lienCommune, lienDepartement, lienDocument } from "../liens.ts";
 import type { VueModule } from "../modale.ts";
 import { capital } from "../texte.ts";
-import { Vue } from "../vue.ts";
+import type { TypeCle } from "../types.ts";
+import { large, Vue } from "../vue.ts";
+import "./couverture.css";
 import template from "./couverture.html?raw";
+import { motsDecoupes } from "./decoupe-outils.ts";
 
 type CouvertureFichier = Couverture & {
   sources: (Couverture["sources"][number] & { libelle?: string })[];
@@ -65,6 +73,10 @@ class Couverture_ extends Vue<Props> {
     return t("couverture.titre");
   }
 
+  type(): TypeCle {
+    return "registre";
+  }
+
   renderVals() {
     const { couv, nonLus, communes } = this.props;
 
@@ -89,17 +101,20 @@ class Couverture_ extends Vue<Props> {
     const autres = entries.filter(
       ([k, e]) => e.etat === "non_collecte" && !has(`registre.departement.art_${k}`),
     );
-    const deps = nommes.map(([k, e]) => ({
-      l: capital(departementArt(k)),
-      codes: "",
+    // the build writes a fiche for every département couverture.json lists
+    const deps: { l: RichItem; codes: RichItem[]; etat: string }[] = nommes.map(([k, e]) => ({
+      l: lienDepartement(k, capital(departementArt(k))),
+      codes: [],
       etat: etat(e),
     }));
     if (autres.length)
       deps.push({
         l: t("couverture.autres_departements", { n: autres.length }),
-        codes: autres.map(([k]) => k).join(", "),
+        codes: autres.map(([k]) => lienDepartement(k, k)),
         etat: t("couverture.etat_non_collecte_court"),
       });
+    // the communes index.json names have their fiche; a decree placed in one has its dossier there
+    const L = { communes } as unknown as Lexique;
 
     // the decrees not read entirely, the newest first
     const rows = nonLus
@@ -108,14 +123,23 @@ class Couverture_ extends Vue<Props> {
       .map((n) => {
         const type = has(`registre.couverture.type.${n.t}`) ? t(`couverture.type.${n.t}`) : "";
         const c = n.insee ? communes[n.insee] : undefined;
+        const nom = n.insee
+          ? (n.commune ?? c?.nom ?? t("commun.code_insee", { insee: n.insee }))
+          : "";
+        // its dossier in the commune's Autorisations (corpus.ts docHref); elsewhere the build does not
+        // say whether the register holds it: its number alone
+        const acte: RichItem =
+          c && n.insee
+            ? lienDocument(
+                L,
+                { id: n.id, affaire: n.id, t: n.t, insee: n.insee } as Evenement,
+                n.id,
+              )
+            : n.id;
         return {
           date: shortDate(n.date),
-          acte: type ? `${type} · ${n.id}` : n.id,
-          href: n.insee ? communeHref(n.insee) : "",
-          commune: n.insee
-            ? (n.commune ?? c?.nom ?? t("commun.code_insee", { insee: n.insee }))
-            : "",
-          sans: n.insee ? "" : "—",
+          acte: type ? [`${type} · `, acte] : [acte],
+          commune: n.insee ? lienCommune(L, n.insee, nom) : "—",
           raisons: n.raisons
             .map((r) => (has(`registre.non_lu.${r}`) ? t(`non_lu.${r}`) : r))
             .join(" · "),
@@ -133,8 +157,10 @@ class Couverture_ extends Vue<Props> {
 
     return {
       ...this.base("couverture"),
-      fil: [{ l: t("commun.fil_registre"), href: "/registre/" }],
-      filIci: t("couverture.titre"),
+      lay: large()
+        ? { inner: "inner", cut: "cutout", tickets: "tickets" }
+        : { inner: "tin", cut: "cutout s", tickets: "tickets t2" },
+      mots: motsDecoupes(t("couverture.titre")),
       maj: t("couverture.maj", { date: longDate(couv.maj) }),
       sources,
       anneeNote: annee ? t("couverture.annee_note") : "",

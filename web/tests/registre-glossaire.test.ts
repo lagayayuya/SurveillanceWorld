@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { setMessages, t } from "../src/registre/i18n.ts";
 import { route } from "../src/registre/routes.ts";
-import { ancre, cle, filtrer, MOTS, mots } from "../src/registre/vues/glossaire-mots.ts";
+import { ancre, cle, filtrer, MOTS, mots, TYPES_MOTS, typeExemple } from "../src/registre/vues/glossaire-mots.ts";
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
 setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
@@ -82,4 +82,20 @@ test("no word says what the register's rules forbid", () => {
   const banned = [/relu/i, /relecture/i, /à la main/i, /maximum/i, /vérifié/i, /versée?s?\b/i, /prototype/i];
   for (const [k, v] of Object.entries(catalogue))
     if (k.startsWith("registre.glossaire.")) for (const re of banned) assert.doesNotMatch(v, re, k);
+});
+
+test("v2: a word that names a type of fiche wears its sticker; an example that is a fiche, its type", () => {
+  // every typed word is a word of the page, and each family of fiche the glossary names is there
+  for (const id of Object.keys(TYPES_MOTS)) assert.ok(MOTS.some(([m]) => m === id), id);
+  assert.deepEqual(new Set(Object.values(TYPES_MOTS)), new Set(["acheteur", "entreprise", "con", "mod", "ao", "aut", "sub"]));
+  assert.equal(typeExemple("/registre/commune/69283/autorisations/69-20083300"), "commune");
+  assert.equal(typeExemple("/registre/commune/69283#s-introuvables"), "commune");
+  assert.equal(typeExemple("/registre/acheteur/200046977"), "acheteur");
+  assert.equal(typeExemple("/registre/entreprise/431903954"), "entreprise");
+  assert.equal(typeExemple("/registre/contrat/avis-26-71981"), "ao");
+  assert.equal(typeExemple("/registre/contrat/sub-EX077568"), "sub");
+  assert.equal(typeExemple("/registre/contrat/21690283300013202520240600_32323500"), "con");
+  // a list or the coverage is no fiche: a plain link
+  assert.equal(typeExemple("/registre/?t=con"), null);
+  assert.equal(typeExemple("/registre/couverture"), null);
 });
