@@ -1,0 +1,130 @@
+# The registre's collection (pipeline/lacarte_registre/fetch.py, `lacarte-registre
+# collecter`): who the robot says it is, how fast it asks each host, how long it waits and how
+# often it tries again, and where each source is read. Every value has an id and a rationale,
+# as the other rules. Not in buildinfo's hashed rules: no map build depends on it.
+version: 1
+
+robot:
+  id: rule:registre_sources@1:robot
+  # User-Agent: SurveillanceWorld/<version> (+<contact>); the contact is LACARTE_ROBOT_CONTACT,
+  # never written here (no address in the repository): without it the robot does not start.
+  name: SurveillanceWorld
+  version: "1.0"
+  rationale: >-
+    An honest name, a version and a way to reach whoever runs it: what a host needs to tell
+    us apart and to write to us rather than block us.
+
+# The pace: at most one request per `interval_s` on a host, whatever the source; `default`
+# for a host not listed.
+hosts:
+  default:
+    id: rule:registre_sources@1:pace_default
+    interval_s: 1.0
+    rationale: >-
+      One request per second, the exploration's pace (design/registre/collecte/sources.md),
+      for any host that publishes no rate of its own.
+  boamp-datadila.opendatasoft.com:
+    id: rule:registre_sources@1:pace_boamp
+    interval_s: 1.0
+    rationale: >-
+      The BOAMP's API (DILA, Opendatasoft): one request per second at most, as the lot asks.
+  tabular-api.data.gouv.fr:
+    id: rule:registre_sources@1:pace_tabular
+    interval_s: 1.0
+    rationale: >-
+      data.gouv.fr's tabular API, which serves the consolidated DECP row by row: one request
+      per second, the pace of the exploration on data.gouv.fr.
+  static.data.gouv.fr:
+    id: rule:registre_sources@1:pace_static
+    interval_s: 1.0
+    rationale: >-
+      data.gouv.fr's files (the DECP Parquet, the SIRENE file when it is published there):
+      few requests, each a large file; one per second all the same.
+  object.files.data.gouv.fr:
+    id: rule:registre_sources@1:pace_object_files
+    interval_s: 1.0
+    rationale: >-
+      Where data.gouv.fr stores INSEE's SIRENE files: few requests, one per second.
+  recherche-entreprises.api.gouv.fr:
+    id: rule:registre_sources@1:pace_recherche_entreprises
+    interval_s: 1.1
+    rationale: >-
+      The API Recherche d'entreprises allows 7 requests per second (its documentation, read
+      in the exploration); the exploration asked one per 1.1 s, kept here.
+  geo.api.gouv.fr:
+    id: rule:registre_sources@1:pace_geo
+    interval_s: 1.0
+    rationale: >-
+      The API Découpage administratif (communes, intercommunalities, départements): three
+      requests a collection, one per second.
+
+# Waiting and trying again: on a network error, a 429 or a 503 (and a 502 or 504, a proxy's
+# own), at most `attempts` tries, waiting `first_wait_s` then twice as long each time, never
+# more than `max_wait_s` (a Retry-After the host gives is honoured within that bound). A 403
+# or an anti-robot check is never tried again: the source stops and says so.
+retries:
+  id: rule:registre_sources@1:retries
+  attempts: 8
+  first_wait_s: 2
+  max_wait_s: 120
+  timeout_s: 120
+  rationale: >-
+    A slow or overloaded host gets room to recover (2, 4, 8 … seconds); eight tries cover a
+    few minutes of outage, measured on data.gouv.fr in the exploration
+    (rapport-v5.md § 4), without hammering a host that refuses us.
+
+# robots.txt (RFC 9309): read once per host and kept for `cache_h` hours (§ 2.4: no more
+# than 24 hours); a 4xx means no rule, a 5xx or no answer means everything is forbidden,
+# an HTML page instead of a robots file is taken for an anti-robot check (unreachable).
+robots:
+  id: rule:registre_sources@1:robots
+  cache_h: 24
+  rationale: >-
+    RFC 9309 § 2.3.1 and § 2.4; the exploration's rule (design/registre/collecte/robots_rule.py).
+
+# Where each source is read. `decp`: the consolidated DECP, as a Parquet file when its host's
+# robots.txt lets us, else row by row from data.gouv.fr's tabular API (the same file's
+# rows, its CSV copy); `boamp`: the DILA's records API; `sirene`: INSEE's legal units
+# file; `communes`: the API Découpage administratif.
+sources:
+  decp:
+    id: rule:registre_sources@1:source_decp
+    dataset: https://www.data.gouv.fr/api/1/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/
+    parquet_title: decp.parquet
+    csv_title: decp.csv
+    tabular: https://tabular-api.data.gouv.fr/api/resources/{resource}/data/
+    page_size: 200
+    rationale: >-
+      The consolidated DECP (Colin Maudry's decp-processing, published by data.gouv.fr,
+      Licence Ouverte 2.0). static.data.gouv.fr serves www.data.gouv.fr's robots.txt, whose
+      `Disallow: /resources` covers the Parquet's path (read on 2026-10-30): the tabular
+      API (no robots.txt, a 404: no rule) serves the same rows, filtered by the server.
+  boamp:
+    id: rule:registre_sources@1:source_boamp
+    api: https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp/records
+    first_year: 2015
+    page_size: 100
+    rationale: >-
+      The BOAMP's notices (DILA, Licence Ouverte 2.0), through the records API: its
+      robots.txt forbids the bulk export paths, not the API (exploration, sources.md). The
+      API stops at offset 10 000: the collection pages by month.
+  sirene:
+    id: rule:registre_sources@1:source_sirene
+    dataset: https://www.data.gouv.fr/api/2/datasets/5b7ffc618b4c4169d30727e0/resources/?page_size=100
+    title_prefix: "Sirene : Fichier StockUniteLegale -"
+    api: https://recherche-entreprises.api.gouv.fr/search
+    rationale: >-
+      INSEE's legal units (Base Sirene, Licence Ouverte 2.0): the monthly stock as Parquet
+      (~714 MB), read for the units the registre meets only. Its path is under
+      static.data.gouv.fr/resources, which that host's robots.txt forbids (read on
+      2026-10-30): then the API Recherche d'entreprises (DINUM, the same units), one request
+      per SIREN not yet known, its answers kept from one collection to the next.
+  communes:
+    id: rule:registre_sources@1:source_communes
+    communes: https://geo.api.gouv.fr/communes?fields=code,nom,population,codeDepartement,codeEpci,siren&format=json
+    epcis: https://geo.api.gouv.fr/epcis?fields=code,nom&format=json
+    departements: https://geo.api.gouv.fr/departements?fields=code,nom&format=json
+    rationale: >-
+      Every commune of France with its département, its population, its intercommunality
+      and its own SIREN (API Découpage administratif, INSEE's COG, Licence Ouverte 2.0): a
+      buyer's SIREN becomes its commune, a commune its intercommunality.
