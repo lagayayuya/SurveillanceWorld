@@ -1,0 +1,199 @@
+# Which public contracts are video surveillance, and how the registre reads them
+# (pipeline/lacarte_registre/selection.py, used by decp.py, boamp.py and national.py). Ported
+# from the exploration's scripts (design/registre/collecte/decp_select.py, dispositifs_decp.py,
+# build_registre.py, faits.py), unchanged: the same contracts, the same flags. Each rule has
+# an id and a rationale; the regular expressions are matched on the lower-cased text, as the
+# exploration's DuckDB did (RE2: \b is an ASCII word boundary). Not in buildinfo's hashed
+# rules: no map build depends on it.
+version: 1
+
+# --- 1. The contracts selected in the DECP ------------------------------------------------
+# A contract (a DECP `uid`) is kept when one of its rows takes a path, in this order of rank:
+#   mot_fort        its objet names video surveillance (strong words), whatever its CPV;
+#   cpv_coeur+mot   a core CPV and a video word or a weak word in its objet;
+#   cpv_large+mot_faible  a broad CPV and a weak word;
+#   drone           a drone in a security context, or a drone CPV bought by the police;
+#   cpv_coeur_seul  a core CPV alone (kept, listed for review).
+# Every row of a kept contract is kept (a modification row may have no objet). A contract
+# whose path is not mot_fort or drone and one of whose objets names a noise word is dropped.
+cpv:
+  id: rule:registre_selection@1:cpv
+  rationale: >-
+    The CPV codes of video surveillance (core), of security at large (broad: they need a weak
+    word), of drones; speed cameras excluded (exploration, cpv_codes.csv: 9 454 official
+    labels read).
+  coeur:
+    "32234000": Caméras de télévision en circuit fermé
+    "32235000": Système de surveillance en circuit fermé
+    "32323500": Système de surveillance vidéo
+    "35125300": Caméras de sécurité
+    "32231000": Appareils de télévision en circuit fermé
+  large:
+    "51314000": Services d'installation de matériel vidéo
+    "50343000": Services de réparation et d'entretien de matériel vidéo
+    "35125000": Système de surveillance
+    "35120000": Systèmes et appareils de surveillance et de sécurité
+    "35121000": Équipement de sécurité
+    "35113300": Installations de sécurité
+    "45233292": Installation de dispositifs de sécurité
+    "45312000": Travaux d'installation de systèmes d'alarme et d'antennes
+    "45312200": Travaux d'installation de systèmes avertisseurs d'effraction
+    "50610000": Services de réparation et d'entretien du matériel de sécurité
+    "79711000": Services de surveillance d'installations d'alarme
+    "79714000": Services de surveillance
+    "32323300": Matériel vidéo
+    "32323000": Moniteurs vidéo
+    "48730000": Logiciels de sécurité
+  drone:
+    "34711200": Aéronefs sans pilote
+    "35613000": Véhicules aériens sans pilote
+  exclu:
+    "34971000": Caméras de contrôle de la vitesse
+
+words:
+  strong:
+    id: rule:registre_selection@1:strong
+    rx: 'vid[ée]o[\s\-]*(protection|surveillance|verbalisation|patrouill)|\bcsu\b|centres?\s+de\s+supervision\s+urbain|supervision\s+urbaine|cam[ée]ras?\s+de\s+(surveillance|vid[ée]o|s[ée]curit[ée]|protection)|lecture\s+automatique\s+de\s+plaques|\blapi\b|cam[ée]ras?[\s\-]+(pi[ée]tons?|individuelles|nomades)'
+    rationale: Words that name video surveillance unambiguously (exploration, round 1).
+  video_any:
+    id: rule:registre_selection@1:video_any
+    rx: 'vid[ée]o|cam[ée]ra|webcam|images'
+    rationale: >-
+      Any video word: enough beside a core CPV, never alone (bare « vidéo », « caméra » were
+      mostly audiovisual, scientific, medical or sewer-inspection purchases, sample_noise.csv).
+  weak:
+    id: rule:registre_selection@1:weak
+    rx: 'cam[ée]ras?|lev[ée]e\s+de\s+doute\s+vid[ée]o|portiers?\s+vid[ée]o|vid[ée]o.{0,40}(s[ûu]ret[ée]|s[ée]curit[ée]|intrusion)|(s[ûu]ret[ée]|s[ée]curit[ée]|intrusion).{0,40}vid[ée]o'
+    rationale: Words that need a CPV of security to say video surveillance.
+  noise:
+    id: rule:registre_selection@1:noise
+    rx: 'thermique|inspection|assainissement|incendie|feux|sous[\s\-]marine|optronique|spectr|scientifique|microscop|gamma|holograph|covoiturage|trafic|circulation|webcam|front d.onde'
+    rationale: >-
+      What the paths other than strong words and drones still caught that is not surveillance
+      (round-3 review).
+  drone_context:
+    id: rule:registre_selection@1:drone_context
+    rx: 'drones?.*(surveillance|s[ée]curit[ée] publique|police|gendarmerie)|(surveillance|police|gendarmerie).*drones?'
+    rationale: A drone bought for surveillance or by the forces of order, not for filming events.
+  drone_buyer:
+    id: rule:registre_selection@1:drone_buyer
+    rx: 'police|gendarmerie|int[ée]rieur'
+    rationale: A drone CPV is kept when the buyer is the police, the gendarmerie or the Interior.
+
+# The order in which a contract's rows give it a path (the first wins).
+paths:
+  id: rule:registre_selection@1:paths
+  order: [mot_fort, cpv_coeur+mot, cpv_large+mot_faible, drone, cpv_coeur_seul]
+  rationale: The strongest evidence names the contract's path (decp_select.py).
+
+# --- 2. The device a contract is about (dispositifs_decp.py) -------------------------------
+# Matched on the objet of the contract's latest row; the first device that matches, in this
+# order, wins; « videoprotection » when none does. Drones and algorithmic analysis need a
+# security context too.
+dispositifs:
+  id: rule:registre_selection@1:dispositifs
+  rationale: >-
+    The devices the registre tells apart, measured on a reviewed sample per device
+    (dispositifs_decp/echantillon_dispositifs.csv).
+  order: [vsa, lapi, cameras_pietons, videoverbalisation, csu, drones]
+  rx:
+    vsa: 'vid[ée]o[\s\-]*(intelligente|analyse)|analyse\s+(vid[ée]o|d.images|automatique\s+d)|algorithm|\bvsa\b|traitement\s+automatis[ée]\s+d.images|d[ée]tection\s+automatique|intelligence\s+artificielle.{0,60}(vid|cam[ée]ra|image)|(vid|cam[ée]ra|image).{0,60}intelligence\s+artificielle|cam[ée]ras?\s+(ia|intelligentes?)\b'
+    lapi: 'lecture\s+automati(que|s[ée]e)\s+des?\s+plaques|\blapi\b'
+    cameras_pietons: 'cam[ée]ras?[\s\-]+(pi[ée]tons?|individuelles|corporelles)|body[\s\-]?cam'
+    videoverbalisation: 'vid[ée]o[\s\-]*verbalis'
+    csu: '\bcsu\b|centres?\s+de\s+supervision|supervision\s+urbaine|centre\s+de\s+vid[ée]o[\s\-]*protection'
+    drones: 'drones?|a[ée]ronefs?\s+(sans|t[ée]l[ée]pilot)'
+  context:
+    devices: [drones, vsa]
+    rx: 'surveillance|s[ée]curit|police|gendarmerie|vid[ée]o[\s\-]*protection|sûreté|surete|captation|cam[ée]ra'
+
+# --- 3. Amounts the totals leave out (build_registre.py, 5th pass) -------------------------
+centrales:
+  id: rule:registre_selection@1:centrales
+  rationale: >-
+    A central purchasing body's ceiling is what other buyers may order, not a spend: out of
+    every total (`hors_totaux: centrale`).
+  sirens:
+    "776056467": UGAP (Union des groupements d'achats publics)
+    "924435951": Centrale d'achat du numérique et des télécoms
+  rx: 'centrale d.?achat|\bugap\b|union des groupements d.?achats|\bresah\b|\bcaih\b'
+mixte:
+  id: rule:registre_selection@1:mixte
+  rationale: >-
+    A contract whose objet covers more than video: building security (`surete`) or other
+    services (`autres`, which wins when both match); out of the totals by default (answer 1
+    of the 5th pass). Matched on the objet without accents.
+  surete: 'controle d.?acces|intrusion|alarme|interphon|courants? faibles|\bgtb\b'
+  autres: 'securite humaine|surveillance humaine|gardiennage|agents? de (?:securite|surete)|incendie|\bssi\b|eclairage|signalisation lumineuse|feux tricolores|multi ?techni|telephon'
+national:
+  id: rule:registre_selection@1:national
+  rationale: >-
+    A national buyer's framework (ministries, general directorates, national networks), not
+    a local site's: out of a territory's totals, flagged « acheteur national » (answer 5).
+    Matched on the buyer's name without accents.
+  rx: '^(?!secretariat general pour l.?administration)(?:minist[eè]re|secr[ée]tariat g[ée]n[ée]ral d[eu]s? minist)|direction g[ée]n[ée]rale|^france travail|^france t[ée]l[ée]visions|services de l.?etat pour la facturation|^agence nationale'
+a_verifier:
+  id: rule:registre_selection@1:a_verifier
+  rationale: >-
+    An amount that is probably not one buyer's spend, out of the totals and listed with its
+    reasons: more than `par_habitant` € per inhabitant of the buyer for at least `par_habitant_min`
+    €; a study or assistance mission over `etude_min` €; more than `estimee_x` times the
+    notice's estimated value (and `ecart_min` € above it), or `attribue_x` times its awarded
+    amount; the same amount of at least `meme_montant_min` € published by `meme_montant_acheteurs`
+    buyers within `meme_montant_jours` days (a joint purchase).
+  par_habitant: 250
+  par_habitant_min: 500000
+  etude_min: 1000000
+  etude_rx: 'assistance a maitrise d.?ouvrage|\bamo\b|\betudes?\b|audit|diagnostic|mission de conseil|maitrise d.?oeuvre'
+  estimee_x: 5
+  attribue_x: 10
+  ecart_min: 500000
+  meme_montant_min: 1000000
+  meme_montant_acheteurs: 3
+  meme_montant_jours: 31
+
+# --- 4. Lots and doublons (faits.py § 2) ---------------------------------------------------
+# Signed contracts with holders, same commune, buyer and day, grouped when they have the same
+# holders, or some in common and the same amount (within `ecart_rel`). In a group, a pair is
+# one contract published twice (doublon) when nothing marks two lots (two lot numbers, ids
+# differing only by their last two digits) and the amounts agree or the ids agree once their
+# trailing « 00 » are dropped. A group of doublons only is « doublon »: its first member
+# counts, the others are copies (regles.is_copy).
+lots:
+  id: rule:registre_selection@1:lots
+  ecart_rel: 0.001
+  montant_min: 1.0
+  rationale: >-
+    One tender published as several DECP rows: lots are kept, copies counted once (checked by
+    hand at Salon-de-Provence, 2022 and 2023).
+
+# --- 5. Notices and contracts (boamp_link.py, build_registre.py) ---------------------------
+liens:
+  id: rule:registre_selection@1:liens
+  rationale: >-
+    A notice belongs to a contract of the same buyer when the contract was notified within
+    [notice − `avant_jours`, notice + `apres_jours`] (an award notice: [−`resultat_avant_jours`,
+    +`resultat_apres_jours`]) and their objets share at least `jaccard` of their words; or by
+    the notices it cites; or, same buyer, by the same number of new cameras in the notice
+    and the contract's objet, notified within `cameras_jours` days. A call for tenders with no
+    contract found has a « probable » one when the same buyer signed one `probable_min_jours`
+    to `probable_max_jours` days later with close objets (`probable_jaccard`) or the same
+    holder as the award notice (after `probable_depuis`): shown as such, never in a total.
+  avant_jours: 30
+  apres_jours: 548
+  resultat_avant_jours: 270
+  resultat_apres_jours: 30
+  jaccard: 0.2
+  cameras_jours: 548
+  probable_min_jours: 30
+  probable_max_jours: 366
+  probable_jaccard: 0.25
+  probable_depuis: "2018-07-01"
+  natures:
+    "Avis de marché": avis
+    "Résultat de marché": resultat
+    "Rectificatif": rectificatif
+  # the BOAMP's own search, broad on purpose (decp's words): the notices are then kept by
+  # `video_notice`, as the exploration did
+  recherche: [vidéoprotection, vidéosurveillance, vidéo protection, vidéo surveillance, vidéo-protection, vidéo-surveillance, caméras, centre de supervision urbain]
+  video_notice: 'vid[ée]o[\s\-]*(protection|surveillance)|\bcsu\b|supervision urbaine|cam[ée]ras?\s+(de\s+(surveillance|vid[ée]o|s[ée]curit[ée])|pi[ée]ton|nomade)'

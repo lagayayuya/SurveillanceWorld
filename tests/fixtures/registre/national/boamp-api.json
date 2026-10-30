@@ -1,0 +1,85 @@
+{
+ "total_count": 4,
+ "results": [
+  {
+   "idweb": "17-164514",
+   "id": "17-164514",
+   "dateparution": "2017-11-21",
+   "code_departement": [
+    "69"
+   ],
+   "nomacheteur": "Commune de Mions",
+   "objet": "Vidéoprotection urbaine : extension du système",
+   "nature": "APPEL_OFFRE",
+   "nature_libelle": "Avis de marché",
+   "famille": "FNS",
+   "annonce_lie": null,
+   "annonces_anterieures": null,
+   "url_avis": "https://www.boamp.fr/pages/avis/?q=idweb:17-164514",
+   "type_marche": [
+    "FOURNITURES"
+   ],
+   "donnees": "{\"IDENTITE\": {\"DENOMINATION\": \"Commune de Mions\", \"CODE_IDENT_NATIONAL\": \"21690283300005\", \"CP\": \"69780\", \"VILLE\": \"MIONS CEDEX\", \"TEL\": \"04 72 23 26 10\", \"CORRESPONDANT\": \"M. Jean Exemple\", \"MEL\": \"jean.exemple@example.org\"}, \"OBJET\": {\"TITRE_MARCHE\": \"Vidéoprotection urbaine\", \"CPV\": {\"PRINCIPAL\": \"32323500\"}, \"QUANTITE\": \"Fourniture et pose de 12 nouvelles caméras. Contact : Mme Exemple, 06 12 34 56 78.\"}}"
+  },
+  {
+   "idweb": "21-16838",
+   "id": "21-16838",
+   "dateparution": "2021-02-07",
+   "code_departement": [
+    "69"
+   ],
+   "nomacheteur": "Commune de Mions",
+   "objet": "Vidéoprotection urbaine : extension du système",
+   "nature": "ATTRIBUTION",
+   "nature_libelle": "Résultat de marché",
+   "famille": "FNS",
+   "annonce_lie": null,
+   "annonces_anterieures": "20-142345",
+   "url_avis": "https://www.boamp.fr/pages/avis/?q=idweb:21-16838",
+   "type_marche": [
+    "FOURNITURES"
+   ],
+   "donnees": "{\"IDENTITE\": {\"DENOMINATION\": \"Commune de Mions\", \"CODE_IDENT_NATIONAL\": \"21690283300005\", \"CP\": \"69780\", \"VILLE\": \"Mions\"}, \"ATTRIBUTION\": {\"DECISION\": [{\"TITULAIRE\": {\"DENOMINATION\": \"SERFIM T.I.C.\", \"CODE_IDENT_NATIONAL\": \"43190395400003\"}, \"RENSEIGNEMENT\": {\"MONTANT\": \"215 000,00\", \"DATE_ATTRIBUTION\": \"2020-02-05\"}}]}, \"AGIT_POUR_AUTRE_COMPTE_NON\": \"\"}"
+  },
+  {
+   "idweb": "26-90001",
+   "id": "26-90001",
+   "dateparution": "2026-03-02",
+   "code_departement": [
+    "69"
+   ],
+   "nomacheteur": "Ville de Lyon",
+   "objet": "Maintenance de la vidéoprotection et du CSU",
+   "nature": "ATTRIBUTION",
+   "nature_libelle": "Résultat de marché",
+   "famille": "EFORMS",
+   "annonce_lie": null,
+   "annonces_anterieures": null,
+   "url_avis": "https://www.boamp.fr/pages/avis/?q=idweb:26-90001",
+   "type_marche": [
+    "SERVICES"
+   ],
+   "donnees": "{\"efac:Organizations\": {\"efac:Organization\": [{\"efac:Company\": {\"cac:PartyIdentification\": {\"cbc:ID\": \"ORG-0001\"}, \"cac:PartyName\": {\"cbc:Name\": \"Ville de Lyon\"}, \"cac:PartyLegalEntity\": {\"cbc:CompanyID\": \"21690123100003\"}, \"cac:PostalAddress\": {\"cbc:PostalZone\": \"69205\", \"cbc:CityName\": \"Lyon cedex 01\"}}}, {\"efac:Company\": {\"cac:PartyIdentification\": {\"cbc:ID\": \"ORG-0002\"}, \"cac:PartyName\": {\"cbc:Name\": \"Jeanne Exemple\"}, \"efbc:NaturalPersonIndicator\": \"true\", \"cac:PartyLegalEntity\": {\"cbc:CompanyID\": \"12345678901234\"}, \"cac:PostalAddress\": {\"cbc:PostalZone\": \"69000\", \"cbc:CityName\": \"Lyon\"}}}]}, \"efac:TenderingParty\": {\"efac:Tenderer\": {\"cbc:ID\": \"ORG-0002\"}}, \"cbc:PayableAmount\": {\"#text\": \"48000\"}}"
+  },
+  {
+   "idweb": "26-90002",
+   "id": "26-90002",
+   "dateparution": "2026-03-03",
+   "code_departement": [
+    "69"
+   ],
+   "nomacheteur": "Ville de Lyon",
+   "objet": "Fourniture de caméras thermiques pour les pompiers",
+   "nature": "APPEL_OFFRE",
+   "nature_libelle": "Avis de marché",
+   "famille": "FNS",
+   "annonce_lie": null,
+   "annonces_anterieures": null,
+   "url_avis": "https://www.boamp.fr/pages/avis/?q=idweb:26-90002",
+   "type_marche": [
+    "FOURNITURES"
+   ],
+   "donnees": "{\"OBJET\": {\"TITRE_MARCHE\": \"Cam\\u00e9ras thermiques\"}}"
+  }
+ ]
+}
