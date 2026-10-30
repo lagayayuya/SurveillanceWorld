@@ -1,32 +1,47 @@
-// View 9 · Acheteur (/registre/acheteur/<siren>; mockup Acheteur-grand, prototype vues/acheteur.js):
-// its head and lead, the frieze of its contracts with its legend shown, the contracts' sortable
-// table, who sells here, its calls for tenders, the buyer linked to it. Its file is the build's
-// acheteur/<siren>.json; a commune buyer's path is its commune's page (the build's page_commune),
+// View 9 · Acheteur (/registre/acheteur/<siren>; content: mockup Acheteur-grand, the prototype's
+// vues/acheteur.js; frame: design/registre/v2, V2-Entreprise): its head, then the skeleton's
+// sections — L'essentiel (the lead, its figures), Dans le temps (its contracts' planned amount by
+// year), Avec qui (who sells here, where its contracts are, the buyer linked to it), Documents (its
+// contracts and its calls for tenders), Sources. Its file is the build's acheteur/<siren>.json; a
+// collectivité's path is its territory's page (a commune's, an intercommunality's, a département's),
 // replaced before anything is drawn. Amounts: a total adds the contracts the build counts (`compte`).
 
-import { type RichItem, richText } from "../dc.ts";
+import type { RichItem } from "../dc.ts";
+import { richText } from "../dc.ts";
+import type { Couverture } from "../donnees.ts";
 import { Absent, load } from "../donnees.ts";
-import { fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
+import { count, fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
 import { t } from "../i18n.ts";
+import {
+  lien,
+  lienAcheteur,
+  lienCommune,
+  lienDepartement,
+  lienDocument,
+  lienEntreprise,
+} from "../liens.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { type BaseState, type Col, Vue } from "../vue.ts";
+import { couverture, sources } from "../sources.ts";
+import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
+import "./acheteur.css";
 import template from "./acheteur.html?raw";
 import {
   appels,
-  buyerHref,
   buyerNom,
   type Contrat,
   categorie,
   contratHref,
   contrats,
-  echelle,
+  departementAVerifier,
   enCours,
-  entHref,
   entName,
   type FichierAcheteur,
   fin,
   lead,
+  lexique,
+  lieux,
+  parAnnee,
   redirection,
   rt,
   sirenSpaced,
@@ -35,8 +50,9 @@ import {
   trier,
   vendeurs,
 } from "./acheteur-outils.ts";
+import type { FichierDepartement } from "./departement-outils.ts";
 
-type Props = Extract<Route, { view: "acheteur" }> & { f: FichierAcheteur };
+type Props = Extract<Route, { view: "acheteur" }> & { f: FichierAcheteur; couverture?: Couverture };
 type State = BaseState & {
   sort: string;
   dir: number;
@@ -60,24 +76,38 @@ const RECENT = (() => {
   return d.toISOString().slice(0, 10);
 })();
 const NUM = new Set(["amt", "dur", "off", "n"]);
+// one colour for the measure, the fiche's type's; yellow for the selection alone (v2 § 8)
+const BAR = "var(--type-acheteur)";
+const ON = "var(--type-territoire)";
+/** Values are written on the bars up to twelve of them (v2 § 8); beyond, the label and the panel. */
+const ECRITES = 12;
+
+/** An amount in millions, one decimal, as the bars write them (« 5,2 M€ »); below 100 000 € in
+ * euros; none: « — » (Entreprise's own). */
+const meur = (n: number): string =>
+  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
 class Acheteur extends Vue<Props, State> {
   protected init(): Partial<State> {
     return { sort: "date", dir: 1, sortV: "amt", dirV: -1, sortA: "date", dirA: 1 };
   }
   titre(): string {
-    return buyerNom(this.props.f, this.props.siren);
+    return titreCourt(buyerNom(this.props.f, this.props.siren));
+  }
+  type() {
+    return "acheteur" as const;
+  }
+  partage(): Partage | null {
+    return { titre: this.titre() };
   }
 
-  /** The companies of a contract, each a link: in the text's colour (« nom »), or bold as the
-   * linked buyer's list shows them (« rowlink », the prototype's entA). */
-  private ents(f: FichierAcheteur, sirens: string[], cls = "nom"): RichItem[] {
+  /** The companies of a contract, each a link to its fiche (a sole trader's words only). */
+  private ents(sirens: string[], sep = " + "): RichItem[] {
+    const { f } = this.props;
     if (!sirens.length) return [t("acheteur.ent_non_publiee")];
-    return sirens.flatMap((s, i) => {
-      const href = entHref(s);
-      const a: RichItem = href ? { a: { href, text: entName(f, s), cls } } : entName(f, s);
-      return i ? [" + ", a] : [a];
-    });
+    return sirens.flatMap((s, i) =>
+      i ? [sep, lienEntreprise(lexique(f), s)] : [lienEntreprise(lexique(f), s)],
+    );
   }
 
   private dur(c: Contrat): string {
@@ -98,8 +128,9 @@ class Acheteur extends Vue<Props, State> {
     const entsAll = [...new Set(C.flatMap((c) => c.ents))];
     const mixtes = T.hors.filter((c) => c.mixte);
     const names = (ss: string[]) => ss.map((s) => entName(f, s)).join(" + ");
+    const wide = large();
 
-    // the figures: the total is the counted contracts' (compte), the others said beside it
+    // L'essentiel: the total is the counted contracts' (compte), the others said beside it
     const montantL = !T.comptes
       ? t("acheteur.kpi_aucun_compte")
       : T.hors.length && mixtes.length === T.hors.length
@@ -108,49 +139,15 @@ class Acheteur extends Vue<Props, State> {
           ? t("acheteur.kpi_montant_hors", { n: T.hors.length })
           : t("acheteur.kpi_montant");
     const totalV = T.comptes ? money(T.montant) : "—";
+    const nMod = C.filter((c) => c.mods.length).length;
     const kpis = [
       { v: fr(C.length), l: t("acheteur.kpi_contrats", { n: C.length }) },
       { v: fr(entsAll.length), l: t("acheteur.kpi_entreprises", { n: entsAll.length }) },
       { v: totalV, l: montantL },
-      {
-        v: fr(C.filter((c) => c.mods.length).length),
-        l: t("acheteur.kpi_modifies", { n: C.filter((c) => c.mods.length).length }),
-      },
+      { v: fr(nMod), l: t("acheteur.kpi_modifies", { n: nMod }) },
     ];
 
-    // the frieze: signature → planned end, the time a change added dashed, the notice, the changes
-    const { y0: t0y, P } = echelle(
-      [...C.map((c) => c.d), ...C.map((c) => c.avis?.date ?? "")],
-      TODAY,
-    );
-    const gantt = C.map((c, i) => {
-      const k = `c${i}`;
-      const on = this.on(k);
-      const col = on ? "var(--accent-fill)" : "var(--fg)";
-      const end = fin(c, false);
-      const end2 = c.d1 ? fin(c) : null;
-      const a = P(c.d);
-      // no published duration: a mark at the signature, not a bar to today
-      const b = end ? P(end) : a;
-      return {
-        label: c.label,
-        entH: this.ents(f, c.ents),
-        amt: money(c.m0),
-        href: contratHref(c.affaire),
-        cls: `gl${on ? " on" : ""}`,
-        bar: `position: absolute; top: 0; bottom: 0; left: ${a.toFixed(2)}%; width: ${Math.max(0.6, b - a).toFixed(2)}%; background: ${col}`,
-        ext: end2
-          ? `position: absolute; top: 0; bottom: 0; left: ${b.toFixed(2)}%; width: ${(P(end2) - b).toFixed(2)}%; border: 2px dashed ${col}; border-left: 0; box-sizing: border-box`
-          : "display: none",
-        avis: c.avis?.date
-          ? `position: absolute; top: 2px; left: calc(${P(c.avis.date).toFixed(2)}% - 7px); width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 13px solid var(--ao)`
-          : "display: none",
-        mods: c.mods.map((d) => ({
-          style: `position: absolute; top: -5px; bottom: -5px; left: ${P(d).toFixed(2)}%; width: 3px; background: var(--blue)`,
-        })),
-        hover: this.pick(k),
-      };
-    });
+    // a contract in the panel
     for (const [i, c] of C.entries()) {
       const rows: [string, string][] = [
         [t("acheteur.entreprise"), names(c.ents) || t("acheteur.ent_non_publiee")],
@@ -174,20 +171,44 @@ class Acheteur extends Vue<Props, State> {
         link: { l: t("acheteur.c_lien"), href: contratHref(c.affaire) },
       };
     }
-    // on a phone the axis is a third as wide: a year keeps clear of « auj. » and of the left edge
-    const wide = matchMedia("(min-width: 960px)").matches;
-    const years: { l: string; style: string }[] = [];
-    for (let y = t0y; y <= Number(TODAY.slice(0, 4)); y += 2) {
-      const x = P(`${y}-01-01`);
-      if (x < (wide ? 92 : 82))
-        years.push({
-          l: String(y),
-          style: `position: absolute; top: 4px; left: ${x.toFixed(2)}%; transform: translateX(${x < 4 ? "0" : "-50%"})`,
-        });
-    }
-    years.push({
-      l: t("acheteur.auj"),
-      style: "position: absolute; top: 4px; right: 0; color: var(--fg)",
+
+    // Dans le temps: the planned amount of the contracts signed each year (in place of R1's frieze,
+    // v2 § 8: one measure on one axis from zero, the years in a row, the detail in the panel)
+    const Y = parAnnee(C, Number(TODAY.slice(0, 4)));
+    const mxs = Math.max(1, ...Y.map((y) => y.montant));
+    const ecrites = Y.length <= ECRITES;
+    const years = Y.map((a) => {
+      const k = `y${a.y}`;
+      const on = this.on(k);
+      DET[k] = {
+        kicker: t("acheteur.det_annee"),
+        title: a.y,
+        rows: [
+          [t("acheteur.p_contrats"), fr(a.cs.length)],
+          [t("acheteur.col_montant"), a.montant ? money(a.montant) : "—"],
+          [t("acheteur.det_plus_gros"), a.max ? money(a.max) : "—"],
+          [t("acheteur.p_entreprises"), fr(new Set(a.cs.flatMap((c) => c.ents)).size)],
+        ],
+        foot: a.cs.length > a.cs.filter((c) => c.compte).length ? t("acheteur.det_hors") : "",
+        link: a.cs.length
+          ? {
+              l: t("acheteur.det_voir_annee", { y: a.y }),
+              href: `/registre/?${new URLSearchParams({ q: full, t: "con", y: a.y })}`,
+            }
+          : undefined,
+      };
+      return {
+        y: a.y,
+        v: ecrites ? meur(a.montant) : "",
+        n: count(a.cs.length, "contrat"),
+        label: t("acheteur.annee_label", { y: a.y, v: meur(a.montant), n: a.cs.length }),
+        on: String(on),
+        // a year without a counted amount draws no bar (its « — » says it), not a sliver
+        bar: a.montant
+          ? `height: ${Math.max(3, Math.round((a.montant / mxs) * 150))}px; background: ${on ? ON : BAR}`
+          : "height: 0; border-width: 0",
+        hover: this.pick(k),
+      };
     });
 
     const run = enCours(C, TODAY);
@@ -211,12 +232,110 @@ class Acheteur extends Vue<Props, State> {
       tempsPhrase.push(
         ...rt(after ? "acheteur.temps_lie_suivants" : "acheteur.temps_lie_autres", {
           quand,
-          lie: { a: { href: "#lie", text: buyerNom(f, A.lie) } },
+          lie: lienAcheteur(lexique(f), A.lie),
         }),
       );
     }
 
-    // the contracts' table, sortable
+    // Avec qui: who sells here, the counted amounts, the contracts out of the total and the shared
+    const SE = vendeurs(C);
+    const mxv = Math.max(1, ...SE.map((x) => x.montant));
+    const notes = SE.map((x) => {
+      const parts: RichItem[][] = [];
+      const mix = x.hors.filter((c) => c.mixte);
+      if (mix.length === 1 && x.hors.length === 1)
+        parts.push([t("acheteur.vend_mixte", { objet: mix[0].label })]);
+      else if (x.hors.length) parts.push([t("acheteur.vend_hors", { n: x.hors.length })]);
+      if (x.partages.length) {
+        const avec = this.ents(x.avec, ", ");
+        parts.push(
+          x.partages.length === x.cs.length
+            ? rt("acheteur.vend_avec", { ents: avec })
+            : rt("acheteur.vend_dont_avec", { n: fr(x.partages.length), ents: avec }),
+        );
+      }
+      return parts.flatMap((p, i) => (i ? [t("acheteur.note_sep"), ...p] : p));
+    });
+    const vkey: Record<string, (i: number) => string | number> = {
+      nom: (i) => entName(f, SE[i].s),
+      n: (i) => SE[i].n,
+      amt: (i) => SE[i].montant,
+    };
+    const first = (k: string) => (NUM.has(k) ? -1 : 1);
+    const sellers = trier(
+      SE.map((_, i) => i),
+      vkey[S.sortV] ?? vkey.amt,
+      S.dirV,
+    ).map((i) => {
+      const x = SE[i];
+      const k = `s${i}`;
+      const rowsS: [string, string][] = [
+        [t("acheteur.s_contrats", { nom }), fr(x.n)],
+        [t("acheteur.col_montant"), x.montant ? moneyFull(x.montant) : "—"],
+      ];
+      const note = notes[i];
+      if (note.length) rowsS.push([t("acheteur.s_note"), richText(note)]);
+      const link = lienEntreprise(lexique(f), x.s);
+      DET[k] = {
+        kicker: t("acheteur.entreprise"),
+        title: entName(f, x.s),
+        rows: rowsS,
+        foot: t("acheteur.s_foot"),
+        link:
+          typeof link === "object" && "a" in link
+            ? { l: t("acheteur.s_lien"), href: link.a.href }
+            : undefined,
+      };
+      return {
+        nom: link,
+        n: fr(x.n),
+        amt: x.montant ? money(x.montant) : "—",
+        note,
+        bar: `display: inline-block; height: 10px; width: ${x.montant ? Math.max(3, Math.round((x.montant / mxv) * (wide ? 160 : 60))) : 0}px; background: ${this.on(k) ? ON : BAR}; border: 1px solid #111`,
+        cls: `r${this.on(k) ? " on" : ""}`,
+        hover: this.pick(k),
+      };
+    });
+    const colsV = this.cols(
+      [
+        ["nom", t("acheteur.entreprise"), "", ""],
+        ["n", t("acheteur.contrats"), "num", ""],
+        ["amt", t("acheteur.col_montant"), "num", ""],
+      ] as Col[],
+      "sortV",
+      "dirV",
+      first,
+    );
+
+    // where its contracts are placed, and its département
+    const ou = lieux(C).map((x) => ({
+      lien: lienCommune(lexique(f), x.insee),
+      n: t("acheteur.n_contrats_ici", { n: x.n }),
+    }));
+    const dep = A.dep ?? "";
+
+    // the linked buyer
+    const lie =
+      A.lie && LC.length
+        ? {
+            lien: lienAcheteur(lexique(f), A.lie),
+            nom: buyerNom(f, A.lie),
+            sous: t("acheteur.lie_sous", {
+              siren: sirenSpaced(A.lie),
+              contrats: t("n.contrat", { n: LC.length }),
+              y0: LC[0].d.slice(0, 4),
+              y1: LC[LC.length - 1].d.slice(0, 4),
+            }),
+          }
+        : null;
+    const mob = LC.map((c) => ({
+      date: shortDate(c.d),
+      objet: lienDocument(lexique(f), c.e, c.label, true),
+      ent: this.ents(c.ents),
+      amt: money(c.m0),
+    }));
+
+    // Documents: the contracts' table, sortable
     const keyf: Record<string, (c: Contrat) => string | number> = {
       date: (c) => c.d,
       objet: (c) => c.label,
@@ -231,10 +350,11 @@ class Acheteur extends Vue<Props, State> {
       return {
         date: shortDate(c.d),
         flag: c.flag,
-        objet: c.label,
+        objet: lienDocument(lexique(f), c.e, c.label, true),
         mixte: c.mixte,
-        ents: c.ents.map((s) => ({ nom: entName(f, s), href: entHref(s) })),
-        href: contratHref(c.affaire),
+        ents: c.ents.length
+          ? c.ents.map((s) => ({ lien: lienEntreprise(lexique(f), s) }))
+          : [{ lien: t("acheteur.ent_non_publiee") }],
         amt: moneyFull(c.m0),
         amt2: c.m1 ? t("acheteur.apres_modif", { eur: moneyFull(c.m1) }) : "",
         dur: this.dur(c) || "—",
@@ -243,7 +363,6 @@ class Acheteur extends Vue<Props, State> {
         hover: this.pick(`c${i}`),
       };
     });
-    const first = (k: string) => (NUM.has(k) ? -1 : 1);
     const cols = this.cols(
       [
         ["date", t("acheteur.col_signature"), "", "width: 120px"],
@@ -255,72 +374,6 @@ class Acheteur extends Vue<Props, State> {
       ] as Col[],
       "sort",
       "dir",
-      first,
-    );
-
-    // who sells here: the counted amounts, the contracts out of the total and the shared ones said
-    const SE = vendeurs(C);
-    const mxs = Math.max(1, ...SE.map((x) => x.montant));
-    const notes = SE.map((x) => {
-      const parts: RichItem[][] = [];
-      const mix = x.hors.filter((c) => c.mixte);
-      if (mix.length === 1 && x.hors.length === 1)
-        parts.push([t("acheteur.vend_mixte", { objet: mix[0].label })]);
-      else if (x.hors.length) parts.push([t("acheteur.vend_hors", { n: x.hors.length })]);
-      if (x.partages.length) {
-        const avec = this.ents(f, x.avec).map((r) => (r === " + " ? ", " : r));
-        parts.push(
-          x.partages.length === x.cs.length
-            ? rt("acheteur.vend_avec", { ents: avec })
-            : rt("acheteur.vend_dont_avec", { n: fr(x.partages.length), ents: avec }),
-        );
-      }
-      return parts.flatMap((p, i) => (i ? [t("acheteur.note_sep"), ...p] : p));
-    });
-    const vkey: Record<string, (i: number) => string | number> = {
-      nom: (i) => entName(f, SE[i].s),
-      n: (i) => SE[i].n,
-      amt: (i) => SE[i].montant,
-    };
-    const sellers = trier(
-      SE.map((_, i) => i),
-      vkey[S.sortV] ?? vkey.amt,
-      S.dirV,
-    ).map((i) => {
-      const x = SE[i];
-      const k = `s${i}`;
-      const rowsS: [string, string][] = [
-        [t("acheteur.s_contrats", { nom }), fr(x.n)],
-        [t("acheteur.col_montant"), x.montant ? moneyFull(x.montant) : "—"],
-      ];
-      const note = notes[i];
-      if (note.length) rowsS.push([t("acheteur.s_note"), richText(note)]);
-      DET[k] = {
-        kicker: t("acheteur.entreprise"),
-        title: entName(f, x.s),
-        rows: rowsS,
-        foot: t("acheteur.s_foot"),
-        link: entHref(x.s) ? { l: t("acheteur.s_lien"), href: entHref(x.s) as string } : undefined,
-      };
-      return {
-        nom: entName(f, x.s),
-        href: entHref(x.s),
-        n: fr(x.n),
-        amt: x.montant ? money(x.montant) : "—",
-        note,
-        bar: `display: inline-block; height: 10px; width: ${x.montant ? Math.max(3, Math.round((x.montant / mxs) * (wide ? 160 : 60))) : 0}px; background: var(--blue)`,
-        cls: `r${this.on(k) ? " on" : ""}`,
-        hover: this.pick(k),
-      };
-    });
-    const colsV = this.cols(
-      [
-        ["nom", t("acheteur.entreprise"), "", ""],
-        ["n", t("acheteur.contrats"), "num", ""],
-        ["amt", t("acheteur.col_montant"), "num", ""],
-      ] as Col[],
-      "sortV",
-      "dirV",
       first,
     );
 
@@ -353,11 +406,9 @@ class Acheteur extends Vue<Props, State> {
     };
     const aos = trier(aoRows, akey[S.sortA] ?? akey.date, S.dirA).map((x) => ({
       date: shortDate(x.a.d),
-      objet: x.a.objet,
+      objet: lien("ao", x.a.href, x.a.objet, true),
       refs: x.a.refs,
-      contrat: x.contrat,
-      chref: x.a.contrat ? contratHref(x.a.contrat) : "",
-      href: x.a.href,
+      contrat: x.contrat ? lien("con", contratHref(x.a.contrat), x.contrat, true) : "",
       found: !!x.contrat,
       missing: !x.contrat,
       probable: x.a.probable,
@@ -375,35 +426,7 @@ class Acheteur extends Vue<Props, State> {
       "sortA",
       "dirA",
     );
-
-    // the linked buyer
-    const lie =
-      A.lie && LC.length
-        ? {
-            nom: buyerNom(f, A.lie),
-            href: buyerHref(f, A.lie),
-            sous: t("acheteur.lie_sous", {
-              siren: sirenSpaced(A.lie),
-              contrats: t("n.contrat", { n: LC.length }),
-              y0: LC[0].d.slice(0, 4),
-              y1: LC[LC.length - 1].d.slice(0, 4),
-            }),
-          }
-        : null;
-    const mob = LC.map((c) => ({
-      date: shortDate(c.d),
-      objet: c.label,
-      ent: this.ents(f, c.ents, "rowlink"),
-      amt: money(c.m0),
-    }));
-
-    const tabs = [
-      ["#temps", t("acheteur.tab_temps")],
-      ["#contrats", t("acheteur.tab_contrats", { n: fr(C.length) })],
-      ["#vend", t("acheteur.tab_vend", { n: fr(entsAll.length) })],
-      ["#ao", t("acheteur.tab_ao", { n: fr(AO.length) })],
-      ...(lie ? [["#lie", lie.nom]] : []),
-    ].map(([href, l], i) => ({ href, l, cur: i === 0 ? "page" : null }));
+    const nMods = C.reduce((s, c) => s + c.mods.length, 0);
 
     // the money's note under « i »: what the total leaves out
     const mt: string[] = [];
@@ -445,32 +468,44 @@ class Acheteur extends Vue<Props, State> {
           links: [],
         };
 
-    const dep = A.dep ?? "";
-    const siege = A.insee_siege ? f.communes[A.insee_siege]?.nom : "";
-    const sous = [
-      A.nom && A.nom !== nom && A.nom !== full ? A.nom : "",
+    // the identity line: its published name when the title shortens it, its kind, its SIREN, its
+    // seat and its département, each place a link
+    const siege = A.insee_siege && f.communes[A.insee_siege] ? A.insee_siege : "";
+    const ligne: RichItem[] = [
+      ...(A.nom && A.nom !== nom && A.nom !== full ? [A.nom, " · "] : []),
+      categorie(f),
+      " · ",
       t("acheteur.sous_siren", { siren: sirenSpaced(siren) }),
-      siege ? t("acheteur.sous_siege", { commune: siege, dep: A.dep_nom ?? dep }) : "",
-    ]
-      .filter(Boolean)
-      .join(" · ");
+      ...(siege ? [" · ", lienCommune(lexique(f), siege)] : []),
+      ...(dep ? [siege ? ", " : " · ", lienDepartement(dep, A.dep_nom ?? undefined)] : []),
+    ];
 
+    const secs = this.sections({
+      essentiel: true,
+      temps: C.length > 0,
+      avecqui: SE.length > 0 || ou.length > 0 || !!lie,
+      documents: C.length > 0 || AO.length > 0,
+      sources: true,
+    });
     return {
       ...this.base("acheteur"),
-      ...this.info("tps", "mt"),
-      fil: [
-        { l: t("commun.fil_registre"), href: "/registre/" },
-        ...(dep ? [{ l: A.dep_nom ?? dep, href: `/registre/departement/${dep}` }] : []),
-      ],
-      filIci: nom,
+      ...this.info("mt"),
+      tete: this.tete("acheteur", nom, ligne),
+      band: this.bandeau("acheteur", nom, secs),
+      secs,
+      lay: {
+        inner: wide ? "inner" : "tin",
+        tickets: wide ? "tickets" : "tickets t2",
+        yb: wide ? "yb" : "yb t",
+        yl: wide ? "yl" : "yl t",
+      },
+      sources: sources(this.props.couverture, ["contrats", "avis"], true),
       cat: categorie(f),
       nom,
-      sous,
       lead: lead(f, C, nom),
       kpis,
-      tabs,
-      gantt,
       years,
+      yearAlt: Y.length ? t("acheteur.annees_alt", { de: Y[0].y, a: Y[Y.length - 1].y }) : "",
       tempsPhrase,
       conTitre: t("acheteur.con_titre", { n: C.length }),
       rows,
@@ -479,6 +514,8 @@ class Acheteur extends Vue<Props, State> {
       nEnts: t("n.entreprise", { n: entsAll.length }),
       sellers,
       colsV,
+      ou,
+      depLien: dep ? lienDepartement(dep, A.dep_nom ?? undefined) : "",
       aoSous: AO.length
         ? t("acheteur.ao_sous", {
             consultations: t("acheteur.n_consultation", { n: AO.length }),
@@ -487,6 +524,12 @@ class Acheteur extends Vue<Props, State> {
         : t("acheteur.ao_aucune"),
       aos,
       colsA,
+      docsPhrase: t("acheteur.docs_phrase", {
+        contrats: count(C.length, "contrat"),
+        mods: nMods,
+        ao: AO.length,
+      }),
+      parcourir: `/registre/?${new URLSearchParams({ q: full })}`,
       lie,
       mob,
       det,
@@ -496,6 +539,7 @@ class Acheteur extends Vue<Props, State> {
 
 async function donnees(r: Route): Promise<Record<string, unknown>> {
   if (r.view !== "acheteur") return {};
+  const cv = couverture().catch(() => undefined);
   let f: FichierAcheteur;
   try {
     f = await load<FichierAcheteur>(`acheteur/${r.siren}.json`);
@@ -506,14 +550,19 @@ async function donnees(r: Route): Promise<Record<string, unknown>> {
       throw new Absent(r.siren);
     throw e;
   }
-  const to = redirection(f);
+  // an intercommunality or a département: its territory's page, when the build holds it
+  const d = departementAVerifier(f);
+  const dep = d
+    ? await load<FichierDepartement>(`departement/${encodeURIComponent(d)}.json`).catch(() => null)
+    : null;
+  const to = redirection(f, dep);
   if (to) {
-    // a commune buys for itself: its page is the commune's. The path is replaced (no new entry in
-    // the history) and the router asked again: it draws the commune and drops this view unmounted.
+    // a collectivité has one fiche, its territory's. The path is replaced (no new entry in the
+    // history) and the router asked again: it draws the territory and drops this view unmounted.
     history.replaceState(null, "", `${to}${location.hash}`);
     dispatchEvent(new PopStateEvent("popstate"));
   }
-  return { f };
+  return { f, couverture: await cv };
 }
 
 export default {

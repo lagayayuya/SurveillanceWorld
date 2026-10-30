@@ -1,0 +1,60 @@
+/* A buyer's fiche on the v2 skeleton (design/registre/v2, V2-Entreprise): what its own content needs
+   beside the kit (cadre.css). Every selector starts with .rg .v-acheteur: the map is behind. */
+
+/* the panel stays in view below the sticky band, and a section opened by its tab starts below it */
+.rg .v-acheteur .panel {
+  top: 74px;
+}
+.rg .v-acheteur section[id] {
+  scroll-margin-top: 74px;
+}
+/* a year's bar, reached by the keyboard: its focus seen (the kit's buttons are unset) */
+.rg .v-acheteur .yb button:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+/* the buyer linked to it (R1's « Aussi »): a framed block inside « Avec qui » */
+.rg .v-acheteur .lie {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .v-acheteur .mob {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--line);
+}
+.rg .v-acheteur .mob li {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) 200px 100px;
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.rg .v-acheteur .mob li > strong {
+  text-align: right;
+}
+@media (max-width: 959px) {
+  .rg .v-acheteur .mob li {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .rg .v-acheteur .mob li > :nth-child(2),
+  .rg .v-acheteur .mob li > :nth-child(3) {
+    grid-column: 1 / -1;
+  }
+  /* the documents' tables follow the site's phone rows (registre.css: the date, then the document
+     and its amount); the companies, the duration and the offers are in the panel, the row touched */
+  .rg .v-acheteur .defile table.t td.t-plus {
+    display: none;
+  }
+  .rg .v-acheteur .yb.t .n {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+}

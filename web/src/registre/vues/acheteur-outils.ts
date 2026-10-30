@@ -3,15 +3,21 @@
 // signing order with their notice, result and changes, who sells to it, its calls for tenders, the
 // frieze's positions. The rules are the build's: a total adds the `montant` of the contracts flagged
 // `compte` only, a commune buyer's page is its commune's (`page_commune`), a central purchasing body
-// is flagged (`centrale`), the linked buyer and its contracts come with the file.
+// is flagged (`centrale`), the linked buyer and its contracts come with the file. A collectivité has
+// one fiche (design/registre/v2): a commune buyer's path goes to its commune's page, an
+// intercommunality's to its territory's (the département's page with `?ic=`), a département's to
+// its département's page.
 
 import { communeHref } from "../commun.ts";
+import type { Lexique } from "../corpus.ts";
 import type { RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { addMonths, fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
+import { departementHref, lienEntreprise } from "../liens.ts";
 import { capital, sentence, tidy, titleCase } from "../texte.ts";
+import type { FichierDepartement } from "./departement-outils.ts";
 
 export type StatsAcheteur = {
   siren: string;
@@ -42,9 +48,40 @@ export type FichierAcheteur = {
   stats_lie: StatsAcheteur | null;
 };
 
-/** Where a commune buyer's path goes: its commune's page (the build decides it exists). */
-export function redirection(f: FichierAcheteur): string | null {
-  return f.acheteur.page_commune ? communeHref(f.acheteur.page_commune) : null;
+/** Its dictionaries, as the typed links read them (liens.ts): every company, buyer and commune it
+ * names. */
+export const lexique = (f: FichierAcheteur): Lexique => ({
+  entreprises: f.entreprises,
+  acheteurs: f.acheteurs,
+  communes: f.communes,
+});
+
+/** The categories of an intercommunality (the build's build_acheteurs: a member of the geo API's
+ * EPCIs); a syndicate or a Grand Paris territory may bear one too, but has no territory row. */
+const EPCI = new Set(["intercommunalite", "metropole"]);
+
+/** The département file to read before deciding where a buyer's path goes: an intercommunality's
+ * or a département's (its `dep`); none for any other buyer. */
+export function departementAVerifier(f: FichierAcheteur): string | null {
+  const a = f.acheteur;
+  return a.dep && (EPCI.has(a.categorie ?? "") || a.categorie === "departement") ? a.dep : null;
+}
+
+/** Where a collectivité buyer's path goes, its one fiche: a commune's page (the build's
+ * `page_commune`); an intercommunality's territory when the département's file has its row (its
+ * code is its SIREN: stats.epcis); a département's page when its file was read. Any other buyer,
+ * or a territory the build does not hold: null, its buyer's page. */
+export function redirection(
+  f: FichierAcheteur,
+  dep: Pick<FichierDepartement, "departement" | "stats"> | null = null,
+): string | null {
+  const a = f.acheteur;
+  if (a.page_commune) return communeHref(a.page_commune);
+  if (!a.dep || !dep || dep.departement.code !== a.dep) return null;
+  if (EPCI.has(a.categorie ?? "") && dep.stats.epcis[a.siren])
+    return `${departementHref(a.dep)}?ic=${encodeURIComponent(a.siren)}`;
+  if (a.categorie === "departement") return departementHref(a.dep);
+  return null;
 }
 
 /** « 256 900 994 ». */
@@ -58,14 +95,6 @@ export function buyerNom(f: FichierAcheteur, siren: string): string {
 /** The title of a buyer's page: its short name without the words that only place it
  * (« Sytral (transports lyonnais) » → « Sytral »), as the mockup's title. */
 export const titreCourt = (nom: string): string => nom.replace(/\s+\([^()]*\)$/, "") || nom;
-
-/** A buyer's page: its commune's, for a commune. */
-export function buyerHref(f: FichierAcheteur, siren: string): string {
-  const a = f.acheteurs[siren];
-  return a?.categorie === "commune" && a.insee_siege && f.communes[a.insee_siege]
-    ? communeHref(a.insee_siege)
-    : `/registre/acheteur/${siren}`;
-}
 
 /** Its category's word (« transports », « centrale d'achat »). */
 export function categorie(f: FichierAcheteur): string {
@@ -82,7 +111,6 @@ export function entName(f: FichierAcheteur, siren: string): string {
   if (!x?.nom) return t("commun.entreprise_siren", { siren });
   return tidy(titleCase(x.nom));
 }
-export { entHref } from "../corpus.ts";
 export const contratHref = (affaire: string): string =>
   `/registre/contrat/${encodeURIComponent(affaire)}`;
 
@@ -326,18 +354,30 @@ export function appels(f: FichierAcheteur, C: Contrat[]): Appel[] {
   return out.sort((a, b) => a.d.localeCompare(b.d));
 }
 
-/** The frieze's scale: from the first year of a signature or notice to today, in percent. */
-export function echelle(dates: string[], today: string): { y0: number; P: (d: string) => number } {
-  const y0 = Math.min(
-    ...dates.filter(Boolean).map((d) => Number(d.slice(0, 4))),
-    Number(today.slice(0, 4)),
-  );
-  const T0 = Date.parse(`${y0}-01-01`);
-  const T1 = Date.parse(today);
-  return {
-    y0,
-    P: (d) => Math.max(0, Math.min(100, ((Date.parse(d) - T0) / (T1 - T0)) * 100)),
-  };
+/** A year of its contracts: those it signed, the counted amount (`compte`), the largest counted. */
+export type Annee = { y: string; cs: Contrat[]; montant: number; max: number };
+
+/** Its contracts by year of signature, from the first one's year to `y1` (today's), every year
+ * shown, an empty one too: the chart's axis is time, not the years that have a contract. */
+export function parAnnee(C: Contrat[], y1: number): Annee[] {
+  const ys = C.map((c) => Number(c.d.slice(0, 4))).filter((y) => y > 0);
+  if (!ys.length) return [];
+  const y0 = Math.min(...ys, y1);
+  return Array.from({ length: Math.max(...ys, y1) - y0 + 1 }, (_, i) => {
+    const y = String(y0 + i);
+    const cs = C.filter((c) => c.d.startsWith(y));
+    const counted = cs.filter((c) => c.compte).map((c) => c.m0 ?? 0);
+    return { y, cs, montant: counted.reduce((s, m) => s + m, 0), max: Math.max(0, ...counted) };
+  });
+}
+
+/** Where its contracts are placed: each commune (the build's `insee`) and how many, most first. */
+export function lieux(C: Contrat[]): { insee: string; n: number }[] {
+  const by = new Map<string, number>();
+  for (const c of C) if (c.e.insee) by.set(c.e.insee, (by.get(c.e.insee) ?? 0) + 1);
+  return [...by.entries()]
+    .map(([insee, n]) => ({ insee, n }))
+    .sort((a, b) => b.n - a.n || a.insee.localeCompare(b.insee));
 }
 
 /** A catalogue message whose placeholders may be rich (bold, a link): the message is the
@@ -374,17 +414,20 @@ export function lead(f: FichierAcheteur, C: Contrat[], nom: string): RichItem[] 
   const out = rt(y0 === y1 ? "acheteur.lead_en" : "acheteur.lead_entre", p);
   const top = premiers(C);
   if (top) {
-    const names = top.ents.map((s) => entName(f, s)).join(t("acheteur.et"));
+    // each company a link to its fiche (a sole trader's words only)
+    const names = top.ents.flatMap((s, i): RichItem[] =>
+      i ? [t("acheteur.et"), lienEntreprise(lexique(f), s)] : [lienEntreprise(lexique(f), s)],
+    );
+    const said = top.tous
+      ? rt(C.length > 1 ? "acheteur.lead_tous" : "acheteur.lead_avec", { ent: names })
+      : rt(top.ents.length > 1 ? "acheteur.lead_obtenu" : "acheteur.lead_obtenu_un", {
+          ents: names,
+          n: fr(top.n),
+        });
     // a name that ends with its own full stop (« Serfim T.I.C. ») does not take a second one
-    out.push(" ", {
-      strong: (top.tous
-        ? t(C.length > 1 ? "acheteur.lead_tous" : "acheteur.lead_avec", { ent: names })
-        : t(top.ents.length > 1 ? "acheteur.lead_obtenu" : "acheteur.lead_obtenu_un", {
-            ents: names,
-            n: fr(top.n),
-          })
-      ).replace(/\.\.$/, "."),
-    });
+    const last = said[said.length - 1];
+    if (last === "." && entName(f, top.ents[top.ents.length - 1]).endsWith(".")) said.pop();
+    out.push(" ", { strong: said });
   }
   return out;
 }

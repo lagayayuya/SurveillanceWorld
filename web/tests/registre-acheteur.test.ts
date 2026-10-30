@@ -1,7 +1,8 @@
-// A buyer's page, its pure part (registre/vues/acheteur-outils.ts): the commune buyer's path, the
-// total of the counted contracts only, who sells here, the lead's facts, the calls for tenders, the
-// frieze's scale, the sort. SYNTHETIC records shaped as the build writes acheteur/<siren>.json
-// (lacarte-registre construire); the real figures are frozen in tests/test_registre_acheteur.py.
+// A buyer's page, its pure part (registre/vues/acheteur-outils.ts): a collectivité buyer's path (its
+// commune's, its intercommunality's, its département's page), the total of the counted contracts
+// only, who sells here, the lead's facts, the calls for tenders, its contracts by year, where they
+// are, the sort. SYNTHETIC records shaped as the build writes acheteur/<siren>.json (lacarte-registre
+// construire); the real figures are frozen in tests/test_registre_acheteur.py.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
@@ -13,11 +14,13 @@ import {
   appels,
   categorie,
   contrats,
-  echelle,
+  departementAVerifier,
   enCours,
   type FichierAcheteur,
   lead,
+  lieux,
   months,
+  parAnnee,
   premiers,
   publications,
   redirection,
@@ -27,6 +30,7 @@ import {
   trier,
   vendeurs,
 } from "../src/registre/vues/acheteur-outils.ts";
+import type { FichierDepartement } from "../src/registre/vues/departement-outils.ts";
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
 setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
@@ -78,6 +82,56 @@ test("a commune buyer's path goes to its commune's page, decided by the build", 
   // a commune whose page does not exist stays a buyer's page
   assert.equal(redirection(fichier({ categorie: "commune", page_commune: null })), null);
   assert.equal(redirection(fichier()), null);
+});
+
+/** SYNTHETIC: the Rhône's file as the build writes its intercommunalities (code = SIREN). */
+const rhone = {
+  departement: { code: "69", nom: "Rhône" },
+  stats: {
+    epcis: { "200046977": { nom: "Métropole de Lyon", communes: ["69123"], uniq: { docs: 1, con: 1, cam: 0, dr: 0, arr: 0 }, acheteur: true } },
+  },
+} as unknown as Pick<FichierDepartement, "departement" | "stats">;
+
+test("an intercommunality's path goes to its territory's page when the build holds its row", () => {
+  const metro = fichier({ siren: "200046977", categorie: "metropole", dep: "69" });
+  assert.equal(departementAVerifier(metro), "69");
+  assert.equal(redirection(metro, rhone), "/registre/departement/69?ic=200046977");
+  // the département's file not read: its buyer's page
+  assert.equal(redirection(metro), null);
+  // a syndicate filed as an intercommunality, no territory row: its buyer's page
+  const syndicat = fichier({ siren: "257800300", categorie: "intercommunalite", dep: "69" });
+  assert.equal(redirection(syndicat, rhone), null);
+  // the row of another département does not count
+  assert.equal(redirection(fichier({ siren: "200046977", categorie: "metropole", dep: "01" }), rhone), null);
+});
+
+test("a département's path goes to its département's page; any other buyer stays", () => {
+  const cd = fichier({ siren: "226900017", categorie: "departement", dep: "69" });
+  assert.equal(departementAVerifier(cd), "69");
+  assert.equal(redirection(cd, rhone), "/registre/departement/69");
+  assert.equal(departementAVerifier(fichier({ dep: "69" })), null);
+  assert.equal(redirection(fichier({ dep: "69" }), rhone), null);
+});
+
+test("its contracts by year, every year to today's, and where they are", () => {
+  const f = fichier();
+  f.evenements[0].insee = "69123";
+  f.evenements[3].insee = "69123";
+  const C = contrats(f, f.stats);
+  const Y = parAnnee(C, 2022);
+  assert.deepEqual(
+    Y.map((y) => [y.y, y.cs.length, y.montant, y.max]),
+    [
+      ["2018", 1, 5_000_000, 5_000_000],
+      // the mixed contract is signed, not counted
+      ["2019", 1, 0, 0],
+      ["2020", 1, 180_000, 180_000],
+      ["2021", 0, 0, 0],
+      ["2022", 0, 0, 0],
+    ],
+  );
+  assert.deepEqual(parAnnee([], 2026), []);
+  assert.deepEqual(lieux(C), [{ insee: "69123", n: 2 }]);
 });
 
 test("its contracts in signing order, with their notice, result and change", () => {
@@ -138,6 +192,11 @@ test("the lead states the facts: how many, for what, when, who won most", () => 
   // the count is in bold, a value, never markup
   const bold = lead(f, C, "Réseau").find((x): x is { strong: RichItem[] } => typeof x === "object" && "strong" in x);
   assert.ok(bold);
+  // the company named is a link to its fiche, in its type's colour
+  const who = lead(f, C, "Réseau").find((x): x is { strong: RichItem[] } => typeof x === "object" && "strong" in x && Array.isArray(x.strong));
+  const a = who?.strong.find((x): x is { a: { href: string; c?: string } } => typeof x === "object" && "a" in x);
+  assert.equal(a?.a.href, "/registre/entreprise/111111111");
+  assert.equal(a?.a.c, "var(--type-entreprise)");
 });
 
 test("a tie names no one", () => {
@@ -167,12 +226,7 @@ test("still running: only the contracts whose duration is published", () => {
   assert.deepEqual(enCours(C, "2027-01-01"), { n: 0, connus: 1 });
 });
 
-test("the frieze's scale and the sort", () => {
-  const { y0, P } = echelle(["2018-06-20", "", "2017-07-19"], "2026-10-29");
-  assert.equal(y0, 2017);
-  assert.equal(P("2017-01-01"), 0);
-  assert.equal(P("2026-10-29"), 100);
-  assert.equal(P("2030-01-01"), 100);
+test("the sort", () => {
   assert.deepEqual(trier([3, 1, 2], (x) => x, -1), [3, 2, 1]);
   assert.deepEqual(trier(["éa", "eb", "ec"], (x) => x, 1), ["éa", "eb", "ec"]);
 });
