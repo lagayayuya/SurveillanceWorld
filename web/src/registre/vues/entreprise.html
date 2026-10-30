@@ -15,12 +15,6 @@
           <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
           <sc-if value="{{depLine.length}}"><p class="sober" style="margin: 4px 0 0; line-height: 2.1">{{t.entreprise.clientes_dans}}
             <sc-for list="{{depLine}}" as="d"><span style="margin-right: 10px; white-space: nowrap">{{{d.lien}}}&nbsp;<span style="font-weight: 400; color: var(--muted)">({{d.n}})</span></span></sc-for></p></sc-if>
-          <sc-if value="{{faitsShow}}">
-            <h3 class="h3" style="margin-top: 14px">{{t.entreprise.ce_qui_ressort}}</h3>
-            <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--line)">
-              <sc-for list="{{faits}}" as="f"><li style="padding: 10px 0; border-bottom: 1px solid var(--rule)">{{{f}}}</li></sc-for>
-            </ul>
-          </sc-if>
         </section>
 
         <sc-if value="{{secs.temps}}">

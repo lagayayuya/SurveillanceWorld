@@ -10,7 +10,6 @@ import { setMessages } from "../src/registre/i18n.ts";
 import {
   Entreprise,
   type FichierEntreprise,
-  faits,
   lead,
   prepare,
 } from "../src/registre/vues/entreprise-outils.ts";
@@ -72,11 +71,7 @@ function fichier(over: Partial<FichierEntreprise["entreprise"]> = {}): FichierEn
       en_cours: ["b~0"],
       sans_fin: 1,
       modifications: 1,
-      faits: {
-        identiques: [{ montant: 300_000, contrats: ["a~0", "b~0"] }],
-        rapproche: null,
-        offres: { une_offre: 1, renseignes: 1 },
-      },
+      faits: { offres: { une_offre: 1, renseignes: 1 } },
       activite: null,
       lieux: { surtout: true, regions: ["69"] },
     },
@@ -126,21 +121,16 @@ test("the page's values: figures, running contracts, unknown ends, singulars", (
   assert.match(client ?? "", /"c":"var\(--type-territoire\)"/);
 });
 
-test("the lead and the facts say what the build found, nothing more", () => {
+test("the lead says what the build found, nothing more", () => {
   const F = fichier();
-  const { CT } = prepare(F);
   assert.equal(richText(lead(F, 3, 3)), "3 collectivités lui ont signé 3 contrats depuis 2024, surtout dans le Rhône.");
   assert.equal(richText(lead(F, 1, 1)), "1 collectivité lui a signé 1 contrat depuis 2024, surtout dans le Rhône.");
-  const fs = faits(F, CT).map((f) => richText(f));
-  assert.deepEqual(fs, [
-    `Les mêmes montants reviennent : 300${N}000 € à Une et Deux.`,
-    "Une seule offre pour 1 contrat sur le seul où le nombre d'offres est publié.",
-  ]);
-  // every place is a link to its buyer's page
-  const links = JSON.stringify(faits(F, CT)[0]);
-  assert.match(links, /\/registre\/commune\/69001/);
-  // no word that judges
-  for (const f of fs) assert.doesNotMatch(f, /pourrait|serait|suspect|étrange|anormal|favoris/i);
+});
+
+test("no « Ce qui ressort »: no amounts or dates set side by side to suggest (v2.1 B5)", () => {
+  const v = new Entreprise({ siren: "100000001", F: fichier() }).renderVals() as Record<string, unknown>;
+  assert.equal("faits" in v, false);
+  assert.doesNotMatch(JSON.stringify(v), /mêmes montants|d'intervalle/);
 });
 
 test("a sole trader is never named, nor its number shown", () => {

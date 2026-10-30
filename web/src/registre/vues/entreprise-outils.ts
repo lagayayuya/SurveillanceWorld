@@ -2,8 +2,7 @@
 // vues/entreprise.js), its logic apart from its template so that the tests read it. Without the
 // scatter of amounts: in its place, the contracts running today and the largest ones. What a rule
 // decides comes from the build (entreprise/<siren>.json): its contracts (a copy never), each one's
-// planned end, the contracts running on the build's date, « Ce qui ressort » as facts, the lead's
-// activity and regions; a total adds the `montant` of the contracts flagged `compte`, nothing else.
+// planned end, the contracts running on the build's date, the lead's activity and regions; a total adds the `montant` of the contracts flagged `compte`, nothing else.
 // A sole trader is never named (corpus.ts entName: « entreprise individuelle, nom non publié »).
 
 import { depArt } from "../commun.ts";
@@ -11,7 +10,7 @@ import { buyerHref, buyerNom, depNom, docHref, entName, type Lexique } from "../
 import type { Handler, Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Couverture, Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
-import { count, fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
+import { count, fr, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import {
   lienAcheteur,
@@ -25,9 +24,9 @@ import { couleur, icone } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
+/** The build's facts: the page reads how many contracts had one offer among those whose number of
+ * offers is published (v2.1 B5: no figure that sets amounts or dates side by side to suggest). */
 export type Faits = {
-  identiques: { montant: number; contrats: string[] }[];
-  rapproche: { montant: number; contrats: string[]; jours: number } | null;
   offres: { une_offre: number; renseignes: number } | null;
 };
 export type Page = {
@@ -95,17 +94,6 @@ export function rt(key: string, params: Record<string, Param> = {}): RichItem[] 
     .split(/(\d+)/)
     .map((x, i) => (i % 2 ? holes[Number(x)] : x))
     .filter((x) => x !== "");
-}
-
-/** « A », « A et B », « A, B et C ». */
-function list(items: RichItem[], sep = "entreprise.et"): RichItem[] {
-  if (items.length < 2) return items;
-  const out: RichItem[] = [];
-  items.forEach((x, i) => {
-    if (i) out.push(i === items.length - 1 ? t(sep) : ", ");
-    out.push(x);
-  });
-  return out;
 }
 
 /** The company's contracts (the build's list: a copy never), oldest first, and its buyers. */
@@ -191,51 +179,6 @@ export function lead(F: FichierEntreprise, nCt: number, nCl: number): RichItem[]
   if (act)
     return [t(`entreprise.activite_${act}`), ...ou, ". ", ...rt("entreprise.lead_combien", params)];
   return rt("entreprise.lead_sans_activite", { ...params, ou: { span: ou, cls: "" } });
-}
-
-/** « Ce qui ressort »: the build's facts, in words; every place a link to its buyer's page. */
-export function faits(F: FichierEntreprise, CT: Ct[]): RichItem[][] {
-  const by = new Map(CT.map((c) => [c.e.id, c]));
-  const place = (id: string): RichItem => {
-    const c = by.get(id);
-    return c ? placeLien(F, c) : "";
-  };
-  const out: RichItem[][] = [];
-  const x = F.page.faits;
-  if (x.identiques.length) {
-    const groups = x.identiques.map((g) =>
-      rt("entreprise.fait_groupe", {
-        montant: moneyFull(g.montant),
-        lieux: { span: list(g.contrats.map(place)), cls: "" },
-      }),
-    );
-    out.push([
-      strong(t("entreprise.fait_memes_montants")),
-      " : ",
-      ...groups.flatMap((g, i) => (i ? ["\u00a0; ", ...g] : g)),
-      ".",
-    ]);
-  }
-  if (x.rapproche) {
-    const [a, b] = x.rapproche.contrats;
-    out.push(
-      rt("entreprise.fait_rapproche", {
-        montant: strong(moneyFull(x.rapproche.montant)),
-        a: place(a),
-        b: place(b),
-        jours: x.rapproche.jours,
-      }),
-    );
-  }
-  if (x.offres?.renseignes)
-    out.push(
-      rt("entreprise.fait_une_offre", {
-        une: strong(t("entreprise.une_seule_offre")),
-        n: count(x.offres.une_offre, "contrat"),
-        m: x.offres.renseignes,
-      }),
-    );
-  return out;
 }
 
 /** A contract is named by its place (its commune), as the mockup's lists do; else by its buyer. */
@@ -636,8 +579,6 @@ export class Entreprise extends Vue<Props, State> {
         : t("entreprise.les_contrats_en_cours", { n: actAll.length }),
       toggleAct: (() => this.setState({ allAct: !S.allAct })) as Handler,
       sansFin: P.sans_fin ? t("entreprise.sans_fin", { n: P.sans_fin }) : "",
-      faits: faits(F, CT),
-      faitsShow: P.faits.identiques.length > 0 || !!P.faits.rapproche || !!of?.renseignes,
       nCli: CL.length,
       depLine,
       cols,
