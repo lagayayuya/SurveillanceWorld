@@ -1179,10 +1179,12 @@
   box-shadow: 3px 3px 0 #111;
   border: 2px solid #111;
 }
+/* pressed: in ink, as every selection since v2.1 (A1: the yellow is the territories') */
 .rg .ctl .sq[aria-pressed="true"] {
-  background: #111;
-  color: #ffe800 !important;
-  box-shadow: 3px 3px 0 #ffe800;
+  background: var(--fg);
+  color: var(--bg) !important;
+  box-shadow: 1px 1px 0 var(--fg);
+  translate: 2px 2px;
 }
 .rg .zrow {
   display: grid;
@@ -1241,9 +1243,9 @@
   font:
     800 13px Archivo,
     sans-serif;
-  fill: #111;
+  fill: var(--fg);
   paint-order: stroke;
-  stroke: #ffe800;
+  stroke: var(--bg);
   stroke-width: 5px;
   stroke-linejoin: round;
   text-anchor: middle;
