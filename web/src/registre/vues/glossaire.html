@@ -23,7 +23,7 @@
         <sc-for list="{{items}}" as="g">
           <article class="{{g.cls}}" id="{{g.id}}" tabindex="{{g.tab}}">
             <div class="gltete"><h2 class="h3">{{g.t}}</h2><sc-if value="{{g.r}}"><span class="stk sm" style="{{g.r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{g.r.i}}"></path></svg>{{g.r.l}}</span></sc-if></div>
-            <p>{{g.d}}</p>
+            <p>{{{g.d}}}</p>
             <sc-if value="{{g.hasEx}}"><p class="glex">{{{g.exemple}}}</p></sc-if>
           </article>
         </sc-for>

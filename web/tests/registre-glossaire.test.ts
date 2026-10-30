@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { setMessages, t } from "../src/registre/i18n.ts";
 import { route } from "../src/registre/routes.ts";
-import { ancre, cle, filtrer, MOTS, mots, TYPES_MOTS, typeExemple } from "../src/registre/vues/glossaire-mots.ts";
+import { ancre, cle, decouperDefinition, filtrer, MENTIONS, MOTS, mots, TYPES_MOTS, typeExemple } from "../src/registre/vues/glossaire-mots.ts";
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
 setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
@@ -98,4 +98,23 @@ test("v2: a word that names a type of fiche wears its sticker; an example that i
   // a list or the coverage is no fiche: a plain link
   assert.equal(typeExemple("/registre/?t=con"), null);
   assert.equal(typeExemple("/registre/couverture"), null);
+});
+
+test("v2: a definition's fiches are cut out where it names them, each once", () => {
+  // every name listed is in its definition, each found once
+  for (const [id, liste] of Object.entries(MENTIONS)) {
+    const parts = decouperDefinition(id, t(`glossaire.mot.${cle(id)}.definition`));
+    assert.deepEqual(
+      parts.filter((x) => typeof x === "number").sort(),
+      [...liste.keys()],
+      id,
+    );
+  }
+  // « Haute-Savoie » whole, « Savoie » alone where it stands alone
+  const parts = decouperDefinition("prefecture-zone", "en Savoie, en Haute-Savoie ou en Isère");
+  const noms = MENTIONS["prefecture-zone"];
+  assert.deepEqual(
+    parts.map((x) => (typeof x === "number" ? `[${noms[x][0]}]` : x)).join(""),
+    "en [Savoie], en [Haute-Savoie] ou en [Isère]",
+  );
 });

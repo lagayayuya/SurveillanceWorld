@@ -30,6 +30,7 @@ import {
   TYPE_ETAPE,
 } from "./contrat-outils.ts";
 import { motsDecoupes } from "./decoupe-outils.ts";
+import { lierDepartement } from "./mention-outils.ts";
 
 type Props = Extract<Route, { view: "contrat" }> & { F: Fiche; couverture?: Couverture };
 type State = BaseState & { copied: "" | "copiee" | "selectionnee" };
@@ -112,10 +113,17 @@ class Contrat extends Vue<Props, State> {
     const wide = large();
 
     // the identity line: the document shown (its date, its reference), who issues it
+    // (a decree's reference names its préfecture's département: a link)
     const ligne: Rich = [
       ...(d
-        ? [d.what, " · ", d.date, ...marque(d.dm), d.ref ? ` · ${d.ref}` : ""]
-        : [F.sous.a, ...marque(F.sous.m), F.sous.b]),
+        ? [
+            d.what,
+            " · ",
+            d.date,
+            ...marque(d.dm),
+            ...(d.ref ? lierDepartement(` · ${d.ref}`, F.dep) : []),
+          ]
+        : [F.sous.a, ...marque(F.sous.m), ...lierDepartement(F.sous.b, F.dep)]),
       ...(F.emetteur ? [" · ", F.emetteur] : []),
     ].filter((x) => x !== "");
 
@@ -142,8 +150,11 @@ class Contrat extends Vue<Props, State> {
         i: icone(tk),
         date: s.date,
         dm: s.dm,
-        // « Modification n° 2 » says its type already
-        what: s.what.startsWith(s.type) ? s.what : `${s.type} · ${s.what}`,
+        // « Modification n° 2 » says its type already; the companies it names are links
+        what: [
+          ...(s.what.startsWith(s.type) ? [] : [`${s.type} · `]),
+          ...(s.whatLien ? (s.whatLien as RichItem[]) : [s.what]),
+        ],
         lm: s.lm,
         // another record of the register (a probable call for tenders or contract): a link of its type
         fiche: s.href ? lien(tk, s.href.href, s.ref || s.href.l) : "",
@@ -195,7 +206,12 @@ class Contrat extends Vue<Props, State> {
       qui: F.qui,
       docs,
       // the companies' names are SIRENE's (as on Entreprise)
-      sources: sources(this.props.couverture, F.sources, !!F.main.entreprises?.length),
+      // a source of one département names it (« Arrêtés du Rhône »): a link
+      sources: sources(this.props.couverture, F.sources, !!F.main.entreprises?.length).map((s) => {
+        const id = F.sources.find((x) => t(`source.${x}`) === s.l) ?? "";
+        const dep = /_(\d[\dAB]|97\d)$/.exec(id)?.[1];
+        return { ...s, l: lierDepartement(s.l, dep), ed: lierDepartement(s.ed, dep) };
+      }),
       arretes: F.arretes,
       det: sel ? this.panel(F, sel) : this.rest(F),
       copier: () => this.copy(citation),
@@ -218,16 +234,25 @@ class Contrat extends Vue<Props, State> {
       kicker: F.sum.kicker,
       title: F.sum.title,
       rows: F.sum.rows.map(([k, v]) => ({ k, v })),
-      // the mentions that have their fiche, as links, unless a row above says them already
-      corr: F.qui
-        .filter((x) => JSON.stringify(x.v).includes('"a":') && !F.sum.rows.some(([k]) => k === x.k))
-        .map((x) => ({ k: x.k, v: x.v })),
+      corr: this.mentions(F),
       foot: [t("contrat.survolez"), ...F.reperes].join(" "),
       links: [
         ...(F.source ? [{ l: t("arretes.voir"), href: F.source }] : []),
         signaler({ id: F.main.id, affaire: this.props.id }),
       ],
     };
+  }
+
+  /** The panel at rest names, as links, whom the fiche names and where it is (its kicker and title are
+   * text: socle's panneau), unless a row above says them already or another link opens the same. */
+  private mentions(F: Fiche): { k: string; v: Rich }[] {
+    const qui = F.qui.filter(
+      (x) => JSON.stringify(x.v).includes('"a":') && !F.sum.rows.some(([k]) => k === x.k),
+    );
+    const ou = F.ou;
+    const href = ou ? /"href":"([^"]+)"/.exec(JSON.stringify(ou.v))?.[1] : undefined;
+    const deja = href && JSON.stringify(qui).includes(`"href":"${href}"`);
+    return [...(ou && !deja ? [ou] : []), ...qui].map((x) => ({ k: x.k, v: x.v }));
   }
 
   /** The panel of a step: its facts, the companies and the record it links to, its source, the report. */

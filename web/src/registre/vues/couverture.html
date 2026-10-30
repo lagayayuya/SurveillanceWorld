@@ -13,7 +13,7 @@
         <caption class="sr">{{t.couverture.sources_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_source}}</th><th scope="col">{{t.couverture.col_jusqu_au}}</th><th scope="col">{{t.couverture.col_collectee}}</th></tr></thead>
         <tbody>
-          <sc-for list="{{sources}}" as="s"><tr><td><strong>{{s.l}}</strong></td><td class="tw">{{s.jusqu}}</td><td class="tw">{{s.le}}</td></tr></sc-for>
+          <sc-for list="{{sources}}" as="s"><tr><td><strong>{{{s.l}}}</strong></td><td class="tw">{{s.jusqu}}</td><td class="tw">{{s.le}}</td></tr></sc-for>
         </tbody>
       </table>
       <sc-if value="{{anneeNote}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{anneeNote}}</p></sc-if>

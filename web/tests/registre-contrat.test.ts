@@ -17,6 +17,7 @@ import {
   TYPE_ETAPE,
 } from "../src/registre/vues/contrat-outils.ts";
 import { motsDecoupes } from "../src/registre/vues/decoupe-outils.ts";
+import { lierDepartement, lierLieux } from "../src/registre/vues/mention-outils.ts";
 
 const catalogue: Record<string, string> = JSON.parse(
   readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"),
@@ -354,4 +355,23 @@ test("v2: a name in cut-out letters breaks between its words only", () => {
     m.map((x) => x.lettres.map((l) => l.ch).join("")),
     ["CONTRAT", "DE", "JUIN", "2022"],
   );
+});
+
+test("v2: the département or commune a text is about is a link inside the register's words", () => {
+  const json = (x: unknown) => JSON.stringify(x);
+  // « Préfecture du Rhône »: the Rhône's fiche; never « Rhône » inside « Bouches-du-Rhône »
+  const p = lierDepartement("Préfecture du Rhône", "69");
+  assert.equal(p[0], "Préfecture du ");
+  assert.match(json(p[1]), /"href":"\/registre\/departement\/69"/);
+  assert.deepEqual(lierDepartement("Préfecture des Bouches-du-Rhône", "69"), ["Préfecture des Bouches-du-Rhône"]);
+  assert.deepEqual(lierDepartement("Contrats publics", null), ["Contrats publics"]);
+  // the dossier's commune in its objet, by its code; a longer name holding it is not it
+  const L = { communes: { "69999": { nom: "Synthèse" } } } as unknown as Parameters<typeof lierLieux>[1];
+  const o = lierLieux("Caméras de la commune de Synthèse, Rhône", L, "69999", "69");
+  assert.match(json(o), /"href":"\/registre\/commune\/69999".*"href":"\/registre\/departement\/69"/);
+  assert.deepEqual(lierLieux("Caméras de Synthèse-le-Haut", L, "69999", null), ["Caméras de Synthèse-le-Haut"]);
+  // the objet of a contract names its commune: « Objet publié » links it
+  const f = contrat();
+  f.evenements[1].objet = "Caméras à Synthèse-la-Ville";
+  assert.match(json(fiche(f)?.dl.find((x) => x.k === "Objet publié")?.v), /"href":"\/registre\/commune\/69999"/);
 });

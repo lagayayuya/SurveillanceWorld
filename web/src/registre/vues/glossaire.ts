@@ -15,13 +15,30 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import "./glossaire.css";
 import { motsDecoupes } from "./decoupe-outils.ts";
 import template from "./glossaire.html?raw";
-import { ancre, filtrer, type Mot, mots, TYPES_MOTS, typeExemple } from "./glossaire-mots.ts";
+import {
+  ancre,
+  decouperDefinition,
+  filtrer,
+  MENTIONS,
+  type Mot,
+  mots,
+  TYPES_MOTS,
+  typeExemple,
+} from "./glossaire-mots.ts";
 
 /** « Exemple : Sytral Mobilités → », a link of its fiche's type; a list or a page, a plain one. */
 function exemple(m: Mot): RichItem {
   const text = t("glossaire.exemple", { g_ex: m.exemple });
   const k = typeExemple(m.href);
   return k ? lien(k, m.href, text) : { a: { href: m.href, text, cls: "ghost" } };
+}
+
+/** The definition, each fiche it names a link of its type (MENTIONS). */
+function definition(m: Mot): RichItem[] {
+  const liste = MENTIONS[m.id] ?? [];
+  return decouperDefinition(m.id, m.definition).map((x) =>
+    typeof x === "number" ? lien(liste[x][1], liste[x][2], liste[x][0]) : x,
+  );
 }
 
 type State = BaseState & { q: string; ici: string };
@@ -85,7 +102,7 @@ class Glossaire extends Vue<Record<string, unknown>, State> {
         cls: m.id === S.ici ? "entry on" : "entry",
         tab: m.id === S.ici ? "-1" : null,
         t: m.terme,
-        d: m.definition,
+        d: definition(m),
         hasEx: !!m.exemple,
         exemple: exemple(m),
         r: TYPES_MOTS[m.id] ? repere(TYPES_MOTS[m.id]) : null,

@@ -21,6 +21,7 @@ import { large, Vue } from "../vue.ts";
 import "./couverture.css";
 import template from "./couverture.html?raw";
 import { motsDecoupes } from "./decoupe-outils.ts";
+import { lierDepartement } from "./mention-outils.ts";
 
 type CouvertureFichier = Couverture & {
   sources: (Couverture["sources"][number] & { libelle?: string })[];
@@ -84,8 +85,9 @@ class Couverture_ extends Vue<Props> {
     let annee = false;
     const sources = couv.sources.map((s) => {
       if (!s.jusqu_au) annee = true;
+      // a source of one département names it: its fiche, a link (« Arrêtés du Rhône »)
       return {
-        l: source(s),
+        l: lierDepartement(source(s), /_(\d[\dAB]|97\d)$/.exec(s.id)?.[1]),
         jusqu: s.jusqu_au ? shortDate(s.jusqu_au) : t("couverture.annee_seulement"),
         le: s.collecte_le ? shortDate(s.collecte_le) : "—",
       };
@@ -113,8 +115,14 @@ class Couverture_ extends Vue<Props> {
         codes: autres.map(([k]) => lienDepartement(k, k)),
         etat: t("couverture.etat_non_collecte_court"),
       });
-    // the communes index.json names have their fiche; a decree placed in one has its dossier there
-    const L = { communes } as unknown as Lexique;
+    // a decree placed in a commune: the build writes that commune's fiche (one per commune of the
+    // départements it reads) with the decree's dossier in its Autorisations
+    const placees = Object.fromEntries(
+      nonLus
+        .filter((n) => n.insee)
+        .map((n) => [n.insee, { nom: n.commune ?? communes[n.insee ?? ""]?.nom ?? n.insee }]),
+    );
+    const L = { communes: { ...placees, ...communes } } as unknown as Lexique;
 
     // the decrees not read entirely, the newest first
     const rows = nonLus
@@ -126,16 +134,11 @@ class Couverture_ extends Vue<Props> {
         const nom = n.insee
           ? (n.commune ?? c?.nom ?? t("commun.code_insee", { insee: n.insee }))
           : "";
-        // its dossier in the commune's Autorisations (corpus.ts docHref); elsewhere the build does not
-        // say whether the register holds it: its number alone
-        const acte: RichItem =
-          c && n.insee
-            ? lienDocument(
-                L,
-                { id: n.id, affaire: n.id, t: n.t, insee: n.insee } as Evenement,
-                n.id,
-              )
-            : n.id;
+        // its dossier in the commune's Autorisations (corpus.ts docHref); without a commune the build
+        // does not say whether the register holds it: its number alone
+        const acte: RichItem = n.insee
+          ? lienDocument(L, { id: n.id, affaire: n.id, t: n.t, insee: n.insee } as Evenement, n.id)
+          : n.id;
         return {
           date: shortDate(n.date),
           acte: type ? [`${type} · `, acte] : [acte],

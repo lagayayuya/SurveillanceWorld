@@ -79,6 +79,48 @@ export const TYPES_MOTS: Readonly<Record<string, TypeCle>> = {
   subvention: "sub",
 };
 
+/** The fiches a definition names (a buyer, a département), each a link of its type where it is said
+ * first; the name as the definition writes it, its fiche's path. */
+export const MENTIONS: Readonly<
+  Record<string, readonly (readonly [nom: string, k: TypeCle, href: string])[]>
+> = {
+  "acheteur-national": [
+    ["France Travail", "acheteur", "/registre/acheteur/130005481"],
+    ["France Télévisions", "acheteur", "/registre/acheteur/432766947"],
+  ],
+  "prefecture-zone": [
+    ["Rhône", "departement", "/registre/departement/69"],
+    ["Haute-Savoie", "departement", "/registre/departement/74"],
+    ["Savoie", "departement", "/registre/departement/73"],
+    ["Isère", "departement", "/registre/departement/38"],
+  ],
+};
+
+/** A definition cut where it names a fiche: [text, mention, text…], each mention its index in the
+ * term's MENTIONS; the longer name first (« Haute-Savoie » before « Savoie »), its first occurrence. */
+export function decouperDefinition(id: string, texte: string): (string | number)[] {
+  const liste = MENTIONS[id] ?? [];
+  const places: [at: number, end: number, i: number][] = [];
+  const pris = (a: number, b: number) => places.some(([x, y]) => a < y && x < b);
+  for (const i of [...liste.keys()].sort((a, b) => liste[b][0].length - liste[a][0].length)) {
+    const nom = liste[i][0];
+    for (let at = texte.indexOf(nom); at >= 0; at = texte.indexOf(nom, at + 1))
+      if (!pris(at, at + nom.length)) {
+        places.push([at, at + nom.length, i]);
+        break;
+      }
+  }
+  const out: (string | number)[] = [];
+  let from = 0;
+  for (const [at, end, i] of places.sort((a, b) => a[0] - b[0])) {
+    if (at > from) out.push(texte.slice(from, at));
+    out.push(i);
+    from = end;
+  }
+  if (from < texte.length) out.push(texte.slice(from));
+  return out;
+}
+
 /** The type of the fiche an example opens (its path), null for a page that is no fiche (a list, the
  * coverage). A document's record by its id's kind: a call for tenders `avis-`, a subsidy `sub-` or
  * `region-`, else a contract; a dossier in a commune's Autorisations opens the commune's fiche. */

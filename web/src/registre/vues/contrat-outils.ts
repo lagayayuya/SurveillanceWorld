@@ -23,6 +23,7 @@ import { has, t } from "../i18n.ts";
 import { lien, lienAcheteur, lienCommune, lienDepartement, lienEntreprise } from "../liens.ts";
 import { capital, sentence, tidy } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
+import { lierDepartement, lierLieux } from "./mention-outils.ts";
 
 export type Parcours = {
   fin_prevue: { date: string; signature: string; mois: number } | null;
@@ -70,6 +71,8 @@ export type Step = {
   href?: { l: string; href: string };
   /** the companies it names, as links (a rich row of the panel) */
   qui?: Rich;
+  /** `what` with those companies as links (a document's row) */
+  whatLien?: Rich;
 };
 export type Ligne = { k: string; v: Rich; note: string; m: Mark };
 /** A link to another record (the previous contract, the next call for tenders), with its type. */
@@ -102,6 +105,10 @@ export type Fiche = {
   emetteur: RichItem;
   /** couverture.json's sources it reads (sources.ts) */
   sources: string[];
+  /** its département's code, when the build knows it */
+  dep: string | null;
+  /** where it is: its commune, else its département, as a link (the panel at rest) */
+  ou: Ligne | null;
   /** the money line under the amounts (a contract) */
   argent: boolean;
   /** the line on decrees read by a program (a decree) */
@@ -190,7 +197,8 @@ export function fiche(f: Fichier): Fiche | null {
   const insee = [a.insee, e0?.insee].find((k): k is string => !!k && !!f.communes[k]) ?? null;
   const c = insee ? f.communes[insee] : null;
   const dep = a.dep ?? e0?.dep ?? (c ? c.dep : null);
-  const depName = typeof dep === "string" && dep ? depNom(dep) : "";
+  const depCode = typeof dep === "string" && dep ? dep : null;
+  const depName = depCode ? depNom(depCode) : "";
   const buyer = (a.acheteur_siren as string | undefined) ?? e0?.acheteur_siren ?? null;
   const ach = buyer ? f.acheteurs[buyer] : undefined;
   const communal = ach?.categorie === "commune" && !!ach.insee_siege;
@@ -212,6 +220,8 @@ export function fiche(f: Fichier): Fiche | null {
       ...(i ? [", "] : []),
       s === EI ? entName(L, s) : lienEntreprise(L, s),
     ]);
+  // the source's own words (the objet) naming the dossier's commune or département: those links
+  const lier = (s: string): Rich => (s ? lierLieux(s, L, insee, depCode) : t("format.non_publie"));
   // the commune the dossier names, when it is not already its buyer (a mairie)
   const communeLigne = (): Ligne[] =>
     c && insee && !(communal && ach?.insee_siege === insee)
@@ -317,6 +327,12 @@ export function fiche(f: Fichier): Fiche | null {
       ],
       foot: [t("contrat.source_decp"), explainDate(att)],
       qui: sirens.length ? entLinks(sirens) : undefined,
+      whatLien: sirens.length
+        ? [
+            ...rt("contrat.signe_avec", { ents: { span: entLinks(sirens), cls: "" } }),
+            offres != null ? `, ${t("contrat.offres_recues", { n: offres })}` : "",
+          ]
+        : undefined,
     });
     const modStep = (m: Evenement, i: number): Step => {
       const ch = (m.changements as string[] | undefined) ?? [];
@@ -468,7 +484,7 @@ export function fiche(f: Fichier): Fiche | null {
     emet = buyer ? lienAcheteur(L, buyer) : "";
     srcs = [...(aoE ? ["avis"] : []), "contrats"];
     dl = [
-      line(t("contrat.d_objet"), objet(att) || t("format.non_publie")),
+      line(t("contrat.d_objet"), lier(objet(att))),
       line(t("contrat.d_forme"), formeRich(a)),
       line(t("contrat.d_dispositif"), dispositif(att)),
       line(t("contrat.d_montant"), [
@@ -503,10 +519,10 @@ export function fiche(f: Fichier): Fiche | null {
         ),
       );
     argent = att.montant != null;
-    const where = c?.nom ?? depName;
     sum = {
-      kicker: where ? `${t("contrat.type_attribution")} · ${where}` : t("contrat.type_attribution"),
-      title: `${sirens.length ? entName(L, sirens[0]) : capital(t("contrat.entreprise_non_publiee"))} · ${money(att.montant)}`,
+      // the panel's kicker and title are text: the place and the company are its rows, as links
+      kicker: t("contrat.type_attribution"),
+      title: money(att.montant),
       rows: [
         [t("contrat.p_signe"), shortDate(att.date)],
         [t("contrat.p_fin"), fin ? t("contrat.fin_date", { date: shortMonth(fin.date) }) : "—"],
@@ -569,6 +585,9 @@ export function fiche(f: Fichier): Fiche | null {
         foot: [explainDate(pe), t("contrat.repere_lien")],
         href: { l: t("contrat.fiche_contrat"), href: contractHref(probId) },
         qui: pe.entreprises?.length ? entLinks(pe.entreprises) : undefined,
+        whatLien: pe.entreprises?.length
+          ? rt("contrat.signe_avec", { ents: { span: entLinks(pe.entreprises), cls: "" } })
+          : undefined,
       });
       suiv = { href: contractHref(probId), l: t("contrat.contrat_suivi"), m: LIEN, k: "con" };
     } else
@@ -623,7 +642,7 @@ export function fiche(f: Fichier): Fiche | null {
     ];
     const refs = (es: Evenement[]) => es.map((x) => reference(x)).join(", ");
     dl = [
-      line(t("contrat.d_objet"), objet(e0) || lib?.titre || t("format.non_publie")),
+      line(t("contrat.d_objet"), lier(objet(e0) || lib?.titre || "")),
       line(t("contrat.d_avis"), avis.length ? refs(avis) : "—"),
       line(t("contrat.d_resultat"), res.length ? refs(res) : t("format.non_publie")),
       ...(rect.length ? [line(t("contrat.d_rectificatifs"), refs(rect))] : []),
@@ -646,9 +665,8 @@ export function fiche(f: Fichier): Fiche | null {
         pe ? LIEN : "",
       ),
     ];
-    const where = c?.nom ?? depName;
     sum = {
-      kicker: where ? `${t("contrat.type_avis")} · ${where}` : t("contrat.type_avis"),
+      kicker: t("contrat.type_avis"),
       title: lib?.titre ?? (objet(e0) || t("format.non_publie")),
       rows: [
         [t("contrat.p_publie"), e0 ? fd(e0) : "—"],
@@ -750,7 +768,7 @@ export function fiche(f: Fichier): Fiche | null {
       ),
     ];
     dl = [
-      line(t("contrat.d_objet"), objet(e0) || t("format.non_publie")),
+      line(t("contrat.d_objet"), lier(objet(e0))),
       line(t("contrat.d_montant"), [{ strong: money(tot) }]),
       line(t("contrat.d_cameras"), cams ? fr(cams) : t("contrat.non_precise")),
     ];
@@ -762,7 +780,7 @@ export function fiche(f: Fichier): Fiche | null {
       ...(pe ? ["contrats"] : []),
     ];
     sum = {
-      kicker: `${t("contrat.type_subvention")}${c ? ` · ${c.nom}` : depName ? ` · ${depName}` : ""}`,
+      kicker: t("contrat.type_subvention"),
       title: money(tot),
       rows: [
         [t("contrat.p_accordee"), e0 ? fd(e0) : "—"],
@@ -817,13 +835,13 @@ export function fiche(f: Fichier): Fiche | null {
       ...rt("contrat.lead_aut", {
         quoi: e0 ? titre(e0) : "",
         beneficiaire: e0 ? benefLabel(e0) : "",
-        emetteur: e0 ? emetteur(e0) : "",
+        emetteur: e0 ? { span: lierDepartement(emetteur(e0), depCode), cls: "" } : "",
       }),
       ...(why.length ? [" ", t("contrat.lead_non_lu", { raisons: why.join(", ") })] : []),
     ];
     qui = [
       line(t("contrat.d_beneficiaire"), e0 ? benefLabel(e0) : "—"),
-      line(t("contrat.d_publie_par"), e0 ? emetteur(e0) : "—"),
+      line(t("contrat.d_publie_par"), e0 ? lierDepartement(emetteur(e0), depCode) : "—"),
       line(
         t("contrat.d_departement"),
         typeof dep === "string" && dep && depName
@@ -831,7 +849,7 @@ export function fiche(f: Fichier): Fiche | null {
           : t("format.non_publie"),
       ),
     ];
-    emet = e0 ? emetteur(e0) : "";
+    emet = e0 ? { span: lierDepartement(emetteur(e0), depCode), cls: "" } : "";
     srcs = typeof dep === "string" && dep ? [`arretes_${dep}`] : [];
     dl = [
       line(t("contrat.d_periode"), e0?.periode ? String(e0.periode) : t("contrat.non_precisee")),
@@ -839,7 +857,7 @@ export function fiche(f: Fichier): Fiche | null {
       ...(why.length ? [line(t("contrat.d_non_lu"), why.join(" · "))] : []),
     ];
     sum = {
-      kicker: depName ? `${t("contrat.type_arrete")} · ${depName}` : t("contrat.type_arrete"),
+      kicker: t("contrat.type_arrete"),
       title: e0 ? titre(e0) : "",
       rows: [
         [t("contrat.p_date"), e0 ? fd(e0) : "—"],
@@ -919,6 +937,13 @@ export function fiche(f: Fichier): Fiche | null {
     docs: docs ?? steps.filter((s) => s.k !== "fin"),
     emetteur: emet,
     sources: srcs,
+    dep: depCode,
+    ou:
+      c && insee
+        ? line(t("contrat.d_commune"), [lienCommune(L, insee)])
+        : typeof dep === "string" && dep && depName
+          ? line(t("contrat.d_departement"), [lienDepartement(dep, depName)])
+          : null,
     argent,
     arretes,
     sum,
