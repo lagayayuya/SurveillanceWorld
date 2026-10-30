@@ -256,7 +256,8 @@ function entete(r: Route): void {
     const crumbs = el("nav", { class: "crumbs", "aria-label": t("cadre.fil") });
     for (const m of fil) {
       crumbs.append(
-        el("a", { class: "crumb", href: m.href }, mini(m.k), m.l),
+        // a row of the contract (v2.1 A2): its pictogram and its words one target (registre.css)
+        el("span", { class: "r" }, el("a", { class: "crumb rl", href: m.href }, mini(m.k), m.l)),
         el("span", { class: "sep", "aria-hidden": "true" }, "›"),
       );
     }
@@ -279,7 +280,11 @@ function entete(r: Route): void {
     ? el(
         "nav",
         { class: "crumbs", "aria-label": t("cadre.fil") },
-        el("a", { class: "crumb", href: up.href }, mini(up.k), `‹ ${up.l}`),
+        el(
+          "span",
+          { class: "r" },
+          el("a", { class: "crumb rl", href: up.href }, mini(up.k), `‹ ${up.l}`),
+        ),
       )
     : (() => {
         const s = el("span", { class: "stk" }, picto(icone("registre")), t("cadre.registre"));

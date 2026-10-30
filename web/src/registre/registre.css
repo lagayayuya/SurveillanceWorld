@@ -1465,3 +1465,34 @@ body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .ma
 body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .maplibregl-popup) * {
   visibility: hidden !important;
 }
+
+/* A2: a crumb is a row of the contract (cadre.css, the end: .r, a.rl), in the head's bar and on the
+   page (socle.html fil): its pictogram and its words one target, as high as the bar lets it (40 px);
+   hovered or focused, its words underlined and its ground tinted. On the black bar of a wide screen
+   the tint is a lighter ink, not the paper's --soft (the bar's light words would not read on it). */
+.rg .crumbs .r {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+/* its words as they were (the head's weight, the underline of RGAA 10.6 above), not a table row's */
+.rg .th .crumbs a.rl {
+  font-weight: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.rg .th .mtop .crumbs a.rl {
+  color: #f2efe6;
+}
+.rg .th :is(.mtop, .ttop) .crumbs a.rl {
+  gap: 6px;
+  padding: 0 4px;
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+}
+.rg .mtop .crumbs .r:is(:hover, :focus-within) > a.rl {
+  background: #2e2b33;
+  text-decoration: underline wavy #ff48b0;
+}
