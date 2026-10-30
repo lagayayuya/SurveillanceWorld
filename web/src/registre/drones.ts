@@ -148,6 +148,11 @@ export const clair = (h: string): boolean => {
   const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16) || 0);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 127.5;
 };
+/** The colour of the zones' own lines (a localised zone's outline, the whole commune's band, the
+ * algorithms' hatching): the documents' colour darkened on a light ground (the map's ground inside
+ * a commune is near the documents' blue), the colour itself on a dark one; never the ink. */
+export const trait = (t: Teintes): string =>
+  clair(t.fond) ? melange(t.doc, t.encre, 0.45) : t.doc;
 /** `a` and `b` (#rrggbb) mixed, `k` of `b`: a zone set back is its colour towards the ground. */
 export function melange(a: string, b: string, k: number): string {
   const rgb = (h: string) => [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16) || 0);
@@ -317,7 +322,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
   // a localised volume's own outline and the whole commune's band: the documents' colour darkened
   // on a light ground (the map's ground inside a commune is near the documents' blue), the colour
   // itself on a dark one; never the ink (the ink is the selection's)
-  const arete = clair(t.fond) ? melange(t.doc, t.encre, 0.45) : t.doc;
+  const arete = trait(t);
   const out: LayerSpecification[] = [];
   if (admin)
     out.push({
@@ -534,7 +539,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
 
   map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
-  if (!map.hasImage(HACHURE)) map.addImage(HACHURE, hachures(tint.doc));
+  if (!map.hasImage(HACHURE)) map.addImage(HACHURE, hachures(trait(tint)));
   // the site's own commune shape until the outline has come (a commune without a map file keeps
   // it): its tiles hold the communes up to z11, overzoomed after
   for (const l of couches(insee, tint, !!map.getSource("admin")))
@@ -621,7 +626,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       // the site's restyle swaps the colours of every layer by its palette's pairs (main.ts) and
       // sets a new sprite: the theme's ink, ground and documents' colour again, and the hatching
       if (map.hasImage(HACHURE)) map.removeImage(HACHURE);
-      map.addImage(HACHURE, hachures(t.doc));
+      map.addImage(HACHURE, hachures(trait(t)));
       for (const l of couches(insee, t, true)) {
         if (!map.getLayer(l.id) || !("paint" in l) || !l.paint) continue;
         for (const [k, v] of Object.entries(l.paint))

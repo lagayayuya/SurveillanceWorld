@@ -3,8 +3,8 @@
   <div class="maptag">
     <a class="mback" href="/registre/">{{t.carte.retour_registre}}</a>
     <div class="leg">
-      <span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span>
-      <span class="leg-in">{{t.carte.leg_hauteur}}</span>
+      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span>
+      <span class="leg-in">{{t.carte.leg_hauteur}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
       <span style="color: var(--muted)">{{t.carte.leg_fond}}</span>
@@ -28,6 +28,8 @@
   </sc-if>
 
   <div class="cd-in">
+    <h2 class="h3 cd-titre">{{titreLong}}</h2>
+    <div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div>
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
       <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures}}</div></div>

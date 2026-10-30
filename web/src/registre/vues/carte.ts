@@ -38,7 +38,10 @@ import {
   type Creneau,
   dansPeriode,
   dateTxt,
+  deGenre,
   drones,
+  type Genre,
+  genre,
   heuresTxt,
   jourTxt,
   mois,
@@ -60,6 +63,10 @@ const PITCH = 50;
 /** One press of a turn button, degrees. */
 const TURN = 45;
 const MOVE_MS = 900;
+/** How long after its flight a move of the site's own undoes it and is flown over again. */
+const REFAIRE_MS = 6000;
+/** The mark on the view's own camera moves (maplibre passes it to their events). */
+const NOTRE = { rgcd: true };
 /** The chart's height in its viewBox: the axis at 104, the reference line at 14. */
 const AXE = 104;
 const HAUT = 14;
@@ -78,6 +85,8 @@ type State = BaseState & {
   fw: number;
   /** the sites over the whole commune, or nearly (drones.ts entieres, once the outline is read) */
   ent: string[];
+  /** the kind of act shown: drones, algorithms, or both (null) */
+  k: Genre;
   is3d: boolean;
 };
 
@@ -105,8 +114,9 @@ class CarteDrones extends Vue<Props, State> {
   private layer: Calque | null = null;
   private dead = false;
   private abort = new AbortController();
-  private saved: { center: [number, number]; zoom: number; bearing: number; pitch: number } | null =
-    null;
+  /** When the flight to the commune left (performance.now()), and whether it was flown again. */
+  private parti = 0;
+  private refait = false;
   private ro: ResizeObserver | null = null;
   /** the period whose hours the map shows */
   private synced = "";
@@ -115,6 +125,15 @@ class CarteDrones extends Vue<Props, State> {
     const f = () => this.layer?.encre(this.teintes());
     requestAnimationFrame(f);
     this.map?.once("idle", f);
+  };
+  /** A move the view did not ask for and no hand made, soon after its flight: the site's map
+   * framing the commune itself (a page opened cold: main.ts ?insee=, its sheet's fitBounds at the
+   * map's idle) undid the flight; once again, then never. */
+  private readonly onMove = (e: { originalEvent?: unknown; rgcd?: boolean }) => {
+    if (e.rgcd || e.originalEvent || this.refait || this.dead || !this.map) return;
+    if (performance.now() - this.parti > REFAIRE_MS) return;
+    this.refait = true;
+    this.voler(this.map);
   };
   private readonly onPitch = () => {
     const on = (this.map?.getPitch() ?? 0) > 5;
@@ -132,6 +151,9 @@ class CarteDrones extends Vue<Props, State> {
       wk: -1,
       fw: large() ? 868 : 340,
       ent: [],
+      k: genre(
+        new URLSearchParams(typeof location === "object" ? location.search : "").get("genre"),
+      ),
       is3d: true,
     };
   }
@@ -162,9 +184,10 @@ class CarteDrones extends Vue<Props, State> {
     const S = this.state;
     return S.r0 == null || S.r1 == null ? null : [S.r0, S.r1];
   }
+  /** A slot of the kind shown, in the period. */
   private inP(c: Creneau): boolean {
     const r = this.periode();
-    return !r || overlaps(c, r[0], r[1]);
+    return deGenre(this.state.k, c.kind) && (!r || overlaps(c, r[0], r[1]));
   }
   /** The theme's ink, ground and documents' colour, as the page has them (tokens.css). */
   private teintes(): Teintes {
@@ -192,14 +215,8 @@ class CarteDrones extends Vue<Props, State> {
     const map = carteDuSite();
     if (!map) return;
     this.map = map;
-    const c = map.getCenter();
-    this.saved = {
-      center: [c.lng, c.lat],
-      zoom: map.getZoom(),
-      bearing: map.getBearing(),
-      pitch: map.getPitch(),
-    };
     map.on("pitchend", this.onPitch);
+    map.on("moveend", this.onMove);
     void this.poser(map);
   }
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
@@ -262,8 +279,9 @@ class CarteDrones extends Vue<Props, State> {
     const box = this.layer?.cadre();
     const pitch = this.state.is3d ? PITCH : 0;
     const duration = reduced() ? 0 : MOVE_MS * 1.6;
+    this.parti = performance.now();
     if (!box) {
-      map.easeTo({ pitch, duration });
+      map.easeTo({ pitch, duration }, NOTRE);
       return;
     }
     const W = innerWidth;
@@ -286,8 +304,9 @@ class CarteDrones extends Vue<Props, State> {
     if (!cam) return;
     // from far away (a cold open of the page: the map starts at its default place) a jump, not a
     // flight that would load every tile on its way
-    if (loin(map, [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2])) map.jumpTo({ ...cam, pitch });
-    else map.flyTo({ ...cam, pitch, duration, essential: true });
+    if (loin(map, [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]))
+      map.jumpTo({ ...cam, pitch }, NOTRE);
+    else map.flyTo({ ...cam, pitch, duration, essential: true }, NOTRE);
   }
   componentWillUnmount(): void {
     this.dead = true;
@@ -297,12 +316,10 @@ class CarteDrones extends Vue<Props, State> {
     const map = this.map;
     if (!map) return;
     map.off("pitchend", this.onPitch);
+    map.off("moveend", this.onMove);
     this.layer?.retirer();
     this.layer = null;
-    const back = this.saved;
-    if (back)
-      if (loin(map, back.center)) map.jumpTo(back);
-      else map.easeTo({ ...back, duration: reduced() ? 0 : MOVE_MS });
+    // the map stays where the view left it: on the commune (v2.1 A5)
     this.map = null;
   }
   componentDidUpdate(): void {
@@ -354,7 +371,7 @@ class CarteDrones extends Vue<Props, State> {
     this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, cur: -1, hov: -1, nd: -1 });
   }
   private ease(o: { pitch?: number; bearing?: number }): void {
-    this.map?.easeTo({ ...o, duration: reduced() ? 0 : MOVE_MS });
+    this.map?.easeTo({ ...o, duration: reduced() ? 0 : MOVE_MS }, NOTRE);
   }
 
   renderVals() {
@@ -372,10 +389,10 @@ class CarteDrones extends Vue<Props, State> {
     const r = this.periode();
     const now = today();
     const { A, B } = span(T, now);
-    const drone = T.filter((c) => c.kind === "drone");
+    const drone = S.k === "vsa" ? [] : T.filter((c) => c.kind === "drone");
 
     // the tickets: the period's
-    const tk = tickets(T, ND, r);
+    const tk = tickets(T, ND, r, S.k);
 
     // the chart: one bar per week, the months under it
     const W = Math.max(200, S.fw);
@@ -559,7 +576,7 @@ class CarteDrones extends Vue<Props, State> {
       });
     });
     ND.forEach((a, i) => {
-      if (!dansPeriode(a.date, r)) return;
+      if (!deGenre(S.k, a.kind) || !dansPeriode(a.date, r)) return;
       const e = d.ev.get(a.acte);
       const when = a.date
         ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
@@ -598,6 +615,29 @@ class CarteDrones extends Vue<Props, State> {
       else vide = t("carte.vide_aucun", { nom });
     } else if (!rows.length) vide = t("carte.vide_periode");
 
+    // the filter: drones, algorithms, or both, with the slots of each over the period
+    const nDe = (k: Genre) =>
+      T.filter((c) => deGenre(k, c.kind) && (!r || overlaps(c, r[0], r[1]))).length +
+      ND.filter((a) => deGenre(k, a.kind) && dansPeriode(a.date, r)).length;
+    const genres = ([null, "drone", "vsa"] as Genre[]).map((k) => {
+      const n = nDe(k);
+      return {
+        l: t(
+          k === "drone" ? "carte.f_drones" : k === "vsa" ? "carte.f_algorithmes" : "carte.f_tous",
+        ),
+        n: String(n),
+        on: S.k === k ? "true" : "false",
+        off: n === 0 && S.k !== k ? "true" : "false",
+        pick: (() => {
+          if (S.k !== k && (n > 0 || k === null))
+            this.setState({ k, cur: -1, hov: -1, nd: -1, wk: -1 });
+        }) as Handler,
+      };
+    });
+
+    // the kind the tickets count: the one chosen, else the only one the commune has
+    const vu: Genre = S.k ?? (genres[2].n === "0" ? "drone" : genres[1].n === "0" ? "vsa" : null);
+
     const isLarge = large();
     const lastDay = new Date(B - DAY).getTime();
     return {
@@ -610,16 +650,24 @@ class CarteDrones extends Vue<Props, State> {
         large: isLarge,
         tel: !isLarge,
       },
-      hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length),
-      hasEnt: S.ent.length > 0,
+      hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length) && S.k !== "drone",
+      hasDrone: drone.some((c) => c.sites.length),
+      hasEnt: S.ent.length > 0 && S.k !== "vsa",
       hasFrise: drone.length > 0,
       is3d: S.is3d ? "true" : "false",
       tog3d: (() => this.ease({ pitch: S.is3d ? 0 : PITCH })) as Handler,
       rotL: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) + TURN })) as Handler,
       rotR: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) - TURN })) as Handler,
       north: (() => this.ease({ bearing: 0 })) as Handler,
+      titreLong: t("carte.titre_long"),
+      genres,
       nA: String(tk.actes),
-      lA: t("carte.t_arretes", { n: tk.actes }),
+      lA: t(
+        vu === "vsa" ? "carte.t_arretes_vsa" : vu ? "carte.t_arretes" : "carte.t_arretes_tous",
+        {
+          n: tk.actes,
+        },
+      ),
       nH: fr(tk.heures),
       nND: String(tk.nonDeduites),
       lND: t("carte.t_nd", { n: tk.nonDeduites }),

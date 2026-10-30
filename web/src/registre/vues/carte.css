@@ -40,6 +40,19 @@
 .rg .v-carte .leg .leg-in {
   padding-left: 23px;
 }
+.rg .v-carte .cd-titre {
+  margin: 0;
+  font-size: 18px;
+}
+.rg .v-carte .cd-genres {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rg .v-carte .cd-genres [aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
 .rg .v-carte .frise-h {
   display: flex;
   align-items: baseline;

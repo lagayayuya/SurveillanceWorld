@@ -15,6 +15,7 @@ import {
   dansPeriode,
   dateTxt,
   drones,
+  genre,
   heuresTxt,
   lundi,
   mois,
@@ -140,6 +141,13 @@ test("the tickets: drone acts of the period, their hours, the acts whose zone wa
   assert.deepEqual(tickets(T, ND, oct20), { actes: 2, heures: 6, nonDeduites: 2 });
   assert.equal(dansPeriode(null, oct20), true);
   assert.equal(dansPeriode("2026-10-18", oct20), false);
+  // the filter « algorithmes », then both kinds (A5)
+  assert.deepEqual(tickets(T, ND, null, "vsa"), { actes: 1, heures: 6, nonDeduites: 0 });
+  assert.deepEqual(tickets(T, ND, null, null), { actes: 6, heures: 24, nonDeduites: 3 });
+  assert.equal(genre("vsa"), "vsa");
+  assert.equal(genre("drone"), "drone");
+  assert.equal(genre("tout"), null);
+  assert.equal(genre(null), null);
 });
 
 test("the volumes: a slot once per site, its acts once, its share of a period, no hours still a volume", () => {

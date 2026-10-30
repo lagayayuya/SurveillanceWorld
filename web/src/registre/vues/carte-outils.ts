@@ -168,16 +168,25 @@ export function repere(max: number): number {
   return 10 * p;
 }
 
-/** The three tickets over a period: the drone acts that authorise a flight in it, the hours they
- * authorise there, and the acts whose zone was not deduced (a slot without a site, or an act the
- * build lists without a slot, dated in the period). */
+/** The kinds of act the view shows: drones, algorithmic analysis, or both (null). */
+export type Genre = "drone" | "vsa" | null;
+/** ?genre=: « drone » or « vsa », else both. */
+export const genre = (s: string | null | undefined): Genre =>
+  s === "drone" || s === "vsa" ? s : null;
+export const deGenre = (k: Genre, kind: string): boolean => !k || kind === k;
+
+/** The three tickets over a period: the acts of the kind shown (drones by default) that authorise
+ * a flight or an analysis in it, the hours they authorise there, and the acts whose zone was not
+ * deduced (a slot without a site, or an act the build lists without a slot, dated in the
+ * period). */
 export function tickets(
   T: Creneau[],
   ND: NonDeduit[],
   r: Periode,
+  k: Genre = "drone",
 ): { actes: number; heures: number; nonDeduites: number } {
-  const drones = T.filter((c) => c.kind === "drone" && inPeriod(c, r));
-  const ndIn = ND.filter((a) => a.kind === "drone" && dansPeriode(a.date, r));
+  const drones = T.filter((c) => deGenre(k, c.kind) && inPeriod(c, r));
+  const ndIn = ND.filter((a) => deGenre(k, a.kind) && dansPeriode(a.date, r));
   return {
     actes: new Set([...drones.flatMap((c) => c.actes), ...ndIn.map((a) => a.acte)]).size,
     heures: sumHours(drones, r),
