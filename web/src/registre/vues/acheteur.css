@@ -13,6 +13,12 @@
   outline: 3px solid var(--fg);
   outline-offset: 2px;
 }
+/* the chart's marks (v2.1, A3): hovered, a thin outline of ink; chosen, full of ink with a thick
+   one (cadre.css) */
+.rg .v-acheteur .yb button:not([aria-pressed="true"]):hover span.b {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
 /* the buyer linked to it (R1's « Aussi »): a framed block inside « Avec qui » */
 .rg .v-acheteur .lie {
   display: flex;

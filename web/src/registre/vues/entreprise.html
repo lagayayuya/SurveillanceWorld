@@ -22,7 +22,7 @@
           <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
           <h3 class="h3">{{t.entreprise.temps_titre}}</h3>
           <p class="sober" style="margin: 0; color: var(--muted)">{{t.entreprise.temps_aide}}</p>
-          <div class="yb" role="group" aria-label="{{yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="yb" role="group" aria-label="{{yearAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
           <div class="yl" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
           <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
 
@@ -35,9 +35,9 @@
               <sc-if value="{{show.mt}}"><p class="note tw">{{f.entreprise.fin_prevue_date_de_signature}}</p></sc-if>
               <p class="sober" style="margin: 0; color: var(--muted)">{{t.entreprise.les_contrats_dont_la_fin}}</p>
               <sc-if value="{{sansFin}}"><p class="sober" style="margin: 0; color: var(--muted)">{{sansFin}}</p></sc-if>
-              <div style="border-top: 2px solid var(--line)">
+              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
                 <sc-for list="{{act}}" as="a">
-                  <div class="{{a.cls}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.hover}}">
+                  <div class="{{a.cls}}" aria-selected="{{a.sel}}" style="{{a.c}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
                     <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{{a.nom}}}</span>
                     <span style="display: flex; flex-direction: column; gap: 3px"><span class="tw" style="font-size: 13px; color: var(--muted)">{{a.span}}</span><span class="prog" role="img" aria-label="{{a.progLabel}}"><span style="{{a.prog}}"></span></span></span>
                     <strong style="text-align: right">{{a.amt}}</strong>
@@ -49,9 +49,9 @@
             <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
               <h3 class="h3" style="min-height: 40px; display: flex; align-items: center">{{t.entreprise.ses_plus_gros_contrats}}</h3>
               <p class="sober" style="margin: 0; color: var(--muted)">{{bigPhrase}}</p>
-              <div style="border-top: 2px solid var(--line)">
+              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
                 <sc-for list="{{big}}" as="b">
-                  <div class="{{b.cls}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.hover}}">
+                  <div class="{{b.cls}}" aria-selected="{{b.sel}}" style="{{b.c}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.pick}}">
                     <span style="display: flex; flex-direction: column; line-height: 1.25; min-width: 0"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{{b.nom}}}</span><span class="tw" style="font-size: 13px; color: var(--muted)">{{b.y}}<sc-if value="{{b.rep}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if></span></span>
                     <span style="display: flex; align-items: center; gap: 8px"><span style="{{b.bar}}"></span><strong style="white-space: nowrap">{{b.amt}}</strong></span>
                   </div>
@@ -76,9 +76,9 @@
                 <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{clients}}" as="c">
-                <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.hover}}">
+                <tr class="{{c.cls}}" aria-selected="{{c.sel}}" style="{{c.c}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.pick}}">
                   <td>{{{c.nom}}}<div style="font-size: 13px; color: var(--muted)">{{c.cat}}</div></td>
                   <td>{{{c.dep}}}</td>
                   <td class="num">{{c.n}}</td>
@@ -106,7 +106,7 @@
         <section id="documents" class="sec">
           <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
           <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
-          <div style="border-top: 2px solid var(--line)"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.qui}}}</span><span class="a">{{{d.amt}}}</span><span class="m">{{d.dur}}</span></div></sc-for></div>
+          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" aria-selected="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.qui}}}</span><span class="a">{{{d.amt}}}</span><span class="m">{{d.dur}}</span></div></sc-for></div>
           <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
             <sc-if value="{{docsMore}}"><button class="more" type="button" onClick="{{togDocs}}">{{docsLabel}}</button></sc-if>
             <a href="{{parcourir}}">{{t.entreprise.parcourir_tout}}</a>

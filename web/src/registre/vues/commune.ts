@@ -124,6 +124,11 @@ function rt(key: string, params: Record<string, Param> = {}): RichItem[] {
 const join = (...parts: (RichItem[] | null | false | undefined)[]): RichItem[] =>
   parts.filter((p): p is RichItem[] => !!p).flatMap((p, i) => (i ? [" ", ...p] : p));
 
+/** A row's attributes under v2.1's contract (vue.ts `ligne`): its class, `aria-selected`, its
+ * type's colour, hovered (shown) and chosen. */
+type Row = { cls: string; sel: string; c: string; hover: Handler; pick: Handler };
+type Sel = (k: string, type?: TypeCle, cls?: string) => Row;
+
 type Det = {
   kicker: string;
   title: string;
@@ -240,8 +245,7 @@ export class Commune extends Vue<Props, State> {
     const S = this.state;
     const P = this.prep;
     const { d, s, insee, nom, dep, n, pub, counted, cs, y0, total } = P;
-    const sel = (k: string) => this.pick(k);
-    const on = (k: string) => this.on(k);
+    const sel: Sel = (k, type, cls) => this.ligne(k, type, cls);
     const DET: Record<string, Det> = {};
     const docs = communeHref(insee, "documents");
     const auts = communeHref(insee, "autorisations");
@@ -336,13 +340,13 @@ export class Commune extends Vue<Props, State> {
           )) as Handler,
       });
 
-    const aut = this.autorise(DET, sel, on);
-    const prv = this.prives(DET, sel, on);
-    const arg = this.argent(DET, sel, on);
-    const chrono = this.chrono(DET, sel, on);
-    const ter = this.territoires(DET, sel, on);
-    const ents = this.entreprises(DET, sel, on);
-    const docsL = this.documents(DET, sel, on);
+    const aut = this.autorise(DET, sel);
+    const prv = this.prives(DET, sel);
+    const arg = this.argent(DET, sel);
+    const chrono = this.chrono(DET, sel);
+    const ter = this.territoires(DET, sel);
+    const ents = this.entreprises(DET, sel);
+    const docsL = this.documents(DET, sel);
     const drones = this.drones();
 
     // to watch, and the documents to ask for
@@ -404,7 +408,9 @@ export class Commune extends Vue<Props, State> {
       }));
 
     // at rest the panel says only what to hover or choose, never the figures beside it (B3)
-    const d0 = S.sel ? DET[S.sel] : undefined;
+    // the panel: the row hovered or focused, else the one chosen (A3)
+    const vu = this.affiche();
+    const d0 = vu ? DET[vu] : undefined;
     const det = d0
       ? {
           kicker: d0.kicker,
@@ -489,6 +495,7 @@ export class Commune extends Vue<Props, State> {
         lien("commune", docs, t("commune.signaler_lien")),
       ] as RichItem[],
       det,
+      quitter: this.quitter(),
       nDocs: s.all.length,
       lien: {
         dossier: P.main
@@ -506,11 +513,7 @@ export class Commune extends Vue<Props, State> {
   }
 
   /** What the préfecture authorises: the last act of the mairie's main dossier. */
-  private autorise(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private autorise(DET: Record<string, Det>, sel: Sel) {
     const { d, s, insee, mainActs, main } = this.prep;
     if (!s.com.length) return { show: false, arr: [] as unknown[] };
     const last = s.com[0];
@@ -568,8 +571,7 @@ export class Commune extends Vue<Props, State> {
         n: fr(e.cameras ?? 0),
         d: shortDate(e.date),
         label: t("commune.arrete_cellule", { date: shortDate(e.date), n: e.cameras ?? 0 }),
-        hover: sel(key),
-        cls: `cell${on(key) ? " on" : ""}`,
+        ...sel(key, "aut", "cell"),
       };
     });
     const pts = ((main?.cameras ?? []) as { n: number | null; groupe?: boolean }[])
@@ -594,13 +596,9 @@ export class Commune extends Vue<Props, State> {
   }
 
   /** « Aussi à <commune> »: the shops' and companies' cameras (the last act of each dossier). */
-  private prives(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private prives(DET: Record<string, Det>, sel: Sel) {
     const { s, nom, insee } = this.prep;
-    const base = { show: s.prv.length > 0, hover: sel("prv"), cls: `prv${on("prv") ? " on" : ""}` };
+    const base = { show: s.prv.length > 0, ...sel("prv", "aut", "prv") };
     if (!base.show) return { ...base, priv: [] as unknown[] };
     const ncam = s.prv.reduce((x, e) => x + (e.cameras ?? 0), 0);
     const kind = (e: Evenement) =>
@@ -657,11 +655,7 @@ export class Commune extends Vue<Props, State> {
   /** The money (L'essentiel), the contracts by year and each one's run (Dans le temps). R1's
    * frieze of contracts and calls for tenders, in lanes, is gone (v2 § 8): one measure by year on
    * an axis from zero, and the same facts as lists. */
-  private argent(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private argent(DET: Record<string, Det>, sel: Sel) {
     const { d, s, insee, cs, counted, y0, total, pop, dep, aos } = this.prep;
     const L = this.L;
     const ents = [...new Set(counted.flatMap((e) => e.entreprises ?? []))];
@@ -778,10 +772,8 @@ export class Commune extends Vue<Props, State> {
       rep: boolean;
       l2b: string;
       cours: string;
-      cls: string;
-      hover: Handler;
       p: { c: string; i: string };
-    };
+    } & Row;
     let ctr: Ligne[];
     if (cs.length < 6)
       ctr = cs.map((e, i) => {
@@ -807,8 +799,7 @@ export class Commune extends Vue<Props, State> {
           rep: flagged(e),
           l2b: ` → ${end ? shortMonth(end) : t("commune.fin_a_lire")}`,
           cours: !end || end > TODAY ? t("commune.en_cours") : "",
-          cls: `ct${on(k) ? " on" : ""}`,
-          hover: sel(k),
+          ...sel(k, "con", "ct r"),
           p: picto("con"),
         };
       });
@@ -847,15 +838,14 @@ export class Commune extends Vue<Props, State> {
             })
               ? t("commune.en_cours")
               : "",
-            cls: `ct${on(k) ? " on" : ""}`,
-            hover: sel(k),
+            ...sel(k, "entreprise", "ct r"),
             p: picto("entreprise"),
           };
         });
     }
 
     // the calls for tenders: those without a contract found, and the contracts' own notices
-    type Ao = { k: string; debut: string; l: RichItem; suite: string; cls: string; hover: Handler };
+    type Ao = { k: string; debut: string; l: RichItem; suite: string } & Row;
     const aoL: Ao[] = [];
     for (const a of aos) {
       const debut = String(a.debut);
@@ -893,8 +883,7 @@ export class Commune extends Vue<Props, State> {
         debut,
         l: lien("ao", affHref(a.id), this.titreAff(a.id, e0)),
         suite,
-        cls: `ao${this.on(k) ? " on" : ""}`,
-        hover: sel(k),
+        ...sel(k, "ao", "ao r"),
       });
     }
     for (const e of cs)
@@ -917,8 +906,7 @@ export class Commune extends Vue<Props, State> {
           debut: x.date,
           l: lienDocument(L, x, this.titreAff(e.affaire, x)),
           suite,
-          cls: `ao${this.on(k) ? " on" : ""}`,
-          hover: sel(k),
+          ...sel(k, "ao", "ao r"),
         });
       }
     aoL.sort((a, b) => a.debut.localeCompare(b.debut));
@@ -935,7 +923,7 @@ export class Commune extends Vue<Props, State> {
     const ecrites = yrs.length <= ECRITES;
     const years = yrs.map((y, i) => {
       const k = `y${y}`;
-      const sel1 = this.on(k);
+      const r = sel(k);
       DET[k] = {
         kicker: t("commune.annee"),
         title: y,
@@ -956,9 +944,10 @@ export class Commune extends Vue<Props, State> {
         v: ecrites ? meur(sums[i]) : "",
         n: count(ya[i].length, "contrat"),
         label: t("commune.annee_label", { y, v: meur(sums[i]), n: ya[i].length }),
-        on: String(sel1),
-        bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: ${sel1 ? "var(--type-territoire)" : "var(--fg)"}`,
-        hover: sel(k),
+        on: r.sel,
+        bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: var(--fg)`,
+        hover: r.hover,
+        pick: r.pick,
       };
     });
 
@@ -1032,11 +1021,7 @@ export class Commune extends Vue<Props, State> {
 
   /** « Ce qui s'est passé »: the mockup's chronology; a big city keeps each year's notable facts.
    * Each fact's mark is its document's type (pictogram and colour), R1's colours by kind gone. */
-  private chrono(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private chrono(DET: Record<string, Det>, sel: Sel) {
     const { d, s, insee, nom, cs, aos } = this.prep;
     type Mk = TypeCle | "vote" | "an";
     type It = { k: string; d: string; mk: Mk; t: RichItem[]; flag?: boolean; key?: string };
@@ -1289,6 +1274,9 @@ export class Commune extends Vue<Props, State> {
       });
     }
     it.sort((a, b) => a.k.localeCompare(b.k));
+    // a fact without a detail (an election): neither shown nor chosen
+    const noop = (() => {}) as Handler;
+    const rien: Row = { cls: "ch", sel: "false", c: "", hover: noop, pick: noop };
     return it.map((x) => {
       const doc = x.mk !== "vote" && x.mk !== "an";
       return {
@@ -1298,8 +1286,7 @@ export class Commune extends Vue<Props, State> {
         doc,
         p: doc ? picto(x.mk as TypeCle) : { c: "", i: "" },
         mark: doc ? "" : x.mk === "vote" ? "mk vote" : "mk an",
-        hover: x.key ? sel(x.key) : ((() => {}) as Handler),
-        cls: `ch${x.key && on(x.key) ? " on" : ""}`,
+        ...(x.key ? sel(x.key, doc ? (x.mk as TypeCle) : undefined, "ch r") : rien),
       };
     });
   }
@@ -1347,11 +1334,7 @@ export class Commune extends Vue<Props, State> {
   }
 
   /** Its companies (Avec qui): each one's contracts with the commune and what a total adds. */
-  private entreprises(
-    _DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private entreprises(_DET: Record<string, Det>, sel: Sel) {
     const { cs, d } = this.prep;
     const by = new Map<string, Contrat[]>();
     for (const e of cs) {
@@ -1374,8 +1357,7 @@ export class Commune extends Vue<Props, State> {
           n: count(es.length, "contrat"),
           ans: ys.length > 1 ? `${ys[0]} → ${ys[ys.length - 1]}` : ys[0],
           amt: sum ? money(sum) : "—",
-          cls: `drow ent${on(k) ? " on" : ""}`,
-          hover: sel(k),
+          ...sel(k, "entreprise", "drow ent r"),
           p: picto("entreprise"),
           seul: k0 === EI || !!d.f.entreprises[k0]?.entrepreneur_individuel,
         };
@@ -1383,11 +1365,7 @@ export class Commune extends Vue<Props, State> {
   }
 
   /** Its documents, the most recent first (V2-Entreprise's list): each its record. */
-  private documents(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private documents(DET: Record<string, Det>, sel: Sel) {
     const { d } = this.prep;
     return d.all.map((e) => {
       const k = `d${e.id}`;
@@ -1434,12 +1412,11 @@ export class Commune extends Vue<Props, State> {
       return {
         qui: q.entR || q.quiR,
         quiStyle: q.qk === "n" ? "font-style: italic; color: var(--muted)" : "",
-        cls: `drow${on(k) ? " on" : ""}`,
+        ...sel(k, typeDocument(e), "drow r"),
         p: picto(typeDocument(e)),
         d: docDate(e.date, e.date_annee),
         titre: lienDocument(this.L, e, titreDocument(e)),
         fig,
-        hover: sel(k),
       };
     });
   }
@@ -1467,11 +1444,7 @@ export class Commune extends Vue<Props, State> {
 
   /** The territories (Avec qui): the build's per-commune stats, each document once, the
    * intercommunality and the département as links; the other communes of its intercommunality. */
-  private territoires(
-    DET: Record<string, Det>,
-    sel: (k: string) => Handler,
-    on: (k: string) => boolean,
-  ) {
+  private territoires(DET: Record<string, Det>, sel: Sel) {
     const { d, insee, nom, dep, pop, collectes } = this.prep;
     const L = this.L;
     const st = d.f.stats;
@@ -1549,6 +1522,7 @@ export class Commune extends Vue<Props, State> {
       rows: [[t("commune.ter_communes_registre"), fr(nDep)], ...rows4(dp)],
       links: [{ l: `${capital(da)} →`, href: depHref }],
     };
+    const TER: Record<string, TypeCle> = { m0: "commune", m1: "epci", m2: "departement" };
     const row = (k: string, nomR: RichItem, sub: string, x: Stats) => ({
       nom: nomR,
       sub,
@@ -1556,8 +1530,7 @@ export class Commune extends Vue<Props, State> {
       con: v(x, "con"),
       aut: v(x, "cam"),
       dr: v(x, "dr"),
-      hover: sel(k),
-      cls: `r${on(k) ? " on" : ""}`,
+      ...sel(k, TER[k]),
     });
     const terr = [
       // the fiche's own name is not a link to itself

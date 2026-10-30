@@ -5,6 +5,7 @@ import { Absent, load } from "../donnees.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture } from "../sources.ts";
+import "./entreprise.css";
 import template from "./entreprise.html?raw";
 import { Entreprise, type FichierEntreprise } from "./entreprise-outils.ts";
 

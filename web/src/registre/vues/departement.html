@@ -30,13 +30,13 @@
           </div>
           <sc-if value="{{show.an}}"><p class="note tw">{{anNote}}</p></sc-if>
           <p class="sober" style="margin: 0; color: var(--muted)">{{t.departement.temps_aide}}</p>
-          <div class="{{lay.yb}}" role="group" aria-label="{{yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="{{lay.yb}}" role="group" aria-label="{{yearAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
           <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}</span></sc-for></div>
           </sc-if>
           <sc-if value="{{modeIc}}">
           <h3 class="h3">{{t.departement.achats_temps_titre}}</h3>
           <p class="sober" style="margin: 0; color: var(--muted)">{{t.departement.temps_aide}}</p>
-          <div class="{{lay.yb}}" role="group" aria-label="{{achatsAlt}}"><sc-for list="{{achatsAn}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="{{lay.yb}}" role="group" aria-label="{{achatsAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{achatsAn}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
           <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{achatsAn}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
           <p class="money" style="margin: 0">{{enveloppe}}</p>
           </sc-if>
@@ -60,9 +60,9 @@
                 <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{ics}}" as="r">
-                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td>{{{r.nom}}}</td>
                   <td class="num">{{r.n}}</td>
                   <td class="num"><strong>{{r.docs}}</strong></td>
@@ -95,9 +95,9 @@
                 <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{coms}}" as="c">
-                <tr class="{{c.cls}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.hover}}">
+                <tr class="{{c.cls}}" aria-selected="{{c.sel}}" style="{{c.c}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.pick}}">
                   <td>{{{c.nom}}}<div style="font-size: 13px; margin-top: 2px">{{{c.ep}}}</div></td>
                   <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.docs}}</strong></div></td>
                   <td class="num">{{c.con}}</td>
@@ -127,9 +127,9 @@
                 <thead><tr><th scope="col">{{t.departement.entreprise}}</th>
                   <sc-for list="{{vCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
                 </tr></thead>
-                <tbody>
+                <tbody onPointerLeave="{{quitter}}">
                   <sc-for list="{{sellers}}" as="s">
-                    <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
+                    <tr class="{{s.cls}}" aria-selected="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
                   </sc-for>
                 </tbody>
               </table>
@@ -141,9 +141,9 @@
                 <thead><tr><th scope="col">{{t.departement.acheteur}}</th>
                   <sc-for list="{{bCols}}" as="c"><th scope="col" class="num" aria-sort="{{c.sort}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
                 </tr></thead>
-                <tbody>
+                <tbody onPointerLeave="{{quitter}}">
                   <sc-for list="{{buyers}}" as="b">
-                    <tr class="{{b.cls}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.hover}}"><td>{{{b.nom}}}<div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td></tr>
+                    <tr class="{{b.cls}}" aria-selected="{{b.sel}}" style="{{b.c}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.pick}}"><td>{{{b.nom}}}<div style="font-size: 13px; color: var(--muted)">{{b.cat}}</div></td><td class="num">{{b.n}}</td><td class="num"><strong>{{b.amt}}</strong></td></tr>
                   </sc-for>
                 </tbody>
               </table>
@@ -158,9 +158,9 @@
           <table class="t">
             <caption class="sr">{{t.departement.qui_lui_vend_legende}}</caption>
             <thead><tr><th scope="col">{{t.departement.entreprise}}</th><th scope="col" class="num">{{t.departement.col_contrats}}</th><th scope="col" class="num">{{t.departement.col_montant}}</th></tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{ventes}}" as="s">
-                <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
+                <tr class="{{s.cls}}" aria-selected="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}"><td>{{{s.nom}}}</td><td class="num">{{s.n}}</td><td class="num"><strong>{{s.amt}}</strong></td></tr>
               </sc-for>
             </tbody>
           </table>
@@ -175,12 +175,12 @@
           <sc-if value="{{docs.length}}">
           <h3 class="h3">{{t.departement.achats_titre}}</h3>
           <p class="sober" style="margin: 0; color: var(--muted)">{{achatsSous}}</p>
-          <div style="border-top: 2px solid var(--line)"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}} achat" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.objet}}}</span><span style="min-width: 0">{{{d.ents}}}</span><span class="a">{{d.amt}}</span></div></sc-for></div>
+          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}} achat" aria-selected="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.objet}}}</span><span style="min-width: 0">{{{d.ents}}}</span><span class="a">{{d.amt}}</span></div></sc-for></div>
           <sc-if value="{{docsMore}}"><button class="more" type="button" onClick="{{togDocs}}">{{docsLabel}}</button></sc-if>
           </sc-if>
           <sc-if value="{{aos.length}}">
           <h3 class="h3" style="margin-top: 10px">{{t.departement.ses_appels}}</h3>
-          <div style="border-top: 2px solid var(--line)"><sc-for list="{{aos}}" as="o"><div class="{{o.cls}} appel" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.hover}}"><span class="tw" style="font-size: 13.5px">{{o.d}}</span><span style="min-width: 0">{{{o.objet}}}</span><span style="min-width: 0; font-size: 14px">{{{o.suite}}}</span></div></sc-for></div>
+          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{aos}}" as="o"><div class="{{o.cls}} appel" aria-selected="{{o.sel}}" style="{{o.c}}" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.pick}}"><span class="tw" style="font-size: 13.5px">{{o.d}}</span><span style="min-width: 0">{{{o.objet}}}</span><span style="min-width: 0; font-size: 14px">{{{o.suite}}}</span></div></sc-for></div>
           </sc-if>
           <sc-if value="{{parcourir}}"><p class="sober" style="margin: 0"><a href="{{parcourir}}">{{t.departement.parcourir_tout}}</a></p></sc-if>
         </section>

@@ -20,7 +20,7 @@
           <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
           <h3 class="h3">{{t.acheteur.temps_titre}}</h3>
           <p class="sober" style="margin: 0; color: var(--muted)">{{t.acheteur.temps_aide}}</p>
-          <div class="{{lay.yb}}" role="group" aria-label="{{yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+          <div class="{{lay.yb}}" role="group" aria-label="{{yearAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
           <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
           <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
           <p class="sober" style="margin: 0">{{{tempsPhrase}}}</p>
@@ -40,9 +40,9 @@
             <thead><tr>
               <sc-for list="{{colsV}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{sellers}}" as="s">
-                <tr class="{{s.cls}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.hover}}">
+                <tr class="{{s.cls}}" aria-selected="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}">
                   <td>{{{s.nom}}}<div style="font-size: 13px; color: var(--muted)">{{{s.note}}}</div></td>
                   <td class="num">{{s.n}}</td>
                   <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{s.bar}}"></span><strong>{{s.amt}}</strong></div></td>
@@ -92,9 +92,9 @@
                 <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
               </sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{rows}}" as="r">
-                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td class="tw t-date" style="white-space: nowrap">{{r.date}}<sc-if value="{{r.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></td>
                   <td class="t-objet">{{{r.objet}}}<sc-if value="{{r.mixte}}"><div style="margin-top: 3px"><span class="b" style="background: var(--warn-bg); color: var(--fg); border-style: dashed">{{t.acheteur.contrat_mixte}}</span></div></sc-if></td>
                   <td class="t-ent"><sc-for list="{{r.ents}}" as="e"><div>{{{e.lien}}}</div></sc-for></td>
@@ -119,9 +119,9 @@
             <thead><tr>
               <sc-for list="{{colsA}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{aos}}" as="a">
-                <tr class="{{a.cls}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.hover}}">
+                <tr class="{{a.cls}}" aria-selected="{{a.sel}}" style="{{a.c}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
                   <td class="tw t-date" style="white-space: nowrap">{{a.date}}</td>
                   <td class="t-objet">{{{a.objet}}}</td>
                   <td class="tw t-plus" style="font-size: 13px; color: var(--muted)">{{a.refs}}</td>

@@ -66,7 +66,11 @@
 .rg .v-commune .cells .cell:hover,
 .rg .v-commune .cells .cell.on {
   background: var(--soft);
-  box-shadow: inset 0 -5px 0 var(--type-territoire);
+}
+/* the act chosen (v2.1, A3): its type's bar, under it as the cells read across; yellow is the
+   territories' colour, never the selection's */
+.rg .v-commune .cells .cell.on {
+  box-shadow: inset 0 -5px 0 var(--c, var(--fg));
 }
 .rg .v-commune .cells .cv {
   font:
@@ -124,9 +128,11 @@
   text-align: right;
 }
 
-/* the years: one measure in ink, the selected year yellow (cadre.css's .yb draws the rest) */
-.rg .v-commune .yb button[aria-pressed="true"] span.b {
-  outline-color: var(--type-territoire);
+/* the years: one measure in ink; hovered, a thin outline of ink; chosen, the thick one of
+   cadre.css's .yb (v2.1: yellow never says the selection) */
+.rg .v-commune .yb button:not([aria-pressed="true"]):hover span.b {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
 }
 .rg .v-commune .yb button:focus-visible {
   outline: 3px solid var(--fg);
@@ -384,10 +390,11 @@
   font-weight: 600;
 }
 
-/* --- Autorisations: the decrees of the mairie's dossier on their time axis, the selection yellow --- */
+/* --- Autorisations: the decrees of the mairie's dossier on their time axis, the selection in ink
+   (v2.1: yellow is the territories' colour, never the selection's) --- */
 .rg .v-autorisations .mk.on .dot,
 .rg .v-autorisations .mk:hover .dot {
-  background: var(--type-territoire);
+  background: var(--fg);
   border-color: var(--fg);
 }
 .rg .v-autorisations .lst.autres {
@@ -409,4 +416,17 @@
   .rg .v-documents .filtres {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* v2.1's rows (cadre.css « rows »): a list's row chosen carries its type's bar at its left, an
+   inset of its own so that the bar never covers its first word; a fact of the chronology too */
+.rg .v-commune .ct.r,
+.rg .v-commune .ao.r,
+.rg .v-commune .drow.r,
+.rg .v-commune .chrono li.r {
+  padding-left: 10px;
+}
+.rg .v-commune .chrono li.r.on,
+.rg .v-commune .chrono li.r[aria-selected="true"] {
+  box-shadow: inset 5px 0 0 var(--c, var(--fg));
 }

@@ -20,7 +20,7 @@ import {
   lienEntreprise,
 } from "../liens.ts";
 import { sources } from "../sources.ts";
-import { couleur, icone } from "../types.ts";
+import { icone } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
@@ -232,9 +232,10 @@ type Det = {
   foot?: string;
 };
 
-// one colour for the measure, the fiche's type's; yellow for the selection alone (v2 § 8)
+// one colour for the measure, the fiche's type's; the mark chosen in ink (v2.1: yellow is the
+// territories' colour, never the selection's)
 const COLOURS = {
-  on: "var(--type-territoire)",
+  on: "var(--fg)",
   bar: "var(--type-entreprise)",
   prog: "var(--type-entreprise)",
 };
@@ -324,7 +325,8 @@ export class Entreprise extends Vue<Props, State> {
         label: t("entreprise.annee_label", { y, v: meur(sums[i]), n: ya[i].length }),
         on: String(this.on(k)),
         bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}`,
-        hover: this.pick(k),
+        hover: this.survol(k),
+        pick: this.choisir(k),
       };
     });
 
@@ -385,8 +387,7 @@ export class Entreprise extends Vue<Props, State> {
         amt: money(c.raw),
         prog: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; background: ${on ? COLOURS.on : COLOURS.prog}`,
         progLabel: t("entreprise.ecoule", { pct }),
-        cls: `bar2 rg2${on ? " on" : ""}`,
-        hover: this.pick(k),
+        ...this.ligne(k, "con", "bar2 rg2 r"),
       };
     });
 
@@ -407,8 +408,7 @@ export class Entreprise extends Vue<Props, State> {
         rep: !!c.e.date_lue && c.e.date_lue !== c.e.date,
         amt: money(c.amt),
         bar: `display: inline-block; height: 14px; width: ${Math.max(4, Math.round((c.amt / bmx) * 150))}px; background: ${on ? COLOURS.on : COLOURS.bar}; border: 1.5px solid #111`,
-        cls: `bar2 rg2b${on ? " on" : ""}`,
-        hover: this.pick(k),
+        ...this.ligne(k, "con", "bar2 rg2b r"),
       };
     });
 
@@ -461,9 +461,8 @@ export class Entreprise extends Vue<Props, State> {
         amt: c.amt ? money(c.amt) : "—",
         last: c.last.slice(0, 4),
         href: buyerHref(F, c.s),
-        cls: `r${this.on(k) ? " on" : ""}`,
-        bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${COLOURS.bar}; border: 1px solid #111`,
-        hover: this.pick(k),
+        ...this.ligne(k, commune ? "commune" : "acheteur"),
+        bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}; border: 1px solid #111`,
       };
     });
     const cols = this.cols(
@@ -500,17 +499,17 @@ export class Entreprise extends Vue<Props, State> {
       const k = `c${c.i}`;
       cDet(c, k);
       return {
-        cls: `drow${this.on(k) ? " on" : ""}`,
-        c: `--c: ${couleur("con")}`,
+        ...this.ligne(k, "con", "drow r"),
         i: icone("con"),
         d: shortDate(c.d),
         qui: placeLien(F, c),
         amt: lienDocument(F, c.e, money(c.raw)),
         dur: c.duree ? t("entreprise.duree_mois", { n: fr(c.duree) }) : "",
-        hover: this.pick(k),
       };
     });
-    const d0 = this.state.sel ? DET[this.state.sel] : undefined;
+    // the panel: the row hovered or focused, else the one chosen (A3)
+    const vu = this.affiche();
+    const d0 = vu ? DET[vu] : undefined;
     const det = d0
       ? {
           kicker: d0.kicker,
@@ -612,6 +611,7 @@ export class Entreprise extends Vue<Props, State> {
         : t("entreprise.docs_sans_modification", { contrats: count(CT.length, "contrat") }),
       parcourir: qNom ? `/registre/?${new URLSearchParams({ q: qNom })}` : "/registre/",
       det,
+      quitter: this.quitter(),
     };
   }
 }

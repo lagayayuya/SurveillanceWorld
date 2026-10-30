@@ -34,9 +34,9 @@
                 <sc-for list="{{aut.items}}" as="i"><li><strong>{{i.a}}</strong><br>{{i.b}}</li></sc-for>
               </ul>
               <h3 class="h3" style="font-size: 16px; margin-top: 6px">{{aut.h3}}</h3>
-              <div class="cells" role="list" style="{{aut.cols}}">
+              <div class="cells" role="list" style="{{aut.cols}}" onPointerLeave="{{quitter}}">
                 <sc-for list="{{arr}}" as="a">
-                  <div role="listitem" class="{{a.cls}}" tabindex="0" aria-label="{{a.label}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.hover}}">
+                  <div role="listitem" class="{{a.cls}}" style="{{a.c}}" tabindex="0" aria-label="{{a.label}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
                     <div class="cv" aria-hidden="true">{{a.n}}</div>
                     <div class="tw cd" aria-hidden="true">{{a.d}}</div>
                   </div>
@@ -45,7 +45,7 @@
               <p class="sober" style="margin: 0">{{{aut.hist}}}</p>
             </div></sc-if>
 
-            <sc-if value="{{prv.show}}"><div class="{{prv.cls}}" onMouseEnter="{{prv.hover}}" onFocus="{{prv.hover}}" onClick="{{prv.hover}}">
+            <sc-if value="{{prv.show}}"><div class="{{prv.cls}}" onMouseEnter="{{prv.hover}}" onFocus="{{prv.hover}}" onClick="{{prv.pick}}">
               <h3 class="h3">{{f.commune.aussi_a}}</h3>
               <p class="sober" style="margin: 0"><strong>{{prv.cam}}</strong> {{f.commune.de_commerces_et_d_entreprises}} <strong>{{prv.arr}}</strong>.</p>
               <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--line)">
@@ -74,7 +74,7 @@
           <sc-if value="{{years.length}}">
             <h3 class="h3">{{t.commune.temps_titre}}</h3>
             <p class="sober" style="margin: 0; color: var(--muted)">{{t.commune.temps_aide}}</p>
-            <div class="{{lay.yb}}" role="group" aria-label="{{arg.yearAlt}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.hover}}" aria-label="{{y.label}}" title="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
+            <div class="{{lay.yb}}" role="group" aria-label="{{arg.yearAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}" title="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
             <div class="{{lay.yl}}" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
             <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
           </sc-if>
@@ -82,9 +82,9 @@
           <div class="{{lay.deux}}">
             <sc-if value="{{arg.ctr.length}}"><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
               <h3 class="h3">{{arg.ctrTitre}}</h3>
-              <div style="border-top: 2px solid var(--line)">
+              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
                 <sc-for list="{{ctr}}" as="c">
-                  <div class="{{c.cls}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.hover}}">
+                  <div class="{{c.cls}}" aria-selected="{{c.sel}}" style="{{c.c}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.pick}}">
                     <span style="min-width: 0">{{{c.l1}}}<span class="tw sub">{{c.l2}}<sc-if value="{{c.rep}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if>{{c.l2b}}</span></span>
                     <span class="tw cours">{{c.cours}}</span>
                   </div>
@@ -94,9 +94,9 @@
             </div></sc-if>
             <sc-if value="{{aoL.length}}"><div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
               <h3 class="h3">{{t.commune.frise_aos}}</h3>
-              <div style="border-top: 2px solid var(--line)">
+              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
                 <sc-for list="{{aoL}}" as="o">
-                  <div class="{{o.cls}}" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.hover}}">
+                  <div class="{{o.cls}}" aria-selected="{{o.sel}}" style="{{o.c}}" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.pick}}">
                     <span class="tw sub">{{o.date}}</span>
                     <span style="min-width: 0">{{{o.l}}}<span class="tw sub">{{o.suite}}</span></span>
                   </div>
@@ -112,9 +112,9 @@
 
           <sc-if value="{{chrono.length}}">
             <h3 class="h3" style="margin-top: 10px">{{t.commune.ce_qui_s_est_passe}}</h3>
-            <ol class="chrono">
+            <ol class="chrono" onPointerLeave="{{quitter}}">
               <sc-for list="{{chrono}}" as="h">
-                <li class="{{h.cls}}" onMouseEnter="{{h.hover}}" onFocus="{{h.hover}}" onClick="{{h.hover}}">
+                <li class="{{h.cls}}" aria-selected="{{h.sel}}" style="{{h.c}}" onMouseEnter="{{h.hover}}" onFocus="{{h.hover}}" onClick="{{h.pick}}">
                   <span class="tw cdate">{{h.d}}<sc-if value="{{h.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if></span>
                   <sc-if value="{{h.doc}}"><span class="mini" style="{{h.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{h.p.i}}"></path></svg></span></sc-if>
                   <sc-if value="{{h.mark}}"><span class="{{h.mark}}" aria-hidden="true"></span></sc-if>
@@ -137,8 +137,8 @@
           <h2 class="h2"><span class="num">{{secs.avecqui.n}}</span>{{secs.avecqui.l}}</h2>
           <sc-if value="{{ents.length}}">
             <h3 class="h3">{{t.commune.ses_entreprises}}</h3>
-            <div style="border-top: 2px solid var(--line)">
-              <sc-for list="{{ents}}" as="e"><div class="{{e.cls}}" onMouseEnter="{{e.hover}}" onFocus="{{e.hover}}" onClick="{{e.hover}}"><span class="mini" style="{{e.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{e.p.i}}"></path></svg></span><span style="min-width: 0">{{{e.nom}}}</span><span class="tw" style="font-size: 13.5px">{{e.ans}}</span><span class="m">{{e.n}}</span><span class="a">{{e.amt}}</span></div></sc-for>
+            <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
+              <sc-for list="{{ents}}" as="e"><div class="{{e.cls}}" aria-selected="{{e.sel}}" style="{{e.c}}" onMouseEnter="{{e.hover}}" onFocus="{{e.hover}}" onClick="{{e.pick}}"><span class="mini" style="{{e.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{e.p.i}}"></path></svg></span><span style="min-width: 0">{{{e.nom}}}</span><span class="tw" style="font-size: 13.5px">{{e.ans}}</span><span class="m">{{e.n}}</span><span class="a">{{e.amt}}</span></div></sc-for>
             </div>
           </sc-if>
 
@@ -151,9 +151,9 @@
           <table class="t">
             <caption class="sr">{{{ter.caption}}}</caption>
             <thead><tr><th scope="col">{{t.commune.territoire}}</th><th scope="col" class="num">{{t.commune.documents}}</th><th scope="col" class="num">{{t.commune.contrats}}</th><th scope="col" class="num">{{t.commune.autorisations}}</th><th scope="col" class="num">{{t.commune.drones}}</th></tr></thead>
-            <tbody>
+            <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{terr}}" as="r">
-                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td>{{{r.nom}}}<div style="font-size: 13px; color: var(--muted)">{{r.sub}}</div></td>
                   <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.con}}</td><td class="num">{{r.aut}}</td><td class="num">{{r.dr}}</td>
                 </tr>
@@ -175,7 +175,7 @@
           <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
           <sc-if value="{{nDocs}}">
             <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
-            <div style="border-top: 2px solid var(--line)"><sc-for list="{{docsL}}" as="d"><div class="{{d.cls}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="mini" style="{{d.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.p.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.titre}}}<span class="dqui" style="{{d.quiStyle}}">{{{d.qui}}}</span></span><span class="a">{{d.fig}}</span></div></sc-for></div>
+            <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docsL}}" as="d"><div class="{{d.cls}}" aria-selected="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.p.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.titre}}}<span class="dqui" style="{{d.quiStyle}}">{{{d.qui}}}</span></span><span class="a">{{d.fig}}</span></div></sc-for></div>
             <p class="sober liens" style="margin: 0">{{{tous}}}</p>
           </sc-if>
           <sc-if value="{{introuvables.length}}">

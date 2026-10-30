@@ -47,14 +47,15 @@
   height: 20px;
   transform: rotate(90deg);
 }
-/* the selection alone is yellow (v2 § 8): the frame's pink stays the frame's */
+/* the step chosen in ink (v2.1: yellow is the territories' colour, never the selection's); the
+   frame's pink stays the frame's */
 .rg .v-contrat .par .st:hover,
 .rg .v-contrat .par .st.on {
   border-color: var(--line);
   background: var(--soft);
 }
 .rg .v-contrat .par .st.on {
-  box-shadow: inset 0 -6px 0 var(--type-territoire);
+  box-shadow: inset 0 -6px 0 var(--fg);
 }
 .rg .v-contrat .par .st.ghostst {
   border-color: var(--muted);
@@ -92,7 +93,7 @@
   grid-template-columns: 24px 130px minmax(0, 1fr) auto;
   padding: 4px 0;
 }
-.rg .v-contrat .drow .r {
+.rg .v-contrat .drow .dref {
   max-width: 330px;
   text-align: right;
   font-size: 13.5px;
@@ -107,7 +108,7 @@
     grid-template-columns: 24px 96px minmax(0, 1fr);
     padding: 6px 0;
   }
-  .rg .v-contrat .drow .r {
+  .rg .v-contrat .drow .dref {
     grid-column: 2 / -1;
     max-width: none;
     text-align: left;

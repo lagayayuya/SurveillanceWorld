@@ -1,0 +1,19 @@
+/* The company's fiche (V2-Entreprise): what v2.1 adds to registre.css's rules for it. */
+
+/* a row of a list (cadre.css « rows »): an inset of its own for the bar of its type's colour that
+   says it is chosen, so that the bar never covers its first word */
+.rg .v-entreprise .bar2.r,
+.rg .v-entreprise .drow.r {
+  position: relative;
+  padding-left: 10px;
+}
+
+/* the chart's marks: hovered, a thin outline of ink; chosen, full of ink with a thick one (cadre.css) */
+.rg .v-entreprise .yb button:not([aria-pressed="true"]):hover span.b {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .v-entreprise .yb button:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}

@@ -12,6 +12,7 @@ import { money } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { departementHref, lien } from "../liens.ts";
 import { plain } from "../texte.ts";
+import type { TypeCle } from "../types.ts";
 
 export type Comptes = { docs: number; con: number; cam: number; dr: number; arr: number };
 /** A company's or a buyer's contracts in the département: `montant` the counted ones'. */
@@ -210,6 +211,19 @@ export function trier<T extends Record<string, unknown>>(rows: T[], k: string, d
 /** An intercommunality's fiche: its département's page with `?ic=<its code>` (its SIREN). */
 export const epciHref = (dep: string, code: string): string =>
   `${departementHref(dep)}?ic=${encodeURIComponent(code)}`;
+
+/** The type of the fiche a mention leads to, read from its address (a row's bar takes its colour,
+ * cadre.css « rows »); a mention without a fiche, none. */
+export function typeDe(x: RichItem): TypeCle | undefined {
+  const href = typeof x === "object" && x && "a" in x ? x.a.href : "";
+  if (href.startsWith("/registre/commune/")) return "commune";
+  if (href.startsWith("/registre/entreprise/")) return "entreprise";
+  if (href.startsWith("/registre/acheteur/")) return "acheteur";
+  if (href.startsWith("/registre/contrat/")) return "con";
+  if (href.startsWith("/registre/departement/"))
+    return href.includes("?ic=") ? "epci" : "departement";
+  return undefined;
+}
 
 /** An intercommunality's mention: a link to its fiche when the département's file has its row. */
 export function lienEpci(

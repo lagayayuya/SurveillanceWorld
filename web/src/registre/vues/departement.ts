@@ -62,6 +62,7 @@ import {
   part,
   sourcesIds,
   trier,
+  typeDe,
   vide,
 } from "./departement-outils.ts";
 
@@ -99,10 +100,11 @@ const DOCS = 8;
 const nameFirst = (k: string) => (k === "nom" ? 1 : -1);
 const SIREN = (s: string) => s.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
 const TODAY = new Date().toISOString().slice(0, 10);
-// one colour for the measure; yellow for the selection alone (§ 8): a territory's own colour is
-// that yellow, so its measure is the ink, as a commune's (DECISIONS 2026-10-30)
+// one colour for the measure: a territory's own colour is yellow, so its measure is the ink, as a
+// commune's (DECISIONS 2026-10-30); the mark chosen is full of ink with a thick outline (v2.1: yellow
+// never says the selection), the outline the kit's (cadre.css .yb)
 const BAR = "var(--fg)";
-const ON = "var(--type-territoire)";
+const ON = "var(--fg)";
 /** An amount in millions, one decimal, as the bars write them; below 100 000 € in euros. */
 const meur = (n: number): string =>
   !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
@@ -177,7 +179,6 @@ class Departement extends Vue<Props, State> {
     const couv = f.couverture;
     const col = couv.etat === "collecte";
     const etat = col ? "" : etatDepartement(dep, N.nom, couv);
-    const sel = S.sel;
     const DET: Record<string, Detail> = {};
     const v = (n: number) => (col ? fr(n) : "—");
     const carte = (n: number | null) => (n == null ? "—" : fr(n));
@@ -214,8 +215,7 @@ class Departement extends Vue<Props, State> {
             aut: v(o.aut),
             dr: v(o.dr),
             cams: carte(o.cams),
-            cls: `r${sel === k ? " on" : ""}`,
-            hover: this.pick(k),
+            ...this.ligne(k, "epci"),
           };
         });
     const icCols = this.cols(
@@ -265,10 +265,9 @@ class Departement extends Vue<Props, State> {
       aut: v(c.aut),
       dr: v(c.dr),
       cams: carte(c.cams),
-      cls: `r${sel === `c${c.insee}` ? " on" : ""}`,
-      hover: this.pick(`c${c.insee}`),
+      ...this.ligne(`c${c.insee}`, "commune"),
       // linear (R1's was a square root, a hidden scale: v2 § 8)
-      bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.docs / mxd) * 110))}px; background: ${sel === `c${c.insee}` ? ON : BAR}; border: 1px solid #111`,
+      bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.docs / mxd) * 110))}px; background: ${this.on(`c${c.insee}`) ? ON : BAR}; border: 1px solid #111`,
     }));
     const comCols = this.cols(
       [
@@ -327,8 +326,7 @@ class Departement extends Vue<Props, State> {
             nom: lk,
             n: fr(o.n),
             amt: montant(o),
-            cls: `r${sel === k ? " on" : ""}`,
-            hover: this.pick(k),
+            ...this.ligne(k, "entreprise"),
           };
         });
     const heads = (cur: "n" | "amt", key: "sortV" | "sortB") =>
@@ -387,8 +385,7 @@ class Departement extends Vue<Props, State> {
             cat: cat(o),
             n: fr(o.n),
             amt: montant(o),
-            cls: `r${sel === k ? " on" : ""}`,
-            hover: this.pick(k),
+            ...this.ligne(k, typeDe(lk)),
           };
         });
 
@@ -426,7 +423,7 @@ class Departement extends Vue<Props, State> {
       const k = `a${i}`;
       const lx = lexique(a.f);
       return {
-        cls: `drow${sel === k ? " on" : ""}`,
+        ...this.ligne(k, "con", "drow r"),
         d: shortDate(a.c.d),
         objet: lienDocument(lx, a.c.e, a.c.label, true),
         ents: a.c.ents.length
@@ -435,7 +432,6 @@ class Departement extends Vue<Props, State> {
             )
           : [t("acheteur.ent_non_publiee")],
         amt: money(a.c.m0),
-        hover: this.pick(k),
       };
     });
     // its calls for tenders (its buyer files'): those of its contracts and those no contract was
@@ -471,11 +467,10 @@ class Departement extends Vue<Props, State> {
         link: [t("departement.voir_appel"), o.href],
       };
       return {
-        cls: `drow${sel === k ? " on" : ""}`,
+        ...this.ligne(k, "ao", "drow r"),
         d: shortDate(o.d),
         objet: lien("ao", o.href, o.objet, true),
         suite,
-        hover: this.pick(k),
       };
     });
     // who sold to the intercommunality (its own purchases): each company a link
@@ -498,8 +493,7 @@ class Departement extends Vue<Props, State> {
         nom: lk,
         n: fr(x.n),
         amt: x.montant ? money(x.montant) : "—",
-        cls: `r${sel === k ? " on" : ""}`,
-        hover: this.pick(k),
+        ...this.ligne(k, "entreprise"),
       };
     });
 
@@ -518,7 +512,7 @@ class Departement extends Vue<Props, State> {
       ? []
       : yrs.map((y, i) => {
           const k = `y${y}`;
-          const on = sel === k;
+          const on = this.on(k);
           const fill = on ? ON : BAR;
           const o = AN[y];
           const h = absent(y) ? 0 : Math.max(vals[i] ? 3 : 0, Math.round((vals[i] / mx) * 150));
@@ -551,7 +545,8 @@ class Departement extends Vue<Props, State> {
               ? t("departement.annee_alt_absente", { y })
               : t("departement.annee_alt", { y, n: vals[i] }),
             on: String(on),
-            hover: this.pick(k),
+            hover: this.survol(k),
+            pick: this.choisir(k),
             // the year in progress hatched, its one mark (« * » under it says so)
             bar: !h
               ? "height: 0; border-width: 0"
@@ -583,7 +578,7 @@ class Departement extends Vue<Props, State> {
     const mxa = Math.max(1, ...Y.map((y) => y.montant));
     const achatsAn = Y.map((a) => {
       const k = `y${a.y}`;
-      const on = sel === k;
+      const on = this.on(k);
       DET[k] = {
         kicker: t("departement.k_annee"),
         title: a.y,
@@ -598,7 +593,8 @@ class Departement extends Vue<Props, State> {
         n: count(a.cs.length, "contrat"),
         label: t("departement.achat_annee_label", { y: a.y, v: meur(a.montant), n: a.cs.length }),
         on: String(on),
-        hover: this.pick(k),
+        hover: this.survol(k),
+        pick: this.choisir(k),
         bar: a.montant
           ? `height: ${Math.max(3, Math.round((a.montant / mxa) * 150))}px; background: ${on ? ON : BAR}`
           : "height: 0; border-width: 0",
@@ -713,8 +709,9 @@ class Departement extends Vue<Props, State> {
             etatLigne,
           ];
 
-    // --- the panel: the row hovered, focused or touched; the territory at rest
-    const d0 = sel ? DET[sel] : undefined;
+    // --- the panel: the row hovered or focused, else the one chosen (A3); at rest, what to choose
+    const vu = this.affiche();
+    const d0 = vu ? DET[vu] : undefined;
     const det = d0
       ? {
           kicker: d0.kicker,
@@ -827,6 +824,7 @@ class Departement extends Vue<Props, State> {
         : t("departement.les_n_contrats", { n: A.length }),
       togDocs: (() => this.setState({ allD: !S.allD })) as Handler,
       det,
+      quitter: this.quitter(),
     };
   }
 }

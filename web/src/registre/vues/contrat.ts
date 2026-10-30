@@ -15,7 +15,7 @@ import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { HASH, ouvrir, signaler } from "../signaler.ts";
 import { couverture, sources } from "../sources.ts";
-import { couleur, icone, repere, type TypeCle } from "../types.ts";
+import { icone, repere, type TypeCle } from "../types.ts";
 import { type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./contrat.css";
 import template from "./contrat.html?raw";
@@ -97,9 +97,10 @@ class Contrat extends Vue<Props, State> {
     }
   }
 
-  /** The step or document selected: `s<i>` a step of the parcours, `d<i>` a document of the list. */
+  /** The step or document the panel shows (hovered or focused, else chosen: A3): `s<i>` a step of
+   * the parcours, `d<i>` a document of the list. */
   private choisi(): Step | undefined {
-    const k = this.state.sel;
+    const k = this.affiche();
     if (!k) return undefined;
     const i = Number(k.slice(1));
     return k[0] === "s" ? this.props.F.steps[i] : this.props.F.docs[i];
@@ -137,16 +138,16 @@ class Contrat extends Vue<Props, State> {
       doc: !s.ghost,
       r: s.k === "fin" ? null : repere(TYPE_ETAPE[s.k]),
       next: i < F.steps.length - 1,
-      cls: `st${s.ghost ? " ghostst" : ""}${S.sel === `s${i}` ? " on" : ""}`,
-      on: String(S.sel === `s${i}`),
-      hover: this.pick(`s${i}`),
+      cls: `st${s.ghost ? " ghostst" : ""}${this.on(`s${i}`) ? " on" : ""}`,
+      on: String(this.on(`s${i}`)),
+      hover: this.survol(`s${i}`),
+      pick: this.choisir(`s${i}`),
     }));
 
     const docs = F.docs.map((s, i) => {
       const tk = s.k === "fin" ? F.type : TYPE_ETAPE[s.k];
       return {
-        cls: `drow${S.sel === `d${i}` ? " on" : ""}`,
-        c: `--c: ${couleur(tk)}`,
+        ...this.ligne(`d${i}`, tk, "drow r"),
         i: icone(tk),
         date: s.date,
         dm: s.dm,
@@ -161,7 +162,6 @@ class Contrat extends Vue<Props, State> {
         ref: s.href ? "" : s.ref,
         url: s.href ? "" : s.url,
         texte: !s.href && !s.url && !!s.ref,
-        hover: this.pick(`d${i}`),
       };
     });
 
@@ -214,6 +214,7 @@ class Contrat extends Vue<Props, State> {
       }),
       arretes: F.arretes,
       det: sel ? this.panel(F, sel) : this.rest(F),
+      quitter: this.quitter(),
       copier: () => this.copy(citation),
       sig: {
         l: t("signaler.lien"),

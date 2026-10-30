@@ -29,6 +29,12 @@
   outline: 3px solid var(--fg);
   outline-offset: 2px;
 }
+/* the chart's marks (v2.1, A3): hovered, a thin outline of ink; chosen, full of ink with a thick
+   one (cadre.css) */
+.rg .v-departement .yb button:not([aria-pressed="true"]):hover span.b {
+  outline: 1px solid var(--fg);
+  outline-offset: 2px;
+}
 /* the chart's title and its three kinds (R1's segmented buttons): the pressed one in ink */
 .rg .v-departement .an-tete {
   display: flex;

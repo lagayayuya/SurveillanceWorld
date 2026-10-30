@@ -78,9 +78,10 @@ const RECENT = (() => {
   return d.toISOString().slice(0, 10);
 })();
 const NUM = new Set(["amt", "dur", "off", "n"]);
-// one colour for the measure, the fiche's type's; yellow for the selection alone (v2 § 8)
+// one colour for the measure, the fiche's type's; the mark chosen in ink (v2.1: yellow is the
+// territories' colour, never the selection's)
 const BAR = "var(--type-acheteur)";
-const ON = "var(--type-territoire)";
+const ON = "var(--fg)";
 /** Values are written on the bars up to twelve of them (v2 § 8); beyond, the label and the panel. */
 const ECRITES = 12;
 
@@ -207,7 +208,8 @@ class Acheteur extends Vue<Props, State> {
         bar: a.montant
           ? `height: ${Math.max(3, Math.round((a.montant / mxs) * 150))}px; background: ${on ? ON : BAR}`
           : "height: 0; border-width: 0",
-        hover: this.pick(k),
+        hover: this.survol(k),
+        pick: this.choisir(k),
       };
     });
 
@@ -292,8 +294,7 @@ class Acheteur extends Vue<Props, State> {
         amt: x.montant ? money(x.montant) : "—",
         note,
         bar: `display: inline-block; height: 10px; width: ${x.montant ? Math.max(3, Math.round((x.montant / mxv) * (wide ? 160 : 60))) : 0}px; background: ${this.on(k) ? ON : BAR}; border: 1px solid #111`,
-        cls: `r${this.on(k) ? " on" : ""}`,
-        hover: this.pick(k),
+        ...this.ligne(k, "entreprise"),
       };
     });
     const colsV = this.cols(
@@ -359,8 +360,7 @@ class Acheteur extends Vue<Props, State> {
         amt2: c.m1 ? t("acheteur.apres_modif", { eur: moneyFull(c.m1) }) : "",
         dur: this.dur(c) || "—",
         off: c.off == null ? t("format.non_publie") : fr(c.off),
-        cls: `r${this.on(`c${i}`) ? " on" : ""}`,
-        hover: this.pick(`c${i}`),
+        ...this.ligne(`c${i}`, "con"),
       };
     });
     const cols = this.cols(
@@ -424,8 +424,7 @@ class Acheteur extends Vue<Props, State> {
       missing: !x.contrat.length,
       probable: x.a.probable,
       manque: x.manque,
-      cls: `r${this.on(x.k) ? " on" : ""}`,
-      hover: this.pick(x.k),
+      ...this.ligne(x.k, "ao"),
     }));
     const colsA = this.cols(
       [
@@ -452,7 +451,9 @@ class Acheteur extends Vue<Props, State> {
     if (nVerif) mt.push(t("acheteur.mt_a_verifier", { n: nVerif }));
     if (nNational) mt.push(t("acheteur.mt_national", { n: nNational }));
 
-    const d0 = S.sel ? DET[S.sel] : undefined;
+    // the panel: the row hovered or focused, else the one chosen (A3)
+    const vu = this.affiche();
+    const d0 = vu ? DET[vu] : undefined;
     const det = d0
       ? {
           kicker: d0.kicker,
@@ -537,6 +538,7 @@ class Acheteur extends Vue<Props, State> {
       lie,
       mob,
       det,
+      quitter: this.quitter(),
     };
   }
 }
