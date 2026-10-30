@@ -1,88 +1,102 @@
-// View 6 · Commune · Carte et drones (/registre/commune/<insee>/carte[?mois=YYYY-MM]; mockup
-// CarteTemps-grand, the prototype's vues/carte.js): the tilted map (carte3d.ts) in the mockup's frame,
-// its layers and its panel, the frieze of the slots of flight with its brush, the list. The slots are
-// the build's (the commune file's `drones`, pipeline drones.py): the hours the acts state, grouped by
-// period and sites; an act whose zone was not deduced is only listed, with its source, never drawn.
-// The map, the frieze and the list follow one state: a period (all dates, ?mois= or the brush), a
-// chosen slot, a hovered one.
-import type { Carte, Site as CarteSite, Translate, Unit } from "../carte3d.ts";
+// View 6 · Commune · Carte et drones (/registre/commune/<insee>/carte[?mois=YYYY-MM]; board
+// V2-CarteDrones): the register shrinks to a panel on the right (panneau()) and draws on the site's
+// map behind it (drones.ts): the commune's outline, its drone zones as volumes whose height is the
+// hours authorised on the period, the map tilted; the cameras are the fields the map already shows.
+// Over the map: « ← Le registre » and the legend, the map's commands (3D, turn, north), « Heures de
+// vol autorisées, par semaine ». In the panel: the commune's band, three tickets, the programme's
+// note, the chosen slot's detail, the slots of the period. The slots are the build's (drones.py):
+// an act whose zone was not deduced is only listed, never drawn. The map, the chart and the list
+// follow one state: a period (every date, ?mois=, a month or a week clicked), a chosen slot, a
+// hovered one. On leaving, the map loses all it was given and goes back where it was.
+import type { Map as MlMap } from "maplibre-gl";
 import { etatDepartement } from "../collecte.ts";
-import { benefLabel, commune, communeHref, type Donnees, filCommune, tete } from "../commun.ts";
+import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
+import type { Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
-import { count, longMonth } from "../format.ts";
+import { type Calque, calque, lireContour, type Site } from "../drones.ts";
+import { count, fr, longMonth } from "../format.ts";
+import { carteDuSite } from "../hote.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../modale.ts";
+import { departementHref, lienDocument } from "../liens.ts";
+import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
-import { type BaseState, Vue } from "../vue.ts";
+import { couleur, icone, repere as repereType } from "../types.ts";
+import { type BaseState, large, Vue } from "../vue.ts";
 import template from "./carte.html?raw";
+import "./carte.css";
 import {
-  attribution,
-  bars,
   type Creneau,
+  dansPeriode,
   dateTxt,
   drones,
   heuresTxt,
+  jourTxt,
   mois,
-  months,
-  msOf,
+  moisAxe,
   type NonDeduit,
   overlaps,
+  type Periode,
+  repere,
+  type Semaine,
+  semaines,
   sitesHours,
   span,
-  sumHours,
-  xOf,
+  tickets,
+  volLabel,
 } from "./carte-outils.ts";
 
-const PLAY_MS = 1400;
-const ROW =
-  "all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 210px 180px minmax(0, 1fr) minmax(110px, auto); gap: 14px; align-items: center; min-height: 46px; padding: 0 8px; border-bottom: 1px solid var(--rule); ";
-const ROW_ON = "background: var(--soft); box-shadow: inset 4px 0 0 var(--accent-fill)";
-// the layers' chips: the mockup's swatches (a camera: a dark ringed point)
-const LAYERS: [keyof Couches, string, string][] = [
-  ["cams", "carte.couche_cams", "background: #111; box-shadow: 0 0 0 2px #f2efe6, 0 0 0 3px #111"],
-  [
-    "vsa",
-    "carte.couche_vsa",
-    "background: repeating-linear-gradient(45deg, #ffe800 0 3px, #111 3px 6px)",
-  ],
-  ["drones", "carte.couche_drones", "background: #7fd4ff"],
-];
+/** The tilt of the map in 3D, degrees (R1a's tilted map's). */
+const PITCH = 50;
+/** One press of a turn button, degrees. */
+const TURN = 45;
+const MOVE_MS = 900;
+/** The board's sky blue and yellow: the measure and the selection. */
+const BLEU = "#7fd4ff";
+const JAUNE = "#ffe800";
+/** The chart's height in its viewBox: the axis at 104, the reference line at 14. */
+const AXE = 104;
+const HAUT = 14;
 
-type Couches = { cams: boolean; vsa: boolean; drones: boolean };
 type Props = Extract<Route, { view: "carte" }> & { d: Donnees };
-type State = BaseState &
-  Couches & {
-    r0: number | null;
-    r1: number | null;
-    /** the chosen slot, the hovered one, the chosen act without a zone (-1: none) */
-    cur: number;
-    hov: number;
-    nd: number;
-    playing: boolean;
-    info: boolean;
-    carte: "attente" | "ok" | "absente";
-    /** the map file's credit for its cameras (OpenStreetMap, ODbL) */
-    source: string;
-  };
+type State = BaseState & {
+  r0: number | null;
+  r1: number | null;
+  /** the chosen slot, the hovered one, the chosen act without a slot (-1: none) */
+  cur: number;
+  hov: number;
+  nd: number;
+  /** the site pointed at on the map */
+  site: string | null;
+  /** the week shown in the chart's tooltip (-1: none) */
+  wk: number;
+  /** the chart's width, CSS px */
+  fw: number;
+  is3d: boolean;
+};
 
-const theme = (): "light" | "dark" =>
-  document.documentElement.dataset.mode === "dark" ? "dark" : "light";
 const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const today = (): number => {
   const d = new Date();
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
+const DAY = 86_400_000;
 
 class CarteDrones extends Vue<Props, State> {
-  private map: Carte | null = null;
+  private map: MlMap | null = null;
+  private layer: Calque | null = null;
   private dead = false;
-  private player = 0;
-  private drag: number | null = null;
+  private abort = new AbortController();
+  private saved: { center: [number, number]; zoom: number; bearing: number; pitch: number } | null =
+    null;
+  private ro: ResizeObserver | null = null;
+  /** the period whose hours the map shows */
   private synced = "";
-  private making: HTMLElement | null = null;
-  private park: HTMLElement | null = null;
-  private readonly onTheme = () => this.map?.setTheme(theme());
+  private readonly onTheme = () => requestAnimationFrame(() => this.layer?.encre(this.ink()));
+  private readonly onPitch = () => {
+    const on = (this.map?.getPitch() ?? 0) > 5;
+    if (on !== this.state.is3d) this.setState({ is3d: on });
+  };
 
   protected init(p: Props): Partial<State> {
     const r = mois(p.mois);
@@ -92,17 +106,28 @@ class CarteDrones extends Vue<Props, State> {
       cur: -1,
       hov: -1,
       nd: -1,
-      playing: false,
-      info: false,
-      cams: true,
-      vsa: true,
-      drones: true,
-      carte: "attente",
-      source: "",
+      site: null,
+      wk: -1,
+      fw: large() ? 868 : 340,
+      is3d: true,
     };
+  }
+  panneau(): boolean {
+    return true;
   }
   titre(): string {
     return t("carte.titre_vue", { nom: this.props.d.f.commune.nom });
+  }
+  type(): "commune" {
+    return "commune";
+  }
+  fil(): Miette[] {
+    const d = this.props.d;
+    const dep = d.f.commune.dep;
+    return [
+      { k: "registre", l: t("types.registre.l"), href: "/registre/" },
+      { k: "departement", l: d.f.stats.dep.nom ?? dep, href: departementHref(dep) },
+    ];
   }
   private get T(): Creneau[] {
     return drones(this.props.d).creneaux;
@@ -110,273 +135,334 @@ class CarteDrones extends Vue<Props, State> {
   private get ND(): NonDeduit[] {
     return drones(this.props.d).non_deduits;
   }
-  private range() {
-    const { A, B } = span(this.T, today());
+  private periode(): Periode {
     const S = this.state;
-    return { A, B, r0: S.r0 ?? A, r1: S.r1 ?? B, all: S.r0 == null };
+    return S.r0 == null || S.r1 == null ? null : [S.r0, S.r1];
   }
-  private shownKind(c: Creneau): boolean {
-    return (c.kind === "drone" && this.state.drones) || (c.kind === "vsa" && this.state.vsa);
+  private inP(c: Creneau): boolean {
+    const r = this.periode();
+    return !r || overlaps(c, r[0], r[1]);
+  }
+  private ink(): string {
+    const el = document.querySelector(".v-carte") ?? document.documentElement;
+    return getComputedStyle(el).getPropertyValue("--fg").trim() || "#111111";
   }
 
-  // --- the map ---------------------------------------------------------------------------------
+  // --- the site's map ---------------------------------------------------------------------------
   componentDidMount(): void {
     addEventListener("themechange", this.onTheme);
-    this.player = window.setInterval(() => {
-      const n = this.T.length;
-      if (this.state.playing && n && !reduced())
-        this.setState({ cur: (this.state.cur + 1) % n, hov: -1, nd: -1 });
-      else if (this.state.playing) this.setState({ playing: false });
-    }, PLAY_MS);
-    setTimeout(() => void this.mountMap(), 0);
+    const g = document.querySelector<HTMLElement>(".v-carte .frise-g");
+    if (g && typeof ResizeObserver === "function") {
+      this.ro = new ResizeObserver(([e]) => {
+        const w = Math.round(e.contentRect.width);
+        if (w > 100 && Math.abs(w - this.state.fw) > 1) this.setState({ fw: w });
+      });
+      this.ro.observe(g);
+    }
+    const map = carteDuSite();
+    if (!map) return;
+    this.map = map;
+    const c = map.getCenter();
+    this.saved = {
+      center: [c.lng, c.lat],
+      zoom: map.getZoom(),
+      bearing: map.getBearing(),
+      pitch: map.getPitch(),
+    };
+    map.on("pitchend", this.onPitch);
+    void this.poser(map);
+  }
+  /** Its layers once the map's style is there, then the outline, then the flight to the commune. */
+  private async poser(map: MlMap): Promise<void> {
+    const d = this.props.d;
+    const used = new Set(this.T.flatMap((c) => c.sites));
+    const sites = d.f.zones.sites.filter((s) => used.has(s.id)) as unknown as Site[];
+    const make = (): boolean => {
+      if (this.dead || this.layer) return true;
+      try {
+        this.layer = calque(map, {
+          insee: d.insee,
+          sites,
+          encre: this.ink(),
+          onSurvol: (id) => {
+            if (id !== this.state.site) this.setState({ site: id });
+          },
+          onChoix: (id) => {
+            const i = this.slotOf(id);
+            if (i >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
+          },
+        });
+        this.synced = "";
+        this.syncMap();
+        return true;
+      } catch {
+        // the map's style is still loading: again when it is
+        return false;
+      }
+    };
+    if (!make())
+      await new Promise<void>((done) => {
+        const again = () => {
+          if (make()) {
+            map.off("styledata", again);
+            done();
+          }
+        };
+        map.on("styledata", again);
+      });
+    if (this.dead || !this.layer) return;
+    // the outline from the register's map file, its head only (drones.ts lireContour)
+    if (d.f.carte.decoupee !== false) {
+      try {
+        const c = await lireContour(d.insee, this.abort.signal);
+        if (c && !this.dead) this.layer.contour(c);
+      } catch {
+        // no outline: the site's own commune shape stays
+      }
+    }
+    if (this.dead) return;
+    this.voler(map);
+  }
+  /** To the commune, tilted, in the part of the map the panel and the chart leave free. */
+  private voler(map: MlMap): void {
+    const box = this.layer?.cadre();
+    const pitch = this.state.is3d ? PITCH : 0;
+    const duration = reduced() ? 0 : MOVE_MS * 1.6;
+    if (!box) {
+      map.easeTo({ pitch, duration });
+      return;
+    }
+    const W = innerWidth;
+    const H = innerHeight;
+    const padding = large()
+      ? {
+          top: 80,
+          left: Math.min(380, W * 0.2),
+          right: Math.min(W - 300, 24 + 470 + 90),
+          bottom: Math.min(H - 300, 24 + 184 + 30),
+        }
+      : { top: 70, left: 16, right: 64, bottom: Math.round(H / 2) + 16 };
+    const cam = map.cameraForBounds(
+      [
+        [box[0], box[1]],
+        [box[2], box[3]],
+      ],
+      { padding, pitch, bearing: map.getBearing() },
+    );
+    if (!cam) return;
+    map.flyTo({ ...cam, pitch, duration, essential: true });
   }
   componentWillUnmount(): void {
     this.dead = true;
+    this.abort.abort();
     removeEventListener("themechange", this.onTheme);
-    clearInterval(this.player);
-    this.map?.destroy();
+    this.ro?.disconnect();
+    const map = this.map;
+    if (!map) return;
+    map.off("pitchend", this.onPitch);
+    this.layer?.retirer();
+    this.layer = null;
+    if (this.saved) map.easeTo({ ...this.saved, duration: reduced() ? 0 : MOVE_MS });
     this.map = null;
-    // left while the map is being made: its frame waits off screen, at its size, until carte()
-    // returns and the map is destroyed (MapLibre in a detached, sizeless frame throws)
-    const el = this.making;
-    if (el) {
-      const park = document.createElement("div");
-      park.className = "th";
-      park.setAttribute("aria-hidden", "true");
-      park.inert = true;
-      park.style.cssText = `position: fixed; top: 0; left: -${el.offsetWidth + 50}px; width: ${el.offsetWidth}px; height: ${el.offsetHeight}px; overflow: hidden; visibility: hidden`;
-      park.append(el);
-      document.body.append(park);
-      this.park = park;
-    }
   }
   componentDidUpdate(): void {
     this.syncMap();
   }
-  private async mountMap(): Promise<void> {
-    const d = this.props.d;
-    const nom = d.f.commune.nom;
-    const el = document.getElementById("carte-tps");
-    if (!el || this.dead) return;
-    // an uncut map: said at once, nothing asked (neither MapLibre nor a file that is not there)
-    if (d.f.carte.decoupee === false) {
-      this.absent(el, nom);
-      return;
-    }
-    try {
-      const { carte, carteUrl } = await import("../carte3d.ts");
-      if (this.dead) return;
-      const r = await fetch(carteUrl(d.insee));
-      const data = r.ok && /json/.test(r.headers.get("content-type") ?? "") ? await r.json() : null;
-      if (this.dead || !el.isConnected) return;
-      if (!data?.contour) {
-        this.absent(el, nom);
-        return;
-      }
-      this.setState({ carte: "ok", source: typeof data.source === "string" ? data.source : "" });
-      const tr: Translate = (k, p) => t(k.replace(/^registre\./, ""), p);
-      this.making = el;
-      let m: Carte;
-      try {
-        m = await carte(el, {
-          data,
-          t: tr,
-          theme: theme(),
-          sites: this.sites(),
-          couches: { cams: this.state.cams, vsa: this.state.vsa, drones: this.state.drones },
-          // no turn (the mockup's map turns by hand only), no control of its own: the frame has its N
-          play: false,
-          controles: false,
-          etiquettes: "survol",
-          slowStop: !/[?&]perf=1\b/.test(location.search),
-          capture: /[?&]capture=1\b/.test(location.search),
-          label: this.alt(),
-          onZone: (u) => this.onZone(u),
-          onHover: (u) => this.onHover(u),
-        });
-      } finally {
-        this.making = null;
-      }
-      if (this.dead) {
-        m.destroy();
-        this.park?.remove();
-        return;
-      }
-      this.map = m;
-      this.synced = "";
-      this.syncMap();
-      el.dataset.prete = "1";
-      document.dispatchEvent(new Event("carteprete"));
-    } catch (e) {
-      // a device that cannot draw it (no WebGL2): said in the frame, the page stays whole
-      this.park?.remove();
-      if (this.dead) return;
-      console.warn(e);
-      if (el.isConnected && !this.map) this.absent(el, nom, "commune.carte_erreur");
-    }
-  }
-  /** No map cut for this commune, or none drawn: the frame says so (L'essentiel's sentence). */
-  private absent(el: HTMLElement, nom: string, key = "commune.carte_absente"): void {
-    const p = document.createElement("p");
-    p.textContent = t(key, { nom });
-    p.style.cssText = "margin: 0; padding: 20px; color: var(--muted)";
-    el.replaceChildren(p);
-    this.setState({ carte: "absente" });
-  }
-  /** The sites the slots draw (the build's: never a zone not deduced or under review). */
-  private sites(): CarteSite[] {
-    const used = new Set(this.T.flatMap((c) => c.sites));
-    return this.props.d.f.zones.sites.filter((s) => used.has(s.id)) as unknown as CarteSite[];
-  }
-  /** The first slot over a site: the chosen one if it is, else the first in the period. */
+  /** The first slot over a site: the chosen one if it is, else the latest in the period. */
   private slotOf(site: string): number {
     const S = this.state;
     const T = this.T;
     if (S.cur >= 0 && T[S.cur].sites.includes(site)) return S.cur;
-    const { r0, r1 } = this.range();
-    return T.findIndex((c) => c.sites.includes(site) && this.shownKind(c) && overlaps(c, r0, r1));
+    for (let i = T.length - 1; i >= 0; i--)
+      if (T[i].sites.includes(site) && this.inP(T[i])) return i;
+    return -1;
   }
-  private onZone(u: Unit | null): void {
-    if (!u) return;
-    const i = this.slotOf(u.id);
-    if (i >= 0) this.setState({ cur: i, nd: -1, playing: false });
-  }
-  private onHover(u: Unit | null): void {
-    const i = u ? this.slotOf(u.id) : -1;
-    if (i !== this.state.hov) this.setState({ hov: i });
-  }
-  /** The map follows: the hours of each site over the period, or the chosen slot's; the layers. */
+  /** The map follows: each site's hours over the period, the hovered and chosen ones in yellow. */
   private syncMap(): void {
-    const m = this.map;
-    if (!m) return;
+    const L = this.layer;
+    if (!L) return;
     const S = this.state;
-    const key = [S.r0, S.r1, S.cur, S.hov, S.drones, S.vsa, S.cams].join("|");
-    if (key === this.synced) return;
-    this.synced = key;
+    const r = this.periode();
     const T = this.T;
-    const { r0, r1 } = this.range();
-    const shown =
-      S.cur >= 0
-        ? [T[S.cur]].filter((c) => this.shownKind(c))
-        : T.filter((c) => this.shownKind(c) && overlaps(c, r0, r1));
-    m.setHeures(sitesHours(shown));
-    m.setCouches({ cams: S.cams, vsa: S.vsa, drones: S.drones });
-    const f = S.hov >= 0 ? T[S.hov] : S.cur >= 0 ? T[S.cur] : null;
-    m.select(f?.sites[0] ?? null);
-    m.hover(S.hov >= 0 ? (T[S.hov].sites[0] ?? null) : null);
-  }
-  private alt(): string {
-    const { r0, r1 } = this.range();
-    const places = new Set(this.T.filter((c) => overlaps(c, r0, r1)).flatMap((c) => c.sites)).size;
-    return t("carte.alt", { nom: this.props.d.f.commune.nom, n: places });
+    const shown = T.filter((c) => this.inP(c));
+    const hs = sitesHours(shown, r);
+    const focus = S.hov >= 0 ? S.hov : S.cur;
+    const chosen = focus >= 0 ? (T[focus].sites[0] ?? null) : null;
+    const survol = S.site;
+    const words = survol
+      ? hs[survol]
+        ? volLabel(hs[survol])
+        : null
+      : focus >= 0 && chosen
+        ? volLabel({ heures: T[focus].heures ?? 0, n: T[focus].actes.length })
+        : null;
+    const hoursKey = `${S.r0}|${S.r1}`;
+    if (hoursKey !== this.synced) L.heures(hs);
+    this.synced = hoursKey;
+    L.marquer(survol, chosen, words);
   }
 
   // --- the page --------------------------------------------------------------------------------
   private pickSlot(i: number): Handler {
-    return () => this.setState({ cur: i, nd: -1, hov: -1, playing: false });
+    return () => {
+      if (this.state.cur !== i || this.state.nd >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
+    };
   }
   private hoverSlot(i: number): Handler {
     return () => {
       if (this.state.hov !== i) this.setState({ hov: i });
     };
   }
+  private setPeriode(r: Periode): void {
+    this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, cur: -1, hov: -1, nd: -1 });
+  }
+  private ease(o: { pitch?: number; bearing?: number }): void {
+    this.map?.easeTo({ ...o, duration: reduced() ? 0 : MOVE_MS });
+  }
 
   renderVals() {
     const S = this.state;
     const d = this.props.d;
+    const L: Lexique = {
+      entreprises: d.f.entreprises,
+      acheteurs: d.f.acheteurs,
+      communes: d.f.communes,
+    };
     const insee = d.insee;
     const nom = d.f.commune.nom;
     const T = this.T;
     const ND = this.ND;
-    const n = T.length;
-    const { A, B, r0, r1, all } = this.range();
-    const allMode = all && S.cur < 0;
-    const inR = (c: Creneau) => overlaps(c, r0, r1);
+    const r = this.periode();
+    const now = today();
+    const { A, B } = span(T, now);
+    const drone = T.filter((c) => c.kind === "drone");
 
-    // the frieze
-    const placed = bars(T, A, B);
-    const barVals = T.map((c, i) => {
-      const on = S.cur === i || S.hov === i;
-      const vis = this.shownKind(c) && (S.cur >= 0 ? S.cur === i : inR(c));
-      const sure = c.heures != null;
+    // the tickets: the period's
+    const tk = tickets(T, ND, r);
+
+    // the chart: one bar per week, the months under it
+    const W = Math.max(200, S.fw);
+    const weeks = semaines(drone, A, B);
+    const n = weeks.length;
+    const step = (W - 4) / n;
+    const bw = Math.max(2, Math.min(18, step * 0.62));
+    const top = repere(Math.max(0, ...weeks.map((w) => w.heures)));
+    const yOf = (h: number) => AXE - (h / top) * (AXE - HAUT);
+    const xOf = (ms: number) => 2 + ((ms - A) / (B - A)) * (W - 4);
+    const focus = S.hov >= 0 ? S.hov : S.cur;
+    const selWeek =
+      focus >= 0 ? weeks.findIndex((w) => T[focus].t0 >= w.t0 && T[focus].t0 < w.t1) : -1;
+    const inR = (w: Semaine) => !r || (w.t1 > r[0] && w.t0 < r[1]);
+    const wk = weeks.map((w, i) => {
+      const h = w.heures > 0 ? Math.max(2, AXE - yOf(w.heures)) : 0;
+      const x = 2 + i * step;
+      const sel = i === selWeek;
       return {
-        x: placed[i].x.toFixed(1),
-        y: placed[i].y,
-        w: placed[i].w.toFixed(1),
-        fill: on ? "var(--accent-fill)" : c.kind === "vsa" ? "#b38f00" : "var(--drone)",
-        op: vis ? 1 : 0.3,
-        stroke: sure ? "none" : "var(--fg)",
-        sw: sure ? 0 : 1.2,
-        dash: sure ? "none" : "3 2",
-        hover: this.hoverSlot(i),
-        pick: ((e) => {
-          e.stopPropagation();
-          this.setState({ cur: i, nd: -1, playing: false });
+        x: (x + (step - bw) / 2).toFixed(1),
+        y: (AXE - h).toFixed(1),
+        w: bw.toFixed(1),
+        h: h.toFixed(1),
+        hx: x.toFixed(1),
+        hw: step.toFixed(1),
+        st: `fill: ${sel ? JAUNE : BLEU}; stroke: var(--line); stroke-width: ${h ? 1 : 0}; opacity: ${sel || inR(w) ? 1 : 0.35}`,
+        hover: (() => {
+          if (S.wk !== i) this.setState({ wk: i });
         }) as Handler,
+        pick: (() => this.setPeriode([w.t0, w.t1])) as Handler,
       };
     });
-    const ticks = months(A, B).map((m) => ({ x: m.x.toFixed(1), tx: m.tx.toFixed(1), l: m.l }));
-    const brush = {
-      x: xOf(r0, A, B).toFixed(1),
-      w: Math.max(2, xOf(r1, A, B) - xOf(r0, A, B)).toFixed(1),
-    };
-    const ax = Math.min(1140, xOf(today(), A, B));
-    const auj = { x: ax.toFixed(1), tx: (ax - 4).toFixed(1) };
-    const svgX = (e: { currentTarget: Element; clientX: number }) => {
-      const r = e.currentTarget.getBoundingClientRect();
-      return ((e.clientX - r.left) * 1144) / (r.width || 1144);
+    const tipTxt = (w: Semaine) =>
+      t("carte.semaine_tip", {
+        de: jourTxt(w.t0),
+        h: heuresTxt(w.heures),
+        n: w.actes,
+      });
+    const tips =
+      S.wk >= 0 && weeks[S.wk]
+        ? (() => {
+            const txt = tipTxt(weeks[S.wk]);
+            const tw = Math.round(txt.length * 6.3 + 16);
+            const cx = 2 + S.wk * step + step / 2;
+            const x = Math.max(0, Math.min(W - tw, cx - tw / 2));
+            return [{ x: x.toFixed(1), w: tw, tx: (x + 8).toFixed(1), t: txt }];
+          })()
+        : [];
+    const ms = moisAxe(drone, A, B);
+    const months = ms.map((m) => {
+      const x0 = xOf(Math.max(m.t0, A));
+      const x1 = xOf(Math.min(m.t1, B));
+      const wpx = Math.max(0, x1 - x0);
+      const on = !!r && r[0] === m.t0 && r[1] === m.t1;
+      const full = new Date(m.t0).toISOString().slice(0, 10);
+      return {
+        l: wpx < m.l.length * 6.6 + 6 ? m.l.slice(0, 1).toUpperCase() : m.l,
+        aria: t("carte.mois_aria", { mois: longMonth(full), h: heuresTxt(m.heures) }),
+        on: on ? "true" : "false",
+        st: `width: ${wpx.toFixed(1)}px${wpx < 12 ? "; visibility: hidden" : ""}`,
+        pick: (() => this.setPeriode(on ? null : [m.t0, m.t1])) as Handler,
+      };
+    });
+    const shownWeek = (i: number) => {
+      const k = Math.max(0, Math.min(n - 1, i));
+      if (k !== S.wk) this.setState({ wk: k });
     };
 
-    // the panel: a slot, an act without a zone, or the period
-    const act = T.map((c, i) => ({ c, i })).filter(
-      (o) => this.shownKind(o.c) && (S.cur >= 0 ? o.i === S.cur : inR(o.c)),
-    );
-    const rangeH = Math.round(
-      sumHours(
-        act.map((o) => o.c),
-        S.cur >= 0 || allMode ? null : [r0, r1],
-      ),
-    );
-    const places = new Set(act.flatMap((o) => o.c.sites)).size;
-    const focus = S.hov >= 0 ? S.hov : S.cur;
+    // the detail: the chosen (or hovered) slot, or the chosen act without a slot
+    type Lien = { l: string; href: string; cls: string; c: string };
     let det: {
-      kicker: string;
-      title: string;
+      c: string;
+      i: string;
+      k: string;
+      title: Rich;
       rows: { k: string; v: string }[];
       note: string;
-      links: { l: string; href: string }[];
-    };
+      links: Lien[];
+    } | null = null;
+    const aut = repereType("aut");
+    const voir = (url: string | null): Lien[] =>
+      url ? [{ l: t("arretes.voir"), href: url, cls: "lk", c: `--c: ${couleur("aut")}` }] : [];
     if (focus >= 0) {
       const c = T[focus];
-      const kicker = [t("carte.creneau_n_sur", { i: focus + 1, n })];
-      if (c.sites.length)
-        kicker.push(t(c.statut === "relu" ? "carte.trace_relu" : "carte.trace_indicatif"));
-      if (c.kind === "vsa") kicker.push(t("carte.analyse_algorithmique"));
-      const sig = signaler(d.ev.get(c.actes[0]) ?? { id: c.actes[0], affaire: c.actes[0] });
+      const e = d.ev.get(c.actes[0]);
+      const sig = signaler(e ?? { id: c.actes[0], affaire: c.actes[0] });
       det = {
-        kicker: kicker.join(" · "),
-        title: dateTxt(c.t0, true),
+        c: aut.c,
+        i: icone("aut"),
+        k: t(c.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
+        title: e ? [lienDocument(L, e, dateTxt(c.t0, true))] : dateTxt(c.t0, true),
         rows: [
+          { k: t("carte.service"), v: c.service ?? t("commun.non_precise") },
+          { k: t("carte.pour_k"), v: c.finalite ?? t("carte.finalite_non_lue") },
           {
             k: t("carte.duree"),
             v: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises_arrete"),
           },
-          { k: t("carte.service"), v: c.service ?? t("commun.non_precise") },
-          { k: t("carte.arretes"), v: String(c.actes.length) },
-          { k: t("carte.fin"), v: dateTxt(c.t1, true) },
+          {
+            k: t("carte.zone"),
+            v: c.sites.length
+              ? t(c.statut === "relu" ? "carte.zone_relue" : "carte.zone_indicative")
+              : t("arretes.zone_non_deduite"),
+          },
+          ...(c.actes.length > 1 ? [{ k: t("carte.arretes"), v: String(c.actes.length) }] : []),
         ],
-        note: t("carte.pour", { fin: c.finalite ?? t("carte.finalite_non_lue") }),
-        links: [...(c.url ? [{ l: t("arretes.voir"), href: c.url }] : []), ...(sig ? [sig] : [])],
+        note: "",
+        links: [...voir(c.url), { ...sig, cls: "", c: "" }],
       };
     } else if (S.nd >= 0 && ND[S.nd]) {
       const a = ND[S.nd];
       const e = d.ev.get(a.acte);
       const sig = signaler(e ?? { id: a.acte, affaire: a.acte });
+      const when = a.date
+        ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
+        : t("format.date_non_publiee");
       det = {
-        kicker: t(a.kind === "vsa" ? "carte.nd_kicker_vsa" : "carte.nd_kicker_drone"),
-        title: a.date ? dateTxt(Date.parse(`${a.date}T00:00:00Z`)) : t("format.date_non_publiee"),
+        c: aut.c,
+        i: icone("aut"),
+        k: t(a.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
+        title: e ? [lienDocument(L, e, when)] : when,
         rows: [
           { k: t("carte.service"), v: e ? benefLabel(e) : t("commun.non_precise") },
+          { k: t("carte.zone"), v: t("arretes.zone_non_deduite") },
           ...(a.ref
             ? [
                 {
@@ -387,66 +473,61 @@ class CarteDrones extends Vue<Props, State> {
             : []),
         ],
         note: t("carte.nd_note"),
-        links: [...(a.url ? [{ l: t("arretes.voir"), href: a.url }] : []), ...(sig ? [sig] : [])],
+        links: [...voir(a.url), { ...sig, cls: "", c: "" }],
       };
-    } else if (!n)
-      det = {
-        kicker: t("carte.toutes_les_dates_collectees"),
-        title: t("carte.aucun_creneau"),
-        rows: [
-          { k: t("carte.creneaux_de_vol"), v: "0" },
-          ...(ND.length ? [{ k: t("carte.arretes_sans_zone"), v: String(ND.length) }] : []),
-        ],
-        note: ND.length ? t("carte.nd_survol") : "",
-        links: [],
-      };
-    else
-      det = {
-        kicker: t(allMode ? "carte.toutes_les_dates_collectees" : "carte.periode_choisie"),
-        title: `${dateTxt(r0)} → ${dateTxt(r1)}`,
-        rows: [
-          { k: t("carte.creneaux_de_vol"), v: String(act.length) },
-          { k: t("carte.heures_autorisees"), v: heuresTxt(rangeH) },
-          { k: t("carte.endroits"), v: String(places) },
-        ],
-        note: t("carte.survolez"),
-        links: [],
-      };
+    }
 
-    // the list: the slots of the period, or the chosen one and those before, newest first; then the
-    // acts whose zone was not deduced (listed, never drawn)
-    const listIdx = T.map((_, i) => i)
-      .filter((i) => this.shownKind(T[i]) && (S.cur >= 0 ? i <= S.cur : inR(T[i])))
-      .reverse();
-    const rows = listIdx.map((i) => {
-      const c = T[i];
+    // the list: every slot of the period (DECISIONS 2026-10-29), newest first, the acts listed
+    // without a slot among them by their date
+    type Row = { at: number; row: Record<string, unknown> };
+    const rows: Row[] = [];
+    T.forEach((c, i) => {
+      if (!this.inP(c)) return;
+      const e = d.ev.get(c.actes[0]);
+      const when = dateTxt(c.t0);
       const on = i === S.cur || i === S.hov;
-      return {
-        d: dateTxt(c.t0, true),
-        svc: c.service ?? t("commun.non_precise"),
-        fin: c.finalite ?? t("carte.finalite_non_lue"),
-        h: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises"),
-        hover: this.hoverSlot(i),
-        pick: this.pickSlot(i),
-        style: ROW + (on ? ROW_ON : ""),
-      };
+      const fin = [
+        ...(c.sites.length ? [] : [t("carte.zone_non_deduite_court")]),
+        ...(c.kind === "vsa" ? [t("carte.analyse_algorithmique")] : []),
+        c.finalite ?? t("carte.finalite_non_lue"),
+      ].join(" · ");
+      rows.push({
+        at: c.t0,
+        row: {
+          cls: on ? "zrow on" : "zrow",
+          d: e ? [lienDocument(L, e, when, true)] : when,
+          svc: c.service ?? t("commun.non_precise"),
+          fin,
+          h: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises"),
+          hover: this.hoverSlot(i),
+          pick: this.pickSlot(i),
+        },
+      });
     });
-    const ndRows = ND.map((a, i) => {
+    ND.forEach((a, i) => {
+      if (!dansPeriode(a.date, r)) return;
       const e = d.ev.get(a.acte);
-      const on = S.nd === i && focus < 0;
-      return {
-        d: a.date ? dateTxt(Date.parse(`${a.date}T00:00:00Z`)) : t("format.date_non_publiee"),
-        svc: e ? benefLabel(e) : t("commun.non_precise"),
-        fin: [t("arretes.zone_non_deduite"), a.ref].filter(Boolean).join(" · "),
-        h: t("carte.non_dessine"),
-        pick: (() => this.setState({ nd: i, cur: -1, hov: -1, playing: false })) as Handler,
-        style: ROW + (on ? ROW_ON : ""),
-      };
+      const when = a.date
+        ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
+        : t("format.date_non_publiee");
+      rows.push({
+        at: a.date ? Date.parse(`${a.date}T00:00:00Z`) : 0,
+        row: {
+          cls: S.nd === i && focus < 0 ? "zrow on" : "zrow",
+          d: e ? [lienDocument(L, e, when, true)] : when,
+          svc: e ? benefLabel(e) : t("commun.non_precise"),
+          fin: [t("carte.zone_non_deduite_court"), a.ref].filter(Boolean).join(" · "),
+          h: t("carte.non_dessine"),
+          hover: (() => {}) as Handler,
+          pick: (() => this.setState({ nd: i, cur: -1, hov: -1 })) as Handler,
+        },
+      });
     });
+    rows.sort((a, b) => b.at - a.at);
 
-    // nothing to place on the frieze: said, with why when it is known
+    // nothing to list: said, with why when it is known
     let vide: Rich = "";
-    if (!n) {
+    if (!T.length && !ND.length) {
       const couv = d.f.couverture.departement;
       const nArr = d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
       if (couv.etat !== "collecte" && !nArr)
@@ -460,113 +541,78 @@ class CarteDrones extends Vue<Props, State> {
           { a: { href: communeHref(insee, "autorisations"), text: t("carte.vide_autorisations") } },
         ];
       else vide = t("carte.vide_aucun", { nom });
-    }
+    } else if (!rows.length) vide = t("carte.vide_periode");
 
-    const layers = LAYERS.map(([k, l, sw]) => ({
-      l: t(l),
-      pressed: S[k] ? "true" : "false",
-      pick: (() => this.setState({ [k]: !S[k] } as Partial<State>)) as Handler,
-      sw: `display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 8px; vertical-align: -2px; ${sw}${S[k] ? "" : "; opacity: .35"}`,
-      style: S[k]
-        ? "background: var(--fg); color: var(--bg)"
-        : "background: var(--bg-2); color: var(--fg)",
-    }));
-    const playOff = reduced() || !n;
-
+    const isLarge = large();
+    const lastDay = new Date(B - DAY).getTime();
     return {
       ...this.base("carte"),
-      ...filCommune(d, t("commun.onglet_carte")),
-      com: tete(d, "carte"),
-      layers,
-      det,
-      bars: barVals,
-      months: ticks,
-      brush,
-      auj,
-      rows,
-      frise: n > 0,
-      vide,
-      nd: {
-        show: ND.length > 0,
-        title: t("carte.nd_titre", { n: ND.length }),
-        rows: ndRows,
-      },
-      carteOk: S.carte !== "absente",
-      attrib: S.carte === "ok" ? attribution(S.source) : "",
-      alt: this.alt(),
-      tlAlt: t("carte.frise_alt", {
-        n,
+      band: {
+        r: repereType("commune"),
         nom,
-        de: longMonth(new Date(A).toISOString().slice(0, 10)),
-        a: longMonth(new Date(today()).toISOString().slice(0, 10)),
+        fiche: communeHref(insee),
+        ici: communeHref(insee, "carte"),
+        large: isLarge,
+        tel: !isLarge,
+      },
+      hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length),
+      is3d: S.is3d ? "true" : "false",
+      tog3d: (() => this.ease({ pitch: S.is3d ? 0 : PITCH })) as Handler,
+      rotL: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) + TURN })) as Handler,
+      rotR: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) - TURN })) as Handler,
+      north: (() => this.ease({ bearing: 0 })) as Handler,
+      nA: String(tk.actes),
+      lA: t("carte.t_arretes", { n: tk.actes }),
+      nH: fr(tk.heures),
+      nND: String(tk.nonDeduites),
+      lND: t("carte.t_nd", { n: tk.nonDeduites }),
+      rangeL: r
+        ? t("carte.du_au", { de: dateTxt(r[0]), a: dateTxt(r[1] - DAY) })
+        : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
+      allOn: r ? "false" : "true",
+      allYear: (() => this.setPeriode(null)) as Handler,
+      fw: String(W),
+      vb: `0 0 ${W} 112`,
+      gridY: String(HAUT),
+      gridTY: String(HAUT - 3),
+      gridL: heuresTxt(top),
+      wk,
+      tips,
+      tipLive: S.wk >= 0 && weeks[S.wk] ? tipTxt(weeks[S.wk]) : "",
+      friseAlt: t("carte.frise_alt2", {
+        nom,
+        de: dateTxt(A),
+        a: dateTxt(Math.min(lastDay, now)),
       }),
-      rangeLabel:
-        S.cur >= 0
-          ? t("carte.creneau_n_sur", { i: S.cur + 1, n })
-          : allMode
-            ? t("carte.range_tout", {
-                creneaux: t("carte.creneaux", { n: act.length }),
-                h: heuresTxt(rangeH),
-              })
-            : t("carte.range_periode", {
-                de: dateTxt(r0),
-                a: dateTxt(r1),
-                creneaux: t("carte.creneaux", { n: act.length }),
-                h: heuresTxt(rangeH),
-              }),
-      listTitle:
-        S.cur >= 0
-          ? t("carte.liste_choisi")
-          : allMode
-            ? t("carte.liste_tout", { n })
-            : t("carte.liste_periode", { creneaux: t("carte.creneaux", { n: act.length }) }),
-      all: (() =>
-        this.setState({ r0: null, r1: null, cur: -1, hov: -1, nd: -1, playing: false })) as Handler,
-      allPressed: allMode ? "true" : "false",
-      allStyle: allMode ? "background: var(--fg); color: var(--bg)" : "",
-      prev: (() =>
-        n &&
-        this.setState({
-          cur: S.cur <= 0 ? n - 1 : S.cur - 1,
-          nd: -1,
-          hov: -1,
-          playing: false,
-        })) as Handler,
-      next: (() =>
-        n && this.setState({ cur: (S.cur + 1) % n, nd: -1, hov: -1, playing: false })) as Handler,
-      // « Lire » walks the slots one by one; never under prefers-reduced-motion (the prototype's)
-      play: (() => {
-        if (playOff) return;
-        this.setState({ playing: !S.playing, cur: S.cur < 0 ? 0 : S.cur, nd: -1, hov: -1 });
+      wkFocus: (() => {
+        if (S.wk < 0) shownWeek(selWeek >= 0 ? selWeek : n - 1);
       }) as Handler,
-      playOff: playOff ? "disabled" : null,
-      playText: t(S.playing ? "carte.pause" : "carte.lire"),
-      playPressed: S.playing ? "true" : "false",
-      showInfo: S.info,
-      infoOpen: S.info ? "true" : "false",
-      tglInfo: (() => this.setState({ info: !S.info })) as Handler,
-      tdown: ((e) => {
-        // a drag chooses a period, it does not select the months' words
+      wkLeave: (() => {
+        if (S.wk >= 0 && document.activeElement?.closest(".frise-g") == null)
+          this.setState({ wk: -1 });
+      }) as Handler,
+      wkKey: ((e) => {
+        const k = e.key;
+        if (k === "ArrowRight" || k === "ArrowDown") shownWeek(S.wk + 1);
+        else if (k === "ArrowLeft" || k === "ArrowUp") shownWeek(S.wk < 0 ? n - 1 : S.wk - 1);
+        else if (k === "Home") shownWeek(0);
+        else if (k === "End") shownWeek(n - 1);
+        else if ((k === "Enter" || k === " ") && weeks[S.wk])
+          this.setPeriode([weeks[S.wk].t0, weeks[S.wk].t1]);
+        else if (k === "Escape" && S.wk >= 0) this.setState({ wk: -1 });
+        else return;
         e.preventDefault();
-        this.drag = svgX(e);
-        try {
-          e.currentTarget.setPointerCapture(e.pointerId);
-        } catch {
-          // no capture (a synthetic event)
-        }
       }) as Handler,
-      tmove: ((e) => {
-        if (this.drag == null) return;
-        const x = svgX(e);
-        const a = Math.min(this.drag, x);
-        const b = Math.max(this.drag, x);
-        if (b - a > 4)
-          this.setState({ r0: msOf(a, A, B), r1: msOf(b, A, B), cur: -1, nd: -1, playing: false });
+      months,
+      hasDet: det !== null,
+      det,
+      clear: (() => this.setState({ cur: -1, hov: -1, nd: -1 })) as Handler,
+      unhover: (() => {
+        if (S.hov >= 0) this.setState({ hov: -1 });
       }) as Handler,
-      tup: (() => {
-        this.drag = null;
-      }) as Handler,
-      north: (() => this.map?.north()) as Handler,
+      listT: t("carte.liste_t", { n: rows.length }),
+      rows: rows.map((x) => x.row),
+      vide,
     };
   }
 }

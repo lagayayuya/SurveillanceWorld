@@ -1,82 +1,74 @@
-<div class="{{th}}" style="font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<div class="{{th}}">
 
-  <dc-include src="tete-commune"></dc-include>
-
-  <div style="width: 1180px; margin: 0 auto; padding: 28px 0 60px; display: flex; flex-direction: column; gap: 16px">
-    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px">
-      <h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 30px; line-height: 1; text-transform: uppercase">{{t.carte.les_drones_dans_le_temps}}</h2>
-      <div style="display: flex; gap: 8px">
-        <sc-for list="{{layers}}" as="l" hint-placeholder-count="3">
-          <button class="chip" onClick="{{l.pick}}" aria-pressed="{{l.pressed}}" style="{{l.style}}"><span aria-hidden="true" style="{{l.sw}}"></span>{{l.l}}</button>
-        </sc-for>
-      </div>
+  <div class="maptag">
+    <a class="mback" href="/registre/">{{t.carte.retour_registre}}</a>
+    <div class="leg">
+      <span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span>
+      <span class="leg-in">{{t.carte.leg_hauteur}}</span>
+      <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
+      <span style="color: var(--muted)">{{t.carte.leg_fond}}</span>
     </div>
+  </div>
+  <div class="ctl" role="group" aria-label="{{t.carte.vue_carte}}">
+    <button class="sq" type="button" aria-pressed="{{is3d}}" onClick="{{tog3d}}" aria-label="{{t.carte.incliner}}">3D</button>
+    <button class="sq" type="button" onClick="{{rotL}}" aria-label="{{t.carte.tourner_gauche}}">↺</button>
+    <button class="sq" type="button" onClick="{{rotR}}" aria-label="{{t.carte.tourner_droite}}">↻</button>
+    <button class="sq" type="button" onClick="{{north}}" aria-label="{{t.carte.remettre_le_nord_en_haut}}" style="font-size: 12px">N</button>
+  </div>
 
-    <div style="display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px">
-      <div style="position: relative; height: 520px; border: 2px solid var(--fg); background: var(--bg-2); overflow: hidden">
-        <div id="carte-tps" data-dc-keep="1" role="img" aria-label="{{alt}}" style="position: absolute; inset: 0"></div>
-        <sc-if value="{{carteOk}}"><span class="tw" style="position: absolute; left: 12px; bottom: 8px; font-size: 12px; color: var(--muted); z-index: 3">{{t.carte.glisser_pour_tourner_molette_pour}}</span>
-        <button class="btn" onClick="{{north}}" aria-label="{{t.carte.remettre_le_nord_en_haut}}" style="position: absolute; right: 10px; top: 10px; width: 44px; padding: 0; z-index: 3">N</button></sc-if>
-      </div>
-
-      <aside class="panel" aria-live="polite" aria-label="{{t.carte.detail}}">
-        <span class="tw" style="font-size: 13px; color: var(--muted)">{{det.kicker}}</span>
-        <strong style="font-size: 24px; line-height: 1.15; font-weight: 900; font-stretch: 75%">{{det.title}}</strong>
-        <sc-for list="{{det.rows}}" as="r" hint-placeholder-count="5">
-          <div style="display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px solid var(--rule)"><span style="color: var(--muted)">{{r.k}}</span><strong style="text-align: right">{{r.v}}</strong></div>
-        </sc-for>
-        <p style="margin: 4px 0 0; color: var(--muted); font-size: 15px">{{det.note}}</p>
-        <div style="margin-top: auto; display: flex; flex-direction: column; gap: 6px"><sc-for list="{{det.links}}" as="k"><a href="{{k.href}}" style="font-weight: 700">{{k.l}}</a></sc-for></div>
-      </aside>
+  <sc-if value="{{band.large}}">
+    <div class="band" style="{{band.r.c}}"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><span class="bname">{{band.nom}}</span><nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.commun.onglet_carte}}</a></nav></div>
+  </sc-if>
+  <sc-if value="{{band.tel}}">
+    <div class="tband" style="{{band.r.c}}">
+      <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b>{{band.nom}}</b></div>
+      <nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.commun.onglet_carte}}</a></nav>
     </div>
-    <sc-if value="{{attrib}}"><p class="tw" style="margin: -8px 0 0; font-size: 12px; color: var(--muted)">{{{attrib}}}</p></sc-if>
+  </sc-if>
 
-    <sc-if value="{{frise}}"><section aria-label="{{t.carte.choisir_une_periode}}" style="border: 2px solid var(--fg); background: var(--bg-2); padding: 12px 16px 14px; display: flex; flex-direction: column; gap: 10px">
-      <div style="display: flex; align-items: center; gap: 8px">
-        <button class="btn" onClick="{{all}}" aria-pressed="{{allPressed}}" style="{{allStyle}}">{{t.carte.toutes_les_dates}}</button>
-        <button class="btn" onClick="{{prev}}" aria-label="{{t.carte.creneau_precedent}}" style="width: 44px; padding: 0">◀</button>
-        <button class="btn" onClick="{{play}}" aria-pressed="{{playPressed}}" disabled="{{playOff}}" style="min-width: 110px">{{playText}}</button>
-        <button class="btn" onClick="{{next}}" aria-label="{{t.carte.creneau_suivant}}" style="width: 44px; padding: 0">▶</button>
-        <span style="margin-left: 12px; font-weight: 700">{{rangeLabel}}</span>
-        <button class="ibtn" onClick="{{tglInfo}}" aria-expanded="{{infoOpen}}" aria-label="{{t.carte.comment_lire}}" style="margin-left: auto"><span aria-hidden="true">i</span></button>
+  <div class="cd-in">
+    <div class="minit">
+      <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
+      <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures}}</div></div>
+      <div class="ticket"><div class="v">{{nND}}</div><div class="l">{{lND}}</div></div>
+    </div>
+    <p class="note">{{t.arretes.lus_par_programme}}</p>
+
+    <section class="frise" aria-labelledby="cd-frise-t">
+      <div class="frise-h">
+        <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.frise_titre}}</h2>
+        <span class="tw" style="font-size: 13px; color: var(--muted)">{{rangeL}}</span>
+        <button class="key s" type="button" style="margin-left: auto; align-self: center" aria-pressed="{{allOn}}" onClick="{{allYear}}">{{t.carte.toute_la_periode}}</button>
       </div>
-      <sc-if value="{{showInfo}}" hint-placeholder-val="{{false}}"><p class="tw" style="margin: 0; padding: 10px; border: 1px solid var(--rule); color: var(--muted); font-size: 14px">{{t.carte.une_barre_par_creneau_de}}</p></sc-if>
-      <svg role="img" aria-label="{{tlAlt}}" viewBox="0 0 1144 150" width="1144" height="150" onPointerDown="{{tdown}}" onPointerMove="{{tmove}}" onPointerUp="{{tup}}" style="display: block; cursor: crosshair; touch-action: none">
-        <rect x="{{brush.x}}" y="0" width="{{brush.w}}" height="122" fill="var(--drone)" fill-opacity="0.12" stroke="var(--drone)" stroke-width="1.5"></rect>
-        <sc-for list="{{months}}" as="m" hint-placeholder-count="12">
-          <g><line x1="{{m.x}}" x2="{{m.x}}" y1="0" y2="126" stroke="var(--rule)" stroke-width="1"></line><text x="{{m.tx}}" y="142" font-size="12" font-family="Special Elite, monospace" fill="var(--muted)">{{m.l}}</text></g>
-        </sc-for>
-        <sc-for list="{{bars}}" as="b" hint-placeholder-count="61">
-          <rect x="{{b.x}}" y="{{b.y}}" width="{{b.w}}" height="11" fill="{{b.fill}}" fill-opacity="{{b.op}}" stroke="{{b.stroke}}" stroke-width="{{b.sw}}" stroke-dasharray="{{b.dash}}" onMouseEnter="{{b.hover}}" onPointerDown="{{b.pick}}" style="cursor: pointer"></rect>
-        </sc-for>
-        <line x1="{{auj.x}}" x2="{{auj.x}}" y1="0" y2="126" stroke="var(--fg)" stroke-width="2"></line>
-        <text x="{{auj.tx}}" y="12" text-anchor="end" font-size="12" font-weight="800" font-family="Archivo, sans-serif" fill="var(--fg)">{{t.carte.auj}}</text>
-      </svg>
-    </section></sc-if>
-
-    <section aria-label="{{t.carte.liste_des_creneaux}}" style="display: flex; flex-direction: column; gap: 0">
-      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px; border-bottom: 2px solid var(--fg)"><h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 26px; text-transform: uppercase">{{listTitle}}</h2><span class="tw" style="color: var(--muted)">{{t.carte.du_plus_recent_au_plus}}</span></div>
-      <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
-        <button onMouseEnter="{{r.hover}}" onClick="{{r.pick}}" style="{{r.style}}">
-          <span class="tw" style="color: var(--muted)">{{r.d}}</span>
-          <span style="font-weight: 700">{{r.svc}}</span>
-          <span style="color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.fin}}</span>
-          <strong style="text-align: right">{{r.h}}</strong>
-        </button>
-      </sc-for>
-      <sc-if value="{{vide}}"><p style="margin: 0; padding: 14px 8px; color: var(--muted)">{{{vide}}}</p></sc-if>
+      <div class="frise-g">
+        <svg width="{{fw}}" height="112" viewBox="{{vb}}" tabindex="0" role="group" aria-roledescription="{{t.carte.frise_role}}" aria-label="{{friseAlt}}" aria-describedby="cd-frise-aide" onKeyDown="{{wkKey}}" onFocus="{{wkFocus}}" onPointerLeave="{{wkLeave}}">
+          <line x1="0" x2="{{fw}}" y1="{{gridY}}" y2="{{gridY}}" style="stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3"></line>
+          <text x="2" y="{{gridTY}}" style="font: 400 11px 'Special Elite', monospace; fill: var(--muted)">{{gridL}}</text>
+          <line x1="0" x2="{{fw}}" y1="104" y2="104" style="stroke: var(--line); stroke-width: 1.5"></line>
+          <sc-for list="{{wk}}" as="w"><rect x="{{w.x}}" y="{{w.y}}" width="{{w.w}}" height="{{w.h}}" style="{{w.st}}"></rect></sc-for>
+          <sc-for list="{{wk}}" as="w"><rect x="{{w.hx}}" y="0" width="{{w.hw}}" height="104" style="fill: transparent; cursor: pointer" onMouseEnter="{{w.hover}}" onClick="{{w.pick}}"></rect></sc-for>
+          <sc-for list="{{tips}}" as="p"><g style="pointer-events: none"><rect x="{{p.x}}" y="0" width="{{p.w}}" height="22" style="fill: var(--fg)"></rect><text x="{{p.tx}}" y="15" style="font: 700 12px Archivo, sans-serif; fill: var(--bg)">{{p.t}}</text></g></sc-for>
+        </svg>
+        <p id="cd-frise-aide" class="sr">{{t.carte.frise_aide}}</p>
+        <p class="sr" aria-live="polite">{{tipLive}}</p>
+      </div>
+      <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
     </section>
 
-    <sc-if value="{{nd.show}}"><section aria-label="{{t.carte.arretes_sans_zone}}" style="display: flex; flex-direction: column; gap: 0">
-      <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 6px; border-bottom: 2px solid var(--fg)"><h2 style="margin: 0; font-weight: 900; font-stretch: 66%; font-size: 26px; text-transform: uppercase">{{nd.title}}</h2><span class="tw" style="color: var(--muted)">{{t.carte.listes_jamais_dessines}}</span></div>
-      <sc-for list="{{nd.rows}}" as="r">
-        <button onClick="{{r.pick}}" style="{{r.style}}">
-          <span class="tw" style="color: var(--muted)">{{r.d}}</span>
-          <span style="font-weight: 700">{{r.svc}}</span>
-          <span style="color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{r.fin}}</span>
-          <strong style="text-align: right">{{r.h}}</strong>
-        </button>
-      </sc-for>
-    </section></sc-if>
+    <sc-if value="{{hasDet}}" hint-placeholder-val="{{false}}">
+      <div class="cd-det" aria-live="polite">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span class="stk" style="{{det.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.i}}"></path></svg>{{det.k}}</span><button class="ibtn" type="button" onClick="{{clear}}" aria-label="{{t.carte.fermer_detail}}"><span aria-hidden="true">✕</span></button></div>
+        <h3 class="h3" style="font-size: 20px; margin-top: 4px">{{{det.title}}}</h3>
+        <sc-for list="{{det.rows}}" as="r"><div class="prow"><span>{{r.k}}</span><b style="text-align: right">{{r.v}}</b></div></sc-for>
+        <sc-if value="{{det.note}}"><p class="tw" style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">{{det.note}}</p></sc-if>
+        <div class="cd-liens"><sc-for list="{{det.links}}" as="l"><a class="{{l.cls}}" style="{{l.c}}" href="{{l.href}}">{{l.l}}</a></sc-for></div>
+      </div>
+    </sc-if>
+
+    <h3 class="h3" style="margin-top: 6px">{{listT}}</h3>
+    <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
+      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><span class="tw" style="font-size: 12.5px">{{{r.d}}}</span><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h">{{r.h}}</span></div></sc-for>
+    </div>
+    <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>
 </div>

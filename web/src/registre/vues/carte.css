@@ -1,0 +1,163 @@
+/* « Carte et drones » (V2-CarteDrones): the board draws the map's overlays (« ← Le registre » and the
+   legend, the column of commands, the chart) at its own page's 1 440 × 900 coordinates beside the
+   register's panel; here the page is the map's, of any size, and the overlays are written in the
+   view (the panel's scroll): fixed to the screen, anchored to the panel's left edge (24 px margin,
+   470 px wide, cadre.css .side) rather than to the board's absolute x. On a phone the sheet holds
+   them in its flow: the band, the commands, the tickets, the chart, the detail, the list, the
+   legend. Every rule under .rg .v-carte: nothing reaches the map. */
+
+.rg .v-carte .cd-in {
+  padding: 16px 18px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rg .v-carte .leg i.sw-zone {
+  width: 16px;
+  height: 14px;
+  background: #7fd4ff;
+  border: 1.5px solid #111;
+  box-sizing: border-box;
+}
+.rg .v-carte .leg i.sw-vsa {
+  width: 16px;
+  height: 14px;
+  border: 2px dashed var(--fg);
+  box-sizing: border-box;
+}
+.rg .v-carte .leg .leg-in {
+  padding-left: 23px;
+}
+.rg .v-carte .frise-h {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rg .v-carte .frise-g {
+  position: relative;
+  min-width: 0;
+}
+.rg .v-carte .frise-g svg {
+  display: block;
+  overflow: visible;
+}
+.rg .v-carte .frise-g svg:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 3px;
+}
+.rg .v-carte .frise-m {
+  display: flex;
+  padding-left: 2px;
+}
+.rg .v-carte .frise-m .mt {
+  box-sizing: border-box;
+  flex: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  min-height: 22px;
+}
+.rg .v-carte .frise-m .mt:focus-visible,
+.rg .v-carte .zrow:focus-within {
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+/* the board's .panel, static, its shadow yellow (registre.css's R1 rules for .panel and for the
+   phone's panel band do not apply to this one) */
+.rg .v-carte .cd-det {
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 4px 4px 0 #ffe800;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.rg .v-carte .cd-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 6px;
+}
+.rg .v-carte .cd-liens a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+.rg .v-carte .zrow {
+  grid-template-columns: 104px minmax(0, 1fr) auto;
+  padding: 4px;
+}
+.rg .v-carte .zrow .h {
+  white-space: nowrap;
+}
+
+/* the wide screen: the overlays over the map, fixed beside the panel */
+@media (min-width: 960px) {
+  .rg .v-carte .maptag {
+    position: fixed;
+    left: 24px;
+    top: 24px;
+  }
+  .rg .v-carte .ctl {
+    position: fixed;
+    left: auto;
+    right: calc(24px + 470px + 44px);
+    top: 24px;
+  }
+  .rg .v-carte .frise {
+    position: fixed;
+    left: 24px;
+    right: calc(24px + 470px + 24px);
+    bottom: 24px;
+    width: auto;
+    height: auto;
+    max-width: 898px;
+  }
+}
+
+/* the phone: the map above, the sheet below holds everything in its flow */
+@media (max-width: 959px) {
+  .rg .v-carte {
+    display: flex;
+    flex-direction: column;
+  }
+  .rg .v-carte .maptag {
+    position: static;
+    order: 3;
+    padding: 0 16px 40px;
+  }
+  .rg .v-carte .maptag .mback {
+    display: none;
+  }
+  .rg .v-carte .leg {
+    max-width: none;
+  }
+  .rg .v-carte .ctl {
+    position: static;
+    order: 1;
+    flex-direction: row;
+    padding: 12px 16px 0;
+  }
+  .rg .v-carte .band,
+  .rg .v-carte .tband {
+    order: 0;
+  }
+  .rg .v-carte .cd-in {
+    order: 2;
+    padding: 14px 16px 20px;
+  }
+  .rg .v-carte .frise {
+    position: static;
+    width: auto;
+    height: auto;
+  }
+  .rg .v-carte .minit .ticket .v {
+    font-size: 24px;
+  }
+  .rg .v-carte .zrow {
+    grid-template-columns: 86px minmax(0, 1fr) auto;
+  }
+}
