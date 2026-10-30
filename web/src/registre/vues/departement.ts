@@ -99,10 +99,10 @@ const DOCS = 8;
 const nameFirst = (k: string) => (k === "nom" ? 1 : -1);
 const SIREN = (s: string) => s.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
 const TODAY = new Date().toISOString().slice(0, 10);
-// one colour for the measure, the fiche's type's (a territory's yellow); the selection, which
-// § 8 gives the yellow, takes the ink on a territory's fiche: yellow on yellow would not show it
-const BAR = "var(--type-territoire)";
-const ON = "var(--fg)";
+// one colour for the measure; yellow for the selection alone (§ 8): a territory's own colour is
+// that yellow, so its measure is the ink, as a commune's (DECISIONS 2026-10-30)
+const BAR = "var(--fg)";
+const ON = "var(--type-territoire)";
 /** An amount in millions, one decimal, as the bars write them; below 100 000 € in euros. */
 const meur = (n: number): string =>
   !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });

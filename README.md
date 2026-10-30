@@ -62,6 +62,11 @@ arrêtés des préfectures (recueils des actes administratifs, le Rhône d'abord
 subventions (listes des régions et des préfectures). Les entreprises sont vérifiées dans le
 répertoire SIRENE (INSEE) ; un particulier ou un commerçant en nom propre n'est jamais nommé.
 
+Le registre s'ouvre sur la carte, qui reste derrière : une fenêtre au grand écran, une feuille
+au téléphone. Chaque fiche dit son type (territoire, acheteur, entreprise, document) par un
+pictogramme, un mot et une couleur, suit la même ossature (l'essentiel, dans le temps, avec qui,
+documents, sources) et se partage par un lien. Toute mention d'une fiche est un lien vers elle.
+
 - **Lu par un programme.** Personne ne relit les arrêtés ; le site le dit, publie la liste de
   ceux qui n'ont pas pu être lus entièrement, et chaque document mène à sa source. « Signaler
   une erreur » corrige le registre : un formulaire sans compte, relu dans `/revue`, et une
