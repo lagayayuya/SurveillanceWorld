@@ -388,6 +388,13 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
         if (map.getLayer(l)) map.setPaintProperty(l, "line-color", c);
       if (map.getLayer(COUCHES.vsa))
         map.setPaintProperty(COUCHES.vsa, "line-color", ["case", ["get", "on"], JAUNE, c]);
+      // the site's restyle swaps the colours of every layer by its palette's pairs (main.ts):
+      // the boards' sky blue and yellow come back
+      if (map.getLayer(COUCHES.vol))
+        map.setPaintProperty(COUCHES.vol, "fill-extrusion-color", BLEU);
+      if (map.getLayer(COUCHES.volOn))
+        map.setPaintProperty(COUCHES.volOn, "fill-extrusion-color", JAUNE);
+      if (map.getLayer(COUCHES.solOn)) map.setPaintProperty(COUCHES.solOn, "fill-color", JAUNE);
     },
     cadre: box,
     retirer() {

@@ -104,7 +104,12 @@ class CarteDrones extends Vue<Props, State> {
   private ro: ResizeObserver | null = null;
   /** the period whose hours the map shows */
   private synced = "";
-  private readonly onTheme = () => requestAnimationFrame(() => this.layer?.encre(this.ink()));
+  /** The theme changed: the ink again, once the site has restyled its map (at once, or at its idle). */
+  private readonly onTheme = () => {
+    const f = () => this.layer?.encre(this.ink());
+    requestAnimationFrame(f);
+    this.map?.once("idle", f);
+  };
   private readonly onPitch = () => {
     const on = (this.map?.getPitch() ?? 0) > 5;
     if (on !== this.state.is3d) this.setState({ is3d: on });
@@ -406,14 +411,23 @@ class CarteDrones extends Vue<Props, State> {
           })()
         : [];
     const ms = moisAxe(drone, A, B);
+    // the months' words as wide as the narrowest whole month allows, the same form for all:
+    // « janv. 26 », else « janv », else « J » (the button's name says the month in full)
+    const CH = 6.6;
+    const wOf = (m: { t0: number; t1: number }) =>
+      Math.max(0, xOf(Math.min(m.t1, B)) - xOf(Math.max(m.t0, A)));
+    const whole = ms.filter((m) => m.t0 >= A && m.t1 <= B);
+    const narrow = Math.min(...(whole.length ? whole : ms).map(wOf));
+    const longest = Math.max(...ms.map((m) => m.l.length));
+    const form = narrow >= longest * CH + 6 ? 2 : narrow >= 4 * CH + 4 ? 1 : 0;
+    const word = (l: string) =>
+      form === 2 ? l : form === 1 ? l.replace(/\..*$/, "") : l.slice(0, 1).toUpperCase();
     const months = ms.map((m) => {
-      const x0 = xOf(Math.max(m.t0, A));
-      const x1 = xOf(Math.min(m.t1, B));
-      const wpx = Math.max(0, x1 - x0);
+      const wpx = wOf(m);
       const on = !!r && r[0] === m.t0 && r[1] === m.t1;
       const full = new Date(m.t0).toISOString().slice(0, 10);
       return {
-        l: wpx < m.l.length * 6.6 + 6 ? m.l.slice(0, 1).toUpperCase() : m.l,
+        l: wpx < word(m.l).length * CH ? "" : word(m.l),
         aria: t("carte.mois_aria", { mois: longMonth(full), h: heuresTxt(m.heures) }),
         on: on ? "true" : "false",
         st: `width: ${wpx.toFixed(1)}px${wpx < 12 ? "; visibility: hidden" : ""}`,

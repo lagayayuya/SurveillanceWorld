@@ -67,7 +67,7 @@
 
     <h3 class="h3" style="margin-top: 6px">{{listT}}</h3>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
-      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><span class="tw" style="font-size: 12.5px">{{{r.d}}}</span><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h">{{r.h}}</span></div></sc-for>
+      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.pick}}" onClick="{{r.pick}}"><span class="tw" style="font-size: 12.5px">{{{r.d}}}</span><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h">{{r.h}}</span></div></sc-for>
     </div>
     <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>
