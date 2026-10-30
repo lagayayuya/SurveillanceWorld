@@ -10,7 +10,9 @@
 //                   tests/registre-liens/rendre.ts <site dir> <path>...
 //
 // Not a mention: the fiche's own name (its h1, its band), a control's words (a button, an option, a
-// field), what is hidden from everyone (aria-hidden: the cut-out letters, the pictograms).
+// field), what is hidden from everyone (aria-hidden: the cut-out letters, the pictograms), and what
+// a template marks `data-mention="non"`: a source's name (« Arrêtés du Rhône » names a publication,
+// not the département's fiche).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import catalogue from "virtual:registre-catalogue";
@@ -122,7 +124,7 @@ function textes(nodes: Rendu[], out: string[], dedans = false): void {
       if (!dedans) suite += n;
       continue;
     }
-    if (n.attrs["aria-hidden"] === "true") continue;
+    if (n.attrs["aria-hidden"] === "true" || n.attrs["data-mention"] === "non") continue;
     const tag = n.name.toLowerCase();
     if (tag === "strong" || tag === "em" || tag === "b" || tag === "span" || tag === "sup") {
       // inline: part of the same sentence
@@ -163,7 +165,16 @@ for (const chemin of paths) {
       continue;
     }
     const { view, nodes } = rendre(m.Vue, props, m.template, { parts, format });
-    const propre = (view as { titre?(): string }).titre?.() ?? "";
+    // its own names: its title and its h1 (a page of a fiche, « Documents », names its fiche there)
+    const propres = new Set([(view as { titre?(): string }).titre?.() ?? ""]);
+    const h1 = (ns: Rendu[]): void => {
+      for (const n of ns)
+        if (typeof n !== "string") {
+          if (n.name === "h1") propres.add(n.kids.filter((k) => typeof k === "string").join("").trim());
+          h1(n.kids);
+        }
+    };
+    h1(nodes);
     const lus: string[] = [];
     textes(nodes, lus);
     const nonLies: Trouve[] = [];
@@ -172,7 +183,7 @@ for (const chemin of paths) {
       for (const { nom, quoi, re } of motifs) {
         if (!re.test(reste)) continue;
         // its own name is not a mention (its h1, its band); it hides no shorter name either
-        if (nom !== propre) nonLies.push({ nom, quoi, texte: texte.slice(0, 160) });
+        if (!propres.has(nom)) nonLies.push({ nom, quoi, texte: texte.slice(0, 160) });
         reste = reste.replace(new RegExp(re.source, "gu"), " ");
       }
     }

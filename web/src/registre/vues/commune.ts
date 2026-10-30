@@ -1595,18 +1595,27 @@ export class Commune extends Vue<Props, State> {
         lien: lienCommune(L, k),
         n: count(st.communes[k]?.docs ?? 0, "document"),
       }));
+    // a territory named in a sentence is a link to its fiche, its article words (« la », « au »)
+    const terL: RichItem = { span: [epA, lien("epci", epHref, en)], cls: "" };
+    const depL = (art: string): RichItem =>
+      art.endsWith(depNom)
+        ? {
+            span: [art.slice(0, art.length - depNom.length), lienDepartement(dep, depNom)],
+            cls: "",
+          }
+        : lienDepartement(dep, art);
     return {
       titre: epci
-        ? t("commune.ter_titre", { ter: `${epA}${en}`, dep: da })
-        : t("commune.ter_titre_dep", { dep: da }),
+        ? rt("commune.ter_titre", { ter: terL, dep: depL(da) })
+        : rt("commune.ter_titre_dep", { dep: depL(da) }),
       de: epA,
       epci: en,
       epciLien: epci ? lien("epci", epHref, en) : "",
       nCom: all.length,
       nReg: reg.length,
       caption: epci
-        ? t("commune.ter_caption", { nom, ter: `${epA}${en}`, dep: au })
-        : t("commune.ter_caption_dep", { nom, dep: au }),
+        ? rt("commune.ter_caption", { nom, ter: terL, dep: depL(au) })
+        : rt("commune.ter_caption_dep", { nom, dep: depL(au) }),
       couv: collectes
         ? t("commune.ter_couv", { mois: longMonth(d.arretes.depuis ?? "") })
         : t("commune.ter_couv_non"),
@@ -1629,7 +1638,7 @@ export class Commune extends Vue<Props, State> {
           : []),
         lienDepartement(dep, capital(da)),
       ],
-      voisTitre: epci ? t("commune.vois_titre", { ter: `${epA}${en}` }) : "",
+      voisTitre: epci ? rt("commune.vois_titre", { ter: terL }) : "",
       vois,
       terr,
     };

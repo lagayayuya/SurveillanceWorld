@@ -143,13 +143,13 @@
           </sc-if>
 
           <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px">
-            <h3 class="h3">{{ter.titre}}</h3>
+            <h3 class="h3">{{{ter.titre}}}</h3>
             <button class="ibtn" type="button" onClick="{{tgl.met}}" aria-expanded="{{open.met}}" aria-label="{{t.commune.ce_que_comptent_ces_chiffres}}"><span aria-hidden="true">i</span></button>
           </div>
           <sc-if value="{{show.met}}"><p class="note tw">{{f.commune.documents_rattaches_a_une_commune}}</p></sc-if>
           <sc-if value="{{ter.epci}}"><p class="sober" style="margin: 0">{{f.commune.fait_partie_de}}{{{ter.epciLien}}} {{f.commune.communes_dont_ont_au_moins}}</p></sc-if>
           <table class="t">
-            <caption class="sr">{{ter.caption}}</caption>
+            <caption class="sr">{{{ter.caption}}}</caption>
             <thead><tr><th scope="col">{{t.commune.territoire}}</th><th scope="col" class="num">{{t.commune.documents}}</th><th scope="col" class="num">{{t.commune.contrats}}</th><th scope="col" class="num">{{t.commune.autorisations}}</th><th scope="col" class="num">{{t.commune.drones}}</th></tr></thead>
             <tbody>
               <sc-for list="{{terr}}" as="r">
@@ -164,7 +164,7 @@
           <p class="sober liens" style="margin: 0">{{{ter.liens}}}</p>
 
           <sc-if value="{{vois.length}}">
-            <h3 class="h3" style="margin-top: 10px">{{ter.voisTitre}}</h3>
+            <h3 class="h3" style="margin-top: 10px">{{{ter.voisTitre}}}</h3>
             <ul class="vois"><sc-for list="{{vois}}" as="v"><li>{{{v.lien}}} <span class="tw">{{v.n}}</span></li></sc-for></ul>
             <sc-if value="{{voisMore}}"><button class="more" type="button" onClick="{{togVois}}">{{voisLabel}}</button></sc-if>
           </sc-if>
@@ -193,7 +193,7 @@
           <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
           <p class="tw" style="margin: 0; color: var(--muted)">{{maj}}</p>
           <div style="border-top: 2px solid var(--line)">
-            <sc-for list="{{sources}}" as="s"><div class="src"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}</span></div></sc-for>
+            <sc-for list="{{sources}}" as="s"><div class="src" data-mention="non"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}</span></div></sc-for>
           </div>
           <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.commune.montants_maximums_prevus_aux_contrats}}</p>
           <p class="sober" style="margin: 0">{{{signalerPhrase}}}</p>
