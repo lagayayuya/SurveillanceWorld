@@ -40,7 +40,8 @@ for (const path of PAGES) {
       const r = { l: Infinity, r: -Infinity };
       const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
       for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-        if (!n.textContent.trim() || n.parentElement.closest("[aria-hidden='true'], .sr, .sr-only")) continue;
+        if (!n.textContent.trim() || n.parentElement.closest("[aria-hidden='true'], .sr, .sr-only"))
+          continue;
         const range = document.createRange();
         range.selectNodeContents(n);
         for (const b of range.getClientRects()) {
