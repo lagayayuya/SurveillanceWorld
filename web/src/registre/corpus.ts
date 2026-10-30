@@ -127,18 +127,19 @@ export function buyerNom(L: Lexique, siren: string): string {
   const a = L.acheteurs[siren];
   return a?.nom_court || a?.nom || t("commun.acheteur_siren", { siren });
 }
-/** A buyer's page: its commune's, for a commune. */
-export function buyerHref(L: Lexique, siren: string): string {
+/** A buyer's page: its commune's, for a commune whose fiche exists; else its own when the build
+ * wrote it (its reference, lot R3); else none. */
+export function buyerHref(L: Lexique, siren: string): string | null {
   const a = L.acheteurs[siren];
-  return a?.categorie === "commune" && a.insee_siege && L.communes[a.insee_siege]
-    ? communeHref(a.insee_siege)
-    : `/registre/acheteur/${siren}`;
+  if (a?.categorie === "commune" && a.insee_siege && L.communes[a.insee_siege]?.ref)
+    return communeHref(a.insee_siege);
+  return a?.ref ? `/registre/${a.ref}` : null;
 }
 
 /** Where a document opens: a decree, its commune's Autorisations at the decree itself (its own
  * address: its section, its row chosen, its panel; v2.1 A7); else its record. */
 export function docHref(L: Lexique, e: Evenement): string {
-  return isArr(e) && e.insee && L.communes[e.insee]
+  return isArr(e) && e.insee && L.communes[e.insee]?.ref
     ? `${communeHref(e.insee, "autorisations")}/${encodeURIComponent(e.id)}`
     : `/registre/contrat/${encodeURIComponent(e.affaire)}`;
 }

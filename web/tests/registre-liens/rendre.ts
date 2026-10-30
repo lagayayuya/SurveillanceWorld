@@ -3,8 +3,9 @@
 // the files of a build (a site directory, as `lacarte-registre construire` writes it), then every
 // text outside a link is searched for the name of a fiche the build holds — a commune, a
 // département, a buyer, a company. Printed as JSON, one record per path: its view, how many texts
-// were read, the names found unlinked with their text. tests/test_registre_liens.py runs it on the
-// fixture's build and fails on any.
+// were read, the names found unlinked with their text, and the links to a fiche the build did not
+// write (a dead link: lot R3 writes a fiche only for a name with a document). tests/
+// test_registre_liens.py runs it on the fixture's build and fails on any.
 //
 // usage, from web/: node --experimental-strip-types --import ./tests/registre-liens/enregistrer.mjs
 //                   tests/registre-liens/rendre.ts <site dir> <path>...
@@ -13,7 +14,7 @@
 // field), what is hidden from everyone (aria-hidden: the cut-out letters, the pictograms), and what
 // a template marks `data-mention="non"`: a source's name (« Arrêtés du Rhône » names a publication,
 // not the département's fiche).
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import catalogue from "virtual:registre-catalogue";
 
@@ -94,8 +95,19 @@ type Dico = {
   >;
   communes: Record<string, { nom: string; dep: string }>;
 };
-// the whole lexicon (recherche.json): every buyer, company and commune of the register
-const L = JSON.parse(readFileSync(join(site, "recherche.json"), "utf8")) as Dico;
+// the names of the fiches the build wrote: every file's lexicon, its entries with a reference (lot
+// R3: a name has one only when its fiche exists)
+const L: Dico = { entreprises: {}, acheteurs: {}, communes: {} };
+for (const dir of ["commune", "departement", "acheteur", "entreprise"]) {
+  if (!existsSync(join(site, dir))) continue;
+  for (const f of readdirSync(join(site, dir)).filter((x) => x.endsWith(".json"))) {
+    const d = JSON.parse(readFileSync(join(site, dir, f), "utf8")) as Partial<Dico>;
+    for (const k of ["entreprises", "acheteurs", "communes"] as const)
+      for (const [id, x] of Object.entries(d[k] ?? {}))
+        if (x && typeof x === "object" && (x as { ref?: string }).ref)
+          (L[k] as Record<string, unknown>)[id] = x;
+  }
+}
 const noms = new Map<string, string>();
 const ajoute = (nom: string | undefined | null, quoi: string) => {
   // a name of two letters or less is a word of every sentence
@@ -166,8 +178,39 @@ function textes(nodes: Rendu[], out: string[], dedans = false): void {
   flush();
 }
 
+/** The fiche's file a register address opens, when it is a fiche's (a list, the summary: none). */
+const FICHE: Record<string, string> = {
+  commune: "commune",
+  departement: "departement",
+  acheteur: "acheteur",
+  entreprise: "entreprise",
+  contrat: "document",
+};
+function fichier(href: string): string | null {
+  const m = /^\/registre\/([a-z]+)\/([^/?#]+)/.exec(href);
+  if (!m || !FICHE[m[1]]) return null;
+  return join(site, FICHE[m[1]], `${decodeURIComponent(m[2])}.json`);
+}
+/** The links to a fiche whose file the build did not write. */
+function morts(nodes: Rendu[], out: string[]): void {
+  for (const n of nodes) {
+    if (typeof n === "string") continue;
+    const href = n.name.toLowerCase() === "a" ? String(n.attrs.href ?? "") : "";
+    const f = href ? fichier(href) : null;
+    if (f && !existsSync(f)) out.push(href);
+    morts(n.kids, out);
+  }
+}
+
 type Trouve = { nom: string; quoi: string; texte: string };
-const resultats: { chemin: string; vue: string; textes: number; nonLies: Trouve[]; erreur?: string }[] = [];
+const resultats: {
+  chemin: string;
+  vue: string;
+  textes: number;
+  nonLies: Trouve[];
+  morts?: string[];
+  erreur?: string;
+}[] = [];
 for (const chemin of paths) {
   const [p, q = ""] = chemin.split("?");
   const r = route(p, q ? `?${q}` : "");
@@ -216,7 +259,11 @@ for (const chemin of paths) {
         reste = reste.replace(new RegExp(re.source, "gu"), " ");
       }
     }
-    resultats.push({ chemin, vue: r.view, textes: lus.length, nonLies });
+    const mortes: string[] = [];
+    // the glossary's examples are the pilot's own fiches (glossaire-mots.ts), which a fixture's
+    // extract may not hold: checked on a real build only (LIENS_GLOSSAIRE=1)
+    if (r.view !== "glossaire" || process.env.LIENS_GLOSSAIRE === "1") morts(nodes, mortes);
+    resultats.push({ chemin, vue: r.view, textes: lus.length, nonLies, morts: mortes });
   } catch (e) {
     resultats.push({ chemin, vue: r.view, textes: 0, nonLies: [], erreur: String(e) });
   }

@@ -25,7 +25,7 @@ const catalogue: Record<string, string> = JSON.parse(
 setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
 const N = " ";
 
-const COMMUNE = { "69999": { nom: "Synthèse-la-Ville", dep: "69", pop: 1000 } };
+const COMMUNE = { "69999": { nom: "Synthèse-la-Ville", dep: "69", pop: 1000, ref: "commune/69999" } };
 const ev = (e: Partial<Evenement> & { id: string; t: string; affaire: string }): Evenement =>
   ({ insee: "69999", dep: "69", entreprises: [], copie: false, compte: false, communal: true, ...e }) as Evenement;
 const vide = { fin_prevue: null, precedent: null, suivant: null, entreprises: {}, contrat: null };
@@ -41,9 +41,9 @@ function fichier(
     affaire: a,
     evenements,
     affaires: { [a.id]: a, ...(more.affaires ?? {}) },
-    entreprises: { "111111111": { nom: "SOCIETE EXEMPLE", entrepreneur_individuel: false } },
+    entreprises: { "111111111": { nom: "SOCIETE EXEMPLE", entrepreneur_individuel: false, ref: "entreprise/111111111" } },
     acheteurs: {
-      "222222222": { nom: "Commune de Synthèse-la-Ville", categorie: "commune", dep: "69", insee_siege: "69999" },
+      "222222222": { nom: "Commune de Synthèse-la-Ville", categorie: "commune", dep: "69", insee_siege: "69999", ref: "acheteur/222222222" },
     },
     communes: COMMUNE,
     libelles: {},
@@ -366,7 +366,7 @@ test("v2: the département or commune a text is about is a link inside the regis
   assert.deepEqual(lierDepartement("Préfecture des Bouches-du-Rhône", "69"), ["Préfecture des Bouches-du-Rhône"]);
   assert.deepEqual(lierDepartement("Contrats publics", null), ["Contrats publics"]);
   // the dossier's commune in its objet, by its code; a longer name holding it is not it
-  const L = { communes: { "69999": { nom: "Synthèse" } } } as unknown as Parameters<typeof lierLieux>[1];
+  const L = { communes: { "69999": { nom: "Synthèse", ref: "commune/69999" } } } as unknown as Parameters<typeof lierLieux>[1];
   const o = lierLieux("Caméras de la commune de Synthèse, Rhône", L, "69999", "69");
   assert.match(json(o), /"href":"\/registre\/commune\/69999".*"href":"\/registre\/departement\/69"/);
   assert.deepEqual(lierLieux("Caméras de Synthèse-le-Haut", L, "69999", null), ["Caméras de Synthèse-le-Haut"]);

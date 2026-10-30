@@ -5,7 +5,7 @@
 // copy, the commune's own, a shared decree) are the build's flags, read here, never recomputed.
 
 import type { Acheteur, Affaire, Commune, Evenement, Stats } from "./donnees.ts";
-import { EI, load } from "./donnees.ts";
+import { Absent, EI, load } from "./donnees.ts";
 import { fr } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import { tidy, titleCase } from "./texte.ts";
@@ -111,12 +111,13 @@ export class Donnees {
     const a = this.f.acheteurs[siren];
     return a?.nom_court || a?.nom || t("commun.acheteur_siren", { siren });
   }
-  /** A buyer's page: its commune's, for a commune. */
-  buyerHref(siren: string): string {
+  /** A buyer's page: its commune's, for a commune whose fiche exists; else its own when the
+   * build wrote it (its reference, lot R3); else none. */
+  buyerHref(siren: string): string | null {
     const a = this.f.acheteurs[siren];
-    return a?.categorie === "commune" && a.insee_siege
-      ? communeHref(a.insee_siege)
-      : `/registre/acheteur/${siren}`;
+    if (a?.categorie === "commune" && a.insee_siege && this.f.communes[a.insee_siege]?.ref)
+      return communeHref(a.insee_siege);
+    return a?.ref ? `/registre/${a.ref}` : null;
   }
   /** The contracts of one procedure in one row: lots added up, a doublon once (app.js mergeLots). */
   mergeLots(cs: Evenement[]): (Evenement & { lots?: Evenement[]; copies?: number })[] {
@@ -153,11 +154,19 @@ export class Donnees {
 }
 
 const files = new Map<string, Promise<Donnees>>();
-/** A commune's file, once per page. */
+/** A commune's file, once per page. A commune without a document has none (lot R3): its pages
+ * say « introuvable », as a buyer's or a company's the register does not hold. */
 export function commune(insee: string): Promise<Donnees> {
   let p = files.get(insee);
   if (!p) {
-    p = load<FichierCommune>(`commune/${insee}.json`).then((f) => new Donnees(f));
+    p = load<FichierCommune>(`commune/${insee}.json`).then(
+      (f) => new Donnees(f),
+      (e) => {
+        if (e instanceof SyntaxError || /: 404$/.test(String((e as Error).message)))
+          throw new Absent(insee);
+        throw e;
+      },
+    );
     files.set(insee, p);
     p.catch(() => files.delete(insee));
   }

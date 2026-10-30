@@ -115,12 +115,15 @@ class Couverture_ extends Vue<Props> {
         codes: autres.map(([k]) => lienDepartement(k, k)),
         etat: t("couverture.etat_non_collecte_court"),
       });
-    // a decree placed in a commune: the build writes that commune's fiche (one per commune of the
-    // départements it reads) with the decree's dossier in its Autorisations
+    // a decree placed in a commune: that commune's fiche when the build wrote it (its reference,
+    // lot R3), with the decree's dossier in its Autorisations
     const placees = Object.fromEntries(
       nonLus
         .filter((n) => n.insee)
-        .map((n) => [n.insee, { nom: n.commune ?? communes[n.insee ?? ""]?.nom ?? n.insee }]),
+        .map((n) => [
+          n.insee,
+          { nom: n.commune ?? communes[n.insee ?? ""]?.nom ?? n.insee, ref: n.commune_ref },
+        ]),
     );
     const L = { communes: { ...placees, ...communes } } as unknown as Lexique;
 
@@ -134,11 +137,17 @@ class Couverture_ extends Vue<Props> {
         const nom = n.insee
           ? (n.commune ?? c?.nom ?? t("commun.code_insee", { insee: n.insee }))
           : "";
-        // its dossier in the commune's Autorisations (corpus.ts docHref); without a commune the build
-        // does not say whether the register holds it: its number alone
-        const acte: RichItem = n.insee
-          ? lienDocument(L, { id: n.id, affaire: n.id, t: n.t, insee: n.insee } as Evenement, n.id)
-          : n.id;
+        // its dossier in the commune's Autorisations (corpus.ts docHref) when the commune's fiche
+        // exists (its reference, lot R3); else the build does not say whether the register holds
+        // it: its number alone
+        const acte: RichItem =
+          n.insee && L.communes[n.insee]?.ref
+            ? lienDocument(
+                L,
+                { id: n.id, affaire: n.id, t: n.t, insee: n.insee } as Evenement,
+                n.id,
+              )
+            : n.id;
         return {
           date: shortDate(n.date),
           acte: type ? [`${type} · `, acte] : [acte],

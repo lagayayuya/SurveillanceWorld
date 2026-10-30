@@ -51,15 +51,15 @@ function fichier(over: Partial<FichierEntreprise["entreprise"]> = {}): FichierEn
     evenements,
     affaires: Object.fromEntries(evenements.map((e) => [e.affaire, { events: [e.id], acheteur_siren: e.acheteur_siren }])),
     entreprises: {
-      "100000001": { nom: "ACME VIDEO", ...over },
+      "100000001": { nom: "ACME VIDEO", ref: "entreprise/100000001", ...over },
       "100000002": { entrepreneur_individuel: true },
     },
     acheteurs: {
-      "200000001": { nom: "Commune de Une", categorie: "commune", insee_siege: "69001", dep: "69" },
-      "200000002": { nom: "Commune de Deux", categorie: "commune", insee_siege: "69002", dep: "69" },
-      "200000003": { nom: "Centrale", categorie: "autre", dep: "93" },
+      "200000001": { nom: "Commune de Une", categorie: "commune", insee_siege: "69001", dep: "69", ref: "acheteur/200000001" },
+      "200000002": { nom: "Commune de Deux", categorie: "commune", insee_siege: "69002", dep: "69", ref: "acheteur/200000002" },
+      "200000003": { nom: "Centrale", categorie: "autre", dep: "93", ref: "acheteur/200000003" },
     },
-    communes: { "69001": { nom: "Une", dep: "69" }, "69002": { nom: "Deux", dep: "69" } },
+    communes: { "69001": { nom: "Une", dep: "69", ref: "commune/69001" }, "69002": { nom: "Deux", dep: "69", ref: "commune/69002" } },
     stats: { n: 3, copies: 1, clientes: ["200000001", "200000002", "200000003"], montant: 600_000, y0: "2024", contrats: ["a~0", "b~0", "c~0"] },
     page: {
       maj: "2026-10-24",

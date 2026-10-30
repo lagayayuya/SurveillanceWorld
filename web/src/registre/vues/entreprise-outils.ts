@@ -451,8 +451,13 @@ export class Entreprise extends Vue<Props, State> {
           [t("entreprise.det_montant"), c.amt ? money(c.amt) : "—"],
           [t("entreprise.det_dernier"), c.last ? numDate(c.last) : "—"],
         ],
-        link: commune ? t("entreprise.voir_commune") : t("entreprise.voir_acheteur"),
-        href: buyerHref(F, c.s),
+        // no fiche, no link (lot R3: a buyer's reference)
+        link: !buyerHref(F, c.s)
+          ? undefined
+          : commune
+            ? t("entreprise.voir_commune")
+            : t("entreprise.voir_acheteur"),
+        href: buyerHref(F, c.s) ?? undefined,
       };
       return {
         nom: lienAcheteur(F, c.s, undefined, true),
@@ -461,7 +466,7 @@ export class Entreprise extends Vue<Props, State> {
         n: fr(c.n),
         amt: c.amt ? money(c.amt) : "—",
         last: c.last.slice(0, 4),
-        href: buyerHref(F, c.s),
+        href: buyerHref(F, c.s) ?? "",
         ...this.ligne(k, commune ? "commune" : "acheteur"),
         bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}; border: 1px solid #111`,
       };

@@ -31,14 +31,14 @@ function donnees(evenements: Evenement[] = []): Donnees {
     evenements,
     affaires: {},
     entreprises: {
-      "100000001": { nom: "ACME VIDEO" },
+      "100000001": { nom: "ACME VIDEO", ref: "entreprise/100000001" },
       "100000002": { nom: null, entrepreneur_individuel: true },
     },
     acheteurs: {
-      "210000001": { nom: "Commune de Villeneuve", categorie: "commune", insee_siege: "99001" },
-      "200000001": { nom: "CC du Val", categorie: "epci" },
+      "210000001": { nom: "Commune de Villeneuve", categorie: "commune", insee_siege: "99001", ref: "acheteur/210000001" },
+      "200000001": { nom: "CC du Val", categorie: "epci", ref: "acheteur/200000001" },
     },
-    communes: { "99001": { nom: "Villeneuve", dep: "99" }, "99002": { nom: "Bourg", dep: "99" } },
+    communes: { "99001": { nom: "Villeneuve", dep: "99", ref: "commune/99001" }, "99002": { nom: "Bourg", dep: "99", ref: "commune/99002" } },
     lots: {},
     libelles: {},
     stats: {

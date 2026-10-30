@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from lacarte_registre import comptes, drones, entreprise
+from lacarte_registre import comptes, drones, entreprise, refs
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     EI,
@@ -87,6 +87,23 @@ class Context:
             if a.get("insee"):
                 self.affaires_of.setdefault(a["insee"], []).append(aid)
         self._commune_stats: dict[str, dict[str, Any]] = {}
+        # the records this build writes (write_all), and every name's reference to its own
+        communes = {k for k, evs in reg.by_insee.items() if evs and k in reg.communes}
+        acheteurs = {b for e in reg.evenements if (b := reg.buyer(e))}
+        self.fiches = refs.Fiches(
+            communes=communes,
+            # a département with a document, and every one a page names: the coverage's, a
+            # fiche's commune's, a buyer's (its fiche says what the register holds there, none
+            # perhaps: a link never leads to a missing page)
+            departements={d for d, evs in reg.by_dep.items() if d and evs}
+            | set(couverture["departements"])
+            | {d for k in communes if (d := reg.communes[k].get("dep"))}
+            | {d for b in acheteurs if (d := (self.acheteurs.get(b) or {}).get("dep"))},
+            acheteurs=acheteurs,
+            entreprises={s for e in reg.evenements for s in e.get("entreprises") or []} - {EI},
+            affaires=set(reg.affaires),
+        )
+        self.manquants = refs.annoter(reg, self.fiches, reg.buyer)
 
     def commune_stats(self, insee: str) -> dict[str, Any]:
         if insee not in self._commune_stats:
@@ -103,15 +120,28 @@ class Context:
         out = {k: a.get(k) for k in ACH_DICO if k in a}
         if self.nom_court(siren):
             out["nom_court"] = self.nom_court(siren)
+        if r := self.fiches.acheteur(siren):
+            out["ref"] = r
         return out
 
     def entreprise(self, siren: str) -> dict[str, Any]:
         x = self.reg.pilote.reg.get("entreprises", {}).get(siren) or {}
-        return {k: x.get(k) for k in ENT_DICO if k in x}
+        out = {k: x.get(k) for k in ENT_DICO if k in x}
+        if r := self.fiches.entreprise(siren):
+            out["ref"] = r
+        return out
 
     def commune(self, insee: str) -> dict[str, Any]:
         c = self.reg.communes.get(insee) or {}
-        return {k: c.get(k) for k in COM_DICO}
+        out = {k: c.get(k) for k in COM_DICO}
+        for key, r in (
+            ("ref", self.fiches.commune(insee)),
+            ("epci_ref", self.fiches.acheteur(c.get("epci"))),
+            ("dep_ref", self.fiches.departement(c.get("dep"))),
+        ):
+            if r:
+                out[key] = r
+        return out
 
 
 class Closure:
@@ -505,6 +535,8 @@ def non_lus_file(ctx: Context) -> dict[str, Any]:
         row = {k: e.get(k) for k in NON_LU_ROW if k in e and (k != "insee" or e.get(k))}
         if (nom := (ctx.reg.communes.get(e.get("insee") or "") or {}).get("nom")) is not None:
             row["commune"] = nom
+        if r := ctx.fiches.commune(e.get("insee")):
+            row["commune_ref"] = r
         rows.append({**row, "raisons": e["non_lu"]})
     return {"v": 1, "non_lus": rows}
 
@@ -516,16 +548,19 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     write("recherche.json", recherche_file(ctx))
     write("non_lus.json", non_lus_file(ctx))
     write("couverture.json", ctx.couverture)
-    insees = sorted(set(reg.communes) | set(reg.by_insee))
+    # a file per commune with a document (its own, or an act it shares), per département,
+    # company, buyer and affaire with one: the records refs.Fiches names
+    f = ctx.fiches
+    insees = sorted(f.communes)
     for k in insees:
         write(f"commune/{file_name(k)}.json", commune_file(ctx, k))
-    deps = sorted(d for d in reg.by_dep if d)
+    deps = sorted(f.departements)
     for d in deps:
         write(f"departement/{file_name(d)}.json", departement_file(ctx, d))
-    sirens = sorted({s for e in reg.evenements for s in e.get("entreprises") or []} - {EI})
+    sirens = sorted(f.entreprises)
     for s in sirens:
         write(f"entreprise/{file_name(s)}.json", entreprise_file(ctx, s))
-    buyers = sorted({b for e in reg.evenements if (b := reg.buyer(e))})
+    buyers = sorted(f.acheteurs)
     for b in buyers:
         write(f"acheteur/{file_name(b)}.json", acheteur_file(ctx, b))
     for a in sorted(reg.affaires):

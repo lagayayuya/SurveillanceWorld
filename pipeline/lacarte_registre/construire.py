@@ -86,6 +86,10 @@ def run(
 
     sortie.replace_dir(root / "site", write)
     summary["documents"] = len(reg.evenements)
+    # the names served without a reference to a record, by type and reason (refs.py)
+    summary["sans_reference"] = {
+        f"{k}/{why}": n for (k, why), n in sorted(ctx.manquants.items()) if n
+    }
     if nat:
         summary["fusion"] = merged
     summary["non_lus"] = cov["non_lus"]

@@ -28,8 +28,9 @@ export const departementHref = (dep: string): string =>
   `/registre/departement/${encodeURIComponent(dep)}`;
 
 // --- a mention by its id, from the lexicon every file carries (corpus.ts Lexique) -----------------
-// Every buyer, company and commune of a lexicon has its page (the build writes one per entry; a sole
-// trader is the token `ei`, without page): its id is enough to link it.
+// A lexicon's entry carries its fiche's reference, `ref`, only when the build wrote that fiche (lot
+// R3, refs.py): a commune without a document has none, a sole trader never (the token `ei`). The
+// reference decides whether a name is a link, never the entry's presence.
 
 /** A buyer: its fiche, or its commune's when it is a commune (one fiche per collectivité). */
 export function lienAcheteur(L: Lexique, siren: string, text?: Rich, liste = false): RichItem {
@@ -37,27 +38,27 @@ export function lienAcheteur(L: Lexique, siren: string, text?: Rich, liste = fal
   // a collectivité's buyer address leads to its territory's fiche (acheteur.ts): its colour is the
   // territory's
   const cat = L.acheteurs[siren]?.categorie;
-  const k: TypeCle = href.startsWith("/registre/commune/")
+  const k: TypeCle = href?.startsWith("/registre/commune/")
     ? "commune"
     : cat === "intercommunalite" || cat === "metropole"
       ? "epci"
       : cat === "departement"
         ? "departement"
         : "acheteur";
-  return lien(k, L.acheteurs[siren] ? href : null, text ?? buyerNom(L, siren), liste);
+  return lien(k, href, text ?? buyerNom(L, siren), liste);
 }
 
 /** A company: its fiche; a sole trader, its words only. */
 export function lienEntreprise(L: Lexique, siren: string, text?: Rich, liste = false): RichItem {
-  const href =
-    L.entreprises[siren] && !L.entreprises[siren].entrepreneur_individuel ? entHref(siren) : null;
+  const x = L.entreprises[siren];
+  const href = x?.ref && !x.entrepreneur_individuel ? entHref(siren) : null;
   return lien("entreprise", href, text ?? entName(L, siren), liste);
 }
 
 /** A commune: its fiche when the register holds it. */
 export function lienCommune(L: Lexique, insee: string, text?: Rich, liste = false): RichItem {
   const c = L.communes[insee];
-  return lien("commune", c ? communeHref(insee) : null, text ?? c?.nom ?? insee, liste);
+  return lien("commune", c?.ref ? communeHref(insee) : null, text ?? c?.nom ?? insee, liste);
 }
 
 /** A département: its fiche (the build writes one per département it covers). */

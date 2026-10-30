@@ -1,8 +1,10 @@
 """Every mention that has its fiche is a link (design/registre/v2, the owner's rule, « partout et
 sans exception »): every page of the register rendered on the fixture's build by its own view
 (web/tests/registre-liens/rendre.ts: Node, no browser), every text outside a link searched for the
-name of a fiche the build holds (a commune, a département, a buyer, a company). The result is
-printed view by view; the test fails on any name left as text, or a page that does not render."""
+name of a fiche the build holds (a commune, a département, a buyer, a company), and every link to
+a fiche checked against the build's files. The result is printed view by view; the test fails on
+any name left as text, a link to a fiche the build did not write (lot R3), or a page that does
+not render."""
 
 import json
 import shutil
@@ -92,6 +94,8 @@ def test_every_mention_that_has_its_fiche_is_a_link(built, capsys):
             print(f"  {name:14} {nb:4} pages {lus:6} textes lus  {non:3} non liés")
     errors = [f"{r['chemin']}: {r['erreur']}" for r in results if r.get("erreur")]
     assert not errors, "\n".join(errors[:20])
+    dead = [f"{r['chemin']}: {h}" for r in results for h in r.get("morts") or []]
+    assert not dead, f"{len(dead)} liens vers une fiche absente:\n" + "\n".join(dead[:40])
     unlinked = [
         f"{r['chemin']}: « {x['nom']} » ({x['quoi']}) dans « {x['texte']} »"
         for r in results

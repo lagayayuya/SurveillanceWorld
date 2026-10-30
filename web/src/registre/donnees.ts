@@ -35,6 +35,17 @@ export type Evenement = {
   hors_totaux?: string | null;
   national?: boolean;
   publie_par?: string | null;
+  // its names' records (lot R3, refs.py): its buyer, commune, a notice's place, an act's
+  // beneficiary, its companies in their order (null: none), a shared act's other communes,
+  // and the names read in its objet
+  acheteur_ref?: string;
+  commune_ref?: string;
+  lieu_ref?: string;
+  beneficiaire_ref?: string;
+  entreprises_refs?: (string | null)[];
+  partage_refs?: (string | null)[];
+  insee0_ref?: string | null;
+  mentions?: Mention[];
   // the build's flags
   compte?: boolean;
   copie?: boolean;
@@ -63,14 +74,28 @@ export type Affaire = {
   [field: string]: unknown;
 };
 
-export type Entreprise = { nom?: string | null; entrepreneur_individuel?: boolean };
+/** A record's reference, `<type>/<id>` (its address under /registre/): only when the build
+ * wrote that record (lot R3, pipeline/lacarte_registre/refs.py). */
+export type Ref = string;
+export type Entreprise = { nom?: string | null; entrepreneur_individuel?: boolean; ref?: Ref };
 export type Acheteur = {
   nom?: string;
   nom_court?: string;
   categorie?: string;
   insee_siege?: string | null;
+  ref?: Ref;
 };
-export type Commune = { nom: string; dep: string; pop?: number; epci?: string };
+export type Commune = {
+  nom: string;
+  dep: string;
+  pop?: number;
+  epci?: string;
+  ref?: Ref;
+  epci_ref?: Ref;
+  dep_ref?: Ref;
+};
+/** A name read in a free text and linked to its record (character offsets in that text). */
+export type Mention = { debut: number; fin: number; ref: Ref };
 export type Dico = {
   entreprises: Record<string, Entreprise>;
   acheteurs: Record<string, Acheteur>;
@@ -110,6 +135,8 @@ export type NonLu = {
   insee?: string | null;
   /** its commune's name, when the build knows it */
   commune?: string;
+  /** its commune's fiche, when the build wrote it (lot R3) */
+  commune_ref?: string;
   ref?: string | null;
   url?: string | null;
   page?: number | null;
