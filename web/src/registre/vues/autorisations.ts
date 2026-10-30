@@ -18,13 +18,13 @@ import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { capital, proper, tidy, titleCase } from "../texte.ts";
-import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import { arriver, type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
 import template from "./autorisations.html?raw";
 import { filCommune, lexique, liensBande, ligneCommune } from "./commune-outils.ts";
 
 type Props = { insee: string; dossier: string; d: Donnees };
-type State = BaseState & { allPriv: boolean };
+type State = BaseState & { allPriv: boolean; allAut: boolean };
 type Dossier = {
   id: string;
   es: Evenement[];
@@ -44,6 +44,7 @@ type Detail = {
 };
 
 const PRIVES_D_ABORD = 15;
+const AUTRES_D_ABORD = 12;
 const dash = (v: number | null | undefined): string => (v == null ? "—" : fr(v));
 const ym = (d: string): string => d.slice(0, 7);
 const lu = (e: Evenement): boolean => e.cameras != null && !e.non_lu?.includes("nombre_illisible");
@@ -106,11 +107,49 @@ function nomPublie(e: Evenement): string | null {
   return proper(tidy(titleCase(e.beneficiaire)));
 }
 
+/** A decree of video protection that has no row of its own (an older decree of its dossier). */
+function detailArrete(e: Evenement): Detail {
+  const nm = nomPublie(e);
+  const illisible = !lu(e);
+  return {
+    kicker: t("autorisations.kicker_arrete", { date: shortDate(e.date) }),
+    title: `${nm ?? capital(t("commun.nom_non_publie"))} · ${
+      illisible ? t("non_lu.nombre_illisible") : t("n.camera", { n: e.cameras ?? 0 })
+    }`,
+    rows: [
+      [t("autorisations.categorie"), categorie(e)],
+      [t("autorisations.sur_la_rue"), dash(e.cameras_vp)],
+      [t("autorisations.abords"), dash(e.cameras_ext)],
+      [t("autorisations.interieur"), dash(e.cameras_int)],
+      [t("autorisations.duree"), e.duree || t("autorisations.non_precisee")],
+    ],
+    note: illisible ? t("autorisations.note_illisible") : undefined,
+    foot: acte(e),
+    links: liens(e),
+  };
+}
+
+/** A decree of drones, body cameras or algorithmic analysis. */
+function detailAutre(e: Evenement, kind: string): Detail {
+  return {
+    kicker: `${kind} · ${shortDate(e.date)}`,
+    title: tidy(nomPublie(e) ?? capital(t("commun.nom_non_publie"))),
+    rows: [
+      [
+        t("autorisations.duree"),
+        String(e.periode ?? "") || e.duree || t("autorisations.non_precisee"),
+      ],
+    ],
+    foot: acte(e),
+    links: liens(e),
+  };
+}
+
 class Autorisations extends Vue<Props, State> {
   private cache: ReturnType<Autorisations["build"]> | null = null;
 
   protected init(): Partial<State> {
-    return { allPriv: false };
+    return { allPriv: false, allAut: false };
   }
 
   /** The breadcrumb's last step, after Registre › Communes › <commune> (fil()). */
@@ -172,7 +211,11 @@ class Autorisations extends Vue<Props, State> {
     const prives = dossiers
       .filter((x) => !x.com)
       .sort((a, b) => (a.last.date ?? "").localeCompare(b.last.date ?? ""));
-    const autres = L.filter((e) => e.t !== "arrete");
+    const autres = L.filter((e) => e.t !== "arrete").sort((a, b) =>
+      (b.date ?? "").localeCompare(a.date ?? ""),
+    );
+    // the main dossier: the mairie's largest whose decrees give a number
+    const main = mairie.find((x) => x.es.some(lu));
     // decrees of drones or algorithmic analysis naming the commune among others, not among its own
     const ids = new Set(L.map((e) => e.id));
     const dep = d.f.commune.dep;
@@ -180,7 +223,7 @@ class Autorisations extends Vue<Props, State> {
       (a: Autorisation) =>
         a.insee.includes(d.insee) && !ids.has(a.acte) && a.acte.startsWith(`${dep}-`),
     );
-    return { L, mairie, prives, autres, multi };
+    return { L, mairie, main, prives, autres, multi };
   }
 
   private data() {
@@ -188,28 +231,50 @@ class Autorisations extends Vue<Props, State> {
     return this.cache;
   }
 
-  componentDidMount(): void {
-    const id = this.props.dossier;
-    if (!id) return;
+  /** Where a decree is on the page: its row's id (its section: the mairie, the shops and
+   * companies, the drones and other devices), and what must be unfolded for the row to be there. */
+  private cible(e: Evenement): { ancre: string; etat: Partial<State> } | null {
     const d = this.data();
-    const i = d.prives.findIndex((x) => x.id === id);
-    const j = d.mairie.findIndex((x) => x.id === id);
+    if (e.t !== "arrete") {
+      const i = d.autres.indexOf(e);
+      return i < 0
+        ? null
+        : { ancre: `arr-${e.id}`, etat: { allAut: i >= AUTRES_D_ABORD || this.state.allAut } };
+    }
+    if (d.main?.es.includes(e)) return { ancre: `arr-${e.id}`, etat: {} };
+    if (d.mairie.some((x) => x.es.includes(e))) return { ancre: `dos-${e.affaire}`, etat: {} };
+    const i = d.prives.findIndex((x) => x.es.includes(e));
+    return i < 0
+      ? null
+      : {
+          ancre: `dos-${e.affaire}`,
+          etat: { allPriv: i >= PRIVES_D_ABORD || this.state.allPriv },
+        };
+  }
+
+  /** Opened at a decree (…/autorisations/<id>, every link to a decree: corpus.ts docHref) or at a
+   * dossier (an older address: its last decree): the decree chosen, its section unfolded, its row
+   * in view, its content in the panel, the panel's arrival marked (v2.1 A7). */
+  componentDidMount(): void {
+    const p = this.props.dossier;
+    if (!p) return;
+    const d = this.data();
+    const e = d.L.find((x) => x.id === p) ?? [...d.L].reverse().find((x) => x.affaire === p);
+    if (!e) return;
+    const c = this.cible(e);
+    this.setState({ sel: e.id, ...(c?.etat ?? {}) } as Partial<State>);
     // two frames: the router scrolls to the top in the next one
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
-        if (j === 0) document.getElementById("mairie")?.scrollIntoView({ block: "start" });
-        else if (j > 0) {
-          this.setState({ sel: d.mairie[j].last.id });
-          document.getElementById(`dos-${id}`)?.scrollIntoView({ block: "center" });
-        } else if (i >= 0) {
-          this.setState({
-            sel: d.prives[i].last.id,
-            allPriv: i >= PRIVES_D_ABORD || this.state.allPriv,
-          });
-          requestAnimationFrame(() =>
-            document.querySelectorAll("#prives tbody tr")[i]?.scrollIntoView({ block: "center" }),
-          );
-        }
+        const row = c ? document.getElementById(c.ancre) : null;
+        // at once: the panel's own scroll (arriver) would stop a smooth one halfway; on a phone
+        // the row near the top, above the drawer the panel becomes (60 % of the height)
+        const wide = large();
+        row?.scrollIntoView({ block: wide ? "center" : "start", behavior: "instant" });
+        const sc = row?.closest(".scroll");
+        if (sc && !wide) sc.scrollTop -= 140;
+        const root = (row ?? document.getElementById("registre"))?.closest(".rg");
+        if (root) arriver(root);
       }),
     );
   }
@@ -266,7 +331,7 @@ class Autorisations extends Vue<Props, State> {
         ? avecNombre.reduce((s, x) => s + (x.lu?.cameras_vp ?? 0), 0)
         : null;
     const camP = d.prives.reduce((s, x) => s + (x.lu?.cameras ?? 0), 0);
-    const main = d.mairie.find((x) => x.es.some(lu));
+    const main = d.main;
     const fin = main?.a?.echeance ?? null;
     // a département whose decrees are not collected: no figure of cameras (they are not known)
     const kpis =
@@ -350,6 +415,7 @@ class Autorisations extends Vue<Props, State> {
           delta: lu(e) && p ? signed((e.cameras ?? 0) - (p.cameras ?? 0)) : "—",
           url: e.url ?? "",
           tel: liens(e),
+          ancre: `arr-${e.id}`,
           cls: `r${S.sel === e.id ? " on" : ""}`,
           hover: this.pick(e.id),
         };
@@ -439,7 +505,7 @@ class Autorisations extends Vue<Props, State> {
           n: dash(n),
           vp: dash(x.lu?.cameras_vp),
           ancre: `dos-${x.id}`,
-          cls: `r${S.sel === e.id ? " on" : ""}`,
+          cls: `r${x.es.some((y) => y.id === S.sel) ? " on" : ""}`,
           hover: this.pick(e.id),
         };
       });
@@ -480,7 +546,8 @@ class Autorisations extends Vue<Props, State> {
         int: dash(e.cameras_int),
         url: e.url ?? "",
         tel: liens(e),
-        cls: `r${S.sel === e.id ? " on" : ""}`,
+        ancre: `dos-${x.id}`,
+        cls: `r${x.es.some((y) => y.id === S.sel) ? " on" : ""}`,
         hover: this.pick(e.id),
       };
     });
@@ -512,36 +579,36 @@ class Autorisations extends Vue<Props, State> {
     // drones, body cameras, algorithmic analysis
     const lyonDr = D.f.stats.communes["69123"]?.dr ?? 0;
     const carte = communeHref(insee, "carte");
-    const list = d.autres
-      .slice()
-      .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
-      .slice(0, 12)
-      .map((e) => {
-        const kind = has(`registre.autorisations.type.${e.t}`)
-          ? t(`autorisations.type.${e.t}`)
-          : t("autorisations.type.autre");
-        const txt: Rich = [`${kind} · ${tidy(nomPublie(e) ?? t("commun.nom_non_publie"))}`];
-        const partage = (e.partage ?? []) as string[];
-        if (partage.length) {
-          txt.push(` · ${t("autorisations.partage", { n: partage.length })} : `);
-          partage.forEach((k, i) => {
-            if (i) txt.push(", ");
-            txt.push(lienCommune(L, k, D.commune(k).nom));
-          });
-        }
-        const zone = /^arrete_(drone|vsa)$/.test(e.t);
-        if (zone && nonDeduite(e)) txt.push(` · ${t("arretes.zone_non_deduite")}`);
-        const surCarte = zone && !nonDeduite(e);
-        // on the map: the commune's « Carte et drones »; else the act itself (the préfecture's recueil)
-        const l = t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete");
-        return {
-          d: shortDate(e.date),
-          t: txt,
-          lien: (surCarte || !e.url
-            ? lien("commune", carte, l)
-            : { a: { href: e.url, text: l } }) as RichItem,
-        };
-      });
+    const list = (S.allAut ? d.autres : d.autres.slice(0, AUTRES_D_ABORD)).map((e) => {
+      const kind = has(`registre.autorisations.type.${e.t}`)
+        ? t(`autorisations.type.${e.t}`)
+        : t("autorisations.type.autre");
+      const txt: Rich = [`${kind} · ${tidy(nomPublie(e) ?? t("commun.nom_non_publie"))}`];
+      const partage = (e.partage ?? []) as string[];
+      if (partage.length) {
+        txt.push(` · ${t("autorisations.partage", { n: partage.length })} : `);
+        partage.forEach((k, i) => {
+          if (i) txt.push(", ");
+          txt.push(lienCommune(L, k, D.commune(k).nom));
+        });
+      }
+      const zone = /^arrete_(drone|vsa)$/.test(e.t);
+      if (zone && nonDeduite(e)) txt.push(` · ${t("arretes.zone_non_deduite")}`);
+      const surCarte = zone && !nonDeduite(e);
+      // on the map: the commune's « Carte et drones »; else the act itself (the préfecture's recueil)
+      const l = t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete");
+      DET[e.id] = detailAutre(e, kind);
+      return {
+        ancre: `arr-${e.id}`,
+        cls: `r${S.sel === e.id ? " on" : ""}`,
+        hover: this.pick(e.id),
+        d: shortDate(e.date),
+        t: txt,
+        lien: (surCarte || !e.url
+          ? lien("commune", carte, l)
+          : { a: { href: e.url, text: l } }) as RichItem,
+      };
+    });
     const multi: Rich = d.multi.length
       ? [
           `${t("autorisations.multi", {
@@ -572,9 +639,17 @@ class Autorisations extends Vue<Props, State> {
           : "",
       list,
       multi,
+      more:
+        d.autres.length > AUTRES_D_ABORD
+          ? S.allAut
+            ? t("autorisations.reduire")
+            : t("autorisations.les_arretes", { n: fr(d.autres.length) })
+          : "",
+      moreAct: () => this.setState({ allAut: !this.state.allAut }),
     };
 
-    const d0 = S.sel ? DET[S.sel] : undefined;
+    const e1 = S.sel ? D.ev.get(S.sel) : undefined;
+    const d0 = S.sel ? (DET[S.sel] ?? (e1 ? detailArrete(e1) : undefined)) : undefined;
     const nDr = d.autres.filter((e) => e.t === "arrete_drone").length + d.multi.length;
     const e0 = S.sel ? D.ev.get(S.sel) : undefined;
     const det = d0

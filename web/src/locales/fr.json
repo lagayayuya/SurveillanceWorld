@@ -1940,6 +1940,7 @@
   "registre.autorisations.valable_jusqu_au": "valable jusqu'au",
   "registre.autorisations.voir_couverture": "Ce que couvre le registre →",
   "registre.autorisations.voir_sur_la_carte": "voir sur la carte →",
+  "registre.autorisations.les_arretes": "Les {n} arrêtés",
   "registre.carte.analyse_algorithmique": "analyse algorithmique",
   "registre.carte.arretes": "Arrêtés",
   "registre.carte.date_heure": "{date}, {h} h {m}",

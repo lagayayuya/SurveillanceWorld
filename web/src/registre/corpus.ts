@@ -135,12 +135,12 @@ export function buyerHref(L: Lexique, siren: string): string {
     : `/registre/acheteur/${siren}`;
 }
 
-/** Where a document opens: a decree, its commune's Autorisations at its dossier; else its record. */
+/** Where a document opens: a decree, its commune's Autorisations at the decree itself (its own
+ * address: its section, its row chosen, its panel; v2.1 A7); else its record. */
 export function docHref(L: Lexique, e: Evenement): string {
-  const a = encodeURIComponent(e.affaire);
   return isArr(e) && e.insee && L.communes[e.insee]
-    ? `${communeHref(e.insee, "autorisations")}/${a}`
-    : `/registre/contrat/${a}`;
+    ? `${communeHref(e.insee, "autorisations")}/${encodeURIComponent(e.id)}`
+    : `/registre/contrat/${encodeURIComponent(e.affaire)}`;
 }
 
 /** A row of the list: its keys for the filters, its words for the search, what it shows. */

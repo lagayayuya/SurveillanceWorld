@@ -80,13 +80,12 @@ const fam = (e: Evenement): string =>
               ? "arr"
               : "sub";
 
-/** A document's own page in the register: a decree its dossier in the Autorisations tab, anything else
- * its record (lot R1b). */
+/** A document's own page in the register: a decree itself in this commune's Autorisations (its
+ * section, its row chosen: v2.1 A7), anything else its record. */
 function docHref(e: Evenement, insee: string): string {
-  const a = encodeURIComponent(e.affaire);
-  return e.t.startsWith("arrete")
-    ? `${communeHref(insee, "autorisations")}/${a}`
-    : `/registre/contrat/${a}`;
+  return isArr(e)
+    ? `${communeHref(insee, "autorisations")}/${encodeURIComponent(e.id)}`
+    : `/registre/contrat/${encodeURIComponent(e.affaire)}`;
 }
 
 /** Why a decree could not be read entirely, in words. */

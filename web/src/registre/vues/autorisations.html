@@ -40,7 +40,7 @@
               <thead><tr><th scope="col">{{t.autorisations.arrete}}</th><th scope="col" class="num">{{t.autorisations.cameras}}</th><th scope="col" class="num">{{t.autorisations.sur_la_rue}}</th><th scope="col" class="num">{{t.autorisations.abords_des_batiments}}</th><th scope="col" class="num">{{t.autorisations.dans_les_batiments}}</th><th scope="col" class="num">{{t.autorisations.ecart}}</th></tr></thead>
               <tbody>
                 <sc-for list="{{rows}}" as="r">
-                  <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                  <tr class="{{r.cls}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
                     <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
                     <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td><td class="num"><strong>{{r.delta}}</strong></td><td class="liens-tel"><sc-for list="{{r.tel}}" as="l"><a href="{{l.href}}">{{l.l}}</a></sc-for></td>
                   </tr>
@@ -86,7 +86,7 @@
               <thead><tr><th scope="col">{{t.autorisations.arrete}}</th><th scope="col">{{t.autorisations.beneficiaire}}</th><th scope="col" class="num">{{t.autorisations.cameras}}</th><th scope="col" class="num">{{t.autorisations.abords}}</th><th scope="col" class="num">{{t.autorisations.interieur}}</th></tr></thead>
               <tbody>
                 <sc-for list="{{priv}}" as="r">
-                  <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
+                  <tr class="{{r.cls}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
                     <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
                     <td><span style="{{r.nomStyle}}">{{{r.nomR}}}</span><div style="font-size: 13px; color: var(--muted)">{{r.cat}}</div></td>
                     <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td><td class="liens-tel"><sc-for list="{{r.tel}}" as="l"><a href="{{l.href}}">{{l.l}}</a></sc-for></td>
@@ -100,7 +100,8 @@
           <sc-if value="{{autresArr.show}}"><section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px; padding-top: 24px">
             <h3 id="a-autres" class="h3">{{t.autorisations.drones_cameras_pietons_analyse_algorithmique}}</h3>
             <sc-if value="{{autresArr.none}}"><p style="margin: 0">{{f.autorisations.aucun_arrete_trouve_pour}} <sc-if value="{{autresArr.ex}}">{{{autresArr.ex}}}</sc-if></p></sc-if>
-            <sc-if value="{{autresArr.list.length}}"><ul class="lst autres"><sc-for list="{{autresArr.list}}" as="x"><li><span class="tw" style="color: var(--muted)">{{x.d}}</span><span>{{{x.t}}}</span><span>{{{x.lien}}}</span></li></sc-for></ul></sc-if>
+            <sc-if value="{{autresArr.list.length}}"><ul class="lst autres"><sc-for list="{{autresArr.list}}" as="x"><li class="{{x.cls}}" id="{{x.ancre}}" onMouseEnter="{{x.hover}}" onFocus="{{x.hover}}" onClick="{{x.hover}}"><span class="tw" style="color: var(--muted)">{{x.d}}</span><span>{{{x.t}}}</span><span>{{{x.lien}}}</span></li></sc-for></ul></sc-if>
+            <sc-if value="{{autresArr.more}}"><button class="more" type="button" onClick="{{autresArr.moreAct}}">{{autresArr.more}}</button></sc-if>
             <sc-if value="{{autresArr.multi}}"><p style="margin: 0">{{{autresArr.multi}}}</p></sc-if>
             <sc-if value="{{lus}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{lus}}</p></sc-if>
             <sc-if value="{{cesTxt}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{cesTxt}} {{{docsLien}}}.</p></sc-if>
