@@ -33,7 +33,16 @@ export const departementHref = (dep: string): string =>
 /** A buyer: its fiche, or its commune's when it is a commune (one fiche per collectivité). */
 export function lienAcheteur(L: Lexique, siren: string, text?: Rich, liste = false): RichItem {
   const href = buyerHref(L, siren);
-  const k: TypeCle = href.startsWith("/registre/commune/") ? "commune" : "acheteur";
+  // a collectivité's buyer address leads to its territory's fiche (acheteur.ts): its colour is the
+  // territory's
+  const cat = L.acheteurs[siren]?.categorie;
+  const k: TypeCle = href.startsWith("/registre/commune/")
+    ? "commune"
+    : cat === "intercommunalite" || cat === "metropole"
+      ? "epci"
+      : cat === "departement"
+        ? "departement"
+        : "acheteur";
   return lien(k, L.acheteurs[siren] ? href : null, text ?? buyerNom(L, siren), liste);
 }
 

@@ -119,3 +119,19 @@ export function decoupe(nom: string): Lettre[] {
   }
   return out;
 }
+
+/** The same, word by word (a name breaks between its words, never inside one). */
+export function decoupeMots(nom: string): { lettres: Lettre[] }[] {
+  const out: { lettres: Lettre[] }[] = [];
+  let i = 0;
+  for (const mot of nom.split(/\s+/).filter(Boolean)) {
+    const lettres = decoupe(mot).map((l, j) => ({
+      ...l,
+      cls: `rg-cut c${(i + j) % 5}`,
+      st: `transform: rotate(${TILT[(i + j) % 12]}deg) translateY(${LIFT[(i + j) % 12]}px)`,
+    }));
+    i += lettres.length;
+    out.push({ lettres });
+  }
+  return out;
+}

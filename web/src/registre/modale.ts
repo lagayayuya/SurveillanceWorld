@@ -267,7 +267,8 @@ function entete(r: Route): void {
   const share = vue?.partage ? boutonPartage(vue as { partage(): Partage | null }) : null;
   haut.replaceChildren(
     debut,
-    el("span", { class: "flex" }),
+    // the step up takes the room; the summary's sticker leaves it to a spacer
+    ...(up ? [] : [el("span", { class: "flex" })]),
     ...(share ? [share] : []),
     boutonTheme(),
     boutonFermer(),

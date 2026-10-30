@@ -1371,3 +1371,41 @@
   align-items: center;
   min-height: 24px;
 }
+/* A cut-out name breaks between its words (each word's scraps kept together, the boards' gap
+   between them), a long name never runs over the band; the band's sections scroll rather than
+   wrap at 1 280 px; the phone's step up keeps its words. */
+.rg .cutout .mot {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+  margin-right: 8px;
+}
+.rg .band .bname {
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.rg .band nav {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.rg .band nav a {
+  flex: none;
+  white-space: nowrap;
+}
+.rg .tband .t1 {
+  min-width: 0;
+}
+.rg .tband .t1 b {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rg .ttop .crumbs {
+  flex: 1 1 auto;
+}
+.rg .ttop .crumbs .crumb {
+  min-width: 0;
+  white-space: nowrap;
+}

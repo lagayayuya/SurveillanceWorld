@@ -5,7 +5,7 @@ import { nest, type Texts } from "./catalogue.ts";
 import { type Handler, type Rich, View } from "./dc.ts";
 import { t } from "./i18n.ts";
 import { partager } from "./partage.ts";
-import { decoupe, type Lettre, type Repere, repere, type TypeCle } from "./types.ts";
+import { decoupe, decoupeMots, type Lettre, type Repere, repere, type TypeCle } from "./types.ts";
 
 let words: Texts = {};
 /** The catalogue as the templates read it ({{t.<view>.<key>}}), set once by the page. */
@@ -65,6 +65,7 @@ export abstract class Vue<
       r: repere(k),
       nom,
       lettres: decoupe(nom) as Lettre[],
+      mots: decoupeMots(nom),
       ligne,
       cls: isLarge ? "inner" : "tin",
       stk: isLarge ? "stk big" : "stk",

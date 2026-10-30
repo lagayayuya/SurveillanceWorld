@@ -49,7 +49,7 @@
 <dc-part name="tete-fiche">
   <div class="{{tete.cls}}" style="padding-bottom: 18px">
     <span class="{{tete.stk}}" style="{{tete.r.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{tete.r.i}}"></path></svg>{{tete.r.l}}</span>
-    <h1 class="sr">{{tete.nom}}</h1><div class="cutout s" aria-hidden="true"><sc-for list="{{tete.lettres}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
+    <h1 class="sr">{{tete.nom}}</h1><div class="cutout s" aria-hidden="true"><sc-for list="{{tete.mots}}" as="m"><span class="mot"><sc-for list="{{m.lettres}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></span></sc-for></div>
     <p class="idline tw">{{{tete.ligne}}}</p>
   </div>
 </dc-part>
