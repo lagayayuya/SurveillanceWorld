@@ -7,7 +7,6 @@
    hover is --accent), its --warn fill is --warn-bg. Every rule is scoped under the register's root (.rg),
    its dialogs' (.dialogue, over the page) excepted, so that nothing reaches the map behind it (v2). */
 
-
 /* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
 @font-face {
   font-family: Archivo;
@@ -297,112 +296,6 @@
 }
 
 /* --- registre (its mockup's own rules) --- */
-.rg .v-registre .fbox {
-  display: flex;
-  flex-direction: column;
-  border-top: 2px solid var(--fg);
-}
-.rg .v-registre .fbox h3 {
-  margin: 14px 0 4px;
-  font-weight: 800;
-  font-stretch: 80%;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.rg .v-registre .fopt {
-  all: unset;
-  cursor: pointer;
-  display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: center;
-  min-height: 36px;
-  font-size: 15px;
-  box-sizing: border-box;
-}
-.rg .v-registre .fopt .box {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--fg);
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1;
-}
-.rg .v-registre .fopt:focus-visible {
-  outline: 2px solid var(--blue);
-}
-.rg .v-registre .fopt[aria-pressed="true"] .box {
-  background: var(--fg);
-  color: var(--bg);
-}
-.rg .v-registre .fopt.zero {
-  color: var(--muted);
-}
-.rg .v-registre a.res {
-  display: block;
-  padding: 12px 10px;
-  border-bottom: 1px solid var(--rule);
-  cursor: pointer;
-  color: var(--fg);
-}
-.rg .v-registre a.res:hover,
-.rg .v-registre a.res.on {
-  background: var(--soft);
-}
-.rg .v-registre a.res:hover strong.tt {
-  text-decoration: underline;
-}
-.rg .v-registre .chip {
-  all: unset;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 2px solid var(--fg);
-  font-size: 14px;
-  font-weight: 700;
-  background: var(--bg-2);
-}
-.rg .v-registre .sug {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  border: 2px solid var(--fg);
-  background: var(--bg-2);
-  text-decoration: none;
-  color: var(--fg) !important;
-  min-width: 0;
-}
-.rg .v-registre .sug:hover {
-  background: var(--soft);
-}
-.rg .v-registre .kbtn {
-  all: unset;
-  cursor: pointer;
-  display: block;
-  padding: 14px 0 14px 18px;
-  border-left: 1px solid var(--rule);
-}
-.rg .v-registre .kbtn:first-child {
-  padding-left: 0;
-  border-left: 0;
-}
-.rg .v-registre .kbtn:hover .kv {
-  color: var(--accent);
-}
-.rg .v-registre .kbtn[aria-pressed="true"] .kv {
-  text-decoration: underline;
-  text-decoration-thickness: 4px;
-  text-underline-offset: 6px;
-}
 
 /* --- commune (its mockup's own rules) --- */
 .rg .v-commune .ctl {
@@ -1336,11 +1229,7 @@
   .rg .v-carte section[aria-label="Choisir une période"] > div:first-child {
     flex-wrap: wrap;
   }
-  .rg .v-registre .fbox {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 16px;
-  }
+
 }
 
 /* accessibility (axe-core, link-in-text-block; RGAA 10.6): the crumbs' links underlined, the mockup draws them
@@ -1446,123 +1335,6 @@
 }
 
 /* --- 12th pass: the registre's filters on a phone, in the frame of the phone mockup « Filtres » --- */
-.rg .v-registre .filtres-btn,
-.rg .v-registre .sheet-head,
-.rg .v-registre .sheet-foot {
-  display: none;
-}
-@media (max-width: 959px) {
-  .rg .v-registre .filtres-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    min-height: 48px;
-    padding: 0 16px;
-    border: 2px solid var(--fg);
-    background: var(--bg-2);
-    color: var(--fg);
-    font:
-      800 15px Archivo,
-      sans-serif;
-    font-stretch: 80%;
-    text-transform: uppercase;
-    cursor: pointer;
-    justify-self: start;
-  }
-  .rg .v-registre .fbox {
-    display: none !important;
-  }
-  .rg .v-registre .fbox.ouvert {
-    display: flex !important;
-    flex-direction: column;
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 86vh;
-    z-index: 30;
-    background: var(--bg);
-    border-top: 3px solid var(--fg);
-    overflow: hidden;
-    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.6);
-  }
-  .rg .v-registre .fbox.ouvert > div:not(.sheet-head):not(.sheet-foot) {
-    padding: 0 16px;
-  }
-  .rg .v-registre .fbox.ouvert {
-    overflow-y: auto;
-  }
-  .rg .v-registre .fbox.ouvert .sheet-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 8px 4px 16px;
-    position: sticky;
-    top: 0;
-    background: var(--bg);
-    z-index: 1;
-  }
-  .rg .v-registre .sheet-handle {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    width: 48px;
-    height: 5px;
-    margin-left: -24px;
-    background: var(--fg);
-    border-radius: 3px;
-  }
-  .rg .v-registre .sheet-t {
-    margin: 0;
-    font-weight: 900;
-    font-stretch: 66%;
-    font-size: 30px;
-    text-transform: uppercase;
-  }
-  .rg .v-registre .sheet-x {
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    background: none;
-    color: var(--fg);
-    cursor: pointer;
-  }
-  .rg .v-registre .fbox.ouvert .sheet-foot {
-    display: flex;
-    gap: 10px;
-    padding: 12px 16px 24px;
-    border-top: 2px solid var(--fg);
-    background: var(--bg);
-    position: sticky;
-    bottom: 0;
-    margin-top: auto;
-  }
-  .rg .v-registre .sheet-raz,
-  .rg .v-registre .sheet-voir {
-    min-height: 48px;
-    border: 2px solid var(--fg);
-    font:
-      800 15px Archivo,
-      sans-serif;
-    font-stretch: 80%;
-    text-transform: uppercase;
-    cursor: pointer;
-  }
-  .rg .v-registre .sheet-raz {
-    flex: 1;
-    background: var(--bg-2);
-    color: var(--fg);
-  }
-  .rg .v-registre .sheet-voir {
-    flex: 1.6;
-    background: var(--fg);
-    color: var(--bg);
-  }
-}
 
 /* v12: the frieze's axis on the phone keeps one year in two, none next to « auj. » (the labels overlapped at 390 px) */
 @media (max-width: 959px) {
