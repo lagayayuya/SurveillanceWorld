@@ -313,7 +313,11 @@ class Documents extends Vue<Props, State> {
       ],
       "sort",
       "dir",
-    );
+    ).map((c, i) => {
+      // a head that does not read alone carries its sentence (v2.1 A6)
+      const aide = i === 2 ? t("documents.aide_qui") : i === 3 ? t("documents.aide_fig") : "";
+      return { ...c, aide, acls: aide ? "aide" : "" };
+    });
 
     const sel = S.sel ? all.find((x) => x.id === S.sel) : undefined;
     const det = sel ? this.panel(sel) : this.rest(all);

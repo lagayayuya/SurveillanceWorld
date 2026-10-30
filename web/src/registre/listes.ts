@@ -160,7 +160,14 @@ export type Rang = {
 };
 
 /** A column after the name: its words, numeric or not, the sort key its head picks. */
-export type Colonne = { l: string; num?: boolean; tri?: string; deps?: boolean };
+export type Colonne = {
+  l: string;
+  num?: boolean;
+  tri?: string;
+  deps?: boolean;
+  /** the head's sentence when it does not read alone (v2.1 A6) */
+  aide?: string;
+};
 /** A « classer par » key: its words, its first direction (-1: the largest first). */
 export type Tri = { k: string; l: string; dir: 1 | -1 };
 
@@ -564,7 +571,9 @@ function defDocument(liste: Liste, k: Kind): Def {
       col("commune"),
       col(aut || sub ? "beneficiaire" : "acheteur"),
       ...(aut || sub ? [] : [col("entreprises")]),
-      aut ? col("cameras", { num: true, tri: "amt" }) : col("montant", { num: true, tri: "amt" }),
+      aut
+        ? col("cameras", { num: true, tri: "amt", aide: W("aide.cameras") })
+        : col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
     ],
     tris: [tri("date", "date"), aut ? tri("amt", "cameras") : tri("amt", "montant")],
     filtres: ["dep", "annee", ...(k === "ao" ? [] : (["disp"] as Filtre[]))],
@@ -582,11 +591,11 @@ export const DEFS: Record<Liste, Def> = {
       k: "commune",
       nom: W("col.commune"),
       cols: [
-        col("documents", { num: true, tri: "docs" }),
-        col("contrats", { num: true, tri: "con" }),
-        col("autorisations", { num: true, tri: "aut" }),
-        col("drones", { num: true, tri: "dr" }),
-        col("carte", { num: true, tri: "carte" }),
+        col("documents", { num: true, tri: "docs", aide: W("aide.documents") }),
+        col("contrats", { num: true, tri: "con", aide: W("aide.contrats") }),
+        col("autorisations", { num: true, tri: "aut", aide: W("aide.autorisations") }),
+        col("drones", { num: true, tri: "dr", aide: W("aide.drones") }),
+        col("carte", { num: true, tri: "carte", aide: W("aide.carte") }),
       ],
       tris: [
         tri("docs", "documents"),
@@ -608,9 +617,9 @@ export const DEFS: Record<Liste, Def> = {
       k: "epci",
       nom: W("col.epci"),
       cols: [
-        col("communes", { num: true, tri: "communes" }),
-        col("contrats_signes", { num: true, tri: "con" }),
-        col("montant", { num: true, tri: "amt" }),
+        col("communes", { num: true, tri: "communes", aide: W("aide.communes_epci") }),
+        col("contrats_signes", { num: true, tri: "con", aide: W("aide.contrats") }),
+        col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
       ],
       tris: [
         tri("communes", "communes"),
@@ -630,11 +639,11 @@ export const DEFS: Record<Liste, Def> = {
       k: "departement",
       nom: W("col.departement"),
       cols: [
-        col("communes", { num: true, tri: "communes" }),
-        col("documents", { num: true, tri: "docs" }),
-        col("contrats", { num: true, tri: "con" }),
-        col("montant", { num: true, tri: "amt" }),
-        col("arretes", { num: true, tri: "aut" }),
+        col("communes", { num: true, tri: "communes", aide: W("aide.communes_dep") }),
+        col("documents", { num: true, tri: "docs", aide: W("aide.documents") }),
+        col("contrats", { num: true, tri: "con", aide: W("aide.contrats") }),
+        col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
+        col("arretes", { num: true, tri: "aut", aide: W("aide.arretes") }),
       ],
       tris: [
         tri("docs", "documents"),
@@ -655,9 +664,9 @@ export const DEFS: Record<Liste, Def> = {
       k: "acheteur",
       nom: W("col.acheteur"),
       cols: [
-        col("contrats", { num: true, tri: "con" }),
-        col("montant", { num: true, tri: "amt" }),
-        col("entreprises", { num: true, tri: "ents" }),
+        col("contrats", { num: true, tri: "con", aide: W("aide.contrats") }),
+        col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
+        col("entreprises", { num: true, tri: "ents", aide: W("aide.entreprises") }),
       ],
       tris: [
         tri("con", "contrats"),
@@ -677,10 +686,10 @@ export const DEFS: Record<Liste, Def> = {
       k: "entreprise",
       nom: W("col.entreprise"),
       cols: [
-        col("departements", { deps: true }),
-        col("contrats", { num: true, tri: "n" }),
-        col("clientes", { num: true, tri: "cl" }),
-        col("montant", { num: true, tri: "amt" }),
+        col("departements", { deps: true, aide: W("aide.departements") }),
+        col("contrats", { num: true, tri: "n", aide: W("aide.contrats") }),
+        col("clientes", { num: true, tri: "cl", aide: W("aide.clientes") }),
+        col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
         col("depuis", { num: true, tri: "y" }),
       ],
       tris: [

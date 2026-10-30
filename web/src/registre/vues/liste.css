@@ -30,16 +30,22 @@
   margin-top: 16px;
   flex-wrap: wrap;
 }
+/* a head may take two lines beside the detail panel (v2.1 B4), its words whole */
 .rg .v-liste table.t th button,
 .rg .v-liste table.t th .th-fixe {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: normal;
+  hyphens: none;
+}
+.rg .v-liste table.t th.num button {
+  text-align: right;
+  justify-content: flex-end;
 }
 /* a head that sorts nothing: the buttons' box, without the button */
 .rg .v-liste table.t th .th-fixe {
   display: flex;
   align-items: center;
   min-height: 40px;
-  padding: 0 8px;
 }
 .rg .v-liste table.t th.num .th-fixe {
   justify-content: flex-end;
@@ -129,6 +135,7 @@
 }
 .rg .v-liste .panel {
   top: 16px;
+  min-height: 0;
 }
 /* a row's other links (its commune, its buyer, its companies, the names under it) stay links of
    their own, above the row's main link that covers it (cadre.css « rows ») */

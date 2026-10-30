@@ -126,7 +126,8 @@ function detail(C: Corpus, r: Rang | undefined, k: TypeCle, docs: boolean) {
     return {
       ...vide,
       kicker: pluriel(k),
-      title: t(docs ? "liste.panneau_repos_docs" : "liste.panneau_repos") as Rich,
+      title: "" as Rich,
+      hint: t(docs ? "liste.panneau_repos_docs" : "liste.panneau_repos"),
       rows: [] as { k: string; v: Rich }[],
       links: [] as { l: string; href: string }[],
     };
@@ -263,8 +264,13 @@ export class ListeVue extends Vue<Props, State> {
       };
     });
     const triNom = def.tris.some((x) => x.k === "nom");
-    const head = (l: string, key: string | undefined, cls: string, w = "") => ({
+    const head = (l: string, key: string | undefined, cls: string, w = "", aide = "") => ({
       l,
+      // a head that does not read alone carries its sentence (v2.1 A6); one that sorts is a
+      // button, its sentence read with it, shown on its hover and its focus
+      aide,
+      acls: aide ? "aide" : "",
+      tab: aide && !key ? "0" : null,
       cls,
       w,
       tri: !!key,
@@ -275,7 +281,7 @@ export class ListeVue extends Vue<Props, State> {
     });
     const cols = [
       head(def.nom, triNom ? "nom" : undefined, "", wide ? "width: 38%" : ""),
-      ...def.cols.map((c) => head(c.l, c.tri, c.num ? "num" : "")),
+      ...def.cols.map((c) => head(c.l, c.tri, c.num ? "num" : "", "", c.aide ?? "")),
     ];
     const rows = list.slice(0, S.lim).map((r, i) => {
       let j = 0;

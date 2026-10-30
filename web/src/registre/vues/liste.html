@@ -28,7 +28,7 @@
         <div style="min-width: 0">
           <table class="t" style="margin-top: 6px">
             <caption class="sr">{{caption}}</caption>
-            <thead><tr><sc-if value="{{wide}}"><th scope="col" style="width: 30px"><span class="sr">{{t.liste.rang}}</span></th></sc-if><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><sc-if value="{{c.tri}}"><button type="button" onClick="{{c.pick}}">{{c.l}}{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}"><span class="th-fixe">{{c.l}}</span></sc-if></th></sc-for></tr></thead>
+            <thead><tr><sc-if value="{{wide}}"><th scope="col" style="width: 30px"><span class="sr">{{t.liste.rang}}</span></th></sc-if><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><sc-if value="{{c.tri}}"><button type="button" onClick="{{c.pick}}"><span class="{{c.acls}}" data-aide="{{c.aide}}">{{c.l}}</span><sc-if value="{{c.aide}}"><span class="sr"> : {{c.aide}}</span></sc-if>{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}"><span class="th-fixe"><span class="{{c.acls}}" tabindex="{{c.tab}}" data-aide="{{c.aide}}">{{c.l}}</span></span></sc-if></th></sc-for></tr></thead>
             <tbody>
               <sc-for list="{{rows}}" as="r">
                 <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">

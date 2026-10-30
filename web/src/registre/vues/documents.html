@@ -48,7 +48,7 @@
             <caption class="sr">{{f.documents.documents_officiels_de_filtres_et}}</caption>
             <thead><tr>
               <sc-for list="{{cols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
+                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" onClick="{{c.pick}}"><span class="{{c.acls}}" data-aide="{{c.aide}}">{{c.l}}</span><sc-if value="{{c.aide}}"><span class="sr"> : {{c.aide}}</span></sc-if><sc-if value="{{c.arrow}}"> <span aria-hidden="true">{{c.arrow}}</span></sc-if></button></th>
               </sc-for>
             </tr></thead>
             <tbody>

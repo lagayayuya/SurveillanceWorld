@@ -25,3 +25,8 @@
     overflow-y: auto;
   }
 }
+/* A sortable head that does not read alone (v2.1 A6): its sentence on its hover and its focus,
+   the button being what the keyboard reaches */
+.rg table.t th button:is(:hover, :focus-visible) .aide::after {
+  display: block;
+}
