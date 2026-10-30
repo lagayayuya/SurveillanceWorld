@@ -135,7 +135,7 @@ class CarteDrones extends Vue<Props, State> {
    * framing the commune itself (a page opened cold: main.ts ?insee=, its sheet's fitBounds at the
    * map's idle) undid the flight; once again, then never. */
   private readonly onMove = (e: { originalEvent?: unknown; rgcd?: boolean }) => {
-    if (e.rgcd || e.originalEvent || this.refait || this.dead || !this.map) return;
+    if (!this.parti || e.rgcd || e.originalEvent || this.refait || this.dead || !this.map) return;
     if (performance.now() - this.parti > REFAIRE_MS) return;
     this.refait = true;
     this.voler(this.map);
@@ -415,8 +415,9 @@ class CarteDrones extends Vue<Props, State> {
   }
 
   // --- the page --------------------------------------------------------------------------------
-  /** A row chosen (a click, Enter, a tap): its link is the view's own address with the act, so
-   * that it opens in a new tab too; here the view stays and its panel fills (A4). */
+  /** A row or a slot of the panel chosen (a click, Enter, a tap): its link (`a.rl`) is the view's
+   * own address with the act, so that it opens in a new tab too; here the view stays and its
+   * panel fills (A4): the click is the view's, not the shell's (hote.ts). */
   private choix(k: string): Handler {
     const f = this.choisir(k);
     return (e) => {
