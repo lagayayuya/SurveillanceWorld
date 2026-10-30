@@ -143,3 +143,8 @@
     margin-top: 0;
   }
 }
+/* a family's rows: each one a row whose target is its list (cadre.css « rows », A2); the link
+   covers it already, the row takes the tint */
+.rg .v-sommaire .fams li.r:hover {
+  background: var(--soft);
+}

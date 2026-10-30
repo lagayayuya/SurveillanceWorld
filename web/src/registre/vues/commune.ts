@@ -65,6 +65,7 @@ import {
   titreDocument,
   typeLabel,
 } from "./commune-outils.ts";
+import { enLigne } from "./departement-outils.ts";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 const ELUS = "https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1";
@@ -791,6 +792,7 @@ export class Commune extends Vue<Props, State> {
                   : e.copies
                     ? t("commune.frise_copies", { n: e.copies })
                     : ""),
+              true,
             ),
             " · ",
             ...who(e),
@@ -826,7 +828,7 @@ export class Commune extends Vue<Props, State> {
           };
           return {
             l1: [
-              k0 === "?" ? t("commune.entreprise_non_publiee") : this.entA(k0),
+              k0 === "?" ? t("commune.entreprise_non_publiee") : enLigne(this.entA(k0)),
               ` · ${count(es.length, "contrat")}`,
             ],
             l2: `${[...new Set(es.map(([e]) => e.dl.slice(0, 4)))].join(", ")} · ${money(sum)}`,
@@ -881,7 +883,7 @@ export class Commune extends Vue<Props, State> {
       aoL.push({
         k,
         debut,
-        l: lien("ao", affHref(a.id), this.titreAff(a.id, e0)),
+        l: lien("ao", affHref(a.id), this.titreAff(a.id, e0), true),
         suite,
         ...sel(k, "ao", "ao r"),
       });
@@ -904,7 +906,7 @@ export class Commune extends Vue<Props, State> {
         aoL.push({
           k,
           debut: x.date,
-          l: lienDocument(L, x, this.titreAff(e.affaire, x)),
+          l: lienDocument(L, x, this.titreAff(e.affaire, x), true),
           suite,
           ...sel(k, "ao", "ao r"),
         });
@@ -1353,7 +1355,7 @@ export class Commune extends Vue<Props, State> {
         const k = cs.length >= 6 ? `e${k0}` : `c${cs.indexOf(es[0])}`;
         const ys = [...new Set(es.map((e) => e.dl.slice(0, 4)))];
         return {
-          nom: k0 === "?" ? t("commune.entreprise_non_publiee") : this.entA(k0),
+          nom: k0 === "?" ? t("commune.entreprise_non_publiee") : enLigne(this.entA(k0)),
           n: count(es.length, "contrat"),
           ans: ys.length > 1 ? `${ys[0]} → ${ys[ys.length - 1]}` : ys[0],
           amt: sum ? money(sum) : "—",
@@ -1415,7 +1417,7 @@ export class Commune extends Vue<Props, State> {
         ...sel(k, typeDocument(e), "drow r"),
         p: picto(typeDocument(e)),
         d: docDate(e.date, e.date_annee),
-        titre: lienDocument(this.L, e, titreDocument(e)),
+        titre: lienDocument(this.L, e, titreDocument(e), true),
         fig,
       };
     });
@@ -1539,13 +1541,13 @@ export class Commune extends Vue<Props, State> {
         ? [
             row(
               "m1",
-              lien("epci", epHref, en),
+              lien("epci", epHref, en, true),
               t("commune.ter_sub_epci", { r: reg.length, n: all.length }),
               ep,
             ),
           ]
         : []),
-      row("m2", lienDepartement(dep, depNom), t("commune.ter_sub_dep", { n: nDep }), dp),
+      row("m2", lienDepartement(dep, depNom, true), t("commune.ter_sub_dep", { n: nDep }), dp),
     ];
     const achat = epci?.achat;
     const au = da.replace(/^le /, "au ").replace(/^les /, "aux ");
@@ -1559,7 +1561,7 @@ export class Commune extends Vue<Props, State> {
           L.communes[a].nom.localeCompare(L.communes[b].nom, "fr"),
       )
       .map((k) => ({
-        lien: lienCommune(L, k),
+        lien: lienCommune(L, k, undefined, true),
         n: count(st.communes[k]?.docs ?? 0, "document"),
       }));
     // a territory named in a sentence is a link to its fiche, its article words (« la », « au »)

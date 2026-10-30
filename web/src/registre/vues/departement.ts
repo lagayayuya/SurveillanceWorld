@@ -49,6 +49,7 @@ import {
   type ComRow,
   communes,
   type EtatCollecte,
+  enLigne,
   epciDe,
   epciHref,
   epciLa,
@@ -208,7 +209,7 @@ class Departement extends Vue<Props, State> {
               : undefined,
           };
           return {
-            nom: o.code ? lienEpci(f, o.code, o.nom) : o.nom,
+            nom: o.code ? lienEpci(f, o.code, o.nom, true) : o.nom,
             n: fr(o.n),
             docs: fr(o.docs),
             con: fr(o.con),
@@ -257,7 +258,7 @@ class Departement extends Vue<Props, State> {
     const shown = q || S.allC ? filtered : filtered.slice(0, SHOWN);
     const mxd = Math.max(1, ...coms.map((c) => c.docs));
     const comsV = shown.map((c: ComRow) => ({
-      nom: lienCommune(L, c.insee, c.nom),
+      nom: lienCommune(L, c.insee, c.nom, true),
       // on an intercommunality's fiche its own name is not repeated under each commune
       ep: c.epci && !ic ? lienEpci(f, c.epci, c.ep, true) : "",
       docs: fr(c.docs),
@@ -323,7 +324,7 @@ class Departement extends Vue<Props, State> {
             link: href ? [t("departement.voir_entreprise"), href] : undefined,
           };
           return {
-            nom: lk,
+            nom: enLigne(lk),
             n: fr(o.n),
             amt: montant(o),
             ...this.ligne(k, "entreprise"),
@@ -381,7 +382,7 @@ class Departement extends Vue<Props, State> {
               : undefined,
           };
           return {
-            nom: lk,
+            nom: enLigne(lk),
             cat: cat(o),
             n: fr(o.n),
             amt: montant(o),
@@ -490,7 +491,7 @@ class Departement extends Vue<Props, State> {
         link: href ? [t("departement.voir_entreprise"), href] : undefined,
       };
       return {
-        nom: lk,
+        nom: enLigne(lk),
         n: fr(x.n),
         amt: x.montant ? money(x.montant) : "—",
         ...this.ligne(k, "entreprise"),

@@ -32,7 +32,7 @@
         <sc-for list="{{res}}" as="g">
           <div class="groupe">
             <span class="stk" style="{{g.c}}; align-self: flex-start; margin-bottom: 6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{g.i}}"></path></svg>{{g.l}}</span>
-            <sc-for list="{{g.rows}}" as="r"><div class="rrow">{{{r.lien}}}<span class="tw">{{r.meta}}</span></div></sc-for>
+            <sc-for list="{{g.rows}}" as="r"><div class="rrow r">{{{r.lien}}}<span class="tw">{{r.meta}}</span></div></sc-for>
             <sc-if value="{{g.plus}}"><a class="tout tw" href="{{g.tout}}">{{g.plus}}</a></sc-if>
           </div>
         </sc-for>
@@ -50,7 +50,7 @@
               <p class="sober" style="margin: 4px 0 0; color: var(--muted); font-size: 14.5px">{{f.d}}</p>
               <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--line)">
                 <sc-for list="{{f.rows}}" as="r">
-                  <li style="border-bottom: 1px solid var(--rule)"><a class="rl" href="{{r.href}}" style="display: flex; align-items: center; min-height: 40px; gap: 4px"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span><span style="flex: 1">{{r.l}}</span><span style="font: 900 20px/1 Archivo, sans-serif; font-stretch: 62%">{{r.n}}</span><span aria-hidden="true" style="margin-left: 6px">→</span></a></li>
+                  <li class="r" style="border-bottom: 1px solid var(--rule)"><a class="rl" href="{{r.href}}" style="display: flex; align-items: center; min-height: 40px; gap: 4px"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span><span style="flex: 1">{{r.l}}</span><span style="font: 900 20px/1 Archivo, sans-serif; font-stretch: 62%">{{r.n}}</span><span aria-hidden="true" style="margin-left: 6px">→</span></a></li>
                 </sc-for>
               </ul>
             </div>
@@ -84,7 +84,7 @@
       <sc-for list="{{fams}}" as="f">
         <div class="tfam" style="{{f.cardTel}}">
           <span class="stk" style="{{f.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.i}}"></path></svg>{{f.l}}</span>
-          <div><sc-for list="{{f.rows}}" as="r"><a class="rl trow" href="{{r.href}}"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.l}}<b>{{r.n}}</b><span aria-hidden="true">→</span></a></sc-for></div>
+          <div><sc-for list="{{f.rows}}" as="r"><div class="r"><a class="rl trow" href="{{r.href}}"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.l}}<b>{{r.n}}</b><span aria-hidden="true">→</span></a></div></sc-for></div>
         </div>
       </sc-for>
       <h2 class="h2" style="font-size: 24px; margin-top: 10px">{{t.sommaire.lire}}</h2>

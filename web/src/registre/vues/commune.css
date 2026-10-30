@@ -430,3 +430,7 @@
 .rg .v-commune .chrono li.r[aria-selected="true"] {
   box-shadow: inset 5px 0 0 var(--c, var(--fg));
 }
+/* its neighbours: each one a row whose target is its fiche (cadre.css « rows », A2) */
+.rg .v-commune .vois li.r:hover {
+  background: var(--soft);
+}

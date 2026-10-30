@@ -50,7 +50,7 @@ import {
   trier,
   vendeurs,
 } from "./acheteur-outils.ts";
-import type { FichierDepartement } from "./departement-outils.ts";
+import { enLigne, type FichierDepartement } from "./departement-outils.ts";
 
 type Props = Extract<Route, { view: "acheteur" }> & { f: FichierAcheteur; couverture?: Couverture };
 type State = BaseState & {
@@ -289,7 +289,7 @@ class Acheteur extends Vue<Props, State> {
             : undefined,
       };
       return {
-        nom: link,
+        nom: enLigne(link),
         n: fr(x.n),
         amt: x.montant ? money(x.montant) : "—",
         note,

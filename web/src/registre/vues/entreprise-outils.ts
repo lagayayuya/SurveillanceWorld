@@ -382,7 +382,7 @@ export class Entreprise extends Vue<Props, State> {
         Math.min(100, Math.round(((now - ym(c.d)) / Math.max(1, ym(end) - ym(c.d))) * 100)),
       );
       return {
-        nom: placeLien(F, c),
+        nom: placeLien(F, c, true),
         span: `${c.d.slice(0, 4)} → ${shortMonth(end)}`,
         amt: money(c.raw),
         prog: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; background: ${on ? COLOURS.on : COLOURS.prog}`,
@@ -403,7 +403,7 @@ export class Entreprise extends Vue<Props, State> {
       const on = this.on(k);
       cDet(c, k);
       return {
-        nom: placeLien(F, c),
+        nom: placeLien(F, c, true),
         y: shortDate(c.d),
         rep: !!c.e.date_lue && c.e.date_lue !== c.e.date,
         amt: money(c.amt),
@@ -454,7 +454,7 @@ export class Entreprise extends Vue<Props, State> {
         href: buyerHref(F, c.s),
       };
       return {
-        nom: lienAcheteur(F, c.s),
+        nom: lienAcheteur(F, c.s, undefined, true),
         cat: buyerCat(F, c),
         dep: depOf(c.s) ? lienDepartement(depOf(c.s)) : "—",
         n: fr(c.n),
@@ -503,7 +503,7 @@ export class Entreprise extends Vue<Props, State> {
         i: icone("con"),
         d: shortDate(c.d),
         qui: placeLien(F, c),
-        amt: lienDocument(F, c.e, money(c.raw)),
+        amt: lienDocument(F, c.e, money(c.raw), true),
         dur: c.duree ? t("entreprise.duree_mois", { n: fr(c.duree) }) : "",
       };
     });

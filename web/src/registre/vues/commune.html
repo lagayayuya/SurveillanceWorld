@@ -165,7 +165,7 @@
 
           <sc-if value="{{vois.length}}">
             <h3 class="h3" style="margin-top: 10px">{{{ter.voisTitre}}}</h3>
-            <ul class="vois"><sc-for list="{{vois}}" as="v"><li>{{{v.lien}}} <span class="tw">{{v.n}}</span></li></sc-for></ul>
+            <ul class="vois"><sc-for list="{{vois}}" as="v"><li class="r">{{{v.lien}}} <span class="tw">{{v.n}}</span></li></sc-for></ul>
             <sc-if value="{{voisMore}}"><button class="more" type="button" onClick="{{togVois}}">{{voisLabel}}</button></sc-if>
           </sc-if>
         </section>

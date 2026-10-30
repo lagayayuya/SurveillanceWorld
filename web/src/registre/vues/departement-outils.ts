@@ -212,6 +212,12 @@ export function trier<T extends Record<string, unknown>>(rows: T[], k: string, d
 export const epciHref = (dep: string, code: string): string =>
   `${departementHref(dep)}?ic=${encodeURIComponent(code)}`;
 
+/** A row's main link (v2.1, A2): the mention made the row's link (`a.rl`, cadre.css « rows »), the
+ * whole row its target; a mention without a fiche stays as it is. */
+export function enLigne(x: RichItem): RichItem {
+  return typeof x === "object" && x && "a" in x ? { a: { ...x.a, cls: "rl" } } : x;
+}
+
 /** The type of the fiche a mention leads to, read from its address (a row's bar takes its colour,
  * cadre.css « rows »); a mention without a fiche, none. */
 export function typeDe(x: RichItem): TypeCle | undefined {
