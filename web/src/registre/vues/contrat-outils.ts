@@ -13,7 +13,7 @@
 // (liens.ts).
 
 import { benefLabel, byDateAsc, communeHref, emetteur, isArr } from "../commun.ts";
-import { BADGE, buyerNom, depNom, disp, entName, type Lexique, titre, typ } from "../corpus.ts";
+import { buyerNom, depNom, disp, entName, type Lexique, titre, typ } from "../corpus.ts";
 import { corrections } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
@@ -85,7 +85,6 @@ export type Fiche = {
   titre: string;
   /** the fiche's name: « Contrat de juin 2022 », « Arrêté du 19 juin 2025 » */
   titreDoc: string;
-  badge: { l: string; s: string };
   sous: { a: string; m: Mark; b: string };
   lead: Rich;
   kpis: { v: string; l: string; m: Mark }[];
@@ -124,10 +123,6 @@ export type Fiche = {
 };
 
 const AO = /^(avis|resultat|rectificatif)$/;
-const GHOST =
-  "background: transparent; color: var(--muted); border-style: dashed; border-color: var(--muted)";
-const STYLE: Record<Step["k"], string> = { ...BADGE, fin: GHOST } as Record<Step["k"], string>;
-
 /** A catalogue message whose placeholders may be rich (bold, a link), put back in place: each rich
  * one is held by a private-use mark while the message is filled, so a digit of the text stays text. */
 type Param = string | number | Exclude<RichItem, string>;
@@ -911,7 +906,6 @@ export function fiche(f: Fichier): Fiche | null {
     type: TYPE_ETAPE[kind],
     titre: head,
     titreDoc,
-    badge: { l: t(`contrat.badge_${kind}`), s: BADGE[kind === "aut" ? "aut" : kind] },
     sous:
       kind === "con"
         ? {
@@ -969,9 +963,6 @@ export function fiche(f: Fichier): Fiche | null {
     return has(`registre.registre.disp_${k}`) ? t(`registre.disp_${k}`) : t("format.non_publie");
   }
 }
-
-/** A step's badge style: the kit's badges, the planned end's dashed one. */
-export const stepStyle = (k: Step["k"]): string => STYLE[k];
 
 /** A step's type (types.ts): each document its own; the planned end is none, it is computed. */
 export const TYPE_ETAPE: Record<Exclude<Step["k"], "fin">, TypeCle> = {
