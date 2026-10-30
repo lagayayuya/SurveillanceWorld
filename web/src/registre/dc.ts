@@ -657,6 +657,33 @@ export type Mounted<V> = {
   unmount(): void;
 };
 
+/** A rendered node without a DOM: an element's name, attributes and children, or a text. */
+export type Rendu = string | { name: string; attrs: Record<string, string>; kids: Rendu[] };
+
+/** A view rendered once, without a DOM (the tests read it: every mention that has its fiche is a
+ * link, design/registre/v2). */
+export function rendre<P extends object, V extends View<P>>(
+  Comp: new (props: P) => V,
+  props: P,
+  template: string | Template,
+  opts: MountOptions = {},
+): { view: V; nodes: Rendu[] } {
+  const tpl = typeof template === "string" ? parse(template) : template;
+  const view = new Comp(props);
+  const out: VNode[] = [];
+  formatting = opts.format ?? null;
+  try {
+    build(tpl.kids, [view.renderVals()], { parts: opts.parts ?? {}, depth: 0 }, HTML, out);
+  } finally {
+    formatting = null;
+  }
+  const conv = (v: VNode): Rendu =>
+    typeof v === "string"
+      ? v
+      : { name: v.name, attrs: Object.fromEntries(v.attrs), kids: v.kids.map(conv) };
+  return { view, nodes: out.map(conv) };
+}
+
 /** Renders a view into `root` and keeps it in step with its state. */
 export function mount<P extends object, V extends View<P>>(
   root: Element,

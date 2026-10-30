@@ -147,30 +147,40 @@ export function prepare(F: FichierEntreprise): { CT: Ct[]; CL: Cl[] } {
   return { CT, CL: [...cl.values()] };
 }
 
-/** « dans le Rhône », « en Île-de-France », « à Paris ». */
-const dans = (r: string): string =>
-  r === "idf"
-    ? t("entreprise.dans_idf")
-    : r === "75"
-      ? t("entreprise.dans_paris")
-      : t("entreprise.dans", { dep: depArt(r, depNom(r)) });
+/** « dans le Rhône », « en Île-de-France », « à Paris »: a département (or Paris) a link to its fiche,
+ * a region words only (it has none). */
+const dans = (F: FichierEntreprise, r: string): RichItem => {
+  if (r === "idf") return t("entreprise.dans_idf");
+  if (r === "75")
+    return {
+      span: rt("entreprise.dans_paris", {
+        paris: F.communes["75056"]
+          ? lienCommune(F, "75056", t("entreprise.paris"))
+          : lienDepartement("75", t("entreprise.paris")),
+      }),
+      cls: "",
+    };
+  const nom = depNom(r);
+  const art = depArt(r, nom);
+  // the article stays words (« le », « l' »), the name is the link
+  const dep: RichItem = art.endsWith(nom)
+    ? { span: [art.slice(0, art.length - nom.length), lienDepartement(r, nom)], cls: "" }
+    : lienDepartement(r, art);
+  return { span: rt("entreprise.dans", { dep }), cls: "" };
+};
 
 /** The lead: what its contracts are (when the export says), where its buyers are, how many. */
 export function lead(F: FichierEntreprise, nCt: number, nCl: number): RichItem[] {
   const { surtout, regions } = F.page.lieux;
   const [r0, r1] = regions;
   let ou: RichItem[] = [];
+  const fort = (r: string) => strong(rt("entreprise.surtout", { dans: dans(F, r) }));
   if (surtout && r0)
     ou = r1
-      ? rt("entreprise.ou_surtout_deux", {
-          surtout: strong(t("entreprise.surtout", { dans: dans(r0) })),
-          dans2: dans(r1),
-        })
-      : rt("entreprise.ou_surtout", {
-          surtout: strong(t("entreprise.surtout", { dans: dans(r0) })),
-        });
-  else if (r0 && r1) ou = rt("entreprise.ou_deux", { dans1: dans(r0), dans2: dans(r1) });
-  else if (r0) ou = rt("entreprise.ou_un", { dans1: dans(r0) });
+      ? rt("entreprise.ou_surtout_deux", { surtout: fort(r0), dans2: dans(F, r1) })
+      : rt("entreprise.ou_surtout", { surtout: fort(r0) });
+  else if (r0 && r1) ou = rt("entreprise.ou_deux", { dans1: dans(F, r0), dans2: dans(F, r1) });
+  else if (r0) ou = rt("entreprise.ou_un", { dans1: dans(F, r0) });
   const params = {
     clientes: strong(t("entreprise.n_collectivites", { n: nCl })),
     contrats: strong(count(nCt, "contrat")),

@@ -2932,7 +2932,7 @@
   "registre.entreprise.contrats_signes_a_plusieurs": "Contrats signés à plusieurs",
   "registre.entreprise.dans": "dans {dep}",
   "registre.entreprise.dans_idf": "en Île-de-France",
-  "registre.entreprise.dans_paris": "à Paris",
+  "registre.entreprise.dans_paris": "à {paris}",
   "registre.entreprise.dep_inconnu": "département non publié",
   "registre.entreprise.dep_titre": "{dep} : {n, plural, one {# cliente} other {# clientes}}",
   "registre.entreprise.deps_alt": "Clientes par département : {liste}",
@@ -3428,5 +3428,6 @@
   "registre.entreprise.ecoule": "{pct} % de la durée prévue écoulés",
   "registre.entreprise.a_plusieurs_titre": "À plusieurs · {n, plural, one {# entreprise} other {# entreprises}}",
   "registre.entreprise.les_contrats": "Ses {n} contrats",
-  "registre.entreprise.parcourir_tout": "Tous ses documents dans le registre →"
+  "registre.entreprise.parcourir_tout": "Tous ses documents dans le registre →",
+  "registre.entreprise.paris": "Paris"
 }
