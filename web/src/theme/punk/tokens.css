@@ -377,6 +377,15 @@
   --drone: #0089c7;
   --rule: #c9c4b6;
   --soft: #e9e5da;
+  /* The register's four families (mockup V2-Types), the same in light and dark (said again in
+     dark below): a territory,
+     a buyer, a company, a document; the register's own pink for its frame. The colour says
+     the type of a fiche or of a link's target, never a value. */
+  --type-territoire: #ffe800;
+  --type-acheteur: #9be7c4;
+  --type-entreprise: #c9b8ff;
+  --type-document: #7fd4ff;
+  --type-registre: #ff48b0;
 }
 
 :root[data-ui="punk"][data-mode="dark"] {
@@ -630,4 +639,9 @@
   --drone: #7fd4ff;
   --rule: #3a3640;
   --soft: #26232a;
+  --type-territoire: #ffe800;
+  --type-acheteur: #9be7c4;
+  --type-entreprise: #c9b8ff;
+  --type-document: #7fd4ff;
+  --type-registre: #ff48b0;
 }
