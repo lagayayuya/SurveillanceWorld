@@ -489,12 +489,13 @@ export function panneauArrete(L: Lexique, e: Evenement, zones: ZoneArrete[] = []
     const sansZone = !!e.non_lu?.includes("zone_non_deduite");
     if (sansZone) note = t("arretes.zone_non_deduite");
     else if (alerte) note = alerte;
-    // the zone on the map: the commune's « Drones et algorithmes », at the slot's month
+    // the zone on the map: the commune's « Drones et algorithmes », at the slot's month when the
+    // commune's file gives the slot (the lists' file has no zones: the view at its default)
     const z = zones.find((x) => x.t0 != null);
-    if (z?.t0 != null && e.insee && !sansZone)
+    if (e.insee && !sansZone && /^arrete_(drone|vsa)$/.test(e.t))
       links.unshift({
         l: t("autorisations.voir_drones"),
-        href: `${communeHref(e.insee, "carte")}?mois=${paris(z.t0).jour.slice(0, 7)}`,
+        href: `${communeHref(e.insee, "carte")}${z?.t0 != null ? `?mois=${paris(z.t0).jour.slice(0, 7)}` : ""}`,
       });
   }
   add("reference", e.ref ? long(uneLigne(e.ref)) : "");

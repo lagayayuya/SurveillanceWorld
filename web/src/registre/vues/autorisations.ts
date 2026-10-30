@@ -246,9 +246,10 @@ class Autorisations extends Vue<Props, State> {
     return (ev) => {
       const n = ev.nativeEvent as MouseEvent;
       if (n.metaKey || n.ctrlKey || n.shiftKey || n.altKey) return;
+      // the row's own element (a mark of the step chart is a button) or its link: chosen here
       const a = (ev.target as Element | null)?.closest?.("a, button");
-      if (a && !a.classList.contains("rl")) return;
-      if (a) ev.preventDefault();
+      if (a && a !== ev.currentTarget && !a.classList.contains("rl")) return;
+      if (a?.tagName === "A") ev.preventDefault();
       if (href && location.pathname !== href) history.replaceState(history.state, "", href);
       choisir(ev);
     };
