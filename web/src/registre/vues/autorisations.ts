@@ -13,15 +13,26 @@ import type { Evenement } from "../donnees.ts";
 import "../demande.ts";
 import { fr, longDate, longMonth, MONTHS_LONG, shortDate, shortMonth, signed } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import { lien, lienCommune, lienEntreprise } from "../liens.ts";
+import { lien, lienCommune } from "../liens.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { signaler } from "../signaler.ts";
-import { capital, proper, tidy, titleCase } from "../texte.ts";
+import { capital } from "../texte.ts";
 import { arriver, type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
+import "./autorisations.css";
 import template from "./autorisations.html?raw";
-import { filCommune, lexique, liensBande, ligneCommune } from "./commune-outils.ts";
+import {
+  acteArrete,
+  beneficiaireArrete,
+  categorieArrete,
+  filCommune,
+  lexique,
+  liensArrete,
+  liensBande,
+  ligneCommune,
+  panneauArrete,
+  type ZoneArrete,
+} from "./commune-outils.ts";
 
 type Props = { insee: string; dossier: string; d: Donnees };
 type State = BaseState & { allPriv: boolean; allAut: boolean };
@@ -34,14 +45,8 @@ type Dossier = {
   lu: Evenement | null;
   a: ReturnType<Donnees["affaire"]>;
 };
-type Detail = {
-  kicker: string;
-  title: string;
-  rows: [string, string][];
-  note?: string;
-  foot: string;
-  links: { l: string; href: string }[];
-};
+/** What a row adds to its decree's panel (panneauArrete): its dossier's words, its change. */
+type Ajout = { kicker?: string; avant?: [string, Rich][]; apres?: [string, Rich][]; foot?: string };
 
 const PRIVES_D_ABORD = 15;
 const AUTRES_D_ABORD = 12;
@@ -49,12 +54,6 @@ const dash = (v: number | null | undefined): string => (v == null ? "—" : fr(v
 const ym = (d: string): string => d.slice(0, 7);
 const lu = (e: Evenement): boolean => e.cameras != null && !e.non_lu?.includes("nombre_illisible");
 const nonDeduite = (e: Evenement): boolean => !!e.non_lu?.includes("zone_non_deduite");
-/** « 18 nov. 2025 », a decree's page added: « Acte 69-2025-11-18-00015, p. 8 ». */
-const acte = (e: Evenement): string =>
-  e.page
-    ? t("autorisations.acte_page", { id: e.id, page: String(e.page) })
-    : t("autorisations.acte", { id: e.id });
-
 /** What a decree changes from the previous one of its dossier, in words (the prototype's change()). */
 function change(a: Evenement, p: Evenement | undefined, dossier: Dossier["a"]): string {
   if (!p) return t("autorisations.change_premier");
@@ -86,63 +85,6 @@ function change(a: Evenement, p: Evenement | undefined, dossier: Dossier["a"]): 
   if (dossier?.echeance_source === a.id && dossier.echeance)
     s += ` ${t("autorisations.change_fin", { date: longDate(dossier.echeance) })}`;
   return s;
-}
-
-/** A decree's two links: its source, and the report of an error. */
-function liens(e: Evenement): { l: string; href: string }[] {
-  return [...(e.url ? [{ l: t("arretes.voir"), href: e.url }] : []), signaler(e)];
-}
-
-/** A shop's or a company's category, from the decree's type of beneficiary. */
-function categorie(e: Evenement): string {
-  if (/pharmacie/i.test(String(e.beneficiaire ?? ""))) return t("autorisations.cat.pharmacie");
-  const k = e.type_beneficiaire || "commerce";
-  return has(`registre.autorisations.cat.${k}`) ? t(`autorisations.cat.${k}`) : capital(k);
-}
-
-/** A beneficiary's published name, or null for « nom non publié » (the build's nom_publie). */
-function nomPublie(e: Evenement): string | null {
-  if (e.beneficiaire === "[non retenu]" || e.nom_publie === false || !e.beneficiaire) return null;
-  if (e.beneficiaire === "[non précisé]") return t("commun.non_precise");
-  return proper(tidy(titleCase(e.beneficiaire)));
-}
-
-/** A decree of video protection that has no row of its own (an older decree of its dossier). */
-function detailArrete(e: Evenement): Detail {
-  const nm = nomPublie(e);
-  const illisible = !lu(e);
-  return {
-    kicker: t("autorisations.kicker_arrete", { date: shortDate(e.date) }),
-    title: `${nm ?? capital(t("commun.nom_non_publie"))} · ${
-      illisible ? t("non_lu.nombre_illisible") : t("n.camera", { n: e.cameras ?? 0 })
-    }`,
-    rows: [
-      [t("autorisations.categorie"), categorie(e)],
-      [t("autorisations.sur_la_rue"), dash(e.cameras_vp)],
-      [t("autorisations.abords"), dash(e.cameras_ext)],
-      [t("autorisations.interieur"), dash(e.cameras_int)],
-      [t("autorisations.duree"), e.duree || t("autorisations.non_precisee")],
-    ],
-    note: illisible ? t("autorisations.note_illisible") : undefined,
-    foot: acte(e),
-    links: liens(e),
-  };
-}
-
-/** A decree of drones, body cameras or algorithmic analysis. */
-function detailAutre(e: Evenement, kind: string): Detail {
-  return {
-    kicker: `${kind} · ${shortDate(e.date)}`,
-    title: tidy(nomPublie(e) ?? capital(t("commun.nom_non_publie"))),
-    rows: [
-      [
-        t("autorisations.duree"),
-        String(e.periode ?? "") || e.duree || t("autorisations.non_precisee"),
-      ],
-    ],
-    foot: acte(e),
-    links: liens(e),
-  };
 }
 
 class Autorisations extends Vue<Props, State> {
@@ -279,6 +221,22 @@ class Autorisations extends Vue<Props, State> {
     );
   }
 
+  /** A decree's panel: everything the build gives of it (panneauArrete), its zones from the
+   * commune's file, what its row adds (its dossier, its change from the decree before). */
+  private detail(e: Evenement, x?: Ajout) {
+    const D = this.props.d;
+    const zones = ((D.f.zones?.zones ?? []) as unknown as ZoneArrete[]).filter(
+      (z) => z.acte === e.id,
+    );
+    const p = panneauArrete(lexique(D), e, zones);
+    return {
+      ...p,
+      kicker: x?.kicker ?? p.kicker,
+      rows: [...(x?.avant ?? []), ...p.rows, ...(x?.apres ?? [])],
+      foot: x?.foot ?? p.foot,
+    };
+  }
+
   renderVals() {
     const S = this.state;
     const D = this.props.d;
@@ -289,7 +247,7 @@ class Autorisations extends Vue<Props, State> {
     const couv = D.f.couverture.departement as Donnees["f"]["couverture"]["departement"] & {
       documents_demandes?: boolean;
     };
-    const DET: Record<string, Detail> = {};
+    const AJ: Record<string, Ajout> = {};
 
     // the lead, the line on the collection under it, the four figures
     const nM = d.mairie.reduce((s, x) => s + x.es.length, 0);
@@ -363,18 +321,9 @@ class Autorisations extends Vue<Props, State> {
         const date = e.date ?? "";
         const n = e.cameras ?? 0;
         const ecart = i ? signed(n - (es[i - 1].cameras ?? 0)) : "—";
-        DET[e.id] = {
-          kicker: t("autorisations.kicker_arrete", { date: shortDate(date) }),
-          title: t("autorisations.titre_mairie", { n }),
-          rows: [
-            [t("autorisations.sur_la_rue"), dash(e.cameras_vp)],
-            [t("autorisations.abords_des_batiments"), dash(e.cameras_ext)],
-            [t("autorisations.dans_les_batiments"), dash(e.cameras_int)],
-            [t("autorisations.ecart"), ecart],
-            [t("autorisations.duree"), e.duree || t("autorisations.non_precisee")],
-          ],
-          foot: `${change(e, es[i - 1], a)} ${acte(e)}`,
-          links: liens(e),
+        AJ[e.id] = {
+          apres: [[t("autorisations.ecart"), ecart]],
+          foot: `${change(e, es[i - 1], a)} ${acteArrete(e)}`,
         };
         const x = X(date);
         const close = x - lastX < 13;
@@ -397,15 +346,6 @@ class Autorisations extends Vue<Props, State> {
       // the table lists every decree of the dossier; one whose number could not be read shows none
       rows = main.es.map((e) => {
         const p = es[es.indexOf(e) - 1];
-        if (!lu(e))
-          DET[e.id] = {
-            kicker: t("autorisations.kicker_arrete", { date: shortDate(e.date) }),
-            title: t("autorisations.titre_mairie_illisible"),
-            rows: [[t("autorisations.duree"), e.duree || t("autorisations.non_precisee")]],
-            note: t("autorisations.note_illisible"),
-            foot: acte(e),
-            links: liens(e),
-          };
         return {
           date: shortDate(e.date),
           n: lu(e) ? fr(e.cameras ?? 0) : "—",
@@ -414,7 +354,7 @@ class Autorisations extends Vue<Props, State> {
           int: dash(e.cameras_int),
           delta: lu(e) && p ? signed((e.cameras ?? 0) - (p.cameras ?? 0)) : "—",
           url: e.url ?? "",
-          tel: liens(e),
+          tel: liensArrete(e),
           ancre: `arr-${e.id}`,
           cls: `r${S.sel === e.id ? " on" : ""}`,
           hover: this.pick(e.id),
@@ -480,27 +420,16 @@ class Autorisations extends Vue<Props, State> {
       .map((x) => {
         const e = x.last;
         const n = x.lu?.cameras ?? null;
-        DET[e.id] = {
-          kicker: t("autorisations.kicker_dossier", { no: x.id.split("-")[1] ?? x.id }),
-          title:
-            n == null
-              ? t("autorisations.titre_mairie_illisible")
-              : t("autorisations.titre_mairie", { n }),
-          rows: [
-            [t("autorisations.arretes_publies"), fr(x.es.length)],
-            [t("autorisations.dernier_arrete"), shortDate(e.date)],
-            [t("autorisations.sur_la_rue"), dash(x.lu?.cameras_vp)],
-            [t("autorisations.duree"), e.duree || t("autorisations.non_precisee")],
-          ],
-          note: lu(e) ? undefined : t("autorisations.note_illisible"),
-          foot: acte(e),
-          links: liens(e),
-        };
+        for (const y of x.es)
+          AJ[y.id] = {
+            kicker: t("autorisations.kicker_dossier", { no: x.id.split("-")[1] ?? x.id }),
+            avant: [[t("autorisations.arretes_publies"), fr(x.es.length)]],
+          };
         return {
           no: x.id.split("-")[1] ?? x.id,
           date: shortDate(e.date),
           url: e.url ?? "",
-          tel: liens(e),
+          tel: liensArrete(e),
           na: fr(x.es.length),
           n: dash(n),
           vp: dash(x.lu?.cameras_vp),
@@ -514,38 +443,22 @@ class Autorisations extends Vue<Props, State> {
     const pv = S.allPriv ? d.prives : d.prives.slice(0, PRIVES_D_ABORD);
     const priv = pv.map((x) => {
       const e = x.last;
-      const nm = nomPublie(e);
-      const cat = categorie(e);
+      const nm = beneficiaireArrete(L, e);
+      const publie =
+        e.beneficiaire !== "[non retenu]" && e.nom_publie !== false && !!e.beneficiaire;
+      const cat = categorieArrete(e);
       const illisible = !lu(e);
-      DET[e.id] = {
-        kicker: t("autorisations.kicker_arrete", { date: shortDate(e.date) }),
-        title: `${nm ?? capital(t("commun.nom_non_publie"))} · ${
-          illisible ? t("non_lu.nombre_illisible") : t("n.camera", { n: e.cameras ?? 0 })
-        }`,
-        rows: [
-          [t("autorisations.categorie"), cat],
-          [t("autorisations.abords"), dash(e.cameras_ext)],
-          [t("autorisations.interieur"), dash(e.cameras_int)],
-          [t("autorisations.duree"), e.duree || t("autorisations.non_precisee")],
-        ],
-        note: illisible ? t("autorisations.note_illisible") : undefined,
-        foot: acte(e),
-        links: liens(e),
-      };
       return {
         date: shortDate(e.date),
         // a company that has its fiche (SIRENE-verified beneficiary), a link; else its words
-        nomR:
-          nm && e.beneficiaire_siren && L.entreprises[e.beneficiaire_siren]
-            ? [lienEntreprise(L, e.beneficiaire_siren, nm)]
-            : (nm ?? t("commun.nom_non_publie")),
-        nomStyle: nm ? "font-weight: 700" : "font-style: italic; color: var(--muted)",
+        nomR: nm,
+        nomStyle: publie ? "font-weight: 700" : "font-style: italic; color: var(--muted)",
         cat,
         n: illisible ? "—" : fr(e.cameras ?? 0),
         ext: dash(e.cameras_ext),
         int: dash(e.cameras_int),
         url: e.url ?? "",
-        tel: liens(e),
+        tel: liensArrete(e),
         ancre: `dos-${x.id}`,
         cls: `r${x.es.some((y) => y.id === S.sel) ? " on" : ""}`,
         hover: this.pick(e.id),
@@ -583,7 +496,7 @@ class Autorisations extends Vue<Props, State> {
       const kind = has(`registre.autorisations.type.${e.t}`)
         ? t(`autorisations.type.${e.t}`)
         : t("autorisations.type.autre");
-      const txt: Rich = [`${kind} · ${tidy(nomPublie(e) ?? t("commun.nom_non_publie"))}`];
+      const txt: Rich = [`${kind} · `, ...beneficiaireArrete(L, e)];
       const partage = (e.partage ?? []) as string[];
       if (partage.length) {
         txt.push(` · ${t("autorisations.partage", { n: partage.length })} : `);
@@ -597,7 +510,6 @@ class Autorisations extends Vue<Props, State> {
       const surCarte = zone && !nonDeduite(e);
       // on the map: the commune's « Carte et drones »; else the act itself (the préfecture's recueil)
       const l = t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete");
-      DET[e.id] = detailAutre(e, kind);
       return {
         ancre: `arr-${e.id}`,
         cls: `r${S.sel === e.id ? " on" : ""}`,
@@ -649,7 +561,7 @@ class Autorisations extends Vue<Props, State> {
     };
 
     const e1 = S.sel ? D.ev.get(S.sel) : undefined;
-    const d0 = S.sel ? (DET[S.sel] ?? (e1 ? detailArrete(e1) : undefined)) : undefined;
+    const d0 = e1?.t.startsWith("arrete") ? this.detail(e1, AJ[e1.id]) : undefined;
     const nDr = d.autres.filter((e) => e.t === "arrete_drone").length + d.multi.length;
     const e0 = S.sel ? D.ev.get(S.sel) : undefined;
     const det = d0

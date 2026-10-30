@@ -1,0 +1,27 @@
+/* A decree in the panel (v2.1 A8, commune-outils.ts panneauArrete), in Autorisations, Documents
+   and the lists: a long value (a place as the act names it, a purpose, a reference) goes under
+   its label, read from the left, rather than squeezed at its right. */
+.rg .panel .prow:has(.long) {
+  flex-direction: column;
+  gap: 2px;
+}
+.rg .panel .prow .long {
+  display: block;
+  text-align: left;
+  font-weight: 500;
+}
+/* « nom non publié »: the decree does not give it (the tables' own style) */
+.rg .panel .np {
+  font-style: italic;
+  color: var(--muted);
+}
+/* A panel taller than the frame (a decree of drones and its slots) scrolls inside itself, so
+   that it is seen whole beside the list (A3) */
+@media (min-width: 960px) {
+  .rg .v-autorisations .panel,
+  .rg .v-documents .panel,
+  .rg .v-liste .panel {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+}

@@ -19,15 +19,18 @@ import { signaler } from "../signaler.ts";
 import { plain } from "../texte.ts";
 import { type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
+import "./autorisations.css";
 import { sansFormule } from "../listes.ts";
 import {
   filCommune,
   lexique,
   liensBande,
   ligneCommune,
+  panneauArrete,
   quiDocument,
   titreDocument,
   typeLabel,
+  type ZoneArrete,
 } from "./commune-outils.ts";
 import template from "./documents.html?raw";
 
@@ -484,6 +487,34 @@ class Documents extends Vue<Props, State> {
       .filter(Boolean)
       .join(" ");
     const ref = e.ref ?? "";
+    const btn = ref
+      ? {
+          l:
+            this.state.copied === "copiee"
+              ? t("documents.reference_copiee")
+              : this.state.copied === "selectionnee"
+                ? t("documents.reference_selectionnee")
+                : t("documents.copier_reference"),
+          act: () => this.copy(ref),
+        }
+      : null;
+    if (isA) {
+      // a decree: everything the build gives of it, as in Autorisations (v2.1 A8)
+      const zones = ((d.f.zones?.zones ?? []) as unknown as ZoneArrete[]).filter(
+        (z) => z.acte === e.id,
+      );
+      const p = panneauArrete(lexique(d), e, zones);
+      return {
+        kicker: p.kicker,
+        title: p.title,
+        rows: p.rows.map(([k, v]) => ({ k, v })),
+        corr: corrections(e, nomsDe(d)),
+        note: p.note ?? "",
+        foot: [p.foot, foot].filter(Boolean).join(" "),
+        links: [links[0], ...p.links],
+        btn,
+      };
+    }
     return {
       kicker: `${typeLabel(e)} · ${docDate(e.date, e.date_annee)}`,
       title: r.objet,
@@ -491,17 +522,7 @@ class Documents extends Vue<Props, State> {
       corr: corrections(e, nomsDe(d)),
       foot,
       links,
-      btn: ref
-        ? {
-            l:
-              this.state.copied === "copiee"
-                ? t("documents.reference_copiee")
-                : this.state.copied === "selectionnee"
-                  ? t("documents.reference_selectionnee")
-                  : t("documents.copier_reference"),
-            act: () => this.copy(ref),
-          }
-        : null,
+      btn,
     };
   }
 }
