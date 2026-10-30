@@ -1,0 +1,24 @@
+code,label_officiel,role,justification
+32234000,Caméras de télévision en circuit fermé,coeur,Le matériel lui-même (CCTV)
+32235000,Système de surveillance en circuit fermé,coeur,Le système de vidéosurveillance complet
+32323500,Système de surveillance vidéo,coeur,Libellé exact de la vidéosurveillance
+35125300,Caméras de sécurité,coeur,Caméras dans la famille sécurité (35125000)
+32231000,Appareils de télévision en circuit fermé,coeur,Synonyme CCTV dans la famille 3223
+51314000,Services d'installation de matériel vidéo,large,Relu : surtout sonorisation et vidéoprojection ; retenu seulement avec un mot de l'objet
+50343000,Services de réparation et d'entretien de matériel vidéo,large,Relu : surtout inspection de réseaux et audiovisuel ; retenu seulement avec un mot de l'objet
+35125000,Système de surveillance,large,Générique (inclut capteurs et pointage) : retenu seulement avec un mot de l'objet
+35120000,Systèmes et appareils de surveillance et de sécurité,large,Famille parente : retenue seulement avec un mot de l'objet
+35121000,Équipement de sécurité,large,Générique : retenu seulement avec un mot de l'objet
+35113300,Installations de sécurité,large,Générique : retenu seulement avec un mot de l'objet
+45233292,Installation de dispositifs de sécurité,large,Voirie : retenu seulement avec un mot de l'objet
+45312000,Travaux d'installation de systèmes d'alarme et d'antennes,large,Souvent mêlé à la vidéo dans les lots courants faibles
+45312200,Travaux d'installation de systèmes avertisseurs d'effraction,large,Intrusion + vidéo souvent dans un même lot
+50610000,Services de réparation et d'entretien du matériel de sécurité,large,Maintenance sûreté (alarme + vidéo)
+79711000,Services de surveillance d'installations d'alarme,large,Télésurveillance
+79714000,Services de surveillance,large,Surtout du gardiennage : retenu seulement avec un mot de l'objet
+32323300,Matériel vidéo,large,Aussi l'audiovisuel : retenu seulement avec un mot de l'objet
+32323000,Moniteurs vidéo,large,Murs d'images de CSU ou audiovisuel
+48730000,Logiciels de sécurité,large,VMS ou cybersécurité : retenu seulement avec un mot de l'objet
+34711200,Aéronefs sans pilote,drone,Drones
+35613000,Véhicules aériens sans pilote,drone,Drones (famille défense)
+34971000,Caméras de contrôle de la vitesse,exclu,Radars routiers : hors vidéoprotection

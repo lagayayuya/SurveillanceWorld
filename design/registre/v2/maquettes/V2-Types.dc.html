@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Registre v2 — le repérage par type</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&amp;family=Special+Elite&amp;display=swap">
+<style>
+body{margin:0}
+.th{--page:#e6eef0;--bg:#f2efe6;--bg2:#ffffff;--fg:#111111;--muted:#5a5650;--line:#111111;--rule:#c9c4b6;--soft:#e9e5da;--accent:#b8005f;--link:#0060a0;--linkline:#b8005f;--shsheet:#7fd4ff;--shticket:#111111;--shtitle:#ff48b0;--serif:#c2006b;--a1:#ffeef6;--a2:#ffb0dd;--a3:#ff71c1;--a4:#ee329c;--a5:#c9006e;--earth:#e6eef0;--ao:#b38f00;background:var(--page);color:var(--fg)}
+.th.dark{--page:#141216;--bg:#1c1a1f;--bg2:#26232a;--fg:#f2efe6;--muted:#a8a29a;--line:#f2efe6;--rule:#3a3640;--soft:#2c2931;--accent:#ff7cc6;--link:#7fd4ff;--linkline:#7fd4ff;--shsheet:#ff48b0;--shticket:#7fd4ff;--shtitle:#7fd4ff;--serif:#ff7cc6;--a1:#36202d;--a2:#682750;--a3:#992e73;--a4:#c93a91;--a5:#fe48b0;--earth:#141216;--ao:#e0b400}
+.th a{color:var(--link);text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:var(--linkline);text-decoration-thickness:1.5px;text-underline-offset:4px}
+.tw{font-family:"Special Elite","Courier New",monospace}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.map{position:absolute;inset:0;overflow:hidden;background:var(--earth)}
+.map svg{display:block}
+.map polygon{stroke:#7fd4ff;stroke-width:.75}
+.map .c1{fill:var(--a1)}.map .c2{fill:var(--a2)}.map .c3{fill:var(--a3)}.map .c4{fill:var(--a4)}.map .c5{fill:var(--a5)}
+.modal{position:absolute;left:56px;right:56px;top:24px;bottom:24px;background:var(--bg);border:2px solid var(--line);box-shadow:8px 8px 0 var(--tc);display:flex;flex-direction:column;overflow:hidden}
+.mtop{display:flex;align-items:center;gap:12px;height:54px;padding:0 10px 0 12px;background:#111111;color:#f2efe6;flex:none}
+.th .mtop a{color:#f2efe6}
+.mback{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:2px solid #f2efe6;font:800 14px/1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.04em;text-decoration:none !important;box-shadow:3px 3px 0 #ff48b0;white-space:nowrap}
+.crumbs{display:flex;align-items:center;gap:6px;min-width:0;flex:1;font:600 14px/1.2 Archivo,sans-serif;white-space:nowrap;overflow:hidden}
+.th .crumb{display:inline-flex;align-items:center;text-decoration:none;color:#f2efe6}
+.crumbs .sep{color:#8a8591}
+.crumbs .here{font-weight:800;overflow:hidden;text-overflow:ellipsis}
+.msearch{display:flex;align-items:center;gap:8px;width:300px;height:38px;padding:0 10px;background:#f2efe6;color:#111;border:2px solid #f2efe6}
+.msearch input{flex:1;min-width:0;border:0;background:transparent;font:500 14px Archivo,sans-serif;color:#111;outline-offset:3px}
+.sq{width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:#f2efe6;color:#111 !important;border:0;box-shadow:3px 3px 0 #7fd4ff;cursor:pointer;text-decoration:none !important;font:900 18px Archivo,sans-serif;flex:none}
+.scroll{flex:1;overflow:auto;position:relative;scroll-behavior:smooth}
+.inner{max-width:1200px;margin:0 auto;padding:26px 34px 70px}
+.stk{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 7px;border:2px solid #111;background:var(--c);color:#111;font:800 14px/1.05 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.05em;box-shadow:2px 2px 0 #111;transform:rotate(-2deg);white-space:nowrap}
+.stk svg{width:20px;height:20px;flex:none}
+.stk.big{font-size:17px;padding:6px 14px 6px 9px;box-shadow:3px 3px 0 #111}
+.stk.big svg{width:24px;height:24px}
+.mini{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;border:1.5px solid #111;background:var(--c);color:#111;flex:none;margin-right:6px;box-sizing:border-box}
+.mini svg{width:13px;height:13px}
+.chip{display:inline-flex;align-items:center;font-weight:700}
+.cutout{display:flex;flex-wrap:wrap;align-items:center;gap:6px 2px;margin:14px 0 10px}
+.cut{display:inline-flex;padding:2px 5px 1px}
+.cut.c0{background:#111;color:#f2efe6;font:800 52px/1 Archivo,sans-serif;font-stretch:62%}
+.cut.c1{background:#ff48b0;color:#111;font:900 43px/1 Archivo,sans-serif;font-stretch:125%}
+.cut.c2{background:#7fd4ff;color:#111;font:400 46px/1 "Special Elite",monospace}
+.cut.c3{border:1.5px solid var(--line);background:var(--bg2);color:var(--fg);font:800 48px/1 Archivo,sans-serif;font-stretch:100%}
+.cut.c4{color:var(--serif);font:italic 700 52px/1 Georgia,serif}
+.gap{width:14px}
+.cutout.s .cut.c0{font-size:30px}.cutout.s .cut.c1{font-size:25px}.cutout.s .cut.c2{font-size:27px}.cutout.s .cut.c3{font-size:28px}.cutout.s .cut.c4{font-size:30px}.cutout.s .gap{width:8px}
+.idline{margin:0;font-size:14px;color:var(--muted)}
+.lead{margin:14px 0 0;max-width:820px;font:500 20px/1.4 Archivo,sans-serif}
+.tickets{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:20px}
+.ticket{background:var(--bg2);border:2px solid var(--line);box-shadow:3px 3px 0 var(--shticket);padding:10px 14px 12px}
+.ticket .v{font:900 38px/1 Archivo,sans-serif;font-stretch:62%;text-shadow:1.5px 1px 0 var(--shtitle)}
+.ticket .l{font-family:"Special Elite",monospace;font-size:13.5px;margin-top:4px}
+.money{margin:10px 0 0;font-size:13.5px;color:var(--muted)}
+.band{position:sticky;top:0;z-index:4;display:flex;align-items:center;gap:14px;height:52px;padding:0 34px;background:var(--c);color:#111;border-top:2px solid #111;border-bottom:2px solid #111}
+.band .bico{display:flex;align-items:center;gap:7px;font:800 13px/1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.06em;padding:4px 8px;background:#111;color:var(--c);flex:none}
+.band .bico svg{width:18px;height:18px}
+.band .bname{font:900 21px/1 Archivo,sans-serif;font-stretch:66%;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:330px}
+.band nav{display:flex;gap:6px;margin-left:auto}
+.th .band nav a{display:inline-flex;align-items:center;min-height:36px;padding:0 12px;background:#f2efe6;color:#111;border:2px solid #111;font:800 13px/1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.04em;text-decoration:none;box-shadow:2px 2px 0 #111}
+.th .band nav a[aria-current="true"]{background:#111;color:#f2efe6;box-shadow:none}
+.sec{padding-top:46px;display:flex;flex-direction:column;gap:14px}
+.h2{margin:0;font:900 30px/1 Archivo,sans-serif;font-stretch:66%;text-transform:uppercase}
+.h2 .num{font-family:"Special Elite",monospace;font-size:15px;font-weight:400;text-transform:none;color:var(--muted);margin-right:10px;vertical-align:4px}
+.h3{margin:0;font:900 19px/1.1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase}
+.sober{font:400 15.5px/1.45 Archivo,sans-serif}
+table.t{width:100%;border-collapse:collapse;font:400 15px/1.35 Archivo,sans-serif}
+table.t th{text-align:left;font:800 12.5px/1 Archivo,sans-serif;font-stretch:80%;text-transform:uppercase;letter-spacing:.04em;padding:0;border-bottom:2px solid var(--line)}
+table.t th button{all:unset;cursor:pointer;display:flex;align-items:center;gap:4px;min-height:40px;padding:0 8px;box-sizing:border-box;width:100%}
+table.t th.num button{justify-content:flex-end}
+table.t td{padding:9px 8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.t td.num{text-align:right;white-space:nowrap}
+table.t tr.r{cursor:pointer}
+table.t tr.r:hover td,table.t tr.r.on td{background:var(--soft)}
+.th a.rl{color:var(--fg);text-decoration:none;font-weight:700}
+.th a.rl:hover{text-decoration:underline wavy var(--linkline)}
+.panel{position:sticky;top:70px;border:2px solid var(--line);background:var(--bg2);box-shadow:3px 3px 0 var(--shticket);padding:16px;display:flex;flex-direction:column;gap:8px;min-height:250px;box-sizing:border-box}
+.prow{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--rule);font:400 15px Archivo,sans-serif}
+.prow span{color:var(--muted)}
+.ibtn{width:40px;height:40px;border:0;background:none;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center;flex:none}
+.ibtn span{width:21px;height:21px;border:2px solid currentColor;border-radius:50%;display:flex;align-items:center;justify-content:center;font:900 13px Archivo,sans-serif}
+.note{margin:0;padding:10px 12px;border:1.5px dashed var(--line);font-size:13.5px}
+.key{all:unset;box-sizing:border-box;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;background:var(--bg2);color:var(--fg);border:2px solid var(--line);box-shadow:3px 3px 0 var(--shticket);font:800 13px/1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.04em}
+.key[aria-pressed="true"]{background:#ff48b0;color:#111;border-color:#111;box-shadow:1px 1px 0 #111}
+.more{all:unset;cursor:pointer;align-self:flex-start;display:inline-flex;align-items:center;min-height:42px;padding:0 16px;background:#111;color:#7fd4ff;border:2px solid #111;box-shadow:3px 3px 0 #ff48b0;font:800 14px/1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;letter-spacing:.04em}
+.th.dark .more{background:#7fd4ff;color:#111;border-color:#7fd4ff}
+.strip{height:58px;box-sizing:border-box;padding:8px 14px;border:2px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;justify-content:center;overflow:hidden;font:400 14.5px/1.35 Archivo,sans-serif}
+.th a.lk{color:var(--fg);text-decoration:none;font-weight:700;border-bottom:3px solid var(--c);padding-bottom:1px;display:inline-flex;align-items:center}
+.th a.lk:hover{background:var(--c);color:#111}
+.th a.lk .mini{margin-right:5px}
+.strip b,.strip span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+</style>
+<style>
+.board{position:absolute;inset:0;padding:30px 40px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px}
+.cols{display:grid;grid-template-columns:330px minmax(0,1fr) 380px;gap:26px;flex:1;min-height:0}
+.col{display:flex;flex-direction:column;gap:12px;min-height:0}
+.fam{display:flex;flex-direction:column;gap:8px;padding:12px 14px;background:var(--bg2);border:2px solid var(--line)}
+.fam .ex{font-size:13.5px;color:var(--muted)}
+.sw{display:inline-block;width:18px;height:18px;border:2px solid #111;vertical-align:-4px;margin-right:6px}
+table.sk{width:100%;border-collapse:collapse;font:400 13.5px/1.3 Archivo,sans-serif;background:var(--bg2);border:2px solid var(--line)}
+table.sk th{padding:8px 8px;text-align:left;border-bottom:2px solid var(--line);vertical-align:bottom}
+table.sk td{padding:8px;border-bottom:1px solid var(--rule);vertical-align:top}
+table.sk td.s{font:900 15px/1.1 Archivo,sans-serif;font-stretch:75%;text-transform:uppercase;width:120px}
+.rule{padding:12px 14px;border:2px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;gap:10px}
+.rule .k{font:400 13px "Special Elite",monospace;color:var(--muted)}
+.lrow{display:flex;align-items:center;gap:6px;min-height:32px;border-bottom:1px solid var(--rule);font-weight:700;font-size:14.5px}
+.lrow em{margin-left:auto;font-style:normal;font-weight:400;color:var(--muted);font-size:13px}
+</style>
+</helmet>
+<div class="{{th}}" style="position: relative; width: 1440px; height: 900px; overflow: hidden; font-family: Archivo, sans-serif; font-size: 16px; line-height: 1.45">
+<div class="board">
+  <div style="display: flex; align-items: flex-end; gap: 22px">
+    <div><h1 class="sr">{{title}}</h1><div class="cutout s" aria-hidden="true" style="margin: 0"><sc-for list="{{letters}}" as="x" hint-placeholder-count="10"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div></div>
+    <p class="sober" style="margin: 0 0 6px; max-width: 640px; color: var(--muted)">Proposition : chaque fiche dit d'emblée ce qu'elle est. Un pictogramme, un mot et une couleur par famille, partout : en tête de page, dans le bandeau, dans les liens et dans les listes.</p>
+    <button class="sq" style="margin-left: auto" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.2"></circle><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"></path></svg></button>
+  </div>
+  <div class="cols">
+    <div class="col">
+      <h2 class="h3">Quatre familles, quatre couleurs</h2>
+      <sc-for list="{{fams}}" as="f" hint-placeholder-count="4">
+        <div class="fam" style="box-shadow: 4px 4px 0 {{f.hex}}">
+          <div style="display: flex; align-items: center; justify-content: space-between"><span class="stk big" style="{{f.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.i}}"></path></svg>{{f.l}}</span><span class="tw" style="font-size: 12.5px"><span class="sw" style="background: {{f.hex}}"></span>{{f.hex}}</span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px 10px; padding-top: 4px"><sc-for list="{{f.types}}" as="t" hint-placeholder-count="3"><span class="stk" style="{{t.c}}; transform: none; box-shadow: none; font-size: 12.5px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{t.i}}"></path></svg>{{t.l}}</span></sc-for></div>
+          <span class="ex">{{f.ex}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div class="col">
+      <h2 class="h3">Une seule ossature pour toutes les fiches</h2>
+      <table class="sk">
+        <thead><tr><th></th><sc-for list="{{heads}}" as="c" hint-placeholder-count="4"><th><span class="stk" style="{{c.c}}; font-size: 12px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{c.i}}"></path></svg>{{c.l}}</span></th></sc-for></tr></thead>
+        <tbody><sc-for list="{{skel}}" as="r" hint-placeholder-count="6"><tr><td class="s">{{r.s}}</td><sc-for list="{{r.v}}" as="v" hint-placeholder-count="4"><td>{{v.t}}</td></sc-for></tr></sc-for></tbody>
+      </table>
+      <p class="note">Toujours dans cet ordre, toujours les mêmes noms de section. Une section vide est retirée, pas laissée vide. Une collectivité a une seule fiche : son territoire et ses achats.</p>
+    </div>
+    <div class="col">
+      <h2 class="h3">Trois repères qui ne bougent pas</h2>
+      <div class="rule">
+        <span class="k">1 · le bandeau du type, collé en haut quand on descend</span>
+        <div class="band" style="position: static; padding: 0 12px; height: 46px; {{bandC}}"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{bandI}}"></path></svg>Entreprise</span><span class="bname" style="font-size: 18px">Serfim T.I.C.</span></div>
+      </div>
+      <div class="rule">
+        <span class="k">2 · un lien a la couleur de ce qu'il ouvre</span>
+        <p class="sober" style="margin: 0; line-height: 2">Le <a class="lk" style="{{l1.c}}" href="V2-Sommaire.dc.html"><span class="mini" style="{{l1.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l1.i}}"></path></svg></span>Sytral Mobilités</a> a signé un <a class="lk" style="{{l2.c}}" href="V2-Sommaire.dc.html"><span class="mini" style="{{l2.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l2.i}}"></path></svg></span>contrat</a> avec <a class="lk" style="{{l3.c}}" href="V2-Entreprise.dc.html"><span class="mini" style="{{l3.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l3.i}}"></path></svg></span>Serfim T.I.C.</a> pour des caméras à <a class="lk" style="{{l4.c}}" href="V2-Sommaire.dc.html"><span class="mini" style="{{l4.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{l4.i}}"></path></svg></span>Lyon</a>.</p>
+      </div>
+      <div class="rule">
+        <span class="k">3 · dans une liste, le pictogramme seul</span>
+        <div><sc-for list="{{rows}}" as="r" hint-placeholder-count="4"><div class="lrow"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.n}}<em>{{r.m}}</em></div></sc-for></div>
+      </div>
+      <p class="note">La couleur dit le type, jamais une valeur. Le rose reste au cadre du registre et à la carte ; le contenu des fiches reste sobre.</p>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["clair","sombre"],"default":"sombre"},"$preview":{"width":1440,"height":900}}'>
+
+const TY = {
+  commune: { l: 'Commune', p: 'Communes', f: 'Territoires', c: '#ffe800', i: 'M3 10.5 12 4l9 6.5M5.5 10v9.5h13V10M10 19.5v-5h4v5' },
+  epci: { l: 'Intercommunalité', p: 'Intercommunalités', f: 'Territoires', c: '#ffe800', i: 'M2 13l4.5-3.5L11 13v6.5H2zM13 13l4.5-3.5L22 13v6.5h-9' },
+  departement: { l: 'Département', p: 'Départements', f: 'Territoires', c: '#ffe800', i: 'M6 4l5 2.5 6-1.5 3 6-3 7.5-7 1.5-5.5-5z' },
+  acheteur: { l: 'Acheteur', p: 'Acheteurs', f: 'Acheteurs', c: '#9be7c4', i: 'M4 9.5 12 4l8 5.5M5 9.5h14M7 9.5v8M10.5 9.5v8M13.5 9.5v8M17 9.5v8M4 20h16' },
+  entreprise: { l: 'Entreprise', p: 'Entreprises', f: 'Entreprises', c: '#c9b8ff', i: 'M3 8.5h18v11H3zM9 8.5V5.5h6v3M3 13.5h18' },
+  contrat: { l: 'Contrat', p: 'Contrats', f: 'Documents', c: '#7fd4ff', i: 'M6 3h9l4 4v14H6zM15 3v4h4M9 17c1.5-2 2.5 1 4-1 1-1 2 0 3 0' },
+  modif: { l: 'Modification', p: 'Modifications', f: 'Documents', c: '#7fd4ff', i: 'M6 3h9l4 4v14H6zM15 3v4h4M9 16l5-5 2 2-5 5H9z' },
+  ao: { l: "Appel d'offres", p: "Appels d'offres", f: 'Documents', c: '#7fd4ff', i: 'M3 10v4h4l7 4.5v-13L7 10zM17.5 9a4 4 0 0 1 0 6M20 6.5a7.5 7.5 0 0 1 0 11' },
+  arrete: { l: 'Arrêté', p: 'Arrêtés', f: 'Documents', c: '#7fd4ff', i: 'M6 3h12v18H6zM9 7.5h6M9 11h6M12 14.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 1 0 0-5' },
+  subvention: { l: 'Subvention', p: 'Subventions', f: 'Documents', c: '#7fd4ff', i: 'M16 6.5a6.5 6.5 0 1 0 0 11M4.5 10.5h8.5M4.5 13.5h8.5' },
+  registre: { l: 'Registre', p: 'Registre', f: '', c: '#ff48b0', i: 'M5 4h11l3 3v13H5zM8 9h8M8 12.5h8M8 16h5' }
+};
+const TILT = [-4, 3, -2, 5, 2, -5, 4, -1, 3, -4, 4, -3];
+const LIFT = [0, 3, -2, 1, 2, 0, -1, 3, -2, 0, 2, 1];
+function cut(word) { const out = []; let i = 0; for (const ch of word.toLocaleUpperCase('fr')) { if (ch === ' ') { out.push({ ch: ' ', cls: 'gap', st: '' }); continue; } out.push({ ch: ch, cls: 'cut c' + (i % 5), st: 'transform: rotate(' + TILT[i % 12] + 'deg) translateY(' + LIFT[i % 12] + 'px)' }); i++; } return out; }
+function ty(k) { const t = TY[k]; return { l: t.l, p: t.p, f: t.f, c: '--c: ' + t.c, i: t.i, k: k }; }
+const fr = (n) => Math.round(n).toLocaleString('fr-FR').replace(/ /g, ' ');
+const eur = (n) => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',') + ' M€' : fr(n) + ' €';
+const MOIS = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+const fd = (d) => { const [y, m, j] = d.split('-').map(Number); return (j ? j + ' ' : '') + MOIS[m - 1] + ' ' + y; };
+const SMALL = { de: 1, du: 1, des: 1, la: 1, le: 1, les: 1, et: 1, en: 1, pour: 1, au: 1, aux: 1, sur: 1 };
+const tidy = (s) => !s ? '' : s !== s.toUpperCase() ? s : s.toLowerCase().split(' ').map((w, i) => /\./.test(w) && w.length <= 8 ? w.toUpperCase() : (i && SMALL[w]) ? w : w.replace(/^(d'|l')?(.)/, (m, a, c) => (a || '') + c.toUpperCase())).join(' ');
+function theme(self) { const d = self.state.dark; return { th: d ? 'th dark' : 'th', isDark: d, isLight: !d, themeLabel: d ? 'Passer en mode clair' : 'Passer en mode sombre', toggleTheme: () => self.setState({ dark: !self.state.dark }) }; }
+
+
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { dark: (props.theme ?? 'sombre') === 'sombre' }; }
+  renderVals() {
+    const F = [
+      ['commune', 'Territoires', ['commune', 'epci', 'departement'], 'Mions, Métropole de Lyon, Rhône'],
+      ['acheteur', 'Acheteurs', ['acheteur'], "Sytral Mobilités, Préfecture de police, un bailleur social"],
+      ['entreprise', 'Entreprises', ['entreprise'], 'Serfim T.I.C., Spie CityNetworks'],
+      ['contrat', 'Documents', ['contrat', 'modif', 'ao', 'arrete', 'subvention'], 'Un contrat, son avis, ses modifications, un arrêté préfectoral']
+    ].map(([k, l, ts, ex]) => Object.assign(ty(k), { l: l, hex: TY[k].c, ex: 'ex. ' + ex, types: ts.map(ty) }));
+    const heads = [Object.assign(ty('commune'), { l: 'Territoire' }), ty('acheteur'), ty('entreprise'), Object.assign(ty('contrat'), { l: 'Document' })];
+    const S = [
+      ['Identité', 'Nom, code INSEE, département', 'Nom, catégorie, SIREN', 'Nom, activité, SIREN', 'Type, numéro, date, émetteur'],
+      ["L'essentiel", 'Caméras, contrats, arrêtés, montants', 'Contrats, entreprises, montants', 'Contrats, clientes, montants', 'Montant, durée, offres reçues'],
+      ['Dans le temps', 'Par année ; la frise des drones', 'Par année', 'Par année', 'Signature, modifications, fin prévue'],
+      ['Avec qui', 'Entreprises, communes voisines', 'Entreprises, territoires', 'Clientes, co-titulaires', 'Acheteur, entreprises, commune'],
+      ['Documents', 'Tous ses documents, filtrables', 'Tous ses documents', 'Tous ses documents', 'Documents liés au même dossier'],
+      ['Sources', 'Date de mise à jour, couverture, signaler', '', '', '']
+    ];
+    const skel = S.map((r) => ({ s: r[0], v: r.slice(1).map((t, i) => ({ t: t || (r[0] === 'Sources' ? '〃' : '') })) }));
+    return Object.assign(theme(this), {
+      title: 'Les types de fiches', letters: cut('Les types de fiches'), fams: F, heads: heads, skel: skel,
+      bandC: '--c: ' + TY.entreprise.c, bandI: TY.entreprise.i,
+      l1: ty('acheteur'), l2: ty('contrat'), l3: ty('entreprise'), l4: ty('commune'),
+      rows: [['commune', 'Mions', '41 documents'], ['acheteur', 'Sytral Mobilités', '9 contrats'], ['entreprise', 'Serfim T.I.C.', '64 contrats'], ['arrete', 'Arrêté n° 69-2025-11-07-00012', '7 nov. 2025']].map(([k, n, m]) => Object.assign(ty(k), { n: n, m: m }))
+    });
+  }
+}
+
+</script>
+</body>
+</html>

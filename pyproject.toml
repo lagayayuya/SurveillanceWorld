@@ -50,6 +50,8 @@ packages = ["pipeline/lacarte", "pipeline/lacarte_registre"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# The design reference (mockups, exploration scripts) is not the project's code.
+extend-exclude = ["design"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
