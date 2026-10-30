@@ -242,7 +242,7 @@ export class ListeVue extends Vue<Props, State> {
         }
         return { cls: c.num ? "num" : "", isDeps: false, deps: [], v: r.cells[j++] };
       });
-      return { rk: i + 1, lien: r.lien, sous: r.sous, cells };
+      return { rk: i + 1, lien: r.lien, sous: r.sous, liens: r.liens ?? [], cells };
     });
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
     const shown = Math.min(S.lim, list.length);

@@ -503,14 +503,16 @@ function filDe(r: Route, k: TypeCle): Miette[] {
 }
 
 /** The path's view in the frame, opened over the map when it was not. */
-export async function afficher(): Promise<void> {
+/** `force`: a link was followed — the page is drawn again even when its address is the one shown
+ * (a view that replaced its own address, a list's filters, would otherwise keep them). */
+export async function afficher(force = false): Promise<void> {
   const r = route(location.pathname, location.search);
   courant = r;
   ouvrirCadre();
   fermerPartage();
   disposer();
   const key = `${location.pathname}${location.search}|${WIDE.matches}`;
-  if (key === shown) {
+  if (key === shown && !force) {
     entete(r);
     return;
   }

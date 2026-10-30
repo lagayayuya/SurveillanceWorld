@@ -120,3 +120,19 @@
     gap: 8px;
   }
 }
+/* A document's own links under its name: its source and « Signaler une erreur » (DECISIONS 2026-10-28
+   and 29: where documents are listed), 44 px under a finger. */
+.rg .v-liste .doc-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+  margin-top: 2px;
+  font-size: 13px;
+}
+@media (max-width: 959px) {
+  .rg .v-liste .doc-liens a {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}

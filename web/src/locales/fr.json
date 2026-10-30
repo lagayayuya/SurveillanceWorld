@@ -3573,5 +3573,6 @@
   "registre.entreprise.les_contrats": "Ses {n} contrats",
   "registre.entreprise.parcourir_tout": "Tous ses documents dans le registre →",
   "registre.entreprise.paris": "Paris",
-  "registre.cadre.fermer_detail": "Fermer le détail"
+  "registre.cadre.fermer_detail": "Fermer le détail",
+  "registre.liste.source": "Source"
 }

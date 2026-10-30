@@ -41,6 +41,7 @@ import {
   lienEntreprise,
 } from "./liens.ts";
 import { LISTES, type Liste, type Route } from "./routes.ts";
+import { signaler } from "./signaler.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
 import type { TypeCle } from "./types.ts";
 
@@ -143,6 +144,9 @@ export type Rang = {
   lien: RichItem;
   /** the line under the name: words, and the fiches it names as links */
   sous: Rich;
+  /** a document's own links: its source (« Voir l'arrêté »), « Signaler une erreur » (DECISIONS
+   * 2026-10-28 and 29: where documents are listed) */
+  liens?: { l: string; href: string }[];
   /** the départements' chips (Entreprises) */
   deps?: string[];
   cells: Rich[];
@@ -486,9 +490,16 @@ function rangsDocuments(C: Corpus, k: Kind): Rang[] {
         k === "aut" || k === "sub"
           ? [where, [qui(L, d)], amount]
           : [where, [qui(L, d)], entreprises(L, d), amount];
+      // a correction accepted in /revue says so where the document is listed (DECISIONS 2026-10-29)
+      const le = Object.values((e.corrige ?? {}) as Record<string, { le?: string }>)
+        .map((x) => x?.le ?? "")
+        .filter(Boolean)
+        .sort()
+        .pop();
       const sous = [
         date(e) + (e.date_lue ? "*" : ""),
         e.non_lu?.includes("zone_non_deduite") ? zone : "",
+        le ? t("corrige.le", { date: le.split("-").reverse().join("/") }) : "",
       ]
         .filter(Boolean)
         .join(" · ");
@@ -497,6 +508,12 @@ function rangsDocuments(C: Corpus, k: Kind): Rang[] {
         nom: d.title,
         lien: lienDocument(L, e, d.title, true),
         sous,
+        liens: [
+          ...(e.url
+            ? [{ l: k === "aut" ? t("arretes.voir") : t("liste.source"), href: e.url }]
+            : []),
+          signaler(e),
+        ],
         cells,
         mots: d.words,
         f: { dep: [d.key[1]], annee: [d.key[2]], disp: [d.key[3]] },

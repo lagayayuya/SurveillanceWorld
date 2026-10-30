@@ -31,7 +31,7 @@
           <sc-for list="{{rows}}" as="r">
             <tr>
               <sc-if value="{{wide}}"><td class="rk">{{r.rk}}</td></sc-if>
-              <td><sc-if value="{{tel}}"><span class="rkt tw">{{r.rk}}</span></sc-if>{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="naf">{{{r.sous}}}</span></sc-if></td>
+              <td><sc-if value="{{tel}}"><span class="rkt tw">{{r.rk}}</span></sc-if>{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="naf">{{{r.sous}}}</span></sc-if><sc-if value="{{r.liens.length}}"><span class="doc-liens"><sc-for list="{{r.liens}}" as="l"><a href="{{l.href}}">{{l.l}}</a></sc-for></span></sc-if></td>
               <sc-for list="{{r.cells}}" as="c"><td class="{{c.cls}}"><sc-if value="{{c.isDeps}}"><div class="deps"><sc-for list="{{c.deps}}" as="d"><span class="{{d.cls}}">{{d.d}}</span></sc-for></div></sc-if>{{{c.v}}}</td></sc-for>
             </tr>
           </sc-for>

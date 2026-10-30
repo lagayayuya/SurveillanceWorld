@@ -39,7 +39,7 @@ export function ouvrir(url: string | URL): void {
   const u = new URL(url, location.href);
   if (!REGISTRE.test(location.pathname)) setAside(mapAddress());
   history.pushState(null, "", `${u.pathname}${u.search}${u.hash}`);
-  void suivre(false);
+  void suivre(false, true);
 }
 
 /** « ← Carte », ✕, Escape: the map again, at its own address, as a new step of the history. */
@@ -49,11 +49,11 @@ export function fermer(): void {
   void suivre(false);
 }
 
-async function suivre(retour: boolean): Promise<void> {
+async function suivre(retour: boolean, force = false): Promise<void> {
   if (REGISTRE.test(location.pathname)) {
     // back or forward onto a register page from the map's: the map's address goes aside
     if (retour && !isAside()) setAside(lastMapAddress());
-    (await charger()).afficher();
+    (await charger()).afficher(force);
     return;
   }
   if (!modale) return;
