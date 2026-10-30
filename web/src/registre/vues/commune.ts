@@ -61,13 +61,14 @@ import {
   lexique,
   liensBande,
   ligneCommune,
+  quiDocument,
   titreDocument,
   typeLabel,
 } from "./commune-outils.ts";
 
 const TODAY = new Date().toISOString().slice(0, 10);
 const ELUS = "https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1";
-const NBSP = " ";
+const NBSP = "\u00a0";
 /** At most this many bars carry their value written; beyond, the tooltip and the panel (v2 § 8). */
 const ECRITES = 12;
 
@@ -479,7 +480,9 @@ export class Commune extends Vue<Props, State> {
       introuvables,
       // the most recent; all of them, filtered, on the Documents page
       docsL: docsL.slice(0, 8),
-      docsPhrase: t("commune.docs_phrase", { n: s.all.length, nom }),
+      docsPhrase: t(s.all.length > 8 ? "commune.docs_phrase" : "commune.docs_tous", {
+        n: s.all.length,
+      }),
       tous: [
         lien("commune", docs, t("commune.tous_documents", { n: s.all.length })),
         lien("commune", auts, t("commune.toutes_autorisations", { n: nArr })),
@@ -1311,31 +1314,41 @@ export class Commune extends Vue<Props, State> {
    * weekly hours themselves are drawn there, from the build's slots. */
   private drones() {
     const { d, s, insee, nom } = this.prep;
-    const own = s.all.filter(isDrone).sort(byDateAsc);
-    const zones = d.f.zones.autorisations.filter(
-      (a) => a.kind === "drone" && a.insee.includes(insee),
-    );
-    const actes = new Set([...own.map((e) => e.id), ...zones.map((a) => a.acte)]);
-    const dates = [...own.map((e) => e.date ?? ""), ...zones.map((a) => a.date_acte)]
-      .filter(Boolean)
-      .sort();
-    if (!actes.size) return { show: false, phrase: "", lien: "" as RichItem };
+    // the acts of the commune, and those naming it among others (its zones' acts)
+    const of = (kind: "drone" | "vsa") => {
+      const own = s.all.filter((e) => e.t === `arrete_${kind}`);
+      const zones = d.f.zones.autorisations.filter(
+        (a) => a.kind === kind && a.insee.includes(insee),
+      );
+      const actes = new Set([...own.map((e) => e.id), ...zones.map((a) => a.acte)]);
+      const dates = [...own.map((e) => e.date ?? ""), ...zones.map((a) => a.date_acte)]
+        .filter(Boolean)
+        .sort();
+      return { n: actes.size, dates };
+    };
+    const phrase = (kind: "drones" | "vsa", x: { n: number; dates: string[] }) =>
+      !x.n
+        ? ""
+        : x.dates.length > 1 && x.dates[0].slice(0, 7) !== x.dates[x.dates.length - 1].slice(0, 7)
+          ? t(`commune.${kind}_phrase`, {
+              n: x.n,
+              nom,
+              de: longMonth(x.dates[0]),
+              a: longMonth(x.dates[x.dates.length - 1]),
+            })
+          : t(`commune.${kind}_phrase_un`, { n: x.n, nom, mois: longMonth(x.dates[0] ?? "") });
+    const dr = of("drone");
+    const vsa = of("vsa");
+    if (!dr.n && !vsa.n) return { show: false, titre: "", phrase: "", lien: "" as RichItem };
     return {
       show: true,
-      phrase:
-        dates.length > 1 && dates[0].slice(0, 7) !== dates[dates.length - 1].slice(0, 7)
-          ? t("commune.drones_phrase", {
-              n: actes.size,
-              nom,
-              de: longMonth(dates[0]),
-              a: longMonth(dates[dates.length - 1]),
-            })
-          : t("commune.drones_phrase_un", {
-              n: actes.size,
-              nom,
-              mois: longMonth(dates[0] ?? ""),
-            }),
-      lien: lien("commune", communeHref(insee, "carte"), t("commune.drones_lien")) as RichItem,
+      titre: t(vsa.n ? "commune.drones_vsa_titre" : "commune.drones_titre"),
+      phrase: [phrase("drones", dr), phrase("vsa", vsa)].filter(Boolean).join(" "),
+      lien: lien(
+        "commune",
+        communeHref(insee, "carte"),
+        t(dr.n ? "commune.drones_lien" : "commune.vsa_lien"),
+      ) as RichItem,
     };
   }
 
@@ -1423,7 +1436,10 @@ export class Commune extends Vue<Props, State> {
           signaler(e),
         ],
       };
+      const q = quiDocument(d, e, true);
       return {
+        qui: q.entR || q.quiR,
+        quiStyle: q.qk === "n" ? "font-style: italic; color: var(--muted)" : "",
         cls: `drow${on(k) ? " on" : ""}`,
         p: picto(typeDocument(e)),
         d: docDate(e.date, e.date_annee),

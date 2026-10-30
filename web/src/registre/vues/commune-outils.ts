@@ -6,15 +6,15 @@
 // Every node is made with createElement, every word comes from the catalogue: nothing is sent
 // anywhere. R1's share image (a canvas, downloaded) is gone: « Partager » is the band's
 // (partage.ts), its image the build's (lot R3).
-import { communeHref, type Donnees } from "../commun.ts";
+import { benefLabel, communeHref, type Donnees, isArr } from "../commun.ts";
 import type { Lexique } from "../corpus.ts";
-import type { RichItem } from "../dc.ts";
+import type { Rich, RichItem } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
-import { lien, lienDepartement } from "../liens.ts";
+import { lien, lienAcheteur, lienDepartement, lienEntreprise } from "../liens.ts";
 import type { Miette } from "../modale.ts";
-import { sentence } from "../texte.ts";
+import { sentence, tidy, titleCase } from "../texte.ts";
 
 /** The commune's file read as a lexicon (corpus.ts): its companies, buyers and communes have pages. */
 export const lexique = (d: Donnees): Lexique => d.f as unknown as Lexique;
@@ -59,6 +59,62 @@ export function filCommune(d: Donnees): Miette[] {
     { k: "commune", l: t("types.commune.p"), href: "/registre/" },
     { k: "commune", l: d.f.commune.nom, href: communeHref(d.insee) },
   ];
+}
+
+/** Who a document is about: the mairie (m), another public buyer (o), the State (e), a company or
+ * a shop (p), a name not published (n); its words, and the same as typed links (the buyer, the
+ * beneficiary or the companies that have their fiche). `self`: the page is the commune's own
+ * fiche, where its name is not a link to itself. */
+export type Qui = { qk: string; qui: string; quiR: Rich; ent: string; entR: Rich };
+export function quiDocument(d: Donnees, e: Evenement, self = false): Qui {
+  const L = lexique(d);
+  const insee = d.insee;
+  const nom = d.f.commune.nom;
+  const isA = isArr(e);
+  const isSub = e.t.startsWith("subvention");
+  const masked = e.beneficiaire === "[non retenu]" || e.nom_publie === false;
+  const qk = isA
+    ? e.communal
+      ? "m"
+      : masked
+        ? "n"
+        : e.type_beneficiaire === "etat"
+          ? "e"
+          : "p"
+    : isSub || e.communal
+      ? "m"
+      : "o";
+  const buyer = !isA && !isSub ? d.buyer(e) : null;
+  const qui =
+    qk === "m"
+      ? isA && e.type_beneficiaire === "epci"
+        ? benefLabel(e)
+        : t("documents.mairie_de", { nom })
+      : qk === "n"
+        ? t("commun.nom_non_publie")
+        : isA
+          ? benefLabel(e)
+          : buyer
+            ? d.buyerNom(buyer)
+            : tidy(titleCase(String(e.acheteur ?? "")));
+  const bs = e.beneficiaire_siren;
+  const quiR: Rich =
+    qk === "o" && buyer
+      ? [lienAcheteur(L, buyer, qui)]
+      : qk === "m" && !self
+        ? [lien("commune", communeHref(insee), qui)]
+        : qk === "p" && bs && L.entreprises[bs]
+          ? [lienEntreprise(L, bs, qui)]
+          : qui;
+  const sirens =
+    (e.t === "attribution" || e.t === "modification") && e.entreprises?.length ? e.entreprises : [];
+  const entR: Rich = sirens.length
+    ? [
+        "→ ",
+        ...sirens.flatMap((s, i) => [...(i ? [", "] : []), lienEntreprise(L, s, d.entName(s))]),
+      ]
+    : "";
+  return { qk, qui, quiR, ent: sirens.map((s) => d.entName(s)).join(", "), entR };
 }
 
 /** A document's kind in words (« Contrat », « Arrêté »…), the Documents table's badge. */

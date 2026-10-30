@@ -6,26 +6,22 @@
 // listed with its source, never drawn.
 
 import { etatDepartement } from "../collecte.ts";
-import {
-  type Autorisation,
-  commune,
-  communeHref,
-  type Donnees,
-  filCommune,
-  tete,
-} from "../commun.ts";
+import { type Autorisation, commune, communeHref, type Donnees } from "../commun.ts";
 import { corrections, nomsDe } from "../corrige.ts";
-import type { Rich } from "../dc.ts";
+import type { Rich, RichItem } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import "../demande.ts";
 import { fr, longDate, longMonth, MONTHS_LONG, shortDate, shortMonth, signed } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import type { VueModule } from "../modale.ts";
+import { lien, lienCommune, lienEntreprise } from "../liens.ts";
+import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { capital, proper, tidy, titleCase } from "../texte.ts";
-import { type BaseState, Vue } from "../vue.ts";
+import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import "./commune.css";
 import template from "./autorisations.html?raw";
+import { filCommune, lexique, liensBande, ligneCommune } from "./commune-outils.ts";
 
 type Props = { insee: string; dossier: string; d: Donnees };
 type State = BaseState & { allPriv: boolean };
@@ -117,8 +113,37 @@ class Autorisations extends Vue<Props, State> {
     return { allPriv: false };
   }
 
+  /** The breadcrumb's last step, after Registre › Communes › <commune> (fil()). */
   titre(): string {
-    return t("autorisations.titre_onglet", { nom: this.props.d.f.commune.nom });
+    return t("autorisations.fil_ici");
+  }
+  type() {
+    return "commune" as const;
+  }
+  fil(): Miette[] {
+    return filCommune(this.props.d);
+  }
+  partage(): Partage | null {
+    return { titre: t("autorisations.titre_onglet", { nom: this.props.d.f.commune.nom }) };
+  }
+
+  /** The commune's head and band (its fiche's), its one section « Documents ». */
+  private cadre() {
+    const d = this.props.d;
+    const nom = d.f.commune.nom;
+    const secs = this.sections({ documents: true });
+    const band = this.bandeau("commune", nom, secs);
+    const wide = large();
+    return {
+      tete: this.tete("commune", nom, ligneCommune(d)),
+      band: { ...band, secs: liensBande(band.secs, d.insee, false) },
+      secs,
+      lay: {
+        inner: wide ? "inner" : "tin",
+        tickets: wide ? "tickets" : "tickets t2",
+        deux: wide ? "deux" : "deux un",
+      },
+    };
   }
 
   private build() {
@@ -192,6 +217,7 @@ class Autorisations extends Vue<Props, State> {
   renderVals() {
     const S = this.state;
     const D = this.props.d;
+    const L = lexique(D);
     const d = this.data();
     const insee = D.insee;
     const nom = D.f.commune.nom;
@@ -442,7 +468,11 @@ class Autorisations extends Vue<Props, State> {
       };
       return {
         date: shortDate(e.date),
-        nom: nm ?? t("commun.nom_non_publie"),
+        // a company that has its fiche (SIRENE-verified beneficiary), a link; else its words
+        nomR:
+          nm && e.beneficiaire_siren && L.entreprises[e.beneficiaire_siren]
+            ? [lienEntreprise(L, e.beneficiaire_siren, nm)]
+            : (nm ?? t("commun.nom_non_publie")),
         nomStyle: nm ? "font-weight: 700" : "font-style: italic; color: var(--muted)",
         cat,
         n: illisible ? "—" : fr(e.cameras ?? 0),
@@ -496,17 +526,20 @@ class Autorisations extends Vue<Props, State> {
           txt.push(` · ${t("autorisations.partage", { n: partage.length })} : `);
           partage.forEach((k, i) => {
             if (i) txt.push(", ");
-            txt.push({ a: { href: communeHref(k), text: D.commune(k).nom } });
+            txt.push(lienCommune(L, k, D.commune(k).nom));
           });
         }
         const zone = /^arrete_(drone|vsa)$/.test(e.t);
         if (zone && nonDeduite(e)) txt.push(` · ${t("arretes.zone_non_deduite")}`);
         const surCarte = zone && !nonDeduite(e);
+        // on the map: the commune's « Carte et drones »; else the act itself (the préfecture's recueil)
+        const l = t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete");
         return {
           d: shortDate(e.date),
           t: txt,
-          href: surCarte ? carte : (e.url ?? carte),
-          l: t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete"),
+          lien: (surCarte || !e.url
+            ? lien("commune", carte, l)
+            : { a: { href: e.url, text: l } }) as RichItem,
         };
       });
     const multi: Rich = d.multi.length
@@ -522,7 +555,7 @@ class Autorisations extends Vue<Props, State> {
             nom,
             dates: d.multi.map((a) => shortDate(a.date_acte)).join(", "),
           })} `,
-          { a: { href: carte, text: t("autorisations.voir_sur_la_carte") } },
+          lien("commune", carte, t("autorisations.voir_sur_la_carte")),
         ]
       : "";
     const autresArr = {
@@ -531,9 +564,12 @@ class Autorisations extends Vue<Props, State> {
       none: couv.etat === "collecte" && !list.length && !d.multi.length,
       ex:
         lyonDr && insee !== "69123"
-          ? t("autorisations.exemple_lyon", { arr: t("n.arrete", { n: lyonDr }) })
+          ? lien(
+              "commune",
+              communeHref("69123", "carte"),
+              t("autorisations.exemple_lyon", { arr: t("n.arrete", { n: lyonDr }) }),
+            )
           : "",
-      exHref: communeHref("69123", "carte"),
       list,
       multi,
     };
@@ -577,11 +613,14 @@ class Autorisations extends Vue<Props, State> {
 
     const nDocs = D.all.length;
     const elide = /^[aeiouyéèêâîôûh]/i.test(nom);
+    const docsHref = communeHref(insee, "documents");
     return {
       ...this.base("autorisations"),
       ...this.info("dos", "nom"),
-      ...filCommune(D, t("autorisations.fil_ici")),
-      com: tete(D, "aut"),
+      ...this.cadre(),
+      com: { nom, insee },
+      // the tabs are gone: all the commune's documents, one link away
+      voisin: [lien("commune", docsHref, t("commune.tous_documents", { n: nDocs }))],
       lead,
       couverture,
       kpis,
@@ -597,8 +636,12 @@ class Autorisations extends Vue<Props, State> {
       lus: d.L.length ? t("arretes.lus_par_programme") : "",
       // singular and elision (« Cet arrêté figure aussi parmi le document d'Ampuis »)
       cesTxt: d.L.length ? t("autorisations.ces_figurent", { n: d.L.length }) : "",
-      docsTxt: t(elide ? "autorisations.docs_d" : "autorisations.docs_de", { n: nDocs, nom }),
-      lien: { ici: location.pathname, documents: communeHref(insee, "documents") },
+      docsLien: lien(
+        "commune",
+        docsHref,
+        t(elide ? "autorisations.docs_d" : "autorisations.docs_de", { n: nDocs, nom }),
+      ),
+      lien: { ici: location.pathname },
     };
   }
 }

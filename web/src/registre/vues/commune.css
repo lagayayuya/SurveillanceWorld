@@ -5,15 +5,13 @@
 
 /* the band: « Fiche » and « Carte et drones » are other pages of the commune, set apart from the
    sections (V2-CarteDrones' band: « Fiche | Carte et drones ») */
-.rg .v-commune .band nav a[data-sec="carte"],
-.rg .v-documents .band nav a[data-sec="carte"],
-.rg .v-autorisations .band nav a[data-sec="carte"] {
+.rg .v-commune :is(.band, .tband) nav a[data-sec="carte"],
+.rg .v-documents :is(.band, .tband) nav a[data-sec="carte"],
+.rg .v-autorisations :is(.band, .tband) nav a[data-sec="carte"] {
   margin-left: 10px;
-  border-left: 2px solid #111;
 }
-.rg .v-documents .band nav a[data-sec="fiche"],
-.rg .v-autorisations .band nav a[data-sec="fiche"] {
-  border-right: 2px solid #111;
+.rg .v-documents :is(.band, .tband) nav a[data-sec="fiche"],
+.rg .v-autorisations :is(.band, .tband) nav a[data-sec="fiche"] {
   margin-right: 10px;
 }
 
@@ -230,6 +228,15 @@
 .rg .v-commune .vois li {
   min-width: 0;
   line-height: 1.9;
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+.rg .v-commune #documents .dqui {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.8;
 }
 .rg .v-commune .vois .tw {
   font-size: 13px;
@@ -293,5 +300,113 @@
   }
   .rg .v-commune .veille {
     grid-template-columns: 80px minmax(0, 1fr);
+  }
+}
+
+/* --- Documents: its filters above the table (R1's left column would leave the table 600 px beside
+   the v2 frame's panel), the table's type as its pictogram and word --- */
+.rg .v-documents .liens,
+.rg .v-autorisations .liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  line-height: 2;
+}
+.rg .v-documents .filtres {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 18px;
+  align-items: start;
+}
+.rg .v-documents .filtres fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.rg .v-documents .filtres legend {
+  padding: 0 0 6px;
+  width: 100%;
+  border-bottom: 2px solid var(--line);
+  margin-bottom: 4px;
+}
+.rg .v-documents .chks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  column-gap: 8px;
+}
+.rg .v-documents .fpied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 20px;
+}
+.rg .v-documents .eff {
+  all: unset;
+  cursor: pointer;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.rg .v-documents .eff:focus-visible {
+  outline: 2px solid var(--fg);
+}
+.rg .v-documents .dbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  padding: 8px 12px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .v-documents .dlk {
+  font-weight: 800;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+}
+.rg .v-documents .dtype {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.rg .v-documents .dobj {
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* --- Autorisations: the decrees of the mairie's dossier on their time axis, the selection yellow --- */
+.rg .v-autorisations .mk.on .dot,
+.rg .v-autorisations .mk:hover .dot {
+  background: var(--type-territoire);
+  border-color: var(--fg);
+}
+.rg .v-autorisations .lst.autres {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 2px solid var(--line);
+}
+.rg .v-autorisations .lst.autres > li {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+@media (max-width: 959px) {
+  .rg .v-documents .filtres {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

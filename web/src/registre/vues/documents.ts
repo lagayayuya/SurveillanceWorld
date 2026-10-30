@@ -1,30 +1,33 @@
-// A commune's Documents (/registre/commune/<insee>/documents; mockup Documents-grand, prototype
-// vues/documents.js): every document of the commune in one table, its filters (type, who, year) kept in
-// the path's query (?t=…&qui=…&y=…), the panel of the row hovered, focused or touched, the selection
-// downloaded as CSV or JSON. The rules (the commune's own, a masked name, a decree not read entirely, a
-// reviewed date) are the build's flags, read here, never recomputed.
+// A commune's Documents (/registre/commune/<insee>/documents; mockup Documents-grand for the content,
+// the commune's v2 head and band for the frame): every document of the commune in one table, its
+// filters (type, who, year) kept in the path's query (?t=…&qui=…&y=…), the panel of the row hovered,
+// focused or touched, the selection downloaded as CSV or JSON. The rules (the commune's own, a masked
+// name, a decree not read entirely, a reviewed date) are the build's flags, read here, never
+// recomputed. Every name that has its fiche is a typed link (liens.ts).
 
-import {
-  benefLabel,
-  commune,
-  communeHref,
-  type Donnees,
-  filCommune,
-  isArr,
-  sortKey,
-  tete,
-} from "../commun.ts";
+import { benefLabel, commune, communeHref, type Donnees, isArr, sortKey } from "../commun.ts";
 import { corrections, nomsDe } from "../corrige.ts";
 import type { Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { addMonths, count, docDate, fr, money, shortDate } from "../format.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../modale.ts";
+import { lien, lienDocument } from "../liens.ts";
+import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
-import { plain, sentence, tidy, titleCase } from "../texte.ts";
-import { type BaseState, Vue } from "../vue.ts";
+import { plain } from "../texte.ts";
+import { type BaseState, large, type Partage, Vue } from "../vue.ts";
+import "./commune.css";
+import {
+  filCommune,
+  lexique,
+  liensBande,
+  ligneCommune,
+  quiDocument,
+  titreDocument,
+  typeLabel,
+} from "./commune-outils.ts";
 import template from "./documents.html?raw";
 
 type Props = Extract<Route, { view: "documents" }> & { d: Donnees };
@@ -75,45 +78,6 @@ const fam = (e: Evenement): string =>
             : e.t.startsWith("arrete")
               ? "arr"
               : "sub";
-/** The kit's five badges (§ 4): a result or a correction is a call for tenders, an act an authorisation. */
-const badge = (e: Evenement): string =>
-  e.t === "attribution"
-    ? "con"
-    : e.t === "modification"
-      ? "mod"
-      : AO.test(e.t)
-        ? "ao"
-        : e.t.startsWith("arrete")
-          ? "aut"
-          : "sub";
-const BADGE: Record<string, string> = {
-  con: "background: var(--fg); color: var(--bg)",
-  mod: "background: transparent; color: var(--fg)",
-  ao: "background: var(--ao); color: var(--ao-ink); border-color: var(--ao)",
-  aut: "background: var(--aut); color: var(--aut-ink); border-color: var(--aut)",
-  sub: "background: var(--sub); color: var(--sub-ink); border-color: var(--sub)",
-};
-const typeLabel = (e: Evenement): string =>
-  t(
-    `documents.type_${e.t.startsWith("arrete") ? "arrete" : e.t.startsWith("subvention") ? "subvention" : e.t}`,
-  );
-
-/** A document's title: a decree by what it authorises, anything else by its published object. */
-function titre(e: Evenement): string {
-  if (e.t === "arrete_drone") {
-    const n = e.partage?.length ?? 0;
-    return n
-      ? `${t("documents.titre_drones")} · ${t("documents.partage", { n })}`
-      : t("documents.titre_drones");
-  }
-  if (e.t === "arrete_pietons") return t("documents.titre_pietons");
-  if (e.t === "arrete_vsa") return t("documents.titre_vsa");
-  if (e.t === "arrete")
-    return e.cameras != null
-      ? t("documents.titre_cameras", { n: e.cameras })
-      : t("documents.titre_cameras_nc");
-  return sentence(e.objet) || t("documents.objet_non_publie");
-}
 
 /** A document's own page in the register: a decree its dossier in the Autorisations tab, anything else
  * its record (lot R1b). */
@@ -156,77 +120,53 @@ class Documents extends Vue<Props, State> {
     return { sort: "date", dir: -1, f: filtersOf(p.q), copied: "" };
   }
 
+  /** The breadcrumb's last step, after Registre › Communes › <commune> (fil()). */
   titre(): string {
-    return t("documents.titre", { nom: this.props.d.f.commune.nom });
+    return t("documents.fil");
+  }
+  type() {
+    return "commune" as const;
+  }
+  fil(): Miette[] {
+    return filCommune(this.props.d);
+  }
+  partage(): Partage | null {
+    return { titre: t("documents.titre", { nom: this.props.d.f.commune.nom }) };
+  }
+
+  /** The commune's head and band (its fiche's), its one section « Documents ». */
+  private cadre() {
+    const d = this.props.d;
+    const nom = d.f.commune.nom;
+    const secs = this.sections({ documents: true });
+    const band = this.bandeau("commune", nom, secs);
+    const wide = large();
+    return {
+      tete: this.tete("commune", nom, ligneCommune(d)),
+      band: { ...band, secs: liensBande(band.secs, d.insee, false) },
+      secs,
+      lay: { inner: wide ? "inner" : "tin" },
+    };
   }
 
   private rows(): Row[] {
     if (this._rows) return this._rows;
     const d = this.props.d;
-    const insee = d.insee;
-    const nom = d.f.commune.nom;
     this._rows = d.all.map((e) => {
-      const isA = isArr(e);
       const isSub = e.t.startsWith("subvention");
-      const masked = e.beneficiaire === "[non retenu]" || e.nom_publie === false;
-      const qk = isA
-        ? e.communal
-          ? "m"
-          : masked
-            ? "n"
-            : e.type_beneficiaire === "etat"
-              ? "e"
-              : "p"
-        : isSub || e.communal
-          ? "m"
-          : "o";
-      const buyer = !isA && !isSub ? d.buyer(e) : null;
-      const qui =
-        qk === "m"
-          ? isA && e.type_beneficiaire === "epci"
-            ? benefLabel(e)
-            : t("documents.mairie_de", { nom })
-          : qk === "n"
-            ? t("commun.nom_non_publie")
-            : isA
-              ? benefLabel(e)
-              : buyer
-                ? d.buyerNom(buyer)
-                : tidy(titleCase(String(e.acheteur ?? "")));
-      // names are links (the buyer when it is not the mairie, the companies); the panel keeps the text
-      const link = (href: string, text: string): Rich => [{ a: { href, text, cls: "nom" } }];
-      const quiR: Rich =
-        qk === "o" && buyer
-          ? link(d.buyerHref(buyer), qui)
-          : qk === "m"
-            ? link(communeHref(insee), qui)
-            : qui;
-      const sirens =
-        (e.t === "attribution" || e.t === "modification") && e.entreprises?.length
-          ? e.entreprises
-          : [];
-      const entR: Rich = sirens.length
-        ? [
-            "→ ",
-            ...sirens.flatMap((s, i) => [
-              ...(i ? [", "] : []),
-              s === EI
-                ? d.entName(s)
-                : { a: { href: `/registre/entreprise/${s}`, text: d.entName(s), cls: "nom" } },
-            ]),
-          ]
-        : "";
+      // names are typed links (the mairie's fiche, the buyer, the companies); the panel keeps the text
+      const q = quiDocument(d, e);
       return {
         e,
         id: e.id,
         g: fam(e),
-        qk,
+        qk: q.qk,
         an: (e.date ?? "").slice(0, 4),
-        qui,
-        quiR,
-        ent: sirens.map((s) => d.entName(s)).join(", "),
-        entR,
-        objet: titre(e),
+        qui: q.qui,
+        quiR: q.quiR,
+        ent: q.ent,
+        entR: q.entR,
+        objet: titreDocument(e),
         amt: e.t === "attribution" || e.t === "modification" || isSub ? (e.montant ?? null) : null,
         cam: e.t === "arrete" ? (e.cameras ?? null) : null,
       };
@@ -265,7 +205,7 @@ class Documents extends Vue<Props, State> {
   renderVals() {
     const S = this.state;
     const d = this.props.d;
-    const insee = d.insee;
+    const L = lexique(d);
     const nom = d.f.commune.nom;
     const all = this.rows();
     const F = S.f;
@@ -336,9 +276,7 @@ class Documents extends Vue<Props, State> {
         date: docDate(e.date, e.date_annee),
         flag: !!e.date_lue && e.date_lue !== e.date,
         type: typeLabel(e),
-        bs: BADGE[badge(e)],
-        objet: r.objet,
-        href: docHref(e, insee),
+        objet: lienDocument(L, e, r.objet, true),
         qui: r.quiR,
         quiStyle: r.qk === "n" ? "font-style: italic; color: var(--muted)" : "",
         ent: r.entR,
@@ -397,8 +335,16 @@ class Documents extends Vue<Props, State> {
     return {
       ...this.base("documents"),
       ...this.info("np", "dl"),
-      ...filCommune(d, t("documents.fil")),
-      com: tete(d, "doc"),
+      ...this.cadre(),
+      com: { nom },
+      // the tabs are gone: the commune's decrees, one link away
+      voisin: [
+        lien(
+          "commune",
+          communeHref(d.insee, "autorisations"),
+          t("commune.toutes_autorisations", { n: all.filter((r) => isArr(r.e)).length }),
+        ),
+      ],
       facets,
       rows,
       cols,
@@ -592,7 +538,7 @@ function exportRows(d: Donnees, es: Evenement[], fmt: "csv" | "json", name: stri
       date: e.date_annee ? (e.date ?? "").slice(0, 4) : (e.date ?? ""),
       date_precision: e.date_annee ? t("documents.export_annee") : t("documents.export_jour"),
       nature: typeLabel(e),
-      objet: isA ? titre(e) : (e.objet ?? ""),
+      objet: isA ? titreDocument(e) : (e.objet ?? ""),
       acheteur: isA ? "" : b ? d.buyerNom(b) : (e.acheteur ?? ""),
       beneficiaire: isA ? benefLabel(e) : "",
       beneficiaire_siren: isA && e.nom_publie !== false ? (e.beneficiaire_siren ?? "") : "",

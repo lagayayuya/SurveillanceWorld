@@ -106,7 +106,7 @@
           </div>
 
           <sc-if value="{{drones.show}}">
-            <h3 class="h3" style="margin-top: 10px">{{t.commune.drones_titre}}</h3>
+            <h3 class="h3" style="margin-top: 10px">{{drones.titre}}</h3>
             <p class="sober" style="margin: 0">{{drones.phrase}} {{{drones.lien}}}</p>
           </sc-if>
 
@@ -175,7 +175,7 @@
           <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
           <sc-if value="{{nDocs}}">
             <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
-            <div style="border-top: 2px solid var(--line)"><sc-for list="{{docsL}}" as="d"><div class="{{d.cls}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="mini" style="{{d.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.p.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.titre}}}</span><span class="a">{{d.fig}}</span></div></sc-for></div>
+            <div style="border-top: 2px solid var(--line)"><sc-for list="{{docsL}}" as="d"><div class="{{d.cls}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="mini" style="{{d.p.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.p.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.titre}}}<span class="dqui" style="{{d.quiStyle}}">{{{d.qui}}}</span></span><span class="a">{{d.fig}}</span></div></sc-for></div>
             <p class="sober liens" style="margin: 0">{{{tous}}}</p>
           </sc-if>
           <sc-if value="{{introuvables.length}}">
