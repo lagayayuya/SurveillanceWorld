@@ -235,3 +235,18 @@ export function pageAtStart(): Slug | null {
   const p = readParam("page");
   return isSlug(p) ? p : null;
 }
+
+// Any other link to a legal page (`/?page=<slug>`, the register's « Signaler une erreur » names
+// « Confidentialité ») opens it in place too, over what is open (v2.1 A9: a modal opened from the
+// register is above it), rather than loading the map's page again and losing what was typed.
+document.addEventListener("click", (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey)
+    return;
+  const a = (e.target as Element | null)?.closest?.<HTMLAnchorElement>("a[href]");
+  if (!a || a.target || a.hasAttribute("download")) return;
+  const url = new URL(a.href, window.location.href);
+  const slug = url.searchParams.get("page");
+  if (url.origin !== window.location.origin || url.pathname !== "/" || !isSlug(slug)) return;
+  e.preventDefault();
+  openLegal(slug, a);
+});

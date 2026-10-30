@@ -10,6 +10,11 @@ import { isAside, lastMapAddress, mapAddress, setAside, takeBack } from "../url.
 
 export const REGISTRE = /^\/registre(\/|$)/;
 
+/** Said on the window as the register opens over the map (modale.ts): one modal at a time, the
+ * site's own (the welcome, the legal pages, the account's sheet, « Vos contributions ») close
+ * (main.ts). */
+export const OUVERTURE = "lacarte:registre";
+
 let carte: MlMap | null = null;
 let modale: Promise<typeof import("./modale.ts")> | null = null;
 const charger = () => {

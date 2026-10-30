@@ -7,6 +7,27 @@
    hover is --accent), its --warn fill is --warn-bg. Every rule is scoped under the register's root (.rg),
    its dialogs' (.dialogue, over the page) excepted, so that nothing reaches the map behind it (v2). */
 
+/* The page's layers, in one order (v2.1 A9): the z-index of every panel and modal of the site, from
+   the bottom up. One modal at a time: opening the register closes the site's modals (main.ts,
+   OUVERTURE), and what opens from the register is above it and takes the focus (modale.ts DESSUS).
+     0      the map (#map, its canvas and controls; the attribution's open credit 4, map.css)
+     1–9    the map's panels: #filters 2 (a phone 5), #estimate 3, #fabs 3 (4), #ticket 3,
+            .filters-empty 3, #queue-count 3, #sheet 4 (the camera's, the area's, the account's),
+            .camlist 4 (5), #filters.machine 4 (5); a contribution under way: #move-pin 3,
+            #edit-pin 3, #complete-camera 3, #aim-target 3, #move-panel 4, #complete-panel 4,
+            #edit-target 4, #edit-tag 4, #edit-warn 4, #modify-panel 5, #edit-float 5,
+            #mine 6 (« Vos contributions »); the poppers' spray 7; #debug 9
+     40     the points scored at a send (.score, score.css: no pointer, no focus)
+     50     the first load (.loading-first, loading.css: never with the register, which it skips)
+     50     the register (.rg's frame, cadre.css): a modal, a sheet, or a panel beside a live map;
+            inside it the band 4, the phone's panel 35, the share drawer 40 (cadre.css, below)
+     60     what opens from the register (.dialogue, below: « Signaler une erreur », a request, the
+            sources); the welcome (#welcome, welcome.css: never with the register, closed as it opens)
+     61     a legal page (#legal, legal.css), over the welcome or over a dialog of the register that
+            links to it
+   Everything under the register is put away while it is open but the map and its credit (the end of
+   this file); a layer added to the site takes its place here. */
+
 /* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
 @font-face {
   font-family: Archivo;

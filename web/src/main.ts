@@ -72,6 +72,7 @@ import { tracker } from "./position";
 import { prefetching, wanted as prefetchWanted } from "./prefetch";
 import {
   brancher as brancherRegistre,
+  OUVERTURE,
   porteRegistre,
   prefetchRegistre,
   REGISTRE,
@@ -1289,6 +1290,16 @@ declare global {
 }
 window.__map = map;
 if (prefetchWanted()) prefetch.install(map);
-// The register over the map, its doors and its addresses (registre/hote.ts).
+// The register over the map, its doors and its addresses (registre/hote.ts). One modal at a time
+// (v2.1 A9): as it opens, the site's own close — the welcome, a legal page, the account's sheet,
+// « Vos contributions ». The map's panels (a camera's or an area's sheet, the filters, an add or a
+// move under way) stay as they are, put away under it (registre.css) and back when it closes.
+addEventListener(OUVERTURE, () => {
+  welcome?.close();
+  legalKit?.closeLegal();
+  document.getElementById("mine")?.remove();
+  // the account's sheet (account/index.ts marks its paper), not a camera's or an area's
+  if (!sheet.hidden && sheet.querySelector("[data-account]")) closeSheet("register");
+});
 brancherRegistre(map);
 window.__palette = palette;

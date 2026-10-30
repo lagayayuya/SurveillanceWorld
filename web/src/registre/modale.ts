@@ -15,7 +15,7 @@ import "./registre.css";
 import "./cadre.css";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
 import { Absent, load } from "./donnees.ts";
-import { fermer, pas, retenir, retour, retourPossible } from "./hote.ts";
+import { fermer, OUVERTURE, pas, retenir, retour, retourPossible } from "./hote.ts";
 import { setMessages, t } from "./i18n.ts";
 import { listeHref, TYPE_DE } from "./listes.ts";
 import { boutonPartage, fermerPartage } from "./partage.ts";
@@ -407,6 +407,8 @@ rg.addEventListener("keydown", (ev) => {
 function ouvrirCadre(): void {
   if (ouvert) return;
   ouvert = true;
+  // one modal at a time (v2.1 A9): the site's own close first (main.ts), their focus given back
+  dispatchEvent(new Event(OUVERTURE));
   avant = document.activeElement as HTMLElement | null;
   titreCarte = document.title;
   inerter();
@@ -414,14 +416,38 @@ function ouvrirCadre(): void {
   rg.hidden = false;
 }
 
-/** The map behind a modal is inert (its later dialogs, appended after, are not). */
+/** What opens over the register (registre.css, the order of the layers): its own dialogs (« Signaler
+ * une erreur », a request, the sources: .dialogue) and the site's legal pages (a link in one). */
+const DESSUS = ".dialogue, #legal, #welcome";
+
+/** The map behind a modal is inert; a dialog over the register never is (it is drawn again, a
+ * view's later render or a cold open, with the dialog open). */
 function inerter(): void {
   for (const x of document.body.children) {
-    if (x === rg || !(x instanceof HTMLElement) || x.inert) continue;
+    if (x === rg || !(x instanceof HTMLElement) || x.inert || x.matches(DESSUS)) continue;
     x.inert = true;
     inertes.push(x);
   }
 }
+
+/** A dialog over the register takes the focus and keeps it: the register is inert under it, and
+ * the focus comes back to where it was in the register when the dialog goes (its own way back,
+ * an element of the register, is refused while the register is still inert). */
+let couvert = false;
+let dernierFocus: HTMLElement | null = null;
+rg.addEventListener("focusin", (ev) => {
+  dernierFocus = ev.target as HTMLElement;
+});
+function regarderDessus(): void {
+  const over = ouvert && [...document.body.children].some((x) => x.matches(DESSUS));
+  if (over === couvert) return;
+  couvert = over;
+  rg.inert = over;
+  const f = document.activeElement;
+  if (!over && ouvert && (!f || f === document.body) && dernierFocus?.isConnected)
+    dernierFocus.focus({ preventScroll: true });
+}
+new MutationObserver(regarderDessus).observe(document.body, { childList: true });
 
 /** The register leaves the page (the map's address again): the map gets its focus back. */
 export function cacher(): void {
@@ -432,6 +458,10 @@ export function cacher(): void {
   observateur?.disconnect();
   ouvert = false;
   rg.hidden = true;
+  // its own dialogs go with it (the browser's back with « Signaler une erreur » open)
+  for (const d of document.querySelectorAll("body > .dialogue")) d.remove();
+  couvert = false;
+  rg.inert = false;
   for (const x of inertes.splice(0)) x.inert = false;
   document.body.classList.remove("registre-ouvert", "registre-panneau");
   panneau = false;
