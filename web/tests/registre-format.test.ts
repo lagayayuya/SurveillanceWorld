@@ -59,7 +59,13 @@ test("published texts, for display only", () => {
 test("paths", () => {
   assert.deepEqual(route("/registre/"), { view: "registre", q: {} });
   assert.deepEqual(route("/registre", "?q=drone"), { view: "registre", q: { q: "drone" } });
+  // the old « Chiffres et classements », replaced by a list (listes.ts redirection)
   assert.deepEqual(route("/registre/chiffres"), { view: "chiffres" });
+  assert.deepEqual(route("/registre/entreprises", "?tri=amt"), {
+    view: "liste",
+    liste: "entreprises",
+    q: { tri: "amt" },
+  });
   assert.deepEqual(route("/registre/couverture"), { view: "couverture" });
   assert.deepEqual(route("/registre/commune/69283"), { view: "commune", insee: "69283" });
   assert.deepEqual(route("/registre/commune/2A004/documents"), { view: "documents", insee: "2A004", q: {} });

@@ -1,0 +1,118 @@
+/* A list of the register (V2-Liste): the rail beside the list, both in the frame's one scroll (the
+   frame draws .scroll, the board's rail sits beside it): the rail stays at the top as the list
+   scrolls, as tall as the frame's inside (the modal: 24 px top and bottom, its 2 px borders, its
+   54 px bar). On a phone the rail is a strip of the same items under the sheet's top. */
+.rg .v-liste .lay {
+  display: flex;
+  align-items: flex-start;
+  min-height: 100%;
+}
+.rg .v-liste .rail {
+  position: sticky;
+  top: 0;
+  height: calc(100vh - 106px);
+}
+.rg .v-liste .lay > .inner {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+  padding: 20px 30px 60px;
+}
+.rg .v-liste .tete {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rg .v-liste .pied {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+/* a head that sorts nothing: the buttons' box, without the button */
+.rg .v-liste table.t th .th-fixe {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 8px;
+}
+.rg .v-liste table.t th.num .th-fixe {
+  justify-content: flex-end;
+}
+/* « télécharger la liste (CSV) », « Effacer les filtres »: actions written as the board's words */
+.rg .v-liste .lienbtn {
+  all: unset;
+  cursor: pointer;
+  color: var(--blue);
+  text-decoration: underline wavy var(--reg-link-line) 1.5px;
+  text-underline-offset: 4px;
+}
+.rg .v-liste .lienbtn:focus-visible,
+.rg .v-liste .key:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .v-liste table.t td a.rl {
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 959px) {
+  .rg .v-liste .lay {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .rg .v-liste .rail.tel {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    width: auto;
+    height: auto;
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 2px solid var(--line);
+    padding: 8px 12px;
+    scrollbar-width: none;
+  }
+  .rg .v-liste .rail.tel .rf {
+    display: none;
+  }
+  .rg .v-liste .rail.tel .ri {
+    flex: none;
+    gap: 2px;
+    min-height: 40px;
+  }
+  .rg .v-liste .rail.tel .ri em {
+    margin-left: 8px;
+  }
+  .rg .v-liste .tools {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .rg .v-liste .tools .key,
+  .rg .v-liste .tools .lbl {
+    flex: none;
+  }
+  .rg .v-liste .filt {
+    width: 100%;
+    flex: none;
+  }
+  .rg .v-liste .tools.t0 {
+    flex-wrap: wrap;
+  }
+  .rg .v-liste .rkt {
+    font-size: 12px;
+    color: var(--muted);
+    margin-right: 6px;
+  }
+  /* the name cut out takes the width under its sticker */
+  .rg .v-liste .tete {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

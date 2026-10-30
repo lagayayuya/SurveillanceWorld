@@ -1,12 +1,32 @@
 // The register's paths (the map's page, served for every /registre/… path by Caddy, the register over it):
-// /registre/, /registre/chiffres, /registre/couverture, /registre/glossaire, /registre/commune/<insee>,
+// /registre/ (the summary, ?q= its search), a list per type (/registre/communes, …/entreprises,
+// …/arretes: LISTES), /registre/couverture, /registre/glossaire, /registre/commune/<insee>,
 // …/documents, …/autorisations[/<dossier>], …/carte[?mois=YYYY-MM], /registre/contrat/<affaire>,
 // /registre/entreprise/<siren>, /registre/acheteur/<siren>, /registre/departement/<code>. Anything else
-// is « introuvable ». Pure: the tests read it, the page's router (main.ts) uses it.
+// is « introuvable ». Two old addresses stay as routes, to be replaced by a list's (listes.ts
+// redirection): /registre/chiffres and the old search of documents, /registre/?t=…&d=…&q=…. Pure: the
+// tests read it, the page's router (modale.ts) uses it.
+
+/** The lists' addresses, one per type (design/registre/v2, V2-Liste), in the summary's order. */
+export const LISTES = [
+  "communes",
+  "intercommunalites",
+  "departements",
+  "acheteurs",
+  "entreprises",
+  "contrats",
+  "modifications",
+  "appels-d-offres",
+  "arretes",
+  "subventions",
+] as const;
+export type Liste = (typeof LISTES)[number];
+const estListe = (s: string): s is Liste => (LISTES as readonly string[]).includes(s);
 
 export type Route =
   | { view: "registre"; q: Record<string, string> }
   | { view: "chiffres" }
+  | { view: "liste"; liste: Liste; q: Record<string, string> }
   | { view: "couverture" }
   | { view: "commune"; insee: string }
   | { view: "documents"; insee: string; q: Record<string, string> }
@@ -34,6 +54,7 @@ export function route(pathname: string, search = ""): Route {
   const [a, b, c, d] = parts;
   if (!a) return { view: "registre", q };
   if (a === "chiffres" && !b) return { view: "chiffres" };
+  if (estListe(a) && !b) return { view: "liste", liste: a, q };
   if (a === "couverture" && !b) return { view: "couverture" };
   if (a === "glossaire" && !b) return { view: "glossaire" };
   if (a === "contrat" && b && !c) return { view: "contrat", id: b };

@@ -17,6 +17,7 @@ import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts
 import { Absent, load } from "./donnees.ts";
 import { fermer } from "./hote.ts";
 import { setMessages, t } from "./i18n.ts";
+import { listeHref, TYPE_DE } from "./listes.ts";
 import { boutonPartage, fermerPartage } from "./partage.ts";
 // « Signaler une erreur »: its form opens over any page that links to it
 import "./signaler.ts";
@@ -52,6 +53,7 @@ export type VueModule = {
 const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>> = {
   registre: () => import("./vues/registre.ts"),
   chiffres: () => import("./vues/chiffres.ts"),
+  liste: () => import("./vues/liste.ts"),
   commune: () => import("./vues/commune.ts"),
   documents: () => import("./vues/documents.ts"),
   autorisations: () => import("./vues/autorisations.ts"),
@@ -81,6 +83,8 @@ function typeDe(r: Route): TypeCle {
       return "acheteur";
     case "contrat":
       return "con";
+    case "liste":
+      return TYPE_DE[r.liste];
     default:
       return "registre";
   }
@@ -494,7 +498,7 @@ let asked = 0;
 function filDe(r: Route, k: TypeCle): Miette[] {
   const m: Miette[] = [{ k: "registre", l: t("types.registre.l"), href: "/registre/" }];
   if (r.view === "registre" || k === "registre") return r.view === "registre" ? [] : m;
-  return [...m, { k, l: pluriel(k), href: "/registre/" }];
+  return [...m, { k, l: pluriel(k), href: listeHref(k) }];
 }
 
 /** The path's view in the frame, opened over the map when it was not. */
