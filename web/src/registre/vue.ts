@@ -96,9 +96,22 @@ export abstract class Vue<
     };
   }
 
-  /** The theme's scope (.th .v-<name>) and the words. */
-  protected base(name: string): { th: string; t: Texts } {
-    return { th: `th v-${name}`, t: words };
+  /** The theme's scope (.th .v-<name>), the words, and the panel's state (`ps`): something chosen
+   * (its class `sel`: on a phone the panel rises as a drawer then only) and how to let it go. */
+  protected base(name: string): {
+    th: string;
+    t: Texts;
+    ps: { cls: string; fermer: Handler | null };
+  } {
+    const sel = this.state.sel !== null;
+    return {
+      th: `th v-${name}`,
+      t: words,
+      ps: {
+        cls: sel ? "panel sel" : "panel",
+        fermer: sel ? ((() => this.setState({ sel: null } as Partial<S>)) as Handler) : null,
+      },
+    };
   }
 
   /** { show, open, tgl } for the « i » buttons named, as the mockups use them. */

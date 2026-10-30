@@ -1196,30 +1196,28 @@
   .rg .th [style*="grid-template-columns: repeat(4, minmax(0px, 1fr)); gap: 10px"] {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
+  /* v2 (V2-Tel-Entreprise): at rest no panel; something touched, the detail rises as a drawer at the
+     bottom of the sheet, with its ✕ (the boards' .drawer) */
   .rg .th .panel {
-    position: sticky !important;
-    bottom: 0;
-    top: auto !important;
-    z-index: 6;
-    height: 64px;
-    min-height: 0 !important;
-    overflow: hidden;
-    padding: 8px 16px !important;
-    gap: 2px !important;
-    margin: 0 -16px;
-    border-width: 2px 0 0 !important;
-  }
-  .rg .th .panel > :not(:nth-child(1)):not(:nth-child(2)) {
     display: none !important;
   }
-  .rg .th .panel > strong {
-    font-size: 18px !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .rg .v-carte .panel {
-    height: 64px !important;
+  .rg .th .panel.sel {
+    display: flex !important;
+    position: fixed !important;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto !important;
+    z-index: 35;
+    max-height: 60vh;
+    min-height: 0 !important;
+    overflow-y: auto;
+    padding: 10px 16px 18px !important;
+    gap: 4px !important;
+    margin: 0;
+    background: var(--bg-2);
+    border-width: 2px 0 0 !important;
+    box-shadow: 0 -5px 0 var(--tc, var(--type-registre)) !important;
   }
   /* a table as rows: the name and two figures; touched, the row unfolds */
   .rg .th table.t thead {

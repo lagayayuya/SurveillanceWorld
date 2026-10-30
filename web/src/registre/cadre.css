@@ -1364,3 +1364,10 @@
     display: none;
   }
 }
+/* The panel's head: what is shown, and its ✕ once something is chosen (V2-Entreprise's panel). */
+.rg .pan-haut {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 24px;
+}
