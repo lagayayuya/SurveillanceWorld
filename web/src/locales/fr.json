@@ -2389,7 +2389,6 @@
   "registre.commune.vue_filment": "{n, plural, one {Ce que filme la caméra placée} other {Ce que filment les # caméras placées}}",
   "registre.commune.bande_fiche": "Fiche",
   "registre.commune.carte_et_drones": "Drones et algorithmes",
-  "registre.commune.sur_la_carte_du_site": "{nom} sur la carte du site",
   "registre.commune.carte_note": "Caméras sur la carte : relevées par des contributeurs OpenStreetMap, pas un inventaire officiel. Leurs champs de vision et les rues filmées sont sur la carte du site ; les zones de drones et d'analyse algorithmique dans « Drones et algorithmes ».",
   "registre.commune.arrete_cellule": "Arrêté du {date} : {n, plural, one {# caméra} other {# caméras}}",
   "registre.commune.en_cours": "en cours",

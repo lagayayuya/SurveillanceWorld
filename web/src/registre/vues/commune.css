@@ -15,14 +15,11 @@
   margin-right: 10px;
 }
 
-/* in place of R1's tilted map: two typed links and the map's caveat */
+/* in place of R1's tilted map: the link to Drones et algorithmes and the map's caveat, unframed */
 .rg .v-commune .cartes {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  padding: 12px 14px;
-  border: 2px solid var(--line);
-  background: var(--bg-2);
 }
 .rg .v-commune .cartes .sober {
   display: flex;

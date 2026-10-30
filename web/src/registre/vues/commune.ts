@@ -47,7 +47,6 @@ import {
 } from "../liens.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { backToMap } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { type Source, sources } from "../sources.ts";
 import { calm, capital, proper, sentence } from "../texte.ts";
@@ -313,10 +312,10 @@ export class Commune extends Vue<Props, State> {
         : { v: "—", l: t("commune.kpi_aucun_contrat") },
       { v: fr(s.all.length), l: t("commune.kpi_documents", { n: s.all.length }) },
     ];
-    // in place of R1's tilted map: « Carte et drones », and the commune on the site's map
+    // in place of R1's tilted map: « Drones et algorithmes » (v2.1 A5: no link to the site's map,
+    // nor the frame that carried it)
     const carteLiens: RichItem[] = [
       lien("commune", communeHref(insee, "carte"), t("commune.carte_et_drones")),
-      lien("commune", backToMap("", insee), t("commune.sur_la_carte_du_site", { nom })),
     ];
 
     // « Où sont les N autres ? » (10th pass: the public cameras of the map only)
