@@ -21,7 +21,7 @@ import type { Couverture } from "../donnees.ts";
 import { load } from "../donnees.ts";
 import { fr, money } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { type BaseState, type Col, Vue } from "../vue.ts";
 import template from "./chiffres.html?raw";

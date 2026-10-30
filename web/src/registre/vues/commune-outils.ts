@@ -30,7 +30,7 @@ export function dialogue(titre: string, corps: (Node | string)[], focus?: HTMLEl
     ...corps,
     el("p", {}, fermer),
   );
-  const m = el("div", { class: "modal" }, box);
+  const m = el("div", { class: "dialogue" }, box);
   const behind = [...document.body.children].filter((x): x is HTMLElement => x !== m);
   const close = () => {
     m.remove();

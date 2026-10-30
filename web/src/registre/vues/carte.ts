@@ -11,7 +11,7 @@ import { benefLabel, commune, communeHref, type Donnees, filCommune, tete } from
 import type { Handler, Rich } from "../dc.ts";
 import { count, longMonth } from "../format.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { type BaseState, Vue } from "../vue.ts";

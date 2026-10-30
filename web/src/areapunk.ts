@@ -12,6 +12,7 @@
 // theme/punk/area.css.
 import { cutout, fitTitle, pinHead } from "./chips";
 import { t } from "./i18n";
+import { porteLieu } from "./registre/hote";
 import { onTheme } from "./theme";
 
 type Props = Record<string, string | number | undefined>;
@@ -482,7 +483,10 @@ export function punkAreaSheet(frame: HTMLElement, input: PunkAreaInput): void {
   body.append(panel, placeSlot, drawn("", "sheet-break"));
   const [toggle, explained] = how(p);
   parts.share.classList.add("sheet-link");
-  body.append(parts.share, toggle, explained);
+  // The register's page of the commune or département, when it holds one (registre/hote.ts).
+  const door = el("div", "area-registre");
+  void porteLieu(String(p.c), String(p.c) === String(p.d)).then((a) => a && door.append(a));
+  body.append(parts.share, door, toggle, explained);
   paper.append(top, body);
   const edge = el("div", "sheet-frame");
   edge.append(paper);

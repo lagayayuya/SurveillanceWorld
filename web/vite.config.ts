@@ -67,8 +67,7 @@ const manifest: Plugin = {
 };
 
 // The register's words: the catalogue's `registre.*` keys only, as a module of their own
-// (registre/main.ts imports "virtual:registre-catalogue"), so that the register's page does not
-// ship the map's and /revue's keys.
+// (registre/modale.ts imports "virtual:registre-catalogue"), asked with the register's code only.
 const REGISTRE_CATALOGUE = "virtual:registre-catalogue";
 const registreCatalogue: Plugin = {
   name: "registre-catalogue",
@@ -77,16 +76,17 @@ const registreCatalogue: Plugin = {
     id === `\0${REGISTRE_CATALOGUE}`
       ? `export default ${JSON.stringify(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))))};`
       : null,
-  // the register's paths are its page's (Caddy rewrites them on the server, deploy/preview.caddy)
+  // the register's paths are the map's page, the register over it (Caddy rewrites them on the
+  // server, deploy/preview.caddy; registre/hote.ts)
   configureServer: (server) => {
     server.middlewares.use((req, _res, next) => {
-      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/registre.html";
+      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/index.html";
       next();
     });
   },
   configurePreviewServer: (server) => {
     server.middlewares.use((req, _res, next) => {
-      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/registre.html";
+      if (req.url && /^\/registre(\/|\?|$)/.test(req.url)) req.url = "/index.html";
       next();
     });
   },
@@ -124,15 +124,13 @@ export default defineConfig({
   plugins: [headStrings, manifest, licences(catalogue), registreCatalogue, siteCatalogue],
   server: { port: 5173, proxy: api },
   preview: { port: 4173, proxy: api },
-  // Three pages: the map, the review page (served at /revue by Caddy) and the register (served at
-  // /registre/… by Caddy), each its own bundle: the register never loads the map's code until a view
-  // shows a map.
+  // Two pages: the map, which answers the register's paths too (/registre/…, the register over
+  // the map, its code a chunk of its own), and the review page (served at /revue by Caddy).
   build: {
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
         revue: resolve(import.meta.dirname, "revue.html"),
-        registre: resolve(import.meta.dirname, "registre.html"),
       },
     },
   },

@@ -160,7 +160,6 @@ def serve(tmp_path, mode, name="127.0.0.1"):
     (web / "tiles").mkdir(parents=True)
     (web / "index.html").write_text("<title>la-carte</title>example-brand")
     (web / "revue.html").write_text("<title>revue</title>")
-    (web / "registre.html").write_text("<title>registre</title>")
     (web / "data" / "registre").mkdir(parents=True)
     (web / "data" / "registre" / "index.json").write_text('{"v": 1}')
     (web / "tiles" / "meta.json").write_text('{"name": "la-carte"}')
@@ -403,7 +402,7 @@ def test_the_review_page_and_the_register_alone_have_a_content_security_policy()
     line = (f'\t@review path /revue /revue.html\n'
             f'\theader @review Content-Security-Policy "{site.REVIEW_CSP}"\n')  # fmt: skip
     assert line in site.render(ENV) and line in site.render(PUBLIC)
-    line = (f'\t@registre path /registre /registre/* /registre.html\n'
+    line = (f'\t@registre path /registre /registre/*\n'
             f'\theader @registre Content-Security-Policy "{site.REGISTRE_CSP}"\n')  # fmt: skip
     assert line in site.render(ENV) and line in site.render(PUBLIC)
     assert site.render(ENV).count("Content-Security-Policy") == 2
@@ -436,7 +435,8 @@ def test_the_review_page_is_served_with_its_policy(request, server):
         assert status == 401 and headers["Content-Security-Policy"] == site.REVIEW_CSP
     for path in ("/registre/", "/registre/commune/69283/documents"):
         status, headers, body = authed(base + path, "reviewer")
-        assert status == 200 and b"registre" in body, path
+        # the map's page: the register opens over the map
+        assert status == 200 and b"la-carte" in body, path
         assert headers["Content-Security-Policy"] == site.REGISTRE_CSP, path
     for path in ("/", "/tiles/meta.json", "/data/registre/index.json", "/api/review/queue"):
         _, headers, _ = authed(base + path, "reviewer")

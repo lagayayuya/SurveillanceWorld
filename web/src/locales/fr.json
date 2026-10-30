@@ -445,6 +445,8 @@
   "part.verify.unsure": "Je ne sais pas",
   "part.sent": "Merci, c'est enregistré.",
   "welcome.square": "À propos de Surveillance World et questions fréquentes",
+  "door.registre": "Le registre : qui achète des caméras, à qui, et ce que la préfecture autorise",
+  "door.registre_lieu": "Voir dans le registre →",
   "welcome.dialog": "Bienvenue sur Surveillance World",
   "welcome.title.first": "Surveillance",
   "welcome.title.second": "World",
@@ -3383,5 +3385,12 @@
   "registre.types.famille.acheteur": "Acheteurs",
   "registre.types.famille.entreprise": "Entreprises",
   "registre.types.famille.document": "Documents",
-  "registre.types.famille.registre": "Le registre"
+  "registre.types.famille.registre": "Le registre",
+  "registre.cadre.carte": "← Carte",
+  "registre.cadre.fil": "Fil d'Ariane",
+  "registre.cadre.chercher": "Chercher dans le registre",
+  "registre.cadre.chercher_exemple": "Commune, entreprise, document…",
+  "registre.cadre.fermer": "Fermer le registre et revenir à la carte",
+  "registre.cadre.registre": "Le registre",
+  "registre.cadre.registre_de": "Le registre : {nom}"
 }

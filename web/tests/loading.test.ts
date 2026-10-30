@@ -1,4 +1,5 @@
-// « Chargement »'s first load as index.html's inline script decides it (src/loading.ts): run
+// « Chargement »'s first load as index.html's script decides it (public/carte-chargement.js,
+// src/loading.ts): run
 // in a sandbox with a page made of the few parts it touches. The first load only once 300 ms
 // have passed since the navigation (at once past them), whatever ?ui= says (the classique,
 // removed on 2026-10-23, once skipped it), not at all when the map was in first; a return from OpenStreetMap or the
@@ -9,11 +10,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { runInNewContext } from "node:vm";
 
-const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const SCRIPT = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)]
-  .map((m) => m[1])
-  .find((s) => s.includes("window.__loading ="));
-assert.ok(SCRIPT, "index.html's « Chargement » script");
+const SCRIPT = readFileSync(new URL("../public/carte-chargement.js", import.meta.url), "utf8");
+assert.ok(SCRIPT.includes("window.__loading ="), "index.html's « Chargement » script");
 
 /** An element as the script uses one: classes, dataset, children, textContent. */
 class El {

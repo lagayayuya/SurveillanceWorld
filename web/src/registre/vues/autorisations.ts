@@ -20,7 +20,7 @@ import type { Evenement } from "../donnees.ts";
 import "../demande.ts";
 import { fr, longDate, longMonth, MONTHS_LONG, shortDate, shortMonth, signed } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { capital, proper, tidy, titleCase } from "../texte.ts";

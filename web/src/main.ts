@@ -70,6 +70,12 @@ import type { Proposal } from "./participate/proposals";
 import { setLeaderboardOpener } from "./participate/score";
 import { tracker } from "./position";
 import { prefetching, wanted as prefetchWanted } from "./prefetch";
+import {
+  brancher as brancherRegistre,
+  porteRegistre,
+  prefetchRegistre,
+  REGISTRE,
+} from "./registre/hote";
 import { type CameraProps, headLine, renderPendingSheet, renderSheet } from "./sheet";
 import "./style.css";
 import { basemap, basemapLayers } from "./basemap";
@@ -121,6 +127,10 @@ const accountModule = import("./account");
 const welcomeModule = import("./welcome");
 // The legal pages (legal/index.ts, the launch lot), beside it: `?page=` opens one at once.
 const legalModule = import("./legal");
+// The register (registre/hote.ts): a register page's address opens it over the map, its code
+// asked beside the map's.
+const registreAtStart = REGISTRE.test(window.location.pathname);
+prefetchRegistre();
 const landing = readParam("osm") !== null || readParam("compte") !== null;
 // What the API says of the site (config.ts: contributions open or not, publishing, the
 // publisher's identity), known before its squares and sheets are built.
@@ -393,12 +403,12 @@ if (machineKit && cameraList)
       byId("fab-filters") as HTMLButtonElement,
       panel,
       cameraList,
-      [account?.square, welcome?.square].filter((x) => x !== undefined),
+      [account?.square, welcome?.square, porteRegistre()].filter((x) => x !== undefined),
     ),
   );
 // A legal page's address opens it in place of the welcome of a first visit.
 const legalAtStart = legalKit?.pageAtStart() ?? null;
-if (welcome && !landing && !legalAtStart) welcome.first();
+if (welcome && !landing && !legalAtStart && !registreAtStart) welcome.first();
 if (legalKit && legalAtStart) legalKit.openLegal(legalAtStart);
 
 /** The cameras in view the filters keep, nearest the map's centre first (the punk list);
@@ -1029,7 +1039,7 @@ const areaOptions = () => ({
     if (!shownArea) return "";
     const param = estimateParam(meta, panel.mode.est);
     const est = param ? `&est=${param}` : "";
-    return `${window.location.origin}${window.location.pathname}?insee=${encodeURIComponent(String(shownArea.c))}${est}`;
+    return `${window.location.origin}/?insee=${encodeURIComponent(String(shownArea.c))}${est}`;
   },
   publicOnly: panel.mode.publicOnly,
 });
@@ -1159,7 +1169,7 @@ const sheetOptions = () => {
       const param = estimateParam(meta, panel.mode.est);
       const est = param ? `&est=${param}` : "";
       const cam = encodeURIComponent(String(shown.id));
-      return `${window.location.origin}${window.location.pathname}?cam=${cam}${est}#18.00/${lat.toFixed(6)}/${lng.toFixed(6)}`;
+      return `${window.location.origin}/?cam=${cam}${est}#18.00/${lat.toFixed(6)}/${lng.toFixed(6)}`;
     },
     onGrab: () => sheetPanel.step(),
     onBack: () => {
@@ -1271,4 +1281,6 @@ declare global {
 }
 window.__map = map;
 if (prefetchWanted()) prefetch.install(map);
+// The register over the map, its doors and its addresses (registre/hote.ts).
+brancherRegistre(map);
 window.__palette = palette;

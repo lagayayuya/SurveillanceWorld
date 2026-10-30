@@ -96,10 +96,11 @@ test("the punk entry imports every file of its folder once, tokens first, and no
 
 const varsRead = (css: string) => new Set([...css.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]));
 // Set by the code at run time (main.ts, bottomsheet.ts, review/camera.ts, machine.ts), with a
-// fallback.
-const RUNTIME = new Set(["--attrib-h", "--sheet-covered", "--foot-h", "--machine-top", "--ticket-bottom", "--digit"]);
+// fallback; the register's --c and --tc are a type's colour, a --type-* token (registre/types.ts),
+// given by its markup.
+const RUNTIME = new Set(["--attrib-h", "--sheet-covered", "--foot-h", "--machine-top", "--ticket-bottom", "--digit", "--c", "--tc"]);
 
-// The register (registre.html) reads the punk tokens too: its stylesheet, its templates' inline
+// The register (over the map, registre/modale.ts) reads the punk tokens too: its stylesheet, its templates' inline
 // styles (the mockups' markup) and its views' code (a style computed in TypeScript).
 const REGISTRE = readdirSync(new URL("../src/registre/", import.meta.url), { recursive: true })
   .map(String)

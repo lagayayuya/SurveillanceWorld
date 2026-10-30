@@ -66,12 +66,13 @@ ${GATE_ACCOUNTS}
 	header @review Content-Security-Policy "${REVIEW_CSP}"
 	rewrite @review /revue.html
 
-	# The register: one page for every /registre path (registre.html and its own router), its data
-	# under /data/registre/. A strict Content-Security-Policy (both modes): no inline script or
-	# style at all, its template engine builds the DOM itself (web/src/registre/dc.ts).
-	@registre path /registre /registre/* /registre.html
+	# The register: every /registre path is the map's page, the register opening over the map
+	# (web/src/registre/hote.ts), its data under /data/registre/. A strict Content-Security-Policy
+	# (both modes): no inline script or style at all, the page's pre-paints are files of their own
+	# and the register's template engine builds the DOM itself (web/src/registre/dc.ts).
+	@registre path /registre /registre/*
 	header @registre Content-Security-Policy "${REGISTRE_CSP}"
-	rewrite @registre /registre.html
+	rewrite @registre /index.html
 
 	# PMTiles are read with HTTP Range requests (file_server answers 206): they must be sent
 	# as stored, never re-encoded. Everything else may be compressed.
@@ -84,7 +85,7 @@ ${GATE_ACCOUNTS}
 	header @assets Cache-Control "private, max-age=31536000, immutable"
 	# The pages and the build's small files are asked again each time (a 304 while
 	# unchanged): a deploy shows at once, and a page never names scripts a deploy removed.
-	@fresh path / /index.html /revue /revue.html /revue-prepaint.js /tiles/*.json /registre /registre/* /registre.html /registre-prepaint.js /data/registre/*
+	@fresh path / /index.html /revue /revue.html /revue-prepaint.js /tiles/*.json /carte-prepaint.js /carte-chargement.js /registre /registre/* /data/registre/*
 	header @fresh Cache-Control "no-cache"
 
 	file_server

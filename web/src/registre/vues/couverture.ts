@@ -9,7 +9,7 @@ import type { Couverture, Dico, NonLu } from "../donnees.ts";
 import { load } from "../donnees.ts";
 import { fr, longDate, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import { capital } from "../texte.ts";
 import { Vue } from "../vue.ts";
 import template from "./couverture.html?raw";

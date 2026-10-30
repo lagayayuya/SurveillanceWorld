@@ -8,7 +8,7 @@ import type { Handler } from "../dc.ts";
 import { Absent, load } from "../donnees.ts";
 import { shortDate } from "../format.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { HASH, ouvrir, signaler } from "../signaler.ts";
 import { type BaseState, Vue } from "../vue.ts";

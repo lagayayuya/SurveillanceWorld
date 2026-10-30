@@ -30,7 +30,7 @@ import type { Rich } from "../dc.ts";
 import { EI, load } from "../donnees.ts";
 import { count, fr, money } from "../format.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { plain } from "../texte.ts";

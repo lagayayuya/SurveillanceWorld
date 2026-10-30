@@ -2,7 +2,7 @@
 // donnees() throws Absent). No mockup draws it: the kit's title and lead.
 
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import { Vue } from "../vue.ts";
 import template from "./introuvable.html?raw";
 

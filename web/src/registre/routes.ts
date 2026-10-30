@@ -1,4 +1,4 @@
-// The register's paths (one page, registre.html, served for every /registre/… path by Caddy):
+// The register's paths (the map's page, served for every /registre/… path by Caddy, the register over it):
 // /registre/, /registre/chiffres, /registre/couverture, /registre/glossaire, /registre/commune/<insee>,
 // …/documents, …/autorisations[/<dossier>], …/carte[?mois=YYYY-MM], /registre/contrat/<affaire>,
 // /registre/entreprise/<siren>, /registre/acheteur/<siren>, /registre/departement/<code>. Anything else

@@ -55,10 +55,11 @@ REVIEW_CSP = (
     " form-action 'self'"
 )
 REVIEW_PAGES = ("/revue", "/revue.html")
-# The register's Content-Security-Policy (both modes, every /registre path): stricter than the
-# review's, no inline style at all (its template engine builds the DOM itself and sets styles
+# The register's Content-Security-Policy (both modes, every /registre path: the map's page, the
+# register over the map): stricter than the review's, no inline script or style at all (the page's
+# pre-paints are files, the register's template engine builds the DOM itself and sets styles
 # through the CSSOM, web/src/registre/dc.ts), its own scripts, styles, fonts and data; images and
-# workers from data: and blob: too (its tilted map); no plugin, no <base>, never framed.
+# workers from data: and blob: too (the map); no plugin, no <base>, never framed.
 REGISTRE_CSP = (
     "default-src 'self'; script-src 'self'; style-src 'self';"
     " img-src 'self' data: blob:; font-src 'self'; connect-src 'self';"
@@ -68,9 +69,9 @@ REGISTRE_CSP = (
 
 
 def registre_page(path: str) -> bool:
-    """A path the register's page answers (registre.html, served for /registre and below)."""
+    """A register path (the map's page, served for /registre and below)."""
     p = urlsplit(path).path
-    return p in ("/registre", "/registre.html") or p.startswith("/registre/")
+    return p == "/registre" or p.startswith("/registre/")
 
 
 # The gate's basic-auth users (not the API's accounts, which sign in with a session).

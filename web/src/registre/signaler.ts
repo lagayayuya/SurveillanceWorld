@@ -1,7 +1,7 @@
 // « Signaler une erreur »: no one reviews the register, so a reader's report is its correction
 // (DECISIONS 2026-10-28). A document's panel and its record link to the record's form
 // (/registre/contrat/<affaire>?doc=<id>#signaler: a page of its own without the script); a click
-// opens the form in a dialog over the page instead, built node by node (.modal of registre.css),
+// opens the form in a dialog over the page instead, built node by node (.dialogue of registre.css),
 // every word from the catalogue. It posts to the API (POST /api/registre/signalement,
 // pipeline/lacarte/api/registre.py): what is wrong, the correction, an optional source and an
 // optional contact; no account. A reviewer accepts or refuses it in /revue; an accepted one is
@@ -130,7 +130,7 @@ function champ(id: string, label: string, input: HTMLElement, hint?: string): HT
 
 export function ouvrir(evenement: string, affaire: string): void {
   const opener = document.activeElement as HTMLElement | null;
-  const m = el("div", { className: "modal" });
+  const m = el("div", { className: "dialogue" });
   const box = el("div", { className: "box signaler" });
   box.setAttribute("role", "dialog");
   box.setAttribute("aria-modal", "true");

@@ -361,7 +361,7 @@
   --welcome-letter: #b8005f;
   --welcome-link-line: #b8005f;
 
-  /* The register (registre.html, lot R1a), from its kit (the mockups' kit-grand-ecran): the
+  /* The register (over the map, lot R1a), from its kit (the mockups' kit-grand-ecran): the
      five document badges' fills and inks (contract on the ink, tender notice in gold,
      authorisation in blue, subsidy in green), the drones' blue on the map and in the frieze,
      the tables' rules and the soft fill of a selected or striped row. The kit's other colours
@@ -386,6 +386,12 @@
   --type-entreprise: #c9b8ff;
   --type-document: #7fd4ff;
   --type-registre: #ff48b0;
+  /* The register v2's kit (design/registre/v2): a link's wavy underline, a ticket's and a
+     title's offset shadow, the cut-out letters' serif. */
+  --reg-link-line: #b8005f;
+  --reg-shadow-ticket: #111111;
+  --reg-shadow-title: #ff48b0;
+  --reg-serif: #c2006b;
 }
 
 :root[data-ui="punk"][data-mode="dark"] {
@@ -644,4 +650,8 @@
   --type-entreprise: #c9b8ff;
   --type-document: #7fd4ff;
   --type-registre: #ff48b0;
+  --reg-link-line: #7fd4ff;
+  --reg-shadow-ticket: #7fd4ff;
+  --reg-shadow-title: #7fd4ff;
+  --reg-serif: #ff7cc6;
 }

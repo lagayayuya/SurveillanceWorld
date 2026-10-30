@@ -8,7 +8,7 @@ import { type RichItem, richText } from "../dc.ts";
 import { Absent, load } from "../donnees.ts";
 import { fr, money, moneyFull, shortDate, shortMonth } from "../format.ts";
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { type BaseState, type Col, Vue } from "../vue.ts";
 import template from "./acheteur.html?raw";

@@ -34,7 +34,7 @@ import {
   shortMonth,
 } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { calm, capital, proper, sentence } from "../texte.ts";

@@ -1,0 +1,1287 @@
+/* The register v2's kit (design/registre/v2/maquettes, every board's own <style>, which agree rule
+   for rule): the frame over the map, the type's stickers and minis, the cut-out name, the tickets,
+   the band, the sections, the links coloured by their target, the list's rail, the phone's sheet,
+   Carte et drones' side panel. Taken as the boards write them, scoped under the register's root
+   (.rg) so that nothing reaches the map; the boards' colour names are the site's tokens (their
+   --bg2 is --bg-2, --link is --blue, --linkline, --shticket, --shtitle and --serif are the
+   --reg-* tokens, theme/punk/tokens.css); their .th.dark is the page's dark mode. Each type's
+   colour --c (and the frame's --tc) is a --type-* token, given by the markup (registre/types.ts).
+   After the R1 kit (registre.css): where both name a rule, the v2 boards' wins. What the site adds
+   to the boards closes the file. */
+
+/* --- every board --- */
+.rg .th a {
+  color: var(--blue);
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: var(--reg-link-line);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+.rg .tw {
+  font-family: "Special Elite", "Courier New", monospace;
+}
+.rg .sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+.rg .modal {
+  position: absolute;
+  left: 56px;
+  right: 56px;
+  top: 24px;
+  bottom: 24px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  box-shadow: 8px 8px 0 var(--tc);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rg .mtop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 54px;
+  padding: 0 10px 0 12px;
+  background: #111111;
+  color: #f2efe6;
+  flex: none;
+}
+.rg .th .mtop a {
+  color: #f2efe6;
+}
+.rg .mback {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 2px solid #f2efe6;
+  font:
+    800 14px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none !important;
+  box-shadow: 3px 3px 0 #ff48b0;
+  white-space: nowrap;
+}
+.rg .crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+  font:
+    600 14px / 1.2 Archivo,
+    sans-serif;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.rg .th .crumb {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: #f2efe6;
+}
+.rg .crumbs .sep {
+  color: #8a8591;
+}
+.rg .crumbs .here {
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rg .msearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 300px;
+  height: 38px;
+  padding: 0 10px;
+  background: #f2efe6;
+  color: #111;
+  border: 2px solid #f2efe6;
+}
+.rg .msearch input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  font:
+    500 14px Archivo,
+    sans-serif;
+  color: #111;
+  outline-offset: 3px;
+}
+.rg .sq {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f2efe6;
+  color: #111 !important;
+  border: 0;
+  box-shadow: 3px 3px 0 #7fd4ff;
+  cursor: pointer;
+  text-decoration: none !important;
+  font:
+    900 18px Archivo,
+    sans-serif;
+  flex: none;
+}
+.rg .scroll {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  scroll-behavior: smooth;
+}
+.rg .inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 26px 34px 70px;
+}
+.rg .stk {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 7px;
+  border: 2px solid #111;
+  background: var(--c);
+  color: #111;
+  font:
+    800 14px / 1.05 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 2px 2px 0 #111;
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+.rg .stk svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.rg .stk.big {
+  font-size: 17px;
+  padding: 6px 14px 6px 9px;
+  box-shadow: 3px 3px 0 #111;
+}
+.rg .stk.big svg {
+  width: 24px;
+  height: 24px;
+}
+.rg .mini {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;
+  height: 19px;
+  border: 1.5px solid #111;
+  background: var(--c);
+  color: #111;
+  flex: none;
+  margin-right: 6px;
+  box-sizing: border-box;
+}
+.rg .mini svg {
+  width: 13px;
+  height: 13px;
+}
+.rg .chip {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+}
+.rg .cutout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 2px;
+  margin: 14px 0 10px;
+}
+.rg .cut {
+  display: inline-flex;
+  padding: 2px 5px 1px;
+}
+.rg .cut.c0 {
+  background: #111;
+  color: #f2efe6;
+  font:
+    800 52px / 1 Archivo,
+    sans-serif;
+  font-stretch: 62%;
+}
+.rg .cut.c1 {
+  background: #ff48b0;
+  color: #111;
+  font:
+    900 43px / 1 Archivo,
+    sans-serif;
+  font-stretch: 125%;
+}
+.rg .cut.c2 {
+  background: #7fd4ff;
+  color: #111;
+  font:
+    400 46px / 1 "Special Elite",
+    monospace;
+}
+.rg .cut.c3 {
+  border: 1.5px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+  font:
+    800 48px / 1 Archivo,
+    sans-serif;
+  font-stretch: 100%;
+}
+.rg .cut.c4 {
+  color: var(--reg-serif);
+  font:
+    italic 700 52px / 1 Georgia,
+    serif;
+}
+.rg .gap {
+  width: 14px;
+}
+.rg .cutout.s .cut.c0 {
+  font-size: 30px;
+}
+.rg .cutout.s .cut.c1 {
+  font-size: 25px;
+}
+.rg .cutout.s .cut.c2 {
+  font-size: 27px;
+}
+.rg .cutout.s .cut.c3 {
+  font-size: 28px;
+}
+.rg .cutout.s .cut.c4 {
+  font-size: 30px;
+}
+.rg .cutout.s .gap {
+  width: 8px;
+}
+.rg .idline {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.rg .lead {
+  margin: 14px 0 0;
+  max-width: 820px;
+  font:
+    500 20px / 1.4 Archivo,
+    sans-serif;
+}
+.rg .tickets {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.rg .ticket {
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  padding: 10px 14px 12px;
+}
+.rg .ticket .v {
+  font:
+    900 38px / 1 Archivo,
+    sans-serif;
+  font-stretch: 62%;
+  text-shadow: 1.5px 1px 0 var(--reg-shadow-title);
+}
+.rg .ticket .l {
+  font-family: "Special Elite", monospace;
+  font-size: 13.5px;
+  margin-top: 4px;
+}
+.rg .money {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  color: var(--muted);
+}
+.rg .band {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  padding: 0 34px;
+  background: var(--c);
+  color: #111;
+  border-top: 2px solid #111;
+  border-bottom: 2px solid #111;
+}
+.rg .band .bico {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font:
+    800 13px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 4px 8px;
+  background: #111;
+  color: var(--c);
+  flex: none;
+}
+.rg .band .bico svg {
+  width: 18px;
+  height: 18px;
+}
+.rg .band .bname {
+  font:
+    900 21px / 1 Archivo,
+    sans-serif;
+  font-stretch: 66%;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 330px;
+}
+.rg .band nav {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.rg .th .band nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 12px;
+  background: #f2efe6;
+  color: #111;
+  border: 2px solid #111;
+  font:
+    800 13px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  box-shadow: 2px 2px 0 #111;
+}
+.rg .th .band nav a[aria-current="true"] {
+  background: #111;
+  color: #f2efe6;
+  box-shadow: none;
+}
+.rg .sec {
+  padding-top: 46px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rg .h2 {
+  margin: 0;
+  font:
+    900 30px / 1 Archivo,
+    sans-serif;
+  font-stretch: 66%;
+  text-transform: uppercase;
+}
+.rg .h2 .num {
+  font-family: "Special Elite", monospace;
+  font-size: 15px;
+  font-weight: 400;
+  text-transform: none;
+  color: var(--muted);
+  margin-right: 10px;
+  vertical-align: 4px;
+}
+.rg .h3 {
+  margin: 0;
+  font:
+    900 19px / 1.1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+.rg .sober {
+  font:
+    400 15.5px / 1.45 Archivo,
+    sans-serif;
+}
+.rg table.t {
+  width: 100%;
+  border-collapse: collapse;
+  font:
+    400 15px / 1.35 Archivo,
+    sans-serif;
+}
+.rg table.t th {
+  text-align: left;
+  font:
+    800 12.5px / 1 Archivo,
+    sans-serif;
+  font-stretch: 80%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0;
+  border-bottom: 2px solid var(--line);
+}
+.rg table.t th button {
+  all: unset;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 0 8px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.rg table.t th.num button {
+  justify-content: flex-end;
+}
+.rg table.t td {
+  padding: 9px 8px;
+  border-bottom: 1px solid var(--rule);
+  vertical-align: top;
+}
+.rg table.t td.num {
+  text-align: right;
+  white-space: nowrap;
+}
+.rg table.t tr.r {
+  cursor: pointer;
+}
+.rg table.t tr.r:hover td,
+.rg table.t tr.r.on td {
+  background: var(--soft);
+}
+.rg .th a.rl {
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 700;
+}
+.rg .th a.rl:hover {
+  text-decoration: underline wavy var(--reg-link-line);
+}
+.rg .panel {
+  position: sticky;
+  top: 70px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 250px;
+  box-sizing: border-box;
+}
+.rg .prow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--rule);
+  font:
+    400 15px Archivo,
+    sans-serif;
+}
+.rg .prow span {
+  color: var(--muted);
+}
+.rg .ibtn {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.rg .ibtn span {
+  width: 21px;
+  height: 21px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font:
+    900 13px Archivo,
+    sans-serif;
+}
+.rg .note {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1.5px dashed var(--line);
+  font-size: 13.5px;
+}
+.rg .key {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  font:
+    800 13px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rg .key[aria-pressed="true"] {
+  background: #ff48b0;
+  color: #111;
+  border-color: #111;
+  box-shadow: 1px 1px 0 #111;
+}
+.rg .more {
+  all: unset;
+  cursor: pointer;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 16px;
+  background: #111;
+  color: #7fd4ff;
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 #ff48b0;
+  font:
+    800 14px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+[data-mode="dark"] .rg .more {
+  background: #7fd4ff;
+  color: #111;
+  border-color: #7fd4ff;
+}
+.rg .strip {
+  height: 58px;
+  box-sizing: border-box;
+  padding: 8px 14px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+  font:
+    400 14.5px / 1.35 Archivo,
+    sans-serif;
+}
+.rg .th a.lk {
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 700;
+  border-bottom: 3px solid var(--c);
+  padding-bottom: 1px;
+  display: inline-flex;
+  align-items: center;
+}
+.rg .th a.lk:hover {
+  background: var(--c);
+  color: #111;
+}
+.rg .th a.lk .mini {
+  margin-right: 5px;
+}
+.rg .strip b,
+.rg .strip span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- V2-Entreprise, V2-Tel-Entreprise (the fiche) --- */
+.rg .grid2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  gap: 30px;
+  align-items: start;
+}
+.rg .yb {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 190px;
+  border-bottom: 2px solid var(--line);
+}
+.rg .yb button {
+  all: unset;
+  cursor: pointer;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  height: 100%;
+}
+.rg .yb button span.b {
+  display: block;
+  width: 100%;
+  border: 2px solid #111;
+  box-sizing: border-box;
+}
+.rg .yb button[aria-pressed="true"] span.b {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .yb .n {
+  font:
+    900 18px / 1 Archivo,
+    sans-serif;
+  font-stretch: 66%;
+}
+.rg .yl {
+  display: flex;
+  gap: 10px;
+}
+.rg .yl span {
+  flex: 1;
+  text-align: center;
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .yl span em {
+  display: block;
+  font-style: normal;
+  font-family: Archivo, sans-serif;
+  font-size: 12px;
+  color: var(--muted);
+}
+.rg .drow {
+  display: grid;
+  grid-template-columns: 24px 120px minmax(0, 1fr) 110px 80px;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  font-size: 15px;
+}
+.rg .drow:hover,
+.rg .drow.on {
+  background: var(--soft);
+}
+.rg .drow .a {
+  text-align: right;
+  font-weight: 700;
+}
+.rg .drow .m {
+  text-align: right;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.rg .src {
+  display: grid;
+  grid-template-columns: 200px 1fr 170px;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14.5px;
+}
+.rg .src b {
+  font-weight: 800;
+}
+.rg .th .band .bshare,
+.rg .bshare {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  margin-left: 6px;
+  background: #111;
+  color: #c9b8ff;
+  border: 2px solid #111;
+  font:
+    800 13px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 2px 2px 0 #f2efe6;
+}
+.rg .bshare svg {
+  width: 16px;
+  height: 16px;
+}
+.rg .share {
+  position: absolute;
+  top: 140px;
+  right: 34px;
+  width: 520px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  box-shadow: 6px 6px 0 #ff48b0;
+  z-index: 20;
+  padding: 14px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+}
+.rg .sbtns {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* --- V2-Liste --- */
+.rg .rail {
+  width: 236px;
+  flex: none;
+  border-right: 2px solid var(--line);
+  background: var(--bg-2);
+  overflow: auto;
+  padding: 14px 10px 30px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rg .rf {
+  margin: 12px 6px 4px;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .rf:first-child {
+  margin-top: 0;
+}
+.rg .th a.ri {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 8px;
+  color: var(--fg);
+  text-decoration: none;
+  font:
+    600 14.5px / 1.1 Archivo,
+    sans-serif;
+  border: 2px solid transparent;
+}
+.rg .th a.ri em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 800;
+  font-stretch: 70%;
+  font-size: 15px;
+}
+.rg .th a.ri:hover {
+  border-color: var(--line);
+}
+.rg .th a.ri.on {
+  background: var(--c);
+  color: #111;
+  border-color: #111;
+  box-shadow: 3px 3px 0 #111;
+}
+.rg .th a.ri.on .mini {
+  background: #111;
+  color: var(--c);
+  border-color: #111;
+}
+.rg .tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 10px;
+  margin-top: 16px;
+}
+.rg .tools .lbl {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+  margin-right: 2px;
+}
+.rg .filt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  width: 300px;
+  box-sizing: border-box;
+}
+.rg .filt input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    500 15px Archivo,
+    sans-serif;
+}
+.rg .key.s {
+  min-height: 32px;
+  padding: 0 9px;
+  font-size: 12px;
+  box-shadow: 2px 2px 0 var(--reg-shadow-ticket);
+}
+.rg .key .n {
+  font-weight: 400;
+  opacity: 0.75;
+}
+.rg td.rk {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+  width: 30px;
+}
+.rg td .naf {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.rg .deps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.rg .deps span {
+  font:
+    600 11.5px / 1 Archivo,
+    sans-serif;
+  padding: 3px 4px;
+  border: 1px solid var(--rule);
+}
+.rg .deps span.on {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+/* --- V2-Tel-Sommaire, V2-Tel-Entreprise (the phone) --- */
+.rg .sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 2px solid var(--line);
+  box-shadow: 0 -6px 0 var(--tc);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rg .handle {
+  display: flex;
+  justify-content: center;
+  padding: 7px 0 3px;
+  flex: none;
+}
+.rg .handle span {
+  width: 46px;
+  height: 5px;
+  background: var(--fg);
+}
+.rg .ttop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 10px 8px 12px;
+  flex: none;
+  border-bottom: 2px solid var(--line);
+}
+.rg .ttop .crumbs {
+  color: var(--fg);
+  font-size: 14px;
+}
+.rg .th .ttop a.crumb {
+  color: var(--fg);
+}
+.rg .ttop .sq {
+  width: 38px;
+  height: 38px;
+  background: var(--bg-2);
+  color: var(--fg) !important;
+  border: 2px solid var(--line);
+  box-shadow: 2px 2px 0 var(--reg-shadow-ticket);
+}
+.rg .tin {
+  padding: 14px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.rg .tfam {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+}
+.rg .trow {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  border-bottom: 1px solid var(--rule);
+  font-weight: 700;
+  font-size: 15px;
+}
+.rg .trow b {
+  margin-left: auto;
+  font:
+    900 19px / 1 Archivo,
+    sans-serif;
+  font-stretch: 62%;
+  margin-right: 6px;
+}
+.rg .tband {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--c);
+  border-top: 2px solid #111;
+  border-bottom: 2px solid #111;
+  display: flex;
+  flex-direction: column;
+  flex: none;
+}
+.rg .tband .t1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  color: #111;
+}
+.rg .tband .t1 .bico {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font:
+    800 11.5px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 6px;
+  background: #111;
+  color: var(--c);
+}
+.rg .tband .t1 .bico svg {
+  width: 15px;
+  height: 15px;
+}
+.rg .tband .t1 b {
+  font:
+    900 17px / 1 Archivo,
+    sans-serif;
+  font-stretch: 66%;
+  text-transform: uppercase;
+}
+.rg .tband nav {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 0 12px 8px;
+  scrollbar-width: none;
+}
+.rg .th .tband nav a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 10px;
+  background: #f2efe6;
+  color: #111;
+  border: 2px solid #111;
+  font:
+    800 12px / 1 Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.rg .th .tband nav a[aria-current="true"] {
+  background: #111;
+  color: #f2efe6;
+}
+.rg .tickets.t2 {
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 0;
+}
+.rg .tickets.t2 .ticket .v {
+  font-size: 30px;
+}
+.rg .yb.t {
+  height: 120px;
+  gap: 5px;
+}
+.rg .yb.t .n {
+  font-size: 15px;
+}
+.rg .yl.t {
+  gap: 5px;
+}
+.rg .yl.t span {
+  font-size: 10.5px;
+}
+.rg .yl.t span em {
+  display: none;
+}
+.rg .crow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14.5px;
+  cursor: pointer;
+}
+.rg .crow .r {
+  margin-left: auto;
+  text-align: right;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rg .crow .r b {
+  display: block;
+  color: var(--fg);
+  font-size: 14px;
+}
+.rg .drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-2);
+  border-top: 2px solid var(--line);
+  box-shadow: 0 -5px 0 #c9b8ff;
+  padding: 10px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 6;
+}
+
+/* --- V2-CarteDrones --- */
+.rg .side {
+  position: absolute;
+  right: 24px;
+  top: 24px;
+  bottom: 24px;
+  width: 470px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  box-shadow: 8px 8px 0 var(--tc);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.rg .side .band {
+  padding: 0 14px;
+  height: 48px;
+}
+.rg .side .band .bname {
+  max-width: 150px;
+}
+.rg .frise {
+  position: absolute;
+  left: 24px;
+  bottom: 24px;
+  width: 898px;
+  height: 184px;
+  background: var(--bg);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--reg-shadow-ticket);
+  box-sizing: border-box;
+  padding: 10px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rg .maptag {
+  position: absolute;
+  left: 24px;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.rg .leg {
+  background: var(--bg);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  padding: 8px 12px;
+  font:
+    400 13px / 1.5 Archivo,
+    sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 340px;
+}
+.rg .leg i {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 7px;
+}
+.rg .ctl {
+  position: absolute;
+  left: 858px;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rg .ctl .sq {
+  width: 44px;
+  height: 44px;
+  font-size: 14px;
+  box-shadow: 3px 3px 0 #111;
+  border: 2px solid #111;
+}
+.rg .ctl .sq[aria-pressed="true"] {
+  background: #111;
+  color: #ffe800 !important;
+  box-shadow: 3px 3px 0 #ffe800;
+}
+.rg .zrow {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 62px;
+  gap: 8px;
+  align-items: center;
+  min-height: 38px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.rg .zrow:hover,
+.rg .zrow.on {
+  background: var(--soft);
+}
+.rg .zrow .m {
+  font-size: 12px;
+  color: var(--muted);
+  display: block;
+}
+.rg .zrow .h {
+  text-align: right;
+  font-weight: 700;
+}
+.rg .mt {
+  all: unset;
+  cursor: pointer;
+  font:
+    400 12px "Special Elite",
+    monospace;
+  padding: 2px 4px;
+}
+.rg .mt[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .minit {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.rg .minit .ticket {
+  padding: 8px 10px;
+}
+.rg .minit .ticket .v {
+  font-size: 30px;
+}
+.rg .minit .ticket .l {
+  font-size: 12.5px;
+}
+.rg .vol {
+  cursor: pointer;
+}
+.rg .vlab {
+  font:
+    800 13px Archivo,
+    sans-serif;
+  fill: #111;
+  paint-order: stroke;
+  stroke: #ffe800;
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+/* --- what the site adds to the boards --- */
+/* The boards draw the frame in a page of their own size; here the page is the map's: the frame is
+   fixed over it, above its panels (z 40) and under the welcome and the legal pages (60, 61). */
+.rg[hidden] {
+  display: none;
+}
+.rg .th {
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+.rg > .th > .modal,
+.rg > .th > .sheet {
+  position: fixed;
+  z-index: 50;
+}
+.rg > .th > .sheet {
+  transition: top var(--dur-sheet, 0.22s) ease-out;
+}
+.rg > .th > .sheet.tire {
+  transition: none;
+}
+.rg .handle {
+  touch-action: none;
+  cursor: grab;
+}
+.rg .ttop .flex {
+  flex: 1;
+}
+.rg .msearch {
+  margin: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rg > .th > .sheet {
+    transition: none;
+  }
+}

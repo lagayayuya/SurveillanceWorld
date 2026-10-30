@@ -138,7 +138,9 @@ export function pass(view, html) {
   return { html: out, keys, formats };
 }
 
-const CSS_HEAD = `/* The register (registre.html): its kit, the wide mockups' « socle » (their kit-grand-ecran, § 1), as the
+// The register v2 scopes every rule of registre.css under .rg (registre/modale.ts): a stylesheet made
+// again here would have to be scoped the same way before it replaces it.
+const CSS_HEAD = `/* The register (over the map, registre/modale.ts): its kit, the wide mockups' « socle » (their kit-grand-ecran, § 1), as the
    mockups write it, then each view's own rules scoped by its class (.v-<name>), then what the site adds:
    the fluid column under 1280 px, the map's frame, the dialogs, the phone (under 960 px, one column, a fixed
    band for the panel, rows that unfold) and the accessibility fixes. Made by scripts/gabarits.mjs --css from

@@ -4,7 +4,7 @@
 // /registre/glossaire#g-accord-cadre) shows its word marked; the page's router scrolls to it.
 
 import { t } from "../i18n.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import { type BaseState, Vue } from "../vue.ts";
 import template from "./glossaire.html?raw";
 import { ancre, filtrer, type Mot, mots } from "./glossaire-mots.ts";

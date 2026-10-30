@@ -2,7 +2,7 @@
 // vues/entreprise.js): its template, its data (the build's entreprise/<siren>.json) and its logic
 // (entreprise-outils.ts, where the tests read it).
 import { Absent, load } from "../donnees.ts";
-import type { VueModule } from "../main.ts";
+import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import template from "./entreprise.html?raw";
 import { Entreprise, type FichierEntreprise } from "./entreprise-outils.ts";

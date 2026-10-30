@@ -1,7 +1,7 @@
 // « Demander à la mairie / à la préfecture » (the v10 request dialog): a template of a request for
 // administrative documents (CRPA L.311-1), to copy and send oneself; nothing is sent from the site. Any
 // element of a view carrying data-demande (the object asked for), data-qui (« mairie » or « prefecture »)
-// and data-insee opens it. The dialog is built node by node (.modal of registre.css), every word from
+// and data-insee opens it. The dialog is built node by node (.dialogue of registre.css), every word from
 // the catalogue.
 
 import { commune } from "./commun.ts";
@@ -19,7 +19,7 @@ export function modele(objet: string, qui: string, nom: string, dep: string): st
 function ouvrir(objet: string, qui: string, nom: string, dep: string): void {
   const opener = document.activeElement as HTMLElement | null;
   const m = document.createElement("div");
-  m.className = "modal";
+  m.className = "dialogue";
   const box = document.createElement("div");
   box.className = "box";
   box.setAttribute("role", "dialog");
