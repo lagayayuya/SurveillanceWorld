@@ -403,7 +403,8 @@ if (machineKit && cameraList)
       byId("fab-filters") as HTMLButtonElement,
       panel,
       cameraList,
-      [account?.square, welcome?.square, porteRegistre()].filter((x) => x !== undefined),
+      [account?.square, welcome?.square].filter((x) => x !== undefined),
+      [porteRegistre()],
     ),
   );
 // A legal page's address opens it in place of the welcome of a first visit.

@@ -7,7 +7,6 @@
 import type { Map as MlMap } from "maplibre-gl";
 import { t } from "../i18n.ts";
 import { isAside, lastMapAddress, mapAddress, setAside, takeBack } from "../url.ts";
-import { icone } from "./types.ts";
 
 export const REGISTRE = /^\/registre(\/|$)/;
 
@@ -93,23 +92,15 @@ function clic(ev: MouseEvent): void {
 }
 
 // --- the doors on the map ------------------------------------------------------------------------
-const SVG = "http://www.w3.org/2000/svg";
-
-/** « Le registre », a square under the map's ticket, after the mode's, the account's and the « ? »
- * (theme/punk/map.css .ticket-square): the register's summary over the map. */
+/** « Le registre → », a link of the map's ticket under « Filtres et légende », in its face (17a's
+ * links, theme/punk/map.css .ticket-link; the ticket's row of squares has no room for a fifth):
+ * the register's summary over the map. */
 export function porteRegistre(): HTMLAnchorElement {
   const a = document.createElement("a");
-  a.className = "ticket-square registre-square";
+  a.className = "ticket-link registre-link";
   a.href = "/registre/";
-  a.setAttribute("aria-label", t("door.registre"));
-  const svg = document.createElementNS(SVG, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("class", "account-icon");
-  svg.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS(SVG, "path");
-  path.setAttribute("d", icone("registre"));
-  svg.append(path);
-  a.append(svg);
+  a.title = t("door.registre");
+  a.append(t("door.registre_court"));
   return a;
 }
 

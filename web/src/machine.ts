@@ -222,6 +222,8 @@ export class Machine {
     private list: CameraList,
     /** The squares after the mode's under the ticket's link (25a: the account's). */
     private squares: HTMLElement[] = [],
+    /** More links under « Filtres et légende », in its face (the register's door). */
+    private liens: HTMLElement[] = [],
   ) {
     this.ticket = this.buildTicket();
     this.panel.before(this.ticket);
@@ -266,7 +268,8 @@ export class Machine {
     // further notice… »): its opener is not placed, the list's code stays (CameraList).
     // Under the link, 25a's squares: the mode's, then the account's (account/index.ts).
     const squares = h("div", { class: "ticket-squares" }, this.modeToggle(), ...this.squares);
-    const links = h("div", { class: "ticket-links" }, fab, squares);
+    for (const l of this.liens) l.append(icon("right"));
+    const links = h("div", { class: "ticket-links" }, fab, ...this.liens, squares);
     this.els.links = links;
     // The legend the ticket prints (20a « Légende ↑ »), with « Calcul ? ».
     const calcBtn = h(

@@ -955,7 +955,7 @@ DECISIONS 2026-10-28.
   map keeps its own address aside meanwhile (`url.ts`) and gets it back; a commune's page shows
   that commune on the map behind. Carte et drones asks for a panel instead (`panneau()`): the
   register on the right (about 470 px), the map live, no trap.
-- **The doors from the map** (`src/registre/hote.ts`): « Le registre », a square under the ticket;
+- **The doors from the map** (`src/registre/hote.ts`): « Le registre → », a link of the ticket under « Filtres et légende » (17a's links; the row of squares has no room for a fifth);
   « Voir dans le registre » in a commune's or a département's sheet when the register holds its
   page. Every link to a register page, on the map or in the register, moves the page's history
   without reloading it.
@@ -1904,7 +1904,7 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-sheet` | The same on a phone: the sheet under 44 px of map (64 above the summary), its handle; « ‹ <up one step> », « Partager » on a fiche, the theme, ✕ | registre/modale.ts | V2-Tel-Sommaire, V2-Tel-Entreprise | the same at 390 px | — | yes |
 | `reg2-sheet-low` | The handle touched or dragged: the sheet at half the screen, the map above; dragged far down: the register closes | registre/modale.ts | IMPROVISED (the boards draw the handle only) | any page at 390 px | — | yes |
 | `reg2-closed` | « ← Carte », ✕ or Escape: the map again at its own address, the focus where it was; the back button reopens the register | registre/hote.ts; url.ts | IMPROVISED | from the map, a door, then Escape | — | yes |
-| `reg2-doors` | « Le registre » under the ticket; « Voir dans le registre » in a commune's or a département's sheet when the register holds its page | registre/hote.ts; areapunk.ts; main.ts | IMPROVISED (the boards draw no door) | `/?insee=69283` | — | yes |
+| `reg2-doors` | « Le registre → » under « Filtres et légende » in the ticket; « Voir dans le registre » in a commune's or a département's sheet when the register holds its page | registre/hote.ts; areapunk.ts; main.ts | IMPROVISED (the boards draw no door) | `/?insee=69283` | — | yes |
 | `reg2-summary` | The summary: the cut-out title, the coverage and update line, the search, the four families with their counts (each a list), « Comment lire le registre », the update and the decrees not read | registre/vues/sommaire.ts | V2-Sommaire, V2-Tel-Sommaire | `/registre/` | — | yes |
 | `reg2-search` | Typed: the results grouped by type, each a typed link, « Les N → » to the list filtered by the same words | registre/vues/sommaire.ts; listes.ts | V2-Sommaire | `/registre/?q=mions` | — | yes |
 | `reg2-search-off` | Neither the API nor `recherche.json` answers: « recherche indisponible » and the départements' list | registre/vues/sommaire.ts | IMPROVISED | `recherche.json` blocked | — | yes |
@@ -2370,7 +2370,7 @@ rows above hold for the content of the fiches.
 |---|---|---|
 | The boards' classes `.cut`, `.drawer`, `.share` | `.rg-cut`, `.rg-drawer`, `.rg-share` | the map's own stylesheets give those names generic rules that reached the register |
 | A cut-out name broken at any letter | broken between its words only | the boards' names are short; a long one (a buyer's) broke inside a word at 390 px |
-| (no board) the doors from the map | « Le registre » under the ticket, « Voir dans le registre » in a sheet | the brief's doors; the map had none |
+| (no board) the doors from the map | « Le registre → », a link of the ticket in 17a's face, « Voir dans le registre » in a sheet | the brief's doors; the map had none |
 | (no board) a fiche of a commune, a buyer, a département, a document | V2-Entreprise's frame, their R1 content in the five sections | the brief: the content does not change, the frame does |
 | V2-Tel-Entreprise: no panel at rest | the same; a drawer once something is touched, with its ✕ | — (the board's own state, 08b) |
 | V2-Liste: no panel | « Voir l'arrêté » (or the source) and « Signaler une erreur » under a document listed, « Corrigé le » in its line | DECISIONS 2026-10-28 and 29 (where documents are listed) |
