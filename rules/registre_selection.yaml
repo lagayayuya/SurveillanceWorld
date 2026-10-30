@@ -86,6 +86,25 @@ paths:
   order: [mot_fort, cpv_coeur+mot, cpv_large+mot_faible, drone, cpv_coeur_seul]
   rationale: The strongest evidence names the contract's path (decp_select.py).
 
+# A contract published twice in the consolidated DECP (several sources, several uids): one
+# kept, the one with the most rows, then the longest objet, then the first uid.
+doublons_decp:
+  id: rule:registre_selection@1:doublons_decp
+  rationale: >-
+    « Doublon : même SIREN, date, montant et objet normalisé » (the exploration's dictionary,
+    dictionnaire.md § 2: 16 % of the contracts kept); the objet normalised without accent,
+    case or punctuation.
+# Contracts the registre does not show.
+exclus:
+  id: rule:registre_selection@1:exclus
+  rationale: >-
+    A CPV alone (cpv_coeur_seul) was relevant one time in two (sample_noise.csv): listed for
+    review, never shown, as in the pilot. And the publications a reader of the exploration
+    found to be another's copy (relecture.csv), each with its reason.
+  chemins: [cpv_coeur_seul]
+  uids:
+    "2169028330001320_32323500": double publication of Mions' contract 216902833000132020_32323500 (relecture.csv)
+
 # --- 2. The device a contract is about (dispositifs_decp.py) -------------------------------
 # Matched on the objet of the contract's latest row; the first device that matches, in this
 # order, wins; « videoprotection » when none does. Drones and algorithmic analysis need a

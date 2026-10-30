@@ -1,4 +1,6 @@
-"""`lacarte-registre importer-pilote [DIR]` reads the registre's pilot export (importer.py), DIR
+"""`lacarte-registre collecter [--source S] [--resume]` collects the national public procurement
+from its sources (collecter.py, the network through fetch.py only), under the machine's lock;
+`lacarte-registre importer-pilote [DIR]` reads the registre's pilot export (importer.py), DIR
 or LACARTE_REGISTRE_PILOTE; `lacarte-registre construire [--dsn DSN | --ssh HOST |
 --sans-corrections]` exports the corrections /revue accepted, then writes its site files, under
 the machine's lock (construire.py); `lacarte-registre verifier` says whether the built site may
@@ -19,12 +21,20 @@ import os
 from pathlib import Path
 
 import lacarte_registre as registre
-from lacarte_registre import construire, exporter, importer, regles
+from lacarte_registre import collecter, construire, exporter, fetch, importer, regles
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="lacarte-registre", description=__doc__.split("\n\n")[0])
     sub = parser.add_subparsers(dest="cmd", required=True)
+    col = sub.add_parser(
+        "collecter", help="collect the national public procurement (collecter.py), under the lock"
+    )
+    col.add_argument("--source", choices=collecter.SOURCES, action="append",
+                     help="one source (repeat for several; default: all, in order)")  # fmt: skip
+    col.add_argument("--resume", action="store_true", help="go on from where a run stopped")
+    col.add_argument("--departement", action="append",
+                     help="only these départements (a partial collection, for a test)")  # fmt: skip
     imp = sub.add_parser("importer-pilote", help="read the pilot export (importer.py)")
     imp.add_argument(
         "dir",
@@ -51,6 +61,17 @@ def main(argv: list[str] | None = None) -> None:
     where.add_argument("--dsn", help="a local database (libpq connection string)")
     where.add_argument("--ssh", help="the server, over ssh (default: DEPLOY_TARGET)")
     args = parser.parse_args(argv)
+    if args.cmd == "collecter":
+        try:
+            summary = collecter.main(
+                sources=tuple(args.source or collecter.SOURCES),
+                resume=args.resume,
+                departements=set(args.departement) if args.departement else None,
+            )
+        except (fetch.NoContact, fetch.Blocked, fetch.Forbidden, fetch.Failed) as e:
+            parser.exit(2, f"lacarte-registre collecter: {e}\n")
+        print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
     if args.cmd == "construire":
         ssh = None if args.dsn else (args.ssh or os.environ.get("DEPLOY_TARGET"))
         try:

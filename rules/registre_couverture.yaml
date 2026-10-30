@@ -15,12 +15,14 @@ sources:
   - source: contrats
     id: rule:registre_couverture@1:source_contrats
     types: [attribution, modification]
+    national: decp
     rationale: >-
       Contracts and their modifications: the public procurement data (DECP, data.gouv.fr),
       all of France for the pilot's buyers.
   - source: avis
     id: rule:registre_couverture@1:source_avis
     types: [avis, resultat, rectificatif]
+    national: boamp
     rationale: >-
       Calls for tenders, their results and corrections: the BOAMP (DILA).
   - source: subventions_region_idf

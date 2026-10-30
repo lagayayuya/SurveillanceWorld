@@ -7,7 +7,10 @@ database it stops, unless --sans-corrections: then it ignores any older export a
 (data/registre/construction.json, not served) says so, and `lacarte-registre verifier`, which
 the deploy runs, refuses to send it.
 
-Reads data/registre/pilote/ (importer.py), rules/registre_corrections.yaml then that export,
+Reads data/registre/pilote/ (importer.py) and, when collected, data/registre/national/
+(`lacarte-registre collecter`: the DECP, the BOAMP, SIRENE and the communes of France,
+assembled by national.py and merged with the pilot by fusion.py: a document in both is the
+national one), rules/registre_corrections.yaml then that export,
 and rules/registre_couverture.yaml; flags every document (regles.py), measures the coverage
 (couverture.py) and writes each page's file (fermetures.py) and the commune maps' layers into
 data/registre/site/, served
@@ -27,7 +30,15 @@ from typing import Any
 
 import lacarte_registre as registre
 from lacarte import lock
-from lacarte_registre import couverture, exporter, fermetures, regles, sortie
+from lacarte_registre import (
+    couverture,
+    exporter,
+    fermetures,
+    fusion,
+    national,
+    regles,
+    sortie,
+)
 
 MARK = "construction.json"
 
@@ -44,12 +55,17 @@ def run(
     root = root or registre.ROOT
     rules = rules or registre.RULES
     pilote = regles.charger(root / "pilote")
+    nat = None
+    if (root / "national" / "decp.jsonl.gz").is_file():
+        # the national public procurement (lacarte-registre collecter), merged first
+        nat = national.assembler(root)
+        pilote, merged = fusion.fusionner(pilote, nat)
     export = root / exporter.FILE
     corr = regles.corrections(rules / "registre_corrections.yaml",
                               *([export] if accepted and export.is_file() else []))  # fmt: skip
     reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
-    cov = couverture.build(reg, conf)
+    cov = couverture.build(reg, conf, nat["sources"] if nat else None)
     maps = sorted((root / "pilote" / "carte").glob("*.json"))
     ctx = fermetures.Context(
         reg, cov, couverture.pilot_departements(conf), frozenset(m.stem for m in maps)
@@ -70,6 +86,8 @@ def run(
 
     sortie.replace_dir(root / "site", write)
     summary["documents"] = len(reg.evenements)
+    if nat:
+        summary["fusion"] = merged
     summary["non_lus"] = cov["non_lus"]
     summary["maj"] = cov["maj"]
     return summary

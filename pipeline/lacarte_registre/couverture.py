@@ -67,7 +67,12 @@ def _latest(values: list[str | None]) -> str | None:
     return max(found) if found else None
 
 
-def build(reg: Registre, conf: dict[str, Any]) -> dict[str, Any]:
+def build(
+    reg: Registre, conf: dict[str, Any], national: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """`national`: the national collection's summaries (national/decp.json, boamp.json):
+    the sources it feeds say its collection day and « France entière »."""
+    national = national or {}
     docs = reg.pilote.reg.get("documents", {})
     built = (reg.pilote.reg.get("meta") or {}).get("construit")
     sources = []
@@ -76,17 +81,26 @@ def build(reg: Registre, conf: dict[str, Any]) -> dict[str, Any]:
         until = _latest([_full_date(e) for e in evs])
         if src.get("recueil"):
             until = _latest([recueil(e) for e in evs]) or until
-        sources.append(
-            {
-                "id": src["source"],
-                "libelle": f"registre.source.{src['source']}",
-                "documents": len(evs),
-                "jusqu_au": until,
-                "collecte_le": _latest(
-                    [(docs.get(e.get("url")) or {}).get("collecte") or built for e in evs]
-                ),
-            }
-        )
+        row = {
+            "id": src["source"],
+            "libelle": f"registre.source.{src['source']}",
+            "documents": len(evs),
+            "jusqu_au": until,
+            "collecte_le": _latest(
+                [(docs.get(e.get("url")) or {}).get("collecte") or built for e in evs]
+            ),
+            "perimetre": src.get("perimetre", "pilote"),
+        }
+        nat = national.get(src.get("national") or "")
+        if nat:
+            # the national collection: its day, all of France (a pilot-only document of the
+            # same kind keeps the source's latest document date, not its collection day)
+            row["collecte_le"] = nat.get("collecte_le") or row["collecte_le"]
+            row["perimetre"] = (
+                "france" if not nat.get("departements") else ",".join(nat["departements"])
+            )
+            row["version_source"] = nat.get("version")
+        sources.append(row)
     deps: dict[str, Any] = {}
     present = sorted({e["dep"] for e in reg.evenements if e.get("dep")})
     for code in dict.fromkeys([*conf["departements"], *present]):
