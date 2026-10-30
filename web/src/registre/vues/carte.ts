@@ -9,7 +9,7 @@
 // follow one state: a period (every date, ?mois=, a month or a week clicked), a chosen slot, a
 // hovered one. On leaving, the map loses all it was given and goes back where it was.
 import type { Map as MlMap } from "maplibre-gl";
-import { etatDepartement } from "../collecte.ts";
+import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
@@ -564,7 +564,8 @@ class CarteDrones extends Vue<Props, State> {
       const nArr = d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
       if (couv.etat !== "collecte" && !nArr)
         vide = [
-          `${etatDepartement(d.f.commune.dep, d.f.stats.dep.nom, couv)} `,
+          { span: etatDepartementLie(d.f.commune.dep, d.f.stats.dep.nom, couv), cls: "" },
+          " ",
           { a: { href: "/registre/couverture", text: t("carte.vide_couverture") } },
         ];
       else if (nArr)

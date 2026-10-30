@@ -54,6 +54,8 @@ let ailleurs = "";
 };
 (globalThis as Record<string, unknown>).dispatchEvent = () => true;
 const g = globalThis as Record<string, unknown>;
+// a view that reads the map's window (Carte et drones: the site's map, absent here)
+g.window = globalThis;
 
 const { render } = await import("../../src/messages.ts");
 const { parseParts, rendre } = await import("../../src/registre/dc.ts");
@@ -120,6 +122,8 @@ function siens(r: { view: string } & Record<string, unknown>): string[] {
     if (a?.nom_court) out.push(a.nom_court.trim());
   };
   if (r.view === "acheteur") add(L.acheteurs[String(r.siren)]);
+  // a commune's pages (Documents, Autorisations, Carte et drones) are its fiche's
+  if ("insee" in r) add({ nom: L.communes[String(r.insee)]?.nom });
   for (const a of Object.values(L.acheteurs)) {
     if (r.view === "departement" && a.categorie === "departement" && a.dep === r.dep) add(a);
     if ("insee" in r && a.categorie === "commune" && a.insee_siege === r.insee) add(a);
