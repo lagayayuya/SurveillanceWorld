@@ -69,6 +69,10 @@
   align-items: flex-start;
   gap: 3px;
 }
+:root[data-ui="punk"] .ticket-row {
+  display: flex;
+  gap: 14px;
+}
 /* 17a's links: the typewriter face, a wavy underline. « Filtres et légende » is the page's
    own button (#fab-filters). */
 :root[data-ui="punk"] .ticket-link,

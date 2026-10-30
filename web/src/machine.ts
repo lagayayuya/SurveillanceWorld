@@ -269,7 +269,9 @@ export class Machine {
     // Under the link, 25a's squares: the mode's, then the account's (account/index.ts).
     const squares = h("div", { class: "ticket-squares" }, this.modeToggle(), ...this.squares);
     for (const l of this.liens) l.append(icon("right"));
-    const links = h("div", { class: "ticket-links" }, fab, ...this.liens, squares);
+    // The other links on the filters' row: the ticket keeps its height over the map.
+    const row = this.liens.length ? h("div", { class: "ticket-row" }, fab, ...this.liens) : fab;
+    const links = h("div", { class: "ticket-links" }, row, squares);
     this.els.links = links;
     // The legend the ticket prints (20a « Légende ↑ »), with « Calcul ? ».
     const calcBtn = h(
