@@ -12,17 +12,19 @@
   flex-direction: column;
   gap: 12px;
 }
+/* the legend's swatches: drones flat, algorithms hatched, both the documents' colour (v2.1 A1) */
 .rg .v-carte .leg i.sw-zone {
   width: 16px;
   height: 14px;
-  background: #7fd4ff;
-  border: 1.5px solid #111;
+  background: var(--type-document);
+  border: 1.5px solid var(--fg);
   box-sizing: border-box;
 }
 .rg .v-carte .leg i.sw-vsa {
   width: 16px;
   height: 14px;
-  border: 2px dashed var(--fg);
+  background: repeating-linear-gradient(-45deg, var(--type-document) 0 2px, transparent 2px 5.66px);
+  border: 1.5px solid var(--fg);
   box-sizing: border-box;
 }
 .rg .v-carte .leg .leg-in {
@@ -63,12 +65,13 @@
   outline: 2px solid var(--fg);
   outline-offset: -2px;
 }
-/* the board's .panel, static, its shadow yellow (registre.css's R1 rules for .panel and for the
-   phone's panel band do not apply to this one) */
+/* the board's .panel, static, its shadow the documents' colour: it shows an act (registre.css's R1
+   rules for .panel and for the phone's panel band do not apply to this one; yellow is the
+   territories', never a selection, v2.1) */
 .rg .v-carte .cd-det {
   border: 2px solid var(--line);
   background: var(--bg-2);
-  box-shadow: 4px 4px 0 #ffe800;
+  box-shadow: 4px 4px 0 var(--type-document);
   padding: 16px;
   display: flex;
   flex-direction: column;

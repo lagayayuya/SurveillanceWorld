@@ -3,7 +3,14 @@
 // feature state and nothing else — no layer, no filter, no paint, no data, no camera.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { type CarteMin, calque, type Site } from "../src/registre/drones.ts";
+import {
+  type CarteMin,
+  calque,
+  hachures,
+  melange,
+  type Site,
+  TEINTES,
+} from "../src/registre/drones.ts";
 
 type Handler = (e: unknown) => void;
 type Ft = { properties: Record<string, unknown> };
@@ -19,6 +26,7 @@ function fausseCarte() {
   const states: { id: string | number | undefined; s: Record<string, unknown> }[] = [];
   let under: Ft[] = [];
   const style = new Map<string, string>();
+  const images = new Set<string>();
   const map = {
     addSource(id: string) {
       count("addSource");
@@ -38,6 +46,14 @@ function fausseCarte() {
       layers.delete(id);
     },
     setPaintProperty: () => count("setPaintProperty"),
+    addImage(id: string) {
+      count("addImage");
+      images.add(id);
+    },
+    hasImage: (id: string) => images.has(id),
+    removeImage(id: string) {
+      images.delete(id);
+    },
     setFilter: () => count("setFilter"),
     setLayoutProperty: () => count("setLayoutProperty"),
     setFeatureState(f: { id?: string | number }, s: Record<string, unknown>) {
@@ -111,7 +127,7 @@ const SITES: Site[] = [
 function pose() {
   const f = fausseCarte();
   const vus: (string | null)[] = [];
-  const L = calque(f.map, { insee: "69123", sites: SITES, encre: "#111111", onSurvol: (id) => vus.push(id) });
+  const L = calque(f.map, { insee: "69123", sites: SITES, teintes: TEINTES, onSurvol: (id) => vus.push(id) });
   L.heures({ s1: { heures: 4, n: 1, mots: "4 h · 1 arrêté" }, s2: { heures: 8, n: 2 }, v1: { heures: 2, n: 1 } });
   // from here on, only what the pointer causes is counted
   for (const k of Object.keys(f.n)) delete f.n[k];
@@ -179,4 +195,16 @@ test("leaving takes every listener away", () => {
   const f = pose();
   f.L.retirer();
   for (const k of ["mousemove", "mouseout", "click"]) assert.equal(f.handlers.get(k)?.length ?? 0, 0, k);
+});
+
+test("the colours: algorithms hatched in raw pixels, a zone set back towards the ground", () => {
+  const h = hachures("#7fd4ff", 8);
+  assert.equal(h.data.length, 8 * 8 * 4);
+  const lit = (x: number, y: number) => h.data[(y * 8 + x) * 4 + 3] === 255;
+  // two pixels of every row, on the rising diagonal, nothing else
+  for (let y = 0; y < 8; y++) assert.equal([0, 1, 2, 3, 4, 5, 6, 7].filter((x) => lit(x, y)).length, 2);
+  assert.ok(lit(0, 0) && lit(7, 1) && !lit(4, 0));
+  assert.deepEqual([...h.data.slice(0, 4)], [0x7f, 0xd4, 0xff, 255]);
+  assert.equal(melange("#000000", "#ffffff", 0.5), "#808080");
+  assert.equal(melange("#7fd4ff", "#f2efe6", 0), "#7fd4ff");
 });

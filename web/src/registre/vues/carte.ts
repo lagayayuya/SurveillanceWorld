@@ -13,7 +13,7 @@ import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
-import { type Calque, calque, lireContour, type Site } from "../drones.ts";
+import { type Calque, calque, lireContour, type Site, TEINTES, type Teintes } from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
 import { carteDuSite } from "../hote.ts";
 import { t } from "../i18n.ts";
@@ -51,9 +51,6 @@ const PITCH = 50;
 /** One press of a turn button, degrees. */
 const TURN = 45;
 const MOVE_MS = 900;
-/** The board's sky blue and yellow: the measure and the selection. */
-const BLEU = "#7fd4ff";
-const JAUNE = "#ffe800";
 /** The chart's height in its viewBox: the axis at 104, the reference line at 14. */
 const AXE = 104;
 const HAUT = 14;
@@ -104,7 +101,7 @@ class CarteDrones extends Vue<Props, State> {
   private synced = "";
   /** The theme changed: the ink again, once the site has restyled its map (at once, or at its idle). */
   private readonly onTheme = () => {
-    const f = () => this.layer?.encre(this.ink());
+    const f = () => this.layer?.encre(this.teintes());
     requestAnimationFrame(f);
     this.map?.once("idle", f);
   };
@@ -157,9 +154,16 @@ class CarteDrones extends Vue<Props, State> {
     const r = this.periode();
     return !r || overlaps(c, r[0], r[1]);
   }
-  private ink(): string {
+  /** The theme's ink, ground and documents' colour, as the page has them (tokens.css). */
+  private teintes(): Teintes {
     const el = document.querySelector(".v-carte") ?? document.documentElement;
-    return getComputedStyle(el).getPropertyValue("--fg").trim() || "#111111";
+    const css = getComputedStyle(el);
+    const v = (k: string, d: string) => css.getPropertyValue(k).trim() || d;
+    return {
+      encre: v("--fg", TEINTES.encre),
+      fond: v("--bg", TEINTES.fond),
+      doc: v("--type-document", TEINTES.doc),
+    };
   }
 
   // --- the site's map ---------------------------------------------------------------------------
@@ -197,7 +201,7 @@ class CarteDrones extends Vue<Props, State> {
         this.layer = calque(map, {
           insee: d.insee,
           sites,
-          encre: this.ink(),
+          teintes: this.teintes(),
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
@@ -364,13 +368,19 @@ class CarteDrones extends Vue<Props, State> {
     const yOf = (h: number) => AXE - (h / top) * (AXE - HAUT);
     const xOf = (ms: number) => 2 + ((ms - A) / (B - A)) * (W - 4);
     const focus = S.hov >= 0 ? S.hov : S.cur;
-    const selWeek =
-      focus >= 0 ? weeks.findIndex((w) => T[focus].t0 >= w.t0 && T[focus].t0 < w.t1) : -1;
+    const weekOf = (i: number) =>
+      i >= 0 ? weeks.findIndex((w) => T[i].t0 >= w.t0 && T[i].t0 < w.t1) : -1;
+    const selWeek = weekOf(focus);
+    // chosen: the week of the slot chosen, or the week the period is; hovered: the week of the row
+    // hovered or the bar pointed at (v2.1 A1: ink, never yellow)
+    const choisie = weekOf(S.cur);
+    const pointee = S.hov >= 0 ? weekOf(S.hov) : S.wk;
     const inR = (w: Semaine) => !r || (w.t1 > r[0] && w.t0 < r[1]);
     const wk = weeks.map((w, i) => {
       const h = w.heures > 0 ? Math.max(2, AXE - yOf(w.heures)) : 0;
       const x = 2 + i * step;
-      const sel = i === selWeek;
+      const plein = i === choisie || (!!r && r[0] === w.t0 && r[1] === w.t1);
+      const fin = i === pointee;
       return {
         x: (x + (step - bw) / 2).toFixed(1),
         y: (AXE - h).toFixed(1),
@@ -378,7 +388,7 @@ class CarteDrones extends Vue<Props, State> {
         h: h.toFixed(1),
         hx: x.toFixed(1),
         hw: step.toFixed(1),
-        st: `fill: ${sel ? JAUNE : BLEU}; stroke: var(--line); stroke-width: ${h ? 1 : 0}; opacity: ${sel || inR(w) ? 1 : 0.35}`,
+        st: `fill: ${plein ? "var(--fg)" : "var(--type-document)"}; stroke: ${fin ? "var(--fg)" : "var(--line)"}; stroke-width: ${h ? (fin ? 2 : 1) : 0}; opacity: ${plein || fin || inR(w) ? 1 : 0.35}`,
         hover: (() => {
           if (S.wk !== i) this.setState({ wk: i });
         }) as Handler,
@@ -511,7 +521,7 @@ class CarteDrones extends Vue<Props, State> {
       const on = i === S.cur || i === S.hov;
       const fin = [
         ...(c.sites.length ? [] : [t("carte.zone_non_deduite_court")]),
-        ...(c.kind === "vsa" ? [t("carte.analyse_algorithmique")] : []),
+        t(c.kind === "vsa" ? "carte.analyse_algorithmique" : "carte.mot_drones"),
         c.finalite ?? t("carte.finalite_non_lue"),
       ].join(" · ");
       rows.push({

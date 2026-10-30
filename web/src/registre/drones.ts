@@ -6,7 +6,8 @@
 //   map already shows from its own tiles), else the site's own commune shape (admin tiles);
 // · the drone zones as volumes (fill-extrusion), their part inside the commune (the part over a
 //   neighbour is that commune's): a site's height is the hours its slots authorise on the period
-//   chosen, never an altitude; an algorithmic-analysis site flat, its outline dashed;
+//   chosen, never an altitude, in the documents' colour; an algorithmic-analysis site flat and
+//   hatched in the same colour; the selection in the theme's ink, never yellow (v2.1 A1);
 // · nothing for the cameras: they are the fields the map shows at its usual zoom.
 // Hover and choice are feature states (v2.1, A1): the pointer moving over the map changes no layer,
 // no filter, no paint and no data, and a state only when the zone under it changes; the camera
@@ -14,7 +15,6 @@
 // draws them.
 import type {
   ExpressionSpecification,
-  FilterSpecification,
   GeoJSONSource,
   LayerSpecification,
   MapMouseEvent,
@@ -51,17 +51,22 @@ export const COUCHES = {
   commune: `${P}-commune`,
   communeAdmin: `${P}-commune-admin`,
   vsa: `${P}-vsa`,
+  vsaPlein: `${P}-vsa-plein`,
   vol: `${P}-vol`,
   sol: `${P}-sol`,
+  bord: `${P}-bord`,
   lab: `${P}-lab`,
 } as const;
 /** The layers the pointer finds a zone in (the label is not one: it never catches the pointer). */
 const CIBLES = [COUCHES.vol, COUCHES.vsa];
 
-// The boards' colours: the drones' sky blue, the selection's yellow (V2-CarteDrones).
-export const BLEU = "#7fd4ff";
-export const JAUNE = "#ffe800";
-const ENCRE = "#111111";
+/** The colours the zones are drawn in: the theme's ink (--fg: the selection, v2.1 A1), its ground
+ * (--bg: the label's halo, the zones set back) and the documents' colour (--type-document: an act
+ * draws them, drones flat, algorithms hatched). Never the territories' yellow. */
+export type Teintes = { encre: string; fond: string; doc: string };
+/** The light theme's values (theme/punk/tokens.css), until the page's are read. */
+export const TEINTES: Teintes = { encre: "#111111", fond: "#f2efe6", doc: "#7fd4ff" };
+const HACHURE = `${P}-hachure`;
 
 // --- the pure part (tested) ------------------------------------------------------------------
 
@@ -114,6 +119,39 @@ export function aire(rs: Ring[]): number {
     total += Math.abs(a) / 2;
   }
   return total;
+}
+/** `a` and `b` (#rrggbb) mixed, `k` of `b`: a zone set back is its colour towards the ground. */
+export function melange(a: string, b: string, k: number): string {
+  const rgb = (h: string) => [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16) || 0);
+  const x = rgb(a);
+  const y = rgb(b);
+  return `#${x
+    .map((v, i) =>
+      Math.round(v + (y[i] - v) * k)
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+}
+/** The hatching of an algorithmic-analysis zone (v2.1 A1): diagonal lines of `couleur` on nothing,
+ * `n` px square, its lines 2 px wide, raw pixels (no canvas: the tests run without one). */
+export function hachures(
+  couleur: string,
+  n = 8,
+): { width: number; height: number; data: Uint8Array } {
+  const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(couleur.slice(i, i + 2), 16) || 0);
+  const data = new Uint8Array(n * n * 4);
+  for (let y = 0; y < n; y++)
+    for (let x = 0; x < n; x++) {
+      // the lines rise from left to right and tile across the square's edges
+      if ((x + y) % n >= 2) continue;
+      const i = (y * n + x) * 4;
+      data[i] = r;
+      data[i + 1] = g;
+      data[i + 2] = b;
+      data[i + 3] = 255;
+    }
+  return { width: n, height: n, data };
 }
 /** A volume's height (m): proportional to its hours, the highest at 18 % of the commune's diagonal
  * (250 m at least), 20 m for none (R1a's tilted map's, DECISIONS 2026-10-29). */
@@ -189,6 +227,9 @@ export type CarteMin = Pick<
   | "removeLayer"
   | "setPaintProperty"
   | "setFeatureState"
+  | "addImage"
+  | "hasImage"
+  | "removeImage"
   | "queryRenderedFeatures"
   | "getCanvas"
   | "on"
@@ -205,8 +246,8 @@ export type Calque = {
   choisir(ids: string[]): void;
   /** The commune's outline from its map file, when it has come. */
   contour(c: Contour): void;
-  /** The ink of the theme (the outline's colour). */
-  encre(c: string): void;
+  /** The theme's colours again (its ink, its ground, the documents' colour). */
+  encre(t: Teintes): void;
   /** The box to fit: the outline's, else the drawn zones'. */
   cadre(): BBox | null;
   /** A site's box (« Voir sur la carte »), null for a site not drawn. */
@@ -218,8 +259,8 @@ export type Calque = {
 export type CalqueOptions = {
   insee: string;
   sites: Site[];
-  /** The ink colour (the page's --fg). */
-  encre: string;
+  /** The theme's ink, ground and documents' colour. */
+  teintes: Teintes;
   /** The zone under the pointer changed (null: none). Called once per change, never per move. */
   onSurvol?: (id: string | null) => void;
   /** A zone clicked. */
@@ -232,6 +273,113 @@ const fs = (k: "survol" | "choix" | "retrait"): ExpressionSpecification => [
   ["feature-state", k],
   false,
 ];
+
+const isDrone: ExpressionSpecification = ["==", ["get", "kind"], "drone"];
+const isLab: ExpressionSpecification = ["has", "lab"];
+const isArea: ExpressionSpecification = ["!", isLab];
+
+/** The layers, bottom to top, in the theme's colours (`admin`: the site's commune shape too).
+ * Every change of look on a hover or a choice is a feature state read here: survol (a thin ink
+ * outline), choix (full, a thick ink outline, its label), retrait (the others set back). */
+function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[] {
+  const recul = melange(t.doc, t.fond, 0.6);
+  const out: LayerSpecification[] = [];
+  if (admin)
+    out.push({
+      id: COUCHES.communeAdmin,
+      type: "line",
+      source: "admin",
+      "source-layer": "communes",
+      filter: ["==", ["get", "c"], insee],
+      layout: { "line-join": "round" },
+      paint: { "line-color": t.encre, "line-width": 3 },
+    });
+  out.push(
+    {
+      id: COUCHES.commune,
+      type: "line",
+      source: SRC_COM,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": t.encre, "line-width": 3 },
+    },
+    // algorithms: hatched in the documents' colour, full when chosen
+    {
+      id: COUCHES.vsa,
+      type: "fill",
+      source: SRC,
+      filter: ["all", isArea, ["!", isDrone]],
+      paint: {
+        "fill-pattern": HACHURE,
+        "fill-opacity": ["case", fs("retrait"), 0.35, 1],
+      },
+    },
+    {
+      id: COUCHES.vsaPlein,
+      type: "fill",
+      source: SRC,
+      filter: ["all", isArea, ["!", isDrone]],
+      paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.85, 0] },
+    },
+    // drones: flat volumes in the documents' colour, the others set back when one is chosen
+    {
+      id: COUCHES.vol,
+      type: "fill-extrusion",
+      source: SRC,
+      filter: ["all", isArea, isDrone],
+      paint: {
+        "fill-extrusion-color": ["case", fs("retrait"), recul, t.doc],
+        "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-base": 0,
+        "fill-extrusion-opacity": 0.55,
+        "fill-extrusion-vertical-gradient": true,
+      },
+    },
+    // the zones overlap (a site over the whole commune holds the smaller ones): the chosen one's
+    // footprint and the ink outlines are drawn over every volume (flat layers after them, which
+    // their depth does not hide), so that a taller zone around it never hides it
+    {
+      id: COUCHES.sol,
+      type: "fill",
+      source: SRC,
+      filter: ["all", isArea, isDrone],
+      paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.95, 0] },
+    },
+    {
+      id: COUCHES.bord,
+      type: "line",
+      source: SRC,
+      filter: isArea,
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": t.encre,
+        "line-width": ["case", fs("choix"), 4, fs("survol"), 1.5, 0],
+      },
+    },
+    // the words of the zone chosen: shown by its state, never by a new datum
+    {
+      id: COUCHES.lab,
+      type: "symbol",
+      source: SRC,
+      filter: isLab,
+      layout: {
+        "text-field": ["get", "lab"],
+        "text-font": ["Noto Sans Medium"],
+        "text-size": 13,
+        "text-anchor": "bottom",
+        "text-offset": [0, -0.6],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": t.encre,
+        "text-halo-color": t.fond,
+        "text-halo-width": 3,
+        "text-opacity": ["case", fs("choix"), 1, 0],
+      },
+    },
+  );
+  return out;
+}
 
 /** Draws the commune's drone zones on the site's map; `retirer()` takes everything away. */
 export function calque(map: CarteMin, o: CalqueOptions): Calque {
@@ -246,7 +394,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   );
   let outline: Contour | null = null;
   let hs: Record<string, Volume> = {};
-  let ink = o.encre;
+  let tint = o.teintes;
   // the states as the map holds them: the pointer's zone, the list's, the chosen ones
   let pointe: string | null = null;
   let liste: string[] = [];
@@ -300,94 +448,13 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
         : [],
     );
 
-  const isDrone: FilterSpecification = ["==", ["get", "kind"], "drone"];
-  const isLab: FilterSpecification = ["has", "lab"];
-  const isArea: FilterSpecification = ["!", isLab];
-  const add = (l: LayerSpecification) => {
-    if (!map.getLayer(l.id)) map.addLayer(l);
-  };
   map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
-  // the site's own commune shape, until the outline has come (a commune without a map file keeps
+  if (!map.hasImage(HACHURE)) map.addImage(HACHURE, hachures(tint.doc));
+  // the site's own commune shape until the outline has come (a commune without a map file keeps
   // it): its tiles hold the communes up to z11, overzoomed after
-  if (map.getSource("admin"))
-    add({
-      id: COUCHES.communeAdmin,
-      type: "line",
-      source: "admin",
-      "source-layer": "communes",
-      filter: ["==", ["get", "c"], insee],
-      layout: { "line-join": "round" },
-      paint: { "line-color": ink, "line-width": 3 },
-    });
-  add({
-    id: COUCHES.commune,
-    type: "line",
-    source: SRC_COM,
-    layout: { "line-join": "round", "line-cap": "round" },
-    paint: { "line-color": ink, "line-width": 3 },
-  });
-  const on: ExpressionSpecification = ["any", fs("survol"), fs("choix")];
-  add({
-    id: COUCHES.vsa,
-    type: "line",
-    source: SRC,
-    filter: ["all", isArea, ["!", isDrone]],
-    paint: {
-      "line-color": ["case", on, JAUNE, ink],
-      "line-width": 2,
-      "line-dasharray": [1, 2],
-    },
-  });
-  // the zones overlap (a site over the whole commune holds the smaller ones): the footprint of
-  // the one hovered or chosen is drawn over every volume (a flat layer after them, which their
-  // depth does not hide), so that a taller zone around it never hides it
-  add({
-    id: COUCHES.vol,
-    type: "fill-extrusion",
-    source: SRC,
-    filter: ["all", isArea, isDrone],
-    paint: {
-      "fill-extrusion-color": ["case", on, JAUNE, BLEU],
-      "fill-extrusion-height": ["get", "h"],
-      "fill-extrusion-base": 0,
-      "fill-extrusion-opacity": 0.55,
-      "fill-extrusion-vertical-gradient": true,
-    },
-  });
-  add({
-    id: COUCHES.sol,
-    type: "fill",
-    source: SRC,
-    filter: ["all", isArea, isDrone],
-    paint: {
-      "fill-color": JAUNE,
-      "fill-opacity": ["case", on, 0.55, 0],
-      "fill-outline-color": ENCRE,
-    },
-  });
-  // the words of the zone chosen: shown by its state, never by a new datum
-  add({
-    id: COUCHES.lab,
-    type: "symbol",
-    source: SRC,
-    filter: isLab,
-    layout: {
-      "text-field": ["get", "lab"],
-      "text-font": ["Noto Sans Medium"],
-      "text-size": 13,
-      "text-anchor": "bottom",
-      "text-offset": [0, -0.6],
-      "text-allow-overlap": true,
-      "text-ignore-placement": true,
-    },
-    paint: {
-      "text-color": ENCRE,
-      "text-halo-color": JAUNE,
-      "text-halo-width": 3,
-      "text-opacity": ["case", fs("choix"), 1, 0],
-    },
-  });
+  for (const l of couches(insee, tint, !!map.getSource("admin")))
+    if (!map.getLayer(l.id)) map.addLayer(l);
 
   const set = (id: string, data: GeoJSON.FeatureCollection) =>
     (map.getSource(id) as GeoJSONSource | undefined)?.setData(data);
@@ -464,17 +531,17 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       if (map.getLayer(COUCHES.communeAdmin)) map.removeLayer(COUCHES.communeAdmin);
       set(SRC, zonesData());
     },
-    encre(c) {
-      ink = c;
-      for (const l of [COUCHES.commune, COUCHES.communeAdmin])
-        if (map.getLayer(l)) map.setPaintProperty(l, "line-color", c);
-      // the site's restyle swaps the colours of every layer by its palette's pairs (main.ts):
-      // the boards' sky blue and yellow come back
-      if (map.getLayer(COUCHES.vsa))
-        map.setPaintProperty(COUCHES.vsa, "line-color", ["case", on, JAUNE, c]);
-      if (map.getLayer(COUCHES.vol))
-        map.setPaintProperty(COUCHES.vol, "fill-extrusion-color", ["case", on, JAUNE, BLEU]);
-      if (map.getLayer(COUCHES.sol)) map.setPaintProperty(COUCHES.sol, "fill-color", JAUNE);
+    encre(t) {
+      tint = t;
+      // the site's restyle swaps the colours of every layer by its palette's pairs (main.ts) and
+      // sets a new sprite: the theme's ink, ground and documents' colour again, and the hatching
+      if (map.hasImage(HACHURE)) map.removeImage(HACHURE);
+      map.addImage(HACHURE, hachures(t.doc));
+      for (const l of couches(insee, t, true)) {
+        if (!map.getLayer(l.id) || !("paint" in l) || !l.paint) continue;
+        for (const [k, v] of Object.entries(l.paint))
+          (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(l.id, k, v);
+      }
     },
     cadre: box,
     boite(id) {
@@ -488,6 +555,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       canvas.style.removeProperty("cursor");
       for (const l of Object.values(COUCHES)) if (map.getLayer(l)) map.removeLayer(l);
       for (const s of [SRC, SRC_COM]) if (map.getSource(s)) map.removeSource(s);
+      if (map.hasImage(HACHURE)) map.removeImage(HACHURE);
     },
   };
 }
