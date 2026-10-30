@@ -174,6 +174,11 @@ for engine in webkit chromium; do
   step "delete-$engine" "$B" node bench/smoke-delete.mjs --browser "$engine"
   step "export-$engine" "$B" node bench/smoke-export.mjs --browser "$engine"
 done
+# v2.1 (2026-10-30): the register's frame, one modal at a time (A9), its tables' edges (A6) and
+# its back button (A4); its data from web/public/data/registre (a build has none: ignored by git).
+for engine in chromium webkit; do
+  step "registre-$engine" "$B" node bench/smoke-registre.mjs --region ci --browser "$engine"
+done
 # The tiles prefetched while the map rests (src/prefetch.ts, off in the other benches: a
 # browser driven by tests), on a throttled 4G phone in Chromium.
 step "prefetch" "$B" node bench/latency.mjs --profile phone4g --check
