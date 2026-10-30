@@ -15,7 +15,7 @@ import "./registre.css";
 import "./cadre.css";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
 import { Absent, load } from "./donnees.ts";
-import { fermer } from "./hote.ts";
+import { fermer, pas, retenir, retour, retourPossible } from "./hote.ts";
 import { setMessages, t } from "./i18n.ts";
 import { listeHref, TYPE_DE } from "./listes.ts";
 import { boutonPartage, fermerPartage } from "./partage.ts";
@@ -193,6 +193,29 @@ function boutonFermer(): HTMLAnchorElement {
   );
 }
 
+/** The head's back button (v2.1 A4, the boards' « ← Carte »): one step back in the register's
+ * history, « ← Retour », named after the page it goes back to; with no register step before (the
+ * first page opened from the map, or opened cold) it is the way to the map, « ← Carte ». */
+function boutonRetour(): HTMLButtonElement {
+  const avant = retourPossible() && (pas()?.rg ?? 1) > 1;
+  const prec = pas()?.prec;
+  const b = el(
+    "button",
+    {
+      class: "mback",
+      type: "button",
+      "aria-label": avant
+        ? prec
+          ? t("cadre.retour_a", { page: prec })
+          : t("cadre.retour_page")
+        : t("cadre.retour_carte"),
+    },
+    t(avant ? "cadre.retour" : "cadre.carte"),
+  );
+  b.addEventListener("click", retour);
+  return b;
+}
+
 /** The search of the head: the register's search page with what was typed. */
 function recherche(): HTMLElement {
   const input = el("input", { type: "search", placeholder: t("cadre.chercher_exemple") });
@@ -218,6 +241,8 @@ function recherche(): HTMLElement {
 let courant: Route = { view: "registre", q: {} };
 let fil: Miette[] = [];
 let ici = "";
+// the page left for another keeps where it was scrolled and its title (hote.ts ouvrir)
+retenir(() => ({ haut: scroll.scrollTop, titre: ici }));
 
 /** The head: on a wide screen the boards' black bar, on a phone the sheet's handle and top. */
 function entete(r: Route): void {
@@ -242,13 +267,7 @@ function entete(r: Route): void {
     // the panel beside the map (V2-CarteDrones): its breadcrumb, the theme, ✕; the map is there
     const cote = mounted?.view.panneau?.() ?? false;
     haut.replaceChildren(
-      ...(cote
-        ? [crumbs]
-        : [
-            el("a", { class: "mback", href: mapAddress(), "data-fermer": "" }, t("cadre.carte")),
-            crumbs,
-            recherche(),
-          ]),
+      ...(cote ? [crumbs] : [boutonRetour(), crumbs, recherche()]),
       boutonTheme(),
       boutonFermer(),
     );
@@ -556,10 +575,13 @@ export async function afficher(force = false): Promise<void> {
     fil = mounted.view.fil?.() ?? filDe(r, k);
     entete(r);
     document.title = ici ? t("page.titre_vue", { vue: ici }) : t("page.titre_seul");
-    const anchor = location.hash.slice(1);
+    const anchor = decodeURIComponent(location.hash.slice(1));
+    // back on a page left for another: where it was scrolled (its step kept it, hote.ts ouvrir)
+    const haut = force ? undefined : pas()?.haut;
     requestAnimationFrame(() => {
       const target = anchor ? document.getElementById(anchor) : null;
-      if (target) target.scrollIntoView({ block: "start" });
+      if (typeof haut === "number") revenirA(haut, ask);
+      else if (target) target.scrollIntoView({ block: "start" });
       else scroll.scrollTop = 0;
       if (!cadre.contains(document.activeElement)) root.focus({ preventScroll: true });
     });
@@ -578,6 +600,28 @@ export async function afficher(force = false): Promise<void> {
     root.replaceChildren(p);
     console.error(e);
   }
+}
+
+/** Back on a page: the frame scrolled where it was left. A view draws some of its parts once their
+ * data come (a commune's sections): the scroll is asked again at each frame until the page is tall
+ * enough, for 2 s at most, and not once the reader scrolls or another page is asked. */
+function revenirA(haut: number, ask: number): void {
+  const fin = performance.now() + 2000;
+  let lu = false;
+  const stop = () => {
+    lu = true;
+  };
+  const opts = { once: true, passive: true } as const;
+  scroll.addEventListener("wheel", stop, opts);
+  scroll.addEventListener("touchstart", stop, opts);
+  scroll.addEventListener("keydown", stop, opts);
+  const essai = () => {
+    if (lu || ask !== asked || !ouvert) return;
+    scroll.scrollTop = haut;
+    if (Math.abs(scroll.scrollTop - haut) > 1 && performance.now() < fin)
+      requestAnimationFrame(essai);
+  };
+  essai();
 }
 
 WIDE.addEventListener("change", () => {

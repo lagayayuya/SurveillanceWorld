@@ -20,9 +20,51 @@ const charger = () => {
 /** The site's map, behind the register (Carte et drones draws on it). */
 export const carteDuSite = (): MlMap | null => carte;
 
+// --- the register's steps (v2.1 A4) --------------------------------------------------------------
+/** A register page's step of the history: `rg`, its rank among the register's steps since the map
+ * (1: the first page opened from the map); `froid`: the page was opened cold (its address typed or
+ * followed from elsewhere), with no step of the register nor of the map before it in this page;
+ * `prec`: the title of the page before (the back button's name); `haut`: where the frame was
+ * scrolled when it was left, given back when one comes back to it. A section of the page is not a
+ * step: its link replaces the step's address (clic). */
+export type Pas = { rg: number; froid?: boolean; prec?: string; haut?: number };
+
+/** The step shown, when it is a register's step this page made (else null: a cold one). */
+export function pas(): Pas | null {
+  const s = history.state as Partial<Pas> | null;
+  return s && typeof s.rg === "number" ? (s as Pas) : null;
+}
+
+/** What the frame keeps of the page it leaves (modale.ts: its scroll, its title). */
+let memoire: (() => { haut: number; titre: string }) | null = null;
+export function retenir(f: () => { haut: number; titre: string }): void {
+  memoire = f;
+}
+
+/** A step of the register before this one, in this page: the back button goes back to it. */
+export function retourPossible(): boolean {
+  const s = pas();
+  return s !== null && (s.rg > 1 || !s.froid);
+}
+
+/** The register's back button: one step back in the register's history, with that page's search,
+ * filters and section (its address and its step carry them); from the first page opened from the
+ * map, the map (the step before); from a page opened cold, the map too (fermer: nothing before). */
+export function retour(): void {
+  if (retourPossible()) history.back();
+  else fermer();
+}
+
+/** Is the register closing (cacher under way)? A view that moved the map leaves it there then
+ * (Drones et algorithmes, A5), and puts it back only when another register page replaces it. */
+let fermeture = false;
+export const seFerme = (): boolean => fermeture;
+
 /** Asked as early as the page opens on a register path, beside the map's own code. */
 export function prefetchRegistre(): void {
   if (!REGISTRE.test(location.pathname)) return;
+  // a page opened cold: its step is the register's first, with nothing of it before
+  if (!pas()) history.replaceState({ ...(history.state ?? {}), rg: 1, froid: true }, "");
   // a register page opened cold shows at once, without waiting for the map to boot; Carte et drones
   // draws on the map, and waits for it (brancher)
   void charger().then((m) => {
@@ -41,12 +83,20 @@ export function brancher(map: MlMap): void {
 /** Opens a register page from wherever the page is (a door on the map, a link in the register). */
 export function ouvrir(url: string | URL): void {
   const u = new URL(url, location.href);
-  if (!REGISTRE.test(location.pathname)) setAside(mapAddress());
-  history.pushState(null, "", `${u.pathname}${u.search}${u.hash}`);
+  let etat: Pas = { rg: 1 };
+  if (REGISTRE.test(location.pathname)) {
+    // the page left keeps where it was scrolled, for the way back
+    const m = memoire?.();
+    const avant = pas() ?? { rg: 1, froid: true };
+    history.replaceState({ ...(history.state ?? {}), ...avant, haut: m?.haut ?? 0 }, "");
+    etat = { rg: avant.rg + 1, ...(m?.titre ? { prec: m.titre } : {}) };
+  } else setAside(mapAddress());
+  history.pushState(etat, "", `${u.pathname}${u.search}${u.hash}`);
   void suivre(false, true);
 }
 
-/** « ← Carte », ✕, Escape: the map again, at its own address, as a new step of the history. */
+/** ✕, Escape (and the back button with no step before it): the map again, at its own address, as
+ * a new step of the history. */
 export function fermer(): void {
   if (!REGISTRE.test(location.pathname)) return;
   history.pushState(null, "", takeBack());
@@ -61,7 +111,13 @@ async function suivre(retour: boolean, force = false): Promise<void> {
     return;
   }
   if (!modale) return;
-  (await modale).cacher();
+  const m = await modale;
+  fermeture = true;
+  try {
+    m.cacher();
+  } finally {
+    fermeture = false;
+  }
   // back from the register onto the map's step: the map's latest address, not the step's
   if (retour && isAside()) history.replaceState(null, "", takeBack());
 }
@@ -85,8 +141,19 @@ function clic(ev: MouseEvent): void {
   }
   const url = new URL(a.href, location.href);
   if (url.origin !== location.origin || !REGISTRE.test(url.pathname)) return;
-  // an anchor of the page shown
-  if (url.pathname === location.pathname && url.search === location.search && url.hash) return;
+  // a section of the page shown is not a step of the history (the back button goes to the page
+  // before, not to the section before): the step's address says it, the frame scrolls to it
+  if (url.pathname === location.pathname && url.search === location.search && url.hash) {
+    if (!REGISTRE.test(location.pathname)) return;
+    ev.preventDefault();
+    const avant = location.href;
+    history.replaceState(history.state, "", url.hash);
+    const id = decodeURIComponent(url.hash.slice(1));
+    document.getElementById(id)?.scrollIntoView({ block: "start" });
+    // what a followed anchor says (the glossary marks its word on it)
+    dispatchEvent(new HashChangeEvent("hashchange", { oldURL: avant, newURL: location.href }));
+    return;
+  }
   ev.preventDefault();
   ouvrir(url);
 }

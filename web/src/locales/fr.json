@@ -3490,6 +3490,10 @@
   "registre.entreprise.parcourir_tout": "Tous ses documents dans le registre →",
   "registre.entreprise.paris": "Paris",
   "registre.cadre.fermer_detail": "Fermer le détail",
+  "registre.cadre.retour": "← Retour",
+  "registre.cadre.retour_a": "Revenir à la page précédente : {page}",
+  "registre.cadre.retour_page": "Revenir à la page précédente du registre",
+  "registre.cadre.retour_carte": "Fermer le registre et revenir à la carte",
   "registre.liste.source": "Source",
   "registre.sommaire.zone_idf": "Île-de-France"
 }

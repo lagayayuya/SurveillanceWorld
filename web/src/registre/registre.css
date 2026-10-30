@@ -1417,3 +1417,11 @@
 .rg .th {
   font-synthesis-style: auto;
 }
+
+/* --- v2.1, the frame (lot « cadre ») --- */
+/* A4: « ← Carte » is the register's back button (modale.ts boutonRetour), a button in the link's face */
+.rg button.mback {
+  background: transparent;
+  color: #f2efe6;
+  cursor: pointer;
+}
