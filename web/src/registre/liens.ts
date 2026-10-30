@@ -8,6 +8,7 @@ import { communeHref } from "./commun.ts";
 import { buyerHref, buyerNom, depNom, docHref, entHref, entName, type Lexique } from "./corpus.ts";
 import type { Rich, RichItem } from "./dc.ts";
 import type { Evenement } from "./donnees.ts";
+import { t } from "./i18n.ts";
 import { couleur, icone, type TypeCle, typeDocument } from "./types.ts";
 
 /** A mention as a link to its fiche, or its words alone when it has none (`href` null). */
@@ -67,4 +68,35 @@ export function lienDepartement(dep: string, text?: Rich, liste = false): RichIt
 /** A document: its record, or its commune's Autorisations at its dossier for a decree. */
 export function lienDocument(L: Lexique, e: Evenement, text: Rich, liste = false): RichItem {
   return lien(typeDocument(e), docHref(L, e), text, liste);
+}
+
+/** A catalogue message whose placeholders may be rich (a link): the message is the catalogue's, each
+ * rich part put back in place of its placeholder. */
+export function phrase(
+  key: string,
+  params: Record<string, string | number | RichItem>,
+): RichItem[] {
+  const holes: RichItem[] = [];
+  const flat: Record<string, string | number> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (typeof v === "object") {
+      flat[k] = `\u0000${holes.length}\u0000`;
+      holes.push(v);
+    } else flat[k] = v;
+  }
+  return t(key, flat)
+    .split("\u0000")
+    .map((x, i) => (i % 2 ? holes[Number(x)] : x))
+    .filter((x) => x !== "");
+}
+
+/** « du Rhône », « le Rhône »: the article words, the name the département's link. */
+export function departementDans(dep: string, avecArticle: string): RichItem {
+  const nom = depNom(dep);
+  return avecArticle.endsWith(nom)
+    ? {
+        span: [avecArticle.slice(0, avecArticle.length - nom.length), lienDepartement(dep, nom)],
+        cls: "",
+      }
+    : lienDepartement(dep, avecArticle);
 }

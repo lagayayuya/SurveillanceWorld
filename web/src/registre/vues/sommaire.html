@@ -2,7 +2,7 @@
   <div class="{{cls}}">
   <sc-if value="{{wide}}">
       <h1 class="sr">{{title}}</h1><div class="cutout" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
-      <p class="idline tw">{{idline}}</p>
+      <p class="idline tw">{{{idline}}}</p>
       <p class="lead">{{t.sommaire.lead}}</p>
       <div role="search" class="cherche">
         <label>
@@ -15,7 +15,7 @@
   <sc-if value="{{tel}}">
       <h1 class="sr">{{title}}</h1><div class="cutout s" aria-hidden="true" style="margin: 2px 0 0"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
       <p class="sober" style="margin: 0">{{t.sommaire.lead_tel}}</p>
-      <p class="idline tw" style="font-size: 12.5px">{{idlineTel}}</p>
+      <p class="idline tw" style="font-size: 12.5px">{{{idlineTel}}}</p>
       <div role="search" class="cherche tel">
         <label><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><span class="sr">{{t.sommaire.chercher}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.sommaire.chercher_exemple_tel}}"></label>
       </div>
@@ -72,7 +72,7 @@
 
       <div class="sec">
         <div class="strip" style="flex-direction: row; align-items: center; gap: 24px; height: auto; min-height: 58px; flex-wrap: wrap">
-          <span><b>{{maj}}</b>{{jusqu}}</span>
+          <span><b>{{maj}}</b>{{{jusqu}}}</span>
           <a href="/registre/couverture">{{t.sommaire.couverture}}</a>
           <a href="/registre/couverture#non-lus">{{nonLus}}</a>
         </div>

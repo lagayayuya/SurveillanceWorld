@@ -8,12 +8,12 @@
 // The old addresses (/registre/chiffres, /registre/?t=…) are replaced by their list's before
 // anything is drawn (listes.ts redirection).
 
-import type { Index, Recherche } from "../corpus.ts";
+import { depNom, type Index, type Recherche } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
-import { lienDepartement } from "../liens.ts";
+import { departementDans, lienDepartement, phrase as phraseLiee } from "../liens.ts";
 import {
   CATS,
   type Comptes,
@@ -237,17 +237,24 @@ class Sommaire extends Vue<Props, State> {
       ...Object.entries(cv.departements)
         .filter(([, d]) => d.etat === "collecte" && d.dernier_recueil)
         .map(([code, d]) =>
-          t("sommaire.arretes_jusqu", {
+          phraseLiee("sommaire.arretes_jusqu", {
             dep: has(`registre.sommaire.du_${code}`)
-              ? t(`sommaire.du_${code}`)
+              ? departementDans(code, t(`sommaire.du_${code}`))
               : t("sommaire.du", { code }),
             date: jourMois(d.dernier_recueil as string),
           }),
         ),
     ]
-      .filter(Boolean)
-      .map((x) => ` · ${x}`)
-      .join("");
+      .filter((x) => x.length > 0)
+      .flatMap((x) => [" · ", ...(typeof x === "string" ? [x] : x)]);
+    // the regions the register covers: a département a link to its fiche, a region words
+    const zones: RichItem[] = [
+      t("sommaire.zone_idf"),
+      ", ",
+      lienDepartement("69", depNom("69")),
+      ", ",
+      lienDepartement("13", depNom("13")),
+    ];
     const res = (S.res ?? []).map((g) => ({
       ...repere(g.k),
       l: pluriel(g.k),
@@ -266,8 +273,14 @@ class Sommaire extends Vue<Props, State> {
       cls: wide ? "inner" : "tin",
       title: t("sommaire.titre"),
       letters: decoupe(t("sommaire.titre")),
-      idline: t("sommaire.idline", { maj: numDate(I.maj) }),
-      idlineTel: t("sommaire.idline_tel", { maj: numDate(I.maj) }),
+      idline: phraseLiee("sommaire.idline", {
+        maj: numDate(I.maj),
+        zones: { span: zones, cls: "" },
+      }),
+      idlineTel: phraseLiee("sommaire.idline_tel", {
+        maj: numDate(I.maj),
+        zones: { span: zones, cls: "" },
+      }),
       q: S.q,
       onQ: this.onQ,
       cherche: S.cherche,

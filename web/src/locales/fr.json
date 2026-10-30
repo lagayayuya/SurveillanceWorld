@@ -3287,8 +3287,8 @@
   "registre.registre.titre_vsa": "Autorisation d'analyse algorithmique",
   "registre.registre.voir": "Voir {countLabel}",
   "registre.sommaire.titre": "Le registre",
-  "registre.sommaire.idline": "Les documents publics de la vidéosurveillance · Île-de-France, Rhône, Bouches-du-Rhône · mis à jour le {maj}",
-  "registre.sommaire.idline_tel": "Île-de-France, Rhône, Bouches-du-Rhône · mis à jour le {maj}",
+  "registre.sommaire.idline": "Les documents publics de la vidéosurveillance · {zones} · mis à jour le {maj}",
+  "registre.sommaire.idline_tel": "{zones} · mis à jour le {maj}",
   "registre.sommaire.lead": "Qui achète des caméras, à qui, pour combien, et ce que la préfecture autorise. Quatre familles de fiches, reliées entre elles.",
   "registre.sommaire.lead_tel": "Qui achète des caméras, à qui, pour combien, et ce que la préfecture autorise.",
   "registre.sommaire.chercher": "Chercher dans tout le registre",
@@ -3568,5 +3568,6 @@
   "registre.entreprise.parcourir_tout": "Tous ses documents dans le registre →",
   "registre.entreprise.paris": "Paris",
   "registre.cadre.fermer_detail": "Fermer le détail",
-  "registre.liste.source": "Source"
+  "registre.liste.source": "Source",
+  "registre.sommaire.zone_idf": "Île-de-France"
 }

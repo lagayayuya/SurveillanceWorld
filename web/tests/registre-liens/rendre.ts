@@ -169,7 +169,9 @@ for (const chemin of paths) {
   const r = route(p, q ? `?${q}` : "");
   g.location = { origin: "http://localhost", pathname: p, search: q ? `?${q}` : "", hash: "" };
   try {
-    let m = (await import(`../../src/registre/vues/${r.view}.ts`)).default;
+    // a route's view and its module's file, as modale.ts VUES pairs them
+    const fichier = ({ registre: "sommaire", chiffres: "sommaire" } as Record<string, string>)[r.view] ?? r.view;
+    let m = (await import(`../../src/registre/vues/${fichier}.ts`)).default;
     let props: Record<string, unknown>;
     ailleurs = "";
     try {
