@@ -27,23 +27,12 @@ from lacarte import apply, camerafilters, exposure, optics, regions, tiles
 
 C = 2 * np.pi * 6378137.0  # Web Mercator world width (m)
 TOL_REL, TOL_ABS_M = 0.05, 1.0  # coloured length per tile within max(1 m, 5 %) of filmed
-# ...10 % on a coarser grid (z11 at tiles.LOW_DETAIL: a unit is 12.6 m at 49° N, 0.5 CSS
-# pixel, 8 times z12's). Snapped to it, the merged intervals shorter than about a unit
-# vanish and curves become chords: the CI extract's z11 tile drew 7.2 % less than filmed
-# (b1; b2 4.1 %), its z12 tile 0.6 % less, from the same intervals (CI run 40755810234).
-TOL_REL_COARSE = 0.10
 OUTSIDE_MIN_M = 1.0  # a coloured stretch off every filmed interval longer than this fails
 # ...except at z12-14 (MERGED_ZOOMS), where tile coordinates are integers of 1.57 m (z12):
 # an interval's end moves by up to ~1 unit; 2.5 m is 0.2-0.4 screen pixel (IDF max 2.45 m)
 # — author's decision.
 OUTSIDE_MERGED_M = 2.5
 FILTER_SLACK_M = 0.5  # a kept portion may overrun its kept cameras by this much
-
-
-def tolerance_rel(extent: int) -> float:
-    """The share of the filmed length a tile's coloured length may miss on a grid of
-    `extent` units: TOL_REL on the full 4,096 grid, TOL_REL_COARSE on a coarser one."""
-    return TOL_REL if extent >= 4096 else TOL_REL_COARSE
 
 
 def outside_limit_m(z: int, extent: int) -> float:
@@ -309,7 +298,7 @@ def tile_audit(
                     )
                 per_tile[est].append((key, col_m, filmed_m, *off, *off_vis))
         for est in estimates:
-            out[f"z{z}_b{est}"] = _zoom_summary(per_tile[est], tolerance_rel(extent))
+            out[f"z{z}_b{est}"] = _zoom_summary(per_tile[est])
     return out
 
 
@@ -321,10 +310,10 @@ def _off(drawn, zone, u: float, limit: float) -> tuple[float, int, int]:
     return float(lens[long].sum()), int(long.sum()), int((lens > limit).sum())
 
 
-def _zoom_summary(per_tile, rel: float = TOL_REL) -> dict:
+def _zoom_summary(per_tile) -> dict:
     col = np.array([t[1] for t in per_tile])
     fil = np.array([t[2] for t in per_tile])
-    bad = np.abs(col - fil) > np.maximum(TOL_ABS_M, rel * fil)
+    bad = np.abs(col - fil) > np.maximum(TOL_ABS_M, TOL_REL * fil)
     worst = sorted(per_tile, key=lambda t: -abs(t[1] - t[2]))[:5]
     return {
         "tiles": len(per_tile),

@@ -47,18 +47,35 @@ def test_every_portion_lists_its_cameras(ci_pipeline):
     assert len(portions) and all(len(c) for c in portions.cameras)
 
 
+# The coloured length per tile may miss 10 % of the filmed length on z11's coarser grid
+# (tiles.LOW_DETAIL: a unit is 12.6 m at 49° N, 0.5 CSS pixel, 8 times z12's), 5 % elsewhere
+# (streetaudit.TOL_REL). Snapped to it, the merged intervals shorter than about a unit vanish
+# and curves become chords: the CI extract's z11 tile drew 7.2 % less than filmed (b1; b2
+# 4.1 %), its z12 tile 0.6 % less, from the same intervals (CI run 40755810234). Set here,
+# not in streetaudit.py: that file enters the build id (buildinfo.code_files), and a test's
+# threshold is no reason to rebuild France.
+TOL_REL_COARSE = 0.10
+
+
 @pytest.fixture(scope="session")
 def ci_tiles(ci_pipeline):
     """The streets tiles of the CI pipeline measured against its filmed intervals."""
     b = ci_pipeline.build_dir
-    zooms = range(tiles.STREETS_MIN, 17)
-    return streetaudit.tile_audit(
-        streetaudit.read_tiles(b / "tiles" / "streets.pmtiles", zooms),
-        gpd.read_parquet(b / "edges.parquet"),
-        pd.read_parquet(b / "filmed_intervals.parquet"),
-        optics.shown_estimates(),
-        zooms,
-    )
+    edges = gpd.read_parquet(b / "edges.parquet")
+    intervals = pd.read_parquet(b / "filmed_intervals.parquet")
+
+    def audit(zooms):
+        return streetaudit.tile_audit(
+            streetaudit.read_tiles(b / "tiles" / "streets.pmtiles", zooms),
+            edges, intervals, optics.shown_estimates(), zooms,
+        )  # fmt: skip
+
+    fine = [z for z in range(tiles.STREETS_MIN, 17) if z not in tiles.LOW_ZOOMS]
+    got = audit(fine)
+    with pytest.MonkeyPatch.context() as mp:  # _zoom_summary reads TOL_REL at each call
+        mp.setattr(streetaudit, "TOL_REL", TOL_REL_COARSE)
+        got |= audit(list(tiles.LOW_ZOOMS))
+    return got
 
 
 # At z12-14 (tiles.MERGED_ZOOMS) a coloured stretch off the filmed intervals is tolerated up
@@ -118,5 +135,5 @@ def test_the_off_limit_is_the_same_share_of_a_grid_unit_on_coarser_zooms():
 
 
 def test_the_length_tolerance_widens_only_on_the_coarser_grid():
-    assert streetaudit.tolerance_rel(4096) == streetaudit.TOL_REL == 0.05
-    assert streetaudit.tolerance_rel(2**tiles.LOW_DETAIL) == 0.10
+    assert streetaudit.TOL_REL == 0.05 < TOL_REL_COARSE == 0.10
+    assert tuple(tiles.LOW_ZOOMS) == (11,) and 2**tiles.LOW_DETAIL == 1024
