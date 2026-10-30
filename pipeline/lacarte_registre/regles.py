@@ -344,6 +344,12 @@ def appliquer(p: Pilote, corr: list[Correction]) -> Registre:
     for siren, x in p.reg.get("entreprises", {}).items():
         if x.get("entrepreneur_individuel") and x.get("nom"):
             raise ValueError(f"the sole trader {siren} is named: the export must mask it")
+    # The pilot's own `corrige` (prototype v4: « identifiant de l'acheteur corrigé », a
+    # boolean on every BOAMP notice, true on 9) is no page's and would be taken for the
+    # record of a correction accepted in /revue.
+    for e in events:
+        if not isinstance(e.get("corrige"), dict):
+            e.pop("corrige", None)
     corriger(reg, corr)
     masquer_ei(reg)
     autorisations = p.get("AUTORISATIONS", [])

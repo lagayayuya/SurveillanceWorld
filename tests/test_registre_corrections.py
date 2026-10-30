@@ -95,6 +95,26 @@ def test_a_number_of_cameras_read_leaves_the_unread(corrected):
     assert UNREADABLE not in json.dumps(read(corrected, "non_lus.json"))
 
 
+def test_the_pilot_s_own_corrige_is_dropped_and_a_correction_still_recorded(tmp_path):
+    # The pilot export marks every BOAMP notice `corrige` (prototype v4: « identifiant de
+    # l'acheteur corrigé », true on 9 of 2,616); the extract has none, so a copy gets it
+    # (SYNTHETIC: false on every document, true on the one corrected below).
+    importer.run(FIXTURE, tmp_path)
+    reg = tmp_path / "pilote" / "REG.json"
+    data = json.loads(reg.read_text(encoding="utf-8"))
+    for e in data["evenements"]:
+        e["corrige"] = e["id"] == CONTRACT_2020
+    reg.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    exporter.write(tmp_path / exporter.FILE, synthetic((CONTRACT_2020, "montant", 250000)))
+    construire.run(tmp_path)
+    site = tmp_path / "site"
+    e = doc(read(site, f"commune/{MIONS}.json"), CONTRACT_2020)
+    assert e["corrige"] == {"montant": {"source": 200000.0, "le": DAY}}
+    for p in site.rglob("*.json"):
+        text = p.read_text(encoding="utf-8")
+        assert '"corrige":true' not in text and '"corrige":false' not in text, p.name
+
+
 def test_without_accepted_corrections_nothing_is_marked(tmp_path):
     site = build(tmp_path, None)
     f = read(site, f"commune/{MIONS}.json")
