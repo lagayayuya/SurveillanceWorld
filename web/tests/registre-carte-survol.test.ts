@@ -6,10 +6,12 @@ import { test } from "node:test";
 import {
   type CarteMin,
   calque,
+  entieres,
   hachures,
   melange,
   type Site,
   TEINTES,
+  TOUTE_LA_COMMUNE,
 } from "../src/registre/drones.ts";
 
 type Handler = (e: unknown) => void;
@@ -207,4 +209,33 @@ test("the colours: algorithms hatched in raw pixels, a zone set back towards the
   assert.deepEqual([...h.data.slice(0, 4)], [0x7f, 0xd4, 0xff, 255]);
   assert.equal(melange("#000000", "#ffffff", 0.5), "#808080");
   assert.equal(melange("#7fd4ff", "#f2efe6", 0), "#7fd4ff");
+});
+
+test("a zone over four fifths of the commune or more is the whole commune, not a volume (B1)", () => {
+  const commune = carre(4.8, 45.7, 0.1).coordinates[0];
+  const zone = (id: string, d: number): Site => ({
+    id,
+    kind: "drone",
+    parts: { "69123": { in: carre(4.8, 45.7, d) } },
+  });
+  // shares of 100 %, 81 %, 64 % and 1 % of the commune's area
+  const sites = [zone("tout", 0.1), zone("presque", 0.09), zone("grand", 0.08), zone("petit", 0.01)];
+  assert.equal(TOUTE_LA_COMMUNE, 0.8);
+  assert.deepEqual([...entieres(sites, "69123", commune)], ["tout", "presque"]);
+  // no outline, no way to tell: every zone stays a volume
+  assert.equal(entieres(sites, "69123", null).size, 0);
+  // drawn: the whole one carries `e`, the volumes' layer leaves it out
+  const f = fausseCarte();
+  const data: unknown[] = [];
+  const m = f.map as unknown as Record<string, unknown>;
+  m.getSource = () => ({ setData: (x: unknown) => data.push(x) });
+  const L = calque(f.map, { insee: "69123", sites, teintes: TEINTES });
+  L.contour({ bbox: [4.8, 45.7, 4.9, 45.8], contour: commune });
+  L.heures({ tout: { heures: 6, n: 1 }, petit: { heures: 2, n: 1 } });
+  const last = data.at(-1) as { features: { properties: Record<string, unknown> }[] };
+  const e = Object.fromEntries(last.features.map((x) => [x.properties.id, x.properties.e]));
+  assert.deepEqual(e, { tout: true, petit: false });
+  // the localised zone is the tallest: the whole one no longer sets the scale
+  const h = Object.fromEntries(last.features.map((x) => [x.properties.id, x.properties.h as number]));
+  assert.ok(h.petit > 250);
 });

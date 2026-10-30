@@ -7,7 +7,9 @@
 // · the drone zones as volumes (fill-extrusion), their part inside the commune (the part over a
 //   neighbour is that commune's): a site's height is the hours its slots authorise on the period
 //   chosen, never an altitude, in the documents' colour; an algorithmic-analysis site flat and
-//   hatched in the same colour; the selection in the theme's ink, never yellow (v2.1 A1);
+//   hatched in the same colour; the selection in the theme's ink, never yellow (v2.1 A1); a zone
+//   over the whole commune, or nearly (TOUTE_LA_COMMUNE), is no volume: a hatched outline on the
+//   ground (v2.1 B1), so that it never hides the localised ones;
 // · nothing for the cameras: they are the fields the map shows at its usual zoom.
 // Hover and choice are feature states (v2.1, A1): the pointer moving over the map changes no layer,
 // no filter, no paint and no data, and a state only when the zone under it changes; the camera
@@ -50,14 +52,19 @@ const SRC_COM = `${P}-commune`;
 export const COUCHES = {
   commune: `${P}-commune`,
   communeAdmin: `${P}-commune-admin`,
+  entiere: `${P}-entiere`,
+  entierePlein: `${P}-entiere-plein`,
   vsa: `${P}-vsa`,
   vsaPlein: `${P}-vsa-plein`,
   vol: `${P}-vol`,
+  arete: `${P}-arete`,
   sol: `${P}-sol`,
   bord: `${P}-bord`,
   lab: `${P}-lab`,
 } as const;
-/** The layers the pointer finds a zone in (the label is not one: it never catches the pointer). */
+/** The layers the pointer finds a zone in (the label is not one: it never catches the pointer; a
+ * zone over the whole commune is not one either: the pointer would find it everywhere in the
+ * commune, and the list chooses it). */
 const CIBLES = [COUCHES.vol, COUCHES.vsa];
 
 /** The colours the zones are drawn in: the theme's ink (--fg: the selection, v2.1 A1), its ground
@@ -67,6 +74,12 @@ export type Teintes = { encre: string; fond: string; doc: string };
 /** The light theme's values (theme/punk/tokens.css), until the page's are read. */
 export const TEINTES: Teintes = { encre: "#111111", fond: "#f2efe6", doc: "#7fd4ff" };
 const HACHURE = `${P}-hachure`;
+
+/** A zone that covers this share of the commune's area or more is the whole commune (v2.1 B1): its
+ * act says « le territoire de la commune », or the commune but for a few blocks; drawn as a volume
+ * it would hold every other zone. 0.8: Lyon's whole-commune zone covers 99.9 % of it, its largest
+ * localised one 10.2 %; a zone over four fifths of a commune no longer says where in it. */
+export const TOUTE_LA_COMMUNE = 0.8;
 
 // --- the pure part (tested) ------------------------------------------------------------------
 
@@ -120,6 +133,21 @@ export function aire(rs: Ring[]): number {
   }
   return total;
 }
+/** The sites over the whole commune, or nearly (TOUTE_LA_COMMUNE of its area), given its outline:
+ * their part inside the commune against the outline's area. None without an outline. */
+export function entieres(sites: Site[], insee: string, contour: LonLat[] | null): Set<string> {
+  const out = new Set<string>();
+  const tout = contour ? aire([contour]) : 0;
+  if (!tout) return out;
+  for (const s of sites)
+    if (aire(rings(s.parts?.[insee]?.in)) >= TOUTE_LA_COMMUNE * tout) out.add(s.id);
+  return out;
+}
+/** A light colour (#rrggbb): its luminance over a half. */
+export const clair = (h: string): boolean => {
+  const [r, g, b] = [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16) || 0);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 127.5;
+};
 /** `a` and `b` (#rrggbb) mixed, `k` of `b`: a zone set back is its colour towards the ground. */
 export function melange(a: string, b: string, k: number): string {
   const rgb = (h: string) => [1, 3, 5].map((i) => Number.parseInt(h.slice(i, i + 2), 16) || 0);
@@ -244,7 +272,8 @@ export type Calque = {
   survoler(ids: string[]): void;
   /** The sites chosen: full, their label shown, the others set back. */
   choisir(ids: string[]): void;
-  /** The commune's outline from its map file, when it has come. */
+  /** The commune's outline from its map file, when it has come (it says which zones are the whole
+   * commune). */
   contour(c: Contour): void;
   /** The theme's colours again (its ink, its ground, the documents' colour). */
   encre(t: Teintes): void;
@@ -277,12 +306,18 @@ const fs = (k: "survol" | "choix" | "retrait"): ExpressionSpecification => [
 const isDrone: ExpressionSpecification = ["==", ["get", "kind"], "drone"];
 const isLab: ExpressionSpecification = ["has", "lab"];
 const isArea: ExpressionSpecification = ["!", isLab];
+const isWhole: ExpressionSpecification = ["==", ["get", "e"], true];
+const isLocal: ExpressionSpecification = ["!=", ["get", "e"], true];
 
 /** The layers, bottom to top, in the theme's colours (`admin`: the site's commune shape too).
  * Every change of look on a hover or a choice is a feature state read here: survol (a thin ink
  * outline), choix (full, a thick ink outline, its label), retrait (the others set back). */
 function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[] {
   const recul = melange(t.doc, t.fond, 0.6);
+  // a localised volume's own outline and the whole commune's band: the documents' colour darkened
+  // on a light ground (the map's ground inside a commune is near the documents' blue), the colour
+  // itself on a dark one; never the ink (the ink is the selection's)
+  const arete = clair(t.fond) ? melange(t.doc, t.encre, 0.45) : t.doc;
   const out: LayerSpecification[] = [];
   if (admin)
     out.push({
@@ -295,6 +330,29 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       paint: { "line-color": t.encre, "line-width": 3 },
     });
   out.push(
+    // a zone over the whole commune: full only when chosen, else a hatched band along its outline
+    // (strokes across it), under the commune's own line
+    {
+      id: COUCHES.entierePlein,
+      type: "fill",
+      source: SRC,
+      filter: ["all", isArea, isWhole],
+      paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.45, 0] },
+    },
+    {
+      id: COUCHES.entiere,
+      type: "line",
+      source: SRC,
+      filter: ["all", isArea, isWhole],
+      layout: { "line-join": "bevel" },
+      // short strokes across the line, as wide as long: a hatched band
+      paint: {
+        "line-color": arete,
+        "line-width": 8,
+        "line-dasharray": [0.4, 0.4],
+        "line-opacity": ["case", fs("retrait"), 0.45, 1],
+      },
+    },
     {
       id: COUCHES.commune,
       type: "line",
@@ -307,7 +365,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       id: COUCHES.vsa,
       type: "fill",
       source: SRC,
-      filter: ["all", isArea, ["!", isDrone]],
+      filter: ["all", isArea, isLocal, ["!", isDrone]],
       paint: {
         "fill-pattern": HACHURE,
         "fill-opacity": ["case", fs("retrait"), 0.35, 1],
@@ -317,7 +375,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       id: COUCHES.vsaPlein,
       type: "fill",
       source: SRC,
-      filter: ["all", isArea, ["!", isDrone]],
+      filter: ["all", isArea, isLocal, ["!", isDrone]],
       paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.85, 0] },
     },
     // drones: flat volumes in the documents' colour, the others set back when one is chosen
@@ -325,13 +383,26 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       id: COUCHES.vol,
       type: "fill-extrusion",
       source: SRC,
-      filter: ["all", isArea, isDrone],
+      filter: ["all", isArea, isLocal, isDrone],
       paint: {
         "fill-extrusion-color": ["case", fs("retrait"), recul, t.doc],
         "fill-extrusion-height": ["get", "h"],
         "fill-extrusion-base": 0,
-        "fill-extrusion-opacity": 0.55,
+        "fill-extrusion-opacity": 0.8,
         "fill-extrusion-vertical-gradient": true,
+      },
+    },
+    // each localised zone's outline on the ground (B1: « avec un contour »)
+    {
+      id: COUCHES.arete,
+      type: "line",
+      source: SRC,
+      filter: ["all", isArea, isLocal],
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": arete,
+        "line-width": 1,
+        "line-opacity": ["case", fs("retrait"), 0.4, 1],
       },
     },
     // the zones overlap (a site over the whole commune holds the smaller ones): the chosen one's
@@ -341,7 +412,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       id: COUCHES.sol,
       type: "fill",
       source: SRC,
-      filter: ["all", isArea, isDrone],
+      filter: ["all", isArea, isLocal, isDrone],
       paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.95, 0] },
     },
     {
@@ -393,6 +464,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     }),
   );
   let outline: Contour | null = null;
+  let entiere = new Set<string>();
   let hs: Record<string, Volume> = {};
   let tint = o.teintes;
   // the states as the map holds them: the pointer's zone, the list's, the chosen ones
@@ -411,7 +483,13 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   // one source: each site's polygon and the point of its label share the site's id, so that one
   // feature state covers both
   const zonesData = (): GeoJSON.FeatureCollection => {
-    const maxH = Math.max(1, ...Object.values(hs).map((v) => v.heures));
+    // the heights are the localised zones': a zone over the whole commune is no volume
+    const maxH = Math.max(
+      1,
+      ...Object.entries(hs)
+        .filter(([id]) => !entiere.has(id))
+        .map(([, v]) => v.heures),
+    );
     const dM = diag();
     const out: Feature[] = [];
     for (const [id, g] of geo) {
@@ -421,7 +499,13 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       out.push({
         type: "Feature",
         geometry: geometry as GeoJSON.Geometry,
-        properties: { id, kind: g.s.kind, h: volumeHeight(v.heures, maxH, dM), a: g.a },
+        properties: {
+          id,
+          kind: g.s.kind,
+          h: volumeHeight(v.heures, maxH, dM),
+          a: g.a,
+          e: entiere.has(id),
+        },
       });
       if (g.c && v.mots)
         out.push({
@@ -527,6 +611,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     },
     contour(c) {
       outline = c;
+      entiere = entieres(sites, insee, c.contour);
       set(SRC_COM, communeData());
       if (map.getLayer(COUCHES.communeAdmin)) map.removeLayer(COUCHES.communeAdmin);
       set(SRC, zonesData());

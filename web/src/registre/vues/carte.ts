@@ -13,7 +13,16 @@ import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
-import { type Calque, calque, lireContour, type Site, TEINTES, type Teintes } from "../drones.ts";
+import {
+  type Calque,
+  type Contour,
+  calque,
+  entieres,
+  lireContour,
+  type Site,
+  TEINTES,
+  type Teintes,
+} from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
 import { carteDuSite } from "../hote.ts";
 import { t } from "../i18n.ts";
@@ -67,6 +76,8 @@ type State = BaseState & {
   wk: number;
   /** the chart's width, CSS px */
   fw: number;
+  /** the sites over the whole commune, or nearly (drones.ts entieres, once the outline is read) */
+  ent: string[];
   is3d: boolean;
 };
 
@@ -120,6 +131,7 @@ class CarteDrones extends Vue<Props, State> {
       nd: -1,
       wk: -1,
       fw: large() ? 868 : 340,
+      ent: [],
       is3d: true,
     };
   }
@@ -190,11 +202,27 @@ class CarteDrones extends Vue<Props, State> {
     map.on("pitchend", this.onPitch);
     void this.poser(map);
   }
-  /** Its layers once the map's style is there, then the outline, then the flight to the commune. */
+  /** The outline (it says which zones are the whole commune), then the layers once the map's style
+   * is there, then the flight to the commune. */
   private async poser(map: MlMap): Promise<void> {
     const d = this.props.d;
     const used = new Set(this.T.flatMap((c) => c.sites));
     const sites = d.f.zones.sites.filter((s) => used.has(s.id)) as unknown as Site[];
+    // the outline from the register's map file, its head only (drones.ts lireContour), before the
+    // layers: a zone over the whole commune is never drawn first as a volume
+    let contour: Contour | null = null;
+    if (d.f.carte.decoupee !== false) {
+      try {
+        contour = await lireContour(d.insee, this.abort.signal);
+      } catch {
+        // no outline: the site's own commune shape stays
+      }
+    }
+    if (this.dead) return;
+    if (contour) {
+      const ent = [...entieres(sites, d.insee, contour.contour)];
+      if (ent.length) this.setState({ ent });
+    }
     const make = (): boolean => {
       if (this.dead || this.layer) return true;
       try {
@@ -207,6 +235,7 @@ class CarteDrones extends Vue<Props, State> {
             if (i >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
           },
         });
+        if (contour) this.layer.contour(contour);
         this.synced = "";
         this.syncMap();
         return true;
@@ -226,16 +255,6 @@ class CarteDrones extends Vue<Props, State> {
         map.on("styledata", again);
       });
     if (this.dead || !this.layer) return;
-    // the outline from the register's map file, its head only (drones.ts lireContour)
-    if (d.f.carte.decoupee !== false) {
-      try {
-        const c = await lireContour(d.insee, this.abort.signal);
-        if (c && !this.dead) this.layer.contour(c);
-      } catch {
-        // no outline: the site's own commune shape stays
-      }
-    }
-    if (this.dead) return;
     this.voler(map);
   }
   /** To the commune, tilted, in the part of the map the panel and the chart leave free. */
@@ -519,8 +538,10 @@ class CarteDrones extends Vue<Props, State> {
       const e = d.ev.get(c.actes[0]);
       const when = dateTxt(c.t0);
       const on = i === S.cur || i === S.hov;
+      const toute = c.sites.length > 0 && c.sites.every((s) => S.ent.includes(s));
       const fin = [
         ...(c.sites.length ? [] : [t("carte.zone_non_deduite_court")]),
+        ...(toute ? [t("carte.toute_la_commune")] : []),
         t(c.kind === "vsa" ? "carte.analyse_algorithmique" : "carte.mot_drones"),
         c.finalite ?? t("carte.finalite_non_lue"),
       ].join(" · ");
@@ -590,6 +611,7 @@ class CarteDrones extends Vue<Props, State> {
         tel: !isLarge,
       },
       hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length),
+      hasEnt: S.ent.length > 0,
       hasFrise: drone.length > 0,
       is3d: S.is3d ? "true" : "false",
       tog3d: (() => this.ease({ pitch: S.is3d ? 0 : PITCH })) as Handler,

@@ -5,6 +5,7 @@
     <div class="leg">
       <span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span>
       <span class="leg-in">{{t.carte.leg_hauteur}}</span>
+      <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
       <span style="color: var(--muted)">{{t.carte.leg_fond}}</span>
     </div>

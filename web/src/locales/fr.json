@@ -2039,6 +2039,8 @@
   "registre.carte.vol_label": "{h} · {n, plural, one {# arrêté} other {# arrêtés}}",
   "registre.carte.titre_long": "Surveillance par drones et par algorithmes",
   "registre.carte.mot_drones": "drones",
+  "registre.carte.toute_la_commune": "toute la commune",
+  "registre.carte.leg_entiere": "zone de vol sur toute la commune, ou presque : bande hachurée le long de ses limites",
   "registre.chiffres.acheteurs_les_10_premiers": "{nBuy} acheteurs · les 10 premiers",
   "registre.chiffres.cat_acheteur": "acheteur",
   "registre.chiffres.cat_autre": "autre",
