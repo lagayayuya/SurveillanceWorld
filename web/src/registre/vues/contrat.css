@@ -1,0 +1,115 @@
+/* A document's record on the v2 skeleton (contrat.html): its own rules, scoped to .rg .v-contrat (the map
+   is behind). The kit's classes are cadre.css's; R1's .st, .arrow and dl.f stay registre.css's. */
+
+/* the name's cut-out letters, a word's scraps on one line (decoupe-outils.ts) */
+.rg .v-contrat .cutout {
+  column-gap: 14px;
+}
+.rg .v-contrat .mot {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+/* a discreet mark (DECISIONS 2026-10-28): « ? » beside a datum */
+.rg .v-contrat .rep {
+  margin-left: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  vertical-align: super;
+  line-height: 0;
+}
+
+/* the parcours: one card per step, in order; a document's sticker is its type's (V2-Types) */
+.rg .v-contrat .par {
+  display: flex;
+  align-items: stretch;
+}
+.rg .v-contrat .par .st {
+  flex: 1 1 0;
+  min-width: 0;
+  border-color: var(--line);
+}
+.rg .v-contrat .par .arrow {
+  flex: 0 0 28px;
+}
+.rg .v-contrat .par.un {
+  flex-direction: column;
+  gap: 6px;
+}
+.rg .v-contrat .par.un .st {
+  flex: none;
+  min-height: 0;
+}
+.rg .v-contrat .par.un .arrow {
+  flex: none;
+  height: 20px;
+  transform: rotate(90deg);
+}
+/* the selection alone is yellow (v2 § 8): the frame's pink stays the frame's */
+.rg .v-contrat .par .st:hover,
+.rg .v-contrat .par .st.on {
+  border-color: var(--line);
+  background: var(--soft);
+}
+.rg .v-contrat .par .st.on {
+  box-shadow: inset 0 -6px 0 var(--type-territoire);
+}
+.rg .v-contrat .par .st.ghostst {
+  border-color: var(--muted);
+}
+.rg .v-contrat .stk.sm {
+  align-self: flex-start;
+  transform: none;
+  box-shadow: none;
+  font-size: 12px;
+  padding: 2px 8px 2px 5px;
+}
+.rg .v-contrat .stk.sm svg {
+  width: 16px;
+  height: 16px;
+}
+.rg .v-contrat .b.fin {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--muted);
+  border-style: dashed;
+  border-color: var(--muted);
+}
+.rg .v-contrat .voisins {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 20px;
+}
+.rg .v-contrat .voisins .suiv {
+  margin-left: auto;
+}
+
+/* the dossier's documents: type, date, what, its source */
+.rg .v-contrat .drow {
+  grid-template-columns: 24px 130px minmax(0, 1fr) auto;
+  padding: 4px 0;
+}
+.rg .v-contrat .drow .r {
+  max-width: 330px;
+  text-align: right;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+.rg .v-contrat dl.f {
+  border-top-color: var(--line);
+}
+
+@media (max-width: 959px) {
+  .rg .v-contrat .drow {
+    grid-template-columns: 24px 96px minmax(0, 1fr);
+    padding: 6px 0;
+  }
+  .rg .v-contrat .drow .r {
+    grid-column: 2 / -1;
+    max-width: none;
+    text-align: left;
+  }
+}

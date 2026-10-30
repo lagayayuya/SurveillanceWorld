@@ -5,26 +5,24 @@
 // tenders, the company's contracts and buyers, the planned end, the contract that followed) is the build's
 // « parcours » (pipeline/lacarte_registre/parcours.py), read here, never recomputed. Pure: the view
 // (contrat.ts) adds its state and handlers, the tests read it.
+//
+// The v2 skeleton (design/registre/v2): the fiche's type is its main document's (a contract, a call for
+// tenders, a subsidy, a decree), its name the short « Contrat de juin 2022 »; what it says (`dl`) and
+// whom it names (`qui`) are apart, for L'essentiel and Avec qui; `docs` lists each document of the
+// dossier, every modification on its own row; every mention that has its fiche is a typed link
+// (liens.ts).
 
 import { benefLabel, byDateAsc, communeHref, emetteur, isArr } from "../commun.ts";
-import {
-  BADGE,
-  buyerHref,
-  buyerNom,
-  depNom,
-  disp,
-  entName,
-  type Lexique,
-  titre,
-  typ,
-} from "../corpus.ts";
+import { BADGE, buyerNom, depNom, disp, entName, type Lexique, titre, typ } from "../corpus.ts";
 import { corrections } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
 import type { Acheteur, Affaire, Commune, Entreprise, Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
 import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
+import { lien, lienAcheteur, lienCommune, lienDepartement, lienEntreprise } from "../liens.ts";
 import { capital, sentence, tidy } from "../texte.ts";
+import type { TypeCle } from "../types.ts";
 
 export type Parcours = {
   fin_prevue: { date: string; signature: string; mois: number } | null;
@@ -70,12 +68,19 @@ export type Step = {
   foot: string[];
   /** another record of the register it opens (a probable contract or call for tenders) */
   href?: { l: string; href: string };
+  /** the companies it names, as links (a rich row of the panel) */
+  qui?: Rich;
 };
 export type Ligne = { k: string; v: Rich; note: string; m: Mark };
-export type Lien = { href: string; l: string; m: Mark };
+/** A link to another record (the previous contract, the next call for tenders), with its type. */
+export type Lien = { href: string; l: string; m: Mark; k: TypeCle };
 export type Fiche = {
   kind: Kind;
+  /** its main document's type: the fiche's (types.ts) */
+  type: TypeCle;
+  /** the objet (R1's title) */
   titre: string;
+  /** the fiche's name: « Contrat de juin 2022 », « Arrêté du 19 juin 2025 » */
   titreDoc: string;
   badge: { l: string; s: string };
   sous: { a: string; m: Mark; b: string };
@@ -87,7 +92,16 @@ export type Fiche = {
   parTitre: string;
   ditTitre: string;
   ditNote: string;
+  /** what the document says (L'essentiel), its corrections last */
   dl: Ligne[];
+  /** whom it names (Avec qui): buyer, companies, commune, beneficiary, funder, département */
+  qui: Ligne[];
+  /** each document of the dossier (and a probable one of another), in order; no planned end */
+  docs: Step[];
+  /** who issues it, for the identity line: the buyer as a link, the funder, the préfecture */
+  emetteur: RichItem;
+  /** couverture.json's sources it reads (sources.ts) */
+  sources: string[];
   /** the money line under the amounts (a contract) */
   argent: boolean;
   /** the line on decrees read by a program (a decree) */
@@ -95,7 +109,6 @@ export type Fiche = {
   sum: { kicker: string; title: string; rows: [string, string][] };
   /** what the marks of the page mean, said in the panel at rest */
   reperes: string[];
-  fil: { l: string; href: string }[];
   /** the document « Signaler une erreur » and « Copier la référence » name */
   main: Evenement;
   ref: string;
@@ -190,14 +203,20 @@ export function fiche(f: Fichier): Fiche | null {
         )
       : buyerNom(L, buyer)
     : capital(t("contrat.l_acheteur"));
-  const buyerLink: Rich = buyer
-    ? [{ a: { href: buyerHref(L, buyer), text: buyerNom(L, buyer) } }]
-    : t("format.non_publie");
+  const buyerLink: Rich = buyer ? [lienAcheteur(L, buyer)] : t("format.non_publie");
+  // the buyer at the head of a sentence (« La mairie de Vénissieux »), a link to its fiche
+  const buyerLead: RichItem = buyer ? lienAcheteur(L, buyer, buyerTxt) : buyerTxt;
+  // a sole trader is never a link (liens.ts)
   const entLinks = (sirens: string[]): RichItem[] =>
     sirens.flatMap((s, i) => [
       ...(i ? [", "] : []),
-      s === EI ? entName(L, s) : { a: { href: `/registre/entreprise/${s}`, text: entName(L, s) } },
+      s === EI ? entName(L, s) : lienEntreprise(L, s),
     ]);
+  // the commune the dossier names, when it is not already its buyer (a mairie)
+  const communeLigne = (): Ligne[] =>
+    c && insee && !(communal && ach?.insee_siege === insee)
+      ? [line(t("contrat.d_commune"), [lienCommune(L, insee)])]
+      : [];
   const entNames = (sirens: string[]) =>
     sirens.length
       ? sirens.map((s) => entName(L, s)).join(", ")
@@ -216,6 +235,10 @@ export function fiche(f: Fichier): Fiche | null {
   let kpis: Fiche["kpis"];
   let lead: Rich;
   let dl: Ligne[];
+  let qui: Ligne[];
+  let docs: Step[] | null = null;
+  let emet: RichItem = "";
+  let srcs: string[];
   let sum: Fiche["sum"];
   let titreDoc: string;
   let prec: Lien | null = null;
@@ -293,6 +316,7 @@ export function fiche(f: Fichier): Fiche | null {
         [t("contrat.p_forme"), formeTxt(a)],
       ],
       foot: [t("contrat.source_decp"), explainDate(att)],
+      qui: sirens.length ? entLinks(sirens) : undefined,
     });
     const modStep = (m: Evenement, i: number): Step => {
       const ch = (m.changements as string[] | undefined) ?? [];
@@ -349,6 +373,8 @@ export function fiche(f: Fichier): Fiche | null {
         foot: [t("contrat.source_decp"), t("contrat.avenants_muets")],
       });
     } else for (const [i, m] of mods.entries()) steps.push(modStep(m, i));
+    // the documents: the call for tenders and the contract, then every modification on its own row
+    docs = [...steps.filter((s) => s.k !== "mod"), ...mods.map(modStep)];
     if (fin) {
       steps.push({
         k: "fin",
@@ -390,6 +416,7 @@ export function fiche(f: Fichier): Fiche | null {
           montant: money(p.montant),
         }),
         m: p.date_a_verifier ? t("repere.date") : "",
+        k: "con",
       };
     }
     if (P.suivant)
@@ -397,6 +424,7 @@ export function fiche(f: Fichier): Fiche | null {
         href: contractHref(P.suivant.affaire),
         l: t("contrat.suivant", { mois: longMonth(P.suivant.date) }),
         m: "",
+        k: "ao",
       };
     kpis = [
       att.montant != null
@@ -419,7 +447,7 @@ export function fiche(f: Fichier): Fiche | null {
       : t("contrat.entreprise_non_publiee");
     const court = lib?.court ?? objet(att).toLowerCase();
     lead = rt(att.montant != null ? "contrat.lead_con" : "contrat.lead_con_sans_montant", {
-      acheteur: buyerTxt,
+      acheteur: buyerLead,
       entreprises: ents,
       montant: { strong: money(att.montant) },
       duree: dur ? t("contrat.lead_duree", { d: duree(dur) }) : "",
@@ -428,13 +456,18 @@ export function fiche(f: Fichier): Fiche | null {
     const st = sirens.length ? P.entreprises[sirens[0]] : undefined;
     const sameAmount = lastM.montant === att.montant;
     const sameDur = months(lastM.duree) == null || months(lastM.duree) === months(att.duree);
-    dl = [
+    qui = [
       line(t("contrat.d_acheteur"), buyerLink),
       line(
         t("contrat.d_entreprise"),
         sirens.length ? entLinks(sirens) : t("contrat.non_publiee"),
         st ? `· ${t("contrat.ent_stats", { n: st.contrats, k: st.collectivites })}` : "",
       ),
+      ...communeLigne(),
+    ];
+    emet = buyer ? lienAcheteur(L, buyer) : "";
+    srcs = [...(aoE ? ["avis"] : []), "contrats"];
+    dl = [
       line(t("contrat.d_objet"), objet(att) || t("format.non_publie")),
       line(t("contrat.d_forme"), formeRich(a)),
       line(t("contrat.d_dispositif"), dispositif(att)),
@@ -535,8 +568,9 @@ export function fiche(f: Fichier): Fiche | null {
         ],
         foot: [explainDate(pe), t("contrat.repere_lien")],
         href: { l: t("contrat.fiche_contrat"), href: contractHref(probId) },
+        qui: pe.entreprises?.length ? entLinks(pe.entreprises) : undefined,
       });
-      suiv = { href: contractHref(probId), l: t("contrat.contrat_suivi"), m: LIEN };
+      suiv = { href: contractHref(probId), l: t("contrat.contrat_suivi"), m: LIEN, k: "con" };
     } else
       steps.push({
         k: "fin",
@@ -574,7 +608,7 @@ export function fiche(f: Fichier): Fiche | null {
     const court = lib?.court ?? objet(e0).toLowerCase();
     lead = [
       ...rt("contrat.lead_ao", {
-        acheteur: buyerTxt,
+        acheteur: buyerLead,
         date: debut ? longDate(debut) : t("format.date_non_publiee"),
         objet: court ? t("contrat.lead_objet", { o: court }) : "",
       }),
@@ -589,11 +623,16 @@ export function fiche(f: Fichier): Fiche | null {
     ];
     const refs = (es: Evenement[]) => es.map((x) => reference(x)).join(", ");
     dl = [
-      line(t("contrat.d_acheteur"), buyerLink),
       line(t("contrat.d_objet"), objet(e0) || lib?.titre || t("format.non_publie")),
       line(t("contrat.d_avis"), avis.length ? refs(avis) : "—"),
       line(t("contrat.d_resultat"), res.length ? refs(res) : t("format.non_publie")),
       ...(rect.length ? [line(t("contrat.d_rectificatifs"), refs(rect))] : []),
+    ];
+    emet = buyer ? lienAcheteur(L, buyer) : "";
+    srcs = ["avis", ...(pe ? ["contrats"] : [])];
+    qui = [
+      line(t("contrat.d_acheteur"), buyerLink),
+      ...communeLigne(),
       line(
         t("contrat.d_contrat"),
         pe
@@ -635,8 +674,7 @@ export function fiche(f: Fichier): Fiche | null {
     const benef = benefLabel(e0);
     const named =
       e0.beneficiaire !== "[non retenu]" && e0.nom_publie !== false && !!e0.beneficiaire;
-    const commune: RichItem | null =
-      c && insee ? { a: { href: communeHref(insee), text: c.nom } } : null;
+    const commune: RichItem | null = c && insee ? lienCommune(L, insee) : null;
     for (const e of evs)
       steps.push({
         k: "sub",
@@ -677,8 +715,9 @@ export function fiche(f: Fichier): Fiche | null {
         rows: [[t("contrat.p_montant"), money(pe.montant)]],
         foot: [explainDate(pe), t("contrat.repere_lien")],
         href: { l: t("contrat.fiche_contrat"), href: contractHref(probId) },
+        qui: pe.entreprises?.length ? entLinks(pe.entreprises) : undefined,
       });
-      suiv = { href: contractHref(probId), l: t("contrat.contrat_finance"), m: LIEN };
+      suiv = { href: contractHref(probId), l: t("contrat.contrat_finance"), m: LIEN, k: "con" };
     }
     const tot = evs.reduce((s, e) => s + (e.montant ?? 0), 0);
     const cams = evs.reduce((s, e) => s + (e.cameras ?? 0), 0);
@@ -699,19 +738,28 @@ export function fiche(f: Fichier): Fiche | null {
       commune: commune ?? "",
       cameras: cams ? t("contrat.lead_cameras", { n: cams }) : "",
     });
-    dl = [
+    qui = [
       line(t("contrat.d_beneficiaire"), benef),
       ...(commune ? [line(t("contrat.d_commune"), [commune])] : []),
       line(t("contrat.d_financeur"), financeur),
-      line(t("contrat.d_objet"), objet(e0) || t("format.non_publie")),
-      line(t("contrat.d_montant"), [{ strong: money(tot) }]),
-      line(t("contrat.d_cameras"), cams ? fr(cams) : t("contrat.non_precise")),
       line(
         t("contrat.d_contrat"),
         pe ? entLinks(pe.entreprises ?? []) : t("contrat.non_designe"),
         "",
         pe ? LIEN : "",
       ),
+    ];
+    dl = [
+      line(t("contrat.d_objet"), objet(e0) || t("format.non_publie")),
+      line(t("contrat.d_montant"), [{ strong: money(tot) }]),
+      line(t("contrat.d_cameras"), cams ? fr(cams) : t("contrat.non_precise")),
+    ];
+    emet = financeur;
+    srcs = [
+      region
+        ? `subventions_region_${e0.dep === "13" ? "sud" : "idf"}`
+        : `subventions_etat_${String(dep ?? "")}`,
+      ...(pe ? ["contrats"] : []),
     ];
     sum = {
       kicker: `${t("contrat.type_subvention")}${c ? ` · ${c.nom}` : depName ? ` · ${depName}` : ""}`,
@@ -773,10 +821,19 @@ export function fiche(f: Fichier): Fiche | null {
       }),
       ...(why.length ? [" ", t("contrat.lead_non_lu", { raisons: why.join(", ") })] : []),
     ];
-    dl = [
+    qui = [
       line(t("contrat.d_beneficiaire"), e0 ? benefLabel(e0) : "—"),
       line(t("contrat.d_publie_par"), e0 ? emetteur(e0) : "—"),
-      line(t("contrat.d_departement"), depName || t("format.non_publie")),
+      line(
+        t("contrat.d_departement"),
+        typeof dep === "string" && dep && depName
+          ? [lienDepartement(dep, depName)]
+          : t("format.non_publie"),
+      ),
+    ];
+    emet = e0 ? emetteur(e0) : "";
+    srcs = typeof dep === "string" && dep ? [`arretes_${dep}`] : [];
+    dl = [
       line(t("contrat.d_periode"), e0?.periode ? String(e0.periode) : t("contrat.non_precisee")),
       line(t("contrat.d_lieu"), e0?.objet ? tidy(e0.objet) : t("contrat.non_precise")),
       ...(why.length ? [line(t("contrat.d_non_lu"), why.join(" · "))] : []),
@@ -813,6 +870,7 @@ export function fiche(f: Fichier): Fiche | null {
     ...steps.flatMap((s) => [s.dm, s.lm]),
     ...kpis.map((k) => k.m),
     ...dl.map((x) => x.m),
+    ...qui.map((x) => x.m),
     prec?.m ?? "",
     suiv?.m ?? "",
     markD(main),
@@ -830,16 +888,9 @@ export function fiche(f: Fichier): Fiche | null {
         (objet(main) ||
           (kind === "sub" && c ? t("contrat.titre_sub", { nom: c.nom }) : t("format.non_publie"))));
   const mainRef = reference(main);
-  const fil = [{ l: t("commun.fil_registre"), href: "/registre/" }];
-  if (typeof dep === "string" && dep && depName)
-    fil.push({ l: depName, href: `/registre/departement/${dep}` });
-  if (c && insee)
-    fil.push(
-      { l: c.nom, href: communeHref(insee) },
-      { l: t("contrat.fil_documents"), href: communeHref(insee, "documents") },
-    );
   return {
     kind,
+    type: TYPE_ETAPE[kind],
     titre: head,
     titreDoc,
     badge: { l: t(`contrat.badge_${kind}`), s: BADGE[kind === "aut" ? "aut" : kind] },
@@ -864,11 +915,14 @@ export function fiche(f: Fichier): Fiche | null {
     ditTitre: t(`contrat.dit_titre_${kind}`),
     ditNote: t(`contrat.dit_note_${kind}`),
     dl,
+    qui,
+    docs: docs ?? steps.filter((s) => s.k !== "fin"),
+    emetteur: emet,
+    sources: srcs,
     argent,
     arretes,
     sum,
     reperes,
-    fil,
     main,
     ref: mainRef,
     source: kind === "aut" ? (e0?.url ?? "") : "",
@@ -893,3 +947,19 @@ export function fiche(f: Fichier): Fiche | null {
 
 /** A step's badge style: the kit's badges, the planned end's dashed one. */
 export const stepStyle = (k: Step["k"]): string => STYLE[k];
+
+/** A step's type (types.ts): each document its own; the planned end is none, it is computed. */
+export const TYPE_ETAPE: Record<Exclude<Step["k"], "fin">, TypeCle> = {
+  ao: "ao",
+  con: "con",
+  mod: "mod",
+  aut: "aut",
+  sub: "sub",
+};
+
+/** A link to another record, of its type (liens.ts). */
+export const lienFiche = (x: Lien): RichItem => lien(x.k, x.href, x.l);
+
+/** The document an address names (`?doc=<id>`), among the dossier's; null for none or another. */
+export const docMontre = (F: Fiche, id: string | null): Step | null =>
+  (id && F.docs.find((d) => d.id === id && !d.href)) || null;

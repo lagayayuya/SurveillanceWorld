@@ -7,7 +7,16 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { Evenement } from "../src/registre/donnees.ts";
 import { setMessages } from "../src/registre/i18n.ts";
-import { type Fichier, fiche, ouvreAilleurs, rt } from "../src/registre/vues/contrat-outils.ts";
+import {
+  docMontre,
+  type Fichier,
+  fiche,
+  lienFiche,
+  ouvreAilleurs,
+  rt,
+  TYPE_ETAPE,
+} from "../src/registre/vues/contrat-outils.ts";
+import { motsDecoupes } from "../src/registre/vues/decoupe-outils.ts";
 
 const catalogue: Record<string, string> = JSON.parse(
   readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"),
@@ -116,7 +125,7 @@ test("a contract: call for tenders → contract → modification → planned end
   assert.equal(F.suiv?.l, "Appel d'offres suivant : juillet 2026 →");
   assert.equal(F.suiv?.href, "/registre/contrat/avis-X");
   assert.ok(F.reperes.some((r) => r.startsWith("« ? » Date à vérifier")));
-  const company = F.dl.find((x) => x.k === "Entreprise");
+  const company = F.qui.find((x) => x.k === "Entreprise");
   assert.equal(company?.note, "· 64 contrats avec 44 collectivités");
   assert.equal(text(F.dl.find((x) => x.k === "Montant")?.v), `215 000 €, inchangé par la modification`);
 });
@@ -193,7 +202,7 @@ test("a subsidy: a name not published stays « nom non publié », the commune i
   const masked = sub("[non retenu]", false);
   assert.equal(masked?.kind, "sub");
   assert.equal(text(masked?.lead), `L'État a accordé 79 100 € pour un projet à Synthèse-la-Ville pour 4 caméras.`);
-  assert.equal(masked?.dl[0].v, "nom non publié");
+  assert.equal(masked?.qui[0].v, "nom non publié");
   assert.equal(text(masked?.titreDoc), "Subvention de 2025");
   assert.ok(!masked?.argent, "the money line is the contracts'");
   const named = sub("COMMUNE DE SYNTHESE", true);
@@ -241,4 +250,108 @@ test("a rich placeholder keeps the digits of the text around it", () => {
     { strong: "3 €" },
     " à X 12.",
   ]);
+});
+
+// --- the v2 skeleton (design/registre/v2): type, sections' contents, documents, typed links ----------
+
+test("v2: the fiche's type is its main document's, its name the short one", () => {
+  const F = fiche(contrat());
+  assert.ok(F);
+  assert.equal(F.type, "con");
+  assert.equal(F.titreDoc, "Contrat de janvier 2025");
+  // L'essentiel says what the contract says; Avec qui whom it names
+  assert.deepEqual(
+    F.dl.map((x) => x.k),
+    ["Objet publié", "Forme", "Dispositif", "Montant", "Durée", "Offres reçues"],
+  );
+  assert.deepEqual(
+    F.qui.map((x) => x.k),
+    ["Acheteur", "Entreprise"],
+  );
+  // the sources it reads, in couverture.json's ids
+  assert.deepEqual(F.sources, ["avis", "contrats"]);
+});
+
+test("v2: every mention that has its fiche is a link of its target's type", () => {
+  const F = fiche(contrat());
+  assert.ok(F);
+  const json = (x: unknown) => JSON.stringify(x);
+  // the buyer, a commune's mairie: its commune's fiche, the territories' colour; in the lead too
+  assert.match(json(F.qui[0].v), /"href":"\/registre\/commune\/69999".*"c":"var\(--type-territoire\)"/);
+  assert.match(json(F.lead), /"href":"\/registre\/commune\/69999"/);
+  assert.match(json(F.emetteur), /"href":"\/registre\/commune\/69999"/);
+  // the company, the companies' colour
+  assert.match(json(F.qui[1].v), /"href":"\/registre\/entreprise\/111111111".*"c":"var\(--type-entreprise\)"/);
+  // the previous contract and the next call for tenders, each of its own type
+  assert.equal(F.prec?.k, "con");
+  assert.equal(F.suiv?.k, "ao");
+  assert.match(json(lienFiche(F.suiv as NonNullable<typeof F.suiv>)), /"c":"var\(--type-document\)"/);
+});
+
+test("v2: the documents of the dossier, each modification on its own row; ?doc= names one", () => {
+  const f = contrat();
+  // three modifications: the parcours folds them into one step, the documents list each
+  f.affaire.events = ["A1", "C1~0", "C1~1", "C1~2", "C1~3"];
+  f.evenements.push(
+    { ...f.evenements[2], id: "C1~2", date: "2026-02-01", modif_n: 2 } as Evenement,
+    { ...f.evenements[2], id: "C1~3", date: "2026-03-01", modif_n: 3 } as Evenement,
+  );
+  const F = fiche(f);
+  assert.ok(F);
+  assert.deepEqual(
+    F.steps.map((s) => s.k),
+    ["ao", "con", "mod", "fin"],
+  );
+  assert.deepEqual(
+    F.docs.map((d) => d.id),
+    ["A1", "C1~0", "C1~1", "C1~2", "C1~3"],
+  );
+  const shown = docMontre(F, "C1~2");
+  assert.equal(shown?.what, "Modification n° 2");
+  assert.equal(shown && shown.k !== "fin" ? TYPE_ETAPE[shown.k] : null, "mod");
+  assert.equal(docMontre(F, "ailleurs"), null);
+  assert.equal(docMontre(F, null), null);
+});
+
+test("v2: a call for tenders, a subsidy, a decree: their type, whom they name, their sources", () => {
+  const ao = fiche(
+    fichier({ id: "avis-X", kind: "contrat_non_retrouve", events: ["X1"] }, [
+      ev({ id: "X1", t: "avis", date: "2026-07-21", affaire: "avis-X", acheteur_siren: "222222222" }),
+    ]),
+  );
+  assert.equal(ao?.type, "ao");
+  assert.deepEqual(ao?.sources, ["avis"]);
+  assert.deepEqual(
+    ao?.qui.map((x) => x.k),
+    ["Acheteur", "Contrat"],
+  );
+  const sub = fiche(
+    fichier({ id: "detr-1", kind: "subvention", events: ["detr-1"] }, [
+      ev({ id: "detr-1", t: "subvention_etat", date: "2025-12-31", affaire: "detr-1", montant: 1, beneficiaire: "X" }),
+    ]),
+  );
+  assert.equal(sub?.type, "sub");
+  assert.deepEqual(sub?.sources, ["subventions_etat_69"]);
+  assert.equal(sub?.emetteur, "L'État");
+  assert.match(JSON.stringify(sub?.qui.find((x) => x.k === "Commune")?.v), /"href":"\/registre\/commune\/69999"/);
+  const aut = fiche(
+    fichier({ id: "75-1", kind: "acte", insee: null, dep: "75", events: ["75-1"] }, [
+      ev({ id: "75-1", t: "arrete_drone", date: "2025-06-19", affaire: "75-1", dep: "75", insee: null }),
+    ]),
+  );
+  assert.equal(aut?.type, "aut");
+  assert.deepEqual(aut?.sources, ["arretes_75"]);
+  assert.match(JSON.stringify(aut?.qui.find((x) => x.k === "Département")?.v), /"href":"\/registre\/departement\/75"/);
+  assert.deepEqual(
+    aut?.docs.map((d) => d.id),
+    ["75-1"],
+  );
+});
+
+test("v2: a name in cut-out letters breaks between its words only", () => {
+  const m = motsDecoupes("Contrat de juin 2022");
+  assert.deepEqual(
+    m.map((x) => x.lettres.map((l) => l.ch).join("")),
+    ["CONTRAT", "DE", "JUIN", "2022"],
+  );
 });
