@@ -595,6 +595,12 @@ class CarteDrones extends Vue<Props, State> {
       });
     });
     rows.sort((a, b) => b.at - a.at);
+    // « 57 créneaux, dans 50 arrêtés » (B2): the list's slots and the acts they come from
+    const shownT = T.filter((c) => this.inP(c));
+    const shownND = ND.filter((a) => deGenre(S.k, a.kind) && dansPeriode(a.date, r));
+    const nSlots = shownT.length;
+    const nNd = shownND.length;
+    const nActes = new Set([...shownT.flatMap((c) => c.actes), ...shownND.map((a) => a.acte)]).size;
 
     // nothing to list: said, with why when it is known
     let vide: Rich = "";
@@ -669,6 +675,9 @@ class CarteDrones extends Vue<Props, State> {
         },
       ),
       nH: fr(tk.heures),
+      nSH: String(tk.sansHoraires),
+      lSH: t("carte.t_sans_horaires", { n: tk.sansHoraires }),
+      hasND: tk.nonDeduites > 0,
       nND: String(tk.nonDeduites),
       lND: t("carte.t_nd", { n: tk.nonDeduites }),
       rangeL: r
@@ -715,7 +724,11 @@ class CarteDrones extends Vue<Props, State> {
       unhover: (() => {
         if (S.hov >= 0) this.setState({ hov: -1 });
       }) as Handler,
-      listT: t("carte.liste_t", { n: rows.length }),
+      listT: rows.length
+        ? `${t("carte.liste_t2", { n: nSlots, arr: count(nActes, "arrete") })}${
+            nNd ? t("carte.liste_nd", { n: nNd }) : ""
+          }`
+        : t("carte.liste_t", { n: 0 }),
       rows: rows.map((x) => x.row),
       vide,
     };

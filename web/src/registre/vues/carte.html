@@ -32,8 +32,9 @@
     <div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div>
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
-      <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures}}</div></div>
-      <div class="ticket"><div class="v">{{nND}}</div><div class="l">{{lND}}</div></div>
+      <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures_hors}}</div></div>
+      <div class="ticket"><div class="v">{{nSH}}</div><div class="l">{{lSH}}</div></div>
+      <sc-if value="{{hasND}}"><div class="ticket"><div class="v">{{nND}}</div><div class="l">{{lND}}</div></div></sc-if>
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
 

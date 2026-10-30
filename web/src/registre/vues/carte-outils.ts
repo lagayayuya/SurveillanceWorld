@@ -175,21 +175,24 @@ export const genre = (s: string | null | undefined): Genre =>
   s === "drone" || s === "vsa" ? s : null;
 export const deGenre = (k: Genre, kind: string): boolean => !k || kind === k;
 
-/** The three tickets over a period: the acts of the kind shown (drones by default) that authorise
- * a flight or an analysis in it, the hours they authorise there, and the acts whose zone was not
- * deduced (a slot without a site, or an act the build lists without a slot, dated in the
- * period). */
+/** The tickets over a period: the acts of the kind shown (drones by default) that authorise a
+ * flight or an analysis in it, the hours they authorise there (the slots whose act states them:
+ * the others count none), the slots whose act does not state the hours (B2: what the board's
+ * « zones non déduites · 21 » counted, its acts' `heures_sures` false), and the acts whose zone was
+ * not deduced (a slot without a site, or an act the build lists without a slot, dated in the
+ * period), shown only when there are some. */
 export function tickets(
   T: Creneau[],
   ND: NonDeduit[],
   r: Periode,
   k: Genre = "drone",
-): { actes: number; heures: number; nonDeduites: number } {
+): { actes: number; heures: number; sansHoraires: number; nonDeduites: number } {
   const drones = T.filter((c) => deGenre(k, c.kind) && inPeriod(c, r));
   const ndIn = ND.filter((a) => deGenre(k, a.kind) && dansPeriode(a.date, r));
   return {
     actes: new Set([...drones.flatMap((c) => c.actes), ...ndIn.map((a) => a.acte)]).size,
     heures: sumHours(drones, r),
+    sansHoraires: drones.filter((c) => c.heures == null).length,
     nonDeduites: new Set([
       ...drones.filter((c) => !c.sites.length).flatMap((c) => c.actes),
       ...ndIn.map((a) => a.acte),
