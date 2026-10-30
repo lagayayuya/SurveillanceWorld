@@ -20,13 +20,15 @@
      40     the points scored at a send (.score, score.css: no pointer, no focus)
      50     the first load (.loading-first, loading.css: never with the register, which it skips)
      50     the register (.rg's frame, cadre.css): a modal, a sheet, or a panel beside a live map;
-            inside it the band 4, the phone's panel 35, the share drawer 40 (cadre.css, below)
+            inside it a row's other links 1, a head's help 3, a list's phone rail 3, the bands 4, a
+            drawer 6, the skip link 10 (below), the share window 20, the phone's chosen panel 35
+            (below), the share drawer 40 (cadre.css)
      60     what opens from the register (.dialogue, below: « Signaler une erreur », a request, the
             sources); the welcome (#welcome, welcome.css: never with the register, closed as it opens)
      61     a legal page (#legal, legal.css), over the welcome or over a dialog of the register that
             links to it
-   Everything under the register is put away while it is open but the map and its credit (the end of
-   this file); a layer added to the site takes its place here. */
+   Everything under the register is put away while it is open but the map and its credit (B6, the end
+   of this file: a principle, not a list); a layer added to the site takes its place here. */
 
 /* Archivo 400-900 and Special Elite, served by the site (theme/fonts, README there). */
 @font-face {
@@ -1445,4 +1447,21 @@
   background: transparent;
   color: #f2efe6;
   cursor: pointer;
+}
+
+/* B6: while the register is open, nothing of the map's interface shows: by a principle, not a list,
+   so that a panel the site adds later is put away too. Every child of the page but the map, the
+   register and what opens over it (the order of the layers, the head of this file) is hidden with
+   all it holds (a part of it that says `visibility: visible`, as the machine's #filters does, would
+   show through a `hidden` parent otherwise); hidden, not removed: the map keeps measuring its ticket
+   (machine.ts place). In the map, its controls (the zoom) and its popups go too, as a modal, a
+   sheet or a panel: beside a live map (« Drones et algorithmes », registre-panneau) the commands are
+   the view's own, in the map's part of the screen (vues/carte.html .ctl), as the V2 boards draw it.
+   The map's credit stays, the map being seen around the register (ODbL: DECISIONS 2026-09-28,
+   2026-10-08; docs/interface.md, « the ODbL attribution is always readable »). */
+body.registre-ouvert > :not(#map, #registre, .dialogue, #legal, #welcome),
+body.registre-ouvert > :not(#map, #registre, .dialogue, #legal, #welcome) *,
+body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .maplibregl-popup),
+body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .maplibregl-popup) * {
+  visibility: hidden !important;
 }

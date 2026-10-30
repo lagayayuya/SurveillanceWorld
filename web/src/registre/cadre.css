@@ -1410,22 +1410,6 @@
   white-space: nowrap;
 }
 
-/* --- the map's own interface while the register is open (every V2 board) ---
-   The boards show the map behind the register with nothing of its own on it: the map's ticket and
-   filters, its buttons and its zoom are put away while the register is open, as a modal, a sheet
-   or a panel (its attribution stays: ODbL). The only rules of this file outside .rg. */
-body.registre-ouvert #ticket,
-body.registre-ouvert #camlist,
-body.registre-ouvert #filters-empty,
-body.registre-ouvert #queue-count,
-body.registre-ouvert #filters,
-body.registre-ouvert #fabs,
-body.registre-ouvert #estimate,
-body.registre-ouvert #sheet,
-body.registre-ouvert .maplibregl-ctrl-top-right {
-  /* hidden, not removed: the map keeps measuring its ticket (machine.ts place) */
-  visibility: hidden !important;
-}
 /* v2.1's rows, the same everywhere (A2, A3, A6): the contract the views follow.
    · A row that leads somewhere (`.r`: a table's `tr`, a list's or a rail's line) is the target
      of its main link (`a.rl`) across its whole width: the link's ::after covers the row; any
