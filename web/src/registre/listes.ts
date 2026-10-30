@@ -141,7 +141,8 @@ export type Rang = {
   id: string;
   nom: string;
   lien: RichItem;
-  sous: string;
+  /** the line under the name: words, and the fiches it names as links */
+  sous: Rich;
   /** the départements' chips (Entreprises) */
   deps?: string[];
   cells: Rich[];
@@ -196,7 +197,7 @@ function rangsCommunes(C: Corpus): Rang[] {
       id: c.insee,
       nom: x.nom,
       lien: lienCommune(C.R, c.insee, x.nom, true),
-      sous: nomDep(C, x.dep),
+      sous: [lienDepartement(x.dep, nomDep(C, x.dep), true)],
       cells: [
         fr(c.docs),
         fr(c.con),
@@ -247,7 +248,14 @@ function rangsEpci(C: Corpus): Rang[] {
       id: siren,
       nom: label,
       lien: nom ? lienAcheteur(C.R, siren, nom, true) : lien("epci", null, label, true),
-      sous: noms.length > 3 ? `${noms.slice(0, 3).join(", ")}…` : noms.join(", "),
+      sous: [
+        ...coms
+          .slice()
+          .sort((x, y) => C.R.communes[x].nom.localeCompare(C.R.communes[y].nom, "fr"))
+          .slice(0, 3)
+          .flatMap((k, i) => [...(i ? [", "] : []), lienCommune(C.R, k, undefined, true)]),
+        ...(noms.length > 3 ? ["…"] : []),
+      ],
       cells: [fr(coms.length), fr(b?.n ?? 0), b?.montant ? money(b.montant) : NA],
       mots: plain(`${label} ${noms.join(" ")}`),
       f: { dep: [...new Set(deps.map(depGroup))] },
@@ -349,7 +357,7 @@ function rangsAcheteurs(C: Corpus): Rang[] {
       id: s,
       nom,
       lien: lienAcheteur(C.R, s, nom, true),
-      sous: dep ? `${catMot} · ${nomDep(C, dep)}` : catMot,
+      sous: dep ? [`${catMot} · `, lienDepartement(dep, nomDep(C, dep), true)] : catMot,
       cells: [fr(b?.n ?? 0), b?.montant ? money(b.montant) : NA, fr(b?.ents.size ?? 0)],
       mots: plain(`${a.nom ?? ""} ${a.nom_court ?? ""} ${catMot}`),
       f: { cat: [cat], dep: dep ? [depGroup(dep)] : [] },
@@ -402,17 +410,40 @@ function rangsEntreprises(C: Corpus): Rang[] {
     });
 }
 
+/** A beneficiary published by its name alone (« Roissy-en-Brie », « Commune de Mions »): the commune
+ * of its département so named, a link, when there is exactly one; else its words. */
+function communeNommee(L: Lexique, dep: string | null | undefined, nom: string): RichItem {
+  const n = nom
+    .replace(/^(commune|ville|mairie)\s+(de\s+|d['’]\s*)?/i, "")
+    .trim()
+    .toLowerCase();
+  const ks = Object.entries(L.communes).filter(
+    ([, c]) => (!dep || c.dep === dep) && c.nom.toLowerCase() === n,
+  );
+  return ks.length === 1 ? lienCommune(L, ks[0][0], nom, true) : nom;
+}
+
 /** A document's « qui »: its buyer (a link), a decree's beneficiary, a subsidy's. */
 function qui(L: Lexique, d: Doc): RichItem {
   const e = d.e;
-  if (d.k === "aut") return benef(e);
+  if (d.k === "aut") {
+    // a decree's beneficiary: its fiche when it is a buyer the register holds (a mairie: its commune)
+    const s = e.beneficiaire_siren;
+    return s && L.acheteurs[s] && e.nom_publie !== false
+      ? lienAcheteur(L, s, benef(e), true)
+      : communeNommee(L, e.dep, benef(e));
+  }
   if (d.k === "sub") {
     const nom =
       e.nom_publie === false
         ? t("commun.nom_non_publie")
         : tidy(titleCase(String(e.beneficiaire ?? "")));
     const s = e.beneficiaire_siren;
-    return s && L.acheteurs[s] && e.nom_publie !== false ? lienAcheteur(L, s, nom, true) : nom;
+    return s && L.acheteurs[s] && e.nom_publie !== false
+      ? lienAcheteur(L, s, nom, true)
+      : e.nom_publie === false
+        ? nom
+        : communeNommee(L, e.dep, nom);
   }
   if (d.k === "ao") {
     const s = e.acheteur_siren;
@@ -447,7 +478,7 @@ function rangsDocuments(C: Corpus, k: Kind): Rang[] {
         e.insee && L.communes[e.insee]
           ? [lienCommune(L, e.insee, undefined, true)]
           : e.dep
-            ? nomDep(C, e.dep)
+            ? [lienDepartement(e.dep, nomDep(C, e.dep), true)]
             : NA;
       const cams = e.t === "arrete" && e.cameras != null ? e.cameras : null;
       const amount: Rich = k === "aut" ? (cams == null ? NA : fr(cams)) : money(e.montant);

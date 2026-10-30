@@ -9,7 +9,7 @@
           <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
           <p class="sober liens" style="margin: 0">{{{voisin}}}</p>
           <p class="lead" style="margin: 0">{{{lead}}}</p>
-          <sc-if value="{{couverture}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{couverture}}</p></sc-if>
+          <sc-if value="{{couverture}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{{couverture}}}</p></sc-if>
           <sc-if value="{{kpis.length}}"><div class="{{lay.tickets}}" style="margin-top: 4px">
             <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
           </div></sc-if>

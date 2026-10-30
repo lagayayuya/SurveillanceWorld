@@ -86,7 +86,10 @@ const format = (key: string, read: (path: string) => unknown) => {
 // --- the names of the fiches the build holds ---------------------------------------------------
 type Dico = {
   entreprises: Record<string, { nom?: string | null; entrepreneur_individuel?: boolean }>;
-  acheteurs: Record<string, { nom?: string; categorie?: string; insee_siege?: string | null }>;
+  acheteurs: Record<
+    string,
+    { nom?: string; nom_court?: string; categorie?: string; dep?: string; insee_siege?: string | null }
+  >;
   communes: Record<string, { nom: string; dep: string }>;
 };
 // the whole lexicon (recherche.json): every buyer, company and commune of the register
@@ -102,7 +105,27 @@ for (const [insee, c] of Object.entries(L.communes)) {
 }
 for (const [s, e] of Object.entries(L.entreprises))
   if (!e.entrepreneur_individuel) ajoute(entName(L, s), `entreprise ${s}`);
-for (const s of Object.keys(L.acheteurs)) ajoute(buyerNom(L, s), `acheteur ${s}`);
+for (const [s, a] of Object.entries(L.acheteurs)) {
+  ajoute(buyerNom(L, s), `acheteur ${s}`);
+  ajoute(a.nom, `acheteur ${s}`);
+  ajoute(a.nom_court, `acheteur ${s}`);
+}
+
+/** The names of the page's own entity: a buyer's official and short names, the département's or
+ * the commune's own buyer (one collectivité, one fiche: « Département du Rhône » on the Rhône's). */
+function siens(r: { view: string } & Record<string, unknown>): string[] {
+  const out: string[] = [];
+  const add = (a?: { nom?: string; nom_court?: string }) => {
+    if (a?.nom) out.push(a.nom.trim());
+    if (a?.nom_court) out.push(a.nom_court.trim());
+  };
+  if (r.view === "acheteur") add(L.acheteurs[String(r.siren)]);
+  for (const a of Object.values(L.acheteurs)) {
+    if (r.view === "departement" && a.categorie === "departement" && a.dep === r.dep) add(a);
+    if ("insee" in r && a.categorie === "commune" && a.insee_siege === r.insee) add(a);
+  }
+  return out;
+}
 // the longest first: « Commune de Lyon » before « Lyon »
 const liste = [...noms.entries()].sort((a, b) => b[0].length - a[0].length);
 const motif = (nom: string) =>
@@ -166,7 +189,7 @@ for (const chemin of paths) {
     }
     const { view, nodes } = rendre(m.Vue, props, m.template, { parts, format });
     // its own names: its title and its h1 (a page of a fiche, « Documents », names its fiche there)
-    const propres = new Set([(view as { titre?(): string }).titre?.() ?? ""]);
+    const propres = new Set([(view as { titre?(): string }).titre?.() ?? "", ...siens(r)]);
     const h1 = (ns: Rendu[]): void => {
       for (const n of ns)
         if (typeof n !== "string") {

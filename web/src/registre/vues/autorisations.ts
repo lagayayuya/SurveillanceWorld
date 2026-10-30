@@ -5,7 +5,7 @@
 // could not be read counts among the decrees and never in the cameras; a drone zone not deduced is
 // listed with its source, never drawn.
 
-import { etatDepartement } from "../collecte.ts";
+import { etatDepartementLie } from "../collecte.ts";
 import { type Autorisation, commune, communeHref, type Donnees } from "../commun.ts";
 import { corrections, nomsDe } from "../corrige.ts";
 import type { Rich, RichItem } from "../dc.ts";
@@ -230,9 +230,9 @@ class Autorisations extends Vue<Props, State> {
     const nM = d.mairie.reduce((s, x) => s + x.es.length, 0);
     const nP = d.prives.reduce((s, x) => s + x.es.length, 0);
     const nA = d.autres.length;
-    const etat = etatDepartement(D.f.commune.dep, D.f.stats.dep.nom, couv);
+    const etat = etatDepartementLie(D.f.commune.dep, D.f.stats.dep.nom, couv);
     let lead: Rich;
-    let couverture = "";
+    let couverture: Rich = "";
     if (d.L.length) {
       const parts = [
         nM ? t("autorisations.lead_mairie", { n: fr(nM) }) : "",
