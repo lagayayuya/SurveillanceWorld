@@ -650,7 +650,6 @@ class CarteDrones extends Vue<Props, State> {
                 )
               : t("arretes.zone_non_deduite"),
           ),
-          ...ligne("carte.methode_k", uniques(zs.map((z) => z.methode))),
           ...(haut ? ligne("carte.hauteur_k", t("carte.hauteur_m", { n: haut.hauteur ?? 0 })) : []),
           ...ligne("carte.type_acte_k", e?.sous_type),
           ...ligne("carte.communes_k", autres.join(", ")),

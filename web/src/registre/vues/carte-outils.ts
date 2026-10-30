@@ -279,7 +279,6 @@ export type ZoneLue = {
   detail?: string | null;
   site?: string | null;
   statut?: string | null;
-  methode?: string | null;
   cameras?: number | null;
   hauteur?: number | null;
   hauteur_lue?: boolean;
