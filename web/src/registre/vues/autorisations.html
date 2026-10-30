@@ -21,10 +21,10 @@
             </div>
             <sc-if value="{{show.dos}}"><p class="note tw">{{t.autorisations.une_autorisation_de_cameras_est}}</p></sc-if>
 
-            <div role="group" aria-label="{{t.autorisations.les_arretes_du_dossier_dans}}" style="position: relative; height: 150px; margin: 8px 0 0; border-bottom: 2px solid var(--line)">
+            <div role="group" onPointerLeave="{{quitter}}" aria-label="{{t.autorisations.les_arretes_du_dossier_dans}}" style="position: relative; height: 150px; margin: 8px 0 0; border-bottom: 2px solid var(--line)">
               <div style="position: absolute; left: 0; width: 20%; bottom: 0; height: 66px; border: 2px dashed var(--muted); border-bottom: 0; box-sizing: border-box; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: var(--muted); padding: 0 8px">{{mairie.avant}}</div>
               <sc-for list="{{marks}}" as="m">
-                <button type="button" class="{{m.cls}}" style="{{m.pos}}" onMouseEnter="{{m.hover}}" onFocus="{{m.hover}}" onClick="{{m.hover}}" aria-label="{{m.aria}}"><span class="n">{{m.n}}</span><span class="x">{{m.delta}}</span><span class="dot" aria-hidden="true"></span></button>
+                <button type="button" class="{{m.cls}}" style="{{m.pos}}" aria-pressed="{{m.pressed}}" onMouseEnter="{{m.hover}}" onFocus="{{m.hover}}" onClick="{{m.pick}}" aria-label="{{m.aria}}"><span class="n">{{m.n}}</span><span class="x">{{m.delta}}</span><span class="dot" aria-hidden="true"></span></button>
               </sc-for>
               <span aria-hidden="true" style="position: absolute; left: 86%; bottom: -2px; top: 40px; border-left: 2px dotted var(--muted)"></span>
               <span class="jusq" style="position: absolute; right: 0; top: 52px; text-align: right; font-size: 13px; color: var(--muted)">{{mairie.jusquaL}}<br><strong style="color: var(--fg)">{{mairie.jusqua}}</strong></span>
@@ -38,10 +38,10 @@
             <table class="t" style="margin-top: 10px">
               <caption class="sr">{{f.autorisations.avec_la_repartition_des_cameras}}</caption>
               <thead><tr><th scope="col">{{t.autorisations.arrete}}</th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_cameras}}">{{t.autorisations.cameras}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_sur_la_rue}}">{{t.autorisations.sur_la_rue}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_abords}}">{{t.autorisations.abords}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_interieur}}">{{t.autorisations.interieur}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_ecart}}">{{t.autorisations.ecart}}</span></th></tr></thead>
-              <tbody>
+              <tbody onPointerLeave="{{quitter}}">
                 <sc-for list="{{rows}}" as="r">
-                  <tr class="{{r.cls}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
-                    <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                  <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                    <td><a class="rl tw" href="{{r.href}}" style="font-weight: 400">{{r.date}}</a></td>
                     <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td><td class="num"><strong>{{r.delta}}</strong></td>
                   </tr>
                 </sc-for>
@@ -67,8 +67,8 @@
             <table class="t">
               <caption class="sr">{{t.autorisations.les_autres_dossiers_prefectoraux_de}}</caption>
               <thead><tr><th scope="col"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_dossier}}">{{t.autorisations.dossier}}</span></th><th scope="col">{{t.autorisations.dernier_arrete}}</th><th scope="col" class="num">{{t.autorisations.arretes}}</th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_cameras_dossier}}">{{t.autorisations.cameras}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_sur_la_rue}}">{{t.autorisations.sur_la_rue}}</span></th></tr></thead>
-              <tbody>
-                <sc-for list="{{autres}}" as="r"><tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}" id="{{r.ancre}}"><td class="tw">{{r.no}}</td><td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td><td class="num">{{r.na}}</td><td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td></tr></sc-for>
+              <tbody onPointerLeave="{{quitter}}">
+                <sc-for list="{{autres}}" as="r"><tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><td class="tw"><a class="rl tw" href="{{r.href}}" style="font-weight: 400">{{r.no}}</a></td><td class="tw">{{r.date}}</td><td class="num">{{r.na}}</td><td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.vp}}</td></tr></sc-for>
               </tbody>
             </table>
             </sc-if>
@@ -84,10 +84,10 @@
             <table class="t">
               <caption class="sr">{{f.autorisations.arretes_pour_des_commerces_et}}</caption>
               <thead><tr><th scope="col">{{t.autorisations.arrete}}</th><th scope="col">{{t.autorisations.beneficiaire}}</th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_cameras}}">{{t.autorisations.cameras}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_abords}}">{{t.autorisations.abords}}</span></th><th scope="col" class="num"><span class="aide" tabindex="0" data-aide="{{t.autorisations.aide_interieur}}">{{t.autorisations.interieur}}</span></th></tr></thead>
-              <tbody>
+              <tbody onPointerLeave="{{quitter}}">
                 <sc-for list="{{priv}}" as="r">
-                  <tr class="{{r.cls}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.hover}}">
-                    <td><a class="rowlink tw" href="{{r.url}}" style="font-weight: 400">{{r.date}}</a></td>
+                  <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" id="{{r.ancre}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                    <td><a class="rl tw" href="{{r.href}}" style="font-weight: 400">{{r.date}}</a></td>
                     <td><span style="{{r.nomStyle}}">{{{r.nomR}}}</span><div style="font-size: 13px; color: var(--muted)">{{r.cat}}</div></td>
                     <td class="num"><strong>{{r.n}}</strong></td><td class="num">{{r.ext}}</td><td class="num">{{r.int}}</td>
                   </tr>
@@ -100,7 +100,7 @@
           <sc-if value="{{autresArr.show}}"><section aria-labelledby="a-autres" style="display: flex; flex-direction: column; gap: 10px; padding-top: 24px">
             <h3 id="a-autres" class="h3">{{t.autorisations.drones_cameras_pietons_analyse_algorithmique}}</h3>
             <sc-if value="{{autresArr.none}}"><p style="margin: 0">{{f.autorisations.aucun_arrete_trouve_pour}} <sc-if value="{{autresArr.ex}}">{{{autresArr.ex}}}</sc-if></p></sc-if>
-            <sc-if value="{{autresArr.list.length}}"><ul class="lst autres"><sc-for list="{{autresArr.list}}" as="x"><li class="{{x.cls}}" id="{{x.ancre}}" onMouseEnter="{{x.hover}}" onFocus="{{x.hover}}" onClick="{{x.hover}}"><span class="tw" style="color: var(--muted)">{{x.d}}</span><span>{{{x.t}}}</span><span>{{{x.lien}}}</span></li></sc-for></ul></sc-if>
+            <sc-if value="{{autresArr.list.length}}"><ul class="lst autres" onPointerLeave="{{quitter}}"><sc-for list="{{autresArr.list}}" as="x"><li class="{{x.cls}}" aria-selected="{{x.sel}}" style="{{x.c}}" id="{{x.ancre}}" onMouseEnter="{{x.hover}}" onFocus="{{x.hover}}" onClick="{{x.pick}}"><a class="rl tw" href="{{x.href}}" style="color: var(--muted); font-weight: 400">{{x.d}}</a><span>{{{x.t}}}</span></li></sc-for></ul></sc-if>
             <sc-if value="{{autresArr.more}}"><button class="more" type="button" onClick="{{autresArr.moreAct}}">{{autresArr.more}}</button></sc-if>
             <sc-if value="{{autresArr.multi}}"><p style="margin: 0">{{{autresArr.multi}}}</p></sc-if>
             <sc-if value="{{lus}}"><p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{lus}}</p></sc-if>

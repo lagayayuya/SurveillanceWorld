@@ -53,7 +53,7 @@
             </tr></thead>
             <tbody>
               <sc-for list="{{rows}}" as="r">
-                <tr class="{{r.cls}}" onMouseEnter="{{r.hover}}" onClick="{{r.hover}}" onFocus="{{r.hover}}">
+                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td class="tw" style="white-space: nowrap; color: var(--muted)">{{r.date}}<sc-if value="{{r.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">*</sup></sc-if></td>
                   <td><span class="dtype">{{r.type}}</span><br><span class="dobj">{{{r.objet}}}</span></td>
                   <td style="font-size: 14px"><span style="{{r.quiStyle}}">{{{r.qui}}}</span><div style="color: var(--muted)">{{{r.ent}}}</div></td>

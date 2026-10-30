@@ -30,3 +30,41 @@
 .rg table.t th button:is(:hover, :focus-visible) .aide::after {
   display: block;
 }
+/* v2.1 A2, A3: the drones' list follows the rows' contract (cadre.css) as a list's line does:
+   hovered, a tint; chosen, a ground and the type's bar at its left */
+.rg .v-autorisations .lst.autres > li.r:hover,
+.rg .v-autorisations .lst.autres > li.r.on {
+  background: var(--soft);
+}
+.rg .v-autorisations .lst.autres > li.r.on {
+  box-shadow: inset 5px 0 0 var(--c, var(--fg));
+  padding-left: 13px;
+}
+.rg .v-autorisations .lst.autres > li {
+  grid-template-columns: 130px minmax(0, 1fr);
+}
+/* the dossier's step chart: hovered, the dot outlined in ink; chosen, filled with ink (the
+   selection said by the ink, v2.1) */
+.rg .v-autorisations .mk:hover .dot {
+  background: var(--bg-2);
+  border-color: var(--fg);
+  outline: 1px solid var(--fg);
+}
+.rg .v-autorisations .mk.on .dot {
+  background: var(--fg);
+  border-color: var(--fg);
+  outline: 3px solid var(--fg);
+  outline-offset: 1px;
+}
+/* Documents: a row's other links (its buyer, its beneficiary, its companies) stay links of their
+   own above the document's link that covers the row */
+.rg .v-documents .r td:not(:has(.dobj)) a.rl {
+  position: relative;
+  z-index: 1;
+}
+.rg .v-documents .r td:not(:has(.dobj)) a.rl::after {
+  content: none;
+}
+.rg .v-documents .r:is(:hover, :focus-within) td:not(:has(.dobj)) a.rl:not(:hover, :focus-visible) {
+  text-decoration: none;
+}

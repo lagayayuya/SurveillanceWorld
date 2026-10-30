@@ -17,6 +17,7 @@ import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { plain } from "../texte.ts";
+import { typeDocument } from "../types.ts";
 import { type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
@@ -43,6 +44,8 @@ type State = BaseState & {
   f: Filters;
   /** « Copier la référence »: "" until clicked, then copied or only selected. */
   copied: "" | "copiee" | "selectionnee";
+  /** the reference `copied` speaks of (the panel shows another as the pointer moves) */
+  copiedRef?: string;
 };
 type Row = {
   e: Evenement;
@@ -194,12 +197,14 @@ class Documents extends Vue<Props, State> {
       const sel = getSelection();
       if (el && sel) {
         sel.selectAllChildren(el);
-        this.setState({ copied: "selectionnee" });
+        this.setState({ copied: "selectionnee", copiedRef: ref });
       }
     };
     try {
       if (!navigator.clipboard) throw new Error("no clipboard");
-      navigator.clipboard.writeText(ref).then(() => this.setState({ copied: "copiee" }), select);
+      navigator.clipboard
+        .writeText(ref)
+        .then(() => this.setState({ copied: "copiee", copiedRef: ref }), select);
     } catch {
       select();
     }
@@ -291,17 +296,12 @@ class Documents extends Vue<Props, State> {
           : r.cam != null
             ? t("documents.cameras", { n: r.cam })
             : reasons.length
-              ? [
-                  reasons.join(" · "),
-                  ...(e.url
-                    ? [{ br: true }, { a: { href: e.url, text: t("documents.source") } }]
-                    : []),
-                ]
+              ? reasons.join(" · ")
               : "") as Rich,
-        cls: `r${S.sel === r.id ? " on" : ""}`,
-        hover: () => {
-          if (S.sel !== r.id) this.setState({ sel: r.id, copied: "" });
-        },
+        // the row under the contract (cadre.css « rows »): its document's link covers it; hovered
+        // or focused it shows in the panel, which keeps it (no `quitter`: the row's click follows
+        // its link, the panel's source and « Copier la référence » stay within reach)
+        ...this.ligne(r.id, typeDocument(e)),
       };
     });
     const cols = this.cols(
@@ -319,7 +319,8 @@ class Documents extends Vue<Props, State> {
       return { ...c, aide, acls: aide ? "aide" : "" };
     });
 
-    const sel = S.sel ? all.find((x) => x.id === S.sel) : undefined;
+    const vu = this.affiche();
+    const sel = vu ? all.find((x) => x.id === vu) : undefined;
     const det = sel ? this.panel(sel) : this.rest(all);
 
     const nf = Object.values(F).reduce((a, o) => a + Object.values(o).filter(Boolean).length, 0);
@@ -362,29 +363,14 @@ class Documents extends Vue<Props, State> {
     };
   }
 
-  /** The panel at rest: the commune's documents by family, and their years. */
+  /** The panel at rest: what to hover (its figures are in the filters beside it, B3). */
   private rest(all: Row[]) {
     const nom = this.props.d.f.commune.nom;
-    const c = (k: string) => all.filter((x) => x.g === k).length;
-    const ys = all
-      .map((x) => x.an)
-      .filter(Boolean)
-      .sort();
     return {
       kicker: `${nom} · ${count(all.length, "document")}`,
       title: t("documents.survolez"),
-      rows: FAMS.filter((k) => c(k))
-        .map((k) => ({ k: t(`documents.fam_${k}`), v: fr(c(k)) }))
-        .concat(
-          ys.length
-            ? [
-                {
-                  k: t("documents.plus_ancien"),
-                  v: t("documents.annees", { a: ys[0], b: ys[ys.length - 1] }),
-                },
-              ]
-            : [],
-        ),
+      // the families' counts are beside it, in the filters: not again here (v2.1 B3)
+      rows: [] as { k: string; v: string }[],
     };
   }
 
@@ -487,11 +473,13 @@ class Documents extends Vue<Props, State> {
     const btn = ref
       ? {
           l:
-            this.state.copied === "copiee"
-              ? t("documents.reference_copiee")
-              : this.state.copied === "selectionnee"
-                ? t("documents.reference_selectionnee")
-                : t("documents.copier_reference"),
+            this.state.copiedRef !== ref
+              ? t("documents.copier_reference")
+              : this.state.copied === "copiee"
+                ? t("documents.reference_copiee")
+                : this.state.copied === "selectionnee"
+                  ? t("documents.reference_selectionnee")
+                  : t("documents.copier_reference"),
           act: () => this.copy(ref),
         }
       : null;

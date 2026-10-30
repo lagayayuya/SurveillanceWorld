@@ -7,8 +7,9 @@
 
 import { etatDepartementLie } from "../collecte.ts";
 import { type Autorisation, commune, communeHref, type Donnees } from "../commun.ts";
+import { docHref } from "../corpus.ts";
 import { corrections, nomsDe } from "../corrige.ts";
-import type { Rich, RichItem } from "../dc.ts";
+import type { Handler, Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import "../demande.ts";
 import { fr, longDate, longMonth, MONTHS_LONG, shortDate, shortMonth, signed } from "../format.ts";
@@ -17,6 +18,7 @@ import { lien, lienCommune } from "../liens.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { capital } from "../texte.ts";
+import { repere, typeDocument } from "../types.ts";
 import { arriver, type BaseState, large, type Partage, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
@@ -236,6 +238,36 @@ class Autorisations extends Vue<Props, State> {
     };
   }
 
+  /** A row's click, a tap or Enter (v2.1 A2, A3, A7): the decree chosen here, its own address
+   * (docHref) written in the address bar rather than followed (the same view, at another
+   * decree); a modified click opens it elsewhere, another link of the row is its own. */
+  private prendre(id: string, href: string): Handler {
+    const choisir = this.choisir(id);
+    return (ev) => {
+      const n = ev.nativeEvent as MouseEvent;
+      if (n.metaKey || n.ctrlKey || n.shiftKey || n.altKey) return;
+      const a = (ev.target as Element | null)?.closest?.("a, button");
+      if (a && !a.classList.contains("rl")) return;
+      if (a) ev.preventDefault();
+      if (href && location.pathname !== href) history.replaceState(history.state, "", href);
+      choisir(ev);
+    };
+  }
+
+  /** A row under the contract (cadre.css « rows »): chosen when one of `ids` is (a dossier's row
+   * holds all its decrees), hovered or focused shown in the panel, its type's bar. */
+  private rang(e: Evenement, ids: string[] = [e.id]) {
+    const on = !!this.state.sel && ids.includes(this.state.sel);
+    return {
+      cls: on ? "r on" : "r",
+      sel: on ? "true" : "false",
+      c: repere(typeDocument(e)).c,
+      href: docHref(lexique(this.props.d), e),
+      hover: this.survol(e.id),
+      pick: this.prendre(e.id, docHref(lexique(this.props.d), e)),
+    };
+  }
+
   renderVals() {
     const S = this.state;
     const D = this.props.d;
@@ -332,6 +364,7 @@ class Autorisations extends Vue<Props, State> {
           delta: i ? ecart : t("autorisations.premier_publie"),
           d: shortMonth(date),
           cls: `mk${S.sel === e.id ? " on" : ""}`,
+          pressed: S.sel === e.id ? "true" : "false",
           pos: `left: ${x.toFixed(1)}%; top: 79px`,
           lpos: `position: absolute; left: ${x.toFixed(1)}%; transform: translateX(-50%); white-space: nowrap`,
           lcls: close ? "tk-o" : "",
@@ -339,7 +372,8 @@ class Autorisations extends Vue<Props, State> {
             date: shortDate(date),
             cameras: t("n.camera", { n }),
           }),
-          hover: this.pick(e.id),
+          hover: this.survol(e.id),
+          pick: this.prendre(e.id, docHref(L, e)),
         };
       });
       // the table lists every decree of the dossier; one whose number could not be read shows none
@@ -352,10 +386,8 @@ class Autorisations extends Vue<Props, State> {
           ext: dash(e.cameras_ext),
           int: dash(e.cameras_int),
           delta: lu(e) && p ? signed((e.cameras ?? 0) - (p.cameras ?? 0)) : "—",
-          url: e.url ?? "",
           ancre: `arr-${e.id}`,
-          cls: `r${S.sel === e.id ? " on" : ""}`,
-          hover: this.pick(e.id),
+          ...this.rang(e),
         };
       });
       mairieCap = t("autorisations.cap", { n: main.es.length });
@@ -426,13 +458,14 @@ class Autorisations extends Vue<Props, State> {
         return {
           no: x.id.split("-")[1] ?? x.id,
           date: shortDate(e.date),
-          url: e.url ?? "",
           na: fr(x.es.length),
           n: dash(n),
           vp: dash(x.lu?.cameras_vp),
           ancre: `dos-${x.id}`,
-          cls: `r${x.es.some((y) => y.id === S.sel) ? " on" : ""}`,
-          hover: this.pick(e.id),
+          ...this.rang(
+            e,
+            x.es.map((y) => y.id),
+          ),
         };
       });
 
@@ -454,10 +487,11 @@ class Autorisations extends Vue<Props, State> {
         n: illisible ? "—" : fr(e.cameras ?? 0),
         ext: dash(e.cameras_ext),
         int: dash(e.cameras_int),
-        url: e.url ?? "",
         ancre: `dos-${x.id}`,
-        cls: `r${x.es.some((y) => y.id === S.sel) ? " on" : ""}`,
-        hover: this.pick(e.id),
+        ...this.rang(
+          e,
+          x.es.map((y) => y.id),
+        ),
       };
     });
     const ds = d.prives.map((x) => x.last.date ?? "").sort();
@@ -503,18 +537,12 @@ class Autorisations extends Vue<Props, State> {
       }
       const zone = /^arrete_(drone|vsa)$/.test(e.t);
       if (zone && nonDeduite(e)) txt.push(` · ${t("arretes.zone_non_deduite")}`);
-      const surCarte = zone && !nonDeduite(e);
-      // on the map: the commune's « Carte et drones »; else the act itself (the préfecture's recueil)
-      const l = t(surCarte ? "autorisations.sur_la_carte" : "autorisations.l_arrete");
+      // its zone on the map and its act are in the panel, not on each row (v2.1 B4)
       return {
         ancre: `arr-${e.id}`,
-        cls: `r${S.sel === e.id ? " on" : ""}`,
-        hover: this.pick(e.id),
+        ...this.rang(e),
         d: shortDate(e.date),
         t: txt,
-        lien: (surCarte || !e.url
-          ? lien("commune", carte, l)
-          : { a: { href: e.url, text: l } }) as RichItem,
       };
     });
     const multi: Rich = d.multi.length
@@ -556,10 +584,10 @@ class Autorisations extends Vue<Props, State> {
       moreAct: () => this.setState({ allAut: !this.state.allAut }),
     };
 
-    const e1 = S.sel ? D.ev.get(S.sel) : undefined;
+    const vu = this.affiche();
+    const e1 = vu ? D.ev.get(vu) : undefined;
     const d0 = e1?.t.startsWith("arrete") ? this.detail(e1, AJ[e1.id]) : undefined;
-    const nDr = d.autres.filter((e) => e.t === "arrete_drone").length + d.multi.length;
-    const e0 = S.sel ? D.ev.get(S.sel) : undefined;
+    const e0 = e1;
     const det = d0
       ? {
           ...d0,
@@ -578,17 +606,10 @@ class Autorisations extends Vue<Props, State> {
             links: [{ l: t("autorisations.voir_couverture"), href: "/registre/couverture" }],
           }
         : {
+            // at rest it says what to hover or choose, never the figures beside it (v2.1 B3)
             kicker: t("autorisations.repos_kicker", { nom }),
-            title: t("autorisations.repos_titre", { n: camM + camP }),
-            rows: [
-              { k: t("autorisations.mairie"), v: fr(camM) },
-              { k: t("autorisations.dont_rue"), v: vpM == null ? "—" : fr(vpM) },
-              { k: t("autorisations.commerces_et_entreprises"), v: fr(camP) },
-              {
-                k: t("autorisations.drones"),
-                v: nDr ? t("n.arrete", { n: nDr }) : t("autorisations.aucun"),
-              },
-            ],
+            title: "",
+            rows: [] as { k: string; v: string }[],
             note: "",
             foot: t("autorisations.repos_foot"),
             links: [],
@@ -625,6 +646,7 @@ class Autorisations extends Vue<Props, State> {
         t(elide ? "autorisations.docs_d" : "autorisations.docs_de", { n: nDocs, nom }),
       ),
       lien: { ici: location.pathname },
+      quitter: this.quitter(),
     };
   }
 }
