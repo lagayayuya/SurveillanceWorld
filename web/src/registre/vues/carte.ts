@@ -66,8 +66,6 @@ type State = BaseState & {
   cur: number;
   hov: number;
   nd: number;
-  /** the site pointed at on the map */
-  site: string | null;
   /** the week shown in the chart's tooltip (-1: none) */
   wk: number;
   /** the chart's width, CSS px */
@@ -123,7 +121,6 @@ class CarteDrones extends Vue<Props, State> {
       cur: -1,
       hov: -1,
       nd: -1,
-      site: null,
       wk: -1,
       fw: large() ? 868 : 340,
       is3d: true,
@@ -201,9 +198,6 @@ class CarteDrones extends Vue<Props, State> {
           insee: d.insee,
           sites,
           encre: this.ink(),
-          onSurvol: (id) => {
-            if (id !== this.state.site) this.setState({ site: id });
-          },
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) this.setState({ cur: i, nd: -1, hov: -1 });
@@ -300,29 +294,26 @@ class CarteDrones extends Vue<Props, State> {
       if (T[i].sites.includes(site) && this.inP(T[i])) return i;
     return -1;
   }
-  /** The map follows: each site's hours over the period, the hovered and chosen ones in yellow. */
+  /** The map follows: each site's hours over the period (new data only when the period changes),
+   * the sites of the row hovered and of the slot chosen (feature states, nothing else). */
   private syncMap(): void {
     const L = this.layer;
     if (!L) return;
     const S = this.state;
-    const r = this.periode();
     const T = this.T;
-    const shown = T.filter((c) => this.inP(c));
-    const hs = sitesHours(shown, r);
-    const focus = S.hov >= 0 ? S.hov : S.cur;
-    const chosen = focus >= 0 ? (T[focus].sites[0] ?? null) : null;
-    const survol = S.site;
-    const words = survol
-      ? hs[survol]
-        ? volLabel(hs[survol])
-        : null
-      : focus >= 0 && chosen
-        ? volLabel({ heures: T[focus].heures ?? 0, n: T[focus].actes.length })
-        : null;
     const hoursKey = `${S.r0}|${S.r1}`;
-    if (hoursKey !== this.synced) L.heures(hs);
-    this.synced = hoursKey;
-    L.marquer(survol, chosen, words);
+    if (hoursKey !== this.synced) {
+      const hs = sitesHours(
+        T.filter((c) => this.inP(c)),
+        this.periode(),
+      );
+      L.heures(
+        Object.fromEntries(Object.entries(hs).map(([k, v]) => [k, { ...v, mots: volLabel(v) }])),
+      );
+      this.synced = hoursKey;
+    }
+    L.survoler(S.hov >= 0 ? T[S.hov].sites : []);
+    L.choisir(S.cur >= 0 ? T[S.cur].sites : []);
   }
 
   // --- the page --------------------------------------------------------------------------------

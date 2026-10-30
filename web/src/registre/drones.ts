@@ -1,20 +1,23 @@
-// « Carte et drones » on the site's map (design/registre/v2, V2-CarteDrones): the register draws
-// on the map behind it (hote.ts carteDuSite), never a map of its own. What it adds, and takes away
-// when it leaves:
+// « Drones et algorithmes » on the site's map (design/registre/v2, V2-CarteDrones): the register
+// draws on the map behind it (hote.ts carteDuSite), never a map of its own. What it adds, and takes
+// away when it leaves:
 // · the commune's outline: its ring from the register's map file (carte/<insee>.json, read up to
 //   its `contour` and no further: the rest, the cameras, the filmed streets and the fields, the site's
 //   map already shows from its own tiles), else the site's own commune shape (admin tiles);
 // · the drone zones as volumes (fill-extrusion), their part inside the commune (the part over a
 //   neighbour is that commune's): a site's height is the hours its slots authorise on the period
-//   chosen, never an altitude; sky blue, yellow when hovered or chosen, with its words (« 6 h ·
-//   1 arrêté »); an algorithmic-analysis site flat, its outline dashed;
+//   chosen, never an altitude; an algorithmic-analysis site flat, its outline dashed;
 // · nothing for the cameras: they are the fields the map shows at its usual zoom.
-// The slots and their hours are the build's (drones.py); this module only draws them.
+// Hover and choice are feature states (v2.1, A1): the pointer moving over the map changes no layer,
+// no filter, no paint and no data, and a state only when the zone under it changes; the camera
+// never moves on a hover. The slots and their hours are the build's (drones.py); this module only
+// draws them.
 import type {
+  ExpressionSpecification,
   FilterSpecification,
   GeoJSONSource,
   LayerSpecification,
-  MapLayerMouseEvent,
+  MapMouseEvent,
   Map as MlMap,
 } from "maplibre-gl";
 
@@ -42,18 +45,18 @@ export const carteUrl = (insee: string): string =>
 
 // The ids of what this module adds to the site's map: one prefix, removed whole on leaving.
 const P = "rg-cd";
-const SRC = `${P}-zones`;
-const SRC_LAB = `${P}-lab`;
+export const SRC = `${P}-zones`;
 const SRC_COM = `${P}-commune`;
 export const COUCHES = {
   commune: `${P}-commune`,
   communeAdmin: `${P}-commune-admin`,
-  vol: `${P}-vol`,
-  volOn: `${P}-vol-on`,
-  solOn: `${P}-sol-on`,
   vsa: `${P}-vsa`,
+  vol: `${P}-vol`,
+  sol: `${P}-sol`,
   lab: `${P}-lab`,
 } as const;
+/** The layers the pointer finds a zone in (the label is not one: it never catches the pointer). */
+const CIBLES = [COUCHES.vol, COUCHES.vsa];
 
 // The boards' colours: the drones' sky blue, the selection's yellow (V2-CarteDrones).
 export const BLEU = "#7fd4ff";
@@ -94,6 +97,23 @@ export function bboxOf(rs: Ring[]): BBox | null {
 export function diagMetres(bbox: BBox): number {
   const [w, s, e, n] = bbox;
   return Math.hypot((e - w) * 111320 * Math.cos((((s + n) / 2) * Math.PI) / 180), (n - s) * 111320);
+}
+/** The area of some outer rings in m² (shoelace, equirectangular at each ring's mean latitude). */
+export function aire(rs: Ring[]): number {
+  let total = 0;
+  for (const r of rs) {
+    if (r.length < 3) continue;
+    const lat = r.reduce((s, p) => s + p[1], 0) / r.length;
+    const kx = 111320 * Math.cos((lat * Math.PI) / 180);
+    let a = 0;
+    for (let i = 0; i < r.length; i++) {
+      const [x1, y1] = r[i];
+      const [x2, y2] = r[(i + 1) % r.length];
+      a += x1 * kx * y2 * 111320 - x2 * kx * y1 * 111320;
+    }
+    total += Math.abs(a) / 2;
+  }
+  return total;
 }
 /** A volume's height (m): proportional to its hours, the highest at 18 % of the commune's diagonal
  * (250 m at least), 20 m for none (R1a's tilted map's, DECISIONS 2026-10-29). */
@@ -148,7 +168,8 @@ export async function lireContour(insee: string, signal?: AbortSignal): Promise<
   }
 }
 
-export type Volume = { heures: number; n: number };
+/** A site's hours over the period, its number of acts, and the words of its label. */
+export type Volume = { heures: number; n: number; mots?: string };
 type Feature = GeoJSON.Feature<GeoJSON.Geometry, Record<string, unknown>>;
 const fc = (features: Feature[]): GeoJSON.FeatureCollection => ({
   type: "FeatureCollection",
@@ -157,17 +178,39 @@ const fc = (features: Feature[]): GeoJSON.FeatureCollection => ({
 
 // --- the layers on the site's map ------------------------------------------------------------
 
+/** The part of the map the calque needs: what it draws with and listens to (a fake in the tests). */
+export type CarteMin = Pick<
+  MlMap,
+  | "addSource"
+  | "getSource"
+  | "removeSource"
+  | "addLayer"
+  | "getLayer"
+  | "removeLayer"
+  | "setPaintProperty"
+  | "setFeatureState"
+  | "queryRenderedFeatures"
+  | "getCanvas"
+  | "on"
+  | "off"
+>;
+
 export type Calque = {
-  /** Hours per site over the period ({siteId: {heures, n}}); a site not named is not drawn. */
+  /** Hours per site over the period ({siteId: {heures, n, mots}}); a site not named is not drawn. */
   heures(hs: Record<string, Volume>): void;
-  /** The site hovered and the one chosen (yellow), the words of the one shown. */
-  marquer(survol: string | null, choix: string | null, mots: string | null): void;
+  /** The sites a hovered row of the list flies over (a thin outline); the pointer's own zone is
+   * the calque's. */
+  survoler(ids: string[]): void;
+  /** The sites chosen: full, their label shown, the others set back. */
+  choisir(ids: string[]): void;
   /** The commune's outline from its map file, when it has come. */
   contour(c: Contour): void;
   /** The ink of the theme (the outline's colour). */
   encre(c: string): void;
   /** The box to fit: the outline's, else the drawn zones'. */
   cadre(): BBox | null;
+  /** A site's box (« Voir sur la carte »), null for a site not drawn. */
+  boite(id: string): BBox | null;
   /** Removes every source, layer and listener it added. */
   retirer(): void;
 };
@@ -177,29 +220,39 @@ export type CalqueOptions = {
   sites: Site[];
   /** The ink colour (the page's --fg). */
   encre: string;
-  /** A site pointed at (null: none). */
+  /** The zone under the pointer changed (null: none). Called once per change, never per move. */
   onSurvol?: (id: string | null) => void;
-  /** A site clicked. */
+  /** A zone clicked. */
   onChoix?: (id: string) => void;
 };
 
+/** A feature state read in a paint expression (false when unset). */
+const fs = (k: "survol" | "choix" | "retrait"): ExpressionSpecification => [
+  "boolean",
+  ["feature-state", k],
+  false,
+];
+
 /** Draws the commune's drone zones on the site's map; `retirer()` takes everything away. */
-export function calque(map: MlMap, o: CalqueOptions): Calque {
+export function calque(map: CarteMin, o: CalqueOptions): Calque {
   const insee = o.insee;
   const sites = o.sites.filter((s) => s.parts?.[insee]);
   const geo = new Map(
     sites.map((s) => {
       const p = s.parts?.[insee] ?? {};
       const rs = rings(p.in);
-      return [s.id, { s, p, rs, c: centroid(rs) }] as const;
+      return [s.id, { s, p, rs, c: centroid(rs), a: aire(rs) }] as const;
     }),
   );
   let outline: Contour | null = null;
   let hs: Record<string, Volume> = {};
-  let survol: string | null = null;
-  let choix: string | null = null;
-  let mots: string | null = null;
   let ink = o.encre;
+  // the states as the map holds them: the pointer's zone, the list's, the chosen ones
+  let pointe: string | null = null;
+  let liste: string[] = [];
+  let survoles = new Set<string>();
+  let choisis = new Set<string>();
+  let curseur = false;
 
   const box = (): BBox | null => outline?.bbox ?? bboxOf([...geo.values()].flatMap((g) => g.rs));
   const diag = () => {
@@ -207,6 +260,8 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
     return b ? diagMetres(b) : 5000;
   };
 
+  // one source: each site's polygon and the point of its label share the site's id, so that one
+  // feature state covers both
   const zonesData = (): GeoJSON.FeatureCollection => {
     const maxH = Math.max(1, ...Object.values(hs).map((v) => v.heures));
     const dM = diag();
@@ -218,30 +273,16 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
       out.push({
         type: "Feature",
         geometry: geometry as GeoJSON.Geometry,
-        properties: {
-          id,
-          kind: g.s.kind,
-          h: volumeHeight(v.heures, maxH, dM),
-          on: id === survol || id === choix,
-        },
+        properties: { id, kind: g.s.kind, h: volumeHeight(v.heures, maxH, dM), a: g.a },
       });
+      if (g.c && v.mots)
+        out.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: g.c },
+          properties: { id, kind: g.s.kind, lab: v.mots },
+        });
     }
     return fc(out);
-  };
-  const labData = (): GeoJSON.FeatureCollection => {
-    const id = survol ?? choix;
-    const c = id ? geo.get(id)?.c : null;
-    return fc(
-      c && mots
-        ? [
-            {
-              type: "Feature",
-              geometry: { type: "Point", coordinates: c },
-              properties: { t: mots },
-            },
-          ]
-        : [],
-    );
   };
   const communeData = (): GeoJSON.FeatureCollection =>
     fc(
@@ -260,11 +301,12 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
     );
 
   const isDrone: FilterSpecification = ["==", ["get", "kind"], "drone"];
+  const isLab: FilterSpecification = ["has", "lab"];
+  const isArea: FilterSpecification = ["!", isLab];
   const add = (l: LayerSpecification) => {
     if (!map.getLayer(l.id)) map.addLayer(l);
   };
-  map.addSource(SRC, { type: "geojson", data: zonesData() });
-  map.addSource(SRC_LAB, { type: "geojson", data: labData() });
+  map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
   // the site's own commune shape, until the outline has come (a commune without a map file keeps
   // it): its tiles hold the communes up to z11, overzoomed after
@@ -285,48 +327,53 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
     layout: { "line-join": "round", "line-cap": "round" },
     paint: { "line-color": ink, "line-width": 3 },
   });
+  const on: ExpressionSpecification = ["any", fs("survol"), fs("choix")];
   add({
     id: COUCHES.vsa,
     type: "line",
     source: SRC,
-    filter: ["!", isDrone],
+    filter: ["all", isArea, ["!", isDrone]],
     paint: {
-      "line-color": ["case", ["get", "on"], JAUNE, ink],
+      "line-color": ["case", on, JAUNE, ink],
       "line-width": 2,
       "line-dasharray": [1, 2],
     },
   });
-  // the zones overlap (a site over the whole commune holds the smaller ones): the one hovered or
-  // chosen is a layer of its own, and its footprint is drawn over every volume (a flat layer after
-  // them, which their depth does not hide), so that a taller zone around it never hides it
-  const vol = (id: string, on: boolean): LayerSpecification => ({
-    id,
+  // the zones overlap (a site over the whole commune holds the smaller ones): the footprint of
+  // the one hovered or chosen is drawn over every volume (a flat layer after them, which their
+  // depth does not hide), so that a taller zone around it never hides it
+  add({
+    id: COUCHES.vol,
     type: "fill-extrusion",
     source: SRC,
-    filter: ["all", isDrone, ["==", ["get", "on"], on]],
+    filter: ["all", isArea, isDrone],
     paint: {
-      "fill-extrusion-color": on ? JAUNE : BLEU,
+      "fill-extrusion-color": ["case", on, JAUNE, BLEU],
       "fill-extrusion-height": ["get", "h"],
       "fill-extrusion-base": 0,
-      "fill-extrusion-opacity": on ? 0.92 : 0.55,
+      "fill-extrusion-opacity": 0.55,
       "fill-extrusion-vertical-gradient": true,
     },
   });
-  add(vol(COUCHES.vol, false));
-  add(vol(COUCHES.volOn, true));
   add({
-    id: COUCHES.solOn,
+    id: COUCHES.sol,
     type: "fill",
     source: SRC,
-    filter: ["==", ["get", "on"], true],
-    paint: { "fill-color": JAUNE, "fill-opacity": 0.55, "fill-outline-color": ENCRE },
+    filter: ["all", isArea, isDrone],
+    paint: {
+      "fill-color": JAUNE,
+      "fill-opacity": ["case", on, 0.55, 0],
+      "fill-outline-color": ENCRE,
+    },
   });
+  // the words of the zone chosen: shown by its state, never by a new datum
   add({
     id: COUCHES.lab,
     type: "symbol",
-    source: SRC_LAB,
+    source: SRC,
+    filter: isLab,
     layout: {
-      "text-field": ["get", "t"],
+      "text-field": ["get", "lab"],
       "text-font": ["Noto Sans Medium"],
       "text-size": 13,
       "text-anchor": "bottom",
@@ -338,43 +385,78 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
       "text-color": ENCRE,
       "text-halo-color": JAUNE,
       "text-halo-width": 3,
+      "text-opacity": ["case", fs("choix"), 1, 0],
     },
   });
 
   const set = (id: string, data: GeoJSON.FeatureCollection) =>
     (map.getSource(id) as GeoJSONSource | undefined)?.setData(data);
+  const etat = (id: string, s: Record<string, boolean>) =>
+    map.setFeatureState({ source: SRC, id }, s);
+  /** The hovered set is the pointer's zone and the list's: only the zones that change are told. */
+  const appliquerSurvol = () => {
+    const next = new Set(liste);
+    if (pointe) next.add(pointe);
+    for (const id of survoles) if (!next.has(id)) etat(id, { survol: false });
+    for (const id of next) if (!survoles.has(id)) etat(id, { survol: true });
+    survoles = next;
+  };
+  /** The zone under the pointer: of those there (the volumes overlap, more so tilted), the
+   * smallest, so that the same point always gives the same zone. */
+  const sous = (e: MapMouseEvent): string | null => {
+    const layers = CIBLES.filter((l) => map.getLayer(l));
+    if (!layers.length) return null;
+    let best: { id: string; a: number } | null = null;
+    for (const f of map.queryRenderedFeatures(e.point, { layers })) {
+      const id = f.properties?.id as string | undefined;
+      const a = Number(f.properties?.a ?? Number.POSITIVE_INFINITY);
+      if (id && (!best || a < best.a)) best = { id, a };
+    }
+    return best?.id ?? null;
+  };
   const canvas = map.getCanvas();
-  const move = (e: MapLayerMouseEvent) => {
-    const id = (e.features?.[0]?.properties?.id as string | undefined) ?? null;
-    canvas.style.setProperty("cursor", id ? "pointer" : "");
-    if (id !== survol) o.onSurvol?.(id);
+  const pointer = (id: string | null) => {
+    if (id === pointe) return;
+    pointe = id;
+    appliquerSurvol();
+    if (!!id !== curseur) {
+      curseur = !!id;
+      if (id) canvas.style.setProperty("cursor", "pointer");
+      else canvas.style.removeProperty("cursor");
+    }
+    o.onSurvol?.(id);
   };
-  const leave = () => {
-    canvas.style.removeProperty("cursor");
-    o.onSurvol?.(null);
-  };
-  const click = (e: MapLayerMouseEvent) => {
-    const id = e.features?.[0]?.properties?.id as string | undefined;
+  const move = (e: MapMouseEvent) => pointer(sous(e));
+  const out = () => pointer(null);
+  const click = (e: MapMouseEvent) => {
+    const id = sous(e);
     if (id) o.onChoix?.(id);
   };
-  for (const l of [COUCHES.vol, COUCHES.volOn, COUCHES.vsa]) {
-    map.on("mousemove", l, move);
-    map.on("mouseleave", l, leave);
-    map.on("click", l, click);
-  }
+  map.on("mousemove", move);
+  map.on("mouseout", out);
+  map.on("click", click);
 
   return {
     heures(x) {
       hs = x;
       set(SRC, zonesData());
     },
-    marquer(s, c, m) {
-      if (s === survol && c === choix && m === mots) return;
-      survol = s;
-      choix = c;
-      mots = m;
-      set(SRC, zonesData());
-      set(SRC_LAB, labData());
+    survoler(ids) {
+      if (ids.length === liste.length && ids.every((id, i) => id === liste[i])) return;
+      liste = [...ids];
+      appliquerSurvol();
+    },
+    choisir(ids) {
+      const next = new Set(ids);
+      if (next.size === choisis.size && ids.every((id) => choisis.has(id))) return;
+      for (const id of geo.keys()) {
+        const was = choisis.has(id);
+        const is = next.has(id);
+        const back = next.size > 0 && !is;
+        const wasBack = choisis.size > 0 && !was;
+        if (was !== is || back !== wasBack) etat(id, { choix: is, retrait: back });
+      }
+      choisis = next;
     },
     contour(c) {
       outline = c;
@@ -386,26 +468,26 @@ export function calque(map: MlMap, o: CalqueOptions): Calque {
       ink = c;
       for (const l of [COUCHES.commune, COUCHES.communeAdmin])
         if (map.getLayer(l)) map.setPaintProperty(l, "line-color", c);
-      if (map.getLayer(COUCHES.vsa))
-        map.setPaintProperty(COUCHES.vsa, "line-color", ["case", ["get", "on"], JAUNE, c]);
       // the site's restyle swaps the colours of every layer by its palette's pairs (main.ts):
       // the boards' sky blue and yellow come back
+      if (map.getLayer(COUCHES.vsa))
+        map.setPaintProperty(COUCHES.vsa, "line-color", ["case", on, JAUNE, c]);
       if (map.getLayer(COUCHES.vol))
-        map.setPaintProperty(COUCHES.vol, "fill-extrusion-color", BLEU);
-      if (map.getLayer(COUCHES.volOn))
-        map.setPaintProperty(COUCHES.volOn, "fill-extrusion-color", JAUNE);
-      if (map.getLayer(COUCHES.solOn)) map.setPaintProperty(COUCHES.solOn, "fill-color", JAUNE);
+        map.setPaintProperty(COUCHES.vol, "fill-extrusion-color", ["case", on, JAUNE, BLEU]);
+      if (map.getLayer(COUCHES.sol)) map.setPaintProperty(COUCHES.sol, "fill-color", JAUNE);
     },
     cadre: box,
+    boite(id) {
+      const g = geo.get(id);
+      return g ? bboxOf(g.rs) : null;
+    },
     retirer() {
-      for (const l of [COUCHES.vol, COUCHES.volOn, COUCHES.vsa]) {
-        map.off("mousemove", l, move);
-        map.off("mouseleave", l, leave);
-        map.off("click", l, click);
-      }
+      map.off("mousemove", move);
+      map.off("mouseout", out);
+      map.off("click", click);
       canvas.style.removeProperty("cursor");
       for (const l of Object.values(COUCHES)) if (map.getLayer(l)) map.removeLayer(l);
-      for (const s of [SRC, SRC_LAB, SRC_COM]) if (map.getSource(s)) map.removeSource(s);
+      for (const s of [SRC, SRC_COM]) if (map.getSource(s)) map.removeSource(s);
     },
   };
 }
