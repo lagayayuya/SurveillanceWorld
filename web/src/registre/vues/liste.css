@@ -120,19 +120,30 @@
     gap: 8px;
   }
 }
-/* A document's own links under its name: its source and « Signaler une erreur » (DECISIONS 2026-10-28
-   and 29: where documents are listed), 44 px under a finger. */
-.rg .v-liste .doc-liens {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 16px;
-  margin-top: 2px;
-  font-size: 13px;
+/* v2.1 B4: the lists have the fiches' detail panel, at the right of the table (kit-grand-ecran.md
+   § 6); a document's links (its source, « Signaler une erreur ») are there, not on each row. The
+   rail and the panel stay in view as the list scrolls. */
+.rg .v-liste .grid2.avec-panneau {
+  grid-template-columns: minmax(0, 1fr) 320px;
+  margin-top: 6px;
+}
+.rg .v-liste .panel {
+  top: 16px;
+}
+/* a row's other links (its commune, its buyer, its companies, the names under it) stay links of
+   their own, above the row's main link that covers it (cadre.css « rows ») */
+.rg .v-liste .r :is(td + td, .naf) a.rl {
+  position: relative;
+  z-index: 1;
+}
+.rg .v-liste .r :is(td + td, .naf) a.rl::after {
+  content: none;
 }
 @media (max-width: 959px) {
-  .rg .v-liste .doc-liens a {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
+  .rg .v-liste .grid2.avec-panneau {
+    grid-template-columns: minmax(0, 1fr);
   }
+}
+.rg .v-liste .r:is(:hover, :focus-within) :is(td + td, .naf) a.rl:not(:hover, :focus-visible) {
+  text-decoration: none;
 }

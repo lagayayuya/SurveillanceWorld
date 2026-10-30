@@ -386,6 +386,17 @@ export function creneauArrete(z: ZoneArrete): string {
   return s;
 }
 
+/** The act's period as the build writes it (« 2026-10-01 au 2026-10-16 », « 2025-11-11 »), in
+ * words; any other wording as it is. */
+function periodeArrete(v: unknown): string {
+  const p = uneLigne(v);
+  const m = /^(\d{4}-\d\d-\d\d)(?: au (\d{4}-\d\d-\d\d))?$/.exec(p);
+  if (!m) return p;
+  return m[2]
+    ? t("autorisations.creneau_jours", { d0: shortDate(m[1]), d1: shortDate(m[2]) })
+    : shortDate(m[1]);
+}
+
 /** A long value (a place, a purpose): under its label, not squeezed at its right. */
 const long = (s: string): RichItem[] => [{ span: s, cls: "long" }];
 const uneLigne = (s: unknown): string =>
@@ -426,7 +437,7 @@ export function panneauArrete(L: Lexique, e: Evenement, zones: ZoneArrete[] = []
     add("abords", e.cameras_ext != null && fr(e.cameras_ext));
     add("interieur", e.cameras_int != null && fr(e.cameras_int));
     add("duree", e.duree || t("autorisations.non_precisee"));
-    add("periode", uneLigne(e.periode));
+    add("periode", periodeArrete(e.periode));
     add("verbalisation", e.videoverbalisation === true && t("autorisations.oui"));
     add("deport", e.deport_forces === true && t("autorisations.oui"));
     add("dossier", e.dossier ? String(e.dossier) : "");
@@ -444,7 +455,7 @@ export function panneauArrete(L: Lexique, e: Evenement, zones: ZoneArrete[] = []
       "appareils",
       e.cameras != null ? appareils(e) : e.cameras_lib ? uneLigne(e.cameras_lib) : "",
     );
-    add("periode", zones.length ? "" : uneLigne(e.periode));
+    add("periode", zones.length ? "" : periodeArrete(e.periode));
     let lieu = "";
     zones.forEach((z, i) => {
       rows.push([

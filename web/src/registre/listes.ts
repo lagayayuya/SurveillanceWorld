@@ -28,7 +28,7 @@ import {
   type Recherche,
 } from "./corpus.ts";
 import type { Rich, RichItem } from "./dc.ts";
-import type { Acheteur, Couverture } from "./donnees.ts";
+import type { Acheteur, Couverture, Evenement } from "./donnees.ts";
 import { EI } from "./donnees.ts";
 import { count, fr, money } from "./format.ts";
 import { has, t } from "./i18n.ts";
@@ -44,6 +44,7 @@ import { LISTES, type Liste, type Route } from "./routes.ts";
 import { signaler } from "./signaler.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
 import type { TypeCle } from "./types.ts";
+import { appareils } from "./vues/commune-outils.ts";
 
 export { LISTES, type Liste };
 
@@ -145,8 +146,10 @@ export type Rang = {
   /** the line under the name: words, and the fiches it names as links */
   sous: Rich;
   /** a document's own links: its source (« Voir l'arrêté »), « Signaler une erreur » (DECISIONS
-   * 2026-10-28 and 29: where documents are listed) */
+   * 2026-10-28 and 29), shown in the list's detail panel, never on each row (v2.1 B4) */
   liens?: { l: string; href: string }[];
+  /** a document's record, for the list's detail panel */
+  e?: Evenement;
   /** the départements' chips (Entreprises) */
   deps?: string[];
   cells: Rich[];
@@ -484,8 +487,19 @@ function rangsDocuments(C: Corpus, k: Kind): Rang[] {
           : e.dep
             ? [lienDepartement(e.dep, nomDep(C, e.dep), true)]
             : NA;
-      const cams = e.t === "arrete" && e.cameras != null ? e.cameras : null;
-      const amount: Rich = k === "aut" ? (cams == null ? NA : fr(cams)) : money(e.montant);
+      const cams = e.cameras ?? null;
+      // a decree of drones or body cameras counts its devices, with their word (« 2 drones »,
+      // v2.1 B4); the act's own words when it gives no number (« non précisé »)
+      const amount: Rich =
+        k !== "aut"
+          ? money(e.montant)
+          : cams == null
+            ? e.cameras_lib && e.t !== "arrete"
+              ? String(e.cameras_lib)
+              : NA
+            : e.t === "arrete"
+              ? fr(cams)
+              : appareils(e);
       const cells: Rich[] =
         k === "aut" || k === "sub"
           ? [where, [qui(L, d)], amount]
@@ -514,6 +528,7 @@ function rangsDocuments(C: Corpus, k: Kind): Rang[] {
             : []),
           signaler(e),
         ],
+        e,
         cells,
         mots: d.words,
         f: { dep: [d.key[1]], annee: [d.key[2]], disp: [d.key[3]] },

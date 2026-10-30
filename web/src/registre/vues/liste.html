@@ -24,25 +24,30 @@
         </div>
       </sc-for>
       <sc-if value="{{argent}}"><p class="money">{{t.argent.enveloppe}}</p></sc-if>
-      <table class="t" style="margin-top: 6px">
-        <caption class="sr">{{caption}}</caption>
-        <thead><tr><sc-if value="{{wide}}"><th scope="col" style="width: 30px"><span class="sr">{{t.liste.rang}}</span></th></sc-if><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><sc-if value="{{c.tri}}"><button type="button" onClick="{{c.pick}}">{{c.l}}{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}"><span class="th-fixe">{{c.l}}</span></sc-if></th></sc-for></tr></thead>
-        <tbody>
-          <sc-for list="{{rows}}" as="r">
-            <tr>
-              <sc-if value="{{wide}}"><td class="rk">{{r.rk}}</td></sc-if>
-              <td><sc-if value="{{tel}}"><span class="rkt tw">{{r.rk}}</span></sc-if>{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="naf">{{{r.sous}}}</span></sc-if><sc-if value="{{r.liens.length}}"><span class="doc-liens"><sc-for list="{{r.liens}}" as="l"><a href="{{l.href}}">{{l.l}}</a></sc-for></span></sc-if></td>
-              <sc-for list="{{r.cells}}" as="c"><td class="{{c.cls}}"><sc-if value="{{c.isDeps}}"><div class="deps"><sc-for list="{{c.deps}}" as="d"><span class="{{d.cls}}">{{d.d}}</span></sc-for></div></sc-if>{{{c.v}}}</td></sc-for>
-            </tr>
-          </sc-for>
-        </tbody>
-      </table>
-      <sc-if value="{{empty}}"><p class="note" style="margin-top: 14px">{{t.liste.aucun}} <button type="button" class="lienbtn" onClick="{{reset}}">{{t.liste.effacer}}</button></p></sc-if>
-      <div class="pied">
-        <sc-if value="{{hasMore}}"><button type="button" class="more" onClick="{{showMore}}">{{moreL}}</button></sc-if>
-        <span class="tw" style="font-size: 13px; color: var(--muted)">{{shown}} · <button type="button" class="lienbtn tw" onClick="{{exporter}}">{{t.liste.csv_lien}}</button></span>
+      <div class="grid2 avec-panneau">
+        <div style="min-width: 0">
+          <table class="t" style="margin-top: 6px">
+            <caption class="sr">{{caption}}</caption>
+            <thead><tr><sc-if value="{{wide}}"><th scope="col" style="width: 30px"><span class="sr">{{t.liste.rang}}</span></th></sc-if><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><sc-if value="{{c.tri}}"><button type="button" onClick="{{c.pick}}">{{c.l}}{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}"><span class="th-fixe">{{c.l}}</span></sc-if></th></sc-for></tr></thead>
+            <tbody>
+              <sc-for list="{{rows}}" as="r">
+                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                  <sc-if value="{{wide}}"><td class="rk">{{r.rk}}</td></sc-if>
+                  <td><sc-if value="{{tel}}"><span class="rkt tw">{{r.rk}}</span></sc-if>{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="naf">{{{r.sous}}}</span></sc-if></td>
+                  <sc-for list="{{r.cells}}" as="c"><td class="{{c.cls}}"><sc-if value="{{c.isDeps}}"><div class="deps"><sc-for list="{{c.deps}}" as="d"><span class="{{d.cls}}">{{d.d}}</span></sc-for></div></sc-if>{{{c.v}}}</td></sc-for>
+                </tr>
+              </sc-for>
+            </tbody>
+          </table>
+          <sc-if value="{{empty}}"><p class="note" style="margin-top: 14px">{{t.liste.aucun}} <button type="button" class="lienbtn" onClick="{{reset}}">{{t.liste.effacer}}</button></p></sc-if>
+          <div class="pied">
+            <sc-if value="{{hasMore}}"><button type="button" class="more" onClick="{{showMore}}">{{moreL}}</button></sc-if>
+            <span class="tw" style="font-size: 13px; color: var(--muted)">{{shown}} · <button type="button" class="lienbtn tw" onClick="{{exporter}}">{{t.liste.csv_lien}}</button></span>
+          </div>
+          <sc-if value="{{arretes}}"><p class="tw" style="margin: 14px 0 0; font-size: 13px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p><p class="tw" style="margin: 6px 0 0; font-size: 13px; color: var(--muted)"><a href="/registre/couverture#non-lus">{{nonLus}}</a></p></sc-if>
+        </div>
+        <dc-include src="panneau"></dc-include>
       </div>
-      <sc-if value="{{arretes}}"><p class="tw" style="margin: 14px 0 0; font-size: 13px; color: var(--muted)">{{t.arretes.lus_par_programme}}</p><p class="tw" style="margin: 6px 0 0; font-size: 13px; color: var(--muted)"><a href="/registre/couverture#non-lus">{{nonLus}}</a></p></sc-if>
     </div>
   </div>
 </div>

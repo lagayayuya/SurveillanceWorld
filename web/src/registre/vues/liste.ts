@@ -6,7 +6,7 @@
 // their figures and their rules are listes.ts's (those of the old « Chiffres et classements » and
 // of the old search of documents).
 
-import type { Index, Recherche } from "../corpus.ts";
+import { badge, date as docDate, docHref, type Index, type Recherche } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
@@ -31,6 +31,7 @@ import {
   listeHref,
   motValeur,
   nomDep,
+  type Rang,
   rangs,
   TYPE_DE,
   valeurs,
@@ -48,6 +49,8 @@ import {
   type TypeCle,
 } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
+import "./autorisations.css";
+import { panneauArrete } from "./commune-outils.ts";
 import "./liste.css";
 import template from "./liste.html?raw";
 
@@ -105,6 +108,56 @@ export function rail(liste: Liste, e: Etat, n: Comptes) {
             );
           }),
   }));
+}
+
+/** A row's main link: where it leads (its fiche, a decree's commune at its row). */
+const hrefDe = (r: Rang): string => (r.lien as { a?: { href?: string } }).a?.href ?? "";
+
+/** A row's line under its name, as words (the panel's note is text). */
+const plainSous = (x: Rich): string => (typeof x === "string" ? x : "");
+
+/** The list's detail panel (v2.1 B4: the lists have the fiches' panel): a decree, everything the
+ * build read of it and its two links (its source, « Signaler une erreur »), which no row repeats;
+ * another document, its line, its reference, its links; a commune, a company…, its name and its
+ * fiche (their figures are in the row). At rest it says what to hover (B3), never the figures beside it. */
+function detail(C: Corpus, r: Rang | undefined, k: TypeCle, docs: boolean) {
+  const vide = { corr: [], note: "", foot: "", btn: null, hint: "" };
+  if (!r)
+    return {
+      ...vide,
+      kicker: pluriel(k),
+      title: t(docs ? "liste.panneau_repos_docs" : "liste.panneau_repos") as Rich,
+      rows: [] as { k: string; v: Rich }[],
+      links: [] as { l: string; href: string }[],
+    };
+  const href = hrefDe(r);
+  const e = r.e;
+  if (e?.t.startsWith("arrete")) {
+    const p = panneauArrete(C.R, e);
+    const nom = e.insee ? C.R.communes[e.insee]?.nom : undefined;
+    return {
+      ...vide,
+      kicker: p.kicker,
+      title: p.title,
+      rows: p.rows.map(([k, v]) => ({ k, v })),
+      note: p.note ?? "",
+      foot: p.foot,
+      links: [
+        ...(nom ? [{ l: t("documents.lien_autorisations", { nom }), href: docHref(C.R, e) }] : []),
+        ...p.links,
+      ],
+    };
+  }
+  // its figures are beside it, in its row: not again here (B3); its line, its links
+  return {
+    ...vide,
+    kicker: e ? `${badge(e)} · ${docDate(e)}` : pluriel(k),
+    title: r.nom as Rich,
+    rows: [] as { k: string; v: Rich }[],
+    hint: plainSous(r.sous),
+    foot: e?.ref ?? "",
+    links: [...(href ? [{ l: t("liste.ouvrir_fiche"), href }] : []), ...(r.liens ?? [])],
+  };
 }
 
 export class ListeVue extends Vue<Props, State> {
@@ -242,8 +295,14 @@ export class ListeVue extends Vue<Props, State> {
         }
         return { cls: c.num ? "num" : "", isDeps: false, deps: [], v: r.cells[j++] };
       });
-      return { rk: i + 1, lien: r.lien, sous: r.sous, liens: r.liens ?? [], cells };
+      // the row under the contract (cadre.css « rows »): its name's link covers it, hovered or
+      // focused it shows in the panel, chosen it keeps its type's bar
+      return { rk: i + 1, lien: r.lien, sous: r.sous, cells, ...this.ligne(r.id, k) };
     });
+    // the panel: the row hovered or focused stays there until another is (no `quitter`: the
+    // row's click follows its link, the panel's links must stay within reach of the pointer)
+    const vu = this.affiche();
+    const det = detail(C, vu ? list.find((x) => x.id === vu) : undefined, k, !!all[0]?.e);
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
     const shown = Math.min(S.lim, list.length);
     const more = Math.min(PAS, list.length - S.lim);
@@ -287,6 +346,7 @@ export class ListeVue extends Vue<Props, State> {
       }),
       exporter: (() => enregistrer(`registre-${liste}.csv`, csv(def, list))) as Handler,
       arretes: liste === "arretes",
+      det,
       nonLus: t("registre.non_lus", { n: I.non_lus }),
     };
   }

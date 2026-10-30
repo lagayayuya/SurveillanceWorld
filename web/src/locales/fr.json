@@ -3544,5 +3544,8 @@
   "registre.cadre.retour_page": "Revenir à la page précédente du registre",
   "registre.cadre.retour_carte": "Fermer le registre et revenir à la carte",
   "registre.liste.source": "Source",
+  "registre.liste.panneau_repos": "Survolez une ligne, ou parcourez la liste au clavier\u00a0: son détail s'affiche ici.",
+  "registre.liste.panneau_repos_docs": "Survolez un document, ou parcourez la liste au clavier\u00a0: son détail, sa source et «\u00a0Signaler une erreur\u00a0» s'affichent ici.",
+  "registre.liste.ouvrir_fiche": "Ouvrir la fiche →",
   "registre.sommaire.zone_idf": "Île-de-France"
 }
