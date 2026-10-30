@@ -2291,6 +2291,7 @@ the rows below are what R1b adds.
 | Entreprise-grand: places in « Ce qui ressort » as text | each place a link to its buyer's page | every name is a link (lot R1a's 11th pass) |
 | Entreprise-grand: names retyped (« BCS », « MDTP ») | as published, title-cased (« Bcs », « Mdtp ») | data: SIRENE's names (lot R1a's row) |
 | Entreprise-grand: the section tabs in the flow | sticky tabs, the panel fixed under them | the owner asked for the panel fixed |
+| Entreprise-grand: « Ses plus gros contrats », the 8 first « des N » of every contract, by maximum amount | the 8 first of the contracts a total adds (`compte`), « des 62 » for Serfim T.I.C. of its 64: an amount to be verified (Bron 2019, 2,87 M€, `hors_totaux: a_verifier`) is ranked nowhere a total would not add it | DECISIONS 2026-10-28 « Amounts in the register » (one rule, `compte`) |
 | Acheteur-grand: « au maximum », « Montant max. », the « i » on maximum amounts | « de contrats », « Montant », « Montants hors taxes, à la signature… » | DECISIONS 2026-10-28 |
 | Acheteur-grand: the calls for tenders' table always there | absent with « aucun appel d'offres trouvé au BOAMP » when there is none | data that does not fit (an empty table) |
 | Acheteur-grand: company names under a frieze row as text | links, in the text's colour, underlined | every name is a link; WCAG 1.4.1 |
