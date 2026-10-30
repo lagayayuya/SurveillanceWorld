@@ -233,10 +233,11 @@ export const epciDe = (f: Pick<FichierDepartement, "stats">, ic: string): string
   ic && f.stats.epcis[ic] ? ic : "";
 
 /** The territory's own purchases, the buyer files to read beside it (« une collectivité a une
- * seule fiche »): an intercommunality's own SIREN when it signed a contract (`acheteur`), a
- * département's buyers filed as a département of this one (the build's `categorie`, `dep`). */
+ * seule fiche »): an intercommunality's own SIREN (its file, when the build wrote one, holds its
+ * contracts and its notices: `acheteur` counts the contracts only), a département's buyers filed
+ * as a département of this one and named in its file (the build's `categorie`, `dep`). */
 export function achatsPropres(f: FichierDepartement, ic: string): string[] {
-  if (ic) return f.stats.epcis[ic]?.acheteur ? [ic] : [];
+  if (ic) return f.stats.epcis[ic] ? [ic] : [];
   return Object.entries(f.acheteurs)
     .filter(([, a]) => a.categorie === "departement" && a.dep === f.departement.code)
     .map(([s]) => s)

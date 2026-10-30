@@ -167,8 +167,10 @@ test("one fiche per territory: an intercommunality's by its code, a link of its 
 test("its own purchases: the intercommunality's buyer file, the département's own buyers", () => {
   const f = fichier();
   assert.deepEqual(achatsPropres(f, "200046977"), ["200046977"]);
+  // no contract signed: its file is read all the same (its notices)
   f.stats.epcis["200046977"].acheteur = false;
-  assert.deepEqual(achatsPropres(f, "200046977"), []);
+  assert.deepEqual(achatsPropres(f, "200046977"), ["200046977"]);
+  assert.deepEqual(achatsPropres(f, "999999999"), []);
   f.acheteurs = {
     "226900017": { nom: "Département du Rhône", categorie: "departement", dep: "69" },
     "221300015": { nom: "Département des Bouches-du-Rhône", categorie: "departement", dep: "13" },

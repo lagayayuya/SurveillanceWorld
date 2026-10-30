@@ -58,7 +58,16 @@
   grid-template-columns: 110px minmax(0, 1fr) 200px 100px;
   padding: 6px 0;
 }
+/* its calls for tenders: date, the notice, the contract that followed (or why none) */
+.rg .v-departement .drow.appel {
+  grid-template-columns: 110px minmax(0, 1fr) minmax(0, 0.8fr);
+  padding: 6px 0;
+}
 @media (max-width: 959px) {
+  .rg .v-departement .drow.appel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
   .rg .v-departement .drow.achat {
     grid-template-columns: minmax(0, 1fr) auto;
   }

@@ -16,6 +16,7 @@ import { count, fr, longDate, longMonth, money, moneyFull, shortDate } from "../
 import { has, t } from "../i18n.ts";
 import {
   departementHref,
+  lien,
   lienAcheteur,
   lienCommune,
   lienDepartement,
@@ -29,6 +30,7 @@ import { capital } from "../texte.ts";
 import { pluriel } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, Vue } from "../vue.ts";
 import {
+  appels,
   buyerNom,
   type Contrat,
   contrats,
@@ -436,6 +438,46 @@ class Departement extends Vue<Props, State> {
         hover: this.pick(k),
       };
     });
+    // its calls for tenders (its buyer files'): those of its contracts and those no contract was
+    // found for, each a link to its record, the contract that followed a link too
+    const { achats } = this.props;
+    const AO = achats
+      .flatMap((x) => appels(x, contrats(x, x.stats)).map((o) => ({ o, f: x })))
+      .sort((a, b) => b.o.d.localeCompare(a.o.d));
+    const RECENT = (() => {
+      const d = new Date();
+      d.setUTCMonth(d.getUTCMonth() - 18);
+      return d.toISOString().slice(0, 10);
+    })();
+    const aos = AO.map(({ o, f: x }, i) => {
+      const k = `o${i}`;
+      const lx = lexique(x);
+      const suite: RichItem[] = o.contrat
+        ? [
+            lien(
+              "con",
+              `/registre/contrat/${encodeURIComponent(o.contrat)}`,
+              shortDate(o.dContrat),
+              true,
+            ),
+            ...o.ents.flatMap((s) => [" · ", lienEntreprise(lx, s)]),
+          ]
+        : [o.d >= RECENT ? t("acheteur.pas_encore_publie") : t("acheteur.non_retrouve")];
+      DET[k] = {
+        kicker: t("acheteur.o_kicker", { date: shortDate(o.d) }),
+        title: o.objet,
+        rows: [[t("acheteur.publications"), o.refs || "—"]],
+        corr: [[t("acheteur.contrat"), suite]],
+        link: [t("departement.voir_appel"), o.href],
+      };
+      return {
+        cls: `drow${sel === k ? " on" : ""}`,
+        d: shortDate(o.d),
+        objet: lien("ao", o.href, o.objet, true),
+        suite,
+        hover: this.pick(k),
+      };
+    });
     // who sold to the intercommunality (its own purchases): each company a link
     const SE = ic && A.length ? vendeurs(C) : [];
     const ventes = SE.map((x, i) => {
@@ -721,7 +763,9 @@ class Departement extends Vue<Props, State> {
       essentiel: true,
       temps: ic ? Y.length > 0 : true,
       avecqui: nC > 0 || sellers.length > 0 || buyers.length > 0 || ventes.length > 0,
-      documents: nDocs > 0 || A.length > 0,
+      // an intercommunality without a contract or a notice of its own: its documents are its
+      // communes' (their fiches, listed above), no section of their own
+      documents: ic ? A.length > 0 || aos.length > 0 : nDocs > 0 || A.length > 0 || aos.length > 0,
       sources: true,
     });
     const k = ic ? ("epci" as const) : ("departement" as const);
@@ -799,6 +843,7 @@ class Departement extends Vue<Props, State> {
           })
         : "",
       docs,
+      aos,
       docsMore: A.length > DOCS,
       docsLabel: S.allD
         ? t("departement.reduire")

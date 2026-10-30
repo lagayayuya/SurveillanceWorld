@@ -87,10 +87,11 @@ test("a commune buyer's path goes to its commune's page, decided by the build", 
 /** SYNTHETIC: the Rhône's file as the build writes its intercommunalities (code = SIREN). */
 const rhone = {
   departement: { code: "69", nom: "Rhône" },
+  acheteurs: { "226900017": { nom: "Département du Rhône", categorie: "departement", dep: "69" } },
   stats: {
     epcis: { "200046977": { nom: "Métropole de Lyon", communes: ["69123"], uniq: { docs: 1, con: 1, cam: 0, dr: 0, arr: 0 }, acheteur: true } },
   },
-} as unknown as Pick<FichierDepartement, "departement" | "stats">;
+} as unknown as Pick<FichierDepartement, "departement" | "stats" | "acheteurs">;
 
 test("an intercommunality's path goes to its territory's page when the build holds its row", () => {
   const metro = fichier({ siren: "200046977", categorie: "metropole", dep: "69" });
@@ -109,6 +110,9 @@ test("a département's path goes to its département's page; any other buyer sta
   const cd = fichier({ siren: "226900017", categorie: "departement", dep: "69" });
   assert.equal(departementAVerifier(cd), "69");
   assert.equal(redirection(cd, rhone), "/registre/departement/69");
+  // a second SIREN filed as the département, which the département's file does not name (no
+  // contract placed there): its notices would show nowhere, its buyer's page stays
+  assert.equal(redirection(fichier({ siren: "171300056", categorie: "departement", dep: "69" }), rhone), null);
   assert.equal(departementAVerifier(fichier({ dep: "69" })), null);
   assert.equal(redirection(fichier({ dep: "69" }), rhone), null);
 });

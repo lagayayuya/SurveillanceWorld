@@ -69,18 +69,19 @@ export function departementAVerifier(f: FichierAcheteur): string | null {
 
 /** Where a collectivité buyer's path goes, its one fiche: a commune's page (the build's
  * `page_commune`); an intercommunality's territory when the département's file has its row (its
- * code is its SIREN: stats.epcis); a département's page when its file was read. Any other buyer,
- * or a territory the build does not hold: null, its buyer's page. */
+ * code is its SIREN: stats.epcis); a département's page when the département's file names it
+ * (that fiche reads its buyer file from there: its documents are not lost). Any other buyer, or a
+ * territory the build does not hold: null, its buyer's page. */
 export function redirection(
   f: FichierAcheteur,
-  dep: Pick<FichierDepartement, "departement" | "stats"> | null = null,
+  dep: Pick<FichierDepartement, "departement" | "stats" | "acheteurs"> | null = null,
 ): string | null {
   const a = f.acheteur;
   if (a.page_commune) return communeHref(a.page_commune);
   if (!a.dep || !dep || dep.departement.code !== a.dep) return null;
   if (EPCI.has(a.categorie ?? "") && dep.stats.epcis[a.siren])
     return `${departementHref(a.dep)}?ic=${encodeURIComponent(a.siren)}`;
-  if (a.categorie === "departement") return departementHref(a.dep);
+  if (a.categorie === "departement" && dep.acheteurs[a.siren]) return departementHref(a.dep);
   return null;
 }
 

@@ -178,6 +178,10 @@
           <div style="border-top: 2px solid var(--line)"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}} achat" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.hover}}"><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.objet}}}</span><span style="min-width: 0">{{{d.ents}}}</span><span class="a">{{d.amt}}</span></div></sc-for></div>
           <sc-if value="{{docsMore}}"><button class="more" type="button" onClick="{{togDocs}}">{{docsLabel}}</button></sc-if>
           </sc-if>
+          <sc-if value="{{aos.length}}">
+          <h3 class="h3" style="margin-top: 10px">{{t.departement.ses_appels}}</h3>
+          <div style="border-top: 2px solid var(--line)"><sc-for list="{{aos}}" as="o"><div class="{{o.cls}} appel" onMouseEnter="{{o.hover}}" onFocus="{{o.hover}}" onClick="{{o.hover}}"><span class="tw" style="font-size: 13.5px">{{o.d}}</span><span style="min-width: 0">{{{o.objet}}}</span><span style="min-width: 0; font-size: 14px">{{{o.suite}}}</span></div></sc-for></div>
+          </sc-if>
           <sc-if value="{{parcourir}}"><p class="sober" style="margin: 0"><a href="{{parcourir}}">{{t.departement.parcourir_tout}}</a></p></sc-if>
         </section>
         </sc-if>
