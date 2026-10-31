@@ -115,6 +115,9 @@ sous Licence Ouverte 2.0 ; chaque document est cité avec sa source.
   carte, les polices et les tuiles sont servis par le site lui-même.
 - Aucune adresse IP gardée : le serveur web ne les journalise pas et l'API ne les reçoit
   jamais.
+- La recherche du registre n'est donc pas limitée par lecteur (rien ne les distingue), mais
+  pour tous à la fois : deux recherches en même temps, quelques autres attendent un instant,
+  au-delà « 503 » ; ses réponses sont gardées une minute en mémoire, par leur question seule.
 - Des compteurs agrégés seulement (cartes chargées, connexions), par heure puis par jour,
   sans identifiant ni rien d'écrit sur l'appareil.
 - « Me localiser » : la position reste sur l'appareil, elle n'est ni envoyée ni gardée.

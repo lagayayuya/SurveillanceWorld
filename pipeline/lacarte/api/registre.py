@@ -97,7 +97,9 @@ logged (no query, no address), as the rest of the API.
     tri   date (default: the latest first) or montant (the largest counted amount first; a
           decree's cameras, the list of decrees' second sort)
     ordre desc (default) or asc: the sort the other way
-    page  1 … 1000 (default 1); n: rows per page, 1 … 500 (default 20)
+    page  1 … 1000 (default 1); n: rows per page, 1 … 500 (default 20); page × n at most
+          20 000 (ROWS_MAX: the register's CSV, its longest read, stops there)
+    t, d, p, y at most 400 characters each; a value given twice counts once
     Answers:
       200 {"total": 1234, "page": 1, "n": 20,
            "facettes": {"t": {"con": 900, …}, "d": {…}, "p": {…}, "y": {…}},  each family's
@@ -108,19 +110,37 @@ logged (no query, no address), as the rest of the API.
            "dico": {"entreprises": {…}, "acheteurs": {…}, "communes": {…},
                     "affaires": {…}}}          the names they need, with their references
       422 {"error": "invalid", "fields": ["t", …]}  a parameter out of its values
+      503 {"error": "busy"}, Retry-After: 2       too many searches at once (below)
+
+    Bounded without telling readers apart (DECISIONS 2026-10-10: no address is read, kept or
+    logged, so no limit per reader; DECISIONS 2026-10-31): limits.registre_search in
+    rules/participation.yaml. At most `concurrent` searches query the database at once,
+    `waiting` more wait up to `wait_s` for a slot (in the event loop: no thread, no
+    connection held), any other answers 503 at once. Answers are kept in memory by their
+    normalised question (the words as searched, each family's values deduplicated and
+    sorted, the sort, the page): `cache_entries` and `cache_mb` at most, `cache_ttl_s` each,
+    and keyed on the loaded table's version (VERSION_TTL_S): a new load is never mixed with
+    the answers of the previous one. A kept answer needs no slot and no query.
 """
 
+import asyncio
+import math
 import re
+import threading
+import time
 import unicodedata
+from collections import OrderedDict
+from collections.abc import Callable
 from datetime import date
 from types import ModuleType
 from typing import Annotated, Any, Literal
 from urllib.parse import urlsplit
 
 from fastapi import Depends, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from psycopg.types.json import Jsonb
 from pydantic import AfterValidator, BaseModel, BeforeValidator, Field
+from starlette.concurrency import run_in_threadpool
 
 from lacarte import participation
 from lacarte.api import stats
@@ -226,6 +246,14 @@ FAMILIES = {
 Q_MAX = 200
 PAGE_MAX = 1000
 N_MAX = 500
+# page × n at most: the register's CSV (web/src/registre/listes.ts toutDemander) reads 20 000
+# rows at most, 40 pages of 500; a list's « Voir plus » 1000 pages of 20.
+ROWS_MAX = 20_000
+# A family's parameter: every département (101, 2 to 3 characters and a comma) fits.
+FILTER_MAX = 400
+# How long the loaded table's version is trusted before it is read again (as the site's
+# switches, app.SWITCHES_TTL_S): a new load is seen within this delay.
+VERSION_TTL_S = 5.0
 
 
 def _words(q: str) -> list[str]:
@@ -284,6 +312,147 @@ def search(
     }
 
 
+def table_version(conn) -> tuple[int, str | None]:
+    """The loaded search table's version: its oid (db/load_registre.sh swaps a new table in)
+    and the transaction that wrote its rows (one COPY writes them all, and charger() reloads
+    in place in one transaction). The table has no build id."""
+    return conn.execute(
+        "SELECT 'registre_recherche'::regclass::oid::bigint,"
+        " (SELECT xmin::text FROM registre_recherche LIMIT 1)"
+    ).fetchone()
+
+
+class Version:
+    """The table's version, read at most every VERSION_TTL_S seconds."""
+
+    def __init__(self, clock: Callable[[], float] = time.monotonic) -> None:
+        self.clock = clock
+        self.value: tuple | None = None
+        self.read_at = -math.inf
+        self.lock = threading.Lock()
+
+    def fresh(self) -> tuple | None:
+        with self.lock:
+            if self.value is not None and self.clock() - self.read_at < VERSION_TTL_S:
+                return self.value
+        return None
+
+    def get(self, conn) -> tuple:
+        value = self.fresh()
+        if value is None:
+            value = tuple(table_version(conn))
+            with self.lock:
+                self.value, self.read_at = value, self.clock()
+        return value
+
+
+class Cache:
+    """Answers (their JSON bytes) by key: the least recently used out first beyond `entries`
+    or `max_bytes`, each kept `ttl` seconds."""
+
+    def __init__(self, entries: int, max_bytes: int, ttl: float,
+                 clock: Callable[[], float] = time.monotonic) -> None:  # fmt: skip
+        self.entries, self.max_bytes, self.ttl, self.clock = entries, max_bytes, ttl, clock
+        self.items: OrderedDict[tuple, tuple[float, bytes]] = OrderedDict()
+        self.size = 0
+        self.lock = threading.Lock()
+
+    def get(self, key: tuple) -> bytes | None:
+        with self.lock:
+            item = self.items.get(key)
+            if item is None:
+                return None
+            if self.clock() - item[0] >= self.ttl:
+                self._drop(key)
+                return None
+            self.items.move_to_end(key)
+            return item[1]
+
+    def put(self, key: tuple, body: bytes) -> None:
+        if len(body) > self.max_bytes:
+            return
+        with self.lock:
+            if key in self.items:
+                self._drop(key)
+            self.items[key] = (self.clock(), body)
+            self.size += len(body)
+            while len(self.items) > self.entries or self.size > self.max_bytes:
+                self._drop(next(iter(self.items)))
+
+    def _drop(self, key: tuple) -> None:
+        self.size -= len(self.items.pop(key)[1])
+
+    def clear(self) -> None:
+        with self.lock:
+            self.items.clear()
+            self.size = 0
+
+
+class Slots:
+    """At most `running` searches at once and `waiting` more waiting up to `wait_s` for a
+    slot; any other refused at once. The counters under a thread lock, the wait a poll in the
+    event loop: no thread held, nothing bound to one event loop (the tests start several)."""
+
+    POLL_S = 0.02
+
+    def __init__(self, running: int, waiting: int, wait_s: float) -> None:
+        self.max_running, self.max_waiting, self.wait_s = running, waiting, wait_s
+        self.running = self.waiting = 0
+        self.lock = threading.Lock()
+
+    def _take(self) -> bool:
+        with self.lock:
+            if self.running < self.max_running:
+                self.running += 1
+                return True
+            return False
+
+    async def enter(self) -> bool:
+        if self._take():
+            return True
+        with self.lock:
+            if self.waiting >= self.max_waiting:
+                return False
+            self.waiting += 1
+        try:
+            deadline = time.monotonic() + self.wait_s
+            while time.monotonic() < deadline:
+                await asyncio.sleep(self.POLL_S)
+                if self._take():
+                    return True
+            return False
+        finally:
+            with self.lock:
+                self.waiting -= 1
+
+    def leave(self) -> None:
+        with self.lock:
+            self.running -= 1
+
+
+class Bounds:
+    """The search's cap, its kept answers and the table's version, from
+    limits.registre_search (read once: a change of the rule needs the API restarted)."""
+
+    def __init__(self, rule: dict) -> None:
+        self.retry_after = str(rule["retry_after_s"])
+        self.slots = Slots(rule["concurrent"], rule["waiting"], float(rule["wait_s"]))
+        self.cache = Cache(rule["cache_entries"], rule["cache_mb"] * 1_000_000,
+                           float(rule["cache_ttl_s"]))  # fmt: skip
+        self.version = Version()
+
+    def busy(self) -> JSONResponse:
+        return JSONResponse({"error": "busy"}, status_code=503,
+                            headers={"Retry-After": self.retry_after})  # fmt: skip
+
+
+def question(q: str, f: dict[str, list[str]], tri: str, ordre: str, page: int, n: int) -> tuple:
+    """A search's normalised question, its kept answer's key: the words as searched, each
+    family's values once and sorted, the sort and the page. Nothing else of the request."""
+    return (tuple(_words(q)), *(tuple(sorted(set(f[k]))) for k in FAMILIES), tri, ordre,
+            page, n)  # fmt: skip
+
+
 def install(api: ModuleType) -> None:
     """The routes, added to the API's app with its own guards and helpers (`api`:
     lacarte.api.app, which calls this at its end; its pool and limits read at each request,
@@ -291,22 +460,26 @@ def install(api: ModuleType) -> None:
     FastAPI 0.141 an included router is one opaque entry of app.routes, and the tests walk
     app.routes for every route (CLOSED_ROUTES among them)."""
     r = api.app
+    bounds = Bounds(participation.rules()["limits"]["registre_search"])
+    api.registre_bounds = bounds
+    family = Query(max_length=FILTER_MAX)
 
     @r.get("/api/registre/recherche")
-    def registre_search(
+    async def registre_search(
         q: Annotated[str, Query(max_length=Q_MAX)] = "",
-        t: str = "",
-        d: str = "",
-        p: str = "",
-        y: str = "",
+        t: Annotated[str, family] = "",
+        d: Annotated[str, family] = "",
+        p: Annotated[str, family] = "",
+        y: Annotated[str, family] = "",
         tri: str = "date",
         ordre: str = "desc",
         page: int = 1,
         n: int = 20,
     ):
-        """The register's search (the contract above): read only, nothing kept or logged."""
+        """The register's search (the contract above): read only, nothing kept but answers
+        by their question, nothing logged; no Request read (no address, no header)."""
         f = {
-            k: [v for v in raw.split(",") if v]
+            k: sorted({v for v in raw.split(",") if v})
             for k, raw in zip(FAMILIES, (t, d, p, y), strict=True)
         }
         bad = [k for k, vs in f.items() if any(not FAMILIES[k].match(v) for v in vs)]
@@ -318,10 +491,32 @@ def install(api: ModuleType) -> None:
             bad.append("page")
         if not 1 <= n <= N_MAX:
             bad.append("n")
+        if not bad and page * n > ROWS_MAX:
+            bad.append("page")
         if bad:
             return JSONResponse({"error": "invalid", "fields": bad}, status_code=422)
+        key = question(q, f, tri, ordre, page, n)
+        version = bounds.version.fresh()
+        kept = None if version is None else bounds.cache.get((version, key))
+        if kept is None:
+            if not await bounds.slots.enter():
+                return bounds.busy()
+            try:
+                kept = await run_in_threadpool(answer, key, q, f, tri, ordre, page, n)
+            finally:
+                bounds.slots.leave()
+        return Response(kept, media_type="application/json")
+
+    def answer(key: tuple, q: str, f: dict, tri: str, ordre: str, page: int, n: int) -> bytes:
+        """A search's JSON, kept by its question and the table's version (another search may
+        have kept it while this one waited)."""
         with api.pool.connection() as conn:
-            return search(conn, q, f, tri, page, n, ordre)
+            version = bounds.version.get(conn)
+            body = bounds.cache.get((version, key))
+            if body is None:
+                body = JSONResponse(search(conn, q, f, tri, page, n, ordre)).body
+                bounds.cache.put((version, key), body)
+        return body
 
     @r.post("/api/registre/signalement", status_code=201)
     def report(body: ReportIn, request: Request,

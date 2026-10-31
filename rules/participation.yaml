@@ -116,3 +116,26 @@ limits:
   # report in a minute or more; it caps what a script can pour into /revue's « Registre ».
   # [TO ADJUST]
   reports_per_minute: 20
+  # The register's search (GET /api/registre/recherche), bounded without telling readers
+  # apart (no address is read, DECISIONS 2026-10-10): one cap for everyone, and answers
+  # kept a short while.
+  registre_search:
+    # Searches running at once. The API has 4 database connections for every route
+    # (app.lifespan's pool): two left for the map, the sign-ins and /revue. A search is ~6
+    # queries of a few ms on the national table. [TO ADJUST]
+    concurrent: 2
+    # Searches waiting for a slot, and how long each waits before 503 « busy »: a search
+    # of the register's summary asks up to six at once (the counts, then one per kind),
+    # so a reader's burst waits instead of failing; a waiting search holds no thread nor
+    # database connection, and more waiting than this get 503 at once. [TO ADJUST]
+    waiting: 24
+    wait_s: 2
+    # The Retry-After of a 503, in seconds.
+    retry_after_s: 2
+    # Answers kept in memory, by their normalised question: at most this many and this
+    # many megabytes (a 500-row page is about 1 MB), each for this long. The data changes
+    # at a deploy only; a new load is seen within 5 s (registre.VERSION_TTL_S) whatever
+    # the age. [TO ADJUST]
+    cache_entries: 256
+    cache_mb: 32
+    cache_ttl_s: 60
