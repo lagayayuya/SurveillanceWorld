@@ -95,6 +95,7 @@ def test_a_contract_published_without_its_day_is_kept_and_compared_to_none(tmp_p
     data[0]["dateNotification"] = ""
     # a day no contract can have (the DECP hold « 0029-12-22 » for a 2021 contract)
     data[1]["dateNotification"] = "0029-12-22"
+    data[2]["dateNotification"] = "2021-02-30"
     (tmp_path / "national").mkdir()
     decp.write(tmp_path / "national" / "decp.jsonl.gz", decp.contracts(data))
     (tmp_path / "national" / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())

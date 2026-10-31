@@ -105,9 +105,11 @@ def _jour(x: Any) -> str:
     """A published day, or "" when it is none a contract can have: a well-formed date from 1990
     to next year (the DECP hold « 0029-12-22 » for a 2021 contract, 2026-10-31)."""
     d = str(x or "")[:10]
-    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
-        return ""
-    return d if 1990 <= int(d[:4]) <= dt.date.today().year + 1 else ""
+    try:
+        day = dt.date.fromisoformat(d) if re.fullmatch(r"\d{4}-\d{2}-\d{2}", d) else None
+    except ValueError:  # « 2021-02-30 »
+        day = None
+    return d if day and 1990 <= day.year <= dt.date.today().year + 1 else ""
 
 
 def _days(a: str, b: str) -> int:
@@ -135,7 +137,8 @@ class Reference:
             k = (c["dep"], selection.norm(c["nom"]))
             # homonyms in a département: no match by name
             ref.by_name[k] = None if k in ref.by_name else c.get("siren")
-            ref.pop_by_siren[c.get("siren") or ""] = c["pop"]
+            if c.get("siren"):
+                ref.pop_by_siren[c["siren"]] = c["pop"]
             if c.get("epci"):
                 ref.pop_by_siren[c["epci"]] = ref.pop_by_siren.get(c["epci"], 0) + c["pop"]
         return ref
@@ -498,7 +501,7 @@ def _quality(
         raisons = []
         mt = e["montant"] or 0
         if not a["centrale_achat"]:
-            pop = ref.pop_by_siren.get(a["acheteur_siren"], 0)
+            pop = ref.pop_by_siren.get(a["acheteur_siren"] or "\0", 0)
             if pop and mt / pop > av["par_habitant"] and mt >= av["par_habitant_min"]:
                 raisons.append(
                     f"{round(mt / pop):,} € par habitant de l'acheteur ({pop:,} habitants)".replace(
