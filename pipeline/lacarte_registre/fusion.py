@@ -31,16 +31,22 @@ NATIONAL_KINDS = frozenset({"attribution", "modification", "avis", "resultat", "
 def fusionner(p: Pilote, nat: dict[str, Any]) -> tuple[Pilote, dict[str, int]]:
     reg = p.reg
     national = {e["id"]: e for e in nat["evenements"]}
-    kept, replaced, pilot_only = [], 0, 0
+    kept, replaced, pilot_only, dated = [], 0, 0, 0
     for e in reg["evenements"]:
         if e["id"] in national:
             replaced += 1
+            # a national row published without its day (the DECP lost some since the pilot's
+            # file): the pilot's day, read then from the same contract
+            n = national[e["id"]]
+            if not n.get("date") and e.get("date"):
+                national[e["id"]] = {**n, "date": e["date"]}
+                dated += 1
             continue
         if e["t"] in NATIONAL_KINDS:
             pilot_only += 1
             e = {**e, "origine": "pilote"}
         kept.append(e)
-    events = [*nat["evenements"], *kept]
+    events = [*(national[e["id"]] for e in nat["evenements"]), *kept]
     affaires: dict[str, dict[str, Any]] = {}
     for aid, a in reg["affaires"].items():
         affaires[aid] = {**a, "events": []}
@@ -103,6 +109,7 @@ def fusionner(p: Pilote, nat: dict[str, Any]) -> tuple[Pilote, dict[str, int]]:
         "nationaux": len(national),
         "remplaces": replaced,
         "pilote_seul": pilot_only,
+        "dates_du_pilote": dated,
         "affaires": len(affaires),
     }
     return merged, stats

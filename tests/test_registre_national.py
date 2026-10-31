@@ -69,6 +69,22 @@ def test_the_same_dates_amounts_communes_and_holders(tmp_path):
             assert (a.get("hors_totaux") or "") == (b.get("hors_totaux") or ""), i
 
 
+def test_a_national_row_without_its_day_keeps_the_pilot_s():
+    """The DECP lost some days since the pilot's file: the merge keeps the pilot's day for the
+    same contract (2175000160001920191370000106_50324100, Paris, 2019-02-11 on 2026-10-31)."""
+    from lacarte_registre import fusion
+    from lacarte_registre.regles import Pilote
+
+    pil = {"id": "c~0", "t": "attribution", "affaire": "c", "date": "2019-02-11"}
+    nat = {"id": "c~0", "t": "attribution", "affaire": "c", "date": ""}
+    p = Pilote(reg={"evenements": [pil], "affaires": {"c": {"events": ["c~0"]}}}, globals={})
+    n = {"evenements": [nat], "affaires": {"c": {"events": []}}, "entreprises": {},
+         "communes": {}, "ACHETEURS": {}, "EPCIS": {}, "DEP": {}, "LOTS_GROUPES": {}}  # fmt: skip
+    merged, summary = fusion.fusionner(p, n)
+    assert merged.reg["evenements"][0]["date"] == "2019-02-11"
+    assert summary["dates_du_pilote"] == 1
+
+
 def test_a_contract_published_without_its_day_is_kept_and_compared_to_none(tmp_path):
     """54 of the real DECP's rows have no notification day (2026-10-31): the build keeps them,
     and the amount checks that compare days skip them."""
