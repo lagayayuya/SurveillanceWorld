@@ -443,6 +443,28 @@ try {
     );
     await context.close();
   }
+
+  // --- the type (v2.3 point 2): a `font` shorthand the browser drops takes its rule's font with it
+  // (the minifier once fused `font` and `font-stretch: 75%` into an invalid value, 24 rules) ---
+  {
+    const assets = join(DIST, "assets");
+    const values = [];
+    for (const f of readdirSync(assets).filter((n) => n.endsWith(".css")))
+      for (const m of readFileSync(join(assets, f), "utf8").matchAll(/[{;]font:([^;}]+)/g))
+        values.push(`${f}: ${m[1]}`);
+    const { context, page } = await visit(`/registre/commune/${INSEE}`);
+    await drawn(page);
+    const bad = await page.evaluate(
+      (vs) => vs.filter((v) => !CSS.supports("font", v.slice(v.indexOf(": ") + 2))),
+      values,
+    );
+    check(
+      "type: every `font` declaration of the built stylesheets is valid (CSS.supports)",
+      values.length > 0 && bad.length === 0,
+      `${values.length} declarations${bad.length ? `, invalid: ${bad.slice(0, 5).join(" | ")}` : ""}`,
+    );
+    await context.close();
+  }
 } finally {
   await browser.close();
   server.close();

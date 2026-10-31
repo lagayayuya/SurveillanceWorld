@@ -474,9 +474,10 @@
   border: 2px solid var(--fg);
   background: var(--bg-2);
   color: var(--fg);
-  font:
-    800 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 800;
   font-stretch: 80%;
   text-transform: uppercase;
   cursor: pointer;
@@ -825,9 +826,11 @@
 }
 .dialogue h2 {
   margin: 0 0 10px;
-  font:
-    900 24px / 1.1 Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1.1;
   font-stretch: 68%;
   text-transform: uppercase;
 }
