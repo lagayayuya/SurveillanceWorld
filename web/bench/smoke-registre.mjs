@@ -758,17 +758,23 @@ try {
     await page.goto(`${APP}/registre/communes`);
     await drawn(page);
     const surListe = await orphelins();
-    // the keyboard into the table's first row, then out of it
-    await page.locator("#registre .v-liste tbody tr a").first().focus();
-    await page.waitForTimeout(300);
-    const dedans = await page.evaluate(
-      () => document.querySelectorAll("#registre .v-liste .panel .ptile").length,
+    // the keyboard into the table's second row, then out of it: the panel shows that row, then
+    // its rest again (v2.4: the list's first row, no longer an empty panel)
+    const titre = () =>
+      page.evaluate(
+        () => document.querySelector("#registre .v-liste .panel strong")?.textContent.trim() ?? "",
+      );
+    const noms = await page.evaluate(() =>
+      [...document.querySelectorAll("#registre .v-liste tbody tr")]
+        .slice(0, 2)
+        .map((r) => r.querySelector("a")?.textContent.trim() ?? ""),
     );
+    await page.locator("#registre .v-liste tbody tr").nth(1).locator("a").first().focus();
+    await page.waitForTimeout(300);
+    const dedans = (await titre()) === noms[1] ? 1 : 0;
     await page.locator("#registre .v-liste .pied button").first().focus();
     await page.waitForTimeout(300);
-    const dehors = await page.evaluate(
-      () => document.querySelectorAll("#registre .v-liste .panel .ptile").length,
-    );
+    const dehors = (await titre()) === noms[0] ? 0 : 1;
     // a key focused by the keyboard shows it (a ring of 2 px or more, solid or dashed: WebKit's Tab
     // lands on another control than Chromium's, each with its own ring)
     await page.keyboard.press("Shift+Tab");
@@ -781,13 +787,13 @@ try {
       return st ? `${st.outlineStyle} ${st.outlineWidth}` : "";
     });
     check(
-      "accessibility: no aria-selected out of a listbox, tabs or grid; Tab out of a list empties its panel; a focused key shows it",
+      "accessibility: no aria-selected out of a listbox, tabs or grid; Tab out of a list puts its panel back to its rest; a focused key shows it",
       surFiche === 0 &&
         surListe === 0 &&
         dedans > 0 &&
         dehors === 0 &&
         /^(solid|dashed) [2-9]px/.test(outline),
-      JSON.stringify({ surFiche, surListe, dedans, dehors, outline }),
+      JSON.stringify({ surFiche, surListe, dedans, dehors, noms, outline }),
     );
     await context.close();
   }

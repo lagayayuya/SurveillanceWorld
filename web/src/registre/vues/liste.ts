@@ -13,6 +13,7 @@ import { type Handler, type Rich, richText } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
+import { departementHref } from "../liens.ts";
 import {
   adresse,
   appliquer,
@@ -184,10 +185,21 @@ function detailNom(r: Rang, def: Def, P: Pick<Props, "couverture">) {
   );
   const dr = typeof r.v.dr === "number" && r.v.dr > 0 ? r.v.dr : 0;
   const href = hrefDe(r);
+  // every mention that has its fiche is a link (the owner's rule): the name, its département
+  const kicker: Rich = dep
+    ? t("liste.kicker_dep", { type: mot(k), nom: "\u0000", dep })
+        .split("\u0000")
+        .flatMap((x, i) =>
+          i ? [{ a: { href: departementHref(dep), text: nomDep(P, dep) } }, x] : [x],
+        )
+    : mot(k);
   return {
-    kicker: dep ? t("liste.kicker_dep", { type: mot(k), nom: nomDep(P, dep), dep }) : mot(k),
-    title: r.nom as Rich,
-    tiles: nums.map((c, i) => ({ v: cells[i], l: c.l.toLowerCase() })),
+    kicker,
+    title: href ? [{ a: { href, text: r.nom } }] : (r.nom as Rich),
+    // a figure the row does not know (« — ») is no tile (v2.3: no « — » ticket)
+    tiles: nums
+      .map((c, i) => ({ v: cells[i], l: c.l.toLowerCase() }))
+      .filter((x) => richText(x.v).trim() !== "—"),
     ouvrir: href ? { href, l: t("liste.ouvrir_fiche") } : null,
     drones: dr
       ? {
@@ -662,8 +674,9 @@ export class ListeVue extends Vue<Props, State> {
       return { rk: i + 1, lien: r.lien, sous: r.sous, cells, telNums, ...this.ligne(r.id, k) };
     });
     // the panel: the row hovered or focused stays there until another is (no `quitter`: the
-    // row's click follows its link, the panel's links must stay within reach of the pointer)
-    const vu = this.affiche();
+    // row's click follows its link, the panel's links must stay within reach of the pointer);
+    // none yet, the list's first row (v2.4, Ju: not « Survolez une ligne »), not marked as chosen
+    const vu = this.affiche() ?? list[0]?.id ?? null;
     const det = detail(L, vu ? list.find((x) => x.id === vu) : undefined, k, docs, def, this.props);
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
     const shown = Math.min(S.lim, list.length);
