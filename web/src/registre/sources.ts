@@ -1,9 +1,12 @@
 // A fiche's last section, « Sources » (design/registre/v2, V2-Entreprise): each source it reads, who
 // publishes it, and how far the register has read it (couverture.json, the build's dates, never a
 // text); then what the register covers. One list for every fiche (socle's part `sources`).
+import { depNom } from "./corpus.ts";
+import type { RichItem } from "./dc.ts";
 import type { Couverture } from "./donnees.ts";
 import { load } from "./donnees.ts";
 import { has, t } from "./i18n.ts";
+import { lienDepartement, phrase } from "./liens.ts";
 
 export type Source = { l: string; ed: string; date: string; href?: string; lien?: string };
 
@@ -49,4 +52,42 @@ export function sources(
       ...(fiche ? { href: fiche, lien: t("sources.fiche_officielle") } : {}),
     });
   return out;
+}
+
+/** The pilot's areas: a département a link to its fiche, a region words. */
+const pilote = (): RichItem[] => [
+  t("sommaire.zone_idf"),
+  ", ",
+  lienDepartement("69", depNom("69")),
+  ", ",
+  lienDepartement("13", depNom("13")),
+];
+
+/** What the register covers, family by family, in one sentence (couverture.json `resume`, the
+ * summary's line): « Contrats et avis : toute la France. Arrêtés : Rhône. », each département a
+ * link. Before the build wrote it, the pilot's areas. */
+export function couvertureLiee(
+  cv: Pick<Couverture, "resume"> & { departements: Record<string, { nom?: string }> },
+): RichItem[] {
+  if (!cv.resume?.length) return pilote();
+  const et = new Intl.ListFormat("fr", { type: "conjunction" });
+  return cv.resume.flatMap((r, i) => {
+    const mots = et.format(r.familles.map((f) => t(`sommaire.par_source.${f}`)));
+    const zone: RichItem[] =
+      r.zone === "france"
+        ? [t("sommaire.par_source.france")]
+        : r.zone === "pilote"
+          ? pilote()
+          : r.zone.flatMap((d, j) => [
+              ...(j ? [", "] : []),
+              lienDepartement(d, cv.departements[d]?.nom ?? depNom(d)),
+            ]);
+    return [
+      ...(i ? [" "] : []),
+      ...phrase("sommaire.par_source.ligne", {
+        familles: mots.charAt(0).toUpperCase() + mots.slice(1),
+        zone: { span: zone, cls: "" },
+      }),
+    ];
+  });
 }

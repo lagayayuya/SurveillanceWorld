@@ -343,3 +343,19 @@ test("a published text a spreadsheet would read as a formula stays text in the C
   assert.equal(sansFormule("Vidéoprotection - lot 2"), "Vidéoprotection - lot 2");
   assert.equal(sansFormule(null), "");
 });
+
+test("the summary says what the register covers, family by family, each département a link", async () => {
+  const { couvertureLiee } = await import("../src/registre/sources.ts");
+  const texte = (cv: Parameters<typeof couvertureLiee>[0]) => richText(couvertureLiee(cv));
+  const cv = {
+    departements: couverture.departements,
+    resume: [
+      { familles: ["contrats", "avis"], zone: "france" as const },
+      { familles: ["arretes"], zone: ["69"] },
+    ],
+  };
+  assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
+  assert.ok(JSON.stringify(couvertureLiee(cv)).includes("/registre/departement/69"));
+  // a build without the sentence: the pilot's areas, as before
+  assert.equal(texte({ departements: {} }), "Île-de-France, Rhône, Bouches-du-Rhône");
+});

@@ -38,6 +38,44 @@ def rules(path: Path) -> dict[str, Any]:
     return conf
 
 
+# The families of documents the summary names (« Contrats et avis : toute la France. Arrêtés :
+# Rhône. »), in its order, each from the sources whose id it starts.
+FAMILLES = ("contrats", "avis", "arretes", "subventions")
+
+
+def resume(sources: list[dict[str, Any]], deps: dict[str, Any]) -> list[dict[str, Any]]:
+    """What each family of documents covers, the families that cover the same together:
+    `zone` "france", "pilote" (the pilot's areas), or département codes. The decrees cover
+    the départements whose acts are collected; a family without a document is left out."""
+    zones: dict[str, Any] = {}
+    for f in FAMILLES:
+        rows = [s for s in sources if s["id"].startswith(f) and s["documents"]]
+        if f == "arretes":
+            codes = sorted(k for k, d in deps.items() if d["etat"] == "collecte")
+            if rows and codes:
+                zones[f] = codes
+            continue
+        if not rows:
+            continue
+        per = {s["perimetre"] for s in rows}
+        if per == {"france"}:
+            zones[f] = "france"
+        elif per <= {"pilote"}:
+            zones[f] = "pilote"
+        else:
+            zones[f] = sorted(
+                {c for p in per for c in p.split(",") if p not in ("france", "pilote")}
+            )
+    out: list[dict[str, Any]] = []
+    for f, z in zones.items():
+        same = next((r for r in out if r["zone"] == z), None)
+        if same:
+            same["familles"].append(f)
+        else:
+            out.append({"familles": [f], "zone": z})
+    return out
+
+
 def pilot_departements(conf: dict[str, Any]) -> list[str]:
     return list(conf["departements"])
 
@@ -120,6 +158,8 @@ def build(
         "v": 1,
         "maj": _latest([s["collecte_le"] for s in sources]),
         "sources": sources,
+        # the summary's sentence: what each family of documents covers
+        "resume": resume(sources, deps),
         "departements": deps,
         "defaut": {"etat": conf["default"]["etat"]},
         "non_lus": {k: why.get(k, 0) for k in NON_LU},

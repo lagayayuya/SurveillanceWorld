@@ -123,6 +123,9 @@ export type Stats = {
 export type Couverture = {
   maj: string;
   sources: { id: string; jusqu_au: string | null; collecte_le: string | null }[];
+  /** what each family of documents covers (couverture.py resume): « Contrats et avis : toute la
+   * France. Arrêtés : Rhône. » */
+  resume?: { familles: string[]; zone: "france" | "pilote" | string[] }[];
   departements: Record<
     string,
     {

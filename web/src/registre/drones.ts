@@ -460,7 +460,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     }),
   );
   let outline: Contour | null = null;
-  let entiere = entieres(sites);
+  const entiere = entieres(sites);
   let hs: Record<string, Volume> = {};
   let tint = o.teintes;
   // the states as the map holds them: the pointer's zone, the list's, the chosen ones

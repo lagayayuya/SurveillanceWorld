@@ -8,7 +8,7 @@
 // The old addresses (/registre/chiffres, /registre/?t=…) are replaced by their list's before
 // anything is drawn (listes.ts redirection).
 
-import { depNom, type Index } from "../corpus.ts";
+import type { Index } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
@@ -36,6 +36,7 @@ import {
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
+import { couvertureLiee } from "../sources.ts";
 import { plain } from "../texte.ts";
 import {
   couleur,
@@ -255,14 +256,7 @@ class Sommaire extends Vue<Props, State> {
     ]
       .filter((x) => x.length > 0)
       .flatMap((x) => [" · ", ...(typeof x === "string" ? [x] : x)]);
-    // the regions the register covers: a département a link to its fiche, a region words
-    const zones: RichItem[] = [
-      t("sommaire.zone_idf"),
-      ", ",
-      lienDepartement("69", depNom("69")),
-      ", ",
-      lienDepartement("13", depNom("13")),
-    ];
+    const zones = couvertureLiee(cv);
     const res = (S.res ?? []).map((g) => ({
       ...repere(g.k),
       l: pluriel(g.k),

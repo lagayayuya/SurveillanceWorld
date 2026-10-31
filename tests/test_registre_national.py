@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from lacarte_registre import collecter, construire, decp, fetch, importer, national
+from lacarte_registre import collecter, construire, couverture, decp, fetch, importer, national
 
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 NATIONAL = FIXTURE / "national"
@@ -208,6 +208,31 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     cov = json.loads((site / "couverture.json").read_text("utf-8"))
     [contrats] = [s for s in cov["sources"] if s["id"] == "contrats"]
     assert contrats["perimetre"] == "69" and contrats["collecte_le"] == "2017-12-31"
+    # the summary's sentence: the Rhône's collection, its decrees, the pilot's subsidies
+    assert cov["resume"][0] == {"familles": ["contrats", "avis", "arretes"], "zone": ["69"]}
+
+
+def test_the_coverage_in_one_sentence_family_by_family():
+    """« Contrats : toute la France. Avis et subventions : (the pilot). Arrêtés : Rhône. »"""
+    src = [
+        {"id": "contrats", "perimetre": "france", "documents": 9},
+        {"id": "avis", "perimetre": "pilote", "documents": 4},
+        {"id": "subventions_region_idf", "perimetre": "pilote", "documents": 2},
+        {"id": "subventions_etat_13", "perimetre": "pilote", "documents": 0},
+        {"id": "arretes_69", "perimetre": "pilote", "documents": 7},
+    ]
+    deps = {"69": {"etat": "collecte"}, "75": {"etat": "non_collecte"}}
+    assert couverture.resume(src, deps) == [
+        {"familles": ["contrats"], "zone": "france"},
+        {"familles": ["avis", "subventions"], "zone": "pilote"},
+        {"familles": ["arretes"], "zone": ["69"]},
+    ]
+    # the notices collected for all of France too: one sentence for both; no decree, no family
+    src[1]["perimetre"] = "france"
+    assert couverture.resume(src[:2], {})[0] == {"familles": ["contrats", "avis"], "zone": "france"}
+    assert couverture.resume(src, {"69": {"etat": "non_collecte"}})[-1]["familles"] == [
+        "subventions"
+    ]
 
 
 def test_a_refused_source_leaves_the_previous_outputs_and_resumes(server, tmp_path):
