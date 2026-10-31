@@ -56,9 +56,11 @@ def pages(site: Path) -> list[str]:
         ("departement", "departement"),
         ("entreprise", "entreprise"),
         ("acheteur", "acheteur"),
-        ("document", "contrat"),
     ):
         out += [f"/registre/{page}/{f.stem}" for f in sorted((site / folder).glob("*.json"))]
+    # a document at its type's address (contrat/, avis/, subvention/, arrete/: its affaire's ref)
+    for f in sorted((site / "document").glob("*.json")):
+        out.append(f"/registre/{json.loads(f.read_text(encoding='utf-8'))['affaire']['ref']}")
     return out
 
 

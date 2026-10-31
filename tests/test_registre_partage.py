@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from lacarte_registre import apercu, construire, importer, pages, partage
+from lacarte_registre import apercu, construire, importer, pages, partage, refs
 
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 MIONS, SERFIM, SYTRAL = "69283", "431903954", "256900994"
@@ -46,6 +46,14 @@ def read(root: Path, rel: str) -> dict:
 def records(root: Path) -> list[Path]:
     kinds = ("commune", "departement", "acheteur", "entreprise", "document")
     return [p for k in kinds for p in sorted((root / "site" / k).glob("*.json"))]
+
+
+def ref_of(root: Path, path: Path) -> str:
+    """A record's address: its file's path, but a document's, whose address is its type's
+    (contrat/, avis/, subvention/, arrete/: its affaire's `ref`)."""
+    if path.parent.name == "document":
+        return json.loads(path.read_text(encoding="utf-8"))["affaire"]["ref"]
+    return path.relative_to(root / "site").with_suffix("").as_posix()
 
 
 def test_a_company_s_text_says_its_figures_sources_day_and_address(built):
@@ -88,9 +96,7 @@ def test_no_text_judges(built):
         p = json.loads(path.read_text(encoding="utf-8"))["partage"]
         assert not partage.JUGEMENT.search(p["texte"]), (path.name, p["texte"])
         # the address is the record's own, the site's before it (VITE_SITE_URL at the deploy)
-        assert p["url"] == "/registre/" + path.relative_to(built / "site").with_suffix(
-            ""
-        ).as_posix().replace("document/", "contrat/")  # noqa: E501
+        assert p["url"] == "/registre/" + ref_of(built, path)
 
 
 def test_a_departement_is_said_as_a_sentence_says_it(built):
@@ -110,8 +116,7 @@ def test_a_departement_is_said_as_a_sentence_says_it(built):
 def test_an_entry_page_per_record_with_its_share_tags(built):
     entree = built / "site" / "entree"
     for path in records(built):
-        ref = path.relative_to(built / "site").with_suffix("").as_posix()
-        ref = ref.replace("document/", "contrat/")
+        ref = ref_of(built, path)
         frag = (entree / f"{ref}.html").read_text(encoding="utf-8")
         for tag in TAGS:
             assert tag in frag, (ref, tag)
@@ -144,6 +149,38 @@ def test_the_page_served_is_the_register_s_with_the_record_s_tags(built, tmp_pat
     assert 'href="/registre/' in body  # its neighbours' records
     with pytest.raises(ValueError):
         pages.run(shell, built / "site", tmp_path / "x", "http://not-https")
+
+
+# The old address of a document that is not a contract, by its affaire's id, as
+# deploy/preview.caddy and web/src/registre/routes.ts redirect it (301, in-app).
+OLD = {
+    "avis": re.compile(r"^avis-"),
+    "subvention": re.compile(r"^(sub|detr|region)-"),
+    "arrete": re.compile(r"^(\d{2,3}|2[AB])-\d"),
+}
+
+
+def test_each_type_of_document_has_its_address(built):
+    """A contract at contrat/, a notice without its contract at avis/, a grant at subvention/,
+    a decree at arrete/ (its affaire's kind); the redirection's rule on the old address, by
+    the id alone, sends each to the same place; the entry pages follow."""
+    seen = set()
+    for path in sorted((built / "site" / "document").glob("*.json")):
+        f = json.loads(path.read_text(encoding="utf-8"))
+        a = f["affaire"]
+        kind, _, aid = a["ref"].partition("/")
+        assert aid == a["id"] == path.stem
+        assert kind == refs.doc_path(a.get("kind")), a["id"]
+        by_id = next((k for k, rx in OLD.items() if rx.match(aid)), "contrat")
+        assert by_id == kind, (aid, a.get("kind"))
+        assert (built / "site" / "entree" / kind / f"{aid}.html").is_file()
+        assert f["partage"]["url"] == f"/registre/{kind}/{aid}"
+        seen.add(kind)
+        # every affaire the file names carries its own address
+        for x in f["affaires"].values():
+            assert x["ref"] == f"{refs.doc_path(x.get('kind'))}/{x['id']}"
+    assert seen == {"contrat", "avis", "subvention", "arrete"}
+    assert not (built / "site" / "entree" / "contrat" / "avis-17-164514.html").exists()
 
 
 def test_a_preview_per_territory_buyer_company_and_document_type(built):

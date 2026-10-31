@@ -21,6 +21,13 @@ test("a document's link leads to its record's form and names the document", () =
 });
 
 test("only a record's form link opens the form", () => {
+  // every type of document has its address: a decree's, a notice's, a grant's form too
+  assert.deepEqual(cible("/registre/arrete/69-2026-10-19-00006?doc=69-2026-10-19-00006#signaler"), {
+    evenement: "69-2026-10-19-00006",
+    affaire: "69-2026-10-19-00006",
+  });
+  assert.equal(cible("/registre/avis/avis-26-1#signaler")?.affaire, "avis-26-1");
+  assert.equal(cible("/registre/subvention/sub-1#signaler")?.affaire, "sub-1");
   assert.equal(cible("/registre/contrat/x"), null);
   assert.equal(cible("/registre/commune/69283#signaler"), null);
   assert.equal(cible("https://example.org/registre/contrat/x#signaler", "https://site.example/"), null);

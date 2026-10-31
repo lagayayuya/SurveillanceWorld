@@ -22,7 +22,7 @@ import { etapeListe, TYPE_DE } from "./listes.ts";
 import { boutonPartage, fermerPartage } from "./partage.ts";
 // « Signaler une erreur »: its form opens over any page that links to it
 import "./signaler.ts";
-import { type Route, route } from "./routes.ts";
+import { nouvelleAdresse, type Route, route } from "./routes.ts";
 import { couleur, icone, type TypeCle } from "./types.ts";
 import { type Partage, setWords } from "./vue.ts";
 import formats from "./vues/formats.json";
@@ -619,6 +619,10 @@ suivreAdresse(() => {
 /** `force`: a link was followed — the page is drawn again even when its address is the one shown
  * (a view that replaced its own address, a list's filters, would otherwise keep them). */
 export async function afficher(force = false): Promise<void> {
+  // an old address (a notice's, a grant's or a decree's record under contrat/): its new one, in
+  // place, as the server's 301 does for a request
+  const neuf = nouvelleAdresse(location.pathname);
+  if (neuf) history.replaceState(history.state, "", `${neuf}${location.search}${location.hash}`);
   const r = route(location.pathname, location.search);
   courant = r;
   ouvrirCadre();

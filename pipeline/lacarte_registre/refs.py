@@ -2,7 +2,11 @@
 
 A record's reference is its address under /registre/, `<type>/<id>`: `commune/<INSEE>`,
 `departement/<code>`, `acheteur/<SIREN>` (an intercommunality that buys has its page there),
-`entreprise/<SIREN>`, `contrat/<affaire>` (every document's record). A name gets one only when
+`entreprise/<SIREN>`, and a document's record by its affaire's kind (DOC_PATHS): a contract
+`contrat/<affaire>` (its modifications in it), a notice without its contract
+`avis/<affaire>`, a grant `subvention/<affaire>`, a decree `arrete/<affaire>`; every affaire
+carries its own (`ref`), the old `contrat/<affaire>` of the others answering a 301 (deploy/
+preview.caddy, web/src/registre/routes.ts). A name gets one only when
 its record is written by this build (`Fiches`): a commune with a document, a département
 with one, a buyer of a document, a company of one that is not a sole trader. A name without
 a record has none: a sole trader never (the token `ei`), a commune without a document
@@ -17,7 +21,7 @@ Where the references are (fermetures.py writes them):
   (its companies, in their order, null for one without a record), `partage_refs` and
   `insee0_ref` (an act's other communes, its original's), `mentions` (below);
 - an affaire's links (`contrat_probable`, `avis_probables`, a lot's members) are affaire ids:
-  each is a record, `contrat/<id>`.
+  each is a record, whose address is that affaire's `ref`.
 
 A name read in a free text (`mentions` of an objet): [{"debut", "fin", "ref"}], character
 offsets in that text. Linked only when the match is sure (DECISIONS 2026-10-30):
@@ -43,10 +47,18 @@ from lacarte_registre.regles import EI, Event, Registre
 from lacarte_registre.selection import luhn
 
 MIN_NOM = 3
+# A document's record's address by its affaire's kind: a contract and its modifications, a
+# notice whose contract was not found, a grant, a decree (a dossier of camera acts, an act).
+DOC_PATHS = {"contrat": "contrat", "contrat_non_retrouve": "avis", "subvention": "subvention",
+             "dossier": "arrete", "acte": "arrete"}  # fmt: skip
 
 
 def ref(kind: str, key: str | None) -> str | None:
     return f"{kind}/{key}" if key else None
+
+
+def doc_path(kind: str | None) -> str:
+    return DOC_PATHS.get(kind or "", "contrat")
 
 
 @dataclass
@@ -57,7 +69,8 @@ class Fiches:
     departements: set[str] = field(default_factory=set)
     acheteurs: set[str] = field(default_factory=set)
     entreprises: set[str] = field(default_factory=set)
-    affaires: set[str] = field(default_factory=set)
+    # an affaire's id: its record's address's type (doc_path)
+    affaires: dict[str, str] = field(default_factory=dict)
 
     def commune(self, k: str | None) -> str | None:
         return ref("commune", k) if k in self.communes else None
@@ -72,7 +85,7 @@ class Fiches:
         return ref("entreprise", s) if s and s != EI and s in self.entreprises else None
 
     def affaire(self, a: str | None) -> str | None:
-        return ref("contrat", a) if a in self.affaires else None
+        return ref(self.affaires[a], a) if a in self.affaires else None
 
     def siren(self, s: str) -> str | None:
         return self.entreprise(s) or self.acheteur(s)
@@ -168,6 +181,10 @@ def annoter(
     its reference's prefix (rules/registre_couverture.yaml `financeur_siren`)."""
     lecteur = Lecteur(reg, fiches)
     missing: Missing = Counter()
+    # every affaire's own address (a document's record), its type its kind's
+    for aid, a in reg.affaires.items():
+        if r := fiches.affaire(aid):
+            a["ref"] = r
     # the copies of a shared act (one per other commune, regles.appliquer) are documents too
     every = {id(e): e for e in reg.evenements}
     originals = set(every)

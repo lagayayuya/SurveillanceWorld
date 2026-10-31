@@ -185,6 +185,9 @@ const FICHE: Record<string, string> = {
   acheteur: "acheteur",
   entreprise: "entreprise",
   contrat: "document",
+  avis: "document",
+  subvention: "document",
+  arrete: "document",
 };
 function fichier(href: string): string | null {
   const m = /^\/registre\/([a-z]+)\/([^/?#]+)/.exec(href);

@@ -14,7 +14,8 @@ from lacarte_registre.regles import EI
 
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 KINDS = {"commune": "commune", "departement": "departement", "acheteur": "acheteur",
-         "entreprise": "entreprise", "contrat": "document"}  # fmt: skip
+         "entreprise": "entreprise", "contrat": "document", "avis": "document",
+         "subvention": "document", "arrete": "document"}  # fmt: skip
 
 
 @pytest.fixture(scope="module")

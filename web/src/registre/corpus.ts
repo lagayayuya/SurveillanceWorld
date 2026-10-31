@@ -9,6 +9,7 @@ import type { Acheteur, Commune, Entreprise, Evenement, Ref } from "./donnees.ts
 import { EI } from "./donnees.ts";
 import { count, docDate } from "./format.ts";
 import { has, t } from "./i18n.ts";
+import { documentHref } from "./routes.ts";
 import { plain, sentence, tidy, titleCase } from "./texte.ts";
 
 export type AffaireCourte = {
@@ -145,7 +146,7 @@ export function buyerHref(L: Lexique, siren: string): string | null {
 export function docHref(L: Lexique, e: Evenement): string {
   return isArr(e) && e.insee && L.communes[e.insee]?.ref
     ? `${communeHref(e.insee, "autorisations")}/${encodeURIComponent(e.id)}`
-    : `/registre/contrat/${encodeURIComponent(e.affaire)}`;
+    : documentHref(e.affaire);
 }
 
 /** A row of the list: its keys for the filters, its words for the search, what it shows. */

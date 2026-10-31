@@ -17,7 +17,8 @@ Nothing is recomputed in the browser: a page reads the flags and the figures giv
 - departement/<code>.json: a département's figures, no document (its page lists none): its
   communes and intercommunalities, who sells and who buys in it, its documents per year;
 - entreprise/, acheteur/, document/<affaire>.json: the same closure as a commune's for the
-  pages of the next lot.
+  pages of the next lot; a document's file stays under document/ whatever its address
+  (`contrat/`, `avis/`, `subvention/`, `arrete/`: its affaire's `ref`, refs.py).
 A file is named after its id as is (a space or an accent included); the page asks for it
 through encodeURIComponent and the server decodes the path.
 """
@@ -48,7 +49,7 @@ Writer = Callable[[str, dict[str, Any]], None]
 ENT_DICO = ("nom", "entrepreneur_individuel", "naf", "naf_libelle", "verifie_sirene")
 ACH_DICO = ("nom", "categorie", "dep", "insee_siege")
 COM_DICO = ("nom", "dep", "pop", "epci")
-AFF_SHORT = ("acheteur_siren", "acheteur_communal", "titre")
+AFF_SHORT = ("acheteur_siren", "acheteur_communal", "titre", "ref")
 NON_LU_ROW = ("id", "t", "date", "dep", "insee", "ref", "url", "page")
 DEP_NOM = "registre.departement.nom_"
 
@@ -114,7 +115,7 @@ class Context:
             | {d for b in acheteurs if (d := (self.acheteurs.get(b) or {}).get("dep"))},
             acheteurs=acheteurs,
             entreprises={s for e in reg.evenements for s in e.get("entreprises") or []} - {EI},
-            affaires=set(reg.affaires),
+            affaires={a: refs.doc_path(x.get("kind")) for a, x in reg.affaires.items()},
         )
         self.manquants = refs.annoter(reg, self.fiches, reg.buyer, financeurs)
 

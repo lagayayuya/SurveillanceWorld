@@ -935,8 +935,12 @@ DECISIONS 2026-10-28.
   pages, `…/autorisations/<id>` a decree chosen at its section, and
   `…/carte[?mois=…&semaine=…&genre=…&acte=…&creneau=…]`, « Drones et algorithmes » on the site's map),
   `/registre/departement/<code>[?ic=<epci>]` (a département, an intercommunality),
-  `/registre/acheteur/<siren>`, `/registre/entreprise/<siren>`, `/registre/contrat/<affaire>`
-  (a document's fiche, of its type). `/registre/chiffres` and the old documents' search are replaced
+  `/registre/acheteur/<siren>`, `/registre/entreprise/<siren>`, a document's fiche at its type's
+  address (`/registre/contrat/<affaire>` a contract and its modifications, `…/avis/<affaire>` a
+  notice without its contract, `…/subvention/<affaire>` a grant, `…/arrete/<affaire>` a decree;
+  the old `/registre/contrat/<affaire>` of the last three answers a 301, `deploy/preview.caddy`,
+  and the router replaces it in place, `routes.ts` `nouvelleAdresse`). `/registre/chiffres` and
+  the old documents' search are replaced
   by their list; a buyer that is a commune, an intercommunality or a département, and a decree
   attached to a commune, by their territory's page (DECISIONS 2026-10-29 and 30). A path whose
   subject the register does not hold says « Page introuvable » (`src/registre/vues/introuvable.ts`).
@@ -1016,7 +1020,7 @@ DECISIONS 2026-10-28.
   that an error is possible; a decree's panel links its source (« Voir l'arrêté (recueil de la
   préfecture) »).
 - **« Signaler une erreur »** (lot R1b, `src/registre/signaler.ts`): every document's panel links
-  its record's form (`/registre/contrat/<affaire>?doc=<id>#signaler`), on a phone in the drawer of
+  its record's form (`/registre/<type>/<affaire>?doc=<id>#signaler`), on a phone in the drawer of
   the row touched, with « Voir l'arrêté » or the source; the record has the button
   beside « Copier la référence »; a click opens the form in a dialog: what is wrong (nine
   choices), the correction, an optional source and contact, no account; posted to
@@ -1915,16 +1919,16 @@ owner's machine's to make (« — »).
 | `reg-carte-empty` | No slot: no frieze, « Aucun créneau de vol · 0 », the list says why (« … (2 arrêtés). Voir les autorisations → », the département not collected, or no act) | registre/vues/carte.ts | IMPROVISED | `/registre/commune/69283/carte` | — | yes |
 | `reg-contrat` | A contract's record: its path (call for tenders → contract → modifications, more than two in one step → « Fin prévue », dashed, « (calculée) »), the four figures, « Contrat précédent » and « Appel d'offres suivant », « Ce que dit le contrat », the money line, Sources, « Copier la référence », « Signaler une erreur », the panel | registre/vues/contrat.ts, contrat-outils.ts; pipeline parcours.py | Contrat-grand | `/registre/contrat/21690283300013202520240600_32323500` | — | yes |
 | `reg-contrat-date` | A contract whose date is to be checked: « ? » beside the date, explained in the panel at rest | registre/vues/contrat.ts | IMPROVISED (DECISIONS 2026-10-28 « Discreet mentions ») | `/registre/contrat/216902833000132020_32323500` | — | yes |
-| `reg-contrat-ao-awaited` | A call for tenders whose contract is not yet published (last 18 months): « pas encore publié » | registre/vues/contrat.ts | Contrat-grand (one template, four kinds) | `/registre/contrat/avis-26-71981` | — | yes |
-| `reg-contrat-ao-not-found` | A call for tenders with no contract found, with its result: « non retrouvé » | registre/vues/contrat.ts | Contrat-grand | `/registre/contrat/avis-20-142345` | — | yes |
+| `reg-contrat-ao-awaited` | A call for tenders whose contract is not yet published (last 18 months): « pas encore publié » | registre/vues/contrat.ts | Contrat-grand (one template, four kinds) | `/registre/avis/avis-26-71981` | — | yes |
+| `reg-contrat-ao-not-found` | A call for tenders with no contract found, with its result: « non retrouvé » | registre/vues/contrat.ts | Contrat-grand | `/registre/avis/avis-20-142345` | — | yes |
 | `reg-contrat-ao-probable` | A call for tenders with a probable contract: the contract step and « Le contrat qui a suivi → », each with its « ? » | registre/vues/contrat.ts | IMPROVISED | web/tests/registre-contrat.test.ts (synthetic) | — | yes |
-| `reg-contrat-sub` | A subsidy: the giver, the amount, « nom non publié » with the commune linked on a row of its own, the financed contract when there is one | registre/vues/contrat.ts | Contrat-grand | `/registre/contrat/detr-69-2025-6` | — | yes |
-| `reg-contrat-aut` | A decree without a commune: its département, why it was not read entirely, the line on decrees read by a program, « Voir l'arrêté » | registre/vues/contrat.ts | Contrat-grand | `/registre/contrat/75-2025-06-19-00003` | — | yes |
-| `reg-contrat-aut-commune` | A decree attached to a commune: the address replaced by its commune's Autorisations at its dossier, the record never drawn | registre/vues/contrat.ts donnees | IMPROVISED (DECISIONS 2026-10-29) | `/registre/contrat/69-20083026` | — | yes |
+| `reg-contrat-sub` | A subsidy: the giver, the amount, « nom non publié » with the commune linked on a row of its own, the financed contract when there is one | registre/vues/contrat.ts | Contrat-grand | `/registre/subvention/detr-69-2025-6` | — | yes |
+| `reg-contrat-aut` | A decree without a commune: its département, why it was not read entirely, the line on decrees read by a program, « Voir l'arrêté » | registre/vues/contrat.ts | Contrat-grand | `/registre/arrete/75-2025-06-19-00003` | — | yes |
+| `reg-contrat-aut-commune` | A decree attached to a commune: the address replaced by its commune's Autorisations at its dossier, the record never drawn | registre/vues/contrat.ts donnees | IMPROVISED (DECISIONS 2026-10-29) | `/registre/arrete/69-20083026` | — | yes |
 | `reg-contrat-corrige` | A document corrected in /revue: under « Ce que dit … », « Corrigé le <date> », the field and the value read now, « publié par la source : » and its value struck | registre/corrige.ts; registre/vues/contrat-outils.ts | IMPROVISED (DECISIONS 2026-10-29) | web/tests/registre-corrige.test.ts; a local data/registre/corrections.yaml | — | yes |
 | `reg-panel-corrige` | A corrected document's row hovered, focused or touched: the panel's rich line « Corrigé le <date> », the field, the value read now and the source's struck (Autorisations, Documents, the register's list) | registre/vues/socle.html (det.corr); registre/corrige.ts | IMPROVISED (DECISIONS 2026-10-29) | a local data/registre/corrections.yaml (a decree of Mions corrected) | — | yes |
 | `reg-row-phone-links` | On a phone, a document's row touched: it unfolds with « Voir l'arrêté (recueil de la préfecture) » or « Source officielle → », and « Signaler une erreur », 44 px targets; folded, the links are not rendered; hidden on a wide screen (the panel has them) | registre/vues/documents.ts, autorisations.ts; registre.css (td.liens-tel) | IMPROVISED (DECISIONS 2026-10-29) | `/registre/commune/69283/documents`, 390 px, a row | — | yes |
-| `reg-signaler` | « Signaler une erreur »: the dialog over the page (« Document <id> », the line on reading by a program, nine choices, the correction, the source, the contact, what the site keeps and « Confidentialité », Envoyer · Annuler); Escape or Annuler gives the focus back | registre/signaler.ts | IMPROVISED (no board) | a panel's « Signaler une erreur », or `/registre/contrat/<affaire>?doc=<id>#signaler` | — | yes |
+| `reg-signaler` | « Signaler une erreur »: the dialog over the page (« Document <id> », the line on reading by a program, nine choices, the correction, the source, the contact, what the site keeps and « Confidentialité », Envoyer · Annuler); Escape or Annuler gives the focus back | registre/signaler.ts | IMPROVISED (no board) | a panel's « Signaler une erreur », or `/registre/<type>/<affaire>?doc=<id>#signaler` | — | yes |
 | `reg-signaler-sent` | Sent: « Merci : votre signalement est enregistré. Il sera relu avant d'être appliqué au registre. », Fermer | registre/signaler.ts | IMPROVISED | the API answering 201 | — | yes |
 | `reg-signaler-refused` | Not sent, said in the form (role status): nothing chosen or written, too many reports (429), closed (403 closed), a source or a contact refused (422), any other failure | registre/signaler.ts issue | IMPROVISED | web/tests/registre-signaler.test.ts | — | yes |
 | `reg-entreprise` | A company: its lead, four figures, the money year by year with the money line, « En cours aujourd'hui : N contrats » and « Ses plus gros contrats », « Ce qui ressort » (facts only), its customers by département and sortable, « Contrats signés à plusieurs », « Ses contrats »; the panel sticky under the tabs | registre/vues/entreprise.ts, entreprise-outils.ts; pipeline entreprise.py | Entreprise-grand (without its scatter) | `/registre/entreprise/431903954` | — | yes |

@@ -6,6 +6,7 @@ reviewer role only). Public: the same file, open and indexable, /revue and its A
 behind a password, and www.<host> redirected for good to the bare host."""
 
 import base64
+import http.client
 import http.server
 import importlib.util
 import json
@@ -72,7 +73,7 @@ def test_one_template_two_modes():
     # Line for line, with the same accounts: only what the password covers and one header,
     # then the www block (none in the preview: its random host has no www).
     pre = site.render({**PUBLIC, "SITE_MODE": "preview", "PREVIEW_ACCOUNTS": f"joe {HASH}"})
-    assert "www." not in pre and "redir" not in pre and pre.endswith("\t}\n}\n")
+    assert "www." not in pre and "redir https:" not in pre and pre.endswith("\t}\n}\n")
     out = out.removesuffix(www)
     diff = [(a, b) for a, b in zip(pre.splitlines(), out.splitlines(), strict=True) if a != b]
     assert diff == [('\t\tX-Robots-Tag "noindex, nofollow, noarchive"',
@@ -256,6 +257,58 @@ def test_a_record_s_address_serves_its_entry_page_else_the_map_s(public_server, 
                  "/registre/", "/registre/entreprises"):  # fmt: skip
         status, _, body = authed(public_server + path, None)
         assert status == 200 and b"la-carte" in body, path
+
+
+def unfollowed(url: str, who: str | None = None) -> tuple[int, dict[str, str]]:
+    """A GET whose redirect is not followed: its status and headers."""
+    parts = urlsplit(url)
+    conn = http.client.HTTPConnection(parts.hostname, parts.port, timeout=5)
+    headers = {}
+    if who:
+        headers["Authorization"] = "Basic " + base64.b64encode(f"{who}:secret".encode()).decode()
+    conn.request("GET", parts.path + (f"?{parts.query}" if parts.query else ""), headers=headers)
+    r = conn.getresponse()
+    r.read()
+    conn.close()
+    return r.status, dict(r.getheaders())
+
+
+@needs_caddy
+def test_a_document_s_old_address_answers_its_new_one_for_good(public_server):
+    """A notice's, a grant's and a decree's record were under /registre/contrat/ until each type
+    had its own address (lot R3): a 301 to /registre/avis/, …/subvention/, …/arrete/, the query
+    (« Signaler une erreur »: ?doc=…) and the encoding kept; a contract's stays where it is; in
+    the preview, the password first."""
+    for old, new in (
+        ("/registre/contrat/avis-26-71981", "/registre/avis/avis-26-71981"),
+        ("/registre/contrat/avis-26-71981?doc=26-71981",
+         "/registre/avis/avis-26-71981?doc=26-71981"),
+        ("/registre/contrat/sub-EX077568", "/registre/subvention/sub-EX077568"),
+        ("/registre/contrat/detr-69-2025-6", "/registre/subvention/detr-69-2025-6"),
+        ("/registre/contrat/region-sud-CP%2023-0209%20du%2024%20mars%202023-0",
+         "/registre/subvention/region-sud-CP%2023-0209%20du%2024%20mars%202023-0"),
+        ("/registre/contrat/69-20083026", "/registre/arrete/69-20083026"),
+        ("/registre/contrat/75-2025-06-19-00003", "/registre/arrete/75-2025-06-19-00003"),
+    ):  # fmt: skip
+        status, headers = unfollowed(public_server + old)
+        assert (status, headers.get("Location")) == (301, new), old
+        assert "Server" not in headers
+        # the new address is the register's: the map's page, the register over it
+        status, _, body = authed(public_server + new, None)
+        assert status == 200 and b"la-carte" in body, new
+    for path in ("/registre/contrat/21690283300013202520240600_32323500",
+                 "/registre/contrat/200054807000172024Z240006F00_45000000"):  # fmt: skip
+        status, headers = unfollowed(public_server + path)
+        assert status == 200 and "Location" not in headers, path
+
+
+@needs_caddy
+def test_in_the_preview_the_old_address_answers_behind_the_password(caddy_server):
+    old = "/registre/contrat/avis-26-71981"
+    assert unfollowed(caddy_server + old)[0] == 401
+    status, headers = unfollowed(caddy_server + old, "tester")
+    assert (status, headers.get("Location")) == (301, "/registre/avis/avis-26-71981")
+    assert site.check(caddy_server) == []
 
 
 @needs_caddy

@@ -7,7 +7,8 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { count, fr, longDate, longMonth, money, moneyFull, shortDate, signed } from "../src/registre/format.ts";
 import { setMessages } from "../src/registre/i18n.ts";
-import { backToMap, route } from "../src/registre/routes.ts";
+import { backToMap, documentHref, nouvelleAdresse, route } from "../src/registre/routes.ts";
+import { signalerHref } from "../src/registre/signaler.ts";
 import { calm, plain, proper, sentence, tidy, titleCase } from "../src/registre/texte.ts";
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
@@ -82,7 +83,20 @@ test("paths", () => {
     mois: "2026-03",
   });
   assert.deepEqual(route("/registre/commune/69123/carte", "?mois=2026-13"), { view: "carte", insee: "69123", mois: "" });
-  assert.deepEqual(route("/registre/contrat/21690283300013 2020~1"), { view: "contrat", id: "21690283300013 2020~1" });
+  assert.deepEqual(route("/registre/contrat/21690283300013 2020~1"), {
+    view: "contrat",
+    id: "21690283300013 2020~1",
+    type: "contrat",
+  });
+  // each type of document its address, the same record's view
+  assert.deepEqual(route("/registre/avis/avis-26-71981"), { view: "contrat", id: "avis-26-71981", type: "avis" });
+  assert.deepEqual(route("/registre/subvention/detr-69-2025-6"), {
+    view: "contrat",
+    id: "detr-69-2025-6",
+    type: "subvention",
+  });
+  assert.deepEqual(route("/registre/arrete/69-20083026"), { view: "contrat", id: "69-20083026", type: "arrete" });
+  assert.deepEqual(route("/registre/avis/a/b"), { view: "introuvable" });
   assert.deepEqual(route("/registre/entreprise/431903954"), { view: "entreprise", siren: "431903954" });
   assert.deepEqual(route("/registre/acheteur/256900994"), { view: "acheteur", siren: "256900994" });
   assert.deepEqual(route("/registre/departement/69"), { view: "departement", dep: "69" });
@@ -91,6 +105,28 @@ test("paths", () => {
   assert.deepEqual(route("/registre/entreprise/4319"), { view: "introuvable" });
   assert.deepEqual(route("/registre/departement/690"), { view: "introuvable" });
   assert.deepEqual(route("/registre/contrat/a/b"), { view: "introuvable" });
+});
+
+test("a document's address by its type; the old ones answer the new", () => {
+  assert.equal(documentHref("21690283300013202520240600_32323500"), "/registre/contrat/21690283300013202520240600_32323500");
+  assert.equal(documentHref("avis-26-71981"), "/registre/avis/avis-26-71981");
+  assert.equal(documentHref("sub-EX077568"), "/registre/subvention/sub-EX077568");
+  assert.equal(
+    documentHref("region-sud-CP 23-0209 du 24 mars 2023-0"),
+    "/registre/subvention/region-sud-CP%2023-0209%20du%2024%20mars%202023-0",
+  );
+  assert.equal(documentHref("69-2025-11-03-00003"), "/registre/arrete/69-2025-11-03-00003");
+  assert.equal(documentHref("2A-20250101"), "/registre/arrete/2A-20250101");
+  // the old addresses (contrat/ for every type): the new one, encoded as asked
+  assert.equal(nouvelleAdresse("/registre/contrat/avis-26-71981"), "/registre/avis/avis-26-71981");
+  assert.equal(
+    nouvelleAdresse("/registre/contrat/region-sud-CP%2023-0209"),
+    "/registre/subvention/region-sud-CP%2023-0209",
+  );
+  assert.equal(nouvelleAdresse("/registre/contrat/69-20083026"), "/registre/arrete/69-20083026");
+  assert.equal(nouvelleAdresse("/registre/contrat/21690283300013202520240600_32323500"), null);
+  assert.equal(nouvelleAdresse("/registre/avis/avis-26-71981"), null);
+  assert.equal(signalerHref({ id: "26-71981", affaire: "avis-26-71981" }), "/registre/avis/avis-26-71981?doc=26-71981#signaler");
 });
 
 test("the way back to the map", () => {

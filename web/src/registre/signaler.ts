@@ -1,6 +1,6 @@
 // « Signaler une erreur »: no one reviews the register, so a reader's report is its correction
 // (DECISIONS 2026-10-28). A document's panel and its record link to the record's form
-// (/registre/contrat/<affaire>?doc=<id>#signaler: a page of its own without the script); a click
+// (/registre/<type>/<affaire>?doc=<id>#signaler: a page of its own without the script); a click
 // opens the form in a dialog over the page instead, built node by node (.dialogue of registre.css),
 // every word from the catalogue. It posts to the API (POST /api/registre/signalement,
 // pipeline/lacarte/api/registre.py): what is wrong, the correction, an optional source and an
@@ -9,6 +9,7 @@
 
 import type { Evenement } from "./donnees.ts";
 import { t } from "./i18n.ts";
+import { documentHref } from "./routes.ts";
 
 /** What is wrong, as the API names it (registre.py CATEGORIES), in the form's order. */
 export const CATEGORIES = [
@@ -28,7 +29,7 @@ export const HASH = "#signaler";
 
 /** The link to a document's form: its record's address, the document named by `doc`. */
 export function signalerHref(e: Pick<Evenement, "id" | "affaire">): string {
-  return `/registre/contrat/${encodeURIComponent(e.affaire)}?doc=${encodeURIComponent(e.id)}${HASH}`;
+  return `${documentHref(e.affaire)}?doc=${encodeURIComponent(e.id)}${HASH}`;
 }
 
 /** The panel's link « Signaler une erreur ». */
@@ -48,7 +49,7 @@ export function cible(
     return null;
   }
   if (url.origin !== new URL(base).origin) return null;
-  const m = /^\/registre\/contrat\/([^/]+)$/.exec(url.pathname);
+  const m = /^\/registre\/(?:contrat|avis|subvention|arrete)\/([^/]+)$/.exec(url.pathname);
   if (!m || url.hash !== HASH) return null;
   const affaire = decodeURIComponent(m[1]);
   return { evenement: url.searchParams.get("doc") || affaire, affaire };

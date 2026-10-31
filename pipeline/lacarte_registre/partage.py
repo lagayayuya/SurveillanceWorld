@@ -226,7 +226,8 @@ def document(
     phrase = t("contrat", titre=titre, nature=nature, date=jour(sign.get("date")), acheteur=buyer,
                entreprises=t("contrat_entreprises", noms=ents) if ents else "")  # fmt: skip
     montant = (sign.get("montant") or 0) if sign.get("compte") else 0
-    ref = f"contrat/{affaire['id']}"
+    # its address by its kind: contrat/, avis/, subvention/, arrete/ (refs.DOC_PATHS)
+    ref = ctx.fiches.affaire(affaire["id"]) or f"contrat/{affaire['id']}"
     ident = " · ".join(
         x for x in (t("signe", date=jour(sign.get("date"))), names.get("commune"), ents) if x
     )

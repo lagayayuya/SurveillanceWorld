@@ -74,13 +74,42 @@ ${GATE_ACCOUNTS}
 	header @registre Content-Security-Policy "${REGISTRE_CSP}"
 	# A record's entry page (lacarte-registre pages: its share tags, its content without
 	# JavaScript) when the build wrote one; the map's page otherwise. Only the first matching
-	# rewrite runs: @entree's, before @registre's.
+	# rewrite runs: @entree's, before @carte's (every other register path, but an old address).
 	@entree {
 		path /registre/*/*
 		file {path}.html
 	}
 	rewrite @entree {path}.html
-	rewrite @registre /index.html
+	@carte {
+		path /registre /registre/*
+		not path_regexp ^/registre/contrat/(avis-|sub-|detr-|region-|(\d{2,3}|2[AB])-\d)
+	}
+	rewrite @carte /index.html
+
+	# The old addresses of a notice's, a grant's and a decree's record: they were under
+	# /registre/contrat/ until each type had its own (lot R3), and answer a permanent redirect
+	# (301) to the new one, the same rule as the register's router (web/src/registre/routes.ts
+	# typeDocument): `avis-<idweb>` a notice, `sub-`, `detr-`, `region-` a grant,
+	# `<département>-<number>` a decree, any other id a contract, which stays. path_regexp reads
+	# the decoded path; the address is rebuilt from the request's own, still encoded ({uri}, its
+	# query ?doc=… kept) once /registre/contrat is stripped. A route runs after basic_auth (the
+	# preview's password first) and after the rewrites, which @carte keeps off these paths.
+	# `redir *`: a first argument starting with « / » would be read as a path matcher.
+	@ancien_avis path_regexp ^/registre/contrat/avis-[^/]+$
+	route @ancien_avis {
+		uri strip_prefix /registre/contrat
+		redir * /registre/avis{uri} 301
+	}
+	@ancien_subvention path_regexp ^/registre/contrat/(sub|detr|region)-[^/]+$
+	route @ancien_subvention {
+		uri strip_prefix /registre/contrat
+		redir * /registre/subvention{uri} 301
+	}
+	@ancien_arrete path_regexp ^/registre/contrat/(\d{2,3}|2[AB])-\d[^/]*$
+	route @ancien_arrete {
+		uri strip_prefix /registre/contrat
+		redir * /registre/arrete{uri} 301
+	}
 
 	# PMTiles are read with HTTP Range requests (file_server answers 206): they must be sent
 	# as stored, never re-encoded. Everything else may be compressed.
