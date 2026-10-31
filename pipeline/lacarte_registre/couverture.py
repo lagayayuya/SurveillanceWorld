@@ -19,6 +19,7 @@ from typing import Any
 
 import yaml
 
+from lacarte_registre import partage
 from lacarte_registre.regles import Event, Registre
 
 # RAA_69-2025-284-031125.pdf: the Rhône's collection n° 284 of 2025, of 3 November 2025.
@@ -144,8 +145,8 @@ def build(
     for code in dict.fromkeys([*conf["departements"], *present]):
         rule = conf["departements"].get(code, conf["default"])
         row = {k: rule[k] for k in ("etat", "raison", "depuis", "documents_demandes") if k in rule}
-        # its name when the export gives one (the pilot names its own départements only)
-        nom = (reg.pilote.globals.get("DEP", {}).get(code) or {}).get("nom")
+        # its name: the catalogue's (every département), else the data's
+        nom = partage.dep_nom(code, (reg.pilote.globals.get("DEP", {}).get(code) or {}).get("nom"))
         if nom:
             row["nom"] = nom
         if rule["etat"] == "collecte":

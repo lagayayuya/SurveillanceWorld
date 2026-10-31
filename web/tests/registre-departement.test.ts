@@ -65,12 +65,16 @@ test("a département's name, with its prepositions", () => {
   assert.deepEqual(noms("75", "Paris"), { nom: "Paris", art: "Paris", dans: "à Paris", du: "de Paris" });
   assert.equal(noms("93", null).du, "de la Seine-Saint-Denis");
   assert.equal(noms("91", null).dans, "dans l'Essonne");
-  // a département the catalogue does not name
-  assert.deepEqual(noms("01", "Ain"), {
-    nom: "Ain",
-    art: "le département Ain",
-    dans: "dans le département Ain",
-    du: "du département Ain",
+  // every département and overseas collectivity is in the catalogue (« l'Ain », « en Guadeloupe »)
+  assert.deepEqual(noms("01", null), { nom: "Ain", art: "l'Ain", dans: "dans l'Ain", du: "de l'Ain" });
+  assert.equal(noms("971", null).dans, "en Guadeloupe");
+  assert.equal(noms("974", null).dans, "à La Réunion");
+  // a code the catalogue does not name (Clipperton, no commune)
+  assert.deepEqual(noms("989", "Île de Clipperton"), {
+    nom: "Île de Clipperton",
+    art: "le département Île de Clipperton",
+    dans: "dans le département Île de Clipperton",
+    du: "du département Île de Clipperton",
   });
 });
 

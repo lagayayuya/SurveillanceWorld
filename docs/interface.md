@@ -1053,6 +1053,10 @@ DECISIONS 2026-10-28.
   three figures, its image), its entry page is served at its address with its Open Graph tags
   and its content readable without JavaScript, and its preview image (1200 × 630) is drawn at
   build over the V2-Partage mockup's layers; the share button and its window are the redesign's.
+  Every département and overseas collectivity is named from the catalogue
+  (`registre.departement.nom_`, `art_`, `dans_`, `du_<code>`; `depArt`, `depDans` in
+  `src/registre/commun.ts`, `partage.dep_*` in the build): « dans le Rhône », « à Paris »,
+  « en Guadeloupe », never « département 30 ».
 
 ## 2. State catalogue
 

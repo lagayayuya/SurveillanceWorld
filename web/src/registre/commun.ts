@@ -220,11 +220,20 @@ export function emetteur(e: Evenement): string {
   return "";
 }
 
-/** « le Rhône », « les Bouches-du-Rhône », « Paris »: a département with its article. */
-export function depArt(dep: string, nom: string | null | undefined): string {
+/** « le Rhône », « les Bouches-du-Rhône », « Paris »: a département with its article (the
+ * catalogue has every département and overseas collectivity; `nom` for a code it lacks). */
+export function depArt(dep: string, nom?: string | null): string {
   return has(`registre.departement.art_${dep}`)
     ? t(`departement.art_${dep}`)
     : t("departement.art", { nom: nom ?? dep });
+}
+
+/** « dans le Rhône », « dans les Bouches-du-Rhône », « à Paris », « en Guadeloupe »: in a
+ * département (« dans » and its article in metropolitan France, the usage overseas). */
+export function depDans(dep: string, nom?: string | null): string {
+  return has(`registre.departement.dans_${dep}`)
+    ? t(`departement.dans_${dep}`)
+    : t("departement.dans", { art: depArt(dep, nom) });
 }
 
 /** The figures of a commune's L'essentiel (app.js ess): its decrees' last state, its contracts. */

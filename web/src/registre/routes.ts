@@ -41,7 +41,8 @@ export type Route =
 
 const INSEE = /^(\d[\dAB]\d{3})$/;
 const SIREN = /^\d{9}$/;
-const DEP = /^(\d[\dAB]|97\d)$/;
+// a département (01–95, 2A, 2B), an overseas one (971–976) or collectivity (975–988)
+const DEP = /^(\d[\dAB]|97\d|98\d)$/;
 const MOIS = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 export function route(pathname: string, search = ""): Route {

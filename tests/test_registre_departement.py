@@ -110,7 +110,7 @@ def test_the_documents_per_year(built):
 
 def test_a_departement_not_collected_says_so(built):
     f = read(built, "departement/93.json")
-    assert f["couverture"] == {"etat": "non_collecte"}
+    assert f["couverture"] == {"etat": "non_collecte", "nom": "Seine-Saint-Denis"}
     assert f["stats"]["depStats"]["con"] == 3
     paris = read(built, "departement/75.json")
     assert paris["couverture"]["etat"] == "impossible"
@@ -120,3 +120,39 @@ def test_a_departement_not_collected_says_so(built):
     s = paris["stats"]
     assert (s["depStats"]["docs"], s["depStats"]["sansCommune"], s["communes"]) == (1, 1, {})
     assert (s["vendeurs"], s["acheteurs"]) == ([], [])
+
+
+CATALOGUE = Path(__file__).parent.parent / "web" / "src" / "locales" / "fr.json"
+# the overseas collectivities (COG): no département, but a buyer's may be one of them
+COM = ("975", "977", "978", "984", "986", "987", "988")
+
+
+def test_every_departement_has_its_name_its_article_and_in_it(built):
+    """Every département of the build, of France's reference (the COG's 101) and the overseas
+    collectivities: its name, « le Rhône », « dans le Rhône » (and « du Rhône ») in the
+    catalogue; and the build says the name (« Gard », never « département 30 »)."""
+    cat = json.loads(CATALOGUE.read_text(encoding="utf-8"))
+    ref = json.loads((FIXTURE / "national" / "communes.json").read_text(encoding="utf-8"))
+    codes = {p.stem for p in (built / "departement").glob("*.json")}
+    codes |= set(read(built, "couverture.json")["departements"]) | set(ref["departements"])
+    codes |= set(COM)
+    assert len(codes) >= 108
+    for code in sorted(codes):
+        for kind in ("nom", "art", "dans", "du"):
+            assert cat.get(f"registre.departement.{kind}_{code}"), (code, kind)
+        nom = cat[f"registre.departement.nom_{code}"]
+        assert nom in cat[f"registre.departement.art_{code}"], code
+        assert cat[f"registre.departement.dans_{code}"].split(" ", 1)[0] in ("dans", "à", "en")
+    # the reference's names, as the catalogue spells them
+    for code, nom in ref["departements"].items():
+        assert cat[f"registre.departement.nom_{code}"] == nom, code
+    assert cat["registre.departement.dans_13"] == "dans les Bouches-du-Rhône"
+    assert cat["registre.departement.dans_75"] == "à Paris"
+    assert cat["registre.departement.dans_974"] == "à La Réunion"
+    assert cat["registre.departement.dans_33"] == "dans la Gironde"
+    assert cat["registre.departement.art_01"] == "l'Ain"
+    # every département's file and coverage row carries its name
+    for p in (built / "departement").glob("*.json"):
+        assert json.loads(p.read_text(encoding="utf-8"))["departement"]["nom"], p.stem
+    for code, row in read(built, "couverture.json")["departements"].items():
+        assert row["nom"] == cat[f"registre.departement.nom_{code}"], code

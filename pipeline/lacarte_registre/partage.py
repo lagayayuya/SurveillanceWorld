@@ -62,6 +62,30 @@ def t(key: str, **kw: Any) -> str:
     return s.format(**kw)
 
 
+# A département's (or an overseas collectivity's) name, with its article (« le Rhône », « les
+# Bouches-du-Rhône », « Paris ») and « in » it (« dans le Rhône », « en Guadeloupe », « à
+# Paris »): the catalogue's `registre.departement.{nom,art,dans}_<code>`, every code of the
+# Code officiel géographique; an unknown code is said as such, never a name invented.
+def dep_nom(code: str | None, fallback: str | None = None) -> str | None:
+    if not code:
+        return None
+    return _catalogue().get(f"registre.departement.nom_{code}") or fallback
+
+
+def dep_art(code: str) -> str:
+    c = _catalogue()
+    return c.get(f"registre.departement.art_{code}") or c["registre.departement.art"].format(
+        nom=code
+    )
+
+
+def dep_dans(code: str) -> str:
+    c = _catalogue()
+    return c.get(f"registre.departement.dans_{code}") or c["registre.departement.dans"].format(
+        art=dep_art(code)
+    )
+
+
 def nombre(n: float) -> str:
     return f"{round(n):,}".replace(",", NBSP)
 

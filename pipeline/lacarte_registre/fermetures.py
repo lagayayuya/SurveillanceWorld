@@ -50,6 +50,7 @@ ACH_DICO = ("nom", "categorie", "dep", "insee_siege")
 COM_DICO = ("nom", "dep", "pop", "epci")
 AFF_SHORT = ("acheteur_siren", "acheteur_communal", "titre")
 NON_LU_ROW = ("id", "t", "date", "dep", "insee", "ref", "url", "page")
+DEP_NOM = "registre.departement.nom_"
 
 
 def file_name(key: str) -> str:
@@ -87,7 +88,11 @@ class Context:
         self.noms_courts: dict[str, str] = p.get("NOMS_COURTS", {})
         self.epcis: dict[str, str] = p.get("EPCIS", {})
         self.acheteurs: dict[str, Any] = p.get("ACHETEURS", {})
+        # every département's name, the catalogue's first (all of them), the data's otherwise
         self.dep_names = {k: v.get("nom") for k, v in p.get("DEP", {}).items()}
+        self.dep_names |= {
+            k[len(DEP_NOM) :]: v for k, v in partage._catalogue().items() if k.startswith(DEP_NOM)
+        }
         self.ent_stats = comptes.entreprises(reg)
         self.buy_stats = comptes.acheteurs(reg)
         self.affaires_of: dict[str, list[str]] = {}
