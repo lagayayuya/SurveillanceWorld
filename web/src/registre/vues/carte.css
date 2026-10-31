@@ -263,3 +263,72 @@
     grid-template-columns: 86px minmax(0, 1fr) auto;
   }
 }
+
+/* v2.3 (Ju): the legend and the chart folded by default on a wide screen, the map left free; the
+   legend a ticket beside the commands, the chart a thin band that keeps the chosen week */
+.rg .v-carte .ctl .legt {
+  width: auto;
+  padding: 0 10px;
+  font-family: Archivo, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rg .v-carte .ctl .legt[aria-expanded="true"] {
+  background: var(--fg);
+  color: var(--bg) !important;
+}
+.rg .v-carte .frise-bande {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.rg .v-carte .frise-bande .tw {
+  font-size: 13px;
+}
+.rg .v-carte .frise-bande[aria-expanded="true"] {
+  border-bottom: 2px solid var(--line);
+}
+.rg .v-carte .frise-leg {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.rg .v-carte .frise-leg i {
+  width: 10px;
+  height: 12px;
+  background: var(--fg);
+}
+@media (min-width: 960px) {
+  /* folded, the chart is its band alone */
+  .rg .v-carte .frise:has(.frise-bande[aria-expanded="false"]) {
+    padding: 0;
+  }
+}
+
+/* v2.2 point 3, v2.3: the panel's band gives the commune's whole name (on two lines if need be) and
+   its tabs their short form (« Fiche », « Drones ») */
+.rg .v-carte .band .bname {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.rg .v-carte .band nav {
+  flex: none;
+}

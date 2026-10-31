@@ -2,34 +2,36 @@
 
   <div class="maptag">
     <a class="mback" href="/registre/">{{t.carte.retour_registre}}</a>
-    <div class="leg">
-      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span>
-      <span class="leg-in">{{t.carte.leg_hauteur}}</span></sc-if>
+    <sc-if value="{{legOuverte}}"><div class="leg" id="cd-legende">
+      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
-      <span style="color: var(--muted)">{{t.carte.leg_fond}}</span>
-    </div>
+      <span class="leg-in" style="color: var(--muted)">{{t.carte.leg_trace}}</span>
+    </div></sc-if>
   </div>
   <div class="ctl" role="group" aria-label="{{t.carte.vue_carte}}">
     <button class="sq" type="button" aria-pressed="{{is3d}}" onClick="{{tog3d}}" aria-label="{{t.carte.incliner}}">3D</button>
     <button class="sq" type="button" onClick="{{rotL}}" aria-label="{{t.carte.tourner_gauche}}">↺</button>
     <button class="sq" type="button" onClick="{{rotR}}" aria-label="{{t.carte.tourner_droite}}">↻</button>
     <button class="sq" type="button" onClick="{{north}}" aria-label="{{t.carte.remettre_le_nord_en_haut}}" style="font-size: 12px">N</button>
+    <sc-if value="{{legTicket}}"><button class="sq legt" type="button" aria-expanded="{{legPressed}}" aria-controls="cd-legende" onClick="{{togLeg}}">{{t.carte.legende}}</button></sc-if>
   </div>
 
   <sc-if value="{{band.large}}">
-    <div class="band" style="{{band.r.c}}"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><span class="bname">{{band.nom}}</span><nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.commun.onglet_carte}}</a></nav></div>
+    <div class="band" style="{{band.r.c}}"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><span class="bname">{{band.nom}}</span><nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.carte.onglet_drones}}</a></nav></div>
   </sc-if>
   <sc-if value="{{band.tel}}">
     <div class="tband" style="{{band.r.c}}">
       <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b>{{band.nom}}</b></div>
-      <nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.commun.onglet_carte}}</a></nav>
+      <nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.carte.onglet_drones}}</a></nav>
     </div>
   </sc-if>
 
   <div class="cd-in">
     <h2 class="h3 cd-titre">{{titreLong}}</h2>
     <sc-if value="{{hasGenres}}"><div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div></sc-if>
+    <!-- v2.2 point 3: a commune without any act, one sentence says why, no row of zeros -->
+    <sc-if value="{{hasGenres}}">
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
       <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures_hors}}</div></div>
@@ -37,8 +39,11 @@
       <sc-if value="{{hasND}}"><div class="ticket"><div class="v">{{nND}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_nd}}">{{lND}}</span></div></div></sc-if>
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
+    </sc-if>
 
     <sc-if value="{{hasFrise}}"><section class="frise" aria-labelledby="cd-frise-t">
+      <sc-if value="{{friseBande}}"><button type="button" class="frise-bande" aria-expanded="{{friseExp}}" aria-label="{{friseAide}}" onClick="{{togFrise}}"><span class="tw">{{friseBandeL}}</span> <span aria-hidden="true">▾</span></button></sc-if>
+      <sc-if value="{{friseOuverte}}">
       <div class="frise-h">
         <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.frise_titre}}</h2>
         <span class="tw" style="font-size: 13px; color: var(--muted)">{{rangeL}}</span>
@@ -57,6 +62,8 @@
         <p class="sr" aria-live="polite">{{tipLive}}</p>
       </div>
       <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
+    <sc-if value="{{semChoisie}}"><p class="frise-leg tw"><i aria-hidden="true"></i>{{t.carte.semaine_choisie}}</p></sc-if>
+      </sc-if>
     </section></sc-if>
 
     <sc-if value="{{hasPanel}}"><div class="cd-det cd-panel">

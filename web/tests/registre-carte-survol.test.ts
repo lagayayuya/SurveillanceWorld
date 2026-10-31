@@ -62,6 +62,10 @@ function fausseCarte() {
       states.push({ id: f.id, s });
     },
     queryRenderedFeatures: () => under,
+    // the camera a label's place and lift are read from
+    project: (c: [number, number]) => ({ x: c[0] * 1000, y: c[1] * 1000 }),
+    getZoom: () => 13,
+    getPitch: () => 50,
     getCanvas: () => ({
       style: {
         setProperty: (k: string, v: string) => {
@@ -188,7 +192,8 @@ test("the list's hover and the choice are states too, set once each, the others 
   assert.equal(f.n.setFeatureState, 4);
   f.L.choisir([]);
   assert.equal(f.n.setFeatureState, 7);
-  assert.equal(f.n.setData ?? 0, 0);
+  // the zones' data never again: only the labels' (a few points) at each new choice (v2.3)
+  assert.equal(f.n.setData ?? 0, 2);
   assert.equal(f.n.setPaintProperty ?? 0, 0);
 });
 

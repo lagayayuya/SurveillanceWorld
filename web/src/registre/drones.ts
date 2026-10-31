@@ -51,6 +51,10 @@ export const carteUrl = (insee: string): string =>
 const P = "rg-cd";
 export const SRC = `${P}-zones`;
 const SRC_COM = `${P}-commune`;
+/** The chosen zones' labels: one per place on the screen (v2.3) */
+const SRC_LAB = `${P}-labels`;
+/** The chosen zone's outline (v2.3, Ju's drones-zone-choisie): the frame's pink, in both modes. */
+const ROSE = "#ff48b0";
 export const COUCHES = {
   commune: `${P}-commune`,
   communeAdmin: `${P}-commune-admin`,
@@ -58,6 +62,7 @@ export const COUCHES = {
   entierePlein: `${P}-entiere-plein`,
   vsa: `${P}-vsa`,
   vsaPlein: `${P}-vsa-plein`,
+  recul: `${P}-recul`,
   vol: `${P}-vol`,
   arete: `${P}-arete`,
   sol: `${P}-sol`,
@@ -256,6 +261,9 @@ export type CarteMin = Pick<
   | "removeImage"
   | "queryRenderedFeatures"
   | "getCanvas"
+  | "project"
+  | "getZoom"
+  | "getPitch"
   | "on"
   | "off"
 >;
@@ -290,6 +298,8 @@ export type CalqueOptions = {
   onSurvol?: (id: string | null) => void;
   /** A zone clicked. */
   onChoix?: (id: string) => void;
+  /** The words of a label that stands for several chosen zones at one place (« 3 zones »). */
+  groupe?: (n: number) => string;
 };
 
 /** A feature state read in a paint expression (false when unset). */
@@ -300,6 +310,13 @@ const fs = (k: "survol" | "choix" | "retrait"): ExpressionSpecification => [
 ];
 
 const isDrone: ExpressionSpecification = ["==", ["get", "kind"], "drone"];
+/** A label's size (px): its lift above a volume is counted in its ems. */
+const LAB_PX = 13;
+/** The screen's pixels per metre on the ground at a zoom and a latitude (the map's 512 px world). */
+export const pxParMetre = (zoom: number, lat: number): number =>
+  (512 * 2 ** zoom) / (40075016.686 * Math.cos((lat * Math.PI) / 180));
+/** Labels nearer than this on the screen (px) are one place: one label for them. */
+const MEME_PLACE = 40;
 const isLab: ExpressionSpecification = ["has", "lab"];
 const isArea: ExpressionSpecification = ["!", isLab];
 const isWhole: ExpressionSpecification = ["==", ["get", "e"], true];
@@ -374,7 +391,16 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       filter: ["all", isArea, isLocal, ["!", isDrone]],
       paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("choix"), 0.85, 0] },
     },
-    // drones: flat volumes in the documents' colour, the others set back when one is chosen
+    // v2.3: a drone zone set back (another one chosen) is flat, at 15 % (an extrusion's opacity is
+    // one for its whole layer: the set-back zones are a flat layer of their own, their volume none)
+    {
+      id: COUCHES.recul,
+      type: "fill",
+      source: SRC,
+      filter: ["all", isArea, isLocal, isDrone],
+      paint: { "fill-color": t.doc, "fill-opacity": ["case", fs("retrait"), 0.15, 0] },
+    },
+    // drones: volumes in the documents' colour; set back, flat
     {
       id: COUCHES.vol,
       type: "fill-extrusion",
@@ -382,7 +408,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       filter: ["all", isArea, isLocal, isDrone],
       paint: {
         "fill-extrusion-color": ["case", fs("retrait"), recul, t.doc],
-        "fill-extrusion-height": ["get", "h"],
+        "fill-extrusion-height": ["case", fs("retrait"), 0, ["get", "h"]],
         "fill-extrusion-base": 0,
         "fill-extrusion-opacity": 0.8,
         "fill-extrusion-vertical-gradient": true,
@@ -418,30 +444,30 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
       filter: isArea,
       layout: { "line-join": "round" },
       paint: {
-        "line-color": t.encre,
+        "line-color": ["case", fs("choix"), ROSE, t.encre],
         "line-width": ["case", fs("choix"), 4, fs("survol"), 1.5, 0],
       },
     },
-    // the words of the zone chosen: shown by its state, never by a new datum
+    // the words of the zones chosen (v2.3): one label per place, set above its volume's top (`off`,
+    // in ems, as the map tilts and zooms), several zones at one place one label (« 3 zones »), a
+    // label that would cover another hidden (the map's own collisions); a symbol is drawn over
+    // the volumes, never behind one
     {
       id: COUCHES.lab,
       type: "symbol",
-      source: SRC,
-      filter: isLab,
+      source: SRC_LAB,
       layout: {
         "text-field": ["get", "lab"],
         "text-font": ["Noto Sans Medium"],
-        "text-size": 13,
+        "text-size": LAB_PX,
         "text-anchor": "bottom",
-        "text-offset": [0, -0.6],
-        "text-allow-overlap": true,
-        "text-ignore-placement": true,
+        "text-offset": ["get", "off"],
+        "text-padding": 4,
       },
       paint: {
         "text-color": t.encre,
         "text-halo-color": t.fond,
         "text-halo-width": 3,
-        "text-opacity": ["case", fs("choix"), 1, 0],
       },
     },
   );
@@ -469,6 +495,8 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   let survoles = new Set<string>();
   let choisis = new Set<string>();
   let curseur = false;
+  /** each drawn zone's height (m), for its label's lift */
+  const hauteurs = new Map<string, number>();
 
   const box = (): BBox | null => outline?.bbox ?? bboxOf([...geo.values()].flatMap((g) => g.rs));
   const diag = () => {
@@ -488,29 +516,54 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     );
     const dM = diag();
     const out: Feature[] = [];
+    hauteurs.clear();
     for (const [id, g] of geo) {
       const v = hs[id];
       const geometry = g.p.in;
       if (!v || !geometry) continue;
+      const h = volumeHeight(v.heures, maxH, dM);
+      hauteurs.set(id, entiere.has(id) || g.s.kind !== "drone" ? 0 : h);
       out.push({
         type: "Feature",
         geometry: geometry as GeoJSON.Geometry,
-        properties: {
-          id,
-          kind: g.s.kind,
-          h: volumeHeight(v.heures, maxH, dM),
-          a: g.a,
-          e: entiere.has(id),
-        },
+        properties: { id, kind: g.s.kind, h, a: g.a, e: entiere.has(id) },
       });
-      if (g.c && v.mots)
-        out.push({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: g.c },
-          properties: { id, kind: g.s.kind, lab: v.mots },
-        });
     }
     return fc(out);
+  };
+  /** The chosen zones' labels where the map shows them now: the zones whose labels fall at one
+   * place are one label (« 3 zones »), lifted above the tallest one's top. */
+  const labelsData = (): GeoJSON.FeatureCollection => {
+    if (!choisis.size) return fc([]);
+    const lift = Math.sin((map.getPitch() * Math.PI) / 180);
+    const z = map.getZoom();
+    const pts = [...choisis].flatMap((id) => {
+      const g = geo.get(id);
+      const mots = hs[id]?.mots;
+      if (!g?.c || !mots) return [];
+      const p = map.project(g.c as [number, number]);
+      return [{ c: g.c, x: p.x, y: p.y, h: hauteurs.get(id) ?? 0, mots }];
+    });
+    const groupes: (typeof pts)[] = [];
+    for (const p of pts) {
+      const gr = groupes.find((g) => Math.hypot(g[0].x - p.x, g[0].y - p.y) < MEME_PLACE);
+      if (gr) gr.push(p);
+      else groupes.push([p]);
+    }
+    return fc(
+      groupes.map((g) => {
+        const top = Math.max(...g.map((p) => p.h));
+        const ems = (top * pxParMetre(z, g[0].c[1]) * lift) / LAB_PX;
+        return {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: g[0].c },
+          properties: {
+            lab: g.length > 1 ? (o.groupe?.(g.length) ?? String(g.length)) : g[0].mots,
+            off: [0, -(ems + 0.6)],
+          },
+        };
+      }),
+    );
   };
   const communeData = (): GeoJSON.FeatureCollection =>
     fc(
@@ -530,6 +583,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
 
   map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
+  map.addSource(SRC_LAB, { type: "geojson", data: fc([]) });
   if (!map.hasImage(HACHURE)) map.addImage(HACHURE, hachures(trait(tint)));
   // the site's own commune shape until the outline has come (a commune without a map file keeps
   // it): its tiles hold the communes up to z11, overzoomed after
@@ -579,14 +633,25 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     const id = sous(e);
     if (id) o.onChoix?.(id);
   };
+  // the labels follow the camera (their place on the screen, their lift), once a frame at most
+  let image = 0;
+  const bouge = () => {
+    if (!choisis.size || image) return;
+    image = requestAnimationFrame(() => {
+      image = 0;
+      set(SRC_LAB, labelsData());
+    });
+  };
   map.on("mousemove", move);
   map.on("mouseout", out);
   map.on("click", click);
+  map.on("move", bouge);
 
   return {
     heures(x) {
       hs = x;
       set(SRC, zonesData());
+      if (choisis.size) set(SRC_LAB, labelsData());
     },
     survoler(ids) {
       if (ids.length === liste.length && ids.every((id, i) => id === liste[i])) return;
@@ -604,6 +669,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
         if (was !== is || back !== wasBack) etat(id, { choix: is, retrait: back });
       }
       choisis = next;
+      set(SRC_LAB, labelsData());
     },
     contour(c) {
       outline = c;
@@ -632,9 +698,11 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       map.off("mousemove", move);
       map.off("mouseout", out);
       map.off("click", click);
+      map.off("move", bouge);
+      if (image) cancelAnimationFrame(image);
       canvas.style.removeProperty("cursor");
       for (const l of Object.values(COUCHES)) if (map.getLayer(l)) map.removeLayer(l);
-      for (const s of [SRC, SRC_COM]) if (map.getSource(s)) map.removeSource(s);
+      for (const s of [SRC, SRC_COM, SRC_LAB]) if (map.getSource(s)) map.removeSource(s);
       if (map.hasImage(HACHURE)) map.removeImage(HACHURE);
     },
   };

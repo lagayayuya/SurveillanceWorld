@@ -116,8 +116,17 @@ export function fermer(): void {
   void suivre(false);
 }
 
+/** What the drone view left on the map when the register closed over it (its volumes, tilted,
+ * v2.2 point 3): taken away when a register page opens again. */
+let laisse: (() => void) | null = null;
+export function laisser(f: (() => void) | null): void {
+  laisse = f;
+}
+
 async function suivre(retour: boolean, force = false): Promise<void> {
   if (REGISTRE.test(location.pathname)) {
+    laisse?.();
+    laisse = null;
     // back or forward onto a register page from the map's: the map's address goes aside
     if (retour && !isAside()) setAside(lastMapAddress());
     (await charger()).afficher(force);

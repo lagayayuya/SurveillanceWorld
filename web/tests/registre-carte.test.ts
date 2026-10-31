@@ -176,9 +176,10 @@ test("the volumes: a slot once per site, its acts once, its share of a period, n
   const maxH = Math.max(...Object.values(v).map((x) => x.heures));
   assert.equal(volumeHeight(v.s3.heures, maxH, 5000), 20);
   assert.ok(volumeHeight(v.s1.heures, maxH, 5000) > volumeHeight(v.s2.heures, maxH, 5000));
-  assert.equal(volLabel(v.s1), "12 h · 2 arrêtés");
-  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h · 1 arrêté");
-  assert.equal(volLabel(v.s3), "horaires non précisés · 1 arrêté");
+  // short (v2.3: the labels must not cover each other): the hours, or « sans horaires »
+  assert.equal(volLabel(v.s1), "12 h");
+  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h");
+  assert.equal(volLabel(v.s3), "sans horaires");
 });
 
 test("the outline from the head of the map file: read as soon as it has come, not before", () => {

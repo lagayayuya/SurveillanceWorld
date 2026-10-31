@@ -234,11 +234,9 @@ export function sitesHours(
 }
 
 /** A volume's words: « 6 h · 1 arrêté »; « horaires non précisés · 1 arrêté » without hours. */
+/** A zone's label on the map, short (v2.3): its hours (« 7,5 h »), or « sans horaires ». */
 export function volLabel(v: { heures: number; n: number }): string {
-  return t("carte.vol_label", {
-    h: v.heures ? heuresTxt(v.heures) : t("carte.horaires_non_precises"),
-    n: v.n,
-  });
+  return t("carte.vol_label", { h: v.heures ? heuresTxt(v.heures) : t("carte.vol_sans_horaires") });
 }
 
 /** The commune file's slots (an older file has none: no slot). */

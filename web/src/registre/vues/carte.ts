@@ -24,7 +24,7 @@ import {
   type Teintes,
 } from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
-import { carteDuSite } from "../hote.ts";
+import { carteDuSite, laisser, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
@@ -93,9 +93,71 @@ type State = BaseState & {
   /** the kind of act shown: drones, algorithms, or both (null) */
   k: Genre;
   is3d: boolean;
+  /** the legend and the chart unfolded (v2.3, Ju: folded by default on a wide screen, the map
+   * left free) */
+  leg: boolean;
+  frise: boolean;
 };
 
 const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
+/** The ticket « Quitter la vue drones » on the map, once the register is closed over the drone
+ * view: it flattens the map and takes the volumes away; so does a register page opened again.
+ * Styled here (it lives on the map, outside the register's stylesheet), in the board's ticket. */
+function quitterPlusTard(map: MlMap, layer: Calque): void {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "rg-quitter-drones";
+  b.textContent = t("carte.quitter_drones");
+  b.setAttribute(
+    "style",
+    "position:absolute;left:16px;bottom:44px;z-index:5;min-height:44px;padding:0 14px;" +
+      "background:#111;color:#f2efe6;border:2px solid #111;box-shadow:3px 3px 0 #ff48b0;" +
+      "font:800 14px/1 Archivo,sans-serif;text-transform:uppercase;letter-spacing:.04em;cursor:pointer",
+  );
+  let fait = false;
+  const finir = () => {
+    if (fait) return;
+    fait = true;
+    layer.retirer();
+    b.remove();
+    laisser(null);
+  };
+  b.addEventListener("click", () => {
+    finir();
+    map.easeTo({ pitch: 0, bearing: 0, duration: reduced() ? 0 : MOVE_MS }, NOTRE);
+  });
+  map.getContainer().append(b);
+  laisser(finir);
+}
+
+/** The camera's closest: a commune, a zone (v2.3: « Voir sur la carte » never enters a volume). */
+const ZOOM_MAX = 15.5;
+const ZOOM_ZONE = 14.5;
+/** The part of the screen the map shows free (v2.3): what the panel, « ← Le registre » and its
+ * legend, the commands and the chart leave, measured where they are (folded or not), 24 px
+ * around. On a phone the sheet below. */
+function libre(): { top: number; left: number; right: number; bottom: number } {
+  const W = innerWidth;
+  const H = innerHeight;
+  const r = (s: string) => document.querySelector(`.rg ${s}`)?.getBoundingClientRect() ?? null;
+  if (!large()) return { top: 70, left: 16, right: 64, bottom: Math.round(H / 2) + 16 };
+  const panel = r("> .th > .side");
+  const tag = r(".v-carte .maptag");
+  const ctl = r(".v-carte .ctl");
+  const frise = r(".v-carte .frise");
+  const right = panel ? W - panel.left + 24 : 24;
+  const pad = {
+    top: Math.max(tag?.bottom ?? 0, 24) + 24,
+    left: 24,
+    right: Math.max(right, ctl ? W - ctl.left + 16 : 0),
+    bottom: frise ? H - frise.top + 24 : 24,
+  };
+  // a screen too small for those margins: the map keeps half its width and height at least
+  pad.right = Math.min(pad.right, W / 2);
+  pad.bottom = Math.min(pad.bottom, H / 2);
+  pad.top = Math.min(pad.top, H / 3);
+  return pad;
+}
 const today = (): number => {
   const d = new Date();
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
@@ -157,6 +219,8 @@ class CarteDrones extends Vue<Props, State> {
       ent: [],
       k: genre(q.get("genre")),
       is3d: true,
+      leg: false,
+      frise: false,
     };
   }
   panneau(): boolean {
@@ -202,21 +266,32 @@ class CarteDrones extends Vue<Props, State> {
   }
 
   // --- the site's map ---------------------------------------------------------------------------
+  /** The chart's width followed (its bars drawn to it), from when it is unfolded. */
+  private friseVue: Element | null = null;
+  private observerFrise(): void {
+    const g = document.querySelector<HTMLElement>(".v-carte .frise-g");
+    if (!g || g === this.friseVue || typeof ResizeObserver !== "function") return;
+    this.ro?.disconnect();
+    this.friseVue = g;
+    this.ro = new ResizeObserver(([e]) => {
+      const w = Math.round(e.contentRect.width);
+      if (w > 100 && Math.abs(w - this.state.fw) > 1) this.setState({ fw: w });
+    });
+    this.ro.observe(g);
+  }
+  /** A click on the map folds the legend back (v2.3). */
+  private readonly onCarte = () => {
+    if (this.state.leg) this.setState({ leg: false });
+  };
   componentDidMount(): void {
     addEventListener("themechange", this.onTheme);
-    const g = document.querySelector<HTMLElement>(".v-carte .frise-g");
-    if (g && typeof ResizeObserver === "function") {
-      this.ro = new ResizeObserver(([e]) => {
-        const w = Math.round(e.contentRect.width);
-        if (w > 100 && Math.abs(w - this.state.fw) > 1) this.setState({ fw: w });
-      });
-      this.ro.observe(g);
-    }
+    this.observerFrise();
     const map = carteDuSite();
     if (!map) return;
     this.map = map;
     map.on("pitchend", this.onPitch);
     map.on("moveend", this.onMove);
+    map.on("click", this.onCarte);
     void this.poser(map);
   }
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
@@ -245,6 +320,7 @@ class CarteDrones extends Vue<Props, State> {
           insee: d.insee,
           sites,
           teintes: this.teintes(),
+          groupe: (n) => t("carte.vol_groupe", { n }),
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) {
@@ -285,24 +361,17 @@ class CarteDrones extends Vue<Props, State> {
       map.easeTo({ pitch, duration }, NOTRE);
       return;
     }
-    const W = innerWidth;
-    const H = innerHeight;
-    const padding = large()
-      ? {
-          top: 80,
-          left: Math.min(380, W * 0.2),
-          right: Math.min(W - 300, 24 + 470 + 90),
-          bottom: Math.min(H - 300, 24 + 184 + 30),
-        }
-      : { top: 70, left: 16, right: 64, bottom: Math.round(H / 2) + 16 };
     const cam = map.cameraForBounds(
       [
         [box[0], box[1]],
         [box[2], box[3]],
       ],
-      { padding, pitch, bearing: map.getBearing() },
+      { padding: libre(), pitch, bearing: map.getBearing() },
     );
     if (!cam) return;
+    // close enough to read a zone, never inside a volume: a zone framed alone is small, its
+    // volume's height the commune's scale (drones.ts volumeHeight)
+    cam.zoom = Math.min(cam.zoom ?? ZOOM_MAX, zone ? ZOOM_ZONE : ZOOM_MAX);
     // from far away (a cold open of the page: the map starts at its default place) a jump, not a
     // flight that would load every tile on its way
     if (loin(map, [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]))
@@ -318,7 +387,12 @@ class CarteDrones extends Vue<Props, State> {
     if (!map) return;
     map.off("pitchend", this.onPitch);
     map.off("moveend", this.onMove);
-    this.layer?.retirer();
+    map.off("click", this.onCarte);
+    // the register closed over this view (✕, Escape): the map stays tilted on the commune with its
+    // volumes and the period chosen (v2.2 point 3), a ticket on it to leave them; any other page
+    // of the register, the volumes go
+    if (seFerme() && this.layer) quitterPlusTard(map, this.layer);
+    else this.layer?.retirer();
     this.layer = null;
     // the map stays where the view left it: on the commune (v2.1 A5)
     this.map = null;
@@ -326,6 +400,7 @@ class CarteDrones extends Vue<Props, State> {
   componentDidUpdate(): void {
     this.syncMap();
     this.adresse();
+    this.observerFrise();
   }
   /** The view's state in its address (A4): the period, the kind, the act chosen, so that a step
    * back to it, or the link copied, shows the same; replaced, never a new step. */
@@ -798,6 +873,29 @@ class CarteDrones extends Vue<Props, State> {
         : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
       allOn: r ? "false" : "true",
       allYear: (() => this.setPeriode(null)) as Handler,
+      // v2.3 (Ju): the legend a ticket beside the commands, the chart a thin band, both folded by
+      // default on a wide screen; folded, the chosen act's week stays in the band
+      legOuverte: !isLarge || S.leg,
+      legTicket: isLarge,
+      legPressed: S.leg ? "true" : "false",
+      togLeg: (() => this.setState({ leg: !S.leg })) as Handler,
+      friseOuverte: !isLarge || S.frise,
+      friseBande: isLarge,
+      friseExp: S.frise ? "true" : "false",
+      togFrise: (() => {
+        this.setState({ frise: !S.frise });
+        // the map's free part changed: framed again within it
+        requestAnimationFrame(() => this.map && this.voler(this.map));
+      }) as Handler,
+      friseBandeL: [
+        t("carte.frise_bandeau"),
+        r
+          ? t("carte.du_au", { de: dateTxt(r[0]), a: dateTxt(r[1] - DAY) })
+          : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
+        ...(selWeek >= 0 && weeks[selWeek] ? [tipTxt(weeks[selWeek])] : []),
+      ].join(" · "),
+      friseAide: t(S.frise ? "carte.frise_replier" : "carte.frise_deplier"),
+      semChoisie: selWeek >= 0,
       fw: String(W),
       vb: `0 0 ${W} 112`,
       gridY: String(HAUT),
