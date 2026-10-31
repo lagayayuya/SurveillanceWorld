@@ -8,10 +8,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+import yaml
 from registre_docs import documents
 
 from lacarte_registre import construire, drones, importer
 
+ROOT = Path(__file__).resolve().parent.parent
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 MIONS, LYON = "69283", "69123"
 DRONES_6, DRONES_3 = "69-2026-03-06-00003", "69-2026-10-15-00005"
@@ -167,3 +169,36 @@ def test_synthetic_a_site_outside_the_commune_is_not_its(synthetic):
     assert {tuple(s["sites"]) for s in s88} == {(S6,)}
     s90 = read(synthetic, "commune/69290.json")["drones"]["creneaux"]
     assert s90 and all(s["sites"] == [] for s in s90)
+
+
+# --- a zone over the whole commune (rules/registre_drones.yaml, v2.1 B1) -------------------------
+
+
+def _carre(x: float, y: float, d: float) -> dict:
+    return {
+        "type": "Polygon",
+        "coordinates": [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]],
+    }
+
+
+def test_a_zone_over_four_fifths_of_its_commune_is_the_whole_commune():
+    commune = _carre(4.8, 45.7, 0.1)["coordinates"][0]
+    part = yaml.safe_load((ROOT / "rules" / "registre_drones.yaml").read_text())["commune_entiere"]
+    assert part["part"] == 0.8 and part["id"] == "rule:registre_drones@1:commune_entiere"
+
+    def site(d: float) -> dict:
+        return {"id": "s", "parts": {"69123": {"in": _carre(4.8, 45.7, d)}}}
+
+    # shares of 100 %, 81 %, 64 % and 1 % of the commune's area
+    got = [drones.commune_entiere(site(d), "69123", commune, 0.8) for d in (0.1, 0.09, 0.08, 0.01)]
+    assert got == [True, True, False, False]
+    # no outline, no way to tell; a site cut elsewhere, no part here
+    assert drones.commune_entiere(site(0.1), "69123", None, 0.8) is False
+    assert drones.commune_entiere(site(0.1), "69001", commune, 0.8) is False
+
+
+def test_every_site_and_zone_says_whether_it_is_the_whole_commune(built):
+    for path in (built / "commune").glob("*.json"):
+        z = read(built, f"commune/{path.name}")["zones"]
+        assert all(isinstance(s["commune_entiere"], bool) for s in z["sites"])
+        assert all(isinstance(x["commune_entiere"], bool) for x in z["zones"])

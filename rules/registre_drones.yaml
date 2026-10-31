@@ -1,0 +1,17 @@
+# The drone and algorithmic-analysis zones of a commune (pipeline/lacarte_registre/fermetures.py
+# zones → commune/<insee>.json, read by « Drones et algorithmes », web/src/registre/drones.ts).
+# Not in buildinfo's hashed rules: no map build depends on it.
+version: 1
+
+commune_entiere:
+  id: rule:registre_drones@1:commune_entiere
+  part: 0.8
+  rationale: >-
+    A zone whose part inside the commune covers this share of the commune's area or more is
+    the whole commune (v2.1 B1, Ju's review): its act says « le territoire de la commune », or
+    the commune but for a few blocks, and drawn as a volume it would hold every other zone.
+    0.8: Lyon's whole-commune zone covers 99.9 % of it, its largest localised one 10.2 %; a
+    zone over four fifths of a commune no longer says where in it. Areas by the shoelace
+    formula on an equirectangular projection at each ring's mean latitude, outer rings only;
+    the commune's outline is its map's (carte/<insee>.json `contour`): without one, no zone
+    is the whole commune.

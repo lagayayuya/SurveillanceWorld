@@ -67,10 +67,16 @@ class Context:
         couverture: dict[str, Any],
         pilot_deps: list[str],
         cartes: frozenset[str] = frozenset(),
+        contours: dict[str, list] | None = None,
+        entiere: float = 0.8,
     ):
         self.reg = reg
         # the communes whose tilted map's layers are served (carte/<insee>.json)
         self.cartes = cartes
+        # their outlines, and the share of one a zone covers to be the whole commune
+        # (rules/registre_drones.yaml)
+        self.contours = contours or {}
+        self.entiere = entiere
         self.couverture = couverture
         self.pilot_deps = pilot_deps
         p = reg.pilote
@@ -201,10 +207,16 @@ def zones(ctx: Context, insee: str) -> dict[str, Any]:
     zids = {z for a in auts for z in a.get("zones") or []}
     zs = [z for z in p.get("ZONES", []) if z["id"] in zids]
     sids = {z.get("site") for z in zs}
+    sites = [_restrict(s, insee) for s in p.get("SITES", []) if s["id"] in sids]
+    # a site over the whole commune, or nearly, and each zone drawn there (drones.py)
+    contour = ctx.contours.get(insee)
+    for s in sites:
+        s["commune_entiere"] = drones.commune_entiere(s, insee, contour, ctx.entiere)
+    whole = {s["id"] for s in sites if s["commune_entiere"]}
     return {
         "autorisations": auts,
-        "zones": zs,
-        "sites": [_restrict(s, insee) for s in p.get("SITES", []) if s["id"] in sids],
+        "zones": [{**z, "commune_entiere": z.get("site") in whole} for z in zs],
+        "sites": sites,
         "unites": [_restrict(u, insee) for u in p.get("UNITES", []) if zids & set(u["zones"])],
     }
 

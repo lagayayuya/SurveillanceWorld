@@ -11,7 +11,6 @@ import {
   melange,
   type Site,
   TEINTES,
-  TOUTE_LA_COMMUNE,
 } from "../src/registre/drones.ts";
 
 type Handler = (e: unknown) => void;
@@ -211,19 +210,19 @@ test("the colours: algorithms hatched in raw pixels, a zone set back towards the
   assert.equal(melange("#7fd4ff", "#f2efe6", 0), "#7fd4ff");
 });
 
-test("a zone over four fifths of the commune or more is the whole commune, not a volume (B1)", () => {
+test("a zone over the whole commune is no volume (B1): the build's flag, read", () => {
   const commune = carre(4.8, 45.7, 0.1).coordinates[0];
-  const zone = (id: string, d: number): Site => ({
+  // the build decides it (drones.py, rules/registre_drones.yaml: four fifths of the area or more)
+  const zone = (id: string, d: number, entiere = false): Site => ({
     id,
     kind: "drone",
     parts: { "69123": { in: carre(4.8, 45.7, d) } },
+    commune_entiere: entiere,
   });
-  // shares of 100 %, 81 %, 64 % and 1 % of the commune's area
-  const sites = [zone("tout", 0.1), zone("presque", 0.09), zone("grand", 0.08), zone("petit", 0.01)];
-  assert.equal(TOUTE_LA_COMMUNE, 0.8);
-  assert.deepEqual([...entieres(sites, "69123", commune)], ["tout", "presque"]);
-  // no outline, no way to tell: every zone stays a volume
-  assert.equal(entieres(sites, "69123", null).size, 0);
+  const sites = [zone("tout", 0.1, true), zone("presque", 0.09, true), zone("grand", 0.08), zone("petit", 0.01)];
+  assert.deepEqual([...entieres(sites)], ["tout", "presque"]);
+  // an older build without the flag: every zone stays a volume
+  assert.equal(entieres(sites.map(({ commune_entiere: _, ...s }) => s)).size, 0);
   // drawn: the whole one carries `e`, the volumes' layer leaves it out
   const f = fausseCarte();
   const data: unknown[] = [];

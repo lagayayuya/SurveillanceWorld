@@ -36,6 +36,8 @@ export type Site = {
   kind: string;
   statut?: string;
   parts?: Record<string, { in?: Area | null; out?: Area | null }>;
+  /** over the whole commune, or nearly: the build's (rules/registre_drones.yaml, lot R3) */
+  commune_entiere?: boolean;
 };
 
 /** The commune's outline and its box, as the register's map file gives them. */
@@ -74,12 +76,6 @@ export type Teintes = { encre: string; fond: string; doc: string };
 /** The light theme's values (theme/punk/tokens.css), until the page's are read. */
 export const TEINTES: Teintes = { encre: "#111111", fond: "#f2efe6", doc: "#7fd4ff" };
 const HACHURE = `${P}-hachure`;
-
-/** A zone that covers this share of the commune's area or more is the whole commune (v2.1 B1): its
- * act says « le territoire de la commune », or the commune but for a few blocks; drawn as a volume
- * it would hold every other zone. 0.8: Lyon's whole-commune zone covers 99.9 % of it, its largest
- * localised one 10.2 %; a zone over four fifths of a commune no longer says where in it. */
-export const TOUTE_LA_COMMUNE = 0.8;
 
 // --- the pure part (tested) ------------------------------------------------------------------
 
@@ -133,15 +129,10 @@ export function aire(rs: Ring[]): number {
   }
   return total;
 }
-/** The sites over the whole commune, or nearly (TOUTE_LA_COMMUNE of its area), given its outline:
- * their part inside the commune against the outline's area. None without an outline. */
-export function entieres(sites: Site[], insee: string, contour: LonLat[] | null): Set<string> {
-  const out = new Set<string>();
-  const tout = contour ? aire([contour]) : 0;
-  if (!tout) return out;
-  for (const s of sites)
-    if (aire(rings(s.parts?.[insee]?.in)) >= TOUTE_LA_COMMUNE * tout) out.add(s.id);
-  return out;
+/** The sites over the whole commune, or nearly (v2.1 B1): the build decides it (`commune_entiere`,
+ * four fifths of the commune's area or more, rules/registre_drones.yaml), the page reads it. */
+export function entieres(sites: Site[]): Set<string> {
+  return new Set(sites.filter((s) => s.commune_entiere).map((s) => s.id));
 }
 /** A light colour (#rrggbb): its luminance over a half. */
 export const clair = (h: string): boolean => {
@@ -469,7 +460,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     }),
   );
   let outline: Contour | null = null;
-  let entiere = new Set<string>();
+  let entiere = entieres(sites);
   let hs: Record<string, Volume> = {};
   let tint = o.teintes;
   // the states as the map holds them: the pointer's zone, the list's, the chosen ones
@@ -616,7 +607,6 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     },
     contour(c) {
       outline = c;
-      entiere = entieres(sites, insee, c.contour);
       set(SRC_COM, communeData());
       if (map.getLayer(COUCHES.communeAdmin)) map.removeLayer(COUCHES.communeAdmin);
       set(SRC, zonesData());

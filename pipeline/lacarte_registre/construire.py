@@ -28,6 +28,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 import lacarte_registre as registre
 from lacarte import lock
 from lacarte_registre import (
@@ -69,9 +71,12 @@ def run(
     conf = couverture.rules(rules / "registre_couverture.yaml")
     cov = couverture.build(reg, conf, nat["sources"] if nat else None)
     maps = sorted((root / "pilote" / "carte").glob("*.json"))
+    contours = {m.stem: json.loads(m.read_text("utf-8")).get("contour") for m in maps}
+    entiere = yaml.safe_load((rules / "registre_drones.yaml").read_text("utf-8"))
     ctx = fermetures.Context(
-        reg, cov, couverture.pilot_departements(conf), frozenset(m.stem for m in maps)
-    )
+        reg, cov, couverture.pilot_departements(conf), frozenset(m.stem for m in maps),
+        contours, entiere["commune_entiere"]["part"],
+    )  # fmt: skip
     summary: dict[str, Any] = {}
 
     def write(tmp: Path) -> None:

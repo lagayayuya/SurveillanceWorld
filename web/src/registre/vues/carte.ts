@@ -88,7 +88,7 @@ type State = BaseState & {
   wk: number;
   /** the chart's width, CSS px */
   fw: number;
-  /** the sites over the whole commune, or nearly (drones.ts entieres, once the outline is read) */
+  /** the sites over the whole commune, or nearly (the build's, drones.ts entieres) */
   ent: string[];
   /** the kind of act shown: drones, algorithms, or both (null) */
   k: Genre;
@@ -227,6 +227,8 @@ class CarteDrones extends Vue<Props, State> {
     const d = this.props.d;
     const used = new Set(this.T.flatMap((c) => c.sites));
     const sites = d.f.zones.sites.filter((s) => used.has(s.id)) as unknown as Site[];
+    const ent = [...entieres(sites)];
+    if (ent.length) this.setState({ ent });
     // the outline from the register's map file, its head only (drones.ts lireContour), before the
     // layers: a zone over the whole commune is never drawn first as a volume
     let contour: Contour | null = null;
@@ -238,10 +240,6 @@ class CarteDrones extends Vue<Props, State> {
       }
     }
     if (this.dead) return;
-    if (contour) {
-      const ent = [...entieres(sites, d.insee, contour.contour)];
-      if (ent.length) this.setState({ ent });
-    }
     const make = (): boolean => {
       if (this.dead || this.layer) return true;
       try {

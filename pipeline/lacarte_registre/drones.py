@@ -17,12 +17,50 @@ What the pilot lacks (no periods, no sites) gives no slot or no site, not an err
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
 from lacarte_registre.regles import Event, Pilote
 
 KINDS = {"arrete_drone": "drone", "arrete_vsa": "vsa"}
+M_PER_DEG = 111320
+
+
+def rings(g: dict[str, Any] | None) -> list[list[list[float]]]:
+    """The outer rings of a polygon or multipolygon (holes left out); none for anything else."""
+    if not g:
+        return []
+    if g.get("type") == "Polygon":
+        return [g["coordinates"][0]]
+    if g.get("type") == "MultiPolygon":
+        return [p[0] for p in g["coordinates"]]
+    return []
+
+
+def aire(rs: list[list[list[float]]]) -> float:
+    """The area of some outer rings in m² (shoelace, equirectangular at each ring's mean
+    latitude: rules/registre_drones.yaml)."""
+    total = 0.0
+    for r in rs:
+        if len(r) < 3:
+            continue
+        kx = M_PER_DEG * math.cos(math.radians(sum(p[1] for p in r) / len(r)))
+        a = 0.0
+        for (x1, y1), (x2, y2) in zip(r, [*r[1:], r[0]], strict=True):
+            a += x1 * kx * y2 * M_PER_DEG - x2 * kx * y1 * M_PER_DEG
+        total += abs(a) / 2
+    return total
+
+
+def commune_entiere(site: dict[str, Any], insee: str, contour: list | None, part: float) -> bool:
+    """Whether a site's part inside the commune covers `part` of the commune's outline or more
+    (rule:registre_drones@1:commune_entiere); never without an outline."""
+    tout = aire([contour]) if contour else 0.0
+    inside = ((site.get("parts") or {}).get(insee) or {}).get("in")
+    return bool(tout) and aire(rings(inside)) >= part * tout
+
+
 NON_DEDUITE = "zone_non_deduite"
 # « dans le cadre du maintien de l'ordre » → « maintien de l'ordre » (the prototype's)
 CADRE = re.compile(r"^dans le cadre (des|de la|du|de l'|d')\s*", re.IGNORECASE)
