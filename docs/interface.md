@@ -2003,6 +2003,21 @@ for the map.
 | `reg2-carte-left` | The register closed over the drone view: the map tilted with its volumes, a ticket « Quitter la vue drones » | registre/vues/carte.ts | — | the drone view, ✕ | — | smoke script |
 | `map-ticket-doors` | The map's ticket: under its squares, « Filtres et légende » on paper and « Le registre » in pink | machine.ts; theme/punk/map.css | — | `/` | captures/apres | yes |
 
+### The register v2.4 (2026-10-31)
+
+Test data: the national build of 2026-10-31 with the communes' boxes (`lacarte-registre collecter
+--source communes`, then `construire`); the gate's CI extract for the map, its region widened to
+France for the framing's check.
+
+| State | What it shows | Where | Mockup | How to see it | Capture | Checked |
+|---|---|---|---|---|---|---|
+| `reg2-carte-framed` | Drones et algorithmes framing its commune from the commune's box, whatever it holds (zones, no act, a département not collected), opened by its address or reached in the site, in light and dark: the commune in the part of the map left free (the map's padding), outlined, tilted (50° wide, 35° phone), framed once | registre/vues/carte.ts; drones.ts `ecran`, `zoomIncline` | V2-CarteDrones | `/registre/commune/94081/carte`, `/registre/commune/69149/carte`, `/registre/commune/69123/carte` | captures/apres | smoke, survey |
+| `reg2-carte-zone-free` | A zone chosen, then « Voir sur la carte »: the zone whole above the sheet on a phone, beside the panel on a wide screen, the camera above the tallest volume | registre/vues/carte.ts | drones-zone-choisie (Ju's) | `/registre/commune/69123/carte?acte=69-2026-10-05-00003`, « Voir sur la carte » | captures/apres | smoke, survey |
+| `reg2-carte-turning` | The slow turn at the opening (one turn in 90 s), stopped for good by a hand or a command; none under reduced motion; north up again when the view is left while it turns | registre/vues/carte.ts | — | the drone view, its first seconds | — | smoke, survey |
+| `reg2-sheet-move` | The phone's sheet lowered or raised by a link or « Retour »: 300 ms ease-out, the new page at its top at once | registre/modale.ts; cadre.css | — | a phone, `/registre/commune/69123`, « Drones » then « ‹ Lyon » | — | smoke (timing) |
+| `reg2-list-drones` | « Avec arrêtés drones » held on the communes' and the départements' lists | registre/vues/liste.ts, liste.html | liste-communes-menu-departements (Ju's) | `/registre/communes?drones=1` | captures/apres | yes |
+| `reg2-list-panel-first` | A list's panel showing its first row before any row is hovered | registre/vues/liste.ts | liste-communes-* (Ju's: Lyon) | `/registre/communes` | captures/apres | yes |
+
 ### The register (lot R3)
 
 No new screen: the v2 draws the share button, its window and the links' colours; R3 gives
@@ -2519,3 +2534,12 @@ rows above hold for the content of the fiches.
 | Every fiche: its name in cut-out letters | a document's name is its objet in two lines at most, in the cut-out letters' face but not cut out; its tickets without a dash | v2.2 point 5: « Appel d'offres de mars 2017 » named nothing; an objet of 100 characters does not read in cut-out letters |
 | The map's ticket (mockup 17a): « Filtres et légende → » and « Le registre → », two wavy-underlined links between the title and the squares | two full-width tickets under the squares: « Filtres et légende » on paper, « Le registre » in pink with its pictogram, 44 px high at least | Ju's instruction (v2.2 point 1, v2.3 point 7): the links were ugly and badly placed |
 | V2-CarteDrones: the chosen zone full with a thick ink outline, the others set back in a lighter blue, every chosen label shown | the chosen zone's volume with the frame's pink outline, the others flat at 15 %; one short label per place, lifted above its volume | Ju's mockup drones-zone-choisie and review (v2.3): the labels of a slot's zones covered each other |
+
+### The register v2.4 (2026-10-31)
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Every board: the theme button and ✕ with a blue shadow | in the light mode white with the theme's blue shadow (`--type-document`) on the black top bar; the v2.3 row's ink shadow is gone | Ju's answer to v2.3's question 1 (v2.4 point 5) |
+| V2-CarteDrones: the map tilted at the mockup's angle on every screen | 50° on a wide screen, 35° on a phone | Ju's capture telephone-inclinaison (v2.4 point 3): at 50° the narrow map showed the volumes more than the streets |
+| V2-CarteDrones: a still map | a slow turn at the opening (one turn in 90 s), stopped for good by a hand, none under reduced motion | Ju's instruction (v2.4 point 3) |
+| V2-CarteDrones: the volumes' heights as drawn (the highest about half the commune) | the tallest at 12 % of the commune's height on the screen, under the site's names | Ju's capture telephone-inclinaison (v2.4 point 3): stacked volumes hid the names |
