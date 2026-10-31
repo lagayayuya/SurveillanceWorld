@@ -171,7 +171,12 @@ function clic(ev: MouseEvent): void {
     const avant = location.href;
     history.replaceState(history.state, "", url.hash);
     const id = decodeURIComponent(url.hash.slice(1));
-    document.getElementById(id)?.scrollIntoView({ block: "start" });
+    // a section of the same page: a smooth scroll (the frame's own scroll is instant since v2.4:
+    // a new page's top, a page come back to)
+    const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ block: "start", behavior: doux ? "smooth" : "auto" });
     // what a followed anchor says (the glossary marks its word on it)
     dispatchEvent(new HashChangeEvent("hashchange", { oldURL: avant, newURL: location.href }));
     return;

@@ -982,6 +982,67 @@ try {
     );
   }
 
+  // --- the phone's sheet (v2.4 point 4): a link or « Retour » moves it in 300 ms, slowing at its
+  // end, by a transform (not its top, held back by the new page's render); the new page starts at
+  // its top at once (no smooth scroll racing the move) ---
+  {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 845 },
+      locale: "fr-FR",
+      hasTouch: true,
+    });
+    await context.addInitScript(() => {
+      try {
+        localStorage.setItem("lacarte.welcome", "1");
+      } catch {}
+    });
+    const page = await context.newPage();
+    await page.route("**/api/**", (r) =>
+      r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"no_session"}' }),
+    );
+    await page.goto(`${APP}${COMMUNE}`);
+    await drawn(page);
+    await page.waitForTimeout(1500);
+    const moves = [];
+    for (const go of [
+      () => page.locator('#registre a.bporte[href$="/carte"]').first().tap(),
+      () => page.goBack(),
+    ]) {
+      await page.evaluate(() => {
+        const sc = document.querySelector(".rg .scroll");
+        sc.scrollTop = 500;
+        window.__y = [];
+        const tick = () => {
+          window.__y.push(document.querySelector(".rg .scroll")?.scrollTop ?? -1);
+          if (window.__y.length < 40) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      });
+      await go();
+      await page.waitForTimeout(120);
+      const m = await page.evaluate(() => {
+        const a = document.querySelector(".rg > .th > .sheet")?.getAnimations?.()[0];
+        const t = a?.effect?.getTiming?.();
+        const k = a?.effect?.getKeyframes?.() ?? [];
+        return {
+          ms: t?.duration ?? null,
+          easing: t?.easing ?? null,
+          transform: k.length > 0 && k.every((x) => "transform" in x),
+          css: getComputedStyle(document.querySelector(".rg .scroll")).scrollBehavior,
+        };
+      });
+      moves.push(m);
+    }
+    check(
+      "the phone's sheet moves in 300 ms ease-out by a transform, and the page under it does not scroll smoothly",
+      moves.every(
+        (m) => m.ms === 300 && m.easing === "ease-out" && m.transform && m.css === "auto",
+      ),
+      JSON.stringify(moves),
+    );
+    await context.close();
+  }
+
   // --- the slow turn at the opening (v2.4 point 3): it turns, a drag stops it for good; none
   // under reduced motion ---
   {

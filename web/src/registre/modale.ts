@@ -329,9 +329,25 @@ function entete(r: Route): void {
  * above; dragged far down, the register closes. Its top stays where the boards put it. */
 const poignee = el("div", { class: "handle", "aria-hidden": "true" }, el("span"));
 let bas = false;
+/** The sheet's move (v2.4): ~300 ms, slowing at its end, the same for every gesture; a transform
+ * (the compositor's), not its `top` (a layout's, which the new page's render held back: on a
+ * phone the sheet went down slowly, then fast). Immediate under reduced motion. */
+const MOUVEMENT_MS = 300;
+const reduit = (): boolean =>
+  typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 function placerFeuille(): void {
   const top = courant.view === "registre" ? 64 : 44;
+  // where it stands on the screen (a move under way included), then where it goes
+  const vu = cadre.getClientRects().length > 0;
+  const avant = cadre.getBoundingClientRect().top;
+  for (const a of cadre.getAnimations?.() ?? []) a.cancel();
   cadre.style.setProperty("top", bas ? "50%" : `${top}px`);
+  const dy = avant - cadre.getBoundingClientRect().top;
+  if (!vu || Math.abs(dy) < 1 || cadre.classList.contains("tire") || reduit()) return;
+  cadre.animate?.([{ transform: `translateY(${dy}px)` }, { transform: "translateY(0)" }], {
+    duration: MOUVEMENT_MS,
+    easing: "ease-out",
+  });
 }
 {
   let depart: { y: number; id: number; top: number } | null = null;

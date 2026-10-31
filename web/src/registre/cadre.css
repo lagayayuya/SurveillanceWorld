@@ -150,7 +150,6 @@
   flex: 1;
   overflow: auto;
   position: relative;
-  scroll-behavior: smooth;
 }
 .rg .inner {
   max-width: 1200px;
@@ -1315,12 +1314,6 @@
   position: fixed;
   z-index: 50;
 }
-.rg > .th > .sheet {
-  transition: top var(--dur-sheet, 0.22s) ease-out;
-}
-.rg > .th > .sheet.tire {
-  transition: none;
-}
 .rg .handle {
   touch-action: none;
   cursor: grab;
@@ -1330,11 +1323,6 @@
 }
 .rg .msearch {
   margin: 0;
-}
-@media (prefers-reduced-motion: reduce) {
-  .rg > .th > .sheet {
-    transition: none;
-  }
 }
 /* A section's top stays under the band (52 px) when its link brings it in; the share window's head. */
 .rg .sec[id] {

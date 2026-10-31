@@ -70,7 +70,11 @@ class Glossaire extends Vue<Record<string, unknown>, State> {
     if (hidden)
       requestAnimationFrame(() => {
         const el = document.getElementById(`g-${ici}`);
-        el?.scrollIntoView({ block: "start" });
+        // a word of the same page: smooth (the frame's scroll is instant, v2.4)
+        el?.scrollIntoView({
+          block: "start",
+          behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        });
         el?.focus({ preventScroll: true });
       });
   };
