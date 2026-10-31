@@ -9,8 +9,10 @@
   db/load_registre.sh; `charger` loads it the same way (the tests).
 - site/listes.json: the register's lists of names (communes, intercommunalities,
   départements, buyers, companies; the redesign v2's V2-Liste), each row with its figures,
-  uncut, the names they need with their references, and every list's count (index.json
-  carries them too, for the summary): computed here as the browser did over every document,
+  uncut, the names they need with their references (`dico.epcis`: every listed commune's
+  intercommunality, named by France's reference, `ref` or `sans_fiche`), and every list's
+  count (index.json carries them too, for the summary): computed here as the browser did over
+  every document,
   which no longer comes.
 """
 
@@ -210,5 +212,18 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
                 if LISTE_CAT.get(a.get("categorie") or "") or s in epcis
             },  # fmt: skip
             "communes": {k: ctx.commune(k) for k in sorted(coms)},
+            # every intercommunality of a listed commune, named by France's reference (the
+            # buyers' dictionary names only those that buy): its fiche, its buyer's page, when
+            # this build writes one, else `sans_fiche` (its row leads nowhere and says so)
+            "epcis": {s: epci(ctx, s) for s in sorted(epcis)},
         },
     }
+
+
+def epci(ctx: fermetures.Context, siren: str) -> dict[str, Any]:
+    out: dict[str, Any] = {"nom": ctx.nom_court(siren) or ctx.epcis.get(siren)}
+    if r := ctx.fiches.acheteur(siren):
+        out["ref"] = r
+    else:
+        out["sans_fiche"] = True
+    return out

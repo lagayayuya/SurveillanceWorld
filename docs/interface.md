@@ -1057,6 +1057,10 @@ DECISIONS 2026-10-28.
   (`registre.departement.nom_`, `art_`, `dans_`, `du_<code>`; `depArt`, `depDans` in
   `src/registre/commun.ts`, `partage.dep_*` in the build): « dans le Rhône », « à Paris »,
   « en Guadeloupe », never « département 30 ».
+  An intercommunality is named by France's reference wherever it is listed (`listes.json`
+  `dico.epcis`: `nom`, `ref` to its buyer's fiche when the build writes one, else
+  `sans_fiche`): the list of intercommunalities no longer says « Intercommunalité, SIREN … »
+  for one that does not buy; such a row links nowhere.
 
 ## 2. State catalogue
 

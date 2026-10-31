@@ -5,7 +5,7 @@
 // rules (counted, a copy, a shared decree, an unread one) are the build's flags, read here.
 
 import { communeHref, isArr, sortKey } from "./commun.ts";
-import type { Acheteur, Commune, Entreprise, Evenement } from "./donnees.ts";
+import type { Acheteur, Commune, Entreprise, Evenement, Ref } from "./donnees.ts";
 import { EI } from "./donnees.ts";
 import { count, docDate } from "./format.ts";
 import { has, t } from "./i18n.ts";
@@ -22,7 +22,11 @@ export type Lexique = {
   acheteurs: Record<string, Acheteur>;
   communes: Record<string, Commune & { carte?: number | null }>;
   affaires?: Record<string, AffaireCourte>;
+  /** listes.json: every listed commune's intercommunality, named by France's reference; `ref`
+   * its fiche (its buyer's page) when the build wrote one, else `sans_fiche`. */
+  epcis?: Record<string, Epci>;
 };
+export type Epci = { nom: string | null; ref?: Ref; sans_fiche?: boolean };
 export type Index = {
   v: number;
   maj: string;

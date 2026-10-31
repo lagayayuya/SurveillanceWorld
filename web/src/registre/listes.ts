@@ -283,8 +283,8 @@ function rangsCommunes(C: Corpus): Rang[] {
   });
 }
 
-/** The intercommunalities of the register's communes (each commune's `epci`). A name and a fiche
- * only for one that buys (its buyer's fiche). */
+/** The intercommunalities of the register's communes (each commune's `epci`): named by the build
+ * (listes.json `dico.epcis`, France's reference), a fiche only for one that buys (its buyer's). */
 function rangsEpci(C: Corpus): Rang[] {
   const by = new Map<string, string[]>();
   for (const insee of Object.keys(C.X.communes)) {
@@ -294,7 +294,7 @@ function rangsEpci(C: Corpus): Rang[] {
   }
   return [...by].map(([siren, coms]) => {
     const a = C.L.acheteurs[siren];
-    const nom = a ? a.nom_court || a.nom || "" : "";
+    const nom = a?.nom_court || C.L.epcis?.[siren]?.nom || a?.nom || "";
     const label = nom || t("liste.epci_siren", { siren });
     const noms = coms.map((k) => C.L.communes[k].nom).sort((x, y) => x.localeCompare(y, "fr"));
     const deps = [...new Set(coms.map((k) => C.L.communes[k].dep))];
@@ -302,7 +302,7 @@ function rangsEpci(C: Corpus): Rang[] {
     return {
       id: siren,
       nom: label,
-      lien: nom ? lienAcheteur(C.L, siren, nom, true) : lien("epci", null, label, true),
+      lien: a?.ref ? lienAcheteur(C.L, siren, nom || label, true) : lien("epci", null, label, true),
       sous: [
         ...coms
           .slice()

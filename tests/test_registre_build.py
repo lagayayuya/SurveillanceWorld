@@ -246,6 +246,26 @@ def test_the_home_names_its_rows_buyers_and_the_lists_the_map_counts(built):
         assert listes["dico"]["entreprises"][s]["ref"] == f"entreprise/{s}"
 
 
+def test_every_intercommunality_listed_has_its_name_and_says_whether_it_has_a_fiche(built):
+    """The list of intercommunalities named only those that buy (the buyers' dictionary): every
+    intercommunality of a listed commune has its name from the reference (EPCIS), its fiche's
+    reference when the build writes one (its buyer's page), else `sans_fiche`."""
+    listes = read(built, "listes.json")
+    epcis = listes["dico"]["epcis"]
+    listed = {listes["dico"]["communes"][k].get("epci") for k in listes["lignes"]["communes"]}
+    assert set(epcis) == listed - {None, ""}
+    files = {p.stem for p in (built / "acheteur").glob("*.json")}
+    with_fiche = [s for s, x in epcis.items() if x.get("ref")]
+    without = [s for s, x in epcis.items() if x.get("sans_fiche")]
+    assert with_fiche and without
+    for s, x in epcis.items():
+        assert x["nom"], s
+        assert ("ref" in x) != bool(x.get("sans_fiche")), s
+        assert (x.get("ref") == f"acheteur/{s}") == (s in files), s
+    # a non-buying one is named although no buyer's entry names it
+    assert any(s not in listes["dico"]["acheteurs"] for s in without)
+
+
 def test_the_unread_decrees_name_their_commune_and_the_coverage_its_departements(built):
     """The coverage page writes names, not codes, where the export gives them."""
     rows = read(built, "non_lus.json")["non_lus"]

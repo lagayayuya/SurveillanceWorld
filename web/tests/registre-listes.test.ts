@@ -65,6 +65,11 @@ const L = {
     [EI]: { nom: null, entrepreneur_individuel: true },
   },
   affaires: {},
+  // listes.json names every listed commune's intercommunality (France's reference)
+  epcis: {
+    "200000001": { nom: "Métropole Alpha", ref: "acheteur/200000001" },
+    "200000002": { nom: "CC du Pays de Gamma", sans_fiche: true },
+  },
 } as unknown as Lexique;
 
 /** SYNTHETIC: the documents those names come from (the API's pages serve them). */
@@ -161,7 +166,8 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.equal(gamma?.v.aut, -1);
   assert.equal(richText(gamma?.cells[2]), "—");
 
-  // an intercommunality that buys has its name and its buyer's fiche; one that does not, its SIREN
+  // an intercommunality that buys has its name and its buyer's fiche; one that does not, its name
+  // (the build's, from France's reference) and no link
   const epci = rangs(C, "intercommunalites");
   const metro = epci.find((r) => r.id === "200000001");
   assert.equal(metro?.nom, "Métropole Alpha");
@@ -169,7 +175,7 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.equal(metro?.v.con, 1);
   assert.ok(JSON.stringify(metro?.lien).includes("/registre/acheteur/200000001"));
   const sans = epci.find((r) => r.id === "200000002");
-  assert.ok(sans?.nom.includes("200000002"));
+  assert.equal(sans?.nom, "CC du Pays de Gamma");
   assert.ok(!JSON.stringify(sans?.lien).includes("href"));
 
   const rh = rangs(C, "departements").find((r) => r.id === "69");
