@@ -20,6 +20,7 @@ import {
   type CouvertureX,
   csv,
   DEFS,
+  demander,
   etapeListe,
   etatDe,
   grouper,
@@ -408,4 +409,18 @@ test("one name per type, the rail's: the list's title and its breadcrumb's step 
   assert.equal(etapeListe("con", "A_1", { dep: "69" }).href, "/registre/contrats?dep=69&ligne=A_1");
   // a list of names does not take a département from a fiche
   assert.equal(etapeListe("commune", "69290", { dep: "69" }).href, "/registre/communes?ligne=69290");
+});
+
+test("a busy search (503) is asked once again after its Retry-After (v2.3)", async () => {
+  let n = 0;
+  const page = { total: 0, page: 1, n: 20, facettes: { t: {}, d: {}, p: {}, y: {} }, par_type: {}, evenements: [], dico: {} };
+  const doFetch = (async () => {
+    n++;
+    return n === 1
+      ? new Response('{"error":"busy"}', { status: 503, headers: { "retry-after": "0", "content-type": "application/json" } })
+      : new Response(JSON.stringify(page), { status: 200, headers: { "content-type": "application/json" } });
+  }) as typeof fetch;
+  const got = await demander(new URLSearchParams("t=con"), doFetch);
+  assert.equal(n, 2);
+  assert.equal(got.total, 0);
 });

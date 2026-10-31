@@ -928,10 +928,19 @@ export function question(def: Def, e: Etat, page: number, n: number): URLSearchP
 /** One page of the search API; throws when it does not answer as such (no API, the dev server's
  * page, a timeout). */
 export async function demander(p: URLSearchParams, doFetch: typeof fetch = fetch): Promise<Page> {
-  const r = await doFetch(`/api/registre/recherche?${p}`, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(8000),
-  });
+  const ask = () =>
+    doFetch(`/api/registre/recherche?${p}`, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+  let r = await ask();
+  // the search busy for everyone (503, v2.3: a cap on the searches at once, no reader told apart):
+  // once again after the pause it asks, 5 s at most
+  if (r.status === 503) {
+    const s = Math.min(5, Math.max(0, Number(r.headers.get("retry-after")) || 1));
+    await new Promise((ok) => setTimeout(ok, s * 1000));
+    r = await ask();
+  }
   if (!r.ok || !/json/.test(r.headers.get("content-type") ?? "")) throw new Error("no api");
   const j = (await r.json()) as Page;
   if (!Array.isArray(j.evenements) || typeof j.total !== "number") throw new Error("no api");
