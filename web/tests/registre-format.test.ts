@@ -137,3 +137,12 @@ test("the way back to the map", () => {
   assert.equal(backToMap(`?carte=${encodeURIComponent("//evil.example/")}`), "/");
   assert.equal(backToMap(`?carte=${encodeURIComponent('#"><script>')}`, "69283"), "/?insee=69283");
 });
+
+test("a published objet's slips are tidied for display (v2.3): « Accord- cadre », « ,…. »", () => {
+  assert.equal(tidy("Accord- cadre à bons de commande"), "Accord-cadre à bons de commande");
+  assert.equal(tidy("installations anti intrusion,…."), "installations anti intrusion…");
+  assert.equal(tidy("maintenance, ..."), "maintenance…");
+  // a dash between spaces stays (« Lot 1 - Vidéo »), a hyphen before a capital too
+  assert.equal(tidy("Lot 1 - Vidéoprotection"), "Lot 1 - Vidéoprotection");
+  assert.equal(tidy("Rhône- Alpes"), "Rhône- Alpes");
+});

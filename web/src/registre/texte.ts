@@ -4,16 +4,22 @@
 
 /** The source's typewriter apostrophes and dashes, and the apostrophes it lost (« D UNE » → « D’UNE »). */
 export function tidy(text: unknown): string {
-  return String(text ?? "")
-    .replace(/[\u0092`´']/g, "’")
-    .replace(/[\u0096\u0097]/g, "–")
-    .replace(/\b([DLdl]|QU|qu|[Jj]) (?=[AEIOUYÉÈÊÂHaeiouyéèêâh])/g, "$1’")
-    .replace(
-      /\bD(UNE?) (?=(?:SYST|DISPOSITIF|R[EÉ]SEAU|PARC|MARCH[EÉ]|CENTRE|LOGICIEL|ENSEMBLE|OUTIL|[EÉ]QUIPEMENT|SOLUTION|INSTALLATION|PLATE|PRESTATION)[A-ZÉÈ]*)/g,
-      "D’$1 ",
-    )
-    .replace(/\s+/g, " ")
-    .trim();
+  return (
+    String(text ?? "")
+      .replace(/[\u0092`´']/g, "’")
+      .replace(/[\u0096\u0097]/g, "–")
+      .replace(/\b([DLdl]|QU|qu|[Jj]) (?=[AEIOUYÉÈÊÂHaeiouyéèêâh])/g, "$1’")
+      .replace(
+        /\bD(UNE?) (?=(?:SYST|DISPOSITIF|R[EÉ]SEAU|PARC|MARCH[EÉ]|CENTRE|LOGICIEL|ENSEMBLE|OUTIL|[EÉ]QUIPEMENT|SOLUTION|INSTALLATION|PLATE|PRESTATION)[A-ZÉÈ]*)/g,
+        "D’$1 ",
+      )
+      // a published objet's slips, for display only (v2.3; the data keep them): « Accord- cadre »
+      // « Accord-cadre », « ,…. » or « ,... » « … »
+      .replace(/(\p{L})- (?=\p{Ll})/gu, "$1-")
+      .replace(/\s*[,;]?\s*(?:…|\.{3})\.?/g, "…")
+      .replace(/\s+/g, " ")
+      .trim()
+  );
 }
 
 /** A title in capitals, or a long one, in sentence case. */

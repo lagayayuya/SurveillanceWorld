@@ -173,7 +173,12 @@ test("a call for tenders without a contract: awaited, not found, or a probable c
   assert.equal(attendu?.kind, "ao");
   assert.equal(text(attendu?.steps[1].date), "pas encore publié");
   assert.equal(attendu?.steps[1].what, "Aucun contrat n'est encore publié");
-  assert.match(text(attendu?.lead), /^La mairie de Synthèse-la-Ville a publié un appel d'offres le 21 juillet 2026\. Aucun contrat n'est encore publié\.$/);
+  assert.match(
+    text(attendu?.lead),
+    /^La mairie de Synthèse-la-Ville a publié un appel d'offres le 21 juillet 2026\. Aucun contrat n'est encore publié\. Aucun résultat n'est publié\.$/,
+  );
+  // a ticket carries a figure or a date, never a dash (v2.2 point 5): its sentence went into the lead
+  assert.ok(attendu?.kpis.every((k) => k.v !== "—"));
   assert.equal(text(fiche(ao("non_retrouve"))?.steps[1].date), "non retrouvé");
   const prob = fiche(ao("probable" as "attendu", "C1"));
   assert.equal(prob?.steps[1].k, "con");

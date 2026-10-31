@@ -65,13 +65,13 @@
   <sc-if value="{{band.large}}">
     <div class="band" style="{{band.r.c}}">
       <span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span>
-      <span class="bname">{{band.nom}}</span>
+      <span class="bname" data-mention="non">{{band.nom}}</span>
       <nav aria-label="{{t.cadre.sections}}"><sc-for list="{{band.secs}}" as="s"><a href="{{s.href}}" data-sec="{{s.k}}">{{s.l}}</a></sc-for></nav><sc-for list="{{band.portes}}" as="p"><a class="bporte" href="{{p.href}}" aria-current="{{p.cur}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.i}}"></path></svg>{{p.l}}</a></sc-for><button class="bshare" type="button" onClick="{{band.partager}}" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7"></path></svg>{{t.cadre.partager}}</button>
     </div>
   </sc-if>
   <sc-if value="{{band.tel}}">
     <div class="tband" style="{{band.r.c}}">
-      <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b>{{band.nom}}</b></div>
+      <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b data-mention="non">{{band.nom}}</b></div>
       <nav aria-label="{{t.cadre.sections}}"><sc-for list="{{band.secs}}" as="s"><a href="{{s.href}}" data-sec="{{s.k}}">{{s.l}}</a></sc-for><sc-for list="{{band.portes}}" as="p"><a class="bporte" href="{{p.href}}" aria-current="{{p.cur}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{p.i}}"></path></svg>{{p.l}}</a></sc-for></nav>
     </div>
   </sc-if>

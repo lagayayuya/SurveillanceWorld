@@ -30,7 +30,6 @@ import {
   type Step,
   TYPE_ETAPE,
 } from "./contrat-outils.ts";
-import { motsDecoupes } from "./decoupe-outils.ts";
 import { lierDepartement } from "./mention-outils.ts";
 
 type Props = Extract<Route, { view: "contrat" }> & { F: Fiche; couverture?: Couverture };
@@ -59,8 +58,13 @@ class Contrat extends Vue<Props, State> {
     return { copied: "", sel: d ? `d${props.F.docs.indexOf(d)}` : null };
   }
 
+  /** The document's name is its objet (v2.2 point 5), cut for a tab or a breadcrumb. */
   titre(): string {
-    return this.props.F.titreDoc;
+    const n = this.nom();
+    return n.length > 70 ? `${n.slice(0, 68).replace(/\s+\S*$/, "")}…` : n;
+  }
+  private nom(): string {
+    return this.props.F.titre || this.props.F.titreDoc;
   }
 
   type(): TypeCle {
@@ -192,9 +196,9 @@ class Contrat extends Vue<Props, State> {
     return {
       ...this.base("contrat"),
       ...this.info("par", "max"),
-      tete: this.tete(k, F.titreDoc, ligne),
-      mots: motsDecoupes(F.titreDoc),
-      band: this.bandeau(k, F.titreDoc, secs),
+      tete: this.tete(k, this.nom(), ligne),
+      nomDoc: this.nom(),
+      band: this.bandeau(k, this.titre(), secs),
       secs,
       lay: {
         inner: wide ? "inner" : "tin",

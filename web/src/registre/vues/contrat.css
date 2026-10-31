@@ -114,3 +114,19 @@
     text-align: left;
   }
 }
+
+/* v2.2 point 5: a document's name is its objet, two lines at most, in the cut-out letters' face
+   (condensed Archivo), not cut out: an objet is a sentence */
+.rg .v-contrat .docnom {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 6px 0 0;
+  font-family: Archivo, sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  font-stretch: 66%;
+  line-height: 1.05;
+  text-transform: uppercase;
+}

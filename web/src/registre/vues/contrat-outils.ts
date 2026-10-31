@@ -98,7 +98,8 @@ export type Fiche = {
   partage: PartageFichier | null;
   sous: { a: string; m: Mark; b: string };
   lead: Rich;
-  kpis: { v: string; l: string; m: Mark }[];
+  /** each a figure or a date; `p`: what a ticket without one says instead, in L'essentiel */
+  kpis: { v: string; l: string; m: Mark; p?: string }[];
   steps: Step[];
   prec: Lien | null;
   suiv: Lien | null;
@@ -456,17 +457,17 @@ export function fiche(f: Fichier): Fiche | null {
     kpis = [
       att.montant != null
         ? { v: money(att.montant), l: t("contrat.kpi_hors_taxes"), m: "" }
-        : { v: "—", l: t("contrat.kpi_montant_non_publie"), m: "" },
+        : { v: "—", l: t("contrat.kpi_montant_non_publie"), m: "", p: t("contrat.manque_montant") },
       dur
         ? {
             v: t("contrat.mois", { n: dur }),
             l: fin ? t("contrat.kpi_fin", { mois: shortMonth(fin.date) }) : t("contrat.kpi_duree"),
             m: "",
           }
-        : { v: "—", l: t("contrat.kpi_duree_non_publiee"), m: "" },
+        : { v: "—", l: t("contrat.kpi_duree_non_publiee"), m: "", p: t("contrat.manque_duree") },
       offres != null
         ? { v: fr(offres), l: t("contrat.kpi_offres", { n: offres }), m: "" }
-        : { v: "—", l: t("contrat.kpi_offres_non_publiees"), m: "" },
+        : { v: "—", l: t("contrat.kpi_offres_non_publiees"), m: "", p: t("contrat.manque_offres") },
       { v: fr(mods.length), l: t("contrat.kpi_modifications", { n: mods.length }), m: "" },
     ];
     const ents: RichItem = sirens.length
@@ -612,7 +613,12 @@ export function fiche(f: Fichier): Fiche | null {
       { v: e0 ? fd(e0) : "—", l: t("contrat.kpi_publiee"), m: e0 ? markD(e0) : "" },
       res.length
         ? { v: fd(res[0]), l: t("contrat.kpi_resultat"), m: "" }
-        : { v: "—", l: t("contrat.kpi_resultat_non_publie"), m: "" },
+        : {
+            v: "—",
+            l: t("contrat.kpi_resultat_non_publie"),
+            m: "",
+            p: t("contrat.manque_resultat"),
+          },
       pe
         ? { v: shortMonth(lue(pe)), l: t("contrat.kpi_contrat_suivi"), m: LIEN }
         : {
@@ -822,7 +828,7 @@ export function fiche(f: Fichier): Fiche | null {
       { v: e0 ? fd(e0) : "—", l: t("contrat.kpi_date_arrete"), m: e0 ? markD(e0) : "" },
       e0?.periode
         ? { v: t("contrat.oui"), l: t("contrat.kpi_periode"), m: "" }
-        : { v: "—", l: t("contrat.kpi_periode_non"), m: "" },
+        : { v: "—", l: t("contrat.kpi_periode_non"), m: "", p: t("contrat.manque_periode") },
       { v: fr(evs.length), l: t("contrat.kpi_arretes", { n: evs.length }), m: "" },
     ];
     lead = [
@@ -892,6 +898,11 @@ export function fiche(f: Fichier): Fiche | null {
         (objet(main) ||
           (kind === "sub" && c ? t("contrat.titre_sub", { nom: c.nom }) : t("format.non_publie"))));
   const mainRef = reference(main);
+  // a ticket carries a figure or a date, never a dash (v2.2 point 5): what a dash said goes into
+  // L'essentiel, as sentences
+  const manque = kpis.flatMap((k) => (k.v === "—" && k.p ? [k.p] : []));
+  kpis = kpis.filter((k) => k.v !== "—");
+  if (manque.length) lead = [...(Array.isArray(lead) ? lead : [lead]), " ", manque.join(" ")];
   return {
     kind,
     type: TYPE_ETAPE[kind],
