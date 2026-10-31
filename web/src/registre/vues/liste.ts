@@ -7,15 +7,17 @@
 // documents asks the search API a page at a time (lot R3), « Afficher plus » the next one.
 
 import { remplacerAdresse } from "../adresse.ts";
+import { communeHref } from "../commun.ts";
 import { badge, date as docDate, docHref, type Index, type Lexique } from "../corpus.ts";
-import type { Handler, Rich } from "../dc.ts";
+import { type Handler, type Rich, richText } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
-import { t } from "../i18n.ts";
+import { has, t } from "../i18n.ts";
 import {
   adresse,
   appliquer,
   CATS,
+  type Colonne,
   type Comptes,
   type Corpus,
   type CouvertureX,
@@ -55,6 +57,7 @@ import {
   decoupe,
   FAMILLES,
   icone,
+  mot,
   motFamille,
   pluriel,
   repere,
@@ -92,6 +95,8 @@ type State = BaseState & {
   /** the menu open (« Départements », v2.3), and the words typed in its search */
   menu: "dep" | "tri" | null;
   menuQ: string;
+  /** the list's link just copied */
+  copie: boolean;
 };
 const VIDE: Lexique = { entreprises: {}, acheteurs: {}, communes: {}, affaires: {} };
 
@@ -149,8 +154,69 @@ const plainSous = (x: Rich): string => (typeof x === "string" ? x : "");
  * build read of it and its two links (its source, « Signaler une erreur »), which no row repeats;
  * another document, its line, its reference, its links; a commune, a company…, its name and its
  * fiche (their figures are in the row). At rest it says what to hover (B3), never the figures beside it. */
-function detail(L: Lexique, r: Rang | undefined, k: TypeCle, docs: boolean) {
-  const vide = { corr: [], note: "", foot: "", btn: null, hint: "" };
+/** A figure of a row named (« 93 documents »): the phone's line under the name, the panel's tiles. */
+function nomme(c: Colonne, r: Rang, cell: Rich): string {
+  const v = richText(cell);
+  const n = c.tri ? r.v[c.tri] : undefined;
+  if (
+    c.cle &&
+    typeof n === "number" &&
+    n >= 0 &&
+    /\d/.test(v) &&
+    has(`registre.liste.nomme.${c.cle}`)
+  )
+    return c.cle === "montant" || c.cle === "depuis"
+      ? t(`liste.nomme.${c.cle}`, { v })
+      : t(`liste.nomme.${c.cle}`, { n });
+  return t("liste.nomme.autre", { v, l: c.l.toLowerCase() });
+}
+
+/** A list of names' row in the panel (v2.3, mockups liste-communes-*): its type and département,
+ * its name, its figures as tiles, « Ouvrir la fiche → », its drones' door, « Voir sur la carte »
+ * for a commune. */
+function detailNom(r: Rang, def: Def, P: Pick<Props, "couverture">) {
+  const k = def.k;
+  const dep = r.f.dep?.length === 1 && (k === "commune" || k === "epci") ? r.f.dep[0] : null;
+  const nums = def.cols.filter((c) => c.num);
+  const cells = def.cols.flatMap((c, i) =>
+    c.num ? [r.cells[i - def.cols.slice(0, i).filter((x) => x.deps).length]] : [],
+  );
+  const dr = typeof r.v.dr === "number" && r.v.dr > 0 ? r.v.dr : 0;
+  const href = hrefDe(r);
+  return {
+    kicker: dep ? t("liste.kicker_dep", { type: mot(k), nom: nomDep(P, dep), dep }) : mot(k),
+    title: r.nom as Rich,
+    tiles: nums.map((c, i) => ({ v: cells[i], l: c.l.toLowerCase() })),
+    ouvrir: href ? { href, l: t("liste.ouvrir_fiche") } : null,
+    drones: dr
+      ? {
+          l: t("liste.drones_porte", { n: dr }),
+          href:
+            k === "commune"
+              ? communeHref(r.id, "carte")
+              : `/registre/arretes?dep=${encodeURIComponent(r.id)}&disp=dr`,
+        }
+      : null,
+    carte:
+      k === "commune"
+        ? { l: t("liste.voir_carte"), href: `/?insee=${encodeURIComponent(r.id)}` }
+        : null,
+  };
+}
+
+function detail(L: Lexique, r: Rang | undefined, k: TypeCle, docs: boolean, def?: Def, P?: Props) {
+  const vide = {
+    corr: [],
+    note: "",
+    foot: "",
+    btn: null,
+    hint: "",
+    tiles: null,
+    ouvrir: null,
+    drones: null,
+    carte: null,
+    clavier: t("liste.clavier"),
+  };
   if (!r)
     return {
       ...vide,
@@ -178,7 +244,10 @@ function detail(L: Lexique, r: Rang | undefined, k: TypeCle, docs: boolean) {
       ],
     };
   }
-  // its figures are beside it, in its row: not again here (B3); its line, its links
+  // a list of names (v2.3, Ju's mockups): its figures again as tiles, its doors
+  if (!e && def && P)
+    return { ...vide, rows: [] as { k: string; v: Rich }[], links: [], ...detailNom(r, def, P) };
+  // a document: its line, its reference, its links
   return {
     ...vide,
     kicker: e ? `${badge(e)} · ${docDate(e)}` : pluriel(k),
@@ -220,6 +289,7 @@ export class ListeVue extends Vue<Props, State> {
       sel: ligne ?? null,
       menu: null,
       menuQ: "",
+      copie: false,
     };
   }
 
@@ -268,6 +338,24 @@ export class ListeVue extends Vue<Props, State> {
       ),
     );
   }
+  /** The table's keys (v2.3): ↑ ↓ go from row to row (its link focused, its detail in the panel),
+   * Enter follows the link. */
+  private clavierTable: Handler = (ev) => {
+    if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    const tr = (document.activeElement as Element | null)?.closest(".v-liste tbody tr");
+    const all = [...document.querySelectorAll<HTMLElement>(".v-liste tbody tr")];
+    const i = tr ? all.indexOf(tr as HTMLElement) : -1;
+    const next = all[ev.key === "ArrowDown" ? i + 1 : Math.max(0, i - 1)];
+    next?.querySelector<HTMLElement>("a")?.focus();
+    ev.nativeEvent.preventDefault();
+  };
+  /** « copier le lien de cette liste »: its address, filters and order with it. */
+  private copierLien: Handler = () => {
+    void navigator.clipboard?.writeText(location.href).then(() => {
+      this.setState({ copie: true });
+      setTimeout(() => this.setState({ copie: false }), 2000);
+    });
+  };
   private attente: ReturnType<typeof setTimeout> | undefined;
   componentWillUnmount(): void {
     clearTimeout(this.attente);
@@ -553,12 +641,21 @@ export class ListeVue extends Vue<Props, State> {
       });
       // the row under the contract (cadre.css « rows »): its name's link covers it, hovered or
       // focused it shows in the panel, chosen it keeps its type's bar
-      return { rk: i + 1, lien: r.lien, sous: r.sous, cells, ...this.ligne(r.id, k) };
+      // on a phone each figure says its name, the first two only (the others are in the fiche)
+      const telNums = wide
+        ? ""
+        : def.cols
+            .map((c, i) => [c, cells[i]] as const)
+            .filter(([c]) => c.num)
+            .slice(0, 2)
+            .map(([c, x]) => nomme(c, r, x.v))
+            .join(" · ");
+      return { rk: i + 1, lien: r.lien, sous: r.sous, cells, telNums, ...this.ligne(r.id, k) };
     });
     // the panel: the row hovered or focused stays there until another is (no `quitter`: the
     // row's click follows its link, the panel's links must stay within reach of the pointer)
     const vu = this.affiche();
-    const det = detail(L, vu ? list.find((x) => x.id === vu) : undefined, k, docs);
+    const det = detail(L, vu ? list.find((x) => x.id === vu) : undefined, k, docs, def, this.props);
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
     const shown = Math.min(S.lim, list.length);
     const more = Math.min(PAS, total - shown);
@@ -616,6 +713,9 @@ export class ListeVue extends Vue<Props, State> {
       // the lists whose rows may say « non lu »: the line that says why, once
       nonLu: C && (liste === "communes" || liste === "departements") ? noteNonLu(C) : null,
       det,
+      clavierTable: this.clavierTable,
+      copier: this.copierLien,
+      copierL: t(S.copie ? "liste.lien_copie" : "liste.copier_lien"),
       nonLus: t("registre.non_lus", { n: I.non_lus }),
     };
   }

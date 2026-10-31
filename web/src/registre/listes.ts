@@ -202,6 +202,8 @@ export type Rang = {
 /** A column after the name: its words, numeric or not, the sort key its head picks. */
 export type Colonne = {
   l: string;
+  /** its key (« documents »): a figure named on a phone (liste.nomme.<cle>, v2.3) */
+  cle?: string;
   num?: boolean;
   tri?: string;
   deps?: boolean;
@@ -231,7 +233,11 @@ export type Def = {
 
 const W = (k: string) => t(`liste.${k}`);
 const tri = (k: string, l: string, dir: 1 | -1 = -1): Tri => ({ k, l: W(`tri.${l}`), dir });
-const col = (l: string, x: Partial<Colonne> = {}): Colonne => ({ l: W(`col.${l}`), ...x });
+const col = (l: string, x: Partial<Colonne> = {}): Colonne => ({
+  l: W(`col.${l}`),
+  cle: l,
+  ...x,
+});
 const csvCol = (k: string): [string, string] => [k, W(`csv.${k}`)];
 /** « — »: a figure the register does not have (no commune, no year, no amount on a document). */
 const NA = "—";

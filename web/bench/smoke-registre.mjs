@@ -633,6 +633,54 @@ try {
     );
     await context.close();
   }
+
+  // --- the lists (v2.3 point 5): one « Départements » menu, one « Classer par », the panel ---
+  {
+    const { context, page } = await visit("/registre/communes");
+    await drawn(page);
+    const buttons = await page.locator("#registre .v-liste .tools .key").count();
+    await page.click("#registre .v-liste .dancre.dep > button");
+    await page.locator("#registre .v-liste .dmenu [role=option]").first().waitFor();
+    const options = await page.locator("#registre .v-liste .dmenu [role=option]").count();
+    await page.locator("#registre .v-liste .dmenu .dq input").fill("69");
+    await page.locator("#registre .v-liste .dmenu [role=option]").first().click();
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(500);
+    const menu = await page.evaluate(() => ({
+      url: location.search,
+      open: !!document.querySelector("#registre .v-liste .dmenu"),
+      chips: [...document.querySelectorAll("#registre .v-liste .dchip")].map((x) =>
+        x.textContent.trim(),
+      ),
+      focus: document.activeElement?.closest(".dancre")?.className,
+    }));
+    check(
+      "lists: one « Départements » button, its menu (every département with rows), chosen ones as chips, Escape back to the button",
+      buttons === 0 &&
+        options > 90 &&
+        menu.url === "?dep=69" &&
+        !menu.open &&
+        menu.chips.length === 1 &&
+        /Rhône/.test(menu.chips[0]) &&
+        /dep/.test(menu.focus ?? ""),
+      JSON.stringify({ buttons, options, menu }),
+    );
+    // the pointer away first: the menu closed over the rows, it may be on one already
+    await page.mouse.move(5, 5);
+    await page.hover("#registre .v-liste tbody tr >> nth=1", { force: true });
+    await page.waitForTimeout(300);
+    const panel = await page.evaluate(() => ({
+      tiles: document.querySelectorAll("#registre .v-liste .panel .ptile").length,
+      ouvrir: document.querySelector("#registre .v-liste .panel .pouvrir")?.getAttribute("href"),
+      keys: !!document.querySelector("#registre .v-liste .panel .pclavier"),
+    }));
+    check(
+      "lists: the hovered row's panel, its five figures, « Ouvrir la fiche », the keys' line",
+      panel.tiles === 5 && /^\/registre\/commune\//.test(panel.ouvrir ?? "") && panel.keys,
+      JSON.stringify(panel),
+    );
+    await context.close();
+  }
 } finally {
   await browser.close();
   server.close();

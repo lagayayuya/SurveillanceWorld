@@ -355,3 +355,86 @@
   font-size: 13px;
   color: var(--muted);
 }
+/* v2.3: the table's head stays at the top as the list scrolls */
+.rg .v-liste table.t thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg);
+}
+/* the panel of a list of names (mockups liste-communes-*): its figures as tiles, « Ouvrir la fiche »
+   in pink, its drones' door, the keys' line */
+.rg .v-liste .ptiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.rg .v-liste .ptile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 2px solid var(--line);
+}
+.rg .v-liste .ptile b {
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-stretch: 62%;
+  line-height: 1;
+}
+.rg .v-liste .ptile .tw {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.rg .v-liste :is(.pouvrir, .pdrones) {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  font-stretch: 75%;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--fg);
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+}
+.rg .th .v-liste .pouvrir,
+.rg .v-liste .pouvrir {
+  background: #ff48b0;
+  color: #111;
+  border-color: #111;
+}
+.rg .v-liste .pclavier {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+/* a panel needs room: below 1280 px the list takes the width and the panel goes (a row's link
+   opens its fiche) */
+@media (max-width: 1279px) {
+  .rg .v-liste .grid2.avec-panneau {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rg .v-liste .grid2.avec-panneau > .panel {
+    display: none;
+  }
+}
+/* on a phone each figure says its name under the row's name (« 93 documents · 7 contrats »), the
+   first two; the table's columns of figures go */
+.rg .v-liste .tnums {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+@media (max-width: 959px) {
+  .rg .v-liste table.t :is(td, th).num {
+    display: none;
+  }
+}
