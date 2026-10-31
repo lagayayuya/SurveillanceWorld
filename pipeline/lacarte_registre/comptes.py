@@ -67,8 +67,14 @@ def departement(reg: Registre, dep: str) -> dict[str, Any]:
 
 
 def communes_dep(reg: Registre, dep: str) -> list[str]:
-    """The communes of a département with a document."""
-    return sorted(k for k, evs in reg.by_insee.items() if evs and reg.communes[k]["dep"] == dep)
+    """The communes of a département with a document. A code the reference no longer holds (a
+    commune merged since: 93059, Pierrefitte-sur-Seine, in Saint-Denis on 2025-01-01, on older
+    contracts) has none: its document counts in its département, without a commune."""
+    return sorted(
+        k
+        for k, evs in reg.by_insee.items()
+        if evs and k in reg.communes and reg.communes[k]["dep"] == dep
+    )
 
 
 def communes_epci(reg: Registre, code: str) -> list[str]:
