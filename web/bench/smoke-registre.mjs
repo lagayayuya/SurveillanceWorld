@@ -769,7 +769,8 @@ try {
     const dehors = await page.evaluate(
       () => document.querySelectorAll("#registre .v-liste .panel .ptile").length,
     );
-    // a key focused by the keyboard shows it
+    // a key focused by the keyboard shows it (a ring of 2 px or more, solid or dashed: WebKit's Tab
+    // lands on another control than Chromium's, each with its own ring)
     await page.keyboard.press("Shift+Tab");
     await page.locator("#registre .v-liste .dbtn").first().focus();
     await page.keyboard.press("Tab");
@@ -781,7 +782,11 @@ try {
     });
     check(
       "accessibility: no aria-selected out of a listbox, tabs or grid; Tab out of a list empties its panel; a focused key shows it",
-      surFiche === 0 && surListe === 0 && dedans > 0 && dehors === 0 && /solid 3px/.test(outline),
+      surFiche === 0 &&
+        surListe === 0 &&
+        dedans > 0 &&
+        dehors === 0 &&
+        /^(solid|dashed) [2-9]px/.test(outline),
       JSON.stringify({ surFiche, surListe, dedans, dehors, outline }),
     );
     await context.close();
