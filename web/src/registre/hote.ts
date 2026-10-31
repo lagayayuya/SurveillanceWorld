@@ -191,7 +191,20 @@ export function porteRegistre(): HTMLAnchorElement {
   a.className = "ticket-link registre-link";
   a.href = "/registre/";
   a.title = t("door.registre");
-  a.append(t("door.registre_court"));
+  // its pictogram, the register's (types.ts TYPES.registre, written here: the map's code does not
+  // load the register's), before its words (v2.3)
+  const NS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "picto");
+  svg.setAttribute("aria-hidden", "true");
+  const path = document.createElementNS(NS, "path");
+  path.setAttribute("d", "M5 4h11l3 3v13H5zM8 9h8M8 12.5h8M8 16h5");
+  svg.append(path);
+  const mots = document.createElement("span");
+  mots.style.marginRight = "auto";
+  mots.textContent = t("door.registre_court");
+  a.append(svg, mots);
   return a;
 }
 

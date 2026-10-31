@@ -69,13 +69,54 @@
   align-items: flex-start;
   gap: 3px;
 }
-:root[data-ui="punk"] .ticket-row {
+/* v2.3 (Ju): under the squares, the ticket's two doors as full-width tickets, the site's way: an
+   ink edge, an offset shadow, the condensed Archivo in capitals, 44 px high at least; « Filtres et
+   légende » on paper, « Le registre » in pink with its pictogram */
+:root[data-ui="punk"] .ticket-ctas {
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: column;
+  gap: 8px;
+  align-self: stretch;
+  margin: 4px 4px 4px 0;
 }
-:root[data-ui="punk"] .ticket-row > .ticket-link {
+:root[data-ui="punk"] .ticket-ctas > .ticket-link,
+:root[data-ui="punk"] .ticket-ctas > #fab-filters.ticket-link {
   box-sizing: border-box;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  background: #f2efe6;
+  color: #111;
+  border: 2px solid #111;
+  box-shadow: 3px 3px 0 #111;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  font-stretch: 75%;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+:root[data-ui="punk"] .ticket-ctas > .registre-link {
+  background: #ff48b0;
+}
+:root[data-ui="punk"] .ticket-ctas > .ticket-link:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 3px;
+}
+:root[data-ui="punk"] .ticket-ctas .picto {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-right: auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* 17a's links: the typewriter face, a wavy underline. « Filtres et légende » is the page's
    own button (#fab-filters). */
@@ -889,4 +930,7 @@
    (style.css body.moving): « Tout réafficher » would change the paint the editor restores. */
 :root[data-ui="punk"] body.moving #filters-empty {
   display: none;
+}
+:root[data-ui="punk"] .ticket-ctas > .ticket-link {
+  text-align: left;
 }

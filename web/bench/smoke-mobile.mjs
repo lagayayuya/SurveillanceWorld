@@ -191,7 +191,11 @@ const PINNED = async () => {
 const cameraInFreeArea = (page, maxY) =>
   page.evaluate((limit) => {
     const m = window.__map;
-    const top = document.getElementById("estimate").getBoundingClientRect().bottom;
+    // under the estimate's bar and the map's ticket (v2.3: its two doors make it reach lower)
+    const top = Math.max(
+      document.getElementById("estimate").getBoundingClientRect().bottom,
+      Number.parseFloat(document.body.style.getPropertyValue("--ticket-bottom")) || 0,
+    );
     const r = m.getCanvas().getBoundingClientRect();
     return (
       m
@@ -217,7 +221,11 @@ async function cameraAt(page, maxY) {
     const d = (f) =>
       Math.hypot(f.geometry.coordinates[0] - c.lng, f.geometry.coordinates[1] - c.lat);
     const f = cams.reduce((a, b) => (d(b) < d(a) ? b : a));
-    const top = document.getElementById("estimate").getBoundingClientRect().bottom;
+    // under the estimate's bar and the map's ticket (v2.3: its two doors make it reach lower)
+    const top = Math.max(
+      document.getElementById("estimate").getBoundingClientRect().bottom,
+      Number.parseFloat(document.body.style.getPropertyValue("--ticket-bottom")) || 0,
+    );
     const h = m.getCanvas().clientHeight;
     const w = m.getCanvas().clientWidth;
     m.jumpTo({ center: f.geometry.coordinates });
@@ -1576,13 +1584,18 @@ try {
     // Communes: a tap opens the commune's sheet; then a camera (its sheet replaces the
     // commune's, the outline goes); then the commune again (camera focus cleared).
     const INSEE = region === "ci" ? "92026" : "75101";
-    /** Put STREET at zoom `z` a quarter of the height from the top (above a half sheet). */
+    /** Put STREET at zoom `z` above a half sheet, below the map's ticket (v2.3: its two doors under
+     * the squares make it taller; the finger lands on the map, 60 px under the ticket at least). */
     const placeStreet = (z) =>
       page.evaluate(
         ([c, zoom]) => {
           const m = window.__map;
           m.jumpTo({ center: c, zoom });
-          m.panBy([0, m.getCanvas().clientHeight * 0.25], { animate: false });
+          const h = m.getCanvas().clientHeight;
+          const ticket =
+            Number.parseFloat(document.body.style.getPropertyValue("--ticket-bottom")) || 0;
+          const y = Math.max(h * 0.25, ticket + 60);
+          m.panBy([0, h / 2 - y], { animate: false });
         },
         [STREET, z],
       );

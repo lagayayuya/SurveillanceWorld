@@ -269,9 +269,10 @@ export class Machine {
     // Under the link, 25a's squares: the mode's, then the account's (account/index.ts).
     const squares = h("div", { class: "ticket-squares" }, this.modeToggle(), ...this.squares);
     for (const l of this.liens) l.append(icon("right"));
-    // The other links on the filters' row: the ticket keeps its height over the map.
-    const row = this.liens.length ? h("div", { class: "ticket-row" }, fab, ...this.liens) : fab;
-    const links = h("div", { class: "ticket-links" }, row, squares);
+    // Under the squares, the ticket's two doors as full-width tickets (v2.3, Ju): « Filtres et
+    // légende » on paper, « Le registre » in pink.
+    const ctas = h("div", { class: "ticket-ctas" }, fab, ...this.liens);
+    const links = h("div", { class: "ticket-links" }, squares, ctas);
     this.els.links = links;
     // The legend the ticket prints (20a « Légende ↑ »), with « Calcul ? ».
     const calcBtn = h(
