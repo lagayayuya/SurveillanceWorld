@@ -463,6 +463,27 @@ try {
       values.length > 0 && bad.length === 0,
       `${values.length} declarations${bad.length ? `, invalid: ${bad.slice(0, 5).join(" | ")}` : ""}`,
     );
+    // every control of the register in its fonts (a button inherits nothing by default: it would
+    // be the system's), on a fiche and on a list
+    const families = async () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("#registre :is(button, input, select, textarea, a)")]
+          .filter((x) => x.getClientRects().length > 0)
+          .map((x) => ({
+            what: `${x.tagName.toLowerCase()}.${[...x.classList].join(".")} « ${x.textContent.trim().slice(0, 20)} »`,
+            family: getComputedStyle(x).fontFamily.split(",")[0].replace(/["']/g, "").trim(),
+          }))
+          .filter((x) => !/^(Archivo|Special Elite)$/.test(x.family)),
+      );
+    const onFiche = await families();
+    await page.goto(`${APP}/registre/communes`);
+    await drawn(page);
+    const onList = await families();
+    check(
+      "type: every control of the register, on a fiche and a list, in Archivo or Special Elite",
+      onFiche.length === 0 && onList.length === 0,
+      JSON.stringify([...onFiche, ...onList].slice(0, 6)),
+    );
     await context.close();
   }
 } finally {

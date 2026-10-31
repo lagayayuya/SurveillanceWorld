@@ -13,6 +13,11 @@
    file. */
 
 /* --- every board --- */
+/* a button takes the browser's own font (Arial on macOS), not its parent's: the boards' buttons
+   are in the page's; without specificity, so any rule that names a button's font wins */
+:where(.rg button) {
+  font: inherit;
+}
 .rg .th a {
   color: var(--blue);
   text-decoration-line: underline;
