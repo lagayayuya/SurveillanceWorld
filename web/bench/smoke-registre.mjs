@@ -802,6 +802,22 @@ try {
       return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")).commune?.bbox ?? null) : null;
     };
     const cases = ["69123", "69149", "94081"].filter((x) => box(x));
+    // the act's zone's box, from Lyon's file (its site's polygon)
+    const ACTE = "69-2026-10-05-00003";
+    const zone = (() => {
+      const f = join(DATA, "commune", "69123.json");
+      if (!existsSync(f)) return null;
+      const d = JSON.parse(readFileSync(f, "utf8"));
+      const z = d.zones?.zones?.find((x) => x.acte === ACTE);
+      const site = d.zones?.sites?.find((x) => x.id === z?.site);
+      const g = site?.parts?.["69123"]?.in;
+      const pts =
+        g?.type === "MultiPolygon" ? g.coordinates.flat(2) : (g?.coordinates?.flat() ?? []);
+      if (!pts.length) return null;
+      const xs = pts.map((p) => p[0]);
+      const ys = pts.map((p) => p[1]);
+      return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+    })();
     const VIEWS = [
       [1440, 900],
       [390, 845],
@@ -881,6 +897,63 @@ try {
         await page.goto(`${APP}/registre/commune/${insee}/carte`);
         await framed(insee, "address");
       }
+      // « Voir sur la carte » on an act opened by its address (Lyon, 5 October 2026, « Périmètre
+      // Université… »): the button there, the zone within the free part, the tilt capped, the
+      // camera above the tallest volume
+      if (zone) {
+        await page.goto(`${APP}/registre/commune/69123/carte?acte=${ACTE}`);
+        await page.waitForFunction(() => document.querySelector("#registre .v-carte"), null, {
+          timeout: 20000,
+        });
+        await page.waitForTimeout(2500);
+        const voir = page.locator("#registre .cd-lieux button.lk").first();
+        const there = (await voir.count()) > 0;
+        if (there) {
+          await voir.scrollIntoViewIfNeeded();
+          await voir.click();
+          await page.waitForTimeout(3000);
+        }
+        const r = await page.evaluate(
+          ([b]) => {
+            const m = window.__map;
+            const pad = m.getPadding();
+            const W = m.getCanvas().clientWidth;
+            const H = m.getCanvas().clientHeight;
+            const fits = [
+              [b[0], b[1]],
+              [b[2], b[1]],
+              [b[2], b[3]],
+              [b[0], b[3]],
+            ]
+              .map((p) => m.project(p))
+              .every(
+                (p) =>
+                  p.x >= pad.left - 2 &&
+                  p.x <= W - pad.right + 2 &&
+                  p.y >= pad.top - 2 &&
+                  p.y <= H - pad.bottom + 2,
+              );
+            const hs = m
+              .querySourceFeatures("rg-cd-zones")
+              .filter((f) => f.geometry.type !== "Point" && !f.properties.e)
+              .map((f) => f.properties.h ?? 0);
+            const pxm =
+              (512 * 2 ** m.getZoom()) /
+              (40075016.686 * Math.cos((m.getCenter().lat * Math.PI) / 180));
+            const alt = (1.5 * H * Math.cos((m.getPitch() * Math.PI) / 180)) / pxm;
+            return {
+              fits,
+              pitch: Math.round(m.getPitch()),
+              alt: Math.round(alt),
+              hmax: Math.max(0, ...hs),
+            };
+          },
+          [zone],
+        );
+        const ok = there && r.fits && r.pitch === (w < 600 ? 35 : 50) && r.alt >= 2 * r.hmax - 1;
+        seen.push({ insee: "69123", how: "voir", w });
+        if (!ok) found.push({ voir: there, w, ...r });
+      }
       // reached in the site: from Lyon's drone view, the fiche (a link), then its door
       for (const insee of cases.filter((x) => x !== "69123")) {
         await page.goto(`${APP}/registre/commune/69123/carte`);
@@ -900,8 +973,8 @@ try {
       await context.close();
     }
     check(
-      "the drone view frames its commune, once, outlined, tilted (by its address and in the site)",
-      cases.length === 3 && found.length === 0,
+      "the drone view frames its commune, once, outlined, tilted (by its address and in the site); « Voir sur la carte » frames its zone",
+      cases.length === 3 && zone !== null && found.length === 0,
       JSON.stringify(found.length ? found : seen.map((r) => `${r.insee}/${r.how}/${r.w}`)),
     );
   }

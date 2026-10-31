@@ -100,6 +100,8 @@ type State = BaseState & {
    * left free) */
   leg: boolean;
   frise: boolean;
+  /** the zones are on the map: a place of the act chosen can be framed (« Voir sur la carte ») */
+  calque: boolean;
 };
 
 const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -242,6 +244,7 @@ class CarteDrones extends Vue<Props, State> {
       is3d: true,
       leg: false,
       frise: false,
+      calque: false,
     };
   }
   panneau(): boolean {
@@ -397,6 +400,9 @@ class CarteDrones extends Vue<Props, State> {
         if (contour) this.layer.contour(contour);
         this.synced = "";
         this.syncMap();
+        // an act opened by its address rendered its panel before the zones were there: its
+        // places' « Voir sur la carte » now
+        this.setState({ calque: true });
         return true;
       } catch {
         // the map's style is still loading: again when it is
@@ -768,7 +774,7 @@ class CarteDrones extends Vue<Props, State> {
         lieux: lieux(zs).map((x) => ({
           l: x.l,
           voir: x.site ? this.voir(x.site) : null,
-          has: !!x.site && !!this.layer,
+          has: !!x.site && S.calque,
         })),
         hasLieux: false,
         creneaux:
