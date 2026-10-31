@@ -182,10 +182,22 @@ export function hachures(
     }
   return { width: n, height: n, data };
 }
-/** A volume's height (m): proportional to its hours, the highest at 18 % of the commune's diagonal
- * (250 m at least), 20 m for none (R1a's tilted map's, DECISIONS 2026-10-29). */
-export const volumeHeight = (heures: number, maxH: number, diagM: number): number =>
-  20 + (heures / Math.max(maxH, 1e-9)) * Math.max(250, diagM * 0.18);
+/** A volume's height (m): proportional to its hours, the highest at `plafondM` (plafondVolumes),
+ * 20 m for none (R1a's tilted map's, DECISIONS 2026-10-29). */
+export const volumeHeight = (heures: number, maxH: number, plafondM: number): number =>
+  20 + (heures / Math.max(maxH, 1e-9)) * plafondM;
+/** The share of the commune's height on the screen the tallest volume stands to (v2.4: at 18 % of
+ * the commune's diagonal, Lyon's volumes stood over half of it, stacked over the names). */
+const PART_VOLUME = 0.12;
+/** The tallest volume's height (m) for a commune's box seen at `pitch`: a height h stands
+ * h · sin(pitch) on the screen and the commune's north–south depth d · cos(pitch), whatever the
+ * zoom; so h = PART_VOLUME · d · cos / sin keeps the tallest volume at that share of the commune on
+ * the screen, on a phone (35°) as on a wide screen (50°). 60 m at least. */
+export function plafondVolumes(box: BBox, pitch: number): number {
+  const d = (box[3] - box[1]) * 111_320;
+  const t = (Math.max(pitch, 20) * Math.PI) / 180;
+  return Math.max(60, (PART_VOLUME * d * Math.cos(t)) / Math.sin(t));
+}
 
 /** The first `[...]` value after `"key":` in a JSON text still arriving, or null while it is
  * incomplete. Brackets inside strings do not occur in the numbers of a bbox or an outline. */
@@ -264,6 +276,7 @@ export type CarteMin = Pick<
   | "project"
   | "getZoom"
   | "getPitch"
+  | "getStyle"
   | "on"
   | "off"
 >;
@@ -302,6 +315,10 @@ export type CalqueOptions = {
   onChoix?: (id: string) => void;
   /** The words of a label that stands for several chosen zones at one place (« 3 zones »). */
   groupe?: (n: number) => string;
+  /** The commune's box (its file's): the volumes' heights are measured on it. */
+  boite?: BBox;
+  /** The view's tilt (degrees): the volumes' heights are measured for it. */
+  inclinaison?: number;
 };
 
 /** A feature state read in a paint expression (false when unset). */
@@ -573,9 +590,11 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   const hauteurs = new Map<string, number>();
 
   const box = (): BBox | null => outline?.bbox ?? bboxOf([...geo.values()].flatMap((g) => g.rs));
-  const diag = () => {
-    const b = box();
-    return b ? diagMetres(b) : 5000;
+  /** the tallest volume's height (m): the commune's box (its file's), else the outline's or the
+   * zones', at the view's tilt */
+  const plafond = () => {
+    const b = o.boite ?? box();
+    return b ? plafondVolumes(b, o.inclinaison ?? 50) : 300;
   };
 
   // one source: each site's polygon and the point of its label share the site's id, so that one
@@ -588,14 +607,14 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
         .filter(([id]) => !entiere.has(id))
         .map(([, v]) => v.heures),
     );
-    const dM = diag();
+    const top = plafond();
     const out: Feature[] = [];
     hauteurs.clear();
     for (const [id, g] of geo) {
       const v = hs[id];
       const geometry = g.p.in;
       if (!v || !geometry) continue;
-      const h = volumeHeight(v.heures, maxH, dM);
+      const h = volumeHeight(v.heures, maxH, top);
       hauteurs.set(id, entiere.has(id) || g.s.kind !== "drone" ? 0 : h);
       out.push({
         type: "Feature",
@@ -661,8 +680,13 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   if (!map.hasImage(HACHURE)) map.addImage(HACHURE, hachures(trait(tint)));
   // the site's own commune shape until the outline has come (a commune without a map file keeps
   // it): its tiles hold the communes up to z11, overzoomed after
+  // under the site's names (the commune's, the streets'), its labels over all (v2.4: the volumes
+  // stood over the names): before the site's first symbol layer, but the zones' own labels
+  const noms = map
+    .getStyle?.()
+    ?.layers?.find((l) => l.type === "symbol" && !l.id.startsWith(P))?.id;
   for (const l of couches(insee, tint, !!map.getSource("admin")))
-    if (!map.getLayer(l.id)) map.addLayer(l);
+    if (!map.getLayer(l.id)) map.addLayer(l, l.type === "symbol" ? undefined : noms);
 
   const set = (id: string, data: GeoJSON.FeatureCollection) =>
     (map.getSource(id) as GeoJSONSource | undefined)?.setData(data);

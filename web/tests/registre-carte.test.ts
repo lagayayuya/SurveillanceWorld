@@ -11,6 +11,7 @@ import {
   bboxOf,
   centroid,
   ecran,
+  plafondVolumes,
   tete,
   valeur,
   volumeHeight,
@@ -311,4 +312,18 @@ test("the camera stays twice the tallest volume above the ground (v2.4)", () => 
   assert.ok(Math.abs(alt - 1200) < 1e-6, String(alt));
   // nothing drawn: no ceiling
   assert.equal(zoomAuDessus(0, 50, 900, 45.75), 22);
+});
+
+test("the tallest volume stands to the same share of the commune on the screen, phone or wide (v2.4)", () => {
+  const lyon: [number, number, number, number] = [4.77187, 45.70748, 4.8984, 45.80842];
+  const d = (lyon[3] - lyon[1]) * 111_320;
+  for (const p of [35, 50]) {
+    const h = plafondVolumes(lyon, p);
+    const t = (p * Math.PI) / 180;
+    assert.ok(Math.abs((h * Math.sin(t)) / (d * Math.cos(t)) - 0.12) < 1e-9, `${p}: ${h}`);
+  }
+  // Lyon at 50°: about 1.1 km, no longer 2.6 km (18 % of its diagonal)
+  assert.ok(Math.abs(plafondVolumes(lyon, 50) - 1131) < 5, String(plafondVolumes(lyon, 50)));
+  // a small commune keeps a volume that can be seen
+  assert.equal(plafondVolumes([4.8, 45.7, 4.801, 45.7005], 50), 60);
 });

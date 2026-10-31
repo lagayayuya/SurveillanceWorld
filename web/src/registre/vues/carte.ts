@@ -396,6 +396,8 @@ class CarteDrones extends Vue<Props, State> {
           sites,
           teintes: this.teintes(),
           groupe: (n) => t("carte.vol_groupe", { n }),
+          boite: d.f.commune.bbox,
+          inclinaison: inclinaison(),
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) {
