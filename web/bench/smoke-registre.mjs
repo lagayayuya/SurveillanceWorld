@@ -802,7 +802,10 @@ try {
       return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")).commune?.bbox ?? null) : null;
     };
     const cases = ["69123", "69149", "94081"].filter((x) => box(x));
-    const VIEWS = [[1440, 900]];
+    const VIEWS = [
+      [1440, 900],
+      [390, 845],
+    ];
     const found = [];
     const seen = [];
     for (const [w, h] of VIEWS) {

@@ -141,7 +141,25 @@ function libre(): { top: number; left: number; right: number; bottom: number } {
   const W = innerWidth;
   const H = innerHeight;
   const r = (s: string) => document.querySelector(`.rg ${s}`)?.getBoundingClientRect() ?? null;
-  if (!large()) return { top: 70, left: 16, right: 64, bottom: Math.round(H / 2) + 16 };
+  if (!large()) {
+    // the sheet where it goes (its yellow band in it: its top as the frame sets it, « 50% » or
+    // px, not where its move has got to), the commands' column on the right
+    const el = document.querySelector<HTMLElement>(".rg > .th > .sheet");
+    const want = el?.style.getPropertyValue("top") ?? "";
+    const top = /%$/.test(want)
+      ? (H * Number.parseFloat(want)) / 100
+      : /px$/.test(want)
+        ? Number.parseFloat(want)
+        : (el?.getBoundingClientRect().top ?? H / 2);
+    const ctl = r(".v-carte .ctl");
+    const bottom = H - top + 16;
+    return {
+      top: 16,
+      left: 16,
+      right: ctl && ctl.width ? Math.max(16, W - ctl.left + 8) : 64,
+      bottom: Math.min(bottom, H - 120),
+    };
+  }
   const panel = r("> .th > .side");
   const tag = r(".v-carte .maptag");
   const ctl = r(".v-carte .ctl");
@@ -284,9 +302,42 @@ class CarteDrones extends Vue<Props, State> {
   private readonly onCarte = () => {
     if (this.state.leg) this.setState({ leg: false });
   };
+  /** The map's padding follows the part of the map left free (v2.4 point 2): the panel or the
+   * sheet, its band, « ← Le registre », the legend and the chart; measured again once they have
+   * stopped changing (a sheet lowered or raised, a window resized, the chart unfolded), and set
+   * once the map is not moving. */
+  private tMarge = 0;
+  private roMarge: ResizeObserver | null = null;
+  private readonly suivreMarge = () => {
+    clearTimeout(this.tMarge);
+    this.tMarge = window.setTimeout(this.poserMarge, 180);
+  };
+  private readonly poserMarge = () => {
+    const map = this.map;
+    if (!map || this.dead || !this.cadree) return;
+    if (map.isMoving()) {
+      map.once("moveend", this.suivreMarge);
+      return;
+    }
+    const p = libre();
+    const cur = map.getPadding();
+    const k = ["top", "bottom", "left", "right"] as const;
+    if (k.every((x) => Math.abs((cur[x] ?? 0) - p[x]) < 2)) return;
+    map.easeTo({ padding: p, duration: reduced() ? 0 : 300 }, NOTRE);
+  };
+  private observerMarge(): void {
+    if (typeof ResizeObserver !== "function") return;
+    this.roMarge ??= new ResizeObserver(this.suivreMarge);
+    for (const sel of ["> .th > :is(.side, .sheet)", ".v-carte .frise", ".v-carte .maptag"]) {
+      const el = document.querySelector(`.rg ${sel}`);
+      if (el) this.roMarge.observe(el);
+    }
+  }
   componentDidMount(): void {
     addEventListener("themechange", this.onTheme);
+    addEventListener("resize", this.suivreMarge);
     this.observerFrise();
+    this.observerMarge();
     const map = carteDuSite();
     if (!map) return;
     this.map = map;
@@ -296,13 +347,19 @@ class CarteDrones extends Vue<Props, State> {
     // the commune first, from its box (v2.4: every commune file has one), before the map's style
     // and the zones: a commune without zones, without acts or outside the collection is framed
     // the same, opened by its address or reached in the site
+    // (once the frame has set itself as a panel or a sheet: modale.ts regler, after the mount)
     const box = this.props.d.f.commune.bbox;
-    if (box) this.voler(map, box, true);
+    if (box)
+      queueMicrotask(() => {
+        if (!this.dead && !this.cadree) this.voler(map, box, true);
+      });
     void this.poser(map);
   }
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
    * is there, then the flight to the commune if its box did not frame it already. */
   private async poser(map: MlMap): Promise<void> {
+    // after the frame has set itself (modale.ts regler) and the box's framing, as in the mount
+    await Promise.resolve();
     const d = this.props.d;
     const used = new Set(this.T.flatMap((c) => c.sites));
     const sites = d.f.zones.sites.filter((s) => used.has(s.id)) as unknown as Site[];
@@ -403,6 +460,9 @@ class CarteDrones extends Vue<Props, State> {
     this.dead = true;
     this.abort.abort();
     removeEventListener("themechange", this.onTheme);
+    removeEventListener("resize", this.suivreMarge);
+    clearTimeout(this.tMarge);
+    this.roMarge?.disconnect();
     this.ro?.disconnect();
     const map = this.map;
     if (!map) return;
@@ -424,6 +484,9 @@ class CarteDrones extends Vue<Props, State> {
     this.syncMap();
     this.adresse();
     this.observerFrise();
+    this.observerMarge();
+    // the legend or the chart folded or unfolded: the free part again
+    this.suivreMarge();
   }
   /** The view's state in its address (A4): the period, the kind, the act chosen, so that a step
    * back to it, or the link copied, shows the same; replaced, never a new step. */
@@ -905,11 +968,8 @@ class CarteDrones extends Vue<Props, State> {
       friseOuverte: !isLarge || S.frise,
       friseBande: isLarge,
       friseExp: S.frise ? "true" : "false",
-      togFrise: (() => {
-        this.setState({ frise: !S.frise });
-        // the map's free part changed: framed again within it
-        requestAnimationFrame(() => this.map && this.voler(this.map));
-      }) as Handler,
+      // the map's free part changes with it: its padding follows (suivreMarge)
+      togFrise: (() => this.setState({ frise: !S.frise })) as Handler,
       friseBandeL: [
         t("carte.frise_bandeau"),
         r
