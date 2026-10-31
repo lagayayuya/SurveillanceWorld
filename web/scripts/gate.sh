@@ -202,6 +202,10 @@ steps() {
   for engine in chromium webkit; do
     step "registre-$engine" "$B" node bench/smoke-registre.mjs --region ci --browser "$engine"
   done
+  lane contribute
+  # v2.3 (2026-10-31): the register's words proofread on 30 fiches at random across the country and
+  # every list (bench/relecture-registre.mjs), its own port; the lane with the room
+  step "relecture-chromium" "$B" node bench/relecture-registre.mjs --browser chromium
   lane last
   # The tiles prefetched while the map rests (src/prefetch.ts, off in the other benches: a
   # browser driven by tests), on a throttled 4G phone in Chromium: alone, its timing its own.
