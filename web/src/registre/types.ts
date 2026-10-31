@@ -72,6 +72,10 @@ const COULEUR: Record<Famille, string> = {
 };
 /** The family's colour, a token: `var(--type-entreprise)`. */
 export const couleur = (k: TypeCle): string => COULEUR[TYPES[k].famille];
+/** « Drones et algorithmes »' door (v2.3): a drone seen from above, its four rotors, in the
+ * types' stroke (24 × 24). */
+export const ICONE_DRONES =
+  "M3.5 5.5h5M15.5 5.5h5M6 5.5v2M18 5.5v2M9 10h6v4.5H9zM6 7.5 9 10M18 7.5 15 10M9 14.5l-3 2.5M15 14.5l3 2.5";
 
 /** What a template reads of a type: its word, plural, colour as a style (`--c`), pictogram. */
 export type Repere = { k: TypeCle; l: string; p: string; c: string; i: string };

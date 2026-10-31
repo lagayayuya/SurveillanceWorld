@@ -14,7 +14,7 @@ import { setMessages } from "../src/registre/i18n.ts";
 import {
   filCommune,
   ligneCommune,
-  liensBande,
+  portesCommune,
   quiDocument,
   titreDocument,
 } from "../src/registre/vues/commune-outils.ts";
@@ -67,23 +67,19 @@ test("the head's identity line: the département and the intercommunality as typ
   assert.match(json(l), /"href":"\/registre\/departement\/99\?ic=200000001","text":"CC du Val"/);
 });
 
-test("the band: the fiche's sections then « Carte et drones »; « Fiche » first elsewhere", () => {
-  const secs = [{ k: "documents", n: 1, l: "Documents", href: "#documents" }];
+test("the band's doors, apart from its sections: « Drones et algorithmes », « Fiche » under it (v2.3)", () => {
   assert.deepEqual(
-    liensBande(secs, "99001", true).map((s) => [s.k, s.href]),
-    [
-      ["documents", "#documents"],
-      ["carte", "/registre/commune/99001/carte"],
-    ],
+    portesCommune("99001", "fiche").map((p) => [p.l, p.href, p.cur]),
+    [["Drones et algorithmes", "/registre/commune/99001/carte", null]],
   );
   assert.deepEqual(
-    liensBande(secs, "99001", false).map((s) => [s.k, s.l]),
+    portesCommune("99001", "autre").map((p) => [p.l, p.href]),
     [
-      ["fiche", "Fiche"],
-      ["documents", "Documents"],
-      ["carte", "Drones et algorithmes"],
+      ["Fiche", "/registre/commune/99001"],
+      ["Drones et algorithmes", "/registre/commune/99001/carte"],
     ],
   );
+  assert.equal(portesCommune("99001", "carte")[1].cur, "page");
 });
 
 test("the breadcrumb of what is under a commune ends on the commune, its list on its row", () => {

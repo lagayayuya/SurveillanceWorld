@@ -1542,3 +1542,44 @@
 .rg .aide:focus-visible::after {
   display: block;
 }
+
+/* v2.3: the band's doors (« Fiche », « Drones et algorithmes »), apart from its sections: the boards'
+   band tab with its pictogram, set off from the tabs; on the page it opens, in ink */
+.rg .th .band .bporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  min-height: 36px;
+  margin-left: 6px;
+  padding: 0 12px;
+  background: #f2efe6;
+  color: #111;
+  border: 2px solid #111;
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 2px 2px 0 #111;
+}
+.rg .th :is(.band, .tband) .bporte svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.rg .th .tband .bporte {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.rg .th :is(.band, .tband) .bporte[aria-current="page"] {
+  background: #111;
+  color: #f2efe6;
+  box-shadow: none;
+}

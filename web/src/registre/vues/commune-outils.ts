@@ -17,6 +17,8 @@ import { etapeListe } from "../listes.ts";
 import type { Miette } from "../modale.ts";
 import { signaler } from "../signaler.ts";
 import { capital, proper, sentence, tidy, titleCase } from "../texte.ts";
+import { ICONE_DRONES, icone } from "../types.ts";
+import type { Porte } from "../vue.ts";
 
 /** The commune's file read as a lexicon (corpus.ts): its companies, buyers and communes have pages. */
 export const lexique = (d: Donnees): Lexique => d.f as unknown as Lexique;
@@ -39,17 +41,27 @@ export function ligneCommune(d: Donnees): RichItem[] {
   return parts.flatMap((p, i) => (i ? [" · ", ...p] : p));
 }
 
-/** A band link: one of the page's sections (`k` its id), or another page of the commune. */
-export type LienBande = { k: string; n: number; l: string; href: string };
-
-/** The band's links: on the fiche its sections then « Carte et drones »; on Documents and
- * Autorisations « Fiche » first (V2-CarteDrones: « Fiche | Carte et drones »). A link to another
- * page carries a `data-sec` that no section has: the band never marks it current. */
-export function liensBande(secs: LienBande[], insee: string, fiche: boolean): LienBande[] {
+/** The band's doors (v2.3: the sections and the views no longer mix): the page's sections are
+ * its band's tabs; the commune's other pages are doors beside them, « Fiche » on the pages under
+ * it, « Drones et algorithmes » with its pictogram everywhere. */
+export function portesCommune(insee: string, ici: "fiche" | "carte" | "autre"): Porte[] {
   return [
-    ...(fiche ? [] : [{ k: "fiche", n: 0, l: t("commune.bande_fiche"), href: communeHref(insee) }]),
-    ...secs,
-    { k: "carte", n: 0, l: t("commune.carte_et_drones"), href: communeHref(insee, "carte") },
+    ...(ici === "fiche"
+      ? []
+      : [
+          {
+            l: t("commune.bande_fiche"),
+            href: communeHref(insee),
+            i: icone("commune"),
+            cur: null,
+          },
+        ]),
+    {
+      l: t("commune.carte_et_drones"),
+      href: communeHref(insee, "carte"),
+      i: ICONE_DRONES,
+      cur: ici === "carte" ? ("page" as const) : null,
+    },
   ];
 }
 

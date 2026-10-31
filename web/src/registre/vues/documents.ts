@@ -25,9 +25,9 @@ import { sansFormule } from "../listes.ts";
 import {
   filCommune,
   lexique,
-  liensBande,
   ligneCommune,
   panneauArrete,
+  portesCommune,
   quiDocument,
   titreDocument,
   typeLabel,
@@ -152,7 +152,7 @@ class Documents extends Vue<Props, State> {
     const wide = large();
     return {
       tete: this.tete("commune", nom, ligneCommune(d)),
-      band: { ...band, secs: liensBande(band.secs, d.insee, false) },
+      band: { ...band, portes: portesCommune(d.insee, "autre") },
       secs,
       lay: { inner: wide ? "inner" : "tin" },
     };

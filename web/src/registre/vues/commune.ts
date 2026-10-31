@@ -58,8 +58,8 @@ import {
   demander,
   epciHref,
   lexique,
-  liensBande,
   ligneCommune,
+  portesCommune,
   quiDocument,
   titreDocument,
   typeLabel,
@@ -443,7 +443,7 @@ export class Commune extends Vue<Props, State> {
       ...this.base("commune"),
       ...this.info("arg", "met", "ou"),
       tete: this.tete("commune", nom, ligneCommune(d)),
-      band: { ...band, secs: liensBande(band.secs, insee, true) },
+      band: { ...band, portes: portesCommune(insee, "fiche") },
       secs,
       lay: {
         inner: wide ? "inner" : "tin",

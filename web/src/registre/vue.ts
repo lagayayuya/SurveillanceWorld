@@ -25,6 +25,10 @@ export type Col = [key: string, label: string, cls?: string, width?: string];
  * head), then these; an empty section is left out, the others numbered in turn. */
 export const SECTIONS = ["essentiel", "temps", "avecqui", "documents", "sources"] as const;
 export type Section = (typeof SECTIONS)[number];
+/** A door of the band (v2.3): another page of the fiche, apart from its sections (« Fiche »,
+ * « Drones et algorithmes »), its pictogram, `cur` on the page it opens. */
+export type Porte = { l: string; href: string; i: string; cur: "page" | null };
+
 export type Sections = {
   /** the sections shown, in order: { k, n, l, href } */
   liste: { k: Section; n: number; l: string; href: string }[];
@@ -98,13 +102,14 @@ export abstract class Vue<
     return out;
   }
 
-  /** The type's band (socle's bandeau): stuck at the top, the sections, « Partager ». */
-  protected bandeau(k: TypeCle, nom: string, secs: Sections) {
+  /** The type's band (socle's bandeau): stuck at the top, the sections, its doors, « Partager ». */
+  protected bandeau(k: TypeCle, nom: string, secs: Sections, portes: Porte[] = []) {
     const isLarge = large();
     return {
       r: repere(k) as Repere,
       nom,
       secs: secs.liste,
+      portes,
       large: isLarge,
       tel: !isLarge,
       partager: ((ev: { currentTarget: Element }) => partager(this, ev.currentTarget)) as Handler,

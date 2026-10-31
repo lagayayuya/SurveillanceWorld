@@ -589,6 +589,31 @@ try {
       sous.length === 4 && sous[1] === "Communes" && sous[2] === nomCommune,
       JSON.stringify({ nomCommune, sous }),
     );
+    // Drones et algorithmes is a door, not a section; the summary and a département open the
+    // decrees on their drones
+    await go("/registre/commune/69290");
+    const band = await page.evaluate(() => ({
+      secs: [...document.querySelectorAll("#registre .band nav a")].map((a) =>
+        a.textContent.trim(),
+      ),
+      door: document.querySelector('#registre .band a.bporte[href$="/carte"]')?.textContent.trim(),
+    }));
+    await go("/registre/");
+    const sommaire = await page.evaluate(
+      () => !!document.querySelector('#registre a[href="/registre/arretes?disp=dr"]'),
+    );
+    await go("/registre/departement/69");
+    const dep = await page.evaluate(
+      () => document.querySelector("#registre .band a.bporte")?.getAttribute("href") ?? null,
+    );
+    check(
+      "tree: « Drones et algorithmes » a door of the band, not a section; the summary's and the Rhône's open the drone decrees",
+      !band.secs.some((x) => /drones/i.test(x)) &&
+        /drones/i.test(band.door ?? "") &&
+        sommaire &&
+        dep === "/registre/arretes?dep=69&disp=dr",
+      JSON.stringify({ band, sommaire, dep }),
+    );
     // the list's step reopens the list on the fiche's row: marked, in view
     await go("/registre/communes?ligne=69290");
     await page.waitForTimeout(800);

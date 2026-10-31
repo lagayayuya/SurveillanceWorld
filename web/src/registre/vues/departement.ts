@@ -27,7 +27,16 @@ import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
 import { capital } from "../texte.ts";
-import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
+import { ICONE_DRONES } from "../types.ts";
+import {
+  type BaseState,
+  type Col,
+  large,
+  type Partage,
+  type Porte,
+  partageDe,
+  Vue,
+} from "../vue.ts";
 import {
   appels,
   buyerNom,
@@ -165,6 +174,14 @@ class Departement extends Vue<Props, State> {
       { k: "registre", l: t("types.registre.l"), href: "/registre/" },
       ic ? etapeListe("epci", ic) : etapeListe("departement", this.props.dep),
     ];
+  }
+  /** Its door to the drones (v2.3): with drone decrees, the list of decrees on its drones (no 3D
+   * view of a département, by default in this lot). */
+  private portes(): Porte[] {
+    const n = this.props.f.stats.depStats.dr ?? 0;
+    if (!n) return [];
+    const href = `/registre/arretes?dep=${encodeURIComponent(this.props.dep)}&disp=dr`;
+    return [{ l: t("commune.carte_et_drones"), href, i: ICONE_DRONES, cur: null }];
   }
   partage(): Partage | null {
     return partageDe(this.titre(), this.props.f.partage);
@@ -769,7 +786,7 @@ class Departement extends Vue<Props, State> {
       ...this.base("departement"),
       ...this.info("ic", "qui", "an"),
       tete: this.tete(k, nom, ligne),
-      band: this.bandeau(k, nom, secs),
+      band: this.bandeau(k, nom, secs, ic ? [] : this.portes()),
       secs,
       modeDep: !ic,
       modeIc: !!ic,

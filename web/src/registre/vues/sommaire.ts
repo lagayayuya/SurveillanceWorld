@@ -30,6 +30,7 @@ import {
   lienTrouve,
   listeHref,
   nomDep,
+  nomListe,
   ordonner,
   redirection,
   TYPE_DE,
@@ -42,6 +43,7 @@ import {
   couleur,
   decoupe,
   FAMILLES,
+  ICONE_DRONES,
   icone,
   mot,
   motFamille,
@@ -139,19 +141,27 @@ export function familles(n: Comptes | null) {
           ? CATS.map((x) =>
               row(
                 "acheteur",
-                t(`liste.cat.${x}`),
+                nomListe("acheteurs", x),
                 n?.categories[x],
                 `${listeHref("acheteur")}?cat=${x}`,
               ),
             )
-          : f.types.map((k) =>
-              row(
-                k,
-                k === "entreprise" ? t("sommaire.titulaires") : pluriel(k),
-                n?.listes[listeDe(k)],
-                listeHref(k),
+          : [
+              ...f.types.map((k) =>
+                row(k, nomListe(listeDe(k)), n?.listes[listeDe(k)], listeHref(k)),
               ),
-            ),
+              // v2.3: the drones' door, the list of decrees on their drones
+              ...(f.famille === "document"
+                ? [
+                    {
+                      // no count: the build counts the decrees by list, not by device
+                      ...row("aut", t("commune.carte_et_drones"), 0, "/registre/arretes?disp=dr"),
+                      i: ICONE_DRONES,
+                      n: "",
+                    },
+                  ]
+                : []),
+            ],
     };
   });
 }
