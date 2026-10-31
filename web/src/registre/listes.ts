@@ -174,8 +174,8 @@ export const nomDep = (C: Pick<Corpus, "couverture">, code: string): string =>
 
 // --- a list's rows ----------------------------------------------------------------------------
 
-export type Filtre = "dep" | "cat" | "annee" | "disp" | "etat";
-export const FILTRES: Filtre[] = ["cat", "etat", "dep", "annee", "disp"];
+export type Filtre = "dep" | "cat" | "annee" | "disp" | "etat" | "drones";
+export const FILTRES: Filtre[] = ["cat", "etat", "dep", "annee", "disp", "drones"];
 
 /** A row: its name (a typed link, the pictogram alone), the line under it, its other cells, what
  * its filters, its sort keys and its CSV read. */
@@ -287,7 +287,7 @@ function rangsCommunes(C: Corpus): Rang[] {
         carte == null ? NA : fr(carte),
       ],
       mots: plain(`${x.nom} ${nomDep(C, x.dep)}`),
-      f: { dep: [x.dep] },
+      f: { dep: [x.dep], drones: ok && c.dr > 0 ? ["1"] : [] },
       v: {
         docs: c.docs,
         con: c.con,
@@ -365,9 +365,13 @@ function etatDep(C: Pick<Corpus, "couverture">, code: string): string {
 
 function rangsDepartements(C: Corpus): Rang[] {
   const coms: Record<string, number> = {};
+  // a département with drone decrees: one of its communes has some (the lists count none of
+  // their own for a département)
+  const drones = new Set<string>();
   for (const insee of Object.keys(C.X.communes)) {
     const d = C.L.communes[insee].dep;
     coms[d] = (coms[d] ?? 0) + 1;
+    if ((C.X.communes[insee]?.dr ?? 0) > 0) drones.add(d);
   }
   return Object.entries(C.couverture.departements).map(([code, d]) => {
     const o = C.X.departements[code] ?? { n: 0, con: 0, aut: 0, amt: 0 };
@@ -380,7 +384,7 @@ function rangsDepartements(C: Corpus): Rang[] {
       sous: `${code} · ${t("liste.arretes_etat", { etat: etatDep(C, code) })}`,
       cells: [fr(coms[code] ?? 0), fr(o.n), fr(o.con), money(o.amt ?? 0), ok ? fr(o.aut) : nonLu()],
       mots: plain(`${code} ${nom}`),
-      f: { etat: [d.etat] },
+      f: { etat: [d.etat], drones: ok && drones.has(code) ? ["1"] : [] },
       v: {
         docs: o.n,
         communes: coms[code] ?? 0,
@@ -655,7 +659,7 @@ export const DEFS: Record<Liste, Def> = {
         tri("carte", "carte"),
         tri("nom", "nom", 1),
       ],
-      filtres: ["dep"],
+      filtres: ["dep", "drones"],
       argent: false,
       csv: ["departement", "documents", "contrats", "autorisations", "drones", "carte"].map(csvCol),
       rangs: rangsCommunes,
@@ -702,7 +706,7 @@ export const DEFS: Record<Liste, Def> = {
         tri("amt", "montant"),
         tri("nom", "nom", 1),
       ],
-      filtres: ["etat"],
+      filtres: ["etat", "drones"],
       argent: true,
       csv: ["etat", "communes", "documents", "contrats", "montant", "arretes"].map(csvCol),
       rangs: rangsDepartements,
@@ -808,6 +812,8 @@ export function valeurs(f: Filtre): string[] {
   if (f === "cat") return [...CATS];
   if (f === "annee") return YEARS;
   if (f === "disp") return DISPS;
+  // « Avec arrêtés drones » (v2.4, mockup liste-communes-menu-departements): one value, on
+  if (f === "drones") return ["1"];
   return ["collecte", "non_collecte", "impossible"];
 }
 
@@ -817,6 +823,7 @@ export function motValeur(f: Filtre, v: string): string {
   if (f === "cat") return W(`cat.${v}`);
   if (f === "annee") return v === "<2018" ? t("registre.annee_avant_2018") : v;
   if (f === "disp") return t(`registre.disp_${v}`);
+  if (f === "drones") return t("liste.avec_drones");
   return W(`etat.${v}`);
 }
 

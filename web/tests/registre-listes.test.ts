@@ -230,6 +230,26 @@ test("a filter's counts leave out its own filter; the sort and the words", () =>
   assert.deepEqual(nom, ["100000001", "100000002"]);
 });
 
+test("« Avec arrêtés drones » keeps the communes and the départements that have some (v2.4)", () => {
+  const com = DEFS.communes;
+  const on = etatDe(com, { drones: "1" });
+  assert.deepEqual(on.f, { drones: "1" });
+  assert.equal(adresse(com, on), "/registre/communes?drones=1");
+  const { list, comptes } = appliquer(com, rangs(C, "communes"), on);
+  // Alpha and Beta have drone decrees; Gamma's département is not read (its figure « non lu »)
+  assert.deepEqual(list.map((r) => r.id).sort(), ["69001", "69002"]);
+  assert.equal(comptes.drones?.["1"], 2);
+  // a département has some when one of its communes has some
+  const dep = DEFS.departements;
+  const d = appliquer(dep, rangs(C, "departements"), etatDe(dep, { drones: "1" }));
+  assert.deepEqual(
+    d.list.map((r) => r.id),
+    ["69"],
+  );
+  // an unknown value is dropped
+  assert.deepEqual(etatDe(com, { drones: "oui" }).f, {});
+});
+
 test("a list of documents asks the API for its state, its counts the API's facets", () => {
   const def = DEFS.contrats;
   const e = etatDe(def, { disp: "csu", dep: "69", q: "  vidéo ", tri: "amt", ordre: "asc" });

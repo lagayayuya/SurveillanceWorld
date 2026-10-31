@@ -575,8 +575,16 @@ export class ListeVue extends Vue<Props, State> {
       basculer: this.ouvrirTri,
       clavier: this.clavierTri,
     };
+    // « Avec arrêtés drones »: a button that holds, beside « Classer par » (the mockup's)
+    const drones = def.filtres.includes("drones")
+      ? {
+          on: e.f.drones ? "true" : "false",
+          n: fr((cpt.drones ?? {})["1"] ?? 0),
+          basculer: this.filtrer("drones", e.f.drones ? "" : "1"),
+        }
+      : null;
     const filtres = def.filtres
-      .filter((f) => f !== "dep")
+      .filter((f) => f !== "dep" && f !== "drones")
       .map((f) => {
         const c = cpt[f] ?? {};
         const cur = e.f[f] ?? "";
@@ -686,6 +694,7 @@ export class ListeVue extends Vue<Props, State> {
       sorts,
       tri,
       filtres,
+      drones,
       deps: def.filtres.includes("dep") ? this.menuDeps(cpt.dep ?? {}, total, k) : null,
       argent: def.argent,
       caption: t("liste.caption", { liste: nomListe(liste, e.f.cat) }),

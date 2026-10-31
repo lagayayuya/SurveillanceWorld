@@ -3806,6 +3806,7 @@
   "registre.sommaire.non_lus": "{n, plural, one {# arrêté n'a pas pu être lu entièrement →} other {# arrêtés n'ont pas pu être lus entièrement →}}",
   "registre.liste.etiquette": "Liste",
   "registre.liste.classer_par": "classer par",
+  "registre.liste.avec_drones": "avec arrêtés drones",
   "registre.liste.filtrer": "Filtrer la liste",
   "registre.liste.rail": "Toutes les listes du registre",
   "registre.liste.rail_titulaires": "Titulaires",

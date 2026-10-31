@@ -39,6 +39,7 @@
             </ul>
           </sc-if>
         </div>
+        <sc-if value="{{drones}}"><button type="button" class="dbtn dtog" aria-pressed="{{drones.on}}" onClick="{{drones.basculer}}"><b>{{t.liste.avec_drones}}</b> <span class="tw">· {{drones.n}}</span></button></sc-if>
       </div>
       <sc-if value="{{deps.chips}}"><div class="dchips" role="group" aria-label="{{t.liste.dep.choix}}"><sc-for list="{{deps.chips}}" as="c"><button type="button" class="dchip" onClick="{{c.ote}}" aria-label="{{c.aide}}">{{c.l}} <span aria-hidden="true">✕</span></button></sc-for><button type="button" class="lienbtn" onClick="{{deps.effacer}}">{{t.liste.tout_effacer}}</button></div></sc-if>
       <sc-for list="{{filtres}}" as="g">

@@ -186,9 +186,18 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.rg .v-liste .dbtn[aria-expanded="true"] {
+.rg .v-liste .dbtn[aria-expanded="true"],
+.rg .v-liste .dtog[aria-pressed="true"] {
   box-shadow: none;
   translate: 2px 2px;
+}
+/* « Avec arrêtés drones » held: the ink, as a chosen key */
+.rg .v-liste .dtog[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .v-liste .dtog[aria-pressed="true"] .tw {
+  color: var(--bg);
 }
 .rg .v-liste .dmenu {
   position: absolute;
