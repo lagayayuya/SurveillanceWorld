@@ -121,10 +121,11 @@ sources:
       per SIREN not yet known, its answers kept from one collection to the next.
   communes:
     id: rule:registre_sources@1:source_communes
-    communes: https://geo.api.gouv.fr/communes?fields=code,nom,population,codeDepartement,codeEpci,siren&format=json
+    communes: https://geo.api.gouv.fr/communes?fields=code,nom,population,codeDepartement,codeEpci,siren,bbox&format=json
     epcis: https://geo.api.gouv.fr/epcis?fields=code,nom&format=json
     departements: https://geo.api.gouv.fr/departements?fields=code,nom&format=json
     rationale: >-
       Every commune of France with its département, its population, its intercommunality
       and its own SIREN (API Découpage administratif, INSEE's COG, Licence Ouverte 2.0): a
-      buyer's SIREN becomes its commune, a commune its intercommunality.
+      buyer's SIREN becomes its commune, a commune its intercommunality; its box frames it on
+      the drone view's map.

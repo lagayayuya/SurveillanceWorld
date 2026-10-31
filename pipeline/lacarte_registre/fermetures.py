@@ -277,7 +277,12 @@ def commune_file(ctx: Context, insee: str) -> dict[str, Any]:
     p = reg.pilote
     return {
         "v": 1,
-        "commune": {"insee": insee, **ctx.commune(insee)},
+        # its box (communes.py): the drone view frames the commune with it, whatever it holds
+        "commune": {
+            "insee": insee,
+            **ctx.commune(insee),
+            **({"bbox": c["bbox"]} if c.get("bbox") else {}),
+        },
         **body,
         "stats": stats,
         "carte": {

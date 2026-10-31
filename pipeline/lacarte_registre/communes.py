@@ -1,8 +1,9 @@
 """The communes of France (API Découpage administratif, INSEE's COG): what turns a buyer's
 SIREN into its commune, a commune into its intercommunality and département, and gives the
-populations the amounts per inhabitant are measured with.
+populations the amounts per inhabitant are measured with, and each commune's box (west, south,
+east, north), which frames the commune on the drone view's map whatever it holds.
 
-Out: <root>/national/communes.json {"communes": {insee: {nom, dep, pop, epci, siren}},
+Out: <root>/national/communes.json {"communes": {insee: {nom, dep, pop, epci, siren, bbox}},
 "epcis": {siren: nom}, "departements": {code: nom}}. Three requests.
 """
 
@@ -17,6 +18,19 @@ from lacarte_registre import fetch
 SOURCE = "communes"
 
 
+def box(g: dict[str, Any] | None) -> list[float] | None:
+    """[west, south, east, north] of the API's `bbox` polygon, to 5 decimals (about a metre)."""
+    try:
+        ring = g["coordinates"][0] if g else None
+        xs = [p[0] for p in ring or []]
+        ys = [p[1] for p in ring or []]
+    except (KeyError, IndexError, TypeError):
+        return None
+    if not xs:
+        return None
+    return [round(min(xs), 5), round(min(ys), 5), round(max(xs), 5), round(max(ys), 5)]
+
+
 def collect(f: fetch.Fetcher, out_dir: Path) -> dict[str, Any]:
     src = f.conf["sources"][SOURCE]
     communes = {
@@ -26,6 +40,7 @@ def collect(f: fetch.Fetcher, out_dir: Path) -> dict[str, Any]:
             "pop": int(c.get("population") or 0),
             "epci": c.get("codeEpci") or "",
             "siren": c.get("siren"),
+            "bbox": box(c.get("bbox")),
         }
         for c in f.get_json(src["communes"])
     }

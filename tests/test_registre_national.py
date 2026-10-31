@@ -165,6 +165,12 @@ def test_a_buyer_the_decp_do_not_name_is_named_by_sirene_else_flagged(tmp_path):
 
 
 # --- the collection, end to end, on a fake server ------------------------------------------
+# Mions' box as the API Découpage administratif gives it (`fields=bbox`: a polygon, 6 decimals)
+MIONS_BBOX = {"type": "Polygon", "coordinates": [[
+    [4.936126, 45.630214], [4.991243, 45.630214], [4.991243, 45.674681],
+    [4.936126, 45.674681], [4.936126, 45.630214]]]}  # fmt: skip
+
+
 class Fake(http.server.ThreadingHTTPServer):
     def __init__(self) -> None:
         super().__init__(("127.0.0.1", 0), Handler)
@@ -220,7 +226,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 body = {"total_count": len(hits), "results": hits[off : off + lim]}
         elif url.path == "/communes":
             body = [{"code": k, "nom": c["nom"], "codeDepartement": c["dep"],
-                     "population": c["pop"], "codeEpci": c["epci"], "siren": c["siren"]}
+                     "population": c["pop"], "codeEpci": c["epci"], "siren": c["siren"],
+                     **({"bbox": MIONS_BBOX} if k == MIONS else {})}
                     for k, c in srv.communes["communes"].items()]  # fmt: skip
         elif url.path == "/epcis":
             body = [{"code": k, "nom": n} for k, n in srv.communes["epcis"].items()]
@@ -302,6 +309,12 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     site = tmp_path / "site"
     mions = json.loads((site / "commune" / f"{MIONS}.json").read_text("utf-8"))
     assert mions["stats"]["communes"][MIONS]["montant"] == 415_000
+    # its box, as the API's polygon gave it (the drone view frames it); a commune without one
+    # has none, and the box stays out of the other communes' dictionary
+    assert mions["commune"]["bbox"] == [4.93613, 45.63021, 4.99124, 45.67468]
+    other = next(p for p in (site / "commune").glob("*.json") if p.stem != MIONS)
+    assert "bbox" not in json.loads(other.read_text("utf-8"))["commune"]
+    assert all("bbox" not in c for c in mions["communes"].values())
     notice = [e for e in mions["evenements"] if e["id"] == "17-164514"]
     assert notice and notice[0]["origine"] == "boamp"
     cov = json.loads((site / "couverture.json").read_text("utf-8"))
