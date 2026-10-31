@@ -1986,6 +1986,23 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-carte-chosen` | A volume pointed at: a thin ink outline; chosen: full, a thick ink outline, its label, the others aside, its week full of ink on the chart, the decree's detail in the panel (places, slots, service, purpose, devices, the zone's status, act, page) | registre/vues/carte.ts; drones.ts | V2-CarteDrones | a Lyon slot | — | yes |
 | `reg2-carte-week` | A week or a month clicked (or chosen with the arrows and Enter): the map, the tickets and the list filtered to it; « Toute la période » | registre/vues/carte.ts | V2-CarteDrones | Lyon, a week of October | — | yes |
 
+### The register v2.3 (2026-10-31)
+
+Test data: the national build of 2026-10-31 (`lacarte-registre construire`), the gate's CI extract
+for the map.
+
+| State | What it shows | Where | Mockup | How to see it | Capture | Checked |
+|---|---|---|---|---|---|---|
+| `reg2-list-dep-menu` | A list's « Départements » button and its menu: a search, the four with the most rows, every département by number with its count and box, « Tout effacer », « Voir N … »; a sheet from the bottom on a phone | registre/vues/liste.ts, liste.html | liste-communes-menu-departements (Ju's) | `/registre/communes`, the button | captures/apres | yes |
+| `reg2-list-dep-chips` | The départements chosen as chips under the bar, each with its ✕, « Tout effacer » | registre/vues/liste.ts | liste-communes-filtree (Ju's) | `/registre/communes?dep=69` | captures/apres | yes |
+| `reg2-list-sort-menu` | « classer par » and its menu of orders | registre/vues/liste.ts | liste-communes-* (Ju's) | `/registre/contrats`, the button | captures/apres | yes |
+| `reg2-list-panel-row` | A list of names' row in the panel: its type and département, name, figures as tiles, « Ouvrir la fiche → », its drones' door, « Voir sur la carte », the keys' line | registre/vues/liste.ts; socle.html panneau | liste-communes-* (Ju's) | `/registre/communes`, a row hovered | captures/apres | yes |
+| `reg2-list-row-reopened` | A list opened from a fiche's breadcrumb: the fiche's row marked and scrolled to | registre/vues/liste.ts (`?ligne=`) | — | `/registre/communes?ligne=69290` | — | smoke |
+| `reg2-band-doors` | A fiche's band: its sections, then its doors (« Drones et algorithmes », « Fiche ») with their pictograms | registre/vues/commune-outils.ts; socle.html | — | `/registre/commune/69290` | captures/apres | yes |
+| `reg2-carte-folded` | Drones et algorithmes on a wide screen: the legend a ticket « Légende » beside the commands, the chart a band with the chosen week | registre/vues/carte.ts | drones-zone-choisie (Ju's) | `/registre/commune/69123/carte` | captures/apres | yes |
+| `reg2-carte-left` | The register closed over the drone view: the map tilted with its volumes, a ticket « Quitter la vue drones » | registre/vues/carte.ts | — | the drone view, ✕ | — | smoke script |
+| `map-ticket-doors` | The map's ticket: under its squares, « Filtres et légende » on paper and « Le registre » in pink | machine.ts; theme/punk/map.css | — | `/` | captures/apres | yes |
+
 ### The register (lot R3)
 
 No new screen: the v2 draws the share button, its window and the links' colours; R3 gives
