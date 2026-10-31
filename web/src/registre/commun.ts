@@ -102,7 +102,10 @@ export class Donnees {
   entName(siren: string): string {
     const x = this.f.entreprises[siren];
     if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
-    if (!x?.nom) return t("commun.entreprise_siren", { siren });
+    if (!x?.nom)
+      return t("commun.entreprise_siren", {
+        siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3"),
+      });
     return tidy(titleCase(x.nom));
   }
   buyer(e: Evenement): string | null {
@@ -110,7 +113,11 @@ export class Donnees {
   }
   buyerNom(siren: string): string {
     const a = this.f.acheteurs[siren];
-    return a?.nom_court || a?.nom || t("commun.acheteur_siren", { siren });
+    return (
+      a?.nom_court ||
+      a?.nom ||
+      t("commun.acheteur_siren", { siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3") })
+    );
   }
   /** A buyer's page: its commune's, for a commune whose fiche exists; else its own when the
    * build wrote it (its reference, lot R3); else none. */

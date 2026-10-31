@@ -336,8 +336,10 @@ function rangsEpci(C: Corpus): Rang[] {
           .slice(0, 3)
           .flatMap((k, i) => [...(i ? [", "] : []), lienCommune(C.L, k, undefined, true)]),
         ...(noms.length > 3 ? ["…"] : []),
+        // its row leads to its fiche, or to nothing, and says so (v2.3)
+        ...(a?.ref ? [] : [` · ${t("liste.epci_sans_fiche")}`]),
       ],
-      cells: [fr(coms.length), fr(b?.n ?? 0), b?.amt ? money(b.amt) : NA],
+      cells: [fr(coms.length), fr(b?.n ?? 0), money(b?.amt ?? 0)],
       mots: plain(`${label} ${noms.join(" ")}`),
       f: { dep: deps },
       v: { communes: coms.length, con: b?.n ?? 0, amt: b?.amt ?? 0, nom: label },
@@ -562,8 +564,13 @@ export function rangDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evene
     .filter(Boolean)
     .sort()
     .pop();
+  // a decree from another département's or a zone's préfecture says where it comes from (v2.3)
+  const prov = typeof e.provenance === "string" && e.provenance !== "collecte" ? e.provenance : "";
   const sous = [
     date(e) + (e.date_lue ? "*" : ""),
+    prov && has(`registre.sommaire.par_source.provenance.${prov}`)
+      ? t("liste.provenance", { p: t(`sommaire.par_source.provenance.${prov}`) })
+      : "",
     e.non_lu?.includes("zone_non_deduite") ? zone : "",
     le ? t("corrige.le", { date: le.split("-").reverse().join("/") }) : "",
   ]

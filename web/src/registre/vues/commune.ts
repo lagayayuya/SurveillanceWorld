@@ -51,7 +51,7 @@ import { signaler } from "../signaler.ts";
 import { type Source, sources } from "../sources.ts";
 import { calm, capital, proper, sentence } from "../texte.ts";
 import { couleur, icone, type TypeCle, typeDocument } from "../types.ts";
-import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
+import { type BaseState, large, type Partage, partageDe, sansTiret, Vue } from "../vue.ts";
 import "./commune.css";
 import { documentHref } from "../routes.ts";
 import template from "./commune.html?raw";
@@ -455,7 +455,7 @@ export class Commune extends Vue<Props, State> {
       },
       com,
       lead,
-      kpis,
+      kpis: sansTiret(kpis),
       carteLiens,
       ou,
       aut,

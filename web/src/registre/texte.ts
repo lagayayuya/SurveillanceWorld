@@ -35,10 +35,9 @@ export function calm(text: unknown): string {
 export function sentence(text: unknown): string {
   if (!text) return "";
   let s = tidy(text);
-  if (s === s.toUpperCase()) {
-    s = s.toLowerCase();
-    s = s.charAt(0).toUpperCase() + s.slice(1);
-  }
+  if (s === s.toUpperCase()) s = s.toLowerCase();
+  // a sentence starts with its capital (v2.3: an objet published in lower case)
+  s = s.charAt(0).toUpperCase() + s.slice(1);
   return s.length > 120 ? `${s.slice(0, 118).replace(/\s+\S*$/, "")}…` : s;
 }
 
@@ -111,3 +110,36 @@ export const plain = (text: unknown): string =>
 
 /** First letter in capital. */
 export const capital = (s: string): string => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
+
+/** French elision (v2.3: « Contrat de octobre », « La mairie de Antony »): « de » before a vowel
+ * becomes « d' », in a sentence filled in, and before a name put in it as a link. */
+const VOYELLE = "AEIOUYÀÂÉÈÊËÎÏÔÖÛÜaeiouyàâéèêëîïôöûü";
+const DE_VOYELLE = new RegExp(`\\b([Dd])e ([${VOYELLE}])`, "g");
+export const elider = (s: string): string => s.replace(DE_VOYELLE, "$1'$2");
+/** Rich parts in order: a text ending in « de » before a part whose words start with a vowel. */
+export function eliderParts<T>(parts: T[], mots: (x: T) => string): T[] {
+  return parts.map((x, i) => {
+    const next = parts[i + 1];
+    if (typeof x !== "string" || next === undefined || typeof next === "string") return x;
+    return (
+      /\b[Dd]e $/.test(x) && new RegExp(`^[${VOYELLE}]`).test(mots(next).trim())
+        ? x.replace(/([Dd])e $/, "$1'")
+        : x
+    ) as T;
+  });
+}
+
+/** A sentence that starts with a name put in it as a link: the link's first letter in capital (v2.3:
+ * a name may be words that start in lower case, « un acheteur public (SIREN …) »). The catalogue's
+ * own words are left as written (« mis à jour le … »). */
+export function majusculeParts<T>(parts: T[]): T[] {
+  if (!parts.length) return parts;
+  const [p, ...rest] = parts;
+  const up = (s: string) =>
+    s.replace(/^(\s*)(\p{Ll})/u, (_, a: string, b: string) => a + b.toUpperCase());
+  if (typeof p === "string") return parts;
+  const a = (p as { a?: { text?: unknown } }).a;
+  if (a && typeof a.text === "string")
+    return [{ ...p, a: { ...a, text: up(a.text) } } as T, ...rest];
+  return parts;
+}

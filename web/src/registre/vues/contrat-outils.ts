@@ -15,7 +15,7 @@
 import { benefLabel, byDateAsc, communeHref, emetteur, isArr } from "../commun.ts";
 import { buyerNom, depNom, disp, entName, type Lexique, titre, typ } from "../corpus.ts";
 import { corrections } from "../corrige.ts";
-import type { Rich, RichItem } from "../dc.ts";
+import { type Rich, type RichItem, richText } from "../dc.ts";
 import type {
   Acheteur,
   Affaire,
@@ -29,7 +29,7 @@ import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "
 import { has, t } from "../i18n.ts";
 import { lien, lienAcheteur, lienCommune, lienDepartement, lienEntreprise } from "../liens.ts";
 import { documentHref } from "../routes.ts";
-import { capital, sentence, tidy } from "../texte.ts";
+import { capital, eliderParts, majusculeParts, sentence, tidy } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { lierDepartement, lierLieux, lierMentions } from "./mention-outils.ts";
 
@@ -146,10 +146,15 @@ export function rt(key: string, params: Record<string, Param> = {}): RichItem[] 
       holes.push(v);
     } else flat[k] = v;
   }
-  return t(key, flat)
-    .split(/\ue000(\d+)\ue000/)
-    .map((x, i) => (i % 2 ? holes[Number(x)] : x))
-    .filter((x) => x !== "");
+  return majusculeParts(
+    eliderParts(
+      t(key, flat)
+        .split(/\ue000(\d+)\ue000/)
+        .map((x, i) => (i % 2 ? holes[Number(x)] : x))
+        .filter((x) => x !== ""),
+      richText,
+    ),
+  );
 }
 
 /** The date the timelines use: the reviewed one when the build has one (regles.py date_lue). */

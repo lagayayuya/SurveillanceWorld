@@ -2,6 +2,7 @@
 // from a module the build makes out of fr.json (vite.config.ts, « registre-catalogue »), so that it
 // does not ship the map's and /revue's 1 600 keys; tests give them from fr.json itself.
 import { render } from "../messages.ts";
+import { elider } from "./texte.ts";
 
 let messages: Record<string, string> = {};
 
@@ -20,5 +21,5 @@ export function t(key: string, params: Record<string, string | number> = {}): st
     return `registre.${key}`;
   }
   // a plural's number in the kit's full no-break space, as fr() writes it (format.ts)
-  return render(template, params).replace(/\u202f/g, "\u00a0");
+  return elider(render(template, params).replace(/\u202f/g, "\u00a0"));
 }

@@ -6,9 +6,10 @@
 // text; a sole trader is never a link (DECISIONS 2026-10-29). The views build their mentions here.
 import { communeHref } from "./commun.ts";
 import { buyerHref, buyerNom, depNom, docHref, entHref, entName, type Lexique } from "./corpus.ts";
-import type { Rich, RichItem } from "./dc.ts";
+import { type Rich, type RichItem, richText } from "./dc.ts";
 import type { Evenement } from "./donnees.ts";
 import { t } from "./i18n.ts";
+import { eliderParts, majusculeParts } from "./texte.ts";
 import { couleur, icone, type TypeCle, typeDocument } from "./types.ts";
 
 /** A mention as a link to its fiche, or its words alone when it has none (`href` null). */
@@ -85,16 +86,22 @@ export function phrase(
       holes.push(v);
     } else flat[k] = v;
   }
-  return t(key, flat)
-    .split("\u0000")
-    .map((x, i) => (i % 2 ? holes[Number(x)] : x))
-    .filter((x) => x !== "");
+  return majusculeParts(
+    eliderParts(
+      t(key, flat)
+        .split("\u0000")
+        .map((x, i) => (i % 2 ? holes[Number(x)] : x))
+        .filter((x) => x !== ""),
+      richText,
+    ),
+  );
 }
 
 /** « du Rhône », « le Rhône »: the article words, the name the département's link. */
 export function departementDans(dep: string, avecArticle: string): RichItem {
   const nom = depNom(dep);
-  return avecArticle.endsWith(nom)
+  return avecArticle.endsWith(nom) &&
+    !/['’]$/.test(avecArticle.slice(0, avecArticle.length - nom.length))
     ? {
         span: [avecArticle.slice(0, avecArticle.length - nom.length), lienDepartement(dep, nom)],
         cls: "",

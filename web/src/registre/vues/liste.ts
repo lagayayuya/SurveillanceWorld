@@ -67,6 +67,7 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import "./autorisations.css";
 import { panneauArrete } from "./commune-outils.ts";
 import "./liste.css";
+import { couvertureLiee } from "../sources.ts";
 import template from "./liste.html?raw";
 
 /** The rows shown at first, and added by « Afficher plus » (the mockup's 20). */
@@ -710,6 +711,9 @@ export class ListeVue extends Vue<Props, State> {
             )
           : enregistrer(`registre-${liste}.csv`, csv(def, list))) as Handler,
       arretes: liste === "arretes",
+      // the decrees: what the register reads of them, and where the others come from, as the
+      // coverage says it (v2.3: the list and « Ce que couvre le registre » say the same)
+      resumeArretes: liste === "arretes" ? couvertureLiee(this.props.couverture) : null,
       // the lists whose rows may say « non lu »: the line that says why, once
       nonLu: C && (liste === "communes" || liste === "departements") ? noteNonLu(C) : null,
       det,

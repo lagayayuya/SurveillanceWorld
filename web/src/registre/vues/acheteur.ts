@@ -24,7 +24,15 @@ import { catAcheteur, etapeListe } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
-import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
+import {
+  type BaseState,
+  type Col,
+  large,
+  type Partage,
+  partageDe,
+  sansTiret,
+  Vue,
+} from "../vue.ts";
 import "./acheteur.css";
 import template from "./acheteur.html?raw";
 import {
@@ -89,7 +97,11 @@ const ECRITES = 12;
 /** An amount in millions, one decimal, as the bars write them (« 5,2 M€ »); below 100 000 € in
  * euros; none: « — » (Entreprise's own). */
 const meur = (n: number): string =>
-  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
+  !n
+    ? money(0)
+    : n < 1e5
+      ? money(n)
+      : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
 class Acheteur extends Vue<Props, State> {
   protected init(): Partial<State> {
@@ -533,7 +545,7 @@ class Acheteur extends Vue<Props, State> {
       cat: categorie(f),
       nom,
       lead: lead(f, C, nom),
-      kpis,
+      kpis: sansTiret(kpis),
       years,
       yearAlt: Y.length ? t("acheteur.annees_alt", { de: Y[0].y, a: Y[Y.length - 1].y }) : "",
       tempsPhrase,

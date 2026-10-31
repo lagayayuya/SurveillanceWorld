@@ -35,6 +35,7 @@ import {
   type Partage,
   type Porte,
   partageDe,
+  sansTiret,
   Vue,
 } from "../vue.ts";
 import {
@@ -118,7 +119,11 @@ const BAR = "var(--fg)";
 const ON = "var(--fg)";
 /** An amount in millions, one decimal, as the bars write them; below 100 000 € in euros. */
 const meur = (n: number): string =>
-  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
+  !n
+    ? money(0)
+    : n < 1e5
+      ? money(n)
+      : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
 /** A contract of the territory's own purchases, with the buyer file that holds it. */
 type Achat = { c: Contrat; f: FichierAcheteur };
@@ -795,7 +800,7 @@ class Departement extends Vue<Props, State> {
       dans: N.dans,
       du: ic ? t("departement.de_ic", { nom: epciLa(nom) }) : N.du,
       lead,
-      kpis,
+      kpis: sansTiret(kpis),
       nIc: fr(IC.filter((o) => o.code).length),
       nCom: fr(nC),
       icNote: [

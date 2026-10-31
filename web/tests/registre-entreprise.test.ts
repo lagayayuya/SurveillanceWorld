@@ -154,8 +154,9 @@ test("the single-offer ticket: plural, its help, and none published", () => {
   assert.equal(`${k.v} ${k.l}`, "2 contrats sur 27 n'ont reçu qu'une offre");
   assert.equal(k.aide, "Les 27 sont les contrats dont le nombre d'offres reçues est publié ; pour les autres, il ne l'est pas.");
   F.page = { ...F.page, faits: { offres: null } };
-  k = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string; aide?: string }[] }).kpis[3];
-  assert.deepEqual([k.v, k.l, k.aide], ["—", "nombre d'offres reçues non publié", undefined]);
+  // none published: no ticket (a ticket carries a figure or a date, never a dash, v2.3)
+  const ks = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string }[] }).kpis;
+  assert.ok(ks.every((x) => x.v !== "—" && x.l !== "nombre d'offres reçues non publié"));
 });
 
 test("one buyer, every contract shared, no modification, no known end: said as such", () => {

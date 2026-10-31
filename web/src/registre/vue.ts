@@ -29,6 +29,11 @@ export type Section = (typeof SECTIONS)[number];
  * « Drones et algorithmes »), its pictogram, `cur` on the page it opens. */
 export type Porte = { l: string; href: string; i: string; cur: "page" | null };
 
+/** A row of tickets as the reader sees it (v2.2 point 5, v2.3): a ticket carries a figure or a date,
+ * never a dash; one that has none is not shown (its sentence, when there is one, is elsewhere). */
+export const sansTiret = <K extends { v: string }>(kpis: K[]): K[] =>
+  kpis.filter((k) => k.v.trim() !== "—");
+
 export type Sections = {
   /** the sections shown, in order: { k, n, l, href } */
   liste: { k: Section; n: number; l: string; href: string }[];

@@ -100,7 +100,11 @@ export const sirenSpaced = (s: string): string => s.replace(/^(\d{3})(\d{3})(\d{
 /** A buyer's name: the short one, an intercommunality's usual one, else the published one. */
 export function buyerNom(f: FichierAcheteur, siren: string): string {
   const a = f.acheteurs[siren] ?? (siren === f.acheteur.siren ? f.acheteur : undefined);
-  return a?.nom_court || a?.nom || t("commun.acheteur_siren", { siren });
+  return (
+    a?.nom_court ||
+    a?.nom ||
+    t("commun.acheteur_siren", { siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3") })
+  );
 }
 /** The title of a buyer's page: its short name without the words that only place it
  * (« Sytral (transports lyonnais) » → « Sytral »), as the mockup's title. */
@@ -118,7 +122,10 @@ export function categorie(f: FichierAcheteur): string {
 export function entName(f: FichierAcheteur, siren: string): string {
   const x = f.entreprises[siren];
   if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
-  if (!x?.nom) return t("commun.entreprise_siren", { siren });
+  if (!x?.nom)
+    return t("commun.entreprise_siren", {
+      siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3"),
+    });
   return tidy(titleCase(x.nom));
 }
 export const contratHref = (affaire: string): string => documentHref(affaire);

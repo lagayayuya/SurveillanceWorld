@@ -123,14 +123,21 @@ export const entHref = (siren: string): string | null =>
 export function entName(L: Lexique, siren: string): string {
   const x = L.entreprises[siren];
   if (siren === EI || x?.entrepreneur_individuel) return t("commun.entreprise_individuelle");
-  if (!x?.nom) return t("commun.entreprise_siren", { siren });
+  if (!x?.nom)
+    return t("commun.entreprise_siren", {
+      siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3"),
+    });
   return tidy(titleCase(x.nom));
 }
 export const buyerOf = (L: Lexique, e: Evenement): string | null =>
   e.acheteur_siren ?? L.affaires?.[e.affaire]?.acheteur_siren ?? null;
 export function buyerNom(L: Lexique, siren: string): string {
   const a = L.acheteurs[siren];
-  return a?.nom_court || a?.nom || t("commun.acheteur_siren", { siren });
+  return (
+    a?.nom_court ||
+    a?.nom ||
+    t("commun.acheteur_siren", { siren: siren.replace(/^(\d{3})(\d{3})(\d{3})$/, "$1 $2 $3") })
+  );
 }
 /** A buyer's page: its commune's, for a commune whose fiche exists; else its own when the build
  * wrote it (its reference, lot R3); else none. */

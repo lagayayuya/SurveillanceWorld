@@ -21,7 +21,15 @@ import {
 } from "../liens.ts";
 import { annuaire, sources } from "../sources.ts";
 import { icone } from "../types.ts";
-import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
+import {
+  type BaseState,
+  type Col,
+  large,
+  type Partage,
+  partageDe,
+  sansTiret,
+  Vue,
+} from "../vue.ts";
 import { aides } from "./departement-outils.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
@@ -152,10 +160,12 @@ const dans = (F: FichierEntreprise, r: string): RichItem => {
     };
   const nom = depNom(r);
   const art = depArt(r, nom);
-  // the article stays words (« le », « l' »), the name is the link
-  const dep: RichItem = art.endsWith(nom)
-    ? { span: [art.slice(0, art.length - nom.length), lienDepartement(r, nom)], cls: "" }
-    : lienDepartement(r, art);
+  // the article stays words (« le », « la »), the name is the link; an elided one (« l'Isère ») the
+  // link whole, no gap after its apostrophe
+  const dep: RichItem =
+    art.endsWith(nom) && !/['’]$/.test(art.slice(0, art.length - nom.length))
+      ? { span: [art.slice(0, art.length - nom.length), lienDepartement(r, nom)], cls: "" }
+      : lienDepartement(r, art);
   return { span: rt("entreprise.dans", { dep }), cls: "" };
 };
 
@@ -171,6 +181,14 @@ export function lead(F: FichierEntreprise, nCt: number, nCl: number): RichItem[]
       : rt("entreprise.ou_surtout", { surtout: fort(r0) });
   else if (r0 && r1) ou = rt("entreprise.ou_deux", { dans1: dans(F, r0), dans2: dans(F, r1) });
   else if (r0) ou = rt("entreprise.ou_un", { dans1: dans(F, r0) });
+  // its buyers in more than two départements (the national data): how many, and where most are,
+  // never two places said as if they were all (v2.3: « en Île-de-France et dans les Bouches-du-Rhône »)
+  const deps = new Set(F.evenements.flatMap((e) => (e.dep ? [e.dep] : [])));
+  if (deps.size > 2)
+    ou =
+      surtout && r0 && r0 !== "idf"
+        ? rt("entreprise.ou_n_surtout", { n: deps.size, dans1: dans(F, r0) })
+        : rt("entreprise.ou_n", { n: deps.size });
   const params = {
     clientes: strong(t("entreprise.n_collectivites", { n: nCl })),
     contrats: strong(count(nCt, "contrat")),
@@ -215,7 +233,11 @@ export function buyerCat(F: FichierEntreprise, c: Cl): string {
 /** An amount in millions, one decimal, as the mockup's bars write them (« 5,2 M€ »); below
  * 100 000 € in euros (never « 0,0 M€ »); none: « — ». */
 const meur = (n: number): string =>
-  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
+  !n
+    ? money(0)
+    : n < 1e5
+      ? money(n)
+      : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 
 export type Props = { siren: string; F: FichierEntreprise; couverture?: Couverture };
 export type State = BaseState & {
@@ -576,7 +598,7 @@ export class Entreprise extends Vue<Props, State> {
       ),
       nom,
       lead: lead(F, CT.length, CL.length),
-      kpis,
+      kpis: sansTiret(kpis),
       years,
       yearsCols: `repeat(${yrs.length}, minmax(0, 1fr))`,
       yearAlt: t("entreprise.annees_alt", { de: yrs[0], a: yrs[yrs.length - 1] }),

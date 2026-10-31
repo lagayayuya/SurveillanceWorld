@@ -19,7 +19,7 @@ import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { capital } from "../texte.ts";
 import { repere, typeDocument } from "../types.ts";
-import { arriver, type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
+import { arriver, type BaseState, large, type Partage, partageDe, sansTiret, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
 import template from "./autorisations.html?raw";
@@ -631,7 +631,7 @@ class Autorisations extends Vue<Props, State> {
       voisin: [lien("commune", docsHref, t("commune.tous_documents", { n: nDocs }))],
       lead,
       couverture,
-      kpis,
+      kpis: sansTiret(kpis),
       mairie,
       marks,
       rows,
