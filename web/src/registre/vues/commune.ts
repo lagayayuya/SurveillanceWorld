@@ -53,6 +53,7 @@ import { calm, capital, proper, sentence } from "../texte.ts";
 import { couleur, icone, type TypeCle, typeDocument } from "../types.ts";
 import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
+import { documentHref } from "../routes.ts";
 import template from "./commune.html?raw";
 import {
   demander,
@@ -102,7 +103,7 @@ const meur = (n: number): string =>
   !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
 /** A document type's pictogram and colour, as a template's `.mini` reads them. */
 const picto = (k: TypeCle) => ({ c: `--c: ${couleur(k)}`, i: icone(k) });
-const affHref = (id: string) => `/registre/contrat/${encodeURIComponent(id)}`;
+const affHref = (id: string) => documentHref(id);
 
 /** A catalogue message whose placeholders may be rich (bold, a link): the message is the
  * catalogue's, the rich parts are put back in place of their placeholder. */

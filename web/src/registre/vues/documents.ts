@@ -22,6 +22,7 @@ import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
 import { sansFormule } from "../listes.ts";
+import { documentHref } from "../routes.ts";
 import {
   filCommune,
   lexique,
@@ -91,7 +92,7 @@ const fam = (e: Evenement): string =>
 function docHref(e: Evenement, insee: string): string {
   return isArr(e)
     ? `${communeHref(insee, "autorisations")}/${encodeURIComponent(e.id)}`
-    : `/registre/contrat/${encodeURIComponent(e.affaire)}`;
+    : documentHref(e.affaire);
 }
 
 /** Why a decree could not be read entirely, in words. */
@@ -456,7 +457,7 @@ class Documents extends Vue<Props, State> {
     if (probable)
       links.push({
         l: t("documents.lien_contrat_suivi"),
-        href: `/registre/contrat/${encodeURIComponent(probable)}`,
+        href: documentHref(probable),
       });
     if (isA) {
       if (e.url) links.push({ l: t("arretes.voir"), href: e.url });

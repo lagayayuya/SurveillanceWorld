@@ -28,6 +28,7 @@ import { EI } from "../donnees.ts";
 import { docDate, fr, longDate, longMonth, money, shortDate, shortMonth } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { lien, lienAcheteur, lienCommune, lienDepartement, lienEntreprise } from "../liens.ts";
+import { documentHref } from "../routes.ts";
 import { capital, sentence, tidy } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { lierDepartement, lierLieux, lierMentions } from "./mention-outils.ts";
@@ -183,7 +184,7 @@ export function ouvreAilleurs(f: Fichier): string | null {
   return `${communeHref(e.insee, "autorisations")}/${encodeURIComponent(f.affaire.id)}`;
 }
 
-const contractHref = (id: string) => `/registre/contrat/${encodeURIComponent(id)}`;
+const contractHref = (id: string) => documentHref(id);
 
 export function fiche(f: Fichier): Fiche | null {
   const L = f as unknown as Lexique;

@@ -124,7 +124,7 @@ test("a contract: call for tenders → contract → modification → planned end
   assert.equal(F.prec?.m, "date à vérifier");
   assert.equal(F.prec?.href, "/registre/contrat/C0");
   assert.equal(F.suiv?.l, "Appel d'offres suivant : juillet 2026 →");
-  assert.equal(F.suiv?.href, "/registre/contrat/avis-X");
+  assert.equal(F.suiv?.href, "/registre/avis/avis-X");
   assert.ok(F.reperes.some((r) => r.startsWith("« ? » Date à vérifier")));
   const company = F.qui.find((x) => x.k === "Entreprise");
   assert.equal(company?.note, "· 64 contrats avec 44 collectivités");
@@ -152,7 +152,7 @@ test("a call for tenders linked by a probable link: its mark, explained once in 
   assert.ok(F);
   assert.equal(F.steps[0].k, "ao");
   assert.equal(F.steps[0].lm, "lien probable");
-  assert.equal(F.steps[0].href?.href, "/registre/contrat/avis-P");
+  assert.equal(F.steps[0].href?.href, "/registre/avis/avis-P");
   assert.equal(F.reperes.filter((r) => r.startsWith("« ? » Lien probable")).length, 1);
 });
 

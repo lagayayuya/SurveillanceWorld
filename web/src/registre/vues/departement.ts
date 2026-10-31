@@ -50,6 +50,7 @@ import {
   vendeurs,
 } from "./acheteur-outils.ts";
 import "./departement.css";
+import { documentHref } from "../routes.ts";
 import template from "./departement.html?raw";
 import {
   achatsPropres,
@@ -453,10 +454,7 @@ class Departement extends Vue<Props, State> {
               : [t("acheteur.ent_non_publiee")],
           ],
         ],
-        link: [
-          t("departement.voir_contrat"),
-          `/registre/contrat/${encodeURIComponent(a.c.affaire)}`,
-        ],
+        link: [t("departement.voir_contrat"), documentHref(a.c.affaire)],
       };
     const docs = (S.allD ? A : A.slice(0, DOCS)).map((a, i) => {
       const k = `a${i}`;
@@ -489,12 +487,7 @@ class Departement extends Vue<Props, State> {
       const lx = lexique(x);
       const suite: RichItem[] = o.contrat
         ? [
-            lien(
-              "con",
-              `/registre/contrat/${encodeURIComponent(o.contrat)}`,
-              shortDate(o.dContrat),
-              true,
-            ),
+            lien("con", documentHref(o.contrat), shortDate(o.dContrat), true),
             ...o.ents.flatMap((s) => [" · ", lienEntreprise(lx, s)]),
           ]
         : [o.d >= RECENT ? t("acheteur.pas_encore_publie") : t("acheteur.non_retrouve")];

@@ -235,7 +235,7 @@ export function typeDe(x: RichItem): TypeCle | undefined {
   if (href.startsWith("/registre/commune/")) return "commune";
   if (href.startsWith("/registre/entreprise/")) return "entreprise";
   if (href.startsWith("/registre/acheteur/")) return "acheteur";
-  if (href.startsWith("/registre/contrat/")) return "con";
+  if (/^\/registre\/(contrat|avis|subvention|arrete)\//.test(href)) return "con";
   if (href.startsWith("/registre/departement/"))
     return href.includes("?ic=") ? "epci" : "departement";
   return undefined;

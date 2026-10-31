@@ -10,6 +10,7 @@
 // (GET and POST /api/review/registre, lacarte.api.registre).
 import { t } from "../i18n";
 import { call } from "../participate/api";
+import { documentHref } from "../registre/routes.ts";
 import { type AdminNav, button, frame } from "./admin";
 import { defaultField, FIELDS, type Field, parseValue } from "./registre-value";
 import { el } from "./rows";
@@ -33,7 +34,8 @@ export type ReportedDocument = {
 export type Pending = { pending: number; documents: ReportedDocument[]; fields: string[] };
 
 /** The register's page of a document's contract. */
-export const contractHref = (affaire: string) => `/registre/contrat/${encodeURIComponent(affaire)}`;
+/** A document's record on the register: its type's address (/registre/avis/…, …/contrat/…). */
+export const contractHref = (affaire: string) => documentHref(affaire);
 
 let serial = 0;
 

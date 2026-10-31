@@ -23,6 +23,7 @@ import { EI } from "../donnees.ts";
 import { addMonths, fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { departementHref, lienEntreprise } from "../liens.ts";
+import { documentHref } from "../routes.ts";
 import { capital, sentence, tidy, titleCase } from "../texte.ts";
 import type { FichierDepartement } from "./departement-outils.ts";
 
@@ -120,8 +121,7 @@ export function entName(f: FichierAcheteur, siren: string): string {
   if (!x?.nom) return t("commun.entreprise_siren", { siren });
   return tidy(titleCase(x.nom));
 }
-export const contratHref = (affaire: string): string =>
-  `/registre/contrat/${encodeURIComponent(affaire)}`;
+export const contratHref = (affaire: string): string => documentHref(affaire);
 
 /** A month count as published (a number, or a number in a string); none: null. */
 export function months(v: unknown): number | null {
