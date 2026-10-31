@@ -101,6 +101,15 @@ def _num(x: Any) -> float | None:
     return None if v != v else v
 
 
+def _jour(x: Any) -> str:
+    """A published day, or "" when it is none a contract can have: a well-formed date from 1990
+    to next year (the DECP hold « 0029-12-22 » for a 2021 contract, 2026-10-31)."""
+    d = str(x or "")[:10]
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        return ""
+    return d if 1990 <= int(d[:4]) <= dt.date.today().year + 1 else ""
+
+
 def _days(a: str, b: str) -> int:
     return (dt.date.fromisoformat(b[:10]) - dt.date.fromisoformat(a[:10])).days
 
@@ -259,7 +268,7 @@ def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
             e = {
                 "id": f"{uid}~{n}",
                 "t": "attribution" if n == 0 else "modification",
-                "date": (m.get("dateNotification") or "")[:10],
+                "date": _jour(m.get("dateNotification")),
                 "insee": insee,
                 "dep": dep,
                 "affaire": uid,
@@ -454,8 +463,12 @@ def _quality(
     groupes = set()
     for es in by_amount.values():
         for e in es:
-            near = {affaires[x["affaire"]]["acheteur_siren"] for x in es
-                    if abs(_days(x["date"], e["date"])) <= av["meme_montant_jours"]}  # fmt: skip
+            # a contract published without its notification day (54 of the DECP's rows on
+            # 2026-10-31) is near no other
+            if not e["date"]:
+                continue
+            near = {affaires[x["affaire"]]["acheteur_siren"] for x in es if x["date"]
+                    and abs(_days(x["date"], e["date"])) <= av["meme_montant_jours"]}  # fmt: skip
             if len(near) >= av["meme_montant_acheteurs"]:
                 groupes.add(e["affaire"])
     for u, e in first.items():
@@ -564,6 +577,8 @@ def _probables(
         best = []
         for u in by_buyer.get(s, []):
             ce = first[u]
+            if not ce["date"] or not av["date"]:
+                continue
             d = _days(av["date"], ce["date"])
             if not li["probable_min_jours"] <= d <= li["probable_max_jours"]:
                 continue

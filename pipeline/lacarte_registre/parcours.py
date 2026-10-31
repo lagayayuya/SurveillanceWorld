@@ -35,7 +35,7 @@ def add_months(d: str, n: int) -> str:
     """A date plus n months, its day kept (the page's format.ts addMonths)."""
     y, m = int(d[:4]), int(d[5:7])
     total = y * 12 + (m - 1) + n
-    return f"{total // 12}-{total % 12 + 1:02d}{d[7:]}"
+    return f"{total // 12:04d}-{total % 12 + 1:02d}{d[7:]}"
 
 
 def date_lue(e: Event) -> str:

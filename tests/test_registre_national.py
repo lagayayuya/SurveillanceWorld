@@ -69,6 +69,24 @@ def test_the_same_dates_amounts_communes_and_holders(tmp_path):
             assert (a.get("hors_totaux") or "") == (b.get("hors_totaux") or ""), i
 
 
+def test_a_contract_published_without_its_day_is_kept_and_compared_to_none(tmp_path):
+    """54 of the real DECP's rows have no notification day (2026-10-31): the build keeps them,
+    and the amount checks that compare days skip them."""
+    data = rows()
+    # one amount shared by contracts of several buyers, one of them without its day
+    for r in data[:5]:
+        r["montant"] = 1_234_567
+    data[0]["dateNotification"] = ""
+    # a day no contract can have (the DECP hold « 0029-12-22 » for a 2021 contract)
+    data[1]["dateNotification"] = "0029-12-22"
+    (tmp_path / "national").mkdir()
+    decp.write(tmp_path / "national" / "decp.jsonl.gz", decp.contracts(data))
+    (tmp_path / "national" / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    evs = national.assembler(tmp_path)["evenements"]
+    assert len(evs) >= 238 and any(not e["date"] for e in evs)
+    assert all(not e["date"] or e["date"] >= "1990" for e in evs)
+
+
 # --- the collection, end to end, on a fake server ------------------------------------------
 class Fake(http.server.ThreadingHTTPServer):
     def __init__(self) -> None:
