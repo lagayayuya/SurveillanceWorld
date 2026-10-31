@@ -215,12 +215,19 @@ def corriger(reg: Registre, corr: list[Correction]) -> None:
 # SIREN names it in SIRENE, so it never leaves the build (masquer_ei).
 EI = "ei"
 EI_DICO = {"nom": None, "entrepreneur_individuel": True}
+# A sole trader's SIREN (or one of its SIRETs) written in a free text (an objet, a title, a
+# label), replaced where it stands, as MASQUE replaces a natural person's name.
+MASQUE_SIREN = "[SIREN masqué]"
+# 9 digits, maybe grouped by three (« 123 456 789 », « 123.456.789 »), maybe followed by an
+# establishment's 5 (a SIRET); never inside a longer run of digits (an affaire's id).
+SIREN_TEXTE = re.compile(r"(?<!\d)(\d{3})[\s.]?(\d{3})[\s.]?(\d{3})(?:[\s.]?\d{5})?(?!\d)")
 
 
 def masquer_ei(reg: Registre) -> int:
     """Replace every sole trader's SIREN by EI: the documents' and the affaires' companies,
     a correction's source value, any `*_siren` field; the dictionary keeps one EI entry and
-    no sole trader's own. Returns how many sole traders were masked."""
+    no sole trader's own; written in a free text (an objet, a title), by MASQUE_SIREN.
+    Returns how many sole traders were masked."""
     ents = reg.pilote.reg.get("entreprises", {})
     ei = {s for s, x in ents.items() if x.get("entrepreneur_individuel")}
     if not ei:
@@ -260,9 +267,21 @@ def _ei_id(v: Any, ei: set[str]) -> bool:
     return isinstance(v, str) and (v in ei or (len(v) == 14 and v.isdigit() and v[:9] in ei))
 
 
+def masquer_texte(text: str, ei: set[str] | frozenset[str]) -> str:
+    """`text` with every sole trader's SIREN or SIRET written in it replaced by MASQUE_SIREN."""
+    if not ei or not any(ch.isdigit() for ch in text):
+        return text
+    return SIREN_TEXTE.sub(
+        lambda m: MASQUE_SIREN if "".join(m.groups()) in ei else m.group(0), text
+    )
+
+
 def _sans_ei(v: Any, ei: set[str]) -> Any:
-    """`v` with every sole trader's id gone: EI in a list, None as a value, a key dropped.
-    Containers are changed in place (the documents are shared between indexes)."""
+    """`v` with every sole trader's id gone: EI in a list, None as a value, a key dropped,
+    MASQUE_SIREN where a text writes it. Containers are changed in place (the documents are
+    shared between indexes)."""
+    if isinstance(v, str):
+        return masquer_texte(v, ei)
     if isinstance(v, list):
         for i, x in enumerate(v):
             v[i] = EI if _ei_id(x, ei) else _sans_ei(x, ei)

@@ -7,10 +7,13 @@ The CI extract holds no sole trader: two of its companies are made sole traders 
 copy of the imported pilot (SYNTHETIC, for this test only), as the pilot export gives them
 (entrepreneur_individuel, the name masked); one of their contracts gets a correction that
 names another company instead, so that the masked SIREN would also be the correction's
-source value."""
+source value. One of their contracts also writes both sole traders' numbers in its objet and
+its affaire's title (synthetic): a SIREN bare, a SIRET grouped by three (« 508 837 564 00017 »),
+as published objets sometimes do; the build masks them there too."""
 
 from __future__ import annotations
 
+import gzip
 import json
 from pathlib import Path
 
@@ -26,6 +29,9 @@ EI_A, EI_B = "393040571", "508837564"
 CONTRACT_A = "176901205000112569036_45110000~0"
 CONTRACT_B = "176901205000112021151043296700_71000000~0"
 SYTRAL, GROUP = "256900994", "G69029-2019-10-10-1"
+OBJET_EI = f"titulaire SIREN {EI_A}, cotraitant SIRET 508 837 564 00017, mandataire {SERFIM}"
+# every way the build could still serve one of them
+FORMS = [EI_A, EI_B, "393 040 571", "508 837 564", "393.040.571"]
 
 
 @pytest.fixture(scope="module")
@@ -36,6 +42,12 @@ def site(tmp_path_factory) -> Path:
     data = json.loads(reg.read_text(encoding="utf-8"))
     for s in (EI_A, EI_B):
         data["entreprises"][s].update(entrepreneur_individuel=True, nom=None)
+    # a free text naming them by their numbers, beside a company that is not one (synthetic)
+    for e in data["evenements"]:
+        if e["id"] == CONTRACT_A:
+            e["objet"] = f"{e.get('objet') or ''} ({OBJET_EI})"
+    aff = data["affaires"][CONTRACT_A.split("~")[0]]
+    aff["titre"] = f"{aff.get('titre') or ''} ({OBJET_EI})"
     reg.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
     # The full pilot also names companies in a buyer's entry and in a group of lots, which
     # the extract leaves out: put the sole traders there too (a SIRET for one of them).
@@ -69,6 +81,35 @@ def test_no_served_file_holds_a_sole_trader_s_siren(site):
         assert EI_A.encode() not in data and EI_B.encode() not in data, p.relative_to(site)
     assert not (site / "entreprise" / f"{EI_A}.json").exists()
     assert not (site / "entreprise" / f"{regles.EI}.json").exists()
+
+
+def test_a_free_text_never_serves_a_sole_trader_s_number(site):
+    """An objet, a title, the share texts, the entry pages and the search rows (beside the
+    site, not served but loaded into the database the search answers from): every form."""
+    served = [p for p in site.rglob("*") if p.is_file() and p.suffix in (".json", ".html")]
+    with gzip.open(site.parent / "recherche.tsv.gz", "rt", encoding="utf-8") as g:
+        texts = [("recherche.tsv.gz", g.read())]
+    texts += [(str(p.relative_to(site)), p.read_text(encoding="utf-8")) for p in served]
+    for name, text in texts:
+        for form in FORMS:
+            assert form not in text, (name, form)
+    a = next(json.loads(r["doc"]) for r in rows(site) if r["id"] == CONTRACT_A)
+    assert a["objet"].endswith(
+        f"(titulaire SIREN {regles.MASQUE_SIREN}, cotraitant SIRET {regles.MASQUE_SIREN}, "
+        f"mandataire {SERFIM})"
+    )
+    # the company that is not a sole trader keeps its number, and its link (refs.py mentions)
+    assert any(m["ref"] == f"entreprise/{SERFIM}" for m in a["mentions"])
+    doc = read(site, f"document/{CONTRACT_A.split('~')[0]}.json")
+    assert regles.MASQUE_SIREN in doc["affaire"]["titre"]
+    assert regles.MASQUE_SIREN in doc["partage"]["texte"]
+
+
+def test_a_number_inside_a_longer_one_is_not_masked():
+    ei = {EI_A}
+    assert regles.masquer_texte(f"lot {EI_A}0 et 1{EI_A}", ei) == f"lot {EI_A}0 et 1{EI_A}"
+    assert regles.masquer_texte(f"SIRET {EI_A}00012.", ei) == f"SIRET {regles.MASQUE_SIREN}."
+    assert regles.masquer_texte(f"n° {SERFIM}", ei) == f"n° {SERFIM}"
 
 
 def test_its_documents_say_a_sole_trader_whose_name_is_not_published(site):
