@@ -5,7 +5,12 @@ import type { Couverture } from "./donnees.ts";
 import { load } from "./donnees.ts";
 import { has, t } from "./i18n.ts";
 
-export type Source = { l: string; ed: string; date: string };
+export type Source = { l: string; ed: string; date: string; href?: string; lien?: string };
+
+/** A legal person's official record, the Annuaire des entreprises (DINUM, from SIRENE): a link
+ * only, nothing loaded from it. Never for a sole trader (its number names a person). */
+export const annuaire = (siren: string): string =>
+  `https://annuaire-entreprises.data.gouv.fr/entreprise/${siren}`;
 
 const numDate = (d: string) => d.split("-").reverse().join("/");
 
@@ -13,8 +18,14 @@ const numDate = (d: string) => d.split("-").reverse().join("/");
 export const couverture = (): Promise<Couverture> => load<Couverture>("couverture.json");
 
 /** The sources a fiche reads, in this order: `ids` are couverture.json's (contrats, avis, the
- * départements' decrees…); `sirene` adds the companies' register (names and activities). */
-export function sources(c: Couverture | undefined, ids: string[], sirene = false): Source[] {
+ * départements' decrees…); `sirene` adds the companies' register (names and activities), with
+ * `fiche` its official record when the fiche is a legal person's (« Fiche officielle »). */
+export function sources(
+  c: Couverture | undefined,
+  ids: string[],
+  sirene = false,
+  fiche?: string,
+): Source[] {
   const out: Source[] = [];
   for (const id of ids) {
     const s = c?.sources.find((x) => x.id === id);
@@ -30,6 +41,12 @@ export function sources(c: Couverture | undefined, ids: string[], sirene = false
       date,
     });
   }
-  if (sirene) out.push({ l: t("sources.sirene"), ed: t("sources.editeur.sirene"), date: "" });
+  if (sirene)
+    out.push({
+      l: t("sources.sirene"),
+      ed: t("sources.editeur.sirene"),
+      date: "",
+      ...(fiche ? { href: fiche, lien: t("sources.fiche_officielle") } : {}),
+    });
   return out;
 }

@@ -180,3 +180,14 @@ test("one buyer, every contract shared, no modification, no known end: said as s
   assert.equal(v.parPhrase, "Ses 2 contrats ont été signés avec d'autres entreprises.");
   assert.equal(v.docsPhrase, "2 contrats, avec la cliente, le montant et la source.");
 });
+
+test("a legal person's Sources lead to its official record; a sole trader's never", async () => {
+  const { annuaire, sources } = await import("../src/registre/sources.ts");
+  const rows = sources(undefined, [], true, annuaire("431903954"));
+  assert.deepEqual(
+    rows.map((s) => [s.href, s.lien]),
+    [["https://annuaire-entreprises.data.gouv.fr/entreprise/431903954", "Fiche officielle"]],
+  );
+  // a sole trader: neither its name nor its number, no SIRENE row at all
+  assert.deepEqual(sources(undefined, [], false), []);
+});

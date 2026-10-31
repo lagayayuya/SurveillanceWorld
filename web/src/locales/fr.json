@@ -3593,6 +3593,7 @@
   "registre.sources.collecte_le": "lu le {date}",
   "registre.sources.sirene": "Nom et activité",
   "registre.sources.editeur.sirene": "Répertoire SIRENE, Insee",
+  "registre.sources.fiche_officielle": "Fiche officielle",
   "registre.sources.editeur.contrats": "Données essentielles de la commande publique, data.gouv.fr",
   "registre.sources.editeur.avis": "BOAMP, Direction de l'information légale et administrative",
   "registre.sources.editeur.subventions_region_idf": "Région Île-de-France",

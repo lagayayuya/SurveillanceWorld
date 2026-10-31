@@ -19,7 +19,7 @@ import {
   lienDocument,
   lienEntreprise,
 } from "../liens.ts";
-import { sources } from "../sources.ts";
+import { annuaire, sources } from "../sources.ts";
 import { icone } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
 import { aides } from "./departement-outils.ts";
@@ -567,7 +567,13 @@ export class Entreprise extends Vue<Props, State> {
         tickets: wide ? "tickets" : "tickets t2",
         deux: wide ? "deux" : "deux un",
       },
-      sources: sources(this.props.couverture, ["contrats", "avis"], !ei),
+      // a legal person's official record (the Annuaire des entreprises), never a sole trader's
+      sources: sources(
+        this.props.couverture,
+        ["contrats", "avis"],
+        !ei,
+        ei ? undefined : annuaire(siren),
+      ),
       nom,
       lead: lead(F, CT.length, CL.length),
       kpis,

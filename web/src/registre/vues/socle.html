@@ -79,7 +79,7 @@
   <section id="sources" class="sec">
     <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
     <div style="border-top: 2px solid var(--line)">
-      <sc-for list="{{sources}}" as="s"><div class="src" data-mention="non"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}</span></div></sc-for>
+      <sc-for list="{{sources}}" as="s"><div class="src" data-mention="non"><b>{{s.l}}</b><span>{{s.ed}}</span><span class="tw">{{s.date}}<sc-if value="{{s.href}}"><a href="{{s.href}}">{{s.lien}}</a></sc-if></span></div></sc-for>
     </div>
     <p class="sober" style="margin: 0"><a href="/registre/couverture">{{t.sources.couverture}}</a></p>
   </section>
