@@ -85,8 +85,11 @@ export function phrase(key: string): Morceau[] {
     "ao",
     "aut",
     "sub",
-  ])
+  ]) {
     marks[k] = `\u0001${k}\u0001`;
+    // « des {mod_p} »: the plural's sticker (v2.3, « des MODIFICATIONS »)
+    marks[`${k}_p`] = `\u0001${k}_p\u0001`;
+  }
   const out: Morceau[] = [];
   t(key, marks)
     .split("\u0001")
@@ -100,14 +103,15 @@ export function phrase(key: string): Morceau[] {
         if (w) out.push({ isT: false, isW: true, w });
         return;
       }
-      const k = x as TypeCle;
+      const plur = x.endsWith("_p");
+      const k = (plur ? x.slice(0, -2) : x) as TypeCle;
       out.push({
         isT: true,
         isW: false,
         href: listeHref(k),
         c: `--c: ${couleur(k)}`,
         i: icone(k),
-        l: mot(k),
+        l: plur ? pluriel(k) : mot(k),
         apres: "",
       });
     });
