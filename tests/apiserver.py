@@ -1,6 +1,7 @@
 """The participation API on a throwaway database, for development and the smoke tests.
 
     uv run python tests/apiserver.py --region ci [--port 8791] [--origin URL]
+        [--registre data/registre/recherche.tsv.gz]
 
 Makes a PostGIS cluster (tests/pgcluster.py; TEST_DSN in CI), applies the migrations,
 loads the region's build (`lacarte db load`, its files in a temporary folder: the build is
@@ -143,6 +144,11 @@ def main() -> None:
     )
     p.add_argument("--fixtures", type=Path, help="write a camera and a point near a facade")
     p.add_argument("--reset", action="store_true", help="empty the contributions first")
+    p.add_argument(
+        "--registre",
+        type=Path,
+        help="the register's search rows to load (data/registre/recherche.tsv.gz, lot R3)",
+    )
     args = p.parse_args()
     region = regions.load(args.region)
     with pgcluster.database() as dsn:
@@ -160,6 +166,14 @@ def main() -> None:
         with tempfile.TemporaryDirectory(prefix="apiserver-") as out:
             db.export(region, Path(out))
             db.load(Path(out), dsn)
+        if args.registre:
+            import psycopg
+
+            from lacarte_registre import recherche
+
+            with psycopg.connect(dsn, autocommit=True) as conn:
+                n = recherche.charger(conn, args.registre)
+            print(f"registre: {n} documents in the search", flush=True)
         if args.reset:  # CI's database also served pytest
             import subprocess
 
