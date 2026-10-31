@@ -1033,10 +1033,11 @@ DECISIONS 2026-10-28.
   contrat : une enveloppe, pas forcément dépensée en entier. »; « date à vérifier » and « lien
   probable » are a small mark beside the datum, named for assistive technologies and explained
   in the panel and under « i ».
-- **Loading.** The summary reads `index.json` and `couverture.json`, then the search file
-  (`recherche.json`, 5 MB, 1.1 MB compressed) after its first display for four of its counts and the
-  search (until R3 writes the counts and answers the search); a fiche's file is asked as its path
-  opens. Carte et drones draws on the site's map, already there: its outline is the head of
+- **Loading.** The summary reads `index.json` (its counts, `comptes`) and `couverture.json`; a
+  search asks `listes.json` once (the names) and the search API (`GET /api/registre/recherche`,
+  the documents, by kind: one request for the counts, one per kind found); a list of names reads
+  `listes.json`, a list of documents asks the API a page of 20 at a time (lot R3); a fiche's file
+  is asked as its path opens. Carte et drones draws on the site's map, already there: its outline is the head of
   `/data/registre/carte/<insee>.json` (the read cancelled once it has arrived), its volumes the
   commune file's slots; measured (`web/bench/registre-carte.mjs`, Apple M3): Lyon 5.3 MB cold,
   1.4 MB with the map loaded, 449 images/s tilting, 358 turning; Paris 7.4 MB and 3.4 MB, 494 and
@@ -1952,8 +1953,10 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-doors` | « Le registre → » on the row of « Filtres et légende » in the ticket; « Voir dans le registre » in a commune's or a département's sheet when the register holds its page | registre/hote.ts; areapunk.ts; main.ts | IMPROVISED (the boards draw no door) | `/?insee=69283` | — | yes |
 | `reg2-summary` | The summary: the cut-out title, the coverage and update line, the search, the four families with their counts (each a list), « Comment lire le registre », the update and the decrees not read | registre/vues/sommaire.ts | V2-Sommaire, V2-Tel-Sommaire | `/registre/` | — | yes |
 | `reg2-search` | Typed: the results grouped by type, each a typed link, « Les N → » to the list filtered by the same words | registre/vues/sommaire.ts; listes.ts | V2-Sommaire | `/registre/?q=mions` | — | yes |
-| `reg2-search-off` | Neither the API nor `recherche.json` answers: « recherche indisponible » and the départements' list | registre/vues/sommaire.ts | IMPROVISED | `recherche.json` blocked | — | yes |
+| `reg2-search-off` | The search API does not answer: the names found (listes.json) if any, then « recherche indisponible » and the départements' list | registre/vues/sommaire.ts | IMPROVISED | the API stopped | — | yes |
 | `reg2-list` | A list: the rail, its title, « classer par » with the rank, the filters with their counts, the rows (the pictogram alone), « Afficher plus », the CSV; the detail panel on the right, a document's « Voir l'arrêté » (or its source) and « Signaler une erreur » in it | registre/vues/liste.ts; listes.ts | V2-Liste | `/registre/entreprises`, `/registre/arretes?dep=69` | — | yes |
+| `reg2-list-docs-loading` | A list of documents while its page is asked: « Chargement de la liste… » under the heads, no row | registre/vues/liste.ts | IMPROVISED | `/registre/contrats`, a slow API | — | yes |
+| `reg2-list-docs-off` | The search API does not answer a list of documents: « La liste n'a pas pu être chargée. Réessayez. », no « Afficher plus » | registre/vues/liste.ts | IMPROVISED | `/registre/contrats`, the API stopped | — | yes |
 | `reg2-fiche` | A fiche: its type's sticker, its name cut out, its identity; the band stuck at the top with its sections (the one read marked) and « Partager »; the sections in order, numbered; the panel on the right | vues/socle.html; vue.ts | V2-Entreprise | Serfim T.I.C., Lyon, Mions, Sytral, the Rhône | — | yes |
 | `reg2-detail-drawer` | On a phone, something touched: the detail rises as a drawer with its ✕; at rest no panel | vues/socle.html; registre.css | V2-Tel-Entreprise (08b) | a year of Serfim at 390 px | — | yes |
 | `reg2-share` | « Partager »: on a wide screen a window (« Copier le lien », « Copier le texte » when the build wrote one, the image when the build made it); on a phone a drawer (« Partager… » when the device has a share sheet, « Copier le lien »); the link keeps the section; « Lien copié » | registre/partage.ts | V2-Entreprise (share), V2-Tel-Entreprise | Serfim's band | — | yes |
