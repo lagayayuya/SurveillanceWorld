@@ -797,12 +797,20 @@ export function motValeur(f: Filtre, v: string): string {
 
 export type Etat = { tri: string; dir: 1 | -1; q: string; f: Partial<Record<Filtre, string>> };
 
+/** A filter's values chosen: « 69,13 » the Rhône and the Bouches-du-Rhône (the départements). */
+export const choisis = (v: string | undefined): string[] => (v ? v.split(",").filter(Boolean) : []);
+
 /** The state an address says (?tri=…&ordre=…&dep=…&q=…); a value it does not know is dropped. */
 export function etatDe(def: Def, q: Record<string, string>): Etat {
   const t0 = def.tris.find((x) => x.k === q.tri) ?? def.tris[0];
   const dir = q.ordre === "asc" ? 1 : q.ordre === "desc" ? -1 : t0.dir;
   const f: Partial<Record<Filtre, string>> = {};
-  for (const k of def.filtres) if (q[k] && valeurs(k).includes(q[k])) f[k] = q[k];
+  for (const k of def.filtres) {
+    // the départements, several at once (« 69,13 », v2.3); the other filters one value
+    const vs = k === "dep" ? choisis(q[k]) : q[k] ? [q[k]] : [];
+    const ok = vs.filter((v) => valeurs(k).includes(v));
+    if (ok.length) f[k] = ok.join(",");
+  }
   return { tri: t0.k, dir, q: q.q ?? "", f };
 }
 
@@ -829,7 +837,9 @@ export function appliquer(def: Def, all: Rang[], e: Etat): Resultat {
   const q = plain(e.q.trim());
   const base = q ? all.filter((r) => r.mots.includes(q)) : all;
   const ok = (r: Rang, skip: Filtre | null) =>
-    def.filtres.every((k) => k === skip || !e.f[k] || (r.f[k] ?? []).includes(e.f[k] as string));
+    def.filtres.every(
+      (k) => k === skip || !e.f[k] || (r.f[k] ?? []).some((v) => choisis(e.f[k]).includes(v)),
+    );
   const comptes: Resultat["comptes"] = {};
   for (const k of def.filtres) {
     const c: Record<string, number> = { "": 0 };

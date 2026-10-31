@@ -19,6 +19,7 @@ import {
   type Comptes,
   type Corpus,
   type CouvertureX,
+  choisis,
   comptesIndex,
   comptesPage,
   corpus,
@@ -47,6 +48,7 @@ import {
 } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
+import { plain } from "../texte.ts";
 import {
   couleur,
   decoupe,
@@ -86,6 +88,9 @@ type State = BaseState & {
   /** a page is being asked; the API did not answer */
   charge: boolean;
   echec: boolean;
+  /** the menu open (« Départements », v2.3), and the words typed in its search */
+  menu: "dep" | null;
+  menuQ: string;
 };
 const VIDE: Lexique = { entreprises: {}, acheteurs: {}, communes: {}, affaires: {} };
 
@@ -205,7 +210,16 @@ export class ListeVue extends Vue<Props, State> {
       );
       if (i >= 0) lim = Math.ceil((i + 1) / PAS) * PAS;
     }
-    return { e, lim, docs: null, charge: false, echec: false, sel: ligne ?? null };
+    return {
+      e,
+      lim,
+      docs: null,
+      charge: false,
+      echec: false,
+      sel: ligne ?? null,
+      menu: null,
+      menuQ: "",
+    };
   }
 
   /** A list of documents: its first page in the state `e` (after a pause for typed words), or the
@@ -257,6 +271,7 @@ export class ListeVue extends Vue<Props, State> {
   componentWillUnmount(): void {
     clearTimeout(this.attente);
     this.n++;
+    document.removeEventListener("pointerdown", this.dehors, true);
   }
   titre(): string {
     return nomListe(this.props.liste, this.state.e.f.cat);
@@ -271,6 +286,7 @@ export class ListeVue extends Vue<Props, State> {
   componentDidMount(): void {
     void this.pages(this.state.e);
     this.viser();
+    document.addEventListener("pointerdown", this.dehors, true);
     // on a phone the rail is a strip: its current list in view
     document
       .querySelector<HTMLElement>(".v-liste .rail.tel .ri.on")
@@ -317,6 +333,94 @@ export class ListeVue extends Vue<Props, State> {
     return () => this.set({ f: { ...this.state.e.f, [f]: v || undefined } });
   }
 
+  // --- the départements' menu (v2.3, mockups liste-communes-*): one button for the 101 ---------
+  /** A département chosen or not: the list follows at once, the menu stays open. */
+  private basculerDep(v: string): Handler {
+    return () => {
+      const cur = choisis(this.state.e.f.dep);
+      const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
+      this.set({ f: { ...this.state.e.f, dep: next.join(",") || undefined } });
+    };
+  }
+  private effacerDeps: Handler = () => this.set({ f: { ...this.state.e.f, dep: undefined } });
+  private ouvrirMenu: Handler = () => {
+    const open = this.state.menu !== "dep";
+    this.setState({ menu: open ? "dep" : null, menuQ: "" });
+    if (open)
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLInputElement>(".v-liste .dmenu input")?.focus(),
+      );
+  };
+  private fermerMenu = (): void => {
+    if (!this.state.menu) return;
+    this.setState({ menu: null });
+    document.querySelector<HTMLElement>(".v-liste .dbtn")?.focus();
+  };
+  /** Its keys: Escape closes it, the arrows go through the départements, Space ticks one. */
+  private clavierMenu: Handler = (ev) => {
+    const opts = [...document.querySelectorAll<HTMLElement>(".v-liste .dmenu [role=option]")];
+    const i = opts.indexOf(document.activeElement as HTMLElement);
+    if (ev.key === "Escape") this.fermerMenu();
+    else if (ev.key === "ArrowDown") opts[Math.min(opts.length - 1, i + 1)]?.focus();
+    else if (ev.key === "ArrowUp") (i > 0 ? opts[i - 1] : opts[0])?.focus();
+    else if (ev.key === " " && i >= 0) opts[i].click();
+    else return;
+    ev.nativeEvent.preventDefault();
+  };
+  /** A pointer down outside the menu closes it. */
+  private dehors = (ev: Event): void => {
+    if (this.state.menu && !(ev.target as Element).closest?.(".v-liste .dancre")) this.fermerMenu();
+  };
+
+  /** The menu's words and rows: the départements the list has, by number, each with its count and
+   * its box; the four with the most rows; the chosen ones as chips under the bar. */
+  private menuDeps(c: Record<string, number>, total: number, k: TypeCle) {
+    const S = this.state;
+    const chosen = choisis(S.e.f.dep);
+    const q = plain(S.menuQ.trim());
+    const dep = (v: string) => {
+      const on = chosen.includes(v);
+      return {
+        code: v,
+        nom: nomDep(this.props, v),
+        n: fr(c[v] ?? 0),
+        on: on ? "true" : "false",
+        cls: on ? "drow on" : "drow",
+        pick: this.basculerDep(v),
+      };
+    };
+    const have = valeurs("dep").filter((v) => c[v] || chosen.includes(v));
+    const tous = have
+      .map(dep)
+      .filter((d) => !q || d.code.startsWith(q) || plain(d.nom).includes(q));
+    const top = [...have]
+      .sort((a, b) => (c[b] ?? 0) - (c[a] ?? 0))
+      .slice(0, 4)
+      .map(dep);
+    return {
+      etat: chosen.length ? t("liste.dep.choisis", { n: chosen.length }) : t("liste.tous.dep"),
+      ouvert: S.menu === "dep" ? "true" : "false",
+      menu: S.menu === "dep",
+      basculer: this.ouvrirMenu,
+      q: S.menuQ,
+      onQ: ((ev) => this.setState({ menuQ: ev.value })) as Handler,
+      top: q || !top.length ? null : top,
+      tous,
+      vide: tous.length === 0,
+      clavier: this.clavierMenu,
+      effacer: this.effacerDeps,
+      fermer: (() => this.fermerMenu()) as Handler,
+      voir: t("liste.voir", { n: fr(total), quoi: pluriel(k).toLowerCase() }),
+      chips: !chosen.length
+        ? null
+        : chosen.map((v) => ({
+            l: `${nomDep(this.props, v)} · ${fr(c[v] ?? 0)}`,
+            ote: this.basculerDep(v),
+            aide: t("liste.dep.oter", { nom: nomDep(this.props, v) }),
+          })),
+    };
+  }
+
   renderVals() {
     const { liste, C, I } = this.props;
     const def = this.def;
@@ -341,36 +445,33 @@ export class ListeVue extends Vue<Props, State> {
       arrow: arrow(x.k),
       pick: this.trier(x.k),
     }));
-    const filtres = def.filtres.map((f) => {
-      const c = cpt[f] ?? {};
-      const cur = e.f[f] ?? "";
-      return {
-        lbl: t(
-          f === "dep" && liste === "entreprises"
-            ? "liste.filtre.dep_entreprises"
-            : `liste.filtre.${f}`,
-        ),
-        keys: [
-          {
-            l: t(`liste.tous.${f}`),
-            nom: "",
-            n: fr(c[""] ?? 0),
-            on: cur ? "false" : "true",
-            pick: this.filtrer(f, ""),
-          },
-          ...valeurs(f)
-            .filter((v) => c[v] || cur === v)
-            .map((v) => ({
-              l: motValeur(f, v),
-              // a département's key is its number; its name is read
-              nom: f === "dep" ? nomDep(this.props, v) : "",
-              n: fr(c[v] ?? 0),
-              on: cur === v ? "true" : "false",
-              pick: this.filtrer(f, v),
-            })),
-        ],
-      };
-    });
+    const filtres = def.filtres
+      .filter((f) => f !== "dep")
+      .map((f) => {
+        const c = cpt[f] ?? {};
+        const cur = e.f[f] ?? "";
+        return {
+          lbl: t(`liste.filtre.${f}`),
+          keys: [
+            {
+              l: t(`liste.tous.${f}`),
+              nom: "",
+              n: fr(c[""] ?? 0),
+              on: cur ? "false" : "true",
+              pick: this.filtrer(f, ""),
+            },
+            ...valeurs(f)
+              .filter((v) => c[v] || cur === v)
+              .map((v) => ({
+                l: motValeur(f, v),
+                nom: "",
+                n: fr(c[v] ?? 0),
+                on: cur === v ? "true" : "false",
+                pick: this.filtrer(f, v),
+              })),
+          ],
+        };
+      });
     const triNom = def.tris.some((x) => x.k === "nom");
     const head = (l: string, key: string | undefined, cls: string, w = "", aide = "") => ({
       l,
@@ -445,6 +546,7 @@ export class ListeVue extends Vue<Props, State> {
       ),
       sorts,
       filtres,
+      deps: def.filtres.includes("dep") ? this.menuDeps(cpt.dep ?? {}, total, k) : null,
       argent: def.argent,
       caption: t("liste.caption", { liste: nomListe(liste, e.f.cat) }),
       cols,
