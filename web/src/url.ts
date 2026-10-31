@@ -40,17 +40,20 @@ export function mapAddress(): string {
 
 // The register's paths: the page opened at one shows the map behind it, at its last address
 // (?carte=, an older link's) or at its start.
-// A commune's page shows the commune on the map (as « ← Carte » did, plan B1.3).
+// A commune's page shows the commune on the map (as « ← Carte » did, plan B1.3); its drone view
+// frames the commune itself (registre/vues/carte.ts), so the map is not asked for the area: no
+// area index to fetch (tiles/areas.json, 920 kB), no framing of its own seconds later, no area's
+// sheet under the view (register v2.4).
+export function mapAtStart(pathname: string, search: string): string {
+  const carte = new URLSearchParams(search).get("carte");
+  if (carte && /^[?#]/.test(carte) && !/[\s<>"]/.test(carte)) return `/${carte}`;
+  const insee = /^\/registre\/commune\/(\d[\dAB]\d{3})(\/|$)/.exec(pathname)?.[1];
+  return insee && !/^\/registre\/commune\/[^/]+\/carte\/?$/.test(pathname)
+    ? `/?insee=${insee}`
+    : "/";
+}
 if (/^\/registre(\/|$)/.test(window.location.pathname)) {
-  const carte = new URLSearchParams(window.location.search).get("carte");
-  const insee = /^\/registre\/commune\/(\d[\dAB]\d{3})(\/|$)/.exec(window.location.pathname)?.[1];
-  setAside(
-    carte && /^[?#]/.test(carte) && !/[\s<>"]/.test(carte)
-      ? `/${carte}`
-      : insee
-        ? `/?insee=${insee}`
-        : "/",
-  );
+  setAside(mapAtStart(window.location.pathname, window.location.search));
   last = "/";
 }
 
