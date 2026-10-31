@@ -2468,3 +2468,9 @@ rows above hold for the content of the fiches.
 | V2-Partage: the text rendered by the browser | the name, line and figures drawn by FreeType (Pillow) with the site's own fonts and the mockup's sizes, axes and colours; one palette of 256 colours | no browser in the build (the VPS has none); the palette keeps an image near 80 kB (DECISIONS 2026-10-30) |
 | V2-Entreprise: « Sources » names SIRENE without a link | « Fiche officielle », a link to the company's record in the Annuaire des entreprises (annuaire-entreprises.data.gouv.fr), nothing loaded from it; never for a sole trader | Ju's instruction (lot R3): a legal person's official record one link away |
 | V2-Sommaire: « Île-de-France, Rhône, Bouches-du-Rhône · mis à jour le … » | what each family of documents covers, in one sentence (« Contrats : toute la France. Avis et subventions : Île-de-France, Rhône, Bouches-du-Rhône. Arrêtés : Rhône. »), from couverture.json `resume`, each département a link | Ju's instruction (lot R3): the contracts now cover all of France, the decrees one département |
+
+### The register v2.3 (2026-10-31)
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Every board: the search field, the theme button and ✕ cream (`#f2efe6`, `#111`, a blue shadow) in both modes | on the theme's tokens (`--bg-2`, `--fg`, `--line`, `--reg-shadow-ticket`): dark in the dark mode; in the light mode white with an ink shadow, which the black top bar hides | Ju's instruction (v2.3, point 3): in the dark mode the cream controls stood out of the page |

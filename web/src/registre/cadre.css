@@ -114,9 +114,9 @@
   width: 300px;
   height: 38px;
   padding: 0 10px;
-  background: #f2efe6;
-  color: #111;
-  border: 2px solid #f2efe6;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
 }
 .rg .msearch input {
   flex: 1;
@@ -126,7 +126,7 @@
   font:
     500 14px Archivo,
     sans-serif;
-  color: #111;
+  color: var(--fg);
   outline-offset: 3px;
 }
 .rg .sq {
@@ -135,10 +135,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f2efe6;
-  color: #111 !important;
+  background: var(--bg-2);
+  color: var(--fg) !important;
   border: 0;
-  box-shadow: 3px 3px 0 #7fd4ff;
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
   cursor: pointer;
   text-decoration: none !important;
   font:
@@ -1221,8 +1221,8 @@
   width: 44px;
   height: 44px;
   font-size: 14px;
-  box-shadow: 3px 3px 0 #111;
-  border: 2px solid #111;
+  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  border: 2px solid var(--line);
 }
 /* pressed: in ink, as every selection since v2.1 (A1: the yellow is the territories') */
 .rg .ctl .sq[aria-pressed="true"] {

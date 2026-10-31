@@ -849,9 +849,9 @@
 .dialogue .btn {
   min-height: 44px;
   padding: 0 14px;
-  border: 2px solid #111;
-  background: #fff;
-  color: #111;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
   font:
     800 15px Archivo,
     sans-serif;
