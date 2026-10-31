@@ -968,6 +968,11 @@
 .rg .th .ttop a.crumb {
   color: var(--fg);
 }
+/* The top bar's squares keep their paper in light, their shadow the theme's blue (v2.4, Ju): the
+   ink shadow was lost on the black bar. The documents' blue, the dark theme's shadow. */
+.rg .mtop .sq {
+  box-shadow: 3px 3px 0 var(--type-document);
+}
 .rg .ttop .sq {
   width: 38px;
   height: 38px;
