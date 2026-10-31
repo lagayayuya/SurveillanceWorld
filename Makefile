@@ -54,7 +54,7 @@ bench:
 #   mkdir -p data/contrib && cp tests/fixtures/contrib-ci.jsonl data/contrib/ci.jsonl
 #   make build REGION=ci
 # `make smoke ONLY="participate theme"` runs the steps whose names start so; logs in
-# build/gate/logs/.
+# build/gate/logs/. Its steps run in two lanes at once; GATE_SERIAL=1 one after another.
 smoke:
 	web/scripts/gate.sh $(ONLY)
 

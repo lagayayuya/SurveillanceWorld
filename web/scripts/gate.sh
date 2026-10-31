@@ -10,7 +10,8 @@
 # It builds in build/gate/ (ignored by git), never in web/dist nor web/public, which keep
 # the developer's region:
 #   current/web       the working tree's web files (tracked and new, not ignored), built;
-#   logs/<step>.log   each step's output.
+#   logs/<step>.log   each step's output;
+#   status/<step>     each step's summary line (the steps run in two lanes at once, below).
 # The build serves the CI extract (data/build/ci/tiles, the versioned basemap), which must
 # be built from the CI fixture as CI's `prepare` job does (checked: the build id).
 # Exits 2 when something is missing, 1 when a step failed, 3 when the machine's lock is taken.
@@ -92,8 +93,15 @@ build_current() {
 }
 
 # --- steps ------------------------------------------------------------------------------------
-declare -a SUMMARY=()
-failed=0
+# The steps run in two lanes at once (the machine had the room: one lane used 2.4 cores of
+# 8), a lane's steps one after another, then the `last` lane alone (the prefetch's throttled
+# timing). Two steps of one bench script share its ports (the states' harness its three:
+# score, editor, revue-operator), so all of a script's steps are in one lane. Each step keeps
+# its log; the summary lists them in the order below, whatever order they ended in.
+# GATE_SERIAL=1 runs the lanes one after the other.
+STATUS="$GATE/status"
+PHASE=""  # run:<lane>: run that lane's steps; summary: print every step's line
+LANE=""
 
 selected() {
   [ ${#ONLY[@]} -eq 0 ] && return 0
@@ -102,12 +110,21 @@ selected() {
   return 1
 }
 
+# lane NAME: the steps below it run in that lane.
+lane() { LANE="$1"; }
+
 # step NAME DIR COMMAND...: run COMMAND in DIR against the current build, log it, count its
-# "ok" and "FAIL" lines.
+# "ok" and "FAIL" lines (its summary line in $STATUS/NAME).
 step() {
   local name="$1" dir="$2"
   shift 2
   selected "$name" || return 0
+  if [ "$PHASE" = summary ]; then
+    if [ -f "$STATUS/$name" ]; then cat "$STATUS/$name"
+    else printf '%-34s exit %-3s (did not run)\n' "$name" "-"; fi
+    return 0
+  fi
+  [ "$PHASE" = "run:$LANE" ] || return 0
   local log="$LOGS/$name.log" t0=$SECONDS code
   echo "== $name: $*"
   (cd "$dir" && LACARTE_DIST="$GATE/current/web/dist" "$@") >"$log" 2>&1
@@ -117,74 +134,101 @@ step() {
   fail=$(grep -c '^FAIL' "$log")
   grep '^FAIL' "$log" | sed 's/^/   /' | cut -c1-240
   [ "$code" -ne 0 ] && [ "$fail" -eq 0 ] && tail -5 "$log" | sed 's/^/   /'
-  SUMMARY+=("$(printf '%-34s exit %-3s ok %-4s FAIL %-3s %4ss' "$name" "$code" "$ok" "$fail" $((SECONDS - t0)))")
-  [ "$code" -eq 0 ] || failed=1
+  printf '%-34s exit %-3s ok %-4s FAIL %-3s %4ss\n' "$name" "$code" "$ok" "$fail" $((SECONDS - t0)) >"$STATUS/$name"
+}
+
+steps() {
+  B="$WEB"
+  lane map
+  step "map-desktop" "$B" node bench/smoke.mjs --region ci
+  for engine in webkit chromium; do
+    step "phone-$engine" "$B" node bench/smoke-mobile.mjs --region ci --browser "$engine"
+  done
+  # Lot M (2026-10-17): the map's floating controls apart, inside the screen and the
+  # floating buttons at the bottom, from 320 to 1920 px wide, phones upright and sideways,
+  # light and dark, in the three engines (Firefox: an Android phone's other browser family).
+  for engine in chromium webkit firefox; do
+    step "formats-$engine" "$B" node bench/smoke-formats.mjs --region ci --browser "$engine"
+  done
+  lane contribute
+  for engine in webkit chromium; do
+    step "participate-$engine" "$B" node bench/smoke-participate.mjs --browser "$engine"
+  done
+  lane map
+  # smoke-theme.mjs serves the build of its working directory (`vite preview`, no
+  # LACARTE_DIST): it runs from the current build's own web folder.
+  for engine in webkit chromium; do
+    step "theme-$engine" "$GATE/current/web" node "$WEB/bench/smoke-theme.mjs" --region ci --browser "$engine"
+  done
+  lane contribute
+  # The punk chips (source tag, certainty, accessible name) with axe-core, the dev dependency.
+  for engine in webkit chromium; do
+    step "chips-$engine" "$B" node bench/smoke-chips.mjs --browser "$engine"
+  done
+  # The punk account screen, the leaderboard (board 26a), the account routes mocked, axe-core.
+  for engine in webkit chromium; do
+    step "profile-$engine" "$B" node bench/smoke-profile.mjs --browser "$engine"
+  done
+  # Lot of 2026-10-11: the welcome panel (28a), the points at send (8a) with their category
+  # colours, and the phone keyboard and gestures (WebKit only: an iPhone's).
+  for engine in webkit chromium; do
+    step "welcome-$engine" "$B" node bench/smoke-welcome.mjs --browser "$engine"
+    step "score-$engine" "$B" node bench/smoke-score.mjs --browser "$engine"
+  done
+  lane map
+  step "keyboard-webkit" "$B" node bench/smoke-keyboard.mjs
+  lane contribute
+  # Lot of 2026-10-12: the punk editor (field under the streets, the aim in pixels, the
+  # height in metres, who films with its search; WebKit phone and Chromium wide inside), and
+  # /revue's choice for a proposed operator name.
+  step "editor" "$B" node bench/smoke-editor.mjs
+  lane map
+  # « Chargement » (board 2c) over punk's first load, and the return from OpenStreetMap.
+  for engine in webkit chromium; do
+    step "loading-$engine" "$B" node bench/smoke-loading.mjs --browser "$engine"
+  done
+  lane contribute
+  step "revue-operator" "$B" node bench/shots-revue-operator.mjs
+  # The launch: the legal pages, the closed contributions, publishing as /api/config says, the
+  # data download (mocked API), and the account's deletion against the real API.
+  for engine in webkit chromium; do
+    step "launch-$engine" "$B" node bench/smoke-launch.mjs --browser "$engine"
+    step "delete-$engine" "$B" node bench/smoke-delete.mjs --browser "$engine"
+    step "export-$engine" "$B" node bench/smoke-export.mjs --browser "$engine"
+  done
+  lane map
+  # v2.1 (2026-10-30): the register's frame, one modal at a time (A9), its tables' edges (A6) and
+  # its back button (A4); its data from web/public/data/registre (a build has none: ignored by git).
+  for engine in chromium webkit; do
+    step "registre-$engine" "$B" node bench/smoke-registre.mjs --region ci --browser "$engine"
+  done
+  lane last
+  # The tiles prefetched while the map rests (src/prefetch.ts, off in the other benches: a
+  # browser driven by tests), on a throttled 4G phone in Chromium: alone, its timing its own.
+  step "prefetch" "$B" node bench/latency.mjs --profile phone4g --check
 }
 
 echo "== build: current web (CI extract $built)"
 build_current >"$LOGS/build.log" 2>&1 || { tail -20 "$LOGS/build.log"; missing "the current build failed"; }
 
-B="$WEB"
-step "map-desktop" "$B" node bench/smoke.mjs --region ci
-for engine in webkit chromium; do
-  step "phone-$engine" "$B" node bench/smoke-mobile.mjs --region ci --browser "$engine"
-done
-# Lot M (2026-10-17): the map's floating controls apart, inside the screen and the
-# floating buttons at the bottom, from 320 to 1920 px wide, phones upright and sideways,
-# light and dark, in the three engines (Firefox: an Android phone's other browser family).
-for engine in chromium webkit firefox; do
-  step "formats-$engine" "$B" node bench/smoke-formats.mjs --region ci --browser "$engine"
-done
-for engine in webkit chromium; do
-  step "participate-$engine" "$B" node bench/smoke-participate.mjs --browser "$engine"
-done
-# smoke-theme.mjs serves the build of its working directory (`vite preview`, no
-# LACARTE_DIST): it runs from the current build's own web folder.
-for engine in webkit chromium; do
-  step "theme-$engine" "$GATE/current/web" node "$WEB/bench/smoke-theme.mjs" --region ci --browser "$engine"
-done
-# The punk chips (source tag, certainty, accessible name) with axe-core, the dev dependency.
-for engine in webkit chromium; do
-  step "chips-$engine" "$B" node bench/smoke-chips.mjs --browser "$engine"
-done
-# The punk account screen, the leaderboard (board 26a), the account routes mocked, axe-core.
-for engine in webkit chromium; do
-  step "profile-$engine" "$B" node bench/smoke-profile.mjs --browser "$engine"
-done
-# Lot of 2026-10-11: the welcome panel (28a), the points at send (8a) with their category
-# colours, and the phone keyboard and gestures (WebKit only: an iPhone's).
-for engine in webkit chromium; do
-  step "welcome-$engine" "$B" node bench/smoke-welcome.mjs --browser "$engine"
-  step "score-$engine" "$B" node bench/smoke-score.mjs --browser "$engine"
-done
-step "keyboard-webkit" "$B" node bench/smoke-keyboard.mjs
-# Lot of 2026-10-12: the punk editor (field under the streets, the aim in pixels, the
-# height in metres, who films with its search; WebKit phone and Chromium wide inside), and
-# /revue's choice for a proposed operator name.
-step "editor" "$B" node bench/smoke-editor.mjs
-# « Chargement » (board 2c) over punk's first load, and the return from OpenStreetMap.
-for engine in webkit chromium; do
-  step "loading-$engine" "$B" node bench/smoke-loading.mjs --browser "$engine"
-done
-step "revue-operator" "$B" node bench/shots-revue-operator.mjs
-# The launch: the legal pages, the closed contributions, publishing as /api/config says, the
-# data download (mocked API), and the account's deletion against the real API.
-for engine in webkit chromium; do
-  step "launch-$engine" "$B" node bench/smoke-launch.mjs --browser "$engine"
-  step "delete-$engine" "$B" node bench/smoke-delete.mjs --browser "$engine"
-  step "export-$engine" "$B" node bench/smoke-export.mjs --browser "$engine"
-done
-# v2.1 (2026-10-30): the register's frame, one modal at a time (A9), its tables' edges (A6) and
-# its back button (A4); its data from web/public/data/registre (a build has none: ignored by git).
-for engine in chromium webkit; do
-  step "registre-$engine" "$B" node bench/smoke-registre.mjs --region ci --browser "$engine"
-done
-# The tiles prefetched while the map rests (src/prefetch.ts, off in the other benches: a
-# browser driven by tests), on a throttled 4G phone in Chromium.
-step "prefetch" "$B" node bench/latency.mjs --profile phone4g --check
+rm -rf "$STATUS" && mkdir -p "$STATUS"
+if [ -n "${GATE_SERIAL:-}" ]; then
+  PHASE=run:map steps
+  PHASE=run:contribute steps
+else
+  PHASE=run:map steps &
+  map=$!
+  PHASE=run:contribute steps &
+  contribute=$!
+  wait "$map" "$contribute"
+fi
+PHASE=run:last steps
 
 echo
 echo "== summary (logs in $LOGS)"
-[ ${#SUMMARY[@]} -gt 0 ] && printf '%s\n' "${SUMMARY[@]}" # bash 3.2 (macOS): no empty "${a[@]}"
+summary="$(PHASE=summary steps)"
+[ -n "$summary" ] && printf '%s\n' "$summary"
+failed=0
+printf '%s\n' "$summary" | awk 'NF && $3 != "0" { bad = 1 } END { exit bad }' || failed=1
 [ "$failed" -eq 0 ] && echo "gate: green" || echo "gate: FAILED"
 exit "$failed"
