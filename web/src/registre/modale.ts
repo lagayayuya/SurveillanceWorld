@@ -547,33 +547,83 @@ addEventListener("resize", () => {
 });
 
 // --- the band's current section: the one at the top of the frame, read as one scrolls -------------
-let observateur: IntersectionObserver | null = null;
+const observateur: IntersectionObserver | null = null;
 let section = "";
 /** The band's links say which section is at the top (aria-current), again after each render. */
 function marquerSection(): void {
   for (const a of root.querySelectorAll<HTMLElement>("[data-sec]"))
     a.setAttribute("aria-current", String(a.dataset.sec === section));
 }
-function suivreSections(): void {
-  observateur?.disconnect();
-  const secs = [...root.querySelectorAll<HTMLElement>("section.sec[id]")];
-  section = secs[0]?.id ?? "";
-  marquerSection();
-  if (!secs.length) return;
-  const vus = new Map<string, boolean>();
-  observateur = new IntersectionObserver(
-    (entries) => {
-      for (const e of entries) vus.set(e.target.id, e.isIntersecting);
-      const first = secs.find((x) => vus.get(x.id));
-      if (first && first.id !== section) {
-        section = first.id;
+/** A section clicked in the band: marked at once, the tracking held until the scroll it asked has
+ * ended (v2.2 point 4: « Dans le temps » stayed marked under « Avec qui »). */
+let tenu = 0;
+let tenue: ReturnType<typeof setTimeout> | undefined;
+function tenir(): void {
+  tenu = performance.now();
+  clearTimeout(tenue);
+  // the end of its scroll: no scroll event for 150 ms, or 1.5 s at most
+  tenue = setTimeout(() => {
+    tenu = 0;
+  }, 1500);
+}
+root.addEventListener(
+  "click",
+  (ev) => {
+    const a = (ev.target as Element).closest?.<HTMLElement>(
+      ".band nav a[data-sec], .tband nav a[data-sec]",
+    );
+    const id = a?.dataset.sec;
+    if (!id || !root.querySelector(`section.sec[id="${CSS.escape(id)}"]`)) return;
+    section = id;
+    marquerSection();
+    tenir();
+  },
+  true,
+);
+/** The section whose title has passed under the stuck band: the last one whose top is above the
+ * band's bottom (its height read, not assumed), else the first. */
+function sectionCourante(secs: HTMLElement[]): string {
+  const band = root.querySelector<HTMLElement>(".band, .tband");
+  const top = scroll.getBoundingClientRect().top;
+  const sous = (band ? band.getBoundingClientRect().height : 52) + 8;
+  let cur = secs[0]?.id ?? "";
+  for (const x of secs) if (x.getBoundingClientRect().top - top <= sous) cur = x.id;
+  // the end of the page: its last section, though its title never reaches the band
+  if (scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 4)
+    cur = secs.at(-1)?.id ?? cur;
+  return cur;
+}
+let image = 0;
+let secsSuivies: HTMLElement[] = [];
+scroll.addEventListener(
+  "scroll",
+  () => {
+    if (tenu) {
+      // a scroll the band asked: held while it goes on
+      tenir();
+      clearTimeout(tenue);
+      tenue = setTimeout(() => {
+        tenu = 0;
+      }, 150);
+      return;
+    }
+    if (image || !secsSuivies.length) return;
+    image = requestAnimationFrame(() => {
+      image = 0;
+      const id = sectionCourante(secsSuivies);
+      if (id !== section) {
+        section = id;
         marquerSection();
       }
-    },
-    // the band (52 px) covers the frame's top: a section counts once it is under it
-    { root: scroll, rootMargin: "-60px 0px -55% 0px" },
-  );
-  for (const x of secs) observateur.observe(x);
+    });
+  },
+  { passive: true },
+);
+function suivreSections(): void {
+  observateur?.disconnect();
+  secsSuivies = [...root.querySelectorAll<HTMLElement>("section.sec[id]")];
+  section = secsSuivies[0]?.id ?? "";
+  marquerSection();
 }
 
 // --- the router -------------------------------------------------------------------------------

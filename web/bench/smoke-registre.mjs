@@ -682,6 +682,65 @@ try {
     await context.close();
   }
 
+  // --- the band follows the right section (v2.2 point 4): clicked, marked at once and after its
+  // scroll; scrolled, the one whose title has passed under the stuck band ---
+  {
+    const { context, page } = await visit(`/registre/commune/${INSEE}`);
+    await drawn(page);
+    await page.waitForTimeout(800);
+    const secs = await page.evaluate(() =>
+      [...document.querySelectorAll("#registre .band nav a[data-sec]")].map((a) => a.dataset.sec),
+    );
+    const cur = () =>
+      page.evaluate(
+        () =>
+          document.querySelector('#registre .band nav a[aria-current="true"]')?.dataset.sec ?? null,
+      );
+    const clicks = [];
+    for (const id of secs) {
+      await page.click(`#registre .band nav a[data-sec="${id}"]`);
+      const now = await cur();
+      await page.waitForTimeout(1600);
+      clicks.push({ id, now, after: await cur() });
+    }
+    // scrolled by hand: each section's title just under the band, then just above its bottom
+    const scrolled = [];
+    for (const id of secs.slice(1)) {
+      await page.evaluate((x) => {
+        const s = document.querySelector("#registre .scroll");
+        const band = document.querySelector("#registre .band").getBoundingClientRect().height;
+        const sec = document.getElementById(x);
+        s.scrollTo({
+          top:
+            s.scrollTop +
+            sec.getBoundingClientRect().top -
+            s.getBoundingClientRect().top -
+            band +
+            2,
+          behavior: "instant",
+        });
+      }, id);
+      await page.waitForTimeout(300);
+      scrolled.push({
+        id,
+        got: await cur(),
+        // at the page's end a title cannot reach the band: its last section is the current one
+        fin: await page.evaluate(() => {
+          const s = document.querySelector("#registre .scroll");
+          return s.scrollTop + s.clientHeight >= s.scrollHeight - 4;
+        }),
+      });
+    }
+    check(
+      "the band: a section clicked is marked at once and after its scroll; scrolled, the one under the band",
+      secs.length > 2 &&
+        clicks.every((c) => c.now === c.id && c.after === c.id) &&
+        scrolled.every((x) => x.got === (x.fin ? secs.at(-1) : x.id)),
+      JSON.stringify({ clicks, scrolled }),
+    );
+    await context.close();
+  }
+
   // --- the head and the band never overflow (v2.3 points 2 and 6, Ju: « Lyon » touching
   // « Drones »): on a wide screen and a phone, long names, the drone view's panel ---
   {
