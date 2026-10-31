@@ -157,14 +157,15 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.deepEqual(acme.deps, ["69", "91"]);
   assert.equal(acme.nom, "Acme Video");
 
-  // an uncollected département shows no decree figure
+  // an uncollected département's decree figures are « non lu » (v2.3), a mark of its own
   const alpha = rangs(C, "communes").find((r) => r.id === "69001");
   assert.equal(alpha?.v.docs, 4);
   assert.equal(alpha?.v.dr, 1);
   assert.equal(alpha?.v.carte, 12);
   const gamma = rangs(C, "communes").find((r) => r.id === "91001");
   assert.equal(gamma?.v.aut, -1);
-  assert.equal(richText(gamma?.cells[2]), "—");
+  assert.equal(richText(gamma?.cells[2]), "non lu");
+  assert.match(JSON.stringify(gamma?.cells[2]), /"cls":"nonlu"/);
 
   // an intercommunality that buys has its name and its buyer's fiche; one that does not, its name
   // (the build's, from France's reference) and no link

@@ -37,6 +37,7 @@ import {
   motValeur,
   nomDep,
   nomListe,
+  noteNonLu,
   question,
   type Rang,
   type Resultat,
@@ -612,6 +613,8 @@ export class ListeVue extends Vue<Props, State> {
             )
           : enregistrer(`registre-${liste}.csv`, csv(def, list))) as Handler,
       arretes: liste === "arretes",
+      // the lists whose rows may say « non lu »: the line that says why, once
+      nonLu: C && (liste === "communes" || liste === "departements") ? noteNonLu(C) : null,
       det,
       nonLus: t("registre.non_lus", { n: I.non_lus }),
     };

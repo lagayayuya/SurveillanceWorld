@@ -339,3 +339,19 @@
   background: var(--fg);
   color: var(--bg-2);
 }
+/* « non lu » (v2.3): a figure the register does not read yet, a dashed mark; its line over the table */
+.rg .v-liste .nonlu {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px dashed var(--fg);
+  font-family: "Special Elite", "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.rg .v-liste .nonlu-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}

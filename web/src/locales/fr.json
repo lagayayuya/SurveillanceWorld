@@ -3835,6 +3835,8 @@
   "registre.liste.dep.oter": "Retirer {nom}",
   "registre.liste.dep.choix": "Départements choisis",
   "registre.liste.tout_effacer": "Tout effacer",
+  "registre.liste.non_lu": "non lu",
+  "registre.liste.non_lu_note": "le registre ne lit encore que les arrêtés {des} ; contrats : toute la France.",
   "registre.liste.voir": "Voir {n} {quoi}",
   "registre.liste.exemple.communes": "Filtrer par nom ou département",
   "registre.liste.exemple.intercommunalites": "Filtrer par nom ou commune",

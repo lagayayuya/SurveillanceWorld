@@ -28,12 +28,14 @@ import type { Acheteur, Couverture, Evenement } from "./donnees.ts";
 import { count, fr, money } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import {
+  departementDans,
   lien,
   lienAcheteur,
   lienCommune,
   lienDepartement,
   lienDocument,
   lienEntreprise,
+  phrase,
 } from "./liens.ts";
 import type { Miette } from "./modale.ts";
 import { LISTES, type Liste, type Route } from "./routes.ts";
@@ -231,8 +233,26 @@ const W = (k: string) => t(`liste.${k}`);
 const tri = (k: string, l: string, dir: 1 | -1 = -1): Tri => ({ k, l: W(`tri.${l}`), dir });
 const col = (l: string, x: Partial<Colonne> = {}): Colonne => ({ l: W(`col.${l}`), ...x });
 const csvCol = (k: string): [string, string] => [k, W(`csv.${k}`)];
-/** « — »: a figure the register does not have (a département whose decrees are not collected). */
+/** « — »: a figure the register does not have (no commune, no year, no amount on a document). */
 const NA = "—";
+/** « non lu » (v2.3): a figure the register does not read yet (the decrees of a département it does
+ * not collect), as a dashed mark; a true zero stays « 0 ». */
+export const nonLu = (): Rich => [{ span: t("liste.non_lu"), cls: "nonlu" }];
+
+/** The line over a list whose rows say « non lu » (v2.3), once: « le registre ne lit encore que
+ * les arrêtés du Rhône ; contrats : toute la France. » */
+export function noteNonLu(C: Pick<Corpus, "couverture">): RichItem[] | null {
+  const codes = [...collectes(C)].sort();
+  if (!codes.length) return null;
+  // each département a link to its fiche (« du Rhône »: the article words, the name the link)
+  const des = codes.map((d) =>
+    departementDans(d, has(`registre.departement.du_${d}`) ? t(`departement.du_${d}`) : d),
+  );
+  const mots = new Intl.ListFormat("fr", { type: "conjunction" })
+    .formatToParts(codes)
+    .map((p) => (p.type === "element" ? des[codes.indexOf(p.value)] : p.value));
+  return phrase("liste.non_lu_note", { des: { span: mots, cls: "" } });
+}
 
 function collectes(C: Pick<Corpus, "couverture">): Set<string> {
   return new Set(
@@ -256,8 +276,8 @@ function rangsCommunes(C: Corpus): Rang[] {
       cells: [
         fr(c.docs),
         fr(c.con),
-        ok ? fr(c.cam) : NA,
-        ok ? fr(c.dr) : NA,
+        ok ? fr(c.cam) : nonLu(),
+        ok ? fr(c.dr) : nonLu(),
         carte == null ? NA : fr(carte),
       ],
       mots: plain(`${x.nom} ${nomDep(C, x.dep)}`),
@@ -350,13 +370,7 @@ function rangsDepartements(C: Corpus): Rang[] {
       nom,
       lien: lienDepartement(code, nom, true),
       sous: `${code} · ${t("liste.arretes_etat", { etat: etatDep(C, code) })}`,
-      cells: [
-        fr(coms[code] ?? 0),
-        fr(o.n),
-        fr(o.con),
-        o.amt ? money(o.amt) : NA,
-        ok ? fr(o.aut) : NA,
-      ],
+      cells: [fr(coms[code] ?? 0), fr(o.n), fr(o.con), money(o.amt ?? 0), ok ? fr(o.aut) : nonLu()],
       mots: plain(`${code} ${nom}`),
       f: { etat: [d.etat] },
       v: {
