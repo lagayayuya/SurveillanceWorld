@@ -14,7 +14,7 @@ export function setWords(catalogue: Record<string, string>): void {
   words = nest(catalogue);
 }
 
-/** `sel`: the row chosen (a click, Enter, a tap; the panel's content, `aria-selected`); `vu`: the
+/** `sel`: the row chosen (a click, Enter, a tap; the panel's content, `aria-current`); `vu`: the
  * row hovered or focused, shown in the panel meanwhile, never a selection (v2.1, A3 and B3). */
 export type BaseState = { sel: string | null; vu?: string | null; open: Record<string, boolean> };
 
@@ -126,12 +126,20 @@ export abstract class Vue<
   protected base(name: string): {
     th: string;
     t: Texts;
+    sortie: Handler;
     ps: { cls: string; fermer: Handler | null };
   } {
     const sel = this.state.sel !== null;
     return {
       th: `th v-${name}`,
       t: words,
+      // the focus left a table for good (Tab out of it): the row it had shown leaves the panel
+      // (v2.3, the v2.1 review's stale hovered row); a pointer leaving keeps it (B3)
+      sortie: ((ev: { nativeEvent: Event; currentTarget: Element }) => {
+        const to = (ev.nativeEvent as FocusEvent).relatedTarget as Node | null;
+        if (this.state.vu && !(to && ev.currentTarget.contains(to)))
+          this.setState({ vu: null } as Partial<S>);
+      }) as Handler,
       ps: {
         cls: sel ? "panel sel" : "panel",
         fermer: sel ? ((() => this.setState({ sel: null } as Partial<S>)) as Handler) : null,
@@ -180,7 +188,7 @@ export abstract class Vue<
     };
   }
 
-  /** Clicked, tapped or Enter: chosen (`aria-selected`, the type's bar), the panel scrolled
+  /** Clicked, tapped or Enter: chosen (`aria-current`, the type's bar), the panel scrolled
    * into view whole and its arrival marked once (`arriver`). */
   protected choisir(k: string): Handler {
     return (ev?: { currentTarget?: Element }) => {
@@ -196,12 +204,12 @@ export abstract class Vue<
     return this.state.vu ?? this.state.sel;
   }
 
-  /** The row chosen (its state: `on`, `aria-selected`). */
+  /** The row chosen (its state: `on`, `aria-current`). */
   protected on(k: string): boolean {
     return this.state.sel === k;
   }
 
-  /** A row's attributes under the contract (cadre.css « rows »): its class, `aria-selected`,
+  /** A row's attributes under the contract (cadre.css « rows »): its class, `aria-current`,
    * and its type's colour for the bar at its left. */
   protected ligne(k: string, type?: TypeCle, cls = "r") {
     const on = this.on(k);

@@ -1461,7 +1461,7 @@
    · A row that leads somewhere (`.r`: a table's `tr`, a list's or a rail's line) is the target
      of its main link (`a.rl`) across its whole width: the link's ::after covers the row; any
      other link or button of the row stays above it.
-   · Hovered: the title underlined, the row tinted. Chosen (`.on`, `aria-selected="true"`): a
+   · Hovered: the title underlined, the row tinted. Chosen (`.on`, `aria-current="true"`: the row the panel shows; no listbox, v2.3): a
      ground, and a bar of its type's colour at its left (`--c`, from types.ts repere(k).c).
    · A column of numbers (`.num`): its head and its values right, with the same inset; a column
      of text, both left. A head that does not read alone: `.aide` with `data-aide`, its sentence
@@ -1488,17 +1488,17 @@
 }
 .rg .r.on > *,
 .rg div.r.on,
-.rg .r[aria-selected="true"] > * {
+.rg .r[aria-current="true"] > * {
   background: var(--soft);
 }
 .rg tr.r.on > :first-child,
-.rg tr.r[aria-selected="true"] > :first-child,
+.rg tr.r[aria-current="true"] > :first-child,
 .rg div.r.on,
-.rg div.r[aria-selected="true"] {
+.rg div.r[aria-current="true"] {
   box-shadow: inset 5px 0 0 var(--c, var(--fg));
 }
 .rg tr.r.on > :first-child,
-.rg tr.r[aria-selected="true"] > :first-child {
+.rg tr.r[aria-current="true"] > :first-child {
   padding-left: 13px;
 }
 .rg table.t th:not(:has(> button)) {
@@ -1622,4 +1622,14 @@
 .rg .aide::after,
 .rg .panel > span:not(.tw) {
   font-family: Archivo, sans-serif;
+}
+
+/* v2.3 (point 9): a visible focus on every key of the register and on the lists' menus, not the
+   browser's (lost on the keys' ink and pink) */
+.rg :is(.key, .dbtn, .dchip, .dvoir, .bporte, .legt, .frise-bande):focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .key[aria-pressed="true"]:focus-visible {
+  outline-color: var(--blue);
 }

@@ -79,6 +79,7 @@ const EVENTS: Record<string, string> = {
   onclick: "click",
   onmouseenter: "mouseenter",
   onfocus: "focus",
+  onfocusout: "focusout",
   oninput: "input",
   onchange: "change",
   onkeydown: "keydown",
@@ -562,6 +563,7 @@ const LISTEN: [string, string, boolean][] = [
   ["mouseover", "mouseenter", true],
   ["pointerout", "pointerleave", true],
   ["focusin", "focus", false],
+  ["focusout", "focusout", false],
 ];
 
 function wrap(e: Event, el: Element, stop: () => void): DcEvent {

@@ -428,7 +428,7 @@
   padding-left: 10px;
 }
 .rg .v-commune .chrono li.r.on,
-.rg .v-commune .chrono li.r[aria-selected="true"] {
+.rg .v-commune .chrono li.r[aria-current="true"] {
   box-shadow: inset 5px 0 0 var(--c, var(--fg));
 }
 /* its neighbours: each one a row whose target is its fiche (cadre.css « rows », A2) */

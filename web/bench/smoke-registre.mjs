@@ -742,6 +742,51 @@ try {
     await context.close();
   }
 
+  // --- accessibility (v2.3 point 9): no aria-selected outside a listbox, a tab list or a grid; the
+  // focus leaving a list's table takes its row out of the panel; a key's focus visible ---
+  {
+    const { context, page } = await visit(`/registre/commune/${INSEE}`);
+    await drawn(page);
+    const orphelins = async () =>
+      page.evaluate(
+        () =>
+          [...document.querySelectorAll("#registre [aria-selected]")].filter(
+            (x) => !x.closest('[role="listbox"], [role="tablist"], [role="grid"]'),
+          ).length,
+      );
+    const surFiche = await orphelins();
+    await page.goto(`${APP}/registre/communes`);
+    await drawn(page);
+    const surListe = await orphelins();
+    // the keyboard into the table's first row, then out of it
+    await page.locator("#registre .v-liste tbody tr a").first().focus();
+    await page.waitForTimeout(300);
+    const dedans = await page.evaluate(
+      () => document.querySelectorAll("#registre .v-liste .panel .ptile").length,
+    );
+    await page.locator("#registre .v-liste .pied button").first().focus();
+    await page.waitForTimeout(300);
+    const dehors = await page.evaluate(
+      () => document.querySelectorAll("#registre .v-liste .panel .ptile").length,
+    );
+    // a key focused by the keyboard shows it
+    await page.keyboard.press("Shift+Tab");
+    await page.locator("#registre .v-liste .dbtn").first().focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Shift+Tab");
+    const outline = await page.evaluate(() => {
+      const x = document.activeElement;
+      const st = x ? getComputedStyle(x) : null;
+      return st ? `${st.outlineStyle} ${st.outlineWidth}` : "";
+    });
+    check(
+      "accessibility: no aria-selected out of a listbox, tabs or grid; Tab out of a list empties its panel; a focused key shows it",
+      surFiche === 0 && surListe === 0 && dedans > 0 && dehors === 0 && /solid 3px/.test(outline),
+      JSON.stringify({ surFiche, surListe, dedans, dehors, outline }),
+    );
+    await context.close();
+  }
+
   // --- the head and the band never overflow (v2.3 points 2 and 6, Ju: « Lyon » touching
   // « Drones »): on a wide screen and a phone, long names, the drone view's panel ---
   {

@@ -82,7 +82,7 @@
 
     <h3 class="h3" style="margin-top: 6px"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_creneau}}">{{listT}}</span></h3>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
-      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h num">{{r.h}}</span></div></sc-for>
+      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h num">{{r.h}}</span></div></sc-for>
     </div>
     <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>

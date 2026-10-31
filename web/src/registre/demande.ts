@@ -59,7 +59,15 @@ function ouvrir(objet: string, qui: string, nom: string, dep: string): void {
     opener?.focus?.();
   };
   const key = (ev: KeyboardEvent) => {
-    if (ev.key === "Escape") shut();
+    // a dialog taken away otherwise (a page left, the register closed) leaves no listener behind
+    // (v2.3, the v2.1 review's « Échap d'un dialogue fermé »)
+    if (!m.isConnected) {
+      document.removeEventListener("keydown", key);
+      return;
+    }
+    if (ev.key !== "Escape") return;
+    ev.preventDefault();
+    shut();
   };
   m.addEventListener("click", (ev) => {
     if (ev.target === m || ev.target === close) shut();

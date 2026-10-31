@@ -35,14 +35,14 @@
             <h3 class="h3">{{t.acheteur.qui_vend_ici}}</h3>
             <span class="tw" style="color: var(--muted); font-size: 14px">{{f.acheteur.montants_a_la_signature}}</span>
           </div>
-          <table class="t">
+          <table class="t" onFocusOut="{{sortie}}">
             <caption class="sr">{{f.acheteur.entreprises_titulaires_des_contrats_de}}</caption>
             <thead><tr>
               <sc-for list="{{colsV}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{sellers}}" as="s">
-                <tr class="{{s.cls}}" aria-selected="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}">
+                <tr class="{{s.cls}}" aria-current="{{s.sel}}" style="{{s.c}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}">
                   <td>{{{s.nom}}}<div style="font-size: 13px; color: var(--muted)">{{{s.note}}}</div></td>
                   <td class="num">{{s.n}}</td>
                   <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{s.bar}}"></span><strong>{{s.amt}}</strong></div></td>
@@ -85,7 +85,7 @@
           </div>
           <sc-if value="{{show.mt}}"><p class="note tw">{{f.acheteur.montants_maximums_prevus_au_contrat}}</p></sc-if>
           <div class="defile">
-          <table class="t">
+          <table class="t" onFocusOut="{{sortie}}">
             <caption class="sr">{{f.acheteur.contrats_signes_par_triables_par}}</caption>
             <thead><tr>
               <sc-for list="{{cols}}" as="c">
@@ -94,7 +94,7 @@
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{rows}}" as="r">
-                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                <tr class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td class="tw t-date" style="white-space: nowrap">{{r.date}}<sc-if value="{{r.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">?</sup></sc-if></td>
                   <td class="t-objet">{{{r.objet}}}<sc-if value="{{r.mixte}}"><div style="margin-top: 3px"><span class="b" style="background: var(--warn-bg); color: var(--fg); border-style: dashed">{{t.acheteur.contrat_mixte}}</span></div></sc-if></td>
                   <td class="t-ent"><sc-for list="{{r.ents}}" as="e"><div>{{{e.lien}}}</div></sc-for></td>
@@ -114,14 +114,14 @@
           </div>
           <sc-if value="{{aos.length}}">
           <div class="defile">
-          <table class="t">
+          <table class="t" onFocusOut="{{sortie}}">
             <caption class="sr">{{f.acheteur.appels_d_offres_et_resultats}}</caption>
             <thead><tr>
               <sc-for list="{{colsA}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th></sc-for>
             </tr></thead>
             <tbody onPointerLeave="{{quitter}}">
               <sc-for list="{{aos}}" as="a">
-                <tr class="{{a.cls}}" aria-selected="{{a.sel}}" style="{{a.c}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
+                <tr class="{{a.cls}}" aria-current="{{a.sel}}" style="{{a.c}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
                   <td class="tw t-date" style="white-space: nowrap">{{a.date}}</td>
                   <td class="t-objet">{{{a.objet}}}</td>
                   <td class="tw t-plus" style="font-size: 13px; color: var(--muted)">{{a.refs}}</td>

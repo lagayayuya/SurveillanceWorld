@@ -44,7 +44,7 @@
           </div>
           <sc-if value="{{show.dl}}"><p class="note tw">{{t.documents.licence_ouverte_2_0_reutilisation}}</p></sc-if>
 
-          <table class="t">
+          <table class="t" onFocusOut="{{sortie}}">
             <caption class="sr">{{f.documents.documents_officiels_de_filtres_et}}</caption>
             <thead><tr>
               <sc-for list="{{cols}}" as="c">
@@ -53,7 +53,7 @@
             </tr></thead>
             <tbody>
               <sc-for list="{{rows}}" as="r">
-                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                <tr class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <td class="tw" style="white-space: nowrap; color: var(--muted)">{{r.date}}<sc-if value="{{r.flag}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px; color: var(--muted)">*</sup></sc-if></td>
                   <td><span class="dtype">{{r.type}}</span><br><span class="dobj">{{{r.objet}}}</span></td>
                   <td style="font-size: 14px"><span style="{{r.quiStyle}}">{{{r.qui}}}</span><div style="color: var(--muted)">{{{r.ent}}}</div></td>

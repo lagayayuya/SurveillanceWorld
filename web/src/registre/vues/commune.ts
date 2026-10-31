@@ -125,7 +125,7 @@ function rt(key: string, params: Record<string, Param> = {}): RichItem[] {
 const join = (...parts: (RichItem[] | null | false | undefined)[]): RichItem[] =>
   parts.filter((p): p is RichItem[] => !!p).flatMap((p, i) => (i ? [" ", ...p] : p));
 
-/** A row's attributes under v2.1's contract (vue.ts `ligne`): its class, `aria-selected`, its
+/** A row's attributes under v2.1's contract (vue.ts `ligne`): its class, `aria-current`, its
  * type's colour, hovered (shown) and chosen. */
 type Row = { cls: string; sel: string; c: string; hover: Handler; pick: Handler };
 type Sel = (k: string, type?: TypeCle, cls?: string) => Row;

@@ -192,6 +192,12 @@ export function dialogue(titre: string, corps: (Node | string)[], focus?: HTMLEl
     opener?.focus?.();
   };
   const key = (ev: KeyboardEvent) => {
+    // taken away otherwise (a page left, the register closed): no listener behind, nothing inert
+    if (!m.isConnected) {
+      document.removeEventListener("keydown", key, true);
+      for (const x of behind) x.inert = false;
+      return;
+    }
     if (ev.key === "Escape") {
       ev.preventDefault();
       ev.stopPropagation();

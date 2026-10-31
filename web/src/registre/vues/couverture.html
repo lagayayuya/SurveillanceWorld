@@ -10,7 +10,7 @@
 
     <section aria-labelledby="c-sources" class="sec">
       <h2 id="c-sources" class="h2">{{t.couverture.sources}}</h2>
-      <table class="t">
+      <table class="t" onFocusOut="{{sortie}}">
         <caption class="sr">{{t.couverture.sources_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_source}}</th><th scope="col">{{t.couverture.col_jusqu_au}}</th><th scope="col">{{t.couverture.col_collectee}}</th></tr></thead>
         <tbody>
@@ -23,7 +23,7 @@
     <section aria-labelledby="c-deps" class="sec">
       <h2 id="c-deps" class="h2">{{t.couverture.departements}}</h2>
       <p class="sober" style="margin: 0">{{t.couverture.departements_phrase}}</p>
-      <table class="t">
+      <table class="t" onFocusOut="{{sortie}}">
         <caption class="sr">{{t.couverture.departements_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_departement}}</th><th scope="col">{{t.couverture.col_etat}}</th></tr></thead>
         <tbody>
@@ -40,7 +40,7 @@
         <sc-for list="{{nonLus.kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l">{{k.l}}</div></div></sc-for>
       </div></sc-if>
       <p class="tw" style="margin: 0; font-size: 13px; color: var(--muted)">{{t.couverture.plusieurs_raisons}}</p>
-      <table class="t">
+      <table class="t" onFocusOut="{{sortie}}">
         <caption class="sr">{{t.couverture.non_lus_legende}}</caption>
         <thead><tr><th scope="col">{{t.couverture.col_arrete}}</th><th scope="col">{{t.couverture.col_commune}}</th><th scope="col">{{t.couverture.col_raison}}</th><th scope="col">{{t.couverture.col_lien}}</th></tr></thead>
         <tbody>

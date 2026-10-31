@@ -52,12 +52,12 @@
       <sc-if value="{{nonLu}}"><p class="nonlu-note tw"><span class="nonlu">{{t.liste.non_lu}}</span> {{{nonLu}}}</p></sc-if>
       <div class="grid2 avec-panneau">
         <div style="min-width: 0">
-          <table class="t" role="grid" style="margin-top: 6px" onKeyDown="{{clavierTable}}">
+          <table class="t" onFocusOut="{{sortie}}" role="grid" style="margin-top: 6px" onKeyDown="{{clavierTable}}">
             <caption class="sr">{{caption}}</caption>
             <thead><tr><sc-if value="{{wide}}"><th scope="col" style="width: 30px"><span class="sr">{{t.liste.rang}}</span></th></sc-if><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><sc-if value="{{c.tri}}"><button type="button" onClick="{{c.pick}}"><span class="{{c.acls}}" data-aide="{{c.aide}}">{{c.l}}</span><sc-if value="{{c.aide}}"><span class="sr"> : {{c.aide}}</span></sc-if>{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}"><span class="th-fixe"><span class="{{c.acls}}" tabindex="{{c.tab}}" data-aide="{{c.aide}}">{{c.l}}</span></span></sc-if></th></sc-for></tr></thead>
             <tbody>
               <sc-for list="{{rows}}" as="r">
-                <tr class="{{r.cls}}" aria-selected="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
+                <tr class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}">
                   <sc-if value="{{wide}}"><td class="rk">{{r.rk}}</td></sc-if>
                   <td><sc-if value="{{tel}}"><span class="rkt tw">{{r.rk}}</span></sc-if>{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="naf">{{{r.sous}}}</span></sc-if><sc-if value="{{r.telNums}}"><span class="tnums tw">{{r.telNums}}</span></sc-if></td>
                   <sc-for list="{{r.cells}}" as="c"><td class="{{c.cls}}"><sc-if value="{{c.isDeps}}"><div class="deps"><sc-for list="{{c.deps}}" as="d"><span class="{{d.cls}}">{{d.d}}</span></sc-for></div></sc-if>{{{c.v}}}</td></sc-for>
