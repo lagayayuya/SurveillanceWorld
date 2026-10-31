@@ -1583,3 +1583,35 @@
   color: #f2efe6;
   box-shadow: none;
 }
+
+/* v2.3 (Ju: « Registre Commune Lyon Drones et al… » without separators, « Lyon » touching
+   « Drones »): a crumb never shrinks under its pictogram, its separator always shows; a breadcrumb
+   too long for the bar goes on two lines rather than cutting a step; beside the map's panel its
+   steps are lower */
+.rg .crumbs {
+  flex-wrap: wrap;
+  white-space: normal;
+  overflow: visible;
+  row-gap: 0;
+}
+.rg .crumbs :is(.r, .sep) {
+  flex: none;
+}
+.rg .crumbs .here {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rg .mtop {
+  height: auto;
+  min-height: 54px;
+}
+.rg > .th > .side .mtop .crumbs a.rl {
+  min-height: 30px;
+}
+/* v2.3: a band too narrow for its sections (a wide screen of 960 px) lets them scroll, as the phone's
+   does, rather than cutting the last ones */
+.rg .band nav {
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}

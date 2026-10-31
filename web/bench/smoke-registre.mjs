@@ -681,6 +681,94 @@ try {
     );
     await context.close();
   }
+
+  // --- the head and the band never overflow (v2.3 points 2 and 6, Ju: « Lyon » touching
+  // « Drones »): on a wide screen and a phone, long names, the drone view's panel ---
+  {
+    const pages = [
+      "/registre/commune/69123/carte",
+      "/registre/commune/38384",
+      "/registre/commune/38384/carte",
+      "/registre/entreprise/314684960",
+    ].filter((p) => existsSync(join(DATA, `${p.split("/").slice(2, 4).join("/")}.json`)));
+    const found = [];
+    for (const [w, h] of [
+      [1280, 800],
+      [390, 845],
+    ]) {
+      const context = await browser.newContext({
+        viewport: { width: w, height: h },
+        locale: "fr-FR",
+      });
+      await context.addInitScript(() => {
+        try {
+          localStorage.setItem("lacarte.welcome", "1");
+        } catch {}
+      });
+      const page = await context.newPage();
+      await page.route("**/api/**", (r) =>
+        r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"no_session"}' }),
+      );
+      for (const path of pages) {
+        await page.goto(`${APP}${path}`);
+        await drawn(page);
+        await page.waitForTimeout(1200);
+        const bad = await page.evaluate(() => {
+          const out = [];
+          const name = (x) =>
+            `${x.tagName.toLowerCase()}.${[...x.classList].join(".")} « ${x.textContent.trim().slice(0, 24)} »`;
+          for (const box of document.querySelectorAll(
+            "#registre :is(.mtop, .ttop, .band, .tband)",
+          )) {
+            const B = box.getBoundingClientRect();
+            if (!B.width) continue;
+            for (const x of box.querySelectorAll("*")) {
+              const r = x.getBoundingClientRect();
+              if (!r.width || x.closest("svg, .sr")) continue;
+              const s = getComputedStyle(x);
+              const scrolls = /auto|scroll/.test(s.overflowX) || x.closest('[style*="overflow"]');
+              // its words wider than itself, not ended by an ellipsis nor in a strip that scrolls:
+              // cut, or spilling over its neighbour when its overflow is visible
+              if (x.scrollWidth > x.clientWidth + 1 && s.textOverflow !== "ellipsis" && !scrolls)
+                out.push(`${s.overflowX === "visible" ? "spill" : "cut"}: ${name(x)}`);
+              // out of its box (a strip that scrolls aside)
+              if (!x.closest("nav") && (r.right > B.right + 1 || r.left < B.left - 1))
+                out.push(`out: ${name(x)}`);
+            }
+            // a tab or a door cut by its strip, when the strip does not scroll
+            for (const nav of box.querySelectorAll("nav")) {
+              const N = nav.getBoundingClientRect();
+              if (/auto|scroll/.test(getComputedStyle(nav).overflowX)) continue;
+              for (const a of nav.children) {
+                const r = a.getBoundingClientRect();
+                if (r.width && (r.right > N.right + 1 || r.right > B.right + 1))
+                  out.push(`clipped: ${name(a)}`);
+              }
+            }
+            // two steps of the breadcrumb on one line never overlap
+            const steps = [...box.querySelectorAll(".crumbs > *")].map((x) => [
+              x,
+              x.getBoundingClientRect(),
+            ]);
+            for (let i = 1; i < steps.length; i++) {
+              const [, a] = steps[i - 1];
+              const [x, b] = steps[i];
+              if (Math.abs(a.top - b.top) < 4 && a.right > b.left + 1)
+                out.push(`overlap: ${name(x)}`);
+            }
+          }
+          return out;
+        });
+        for (const b of bad) found.push(`${w}px ${path}: ${b}`);
+      }
+      await context.close();
+    }
+    check(
+      "the head and the band, 1 280 and 390 px, long names and the drone view's panel: no step cut, none overlapping, none out",
+      pages.length > 0 && found.length === 0,
+      JSON.stringify(found.slice(0, 8)),
+    );
+  }
 } finally {
   await browser.close();
   server.close();
