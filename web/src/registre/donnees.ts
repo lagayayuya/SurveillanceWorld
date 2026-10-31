@@ -45,6 +45,8 @@ export type Evenement = {
   entreprises_refs?: (string | null)[];
   partage_refs?: (string | null)[];
   insee0_ref?: string | null;
+  /** a region's grant: its funder's fiche (rules/registre_couverture.yaml financeur_siren) */
+  financeur_ref?: string;
   mentions?: Mention[];
   // the build's flags
   compte?: boolean;

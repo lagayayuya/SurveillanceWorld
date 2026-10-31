@@ -29,9 +29,11 @@ sources:
     id: rule:registre_couverture@1:source_subventions_region_idf
     types: [subvention_region]
     ref_prefix: "Région Île-de-France"
+    financeur_siren: "237500079"
     rationale: >-
       The Île-de-France Region's video-protection grants, read in its standing committee's
-      deliberations.
+      deliberations. The Region (SIREN 237500079, a buyer in the DECP too) is each grant's
+      funder: its fiche, when the build writes one, is linked from the grant's.
   - source: subventions_region_sud
     id: rule:registre_couverture@1:source_subventions_region_sud
     types: [subvention_region]

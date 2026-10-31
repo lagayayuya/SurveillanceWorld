@@ -160,9 +160,12 @@ class Lecteur:
 Missing = Counter[tuple[str, str]]
 
 
-def annoter(reg: Registre, fiches: Fiches, buyer_of: Any) -> Missing:
+def annoter(
+    reg: Registre, fiches: Fiches, buyer_of: Any, financeurs: dict[str, str] | None = None
+) -> Missing:
     """Write the references on every document (once: a document is shared between files);
-    return the names left without one, by type and reason."""
+    return the names left without one, by type and reason. `financeurs`: a grant's funder by
+    its reference's prefix (rules/registre_couverture.yaml `financeur_siren`)."""
     lecteur = Lecteur(reg, fiches)
     missing: Missing = Counter()
     # the copies of a shared act (one per other commune, regles.appliquer) are documents too
@@ -172,13 +175,14 @@ def annoter(reg: Registre, fiches: Fiches, buyer_of: Any) -> Missing:
         every.update((id(e), e) for e in evs)
     for key, e in every.items():
         if key not in originals:
-            _annotate(e, fiches, buyer_of, lecteur, Counter())
+            _annotate(e, fiches, buyer_of, lecteur, Counter(), financeurs or {})
             continue
-        _annotate(e, fiches, buyer_of, lecteur, missing)
+        _annotate(e, fiches, buyer_of, lecteur, missing, financeurs or {})
     return missing
 
 
-def _annotate(e: Event, fiches: Fiches, buyer_of: Any, lecteur: Lecteur, missing: Missing) -> None:
+def _annotate(e: Event, fiches: Fiches, buyer_of: Any, lecteur: Lecteur, missing: Missing,
+              financeurs: dict[str, str]) -> None:  # fmt: skip
     def put(key: str, value: str | None, kind: str, why: str) -> None:
         if value:
             e[key] = value
@@ -196,6 +200,11 @@ def _annotate(e: Event, fiches: Fiches, buyer_of: Any, lecteur: Lecteur, missing
         missing[("commune", "commune_inconnue")] += 1
     if e.get("lieu_insee"):
         put("lieu_ref", fiches.commune(e["lieu_insee"]), "commune", "lieu_sans_fiche")
+    if e["t"] == "subvention_region":
+        # its funder, a region, by the grant's reference (« Région Île-de-France, … »)
+        s = next((v for k, v in financeurs.items() if (e.get("ref") or "").startswith(k)), None)
+        if s:
+            put("financeur_ref", fiches.acheteur(s), "financeur", "sans_fiche")
     if e.get("beneficiaire_siren"):
         s = e["beneficiaire_siren"]
         put("beneficiaire_ref", fiches.acheteur(s) or fiches.entreprise(s), "beneficiaire",

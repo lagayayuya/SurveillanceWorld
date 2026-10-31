@@ -73,9 +73,12 @@ def run(
     maps = sorted((root / "pilote" / "carte").glob("*.json"))
     contours = {m.stem: json.loads(m.read_text("utf-8")).get("contour") for m in maps}
     entiere = yaml.safe_load((rules / "registre_drones.yaml").read_text("utf-8"))
+    # a grant's funder by its reference's prefix (rules/registre_couverture.yaml)
+    funders = {s["ref_prefix"]: s["financeur_siren"] for s in conf["sources"]
+               if s.get("financeur_siren")}  # fmt: skip
     ctx = fermetures.Context(
         reg, cov, couverture.pilot_departements(conf), frozenset(m.stem for m in maps),
-        contours, entiere["commune_entiere"]["part"],
+        contours, entiere["commune_entiere"]["part"], funders,
     )  # fmt: skip
     summary: dict[str, Any] = {}
 

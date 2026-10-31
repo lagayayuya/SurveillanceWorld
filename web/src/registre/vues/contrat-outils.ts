@@ -30,7 +30,7 @@ import { has, t } from "../i18n.ts";
 import { lien, lienAcheteur, lienCommune, lienDepartement, lienEntreprise } from "../liens.ts";
 import { capital, sentence, tidy } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
-import { lierDepartement, lierLieux } from "./mention-outils.ts";
+import { lierDepartement, lierLieux, lierMentions } from "./mention-outils.ts";
 
 export type Parcours = {
   fin_prevue: { date: string; signature: string; mois: number } | null;
@@ -224,8 +224,14 @@ export function fiche(f: Fichier): Fiche | null {
       ...(i ? [", "] : []),
       s === EI ? entName(L, s) : lienEntreprise(L, s),
     ]);
-  // the source's own words (the objet) naming the dossier's commune or département: those links
-  const lier = (s: string): Rich => (s ? lierLieux(s, L, insee, depCode) : t("format.non_publie"));
+  // the source's own words (the objet): the names the build read in them (its `mentions`), then
+  // the dossier's commune or département
+  const lier = (s: string, e?: Evenement): Rich =>
+    s
+      ? lierMentions(s, e?.objet, e?.mentions).flatMap((p) =>
+          typeof p === "string" ? lierLieux(p, L, insee, depCode) : [p],
+        )
+      : t("format.non_publie");
   // the commune the dossier names, when it is not already its buyer (a mairie)
   const communeLigne = (): Ligne[] =>
     c && insee && !(communal && ach?.insee_siege === insee)
@@ -488,7 +494,7 @@ export function fiche(f: Fichier): Fiche | null {
     emet = buyer ? lienAcheteur(L, buyer) : "";
     srcs = [...(aoE ? ["avis"] : []), "contrats"];
     dl = [
-      line(t("contrat.d_objet"), lier(objet(att))),
+      line(t("contrat.d_objet"), lier(objet(att), att)),
       line(t("contrat.d_forme"), formeRich(a)),
       line(t("contrat.d_dispositif"), dispositif(att)),
       line(t("contrat.d_montant"), [
@@ -636,7 +642,7 @@ export function fiche(f: Fichier): Fiche | null {
     ];
     const refs = (es: Evenement[]) => es.map((x) => reference(x)).join(", ");
     dl = [
-      line(t("contrat.d_objet"), lier(objet(e0) || lib?.titre || "")),
+      line(t("contrat.d_objet"), lier(objet(e0) || lib?.titre || "", e0)),
       line(t("contrat.d_avis"), avis.length ? refs(avis) : "—"),
       line(t("contrat.d_resultat"), res.length ? refs(res) : t("format.non_publie")),
       ...(rect.length ? [line(t("contrat.d_rectificatifs"), refs(rect))] : []),
@@ -672,6 +678,18 @@ export function fiche(f: Fichier): Fiche | null {
     const named =
       e0.beneficiaire !== "[non retenu]" && e0.nom_publie !== false && !!e0.beneficiaire;
     const commune: RichItem | null = c && insee ? lienCommune(L, insee) : null;
+    // the funder, a region whose fiche the build wrote (its reference, lot R3)
+    const financeurLie: RichItem = e0?.financeur_ref
+      ? lien("acheteur", `/registre/${e0.financeur_ref}`, financeur)
+      : financeur;
+    // a beneficiary published as the commune itself (« Sain-Bel », « Commune de Mions »): its
+    // fiche (the dossier names the commune by its code; DECISIONS 2026-10-30)
+    const seul = benef
+      .replace(/^(commune|ville|mairie)\s+(de\s+|d['’]\s*)?/i, "")
+      .trim()
+      .toLowerCase();
+    const benefLie: RichItem =
+      named && c && insee && seul === c.nom.toLowerCase() ? lienCommune(L, insee, benef) : benef;
     for (const e of evs)
       steps.push({
         k: "sub",
@@ -680,6 +698,7 @@ export function fiche(f: Fichier): Fiche | null {
         date: fd(e),
         dm: markD(e),
         what: t("contrat.sub_accorde", { qui: financeur, montant: money(e.montant) }),
+        whatLien: rt("contrat.sub_accorde", { qui: financeurLie, montant: money(e.montant) }),
         lm: "",
         ghost: false,
         ref: reference(e),
@@ -729,16 +748,19 @@ export function fiche(f: Fichier): Fiche | null {
       { v: fr(evs.length), l: t("contrat.kpi_documents", { n: evs.length }), m: "" },
     ];
     lead = rt(named || !commune ? "contrat.lead_sub" : "contrat.lead_sub_commune", {
-      financeur,
+      financeur: financeurLie,
       montant: { strong: money(tot) },
-      beneficiaire: benef,
+      beneficiaire: benefLie,
       commune: commune ?? "",
       cameras: cams ? t("contrat.lead_cameras", { n: cams }) : "",
     });
     qui = [
-      line(t("contrat.d_beneficiaire"), benef),
+      line(t("contrat.d_beneficiaire"), typeof benefLie === "string" ? benefLie : [benefLie]),
       ...(commune ? [line(t("contrat.d_commune"), [commune])] : []),
-      line(t("contrat.d_financeur"), financeur),
+      line(
+        t("contrat.d_financeur"),
+        typeof financeurLie === "string" ? financeurLie : [financeurLie],
+      ),
       line(
         t("contrat.d_contrat"),
         pe ? entLinks(pe.entreprises ?? []) : t("contrat.non_designe"),
@@ -747,11 +769,11 @@ export function fiche(f: Fichier): Fiche | null {
       ),
     ];
     dl = [
-      line(t("contrat.d_objet"), lier(objet(e0))),
+      line(t("contrat.d_objet"), lier(objet(e0), e0)),
       line(t("contrat.d_montant"), [{ strong: money(tot) }]),
       line(t("contrat.d_cameras"), cams ? fr(cams) : t("contrat.non_precise")),
     ];
-    emet = financeur;
+    emet = financeurLie;
     srcs = [
       region
         ? `subventions_region_${e0.dep === "13" ? "sud" : "idf"}`

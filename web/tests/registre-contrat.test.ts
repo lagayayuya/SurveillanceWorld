@@ -393,3 +393,23 @@ test("a fiche's share: the build's text under the page's own name, without its r
   assert.equal(partageDe("Documents de Synthèse", { ...p, titre: "Synthèse", texte: "Synthèse (Rhône) : 3 documents. /registre/contrat/x1" }).texte, "Synthèse (Rhône) : 3 documents.");
   assert.deepEqual(partageDe("Synthèse", null), { titre: "Synthèse" });
 });
+
+test("the names the build read in an objet are links in the text as shown, tidied or cut", async () => {
+  const { lierMentions } = await import("../src/registre/vues/mention-outils.ts");
+  const { richText } = await import("../src/registre/dc.ts");
+  const brut = "VIDEOSURVEILLANCE  DU CRA DE LESQUIN ET DE LESQUINOIS";
+  const shown = "Videosurveillance du cra de lesquin et de lesquinois";
+  const debut = brut.indexOf("LESQUIN");
+  const parts = lierMentions(shown, brut, [{ debut, fin: debut + 7, ref: "commune/59343" }]);
+  assert.equal(richText(parts), shown);
+  const links = JSON.stringify(parts);
+  assert.ok(links.includes("/registre/commune/59343"));
+  // the name whole, its first time: « lesquin », not inside « lesquinois »
+  assert.deepEqual(
+    parts.map((p) => (typeof p === "string" ? p : "[lien]")),
+    ["Videosurveillance du cra de ", "[lien]", " et de lesquinois"],
+  );
+  // a reference of an unknown type, or no mention: the words alone
+  assert.deepEqual(lierMentions(shown, brut, [{ debut: 0, fin: 5, ref: "x/1" }]), [shown]);
+  assert.deepEqual(lierMentions(shown, brut, undefined), [shown]);
+});

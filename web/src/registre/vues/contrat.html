@@ -69,14 +69,14 @@
         <section id="documents" class="sec">
           <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
           <p class="sober" style="margin: 0; color: var(--muted)">{{t.contrat.docs_aide}}</p>
-          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" aria-selected="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.date}}<sc-if value="{{d.dm}}"><sup role="img" aria-label="{{d.dm}}" title="{{d.dm}}" class="rep">?</sup></sc-if></span><span style="min-width: 0">{{{d.what}}}<sc-if value="{{d.lm}}"><sup role="img" aria-label="{{d.lm}}" title="{{d.lm}}" class="rep">?</sup></sc-if></span><span class="dref"><sc-if value="{{d.fiche}}">{{{d.fiche}}}</sc-if><sc-if value="{{d.url}}"><a href="{{d.url}}" class="tw">{{d.ref}} ↗</a></sc-if><sc-if value="{{d.texte}}"><span class="tw">{{d.ref}}</span></sc-if></span></div></sc-for></div>
+          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" aria-selected="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.date}}<sc-if value="{{d.dm}}"><sup role="img" aria-label="{{d.dm}}" title="{{d.dm}}" class="rep">?</sup></sc-if></span><span style="min-width: 0">{{{d.what}}}<sc-if value="{{d.lm}}"><sup role="img" aria-label="{{d.lm}}" title="{{d.lm}}" class="rep">?</sup></sc-if></span><span class="dref" data-mention="non"><sc-if value="{{d.fiche}}">{{{d.fiche}}}</sc-if><sc-if value="{{d.url}}"><a href="{{d.url}}" class="tw">{{d.ref}} ↗</a></sc-if><sc-if value="{{d.texte}}"><span class="tw">{{d.ref}}</span></sc-if></span></div></sc-for></div>
         </section>
         </sc-if>
 
         <section id="sources" class="sec">
           <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
           <div style="border-top: 2px solid var(--line)">
-            <sc-for list="{{sources}}" as="s"><div class="src"><b>{{{s.l}}}</b><span>{{{s.ed}}}</span><span class="tw">{{s.date}}</span></div></sc-for>
+            <sc-for list="{{sources}}" as="s"><div class="src" data-mention="non"><b>{{{s.l}}}</b><span>{{{s.ed}}}</span><span class="tw">{{s.date}}</span></div></sc-for>
           </div>
           <sc-if value="{{arretes}}"><p class="sober" style="margin: 0; color: var(--muted)">{{t.arretes.lus_par_programme}}</p></sc-if>
           <p class="sober" style="margin: 0"><a href="/registre/couverture">{{t.sources.couverture}}</a></p>

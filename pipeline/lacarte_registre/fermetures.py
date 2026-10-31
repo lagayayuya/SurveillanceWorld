@@ -69,6 +69,7 @@ class Context:
         cartes: frozenset[str] = frozenset(),
         contours: dict[str, list] | None = None,
         entiere: float = 0.8,
+        financeurs: dict[str, str] | None = None,
     ):
         self.reg = reg
         # the communes whose tilted map's layers are served (carte/<insee>.json)
@@ -110,7 +111,7 @@ class Context:
             entreprises={s for e in reg.evenements for s in e.get("entreprises") or []} - {EI},
             affaires=set(reg.affaires),
         )
-        self.manquants = refs.annoter(reg, self.fiches, reg.buyer)
+        self.manquants = refs.annoter(reg, self.fiches, reg.buyer, financeurs)
 
     def commune_stats(self, insee: str) -> dict[str, Any]:
         if insee not in self._commune_stats:

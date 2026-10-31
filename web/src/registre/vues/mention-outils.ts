@@ -5,7 +5,10 @@
 // « Bouches-du-Rhône ») is not it. Pure: the tests read it.
 import { depNom, type Lexique } from "../corpus.ts";
 import type { RichItem } from "../dc.ts";
-import { lienCommune, lienDepartement } from "../liens.ts";
+import type { Mention } from "../donnees.ts";
+import { lien, lienCommune, lienDepartement } from "../liens.ts";
+import { tidy } from "../texte.ts";
+import type { TypeCle } from "../types.ts";
 
 const LETTRE = /[\p{L}-]/u;
 
@@ -42,4 +45,46 @@ export function lierLieux(
   return parts
     .flatMap((p) => (typeof p === "string" ? lierDepartement(p, dep) : [p]))
     .filter((x) => x !== "");
+}
+
+/** A reference's type, for its link's colour and pictogram. */
+const TYPE_REF: Record<string, TypeCle> = {
+  commune: "commune",
+  departement: "departement",
+  acheteur: "acheteur",
+  entreprise: "entreprise",
+};
+
+/** The names the build read in a document's own words and linked (its `mentions`, lot R3: a SIREN
+ * or SIRET written, an INSEE code written as such, a commune's exact name unique in its
+ * département): each a link in the text as shown. The text shown may be tidied or cut from the
+ * published one (`brut`), so each name is found again by its words, whole, its first time. */
+export function lierMentions(
+  texte: string,
+  brut: string | null | undefined,
+  mentions: Mention[] | undefined,
+): RichItem[] {
+  let parts: RichItem[] = [texte];
+  for (const m of mentions ?? []) {
+    const k = TYPE_REF[m.ref.split("/")[0]];
+    const mot = tidy(String(brut ?? "").slice(m.debut, m.fin)).toLowerCase();
+    if (!k || !mot) continue;
+    let fait = false;
+    parts = parts.flatMap((p) => {
+      if (fait || typeof p !== "string") return [p];
+      const bas = p.toLowerCase();
+      for (let at = bas.indexOf(mot); at >= 0; at = bas.indexOf(mot, at + 1)) {
+        const end = at + mot.length;
+        if (LETTRE.test(p[at - 1] ?? "") || LETTRE.test(p[end] ?? "")) continue;
+        fait = true;
+        return [
+          p.slice(0, at),
+          lien(k, `/registre/${m.ref}`, p.slice(at, end)),
+          p.slice(end),
+        ].filter((x) => x !== "");
+      }
+      return [p];
+    });
+  }
+  return parts;
 }

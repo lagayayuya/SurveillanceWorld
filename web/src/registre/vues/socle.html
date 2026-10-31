@@ -37,7 +37,7 @@
         <div class="prow"><span>{{c.k}}</span><span style="text-align: right">{{{c.v}}}</span></div>
       </sc-for>
       <sc-if value="{{det.note}}"><p class="tw" style="margin: 4px 0 0; padding: 8px; background: var(--warn-bg); border: 1px dashed var(--fg); font-size: 13px">{{det.note}}</p></sc-if>
-      <sc-if value="{{det.foot}}"><span class="tw" style="font-size: 13px; color: var(--muted)">{{det.foot}}</span></sc-if>
+      <sc-if value="{{det.foot}}"><span class="tw" data-mention="non" style="font-size: 13px; color: var(--muted)">{{det.foot}}</span></sc-if>
       <sc-for list="{{det.links}}" as="l"><a href="{{l.href}}" onClick="{{l.act}}" style="margin-top: 6px; font-weight: 700; min-height: 44px; display: inline-flex; align-items: center">{{l.l}}</a></sc-for>
       <sc-if value="{{det.btn}}"><button type="button" onClick="{{det.btn.act}}" class="more" style="margin-top: 6px">{{det.btn.l}}</button></sc-if>
       <sc-if value="{{det.hint}}"><span style="font-size: 13px; color: var(--muted)">{{det.hint}}</span></sc-if>
