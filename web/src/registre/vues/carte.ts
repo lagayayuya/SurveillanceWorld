@@ -22,6 +22,7 @@ import {
   type Site,
   TEINTES,
   type Teintes,
+  zoomIncline,
 } from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
 import { carteDuSite, laisser, seFerme } from "../hote.ts";
@@ -292,10 +293,15 @@ class CarteDrones extends Vue<Props, State> {
     map.on("pitchend", this.onPitch);
     map.on("moveend", this.onMove);
     map.on("click", this.onCarte);
+    // the commune first, from its box (v2.4: every commune file has one), before the map's style
+    // and the zones: a commune without zones, without acts or outside the collection is framed
+    // the same, opened by its address or reached in the site
+    const box = this.props.d.f.commune.bbox;
+    if (box) this.voler(map, box, true);
     void this.poser(map);
   }
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
-   * is there, then the flight to the commune. */
+   * is there, then the flight to the commune if its box did not frame it already. */
   private async poser(map: MlMap): Promise<void> {
     const d = this.props.d;
     const used = new Set(this.T.flatMap((c) => c.sites));
@@ -349,11 +355,15 @@ class CarteDrones extends Vue<Props, State> {
         map.on("styledata", again);
       });
     if (this.dead || !this.layer) return;
-    this.voler(map);
+    if (!this.cadree) this.voler(map);
   }
-  /** To the commune, tilted, in the part of the map the panel and the chart leave free. */
-  private voler(map: MlMap, zone?: BBox): void {
-    const box = zone ?? this.layer?.cadre();
+  /** Whether the commune was framed: once, then the view moves the camera only when asked. */
+  private cadree = false;
+  /** To the commune (its box, else the outline's or the zones'), or to a zone, tilted, in the part
+   * of the map the panel and the chart leave free. */
+  private voler(map: MlMap, zone?: BBox, commune = !zone): void {
+    const box = zone ?? this.props.d.f.commune.bbox ?? this.layer?.cadre();
+    if (commune && box) this.cadree = true;
     const pitch = this.state.is3d ? PITCH : 0;
     const duration = reduced() ? 0 : MOVE_MS * 1.6;
     this.parti = performance.now();
@@ -361,22 +371,33 @@ class CarteDrones extends Vue<Props, State> {
       map.easeTo({ pitch, duration }, NOTRE);
       return;
     }
-    const cam = map.cameraForBounds(
-      [
-        [box[0], box[1]],
-        [box[2], box[3]],
-      ],
-      { padding: libre(), pitch, bearing: map.getBearing() },
+    // the box's middle at the middle of the part of the map left free: that part is the map's
+    // padding (MapLibre keeps it), so that the map's centre is the commune's
+    const padding = libre();
+    const W = map.getCanvas().clientWidth;
+    const H = map.getCanvas().clientHeight;
+    const center: [number, number] = [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2];
+    const bearing = map.getBearing();
+    // the zoom at which the box holds there, tilted (MapLibre's cameraForBounds fits it flat);
+    // close enough to read a zone, never inside a volume (drones.ts volumeHeight)
+    const zoom = Math.min(
+      zoomIncline(
+        box,
+        center,
+        20,
+        pitch,
+        bearing,
+        H,
+        (W - padding.left - padding.right) / 2,
+        (H - padding.top - padding.bottom) / 2,
+      ),
+      commune ? ZOOM_MAX : ZOOM_ZONE,
     );
-    if (!cam) return;
-    // close enough to read a zone, never inside a volume: a zone framed alone is small, its
-    // volume's height the commune's scale (drones.ts volumeHeight)
-    cam.zoom = Math.min(cam.zoom ?? ZOOM_MAX, zone ? ZOOM_ZONE : ZOOM_MAX);
-    // from far away (a cold open of the page: the map starts at its default place) a jump, not a
-    // flight that would load every tile on its way
-    if (loin(map, [(box[0] + box[2]) / 2, (box[1] + box[3]) / 2]))
-      map.jumpTo({ ...cam, pitch }, NOTRE);
-    else map.flyTo({ ...cam, pitch, duration, essential: true }, NOTRE);
+    const cam = { center, zoom, pitch, bearing, padding };
+    // from far away, or over a map still loading (a cold open: the map starts at its default
+    // place) a jump, not a flight that would load every tile on its way
+    if (!map.isStyleLoaded() || loin(map, center)) map.jumpTo(cam, NOTRE);
+    else map.flyTo({ ...cam, duration, essential: true }, NOTRE);
   }
   componentWillUnmount(): void {
     this.dead = true;
@@ -393,6 +414,8 @@ class CarteDrones extends Vue<Props, State> {
     // of the register, the volumes go
     if (seFerme() && this.layer) quitterPlusTard(map, this.layer);
     else this.layer?.retirer();
+    // the map's padding was the view's free part: the site frames with none (main.ts freePadding)
+    map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }, NOTRE);
     this.layer = null;
     // the map stays where the view left it: on the commune (v2.1 A5)
     this.map = null;

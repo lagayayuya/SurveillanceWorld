@@ -95,6 +95,8 @@ export type Commune = {
   ref?: Ref;
   epci_ref?: Ref;
   dep_ref?: Ref;
+  /** [west, south, east, north] (API Découpage administratif): what the drone view frames */
+  bbox?: [number, number, number, number];
 };
 /** A record's share as the build writes it in its file (lot R3, partage.py): its address
  * (relative), its title, its text (ending with that address), its preview image. */

@@ -7,7 +7,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import type { Donnees } from "../src/registre/commun.ts";
-import { bboxOf, centroid, tete, valeur, volumeHeight } from "../src/registre/drones.ts";
+import {
+  bboxOf,
+  centroid,
+  ecran,
+  tete,
+  valeur,
+  volumeHeight,
+  zoomIncline,
+} from "../src/registre/drones.ts";
 import { setMessages, t } from "../src/registre/i18n.ts";
 import {
   appareils,
@@ -257,4 +265,39 @@ test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () 
   assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
   assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
   assert.equal(plage(slot({ t0: at("2026-10-06", 0), t1: at("2026-10-07", 0) })), `6${N}oct.${N}2026, horaires non précisés`);
+});
+
+test("a commune's box framed tilted: MapLibre's camera, the box within the free part (v2.4)", () => {
+  // Lyon's box, centred at zoom 11.76, tilted 50° on a 900 px canvas: the corners MapLibre drew
+  // (measured on the screen, from the centre: ±2 px)
+  const lyon: [number, number, number, number] = [4.77187, 45.70748, 4.8984, 45.80842];
+  const c: [number, number] = [4.8965, 45.7577];
+  const near = ecran([lyon[0], lyon[1]], c, 11.76, 50, 0, 900);
+  const far = ecran([lyon[2], lyon[3]], c, 11.76, 50, 0, 900);
+  assert.ok(Math.abs(near[0] - -768) <= 3 && Math.abs(near[1] - 285) <= 3, String(near));
+  assert.ok(Math.abs(far[0] - 8) <= 3 && Math.abs(far[1] - -191) <= 3, String(far));
+  // flat, the screen is the map's own scale
+  const [x] = ecran([c[0] + 1, c[1]], c, 0, 0, 0, 900);
+  assert.ok(Math.abs(x - 512 / 360) < 1e-9);
+  // the zoom found holds the four corners within the free part, tilted or not, turned or not
+  const mid: [number, number] = [(lyon[0] + lyon[2]) / 2, (lyon[1] + lyon[3]) / 2];
+  for (const [pitch, bearing, hw, hh] of [
+    [0, 0, 394, 392],
+    [50, 0, 394, 392],
+    [35, 30, 171, 160],
+  ]) {
+    const z = zoomIncline(lyon, mid, 20, pitch, bearing, 900, hw, hh);
+    let k = 0;
+    for (const p of [
+      [lyon[0], lyon[1]],
+      [lyon[2], lyon[1]],
+      [lyon[2], lyon[3]],
+      [lyon[0], lyon[3]],
+    ] as [number, number][]) {
+      const [px, py] = ecran(p, mid, z, pitch, bearing, 900);
+      k = Math.max(k, Math.abs(px) / hw, Math.abs(py) / hh);
+    }
+    // within, and not far from filling it
+    assert.ok(k <= 1.006 && k > 0.8, `${pitch}/${bearing}: ${k}`);
+  }
 });

@@ -792,6 +792,117 @@ try {
     await context.close();
   }
 
+  // --- the drone view frames its commune (v2.4 point 1): Lyon, a commune of the Rhône without a
+  // drone act, a commune of a département not collected; opened by its address, then reached in
+  // the site (from Lyon's view: its fiche, then its « Drones » door); framed once, its outline
+  // drawn, the map tilted, the centre in the commune ---
+  {
+    const box = (insee) => {
+      const f = join(DATA, "commune", `${insee}.json`);
+      return existsSync(f) ? (JSON.parse(readFileSync(f, "utf8")).commune?.bbox ?? null) : null;
+    };
+    const cases = ["69123", "69149", "94081"].filter((x) => box(x));
+    const VIEWS = [[1440, 900]];
+    const found = [];
+    const seen = [];
+    for (const [w, h] of VIEWS) {
+      const context = await browser.newContext({
+        viewport: { width: w, height: h },
+        locale: "fr-FR",
+        colorScheme: w < 600 ? "dark" : "light",
+      });
+      await context.addInitScript(() => {
+        try {
+          localStorage.setItem("lacarte.welcome", "1");
+        } catch {}
+      });
+      const page = await context.newPage();
+      await page.route("**/api/**", (r) =>
+        r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"no_session"}' }),
+      );
+      // the CI extract is a few streets of Clichy, and the map brings a view taken outside its
+      // region back into it (bounds.ts): here the region is France, as in production
+      await page.route("**/tiles/meta.json", async (r) => {
+        const res = await r.fetch();
+        const meta = await res.json();
+        r.fulfill({ response: res, json: { ...meta, bounds: [-5.2, 41.3, 9.6, 51.1] } });
+      });
+      /** Where the map is once the view has framed it, and whether it moved again after. */
+      const framed = async (insee, how) => {
+        await page.waitForFunction(() => document.querySelector("#registre .v-carte"), null, {
+          timeout: 20000,
+        });
+        await page.waitForTimeout(2500);
+        const at = () =>
+          page.evaluate(
+            ([b]) => {
+              const m = window.__map;
+              const c = m.getCenter();
+              const pad = m.getPadding();
+              const W = m.getCanvas().clientWidth;
+              const H = m.getCanvas().clientHeight;
+              // the commune's corners on the screen, in the part of the map left free
+              const pts = [
+                [b[0], b[1]],
+                [b[2], b[1]],
+                [b[2], b[3]],
+                [b[0], b[3]],
+              ].map((p) => m.project(p));
+              const free = [pad.left, pad.top, W - pad.right, H - pad.bottom];
+              const fits = pts.every(
+                (p) =>
+                  p.x >= free[0] - 2 &&
+                  p.x <= free[2] + 2 &&
+                  p.y >= free[1] - 2 &&
+                  p.y <= free[3] + 2,
+              );
+              return {
+                c: [+c.lng.toFixed(4), +c.lat.toFixed(4)],
+                z: +m.getZoom().toFixed(2),
+                pitch: Math.round(m.getPitch()),
+                dans: c.lng > b[0] && c.lng < b[2] && c.lat > b[1] && c.lat < b[3],
+                fits,
+                outline: !!(m.getLayer("rg-cd-commune") || m.getLayer("rg-cd-commune-admin")),
+              };
+            },
+            [box(insee)],
+          );
+        const a = await at();
+        await page.waitForTimeout(4500);
+        const b = await at();
+        const r = { insee, how, w, ...a, moved: a.c.join() !== b.c.join() || a.z !== b.z };
+        seen.push(r);
+        if (!r.dans || !r.fits || !r.outline || r.pitch < 30 || r.moved) found.push(r);
+      };
+      for (const insee of cases) {
+        await page.goto(`${APP}/registre/commune/${insee}/carte`);
+        await framed(insee, "address");
+      }
+      // reached in the site: from Lyon's drone view, the fiche (a link), then its door
+      for (const insee of cases.filter((x) => x !== "69123")) {
+        await page.goto(`${APP}/registre/commune/69123/carte`);
+        await framed("69123", "address");
+        await page.evaluate((i) => {
+          const a = document.createElement("a");
+          a.href = `/registre/commune/${i}`;
+          a.id = "smoke-aller";
+          a.textContent = "aller";
+          document.querySelector("#registre #vue").append(a);
+        }, insee);
+        await page.click("#smoke-aller");
+        await page.waitForSelector('#registre a.bporte[href$="/carte"]', { timeout: 20000 });
+        await page.click('#registre a.bporte[href$="/carte"]');
+        await framed(insee, "site");
+      }
+      await context.close();
+    }
+    check(
+      "the drone view frames its commune, once, outlined, tilted (by its address and in the site)",
+      cases.length === 3 && found.length === 0,
+      JSON.stringify(found.length ? found : seen.map((r) => `${r.insee}/${r.how}/${r.w}`)),
+    );
+  }
+
   // --- the head and the band never overflow (v2.3 points 2 and 6, Ju: « Lyon » touching
   // « Drones »): on a wide screen and a phone, long names, the drone view's panel ---
   {

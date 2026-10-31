@@ -315,6 +315,70 @@ const LAB_PX = 13;
 /** The screen's pixels per metre on the ground at a zoom and a latitude (the map's 512 px world). */
 export const pxParMetre = (zoom: number, lat: number): number =>
   (512 * 2 ** zoom) / (40075016.686 * Math.cos((lat * Math.PI) / 180));
+/** Where a point of the ground lands on the screen (px, from the map's centre: right, down), the
+ * map centred on `c` at `zoom`, tilted by `pitch` and turned by `bearing` (degrees), over a canvas
+ * `H` px high: MapLibre's camera (maplibre-gl src/geo/transform_helper.ts: a field of view of
+ * 0.6435 rad, the camera 0.5 / tan(fov / 2) × H = 1.5 H from the centre; a padding moves the
+ * centre on the screen, not the perspective). */
+export function ecran(
+  p: LonLat,
+  c: LonLat,
+  zoom: number,
+  pitch: number,
+  bearing: number,
+  H: number,
+): [number, number] {
+  const world = 512 * 2 ** zoom;
+  const mx = (lng: number) => (lng + 180) / 360;
+  const my = (lat: number) =>
+    (1 - Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / Math.PI) / 2;
+  const E = (mx(p[0]) - mx(c[0])) * world;
+  const N = -(my(p[1]) - my(c[1])) * world;
+  const b = (bearing * Math.PI) / 180;
+  const t = (pitch * Math.PI) / 180;
+  const right = E * Math.cos(b) - N * Math.sin(b);
+  const ahead = E * Math.sin(b) + N * Math.cos(b);
+  const d = 1.5 * H;
+  const depth = d + ahead * Math.sin(t);
+  if (depth < d * 0.05) return [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY];
+  return [(right * d) / depth, (-ahead * Math.cos(t) * d) / depth];
+}
+/** The zoom, from `z0` down, at which a box (centred on `c`), tilted, holds within `hw` × `hh` px
+ * on each side of the centre: MapLibre's cameraForBounds fits it flat, and at 50° its near edge
+ * spills out on both sides (v2.4: by 50 to 170 px on a wide screen). */
+export function zoomIncline(
+  box: BBox,
+  c: LonLat,
+  z0: number,
+  pitch: number,
+  bearing: number,
+  H: number,
+  hw: number,
+  hh: number,
+): number {
+  // flat first (exact: the screen scales with the zoom), then tilted from there: a point that
+  // would be behind the camera counts as far out
+  const tenir = (z: number, t: number) => {
+    let k = 0;
+    for (const p of [
+      [box[0], box[1]],
+      [box[2], box[1]],
+      [box[2], box[3]],
+      [box[0], box[3]],
+    ] as LonLat[]) {
+      const [x, y] = ecran(p, c, z, t, bearing, H);
+      k = Math.max(k, Math.abs(x) / Math.max(1, hw), Math.abs(y) / Math.max(1, hh));
+    }
+    return Number.isFinite(k) ? k : 4;
+  };
+  let z = Math.min(z0, z0 - Math.log2(tenir(z0, 0)));
+  for (let i = 0; i < 8; i++) {
+    const k = tenir(z, pitch);
+    if (k <= 1.005) break;
+    z -= Math.log2(Math.min(k, 4));
+  }
+  return z;
+}
 /** Labels nearer than this on the screen (px) are one place: one label for them. */
 const MEME_PLACE = 40;
 const isLab: ExpressionSpecification = ["has", "lab"];
