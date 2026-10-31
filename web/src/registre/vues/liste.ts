@@ -264,13 +264,14 @@ export class ListeVue extends Vue<Props, State> {
     if (u.pathname !== location.pathname) return;
     ev.preventDefault();
     const e = etatDe(this.def, Object.fromEntries(u.searchParams));
-    this.setState({ e, lim: PAS });
+    // a list of documents: the old state's rows go at once (« Afficher plus » would add to them)
+    this.setState({ e, lim: PAS, ...(this.def.kind ? { docs: null } : {}) });
     void this.pages(e);
   };
 
   private set(x: Partial<Etat>): void {
     const e = { ...this.state.e, ...x };
-    this.setState({ e, lim: PAS });
+    this.setState({ e, lim: PAS, ...(this.def.kind ? { docs: null } : {}) });
     clearTimeout(this.attente);
     // typed words are asked after a pause; a key at once
     if (x.q !== undefined) this.attente = setTimeout(() => void this.pages(e), 250);
