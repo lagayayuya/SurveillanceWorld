@@ -1061,6 +1061,9 @@ DECISIONS 2026-10-28.
   `dico.epcis`: `nom`, `ref` to its buyer's fiche when the build writes one, else
   `sans_fiche`): the list of intercommunalities no longer says « Intercommunalité, SIREN … »
   for one that does not buy; such a row links nowhere.
+  A buyer no source names (the DECP, France's reference, SIRENE) carries `nom_inconnu: true`
+  in every dictionary and on its fiche (`acheteur.nom_inconnu`): the share says « Un acheteur
+  public (SIREN 130 001 902) », the pages are to say the same, never its SIREN as its name.
 
 ## 2. State catalogue
 

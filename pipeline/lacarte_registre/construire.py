@@ -100,6 +100,8 @@ def run(
     # the search's rows, for the database (migration 027), beside the site: not served
     recherche.write_tsv(root / "recherche.tsv.gz", recherche.rows(ctx))
     summary["documents"] = len(reg.evenements)
+    # the buyers with a fiche that no source names (the DECP, the reference, SIRENE)
+    summary["acheteurs_sans_nom"] = ctx.acheteurs_sans_nom()
     # the names served without a reference to a record, by type and reason (refs.py)
     summary["sans_reference"] = {
         f"{k}/{why}": n for (k, why), n in sorted(ctx.manquants.items()) if n

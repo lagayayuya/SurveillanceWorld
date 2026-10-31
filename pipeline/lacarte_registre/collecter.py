@@ -38,7 +38,8 @@ OUTPUTS = {
 
 
 def _sirens(folder: Path, fallback: Path) -> set[str]:
-    """The SIRENs met: the contracts' holders and buyers, the notices' holders."""
+    """The SIRENs met: the contracts' holders and buyers, the notices' holders and buyers (a
+    buyer the DECP do not name, or that publishes notices only, is named by SIRENE)."""
     out: set[str] = set()
 
     def pick(name: str) -> Path | None:
@@ -55,6 +56,7 @@ def _sirens(folder: Path, fallback: Path) -> set[str]:
     if p := pick("boamp.jsonl.gz"):
         for n in boamp.load(p):
             out |= set(n["resultat"]["titulaires"])
+            out |= {s[:9] for s in n.get("sirets") or []}
     return {s for s in out if len(s) == 9 and s.isdigit()}
 
 

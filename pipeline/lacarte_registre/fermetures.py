@@ -133,9 +133,17 @@ class Context:
         out = {k: a.get(k) for k in ACH_DICO if k in a}
         if self.nom_court(siren):
             out["nom_court"] = self.nom_court(siren)
+        if not out.get("nom") and not out.get("nom_court"):
+            # no source names it (the DECP, France's reference, SIRENE): « un acheteur public
+            # (SIREN …) », never its SIREN as if it were its name
+            out["nom_inconnu"] = True
         if r := self.fiches.acheteur(siren):
             out["ref"] = r
         return out
+
+    def acheteurs_sans_nom(self) -> int:
+        """The buyers with a fiche that no source names (the build's summary)."""
+        return sum(1 for b in self.fiches.acheteurs if self.acheteur(b).get("nom_inconnu"))
 
     def entreprise(self, siren: str) -> dict[str, Any]:
         x = self.reg.pilote.reg.get("entreprises", {}).get(siren) or {}
@@ -441,6 +449,7 @@ def acheteur_file(ctx: Context, siren: str) -> dict[str, Any]:
             **a,
             "nom_court": ctx.nom_court(siren),
             "dep_nom": ctx.dep_names.get(a.get("dep") or ""),
+            **({"nom_inconnu": True} if ctx.acheteur(siren).get("nom_inconnu") else {}),
             # a commune buys for itself: its page is the commune's
             "page_commune": siege
             if a.get("categorie") == "commune" and siege in reg.communes
@@ -565,8 +574,9 @@ def _names(ctx: Context, a: dict[str, Any], events: list[Event]) -> dict[str, st
         for s in a.get("entreprises") or []
         if s != EI and (x := ctx.entreprise(s)).get("nom")
     ]
+    nom = partage.nom(ach.get("nom_court") or ach.get("nom") or "")
     return {
-        "acheteur": partage.nom(ach.get("nom_court") or ach.get("nom") or ""),
+        "acheteur": nom or (partage.acheteur_sans_nom(b, court=True) if b else ""),
         "commune": (reg.communes.get(a.get("insee") or "") or {}).get("nom") or "",
         "entreprises": ", ".join(ents[:3]),
     }
@@ -612,7 +622,8 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     for b in buyers:
         data = acheteur_file(ctx, b)
         evs = [e for e in reg.evenements if reg.buyer(e) == b]
-        name = partage.nom(data["acheteur"].get("nom_court") or data["acheteur"].get("nom") or b)
+        a = data["acheteur"]
+        name = partage.nom(a.get("nom_court") or a.get("nom") or "") or partage.acheteur_sans_nom(b)
         p = partage.acheteur(ctx, b, name, evs)
         write(f"acheteur/{file_name(b)}.json", _shared(ctx, out, data, p, previews))
     by_kind: dict[str, list[Event]] = {}

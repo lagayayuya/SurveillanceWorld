@@ -72,6 +72,13 @@ def dep_nom(code: str | None, fallback: str | None = None) -> str | None:
     return _catalogue().get(f"registre.departement.nom_{code}") or fallback
 
 
+def acheteur_sans_nom(siren: str, court: bool = False) -> str:
+    """A buyer no source names: « Un acheteur public (SIREN 130 001 902) » as a record's name,
+    « SIREN 130 001 902 » after « acheteur » in a sentence (`court`)."""
+    s = NBSP.join((siren[:3], siren[3:6], siren[6:])) if len(siren) == 9 else siren
+    return t("acheteur_siren" if court else "acheteur_sans_nom", siren=s)
+
+
 def dep_art(code: str) -> str:
     c = _catalogue()
     return c.get(f"registre.departement.art_{code}") or c["registre.departement.art"].format(

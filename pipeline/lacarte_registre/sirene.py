@@ -1,10 +1,11 @@
 """SIRENE (INSEE): what the registre may say of the companies and buyers it meets.
 
 Only the SIRENs the registre meets are kept (the DECP's holders and buyers, the BOAMP's
-holders): their legal category (`nature`, catégorie juridique), their size (`categorie`:
-PME, ETI, GE), their activity (NAF), whether they are active, and a name for a legal person
-only. A sole trader (nature 1000, a natural person) is never named: `ei` true, no name,
-and the build masks its SIREN everywhere (regles.masquer_ei).
+holders and buyers; a buyer the DECP leave unnamed is named from here, national.py): their
+legal category (`nature`, catégorie juridique), their size (`categorie`: PME, ETI, GE), their
+activity (NAF), whether they are active, and a name for a legal person only. A sole trader
+(nature 1000, a natural person) is never named: `ei` true, no name, and the build masks its
+SIREN everywhere (regles.masquer_ei).
 
 Where (rules/registre_sources.yaml `sources.sirene`): the monthly stock of legal units
 (Parquet, ~714 MB), downloaded and read by batches of rows when its host's robots.txt allows

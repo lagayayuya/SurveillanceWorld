@@ -161,14 +161,22 @@ class Reference:
         return None
 
 
-def _buyer_name(names: Counter[str], siren: str, ref: Reference) -> str:
+def _buyer_name(
+    names: Counter[str], siren: str, ref: Reference, unite: dict[str, Any] | None = None
+) -> str:
+    """A buyer's name: a commune's or an intercommunality's from France's reference, else the
+    name the DECP publish most often, else SIRENE's (a legal person only: sirene.unite never
+    names a possible natural person), else "" (none: the build says « un acheteur public »)."""
     if siren in ref.commune_by_siren:
         nom = ref.communes[ref.commune_by_siren[siren]]["nom"]
         return f"Commune d'{nom}" if nom[:1] in "AEIOUYÉÈÎ" else f"Commune de {nom}"
     if siren in ref.epcis:
         return ref.epcis[siren]
-    nom = names.most_common(1)[0][0] if names else siren
-    return re.sub(r"\s*\(.*\)\s*$", "", nom).strip() or nom
+    for nom, _ in names.most_common():
+        if nom := re.sub(r"\s*\(.*\)\s*$", "", nom).strip() or nom.strip():
+            return nom
+    u = unite or {}
+    return "" if u.get("ei") else (u.get("nom") or "")
 
 
 def sans_doublons(contrats: Any) -> list[dict[str, Any]]:
@@ -411,7 +419,7 @@ def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
     buyers |= {e["acheteur_siren"] for e in ev if e.get("acheteur_siren")}
     acheteurs = {}
     for s in sorted(b for b in buyers if b):
-        nom = _buyer_name(buyer_names.get(s, Counter()), s, ref)
+        nom = _buyer_name(buyer_names.get(s, Counter()), s, ref, unites.get(s))
         cat = categorie(
             s,
             nom,
@@ -429,6 +437,9 @@ def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
             or (depc.most_common(1)[0][0] if depc else None),
             "insee_siege": seat if seat in ref.communes else None,
         }
+        if not nom:
+            # named by none of its sources: its SIREN alone (fermetures.Context.acheteur)
+            acheteurs[s]["nom_inconnu"] = True
     communes = {
         k: {kk: c.get(kk) for kk in ("nom", "dep", "pop", "epci")} for k, c in ref.communes.items()
     }

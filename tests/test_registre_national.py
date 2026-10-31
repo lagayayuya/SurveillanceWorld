@@ -17,13 +17,24 @@ import json
 import re
 import threading
 import urllib.parse
+from collections import Counter
 from collections.abc import Iterator
 from datetime import date
 from pathlib import Path
 
 import pytest
 
-from lacarte_registre import collecter, construire, couverture, decp, fetch, importer, national
+from lacarte_registre import (
+    boamp,
+    collecter,
+    construire,
+    couverture,
+    decp,
+    fetch,
+    importer,
+    national,
+    sirene,
+)
 
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 NATIONAL = FIXTURE / "national"
@@ -102,6 +113,55 @@ def test_a_contract_published_without_its_day_is_kept_and_compared_to_none(tmp_p
     evs = national.assembler(tmp_path)["evenements"]
     assert len(evs) >= 238 and any(not e["date"] for e in evs)
     assert all(not e["date"] or e["date"] >= "1990" for e in evs)
+
+
+PENITENTIAIRE, PREFECTURE_REGION = "176901205", "176900009"
+ESP = "176\u202f900\u202f009"  # its SIREN as the build writes it, by threes
+
+
+def test_a_buyer_the_decp_do_not_name_is_named_by_sirene_else_flagged(tmp_path):
+    """The DECP leave some buyers' name empty (130001902, 25 contracts, on 2026-10-31): SIRENE's
+    name for a legal person then; with none, no name and `nom_inconnu` (never its SIREN as its
+    name), and the build counts them (SYNTHETIC: two buyers' names blanked)."""
+    data = rows()
+    for r in data:
+        if r["acheteur_id"][:9] in (PENITENTIAIRE, PREFECTURE_REGION):
+            r["acheteur_nom"] = ""
+    nat = tmp_path / "national"
+    nat.mkdir()
+    decp.write(nat / "decp.jsonl.gz", decp.contracts(data))
+    (nat / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    unit = sirene.unite("7172", None, "84.23Z", True, "DIRECTION INTERREGIONALE DES SERVICES "
+                        "PENITENTIAIRES DE LYON")  # fmt: skip
+    (nat / "sirene.json").write_text(json.dumps({"version": None, "mode": "api", "unites": {
+        PENITENTIAIRE: unit, PREFECTURE_REGION: {"introuvable": True}}}), "utf-8")  # fmt: skip
+    buyers = national.assembler(tmp_path)["ACHETEURS"]
+    assert buyers[PENITENTIAIRE]["nom"] == unit["nom"]
+    assert "nom_inconnu" not in buyers[PENITENTIAIRE]
+    assert buyers[PREFECTURE_REGION]["nom"] == ""
+    assert buyers[PREFECTURE_REGION]["nom_inconnu"] is True
+    # a possible natural person is never named, even as a buyer
+    assert national._buyer_name(Counter(), "999999998", national.Reference({}, {}, {}),
+                                sirene.unite("1000", None, None, True, "DUPONT")) == ""  # fmt: skip
+    # the build: the flag in the dictionaries, the share's name, the summary's count
+    importer.run(FIXTURE, tmp_path)
+    # the pilot names it (its own list of buyers wins the merge): not here
+    path = tmp_path / "pilote" / "ACHETEURS.json"
+    pilot_buyers = json.loads(path.read_text("utf-8"))
+    del pilot_buyers[PREFECTURE_REGION]
+    path.write_text(json.dumps(pilot_buyers, ensure_ascii=False), "utf-8")
+    summary = construire.run(tmp_path)
+    assert summary["acheteurs_sans_nom"] == 1
+    site = tmp_path / "site"
+    f = json.loads((site / "acheteur" / f"{PREFECTURE_REGION}.json").read_text("utf-8"))
+    assert f["acheteur"]["nom_inconnu"] is True
+    assert f["partage"]["titre"] == f"Un acheteur public (SIREN {ESP})"
+    assert f["partage"]["texte"].startswith(f"Un acheteur public (SIREN {ESP}) : 14 contrats")
+    doc = next(json.loads(p.read_text("utf-8")) for p in (site / "document").glob("*.json")
+               if json.loads(p.read_text("utf-8"))["affaire"].get("acheteur_siren")
+               == PREFECTURE_REGION)  # fmt: skip
+    assert doc["acheteurs"][PREFECTURE_REGION]["nom_inconnu"] is True
+    assert f", acheteur SIREN {ESP}" in doc["partage"]["texte"]
 
 
 # --- the collection, end to end, on a fake server ------------------------------------------
@@ -231,6 +291,10 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     assert "robots.txt interdit" in fetch.Fetcher("decp", tmp_path).state()["note_parquet"]
     sir = json.loads((nat / "sirene.json").read_text("utf-8"))
     assert sir["mode"] == "api" and sir["unites"][SERFIM]["nom"] == f"ENTREPRISE {SERFIM}"
+    # the buyers are asked too: the contracts' and the notices' (a buyer the DECP do not name)
+    asked = {r["acheteur_id"][:9] for r in server.rows}
+    asked |= {s[:9] for n in boamp.load(nat / "boamp.jsonl.gz") for s in n["sirets"]}
+    assert asked and asked <= set(sir["unites"])
     # then the build, offline, merged with the pilot
     importer.run(FIXTURE, tmp_path)
     built = construire.main(tmp_path, sans_corrections=True)

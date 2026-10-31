@@ -3650,6 +3650,8 @@
   "registre.page.titre_seul": "Le registre · Surveillance World",
   "registre.page.titre_vue": "{vue} · Le registre · Surveillance World",
   "registre.partage.acheteur": "{nom} : {contrats} de vidéosurveillance signés avec {entreprises} depuis {annee}.",
+  "registre.partage.acheteur_sans_nom": "Un acheteur public (SIREN {siren})",
+  "registre.partage.acheteur_siren": "SIREN {siren}",
   "registre.partage.chiffre.acheteur": "acheteur public|acheteurs publics",
   "registre.partage.chiffre.arrete": "arrêté|arrêtés",
   "registre.partage.chiffre.commune": "commune|communes",
