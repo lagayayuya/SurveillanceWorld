@@ -11,18 +11,19 @@ import catalogue from "virtual:registre-catalogue";
 import { render } from "../messages.ts";
 import { mode, toggleMode } from "../theme.ts";
 import { mapAddress } from "../url.ts";
+import { suivreAdresse } from "./adresse.ts";
 import "./registre.css";
 import "./cadre.css";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
 import { Absent, load } from "./donnees.ts";
 import { fermer, OUVERTURE, pas, retenir, retour, retourPossible } from "./hote.ts";
 import { setMessages, t } from "./i18n.ts";
-import { listeHref, TYPE_DE } from "./listes.ts";
+import { etapeListe, TYPE_DE } from "./listes.ts";
 import { boutonPartage, fermerPartage } from "./partage.ts";
 // « Signaler une erreur »: its form opens over any page that links to it
 import "./signaler.ts";
 import { type Route, route } from "./routes.ts";
-import { couleur, icone, pluriel, type TypeCle } from "./types.ts";
+import { couleur, icone, type TypeCle } from "./types.ts";
 import { type Partage, setWords } from "./vue.ts";
 import formats from "./vues/formats.json";
 import socle from "./vues/socle.html?raw";
@@ -37,6 +38,9 @@ export type Miette = { k: TypeCle; l: string; href: string };
  * shows (the frame's colour), the breadcrumb above it. */
 export type VueCadre = View<Record<string, unknown>> & {
   titre?(): string;
+  /** the breadcrumb's last step, when shorter than the title (« Drones et algorithmes », the
+   * commune named one step before) */
+  etape?(): string;
   /** true: the register shrinks to a panel beside the map, which stays live (Carte et drones) */
   panneau?(): boolean;
   partage?(): Partage | null;
@@ -241,8 +245,20 @@ function recherche(): HTMLElement {
 let courant: Route = { view: "registre", q: {} };
 let fil: Miette[] = [];
 let ici = "";
-// the page left for another keeps where it was scrolled and its title (hote.ts ouvrir)
-retenir(() => ({ haut: scroll.scrollTop, titre: ici }));
+// the page left for another keeps where it was scrolled, its title, and when it is a fiche its
+// breadcrumb with itself last: a document opened from it goes under it (hote.ts ouvrir, v2.3)
+retenir(() => ({
+  haut: scroll.scrollTop,
+  titre: ici,
+  ...(estFiche(courant) && ici
+    ? {
+        fiche: [
+          ...fil,
+          { k: typeCourant(), l: ici, href: `${location.pathname}${location.search}` },
+        ],
+      }
+    : {}),
+}));
 
 /** The head: on a wide screen the boards' black bar, on a phone the sheet's handle and top. */
 function entete(r: Route): void {
@@ -262,7 +278,11 @@ function entete(r: Route): void {
       );
     }
     crumbs.append(
-      el("span", { class: "here", "aria-current": "page" }, ici || t("cadre.registre")),
+      el(
+        "span",
+        { class: "here", "aria-current": "page" },
+        mounted?.view.etape?.() || ici || t("cadre.registre"),
+      ),
     );
     haut.className = "mtop";
     // the panel beside the map (V2-CarteDrones): its breadcrumb, the theme, ✕; the map is there
@@ -561,12 +581,39 @@ let mounted: Mounted<VueCadre> | null = null;
 let shown = "";
 let asked = 0;
 
-/** The default breadcrumb: the register's summary, then the list of the fiche's type. */
+/** A page that is a fiche or under one (not the summary, a list, the coverage, the glossary). */
+const estFiche = (r: Route): boolean =>
+  !["registre", "chiffres", "liste", "couverture", "glossaire", "introuvable"].includes(r.view);
+const typeCourant = (): TypeCle => mounted?.view.type?.() ?? typeDe(courant);
+
+/** The row of a fiche in its list (?ligne=): its insee, code, SIREN or record. */
+function ligneDe(r: Route): string | null {
+  if ("insee" in r) return r.insee;
+  if (r.view === "departement") return r.dep;
+  if (r.view === "entreprise" || r.view === "acheteur") return r.siren;
+  if (r.view === "contrat") return r.id;
+  return null;
+}
+
+/** The breadcrumb's one rule (v2.3): Registre › the fiche's list (its rail name, reopened on the
+ * fiche's row) › the fiche › what is under it; a document opened from a fiche goes under that fiche
+ * (its step's `parent`, hote.ts). A view says its own when its list is not its type's. */
 function filDe(r: Route, k: TypeCle): Miette[] {
   const m: Miette[] = [{ k: "registre", l: t("types.registre.l"), href: "/registre/" }];
   if (r.view === "registre" || k === "registre") return r.view === "registre" ? [] : m;
-  return [...m, { k, l: pluriel(k), href: listeHref(k) }];
+  return [...m, etapeListe(k, ligneDe(r))];
 }
+function filParent(r: Route): Miette[] | null {
+  const p = pas()?.parent;
+  return r.view === "contrat" && p?.length ? (p as Miette[]) : null;
+}
+
+// A view that keeps its state in its address (a list's filters) replaces it through adresse.ts: the
+// router then knows it drew that address, and does not draw the view again from it when the map,
+// booted after a page opened cold, asks for the page (hote.ts brancher).
+suivreAdresse(() => {
+  if (shown) shown = `${location.pathname}${location.search}|${WIDE.matches}`;
+});
 
 /** The path's view in the frame, opened over the map when it was not. */
 /** `force`: a link was followed — the page is drawn again even when its address is the one shown
@@ -606,10 +653,11 @@ export async function afficher(force = false): Promise<void> {
     mounted = mount(root, m.Vue, props, m.template, { parts, afterRender, format });
     suivreSections();
     regler(mounted.view.panneau?.() ?? false);
-    shown = key;
+    // the address as the view left it: it may have replaced it while mounting (remplacerAdresse)
+    shown = `${location.pathname}${location.search}|${WIDE.matches}`;
     ici = mounted.view.titre?.() ?? "";
     const k = mounted.view.type?.() ?? typeDe(r);
-    fil = mounted.view.fil?.() ?? filDe(r, k);
+    fil = filParent(r) ?? mounted.view.fil?.() ?? filDe(r, k);
     entete(r);
     document.title = ici ? t("page.titre_vue", { vue: ici }) : t("page.titre_seul");
     const anchor = decodeURIComponent(location.hash.slice(1));

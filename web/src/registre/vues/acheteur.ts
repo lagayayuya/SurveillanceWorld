@@ -20,7 +20,8 @@ import {
   lienDocument,
   lienEntreprise,
 } from "../liens.ts";
-import type { VueModule } from "../modale.ts";
+import { catAcheteur, etapeListe } from "../listes.ts";
+import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
 import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
@@ -99,6 +100,13 @@ class Acheteur extends Vue<Props, State> {
   }
   type() {
     return "acheteur" as const;
+  }
+  /** Registre › its category's list (« Transports »), reopened on its row › the buyer. */
+  fil(): Miette[] {
+    return [
+      { k: "registre", l: t("types.registre.l"), href: "/registre/" },
+      etapeListe("acheteur", this.props.siren, { cat: catAcheteur(this.props.f.acheteur) }),
+    ];
   }
   partage(): Partage | null {
     return partageDe(this.titre(), this.props.f.partage);

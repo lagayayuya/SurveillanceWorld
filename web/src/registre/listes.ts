@@ -35,10 +35,11 @@ import {
   lienDocument,
   lienEntreprise,
 } from "./liens.ts";
+import type { Miette } from "./modale.ts";
 import { LISTES, type Liste, type Route } from "./routes.ts";
 import { signaler } from "./signaler.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
-import type { TypeCle } from "./types.ts";
+import { pluriel, type TypeCle } from "./types.ts";
 import { appareils } from "./vues/commune-outils.ts";
 
 export { LISTES, type Liste };
@@ -66,6 +67,33 @@ const LISTE_DE = Object.fromEntries(
 export function listeHref(k: TypeCle): string {
   const l = LISTE_DE[k];
   return l ? `/registre/${l}` : "/registre/";
+}
+
+/** A list's name, the rail's, for its title and for its step of the breadcrumb (v2.3: one name per
+ * type): « Titulaires » for the companies, a buyers' category for its buyers. */
+export function nomListe(liste: Liste, cat?: string | null): string {
+  if (liste === "entreprises") return t("liste.rail_titulaires");
+  if (liste === "acheteurs" && cat && (CATS as readonly string[]).includes(cat))
+    return t(cat === "autres" ? "liste.rail_autres" : `liste.cat.${cat}`);
+  return pluriel(TYPE_DE[liste]);
+}
+
+/** The breadcrumb's step of a fiche's list (« Registre › Transports › Sytral »): its rail name, and
+ * an address that reopens the list on the fiche's row (?ligne=, liste.ts); a buyer's category, a
+ * document's département (its list then holds a few hundred rows at most, reached in pages). */
+export function etapeListe(
+  k: TypeCle,
+  ligne?: string | null,
+  f: { cat?: string | null; dep?: string | null } = {},
+): Miette {
+  const liste = LISTE_DE[k];
+  if (!liste) return { k: "registre", l: t("types.registre.l"), href: "/registre/" };
+  const p = new URLSearchParams();
+  if (liste === "acheteurs" && f.cat) p.set("cat", f.cat);
+  if (DEFS[liste].kind && f.dep) p.set("dep", f.dep);
+  if (ligne) p.set("ligne", ligne);
+  const s = p.toString();
+  return { k, l: nomListe(liste, f.cat), href: `/registre/${liste}${s ? `?${s}` : ""}` };
 }
 
 /** The list of a document's kind (corpus.ts typ). */

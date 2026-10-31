@@ -11,7 +11,8 @@ import { Absent, type Couverture, load } from "../donnees.ts";
 import { shortDate } from "../format.ts";
 import { t } from "../i18n.ts";
 import { lien } from "../liens.ts";
-import type { VueModule } from "../modale.ts";
+import { etapeListe } from "../listes.ts";
+import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { HASH, ouvrir, signaler } from "../signaler.ts";
 import { couverture, sources } from "../sources.ts";
@@ -65,6 +66,14 @@ class Contrat extends Vue<Props, State> {
   type(): TypeCle {
     const d = this.montre;
     return d && d.k !== "fin" ? TYPE_ETAPE[d.k] : this.props.F.type;
+  }
+  /** Registre › its type's list in its département, reopened on its row › the document (opened
+   * from a fiche, the frame puts it under that fiche instead, modale.ts filParent). */
+  fil(): Miette[] {
+    return [
+      { k: "registre", l: t("types.registre.l"), href: "/registre/" },
+      etapeListe(this.props.F.type, this.props.id, { dep: this.props.F.dep }),
+    ];
   }
 
   partage(): Partage | null {

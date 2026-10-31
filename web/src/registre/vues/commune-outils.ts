@@ -13,6 +13,7 @@ import type { Evenement } from "../donnees.ts";
 import { fr, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { lien, lienAcheteur, lienDepartement, lienEntreprise } from "../liens.ts";
+import { etapeListe } from "../listes.ts";
 import type { Miette } from "../modale.ts";
 import { signaler } from "../signaler.ts";
 import { capital, proper, sentence, tidy, titleCase } from "../texte.ts";
@@ -52,12 +53,13 @@ export function liensBande(secs: LienBande[], insee: string, fiche: boolean): Li
   ];
 }
 
-/** The breadcrumb of Documents and Autorisations: Registre › Communes › <commune>; the last step,
- * « Documents » or « Autorisations », is the view's title. */
+/** The breadcrumb of what is under a commune (Documents, Autorisations and a decree's history,
+ * Drones et algorithmes): Registre › Communes (reopened on its row) › <commune>; the last step is
+ * the view's title. */
 export function filCommune(d: Donnees): Miette[] {
   return [
     { k: "registre", l: t("types.registre.l"), href: "/registre/" },
-    { k: "commune", l: t("types.commune.p"), href: "/registre/" },
+    etapeListe("commune", d.insee),
     { k: "commune", l: d.f.commune.nom, href: communeHref(d.insee) },
   ];
 }

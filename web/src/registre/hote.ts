@@ -29,10 +29,13 @@ export const carteDuSite = (): MlMap | null => carte;
 /** A register page's step of the history: `rg`, its rank among the register's steps since the map
  * (1: the first page opened from the map); `froid`: the page was opened cold (its address typed or
  * followed from elsewhere), with no step of the register nor of the map before it in this page;
- * `prec`: the title of the page before (the back button's name); `haut`: where the frame was
+ * `prec`: the title of the page before (the back button's name); `parent`: the breadcrumb of the
+ * fiche it was opened from, that fiche last (a document under its fiche, v2.3); `haut`: where the frame was
  * scrolled when it was left, given back when one comes back to it. A section of the page is not a
  * step: its link replaces the step's address (clic). */
-export type Pas = { rg: number; froid?: boolean; prec?: string; haut?: number };
+/** A step of a breadcrumb (modale.ts Miette, repeated here: the host loads before the frame). */
+export type Etape = { k: string; l: string; href: string };
+export type Pas = { rg: number; froid?: boolean; prec?: string; parent?: Etape[]; haut?: number };
 
 /** The step shown, when it is a register's step this page made (else null: a cold one). */
 export function pas(): Pas | null {
@@ -41,8 +44,9 @@ export function pas(): Pas | null {
 }
 
 /** What the frame keeps of the page it leaves (modale.ts: its scroll, its title). */
-let memoire: (() => { haut: number; titre: string }) | null = null;
-export function retenir(f: () => { haut: number; titre: string }): void {
+type Memoire = { haut: number; titre: string; fiche?: Etape[] };
+let memoire: (() => Memoire) | null = null;
+export function retenir(f: () => Memoire): void {
   memoire = f;
 }
 
@@ -94,7 +98,11 @@ export function ouvrir(url: string | URL): void {
     const m = memoire?.();
     const avant = pas() ?? { rg: 1, froid: true };
     history.replaceState({ ...(history.state ?? {}), ...avant, haut: m?.haut ?? 0 }, "");
-    etat = { rg: avant.rg + 1, ...(m?.titre ? { prec: m.titre } : {}) };
+    etat = {
+      rg: avant.rg + 1,
+      ...(m?.titre ? { prec: m.titre } : {}),
+      ...(m?.fiche ? { parent: m.fiche } : {}),
+    };
   } else setAside(mapAddress());
   history.pushState(etat, "", `${u.pathname}${u.search}${u.hash}`);
   void suivre(false, true);

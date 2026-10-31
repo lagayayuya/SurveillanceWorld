@@ -86,12 +86,12 @@ test("the band: the fiche's sections then « Carte et drones »; « Fiche » fir
   );
 });
 
-test("the breadcrumb of Documents and Autorisations ends on the commune", () => {
+test("the breadcrumb of what is under a commune ends on the commune, its list on its row", () => {
   assert.deepEqual(
     filCommune(donnees()).map((m) => [m.k, m.l, m.href]),
     [
       ["registre", "Registre", "/registre/"],
-      ["commune", "Communes", "/registre/"],
+      ["commune", "Communes", "/registre/communes?ligne=99001"],
       ["commune", "Villeneuve", "/registre/commune/99001"],
     ],
   );

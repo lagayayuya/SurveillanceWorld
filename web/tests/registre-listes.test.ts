@@ -20,10 +20,12 @@ import {
   type CouvertureX,
   csv,
   DEFS,
+  etapeListe,
   etatDe,
   grouper,
   type Listes,
   listeHref,
+  nomListe,
   type Page,
   question,
   rangDocument,
@@ -358,4 +360,22 @@ test("the summary says what the register covers, family by family, each départe
   assert.ok(JSON.stringify(couvertureLiee(cv)).includes("/registre/departement/69"));
   // a build without the sentence: the pilot's areas, as before
   assert.equal(texte({ departements: {} }), "Île-de-France, Rhône, Bouches-du-Rhône");
+});
+
+test("one name per type, the rail's: the list's title and its breadcrumb's step (v2.3)", () => {
+  assert.equal(nomListe("entreprises"), "Titulaires");
+  assert.equal(nomListe("acheteurs", "transports"), "Transports");
+  assert.equal(nomListe("acheteurs", "autres"), "Santé, éducation…");
+  assert.equal(nomListe("acheteurs"), "Acheteurs");
+  assert.equal(nomListe("contrats"), "Contrats");
+  // the step reopens the list on the fiche's row; a buyer's category, a document's département
+  assert.deepEqual(etapeListe("acheteur", "256900994", { cat: "transports" }), {
+    k: "acheteur",
+    l: "Transports",
+    href: "/registre/acheteurs?cat=transports&ligne=256900994",
+  });
+  assert.equal(etapeListe("entreprise", "409867942").href, "/registre/entreprises?ligne=409867942");
+  assert.equal(etapeListe("con", "A_1", { dep: "69" }).href, "/registre/contrats?dep=69&ligne=A_1");
+  // a list of names does not take a département from a fiche
+  assert.equal(etapeListe("commune", "69290", { dep: "69" }).href, "/registre/communes?ligne=69290");
 });

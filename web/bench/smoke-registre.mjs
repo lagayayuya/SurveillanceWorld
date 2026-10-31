@@ -486,6 +486,128 @@ try {
     );
     await context.close();
   }
+
+  // --- the tree (v2.3 point 4): one name per type, the rail's; one rule for the breadcrumb ---
+  {
+    const { context, page } = await visit("/registre/");
+    await drawn(page);
+    const crumbs = () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("#registre .mtop .crumbs :is(a, .here)")].map((a) => ({
+          l: a.textContent.trim(),
+          href: a.getAttribute("href"),
+        })),
+      );
+    const go = async (path) => {
+      await page.evaluate((p) => {
+        history.pushState({ rg: 2 }, "", p);
+        dispatchEvent(new PopStateEvent("popstate", { state: { rg: 2 } }));
+      }, path);
+      await page.waitForTimeout(1500);
+      await drawn(page);
+    };
+    // every list: its title, its rail row and its breadcrumb's last step say one name
+    const lists = [];
+    for (const path of [
+      "/registre/communes",
+      "/registre/intercommunalites",
+      "/registre/departements",
+      "/registre/acheteurs?cat=etat",
+      "/registre/acheteurs?cat=transports",
+      "/registre/entreprises",
+      "/registre/contrats",
+      "/registre/arretes",
+    ]) {
+      await go(path);
+      const got = await page.evaluate(() => ({
+        title: document.querySelector("#registre .v-liste h1")?.textContent.trim(),
+        rail: document.querySelector("#registre .v-liste .ri.on")?.textContent.trim(),
+        here: document.querySelector("#registre .mtop .crumbs .here")?.textContent.trim(),
+      }));
+      lists.push({ path, ...got });
+    }
+    check(
+      "tree: each list's title is its rail row's name and its breadcrumb's step (« Titulaires », « Transports »)",
+      lists.every((x) => x.title && x.rail?.startsWith(x.title) && x.here === x.title),
+      JSON.stringify(
+        lists.filter((x) => !(x.title && x.rail?.startsWith(x.title) && x.here === x.title)),
+      ),
+    );
+    // a fiche: Registre › its list (reopening on its row) › the fiche; under a commune, the commune
+    const want = [
+      [
+        "/registre/acheteur/256900994",
+        ["Registre", "Transports"],
+        "acheteurs?cat=transports&ligne=256900994",
+      ],
+      [
+        "/registre/commune/69290/carte",
+        ["Registre", "Communes", "Saint-Priest"],
+        "communes?ligne=69290",
+      ],
+      [
+        "/registre/commune/69290/documents",
+        ["Registre", "Communes", "Saint-Priest"],
+        "communes?ligne=69290",
+      ],
+      ["/registre/departement/69", ["Registre", "Départements"], "departements?ligne=69"],
+    ];
+    const fiches = [];
+    for (const [path, steps, list] of want) {
+      if (
+        !existsSync(
+          join(DATA, path.replace("/registre/", "").split("/").slice(0, 2).join("/") + ".json"),
+        )
+      )
+        continue;
+      await go(path);
+      const c = await crumbs();
+      const links = c.slice(0, -1);
+      fiches.push({
+        path,
+        ok:
+          links.map((x) => x.l).join(" › ") === steps.join(" › ") &&
+          links[1]?.href === `/registre/${list}`,
+        c: c.map((x) => x.l).join(" › "),
+      });
+    }
+    check(
+      "tree: a fiche's breadcrumb is Registre › its list › the fiche (› what is under it), the list's step on the fiche's row",
+      fiches.length > 0 && fiches.every((x) => x.ok),
+      JSON.stringify(fiches),
+    );
+    // a document opened from a fiche goes under that fiche
+    await go(`/registre/commune/${INSEE}`);
+    const nomCommune = (await crumbs()).at(-1)?.l;
+    await page.locator('#registre a[href^="/registre/contrat/"]').first().click();
+    await page.waitForURL(/\/registre\/contrat\//);
+    await drawn(page);
+    await page.waitForTimeout(800);
+    const sous = (await crumbs()).map((x) => x.l);
+    check(
+      "tree: a document opened from its commune's fiche: Registre › Communes › the commune › the document",
+      sous.length === 4 && sous[1] === "Communes" && sous[2] === nomCommune,
+      JSON.stringify({ nomCommune, sous }),
+    );
+    // the list's step reopens the list on the fiche's row: marked, in view
+    await go("/registre/communes?ligne=69290");
+    await page.waitForTimeout(800);
+    const row = await page.evaluate(() => {
+      const tr = document.querySelector("#registre .v-liste tr.on");
+      const r = tr?.getBoundingClientRect();
+      return {
+        name: tr?.textContent.replace(/\s+/g, " ").trim().slice(0, 30),
+        top: r?.top,
+        h: innerHeight,
+      };
+    });
+    check(
+      "tree: a list opened from the breadcrumb marks the fiche's row and scrolls to it",
+      !!row.name?.includes("Saint-Priest") && row.top > 0 && row.top < row.h,
+      JSON.stringify(row),
+    );
+    await context.close();
+  }
 } finally {
   await browser.close();
   server.close();

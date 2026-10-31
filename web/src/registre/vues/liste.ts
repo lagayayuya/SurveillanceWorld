@@ -6,6 +6,7 @@
 // their figures and their rules are listes.ts's: a list of names reads listes.json, a list of
 // documents asks the search API a page at a time (lot R3), « Afficher plus » the next one.
 
+import { remplacerAdresse } from "../adresse.ts";
 import { badge, date as docDate, docHref, type Index, type Lexique } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
 import { load } from "../donnees.ts";
@@ -34,6 +35,7 @@ import {
   listeHref,
   motValeur,
   nomDep,
+  nomListe,
   question,
   type Rang,
   type Resultat,
@@ -63,6 +65,9 @@ import template from "./liste.html?raw";
 
 /** The rows shown at first, and added by « Afficher plus » (the mockup's 20). */
 const PAS = 20;
+/** A list reopened on a fiche's row (?ligne=, the breadcrumb's list step) asks pages of documents
+ * until the row comes, at most this many. */
+const PAGES_LIGNE = 25;
 
 type Props = {
   liste: Liste;
@@ -115,7 +120,7 @@ export function rail(liste: Liste, e: Etat, n: Comptes) {
         ? CATS.map((c) =>
             row(
               "acheteur",
-              t(c === "autres" ? "liste.rail_autres" : `liste.cat.${c}`),
+              nomListe("acheteurs", c),
               n.categories[c],
               `${listeHref("acheteur")}?cat=${c}`,
               liste === "acheteurs" && e.f.cat === c,
@@ -123,13 +128,7 @@ export function rail(liste: Liste, e: Etat, n: Comptes) {
           )
         : f.types.map((k) => {
             const l = (Object.keys(TYPE_DE) as Liste[]).find((x) => TYPE_DE[x] === k) as Liste;
-            return row(
-              k,
-              k === "entreprise" ? t("liste.rail_titulaires") : pluriel(k),
-              n.listes[l],
-              listeHref(k),
-              l === liste,
-            );
+            return row(k, nomListe(l), n.listes[l], listeHref(k), l === liste);
           }),
   }));
 }
@@ -191,14 +190,22 @@ export class ListeVue extends Vue<Props, State> {
   /** the latest page asked: an older answer is dropped */
   private n = 0;
 
+  /** the row the address names (?ligne=): reached, then scrolled into view once */
+  private cible: string | null = this.props.q?.ligne ?? null;
+  private vise = false;
+
   protected init(p: Props): Partial<State> {
-    return {
-      e: etatDe(DEFS[p.liste], p.q ?? {}),
-      lim: PAS,
-      docs: null,
-      charge: false,
-      echec: false,
-    };
+    const e = etatDe(DEFS[p.liste], p.q ?? {});
+    const ligne = p.q?.ligne;
+    // a list of names reopened on a row: as many steps of 20 as it takes to show it, chosen
+    let lim = PAS;
+    if (ligne && p.C) {
+      const i = appliquer(DEFS[p.liste], rangs(p.C, p.liste), e).list.findIndex(
+        (x) => x.id === ligne,
+      );
+      if (i >= 0) lim = Math.ceil((i + 1) / PAS) * PAS;
+    }
+    return { e, lim, docs: null, charge: false, echec: false, sel: ligne ?? null };
   }
 
   /** A list of documents: its first page in the state `e` (after a pause for typed words), or the
@@ -217,15 +224,34 @@ export class ListeVue extends Vue<Props, State> {
         ...(prev?.rows ?? []),
         ...P.evenements.map((x) => rangDocument(P.dico, this.props, x)),
       ];
+      // reopened on a document's row: its record or its affair (a fiche's address names the affair)
+      const cible = this.cible;
+      const vu = cible ? rows.find((x) => x.id === cible || x.e?.affaire === cible) : undefined;
       this.setState({
         docs: { rows, L, total: P.total, comptes: comptesPage(this.def, P, e) },
         lim: rows.length,
         charge: false,
         echec: false,
+        ...(vu ? { sel: vu.id } : {}),
       });
+      if (cible && !vu && rows.length < P.total && page < PAGES_LIGNE) void this.pages(e, true);
+      else if (!vu) this.cible = null;
     } catch {
       if (id === this.n) this.setState({ charge: false, echec: true });
     }
+  }
+  /** The row the address named, once drawn: scrolled to the middle of the list, once. */
+  private viser(): void {
+    if (!this.cible || this.vise || !this.state.sel) return;
+    if (!document.querySelector(".v-liste tr.on")) return;
+    this.vise = true;
+    // after the frame has put the new page at its top (modale.ts afficher, its next frame); the row
+    // asked then, a render may have replaced it
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document.querySelector(".v-liste tr.on")?.scrollIntoView({ block: "center" }),
+      ),
+    );
   }
   private attente: ReturnType<typeof setTimeout> | undefined;
   componentWillUnmount(): void {
@@ -233,7 +259,7 @@ export class ListeVue extends Vue<Props, State> {
     this.n++;
   }
   titre(): string {
-    return pluriel(this.type());
+    return nomListe(this.props.liste, this.state.e.f.cat);
   }
   type(): TypeCle {
     return TYPE_DE[this.props.liste];
@@ -244,16 +270,18 @@ export class ListeVue extends Vue<Props, State> {
 
   componentDidMount(): void {
     void this.pages(this.state.e);
+    this.viser();
     // on a phone the rail is a strip: its current list in view
     document
       .querySelector<HTMLElement>(".v-liste .rail.tel .ri.on")
       ?.scrollIntoView({ block: "nearest", inline: "center" });
   }
   componentDidUpdate(): void {
+    this.viser();
     // the state in the address, replaced (no new step in the history)
     const href = adresse(this.def, this.state.e);
     if (href !== `${location.pathname}${location.search}`)
-      history.replaceState(history.state, "", `${href}${location.hash}`);
+      remplacerAdresse(`${href}${location.hash}`);
   }
 
   /** A rail link to the list shown (its own words, another category): the state its address says,
@@ -404,8 +432,8 @@ export class ListeVue extends Vue<Props, State> {
         rows: f.rows.map((r) => ({ ...r, go: this.ici })),
       })),
       ty: repere(k),
-      title: pluriel(k),
-      letters: decoupe(pluriel(k)),
+      title: nomListe(liste, e.f.cat),
+      letters: decoupe(nomListe(liste, e.f.cat)),
       idline: t(`liste.ligne.${liste.replace(/-/g, "_")}`, {
         n: n.listes[liste],
         maj: I.maj.split("-").reverse().join("/"),
@@ -418,7 +446,7 @@ export class ListeVue extends Vue<Props, State> {
       sorts,
       filtres,
       argent: def.argent,
-      caption: t("liste.caption", { liste: pluriel(k) }),
+      caption: t("liste.caption", { liste: nomListe(liste, e.f.cat) }),
       cols,
       rows,
       empty: list.length === 0 && !S.charge && !S.echec && (!docs || !!S.docs),

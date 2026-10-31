@@ -26,13 +26,13 @@ import {
 import { count, fr, longMonth } from "../format.ts";
 import { carteDuSite } from "../hote.ts";
 import { has, t } from "../i18n.ts";
-import { departementHref } from "../liens.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import template from "./carte.html?raw";
+import { filCommune } from "./commune-outils.ts";
 import "./carte.css";
 import {
   appareils,
@@ -169,12 +169,10 @@ class CarteDrones extends Vue<Props, State> {
     return "commune";
   }
   fil(): Miette[] {
-    const d = this.props.d;
-    const dep = d.f.commune.dep;
-    return [
-      { k: "registre", l: t("types.registre.l"), href: "/registre/" },
-      { k: "departement", l: d.f.stats.dep.nom ?? dep, href: departementHref(dep) },
-    ];
+    return filCommune(this.props.d);
+  }
+  etape(): string {
+    return t("commune.carte_et_drones");
   }
   private get T(): Creneau[] {
     return drones(this.props.d).creneaux;

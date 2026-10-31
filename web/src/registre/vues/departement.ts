@@ -15,7 +15,6 @@ import { Absent, load } from "../donnees.ts";
 import { count, fr, longMonth, money, moneyFull, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import {
-  departementHref,
   lien,
   lienAcheteur,
   lienCommune,
@@ -23,11 +22,11 @@ import {
   lienDocument,
   lienEntreprise,
 } from "../liens.ts";
+import { etapeListe } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { couverture, sources } from "../sources.ts";
 import { capital } from "../texte.ts";
-import { pluriel } from "../types.ts";
 import { type BaseState, type Col, large, type Partage, partageDe, Vue } from "../vue.ts";
 import {
   appels,
@@ -158,15 +157,13 @@ class Departement extends Vue<Props, State> {
   type() {
     return this.data().ic ? ("epci" as const) : ("departement" as const);
   }
-  /** Registre › Départements › <département> (› <intercommunalité>, the page itself). */
+  /** Registre › Départements (or Intercommunalités, for an intercommunality) › the page itself. */
   fil(): Miette[] {
-    const { ic, N } = this.data();
+    const { ic } = this.data();
+    // an intercommunality's fiche is drawn by its département's view (?ic=): its list is theirs
     return [
       { k: "registre", l: t("types.registre.l"), href: "/registre/" },
-      { k: "departement", l: pluriel("departement"), href: "/registre/" },
-      ...(ic
-        ? [{ k: "departement" as const, l: N.nom, href: departementHref(this.props.dep) }]
-        : []),
+      ic ? etapeListe("epci", ic) : etapeListe("departement", this.props.dep),
     ];
   }
   partage(): Partage | null {
