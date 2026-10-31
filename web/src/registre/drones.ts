@@ -283,6 +283,8 @@ export type Calque = {
   encre(t: Teintes): void;
   /** The box to fit: the outline's, else the drawn zones'. */
   cadre(): BBox | null;
+  /** The tallest volume drawn (m): the camera stays well above it. */
+  plusHaut(): number;
   /** A site's box (« Voir sur la carte »), null for a site not drawn. */
   boite(id: string): BBox | null;
   /** Removes every source, layer and listener it added. */
@@ -378,6 +380,14 @@ export function zoomIncline(
     z -= Math.log2(Math.min(k, 4));
   }
   return z;
+}
+/** The highest zoom at which the camera, tilted by `pitch` over a canvas `H` px high (MapLibre's,
+ * 1.5 H from the centre: see `ecran`), stays at twice `metres` above the ground at latitude `lat`:
+ * a volume is never entered, nor seen from right under its top. */
+export function zoomAuDessus(metres: number, pitch: number, H: number, lat: number): number {
+  if (metres <= 0) return 22;
+  const px = (1.5 * H * Math.cos((pitch * Math.PI) / 180)) / (2 * metres);
+  return Math.log2((px * 40075016.686 * Math.cos((lat * Math.PI) / 180)) / 512);
 }
 /** Labels nearer than this on the screen (px) are one place: one label for them. */
 const MEME_PLACE = 40;
@@ -754,6 +764,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       }
     },
     cadre: box,
+    plusHaut: () => Math.max(0, ...hauteurs.values()),
     boite(id) {
       const g = geo.get(id);
       return g ? bboxOf(g.rs) : null;

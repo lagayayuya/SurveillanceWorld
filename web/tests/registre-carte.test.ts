@@ -14,6 +14,7 @@ import {
   tete,
   valeur,
   volumeHeight,
+  zoomAuDessus,
   zoomIncline,
 } from "../src/registre/drones.ts";
 import { setMessages, t } from "../src/registre/i18n.ts";
@@ -300,4 +301,14 @@ test("a commune's box framed tilted: MapLibre's camera, the box within the free 
     // within, and not far from filling it
     assert.ok(k <= 1.006 && k > 0.8, `${pitch}/${bearing}: ${k}`);
   }
+});
+
+test("the camera stays twice the tallest volume above the ground (v2.4)", () => {
+  // at that zoom, MapLibre's camera (1.5 H from the centre, tilted) is 2 × 600 m high
+  const z = zoomAuDessus(600, 50, 900, 45.75);
+  const pxParM = (512 * 2 ** z) / (40075016.686 * Math.cos((45.75 * Math.PI) / 180));
+  const alt = (1.5 * 900 * Math.cos((50 * Math.PI) / 180)) / pxParM;
+  assert.ok(Math.abs(alt - 1200) < 1e-6, String(alt));
+  // nothing drawn: no ceiling
+  assert.equal(zoomAuDessus(0, 50, 900, 45.75), 22);
 });

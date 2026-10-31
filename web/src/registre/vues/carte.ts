@@ -22,6 +22,7 @@ import {
   type Site,
   TEINTES,
   type Teintes,
+  zoomAuDessus,
   zoomIncline,
 } from "../drones.ts";
 import { count, fr, longMonth } from "../format.ts";
@@ -68,8 +69,9 @@ import {
   zonesDe,
 } from "./carte-outils.ts";
 
-/** The tilt of the map in 3D, degrees (R1a's tilted map's). */
-const PITCH = 50;
+/** The tilt of the map in 3D, degrees: 50 on a wide screen (R1a's tilted map's), 35 on a phone,
+ * whose narrow map at 50° showed the volumes more than the streets (v2.4, Ju). */
+const inclinaison = (): number => (large() ? 50 : 35);
 /** One press of a turn button, degrees. */
 const TURN = 45;
 const MOVE_MS = 900;
@@ -421,7 +423,7 @@ class CarteDrones extends Vue<Props, State> {
   private voler(map: MlMap, zone?: BBox, commune = !zone): void {
     const box = zone ?? this.props.d.f.commune.bbox ?? this.layer?.cadre();
     if (commune && box) this.cadree = true;
-    const pitch = this.state.is3d ? PITCH : 0;
+    const pitch = this.state.is3d ? inclinaison() : 0;
     const duration = reduced() ? 0 : MOVE_MS * 1.6;
     this.parti = performance.now();
     if (!box) {
@@ -449,6 +451,8 @@ class CarteDrones extends Vue<Props, State> {
         (H - padding.top - padding.bottom) / 2,
       ),
       commune ? ZOOM_MAX : ZOOM_ZONE,
+      // the camera high above the tallest volume (« Voir sur la carte » too)
+      zoomAuDessus(this.layer?.plusHaut() ?? 0, pitch, H, center[1]),
     );
     const cam = { center, zoom, pitch, bearing, padding };
     // from far away, or over a map still loading (a cold open: the map starts at its default
@@ -935,7 +939,7 @@ class CarteDrones extends Vue<Props, State> {
       hasEnt: S.ent.length > 0 && S.k !== "vsa",
       hasFrise: drone.length > 0,
       is3d: S.is3d ? "true" : "false",
-      tog3d: (() => this.ease({ pitch: S.is3d ? 0 : PITCH })) as Handler,
+      tog3d: (() => this.ease({ pitch: S.is3d ? 0 : inclinaison() })) as Handler,
       rotL: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) + TURN })) as Handler,
       rotR: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) - TURN })) as Handler,
       north: (() => this.ease({ bearing: 0 })) as Handler,
