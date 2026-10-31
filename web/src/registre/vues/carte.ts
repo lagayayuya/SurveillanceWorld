@@ -74,6 +74,12 @@ import {
 const inclinaison = (): number => (large() ? 50 : 35);
 /** One press of a turn button, degrees. */
 const TURN = 45;
+/** The slow turn at the opening (v2.4): one whole turn in this many ms, by quarters (an easeTo
+ * goes the shortest way: a whole turn at once would not move). */
+const TOUR_MS = 90_000;
+/** A hand's moves of the map (with an originalEvent): a drag, a pinch or a wheel, a turn, a tilt,
+ * and the keyboard's arrows, which only start a move. */
+const GESTES = ["dragstart", "zoomstart", "rotatestart", "pitchstart", "movestart"] as const;
 const MOVE_MS = 900;
 /** How long after its flight a move of the site's own undoes it and is flown over again. */
 const REFAIRE_MS = 6000;
@@ -320,7 +326,8 @@ class CarteDrones extends Vue<Props, State> {
   private readonly poserMarge = () => {
     const map = this.map;
     if (!map || this.dead || !this.cadree) return;
-    if (map.isMoving()) {
+    // a flight waits; the turn does not (the padding's ease pauses it, it goes on after)
+    if (map.isMoving() && !this.quart) {
       map.once("moveend", this.suivreMarge);
       return;
     }
@@ -463,6 +470,8 @@ class CarteDrones extends Vue<Props, State> {
     const cam = { center, zoom, pitch, bearing, padding };
     // from far away, or over a map still loading (a cold open: the map starts at its default
     // place) a jump, not a flight that would load every tile on its way
+    // the commune framed: the slow turn from there
+    if (commune) map.once("moveend", () => this.demarrerTour());
     if (!map.isStyleLoaded() || loin(map, center)) map.jumpTo(cam, NOTRE);
     else map.flyTo({ ...cam, duration, essential: true }, NOTRE);
   }
@@ -472,6 +481,7 @@ class CarteDrones extends Vue<Props, State> {
     removeEventListener("themechange", this.onTheme);
     removeEventListener("resize", this.suivreMarge);
     clearTimeout(this.tMarge);
+    this.arreterTour();
     this.roMarge?.disconnect();
     this.ro?.disconnect();
     const map = this.map;
@@ -607,8 +617,78 @@ class CarteDrones extends Vue<Props, State> {
       if (this.map && b) this.voler(this.map, b);
     };
   }
+  /** A command of the map's (3D, ↺, ↻, N): a hand on the map, the turn stops for good. */
   private ease(o: { pitch?: number; bearing?: number }): void {
+    this.arreterTour();
     this.map?.easeTo({ ...o, duration: reduced() ? 0 : MOVE_MS }, NOTRE);
+  }
+
+  // --- the slow turn (v2.4 point 3) ---------------------------------------------------------------
+  /** Turning: from the commune's framing until a hand moves the map (a drag, a pinch, a zoom, a
+   * turn, a tilt, one of the commands); a tap on a zone is no such move; never again after, never
+   * under reduced motion. A flight of the view's own (a zone, the padding) pauses it. */
+  private tourne = false;
+  /** A quarter of the turn under way (its easeTo), else false. */
+  private quart = false;
+  private demarrerTour(): void {
+    const map = this.map;
+    if (!map || this.dead || reduced() || this.tourne || this.finTour) return;
+    this.tourne = true;
+    for (const e of GESTES) map.on(e, this.main);
+    for (const e of ["mousedown", "touchstart"] as const) map.on(e, this.appuye);
+    for (const e of ["mouseup", "touchend", "touchcancel"] as const) map.on(e, this.releve);
+    map.on("moveend", this.reprendre);
+    this.reprendre();
+  }
+  /** A finger or a button down on the map: its press stops the quarter under way (MapLibre), and
+   * a quarter started again under it would take the drag away; up, a tap (a zone chosen) lets it
+   * turn on, a gesture has stopped it (main). */
+  private appui = false;
+  private readonly appuye = () => {
+    this.appui = true;
+  };
+  private readonly releve = () => {
+    this.appui = false;
+    this.reprendre();
+  };
+  /** Stopped once: never again. */
+  private finTour = false;
+  // (the gesture itself stops the quarter under way: Camera.stop would stop the gesture too)
+  private readonly main = (e: { originalEvent?: unknown }) => {
+    if (e.originalEvent) this.arreterTour(false);
+  };
+  private readonly reprendre = () => {
+    const map = this.map;
+    if (!map || !this.tourne || this.dead) return;
+    this.quart = false;
+    // once the view's own flight, or the quarter just ended, is over
+    requestAnimationFrame(() => {
+      if (!this.tourne || this.dead || this.quart || this.appui || !this.map || this.map.isMoving())
+        return;
+      this.quart = true;
+      this.map.easeTo(
+        {
+          bearing: this.map.getBearing() - 90,
+          duration: TOUR_MS / 4,
+          easing: (t) => t,
+          essential: true,
+        },
+        { ...NOTRE, tour: true },
+      );
+    });
+  };
+  private arreterTour(stop = true): void {
+    this.finTour = true;
+    if (!this.tourne) return;
+    this.tourne = false;
+    const map = this.map;
+    if (!map) return;
+    for (const e of GESTES) map.off(e, this.main);
+    for (const e of ["mousedown", "touchstart"] as const) map.off(e, this.appuye);
+    for (const e of ["mouseup", "touchend", "touchcancel"] as const) map.off(e, this.releve);
+    map.off("moveend", this.reprendre);
+    if (this.quart && stop) map.stop();
+    this.quart = false;
   }
 
   renderVals() {

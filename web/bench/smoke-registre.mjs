@@ -829,6 +829,9 @@ try {
         viewport: { width: w, height: h },
         locale: "fr-FR",
         colorScheme: w < 600 ? "dark" : "light",
+        // the framing as it lands, the slow turn aside (its own check below): a box turned
+        // spills by its corners
+        reducedMotion: "reduce",
       });
       await context.addInitScript(() => {
         try {
@@ -976,6 +979,55 @@ try {
       "the drone view frames its commune, once, outlined, tilted (by its address and in the site); « Voir sur la carte » frames its zone",
       cases.length === 3 && zone !== null && found.length === 0,
       JSON.stringify(found.length ? found : seen.map((r) => `${r.insee}/${r.how}/${r.w}`)),
+    );
+  }
+
+  // --- the slow turn at the opening (v2.4 point 3): it turns, a drag stops it for good; none
+  // under reduced motion ---
+  {
+    const turn = {};
+    for (const reduce of [false, true]) {
+      const context = await browser.newContext({
+        viewport: { width: 1440, height: 900 },
+        locale: "fr-FR",
+        reducedMotion: reduce ? "reduce" : "no-preference",
+      });
+      await context.addInitScript(() => {
+        try {
+          localStorage.setItem("lacarte.welcome", "1");
+        } catch {}
+      });
+      const page = await context.newPage();
+      await page.route("**/api/**", (r) =>
+        r.fulfill({ status: 401, contentType: "application/json", body: '{"error":"no_session"}' }),
+      );
+      await page.goto(`${APP}/registre/commune/${INSEE}/carte`);
+      await page.waitForFunction(() => document.querySelector("#registre .v-carte"), null, {
+        timeout: 20000,
+      });
+      await page.waitForTimeout(2500);
+      const bearing = () => page.evaluate(() => window.__map.getBearing());
+      const during = async (ms) => {
+        const a = await bearing();
+        await page.waitForTimeout(ms);
+        return Math.abs((await bearing()) - a);
+      };
+      if (reduce) turn.reduced = await during(2500);
+      else {
+        turn.turns = await during(2500);
+        await page.mouse.move(300, 500);
+        await page.mouse.down();
+        await page.mouse.move(380, 540, { steps: 8 });
+        await page.mouse.up();
+        await page.waitForTimeout(400);
+        turn.afterDrag = await during(2500);
+      }
+      await context.close();
+    }
+    check(
+      "the drone view turns slowly at its opening, stops for good under a hand, never under reduced motion",
+      turn.turns > 5 && turn.afterDrag < 0.01 && turn.reduced < 0.01,
+      JSON.stringify(turn),
     );
   }
 
