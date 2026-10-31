@@ -1615,3 +1615,11 @@
   overflow-x: auto;
   scrollbar-width: none;
 }
+
+/* v2.3 (point 7): the long sentences, the panels', the notes and the helps, in Archivo; Special Elite
+   stays for the labels, the dates and the identity lines (the boards' typewriter is for those) */
+.rg :is(p.note, p.tw:not(.idline, .dlbl, .etat), .cd-vide, .cd-sub, .nonlu-note, .pclavier),
+.rg .aide::after,
+.rg .panel > span:not(.tw) {
+  font-family: Archivo, sans-serif;
+}
