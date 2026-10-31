@@ -3,6 +3,14 @@
 // capitals, CSS only (text-transform, checked by smoke-theme.mjs), are switched off;
 // captures keep them. One interface since 2026-10-23 (the classique removed): no --ui.
 
+/** A bench's launch options for `engine`: Chromium draws WebGL on the machine's GPU (ANGLE on
+ * Metal), as smoke.mjs always did. Playwright's headless Chromium draws it in software
+ * (SwiftShader) by default: every map frame several times slower, every wait on the map's
+ * « idle » or a slide of a finger with it (participate-chromium 710 s against 214 s in
+ * WebKit). CI's Linux runners have no Metal: smoke.mjs runs there with the same flags. */
+export const launchOptions = (engine) =>
+  engine === "chromium" ? { args: ["--use-angle=metal", "--ignore-gpu-blocklist"] } : {};
+
 /** Every page the browser opens is a returning visit: the welcome panel (welcome.ts, board
  * 28a), shown on a first visit, would cover the map the tests use. */
 export function returning(browser) {

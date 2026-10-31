@@ -13,7 +13,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { chromium, devices, webkit } from "playwright";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { returning } from "./ui.mjs";
+import { launchOptions, returning } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -105,7 +105,9 @@ const screen = (page) =>
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-browser = returning(await (engine === "chromium" ? chromium : webkit).launch());
+browser = returning(
+  await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine)),
+);
 try {
   for (const [name, options] of [
     ["phone", PHONE],

@@ -52,6 +52,7 @@ import {
   takenPorts,
 } from "./states/harness.mjs";
 import { kit } from "./states/kit.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -143,7 +144,7 @@ async function open(size, opts = {}) {
 
 try {
   await startServers();
-  browser = await (engine === "chromium" ? chromium : webkit).launch();
+  browser = await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine));
   const size = engine === "webkit" ? PHONE : WIDE;
   const where = engine === "webkit" ? "phone" : "wide";
 

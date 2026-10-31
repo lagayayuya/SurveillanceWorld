@@ -27,7 +27,7 @@ import { join, resolve } from "node:path";
 import { chromium, devices, webkit } from "playwright";
 import { DIST, preview, requireTiles, WEB } from "./dist.mjs";
 import { BENCH_PASSWORD, COOKIE, entryOf, reauthOf, sessionOf } from "./session.mjs";
-import { benchBrowser } from "./ui.mjs";
+import { benchBrowser, launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -652,7 +652,10 @@ try {
     anon.join(","),
   );
 
-  browser = benchBrowser(await (engine === "chromium" ? chromium : webkit).launch(), true);
+  browser = benchBrowser(
+    await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine)),
+    true,
+  );
   const newContext = browser.newContext.bind(browser);
   browser.newContext = async (options) => {
     const context = await recorded(await newContext(options));

@@ -33,6 +33,7 @@ import {
   takenPorts,
 } from "./states/harness.mjs";
 import { kit } from "./states/kit.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -682,7 +683,7 @@ try {
   ]) {
     if (only && only !== name) continue;
     where = name;
-    browser = await engine.launch();
+    browser = await engine.launch(launchOptions(engine.name()));
     resetContributions();
     await pointThree(size);
     await pointThree(size, true);

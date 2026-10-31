@@ -24,6 +24,7 @@ import { createServer } from "node:http";
 import { extname, join, resolve } from "node:path";
 import { chromium, webkit } from "playwright";
 import { DIST, requireTiles, WEB } from "./dist.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -117,7 +118,7 @@ function check(name, ok, detail = "") {
   console.log(`${ok ? "ok  " : "FAIL"} [${engine}] ${name}${detail ? ` — ${detail}` : ""}`);
 }
 
-const browser = await (engine === "webkit" ? webkit : chromium).launch();
+const browser = await (engine === "webkit" ? webkit : chromium).launch(launchOptions(engine));
 /** A page of a fresh context; `first`: a first visit (the welcome not seen yet). */
 async function visit(path, { first = false } = {}) {
   const context = await browser.newContext({

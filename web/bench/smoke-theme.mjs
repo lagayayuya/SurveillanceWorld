@@ -16,7 +16,7 @@
 //   node bench/smoke-theme.mjs [--region idf|ci] [--browser chromium|webkit] [--port N]
 import { spawn } from "node:child_process";
 import { chromium, devices, webkit } from "playwright";
-import { returning } from "./ui.mjs";
+import { launchOptions, returning } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -149,7 +149,9 @@ const server = spawn("npx", ["vite", "preview", "--port", String(PORT), "--stric
   stdio: "ignore",
 });
 await new Promise((r) => setTimeout(r, 1500));
-const browser = returning(await (engine === "webkit" ? webkit : chromium).launch());
+const browser = returning(
+  await (engine === "webkit" ? webkit : chromium).launch(launchOptions(engine)),
+);
 const device =
   engine === "webkit" ? devices["iPhone 14"] : { viewport: { width: 1280, height: 800 } };
 

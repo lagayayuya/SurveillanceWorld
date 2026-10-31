@@ -56,7 +56,7 @@ import {
   SYNC_ON,
   WRITE_URL,
 } from "./profile-mock.mjs";
-import { returning } from "./ui.mjs";
+import { launchOptions, returning } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -1329,7 +1329,9 @@ async function camerasChecks(page, api, where, phone) {
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = returning(await (engine === "chromium" ? chromium : webkit).launch());
+const browser = returning(
+  await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine)),
+);
 try {
   for (const [device, options] of [
     ["phone", devices["iPhone 14"]],

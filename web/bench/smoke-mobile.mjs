@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import { chromium, devices, webkit } from "playwright";
 import { accountSmoke } from "./account.mjs";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { benchBrowser } from "./ui.mjs";
+import { benchBrowser, launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -310,7 +310,10 @@ const areaFramed = (page, code) =>
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = benchBrowser(await (engine === "chromium" ? chromium : webkit).launch(), true);
+const browser = benchBrowser(
+  await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine)),
+  true,
+);
 try {
   const context = await browser.newContext({
     ...devices["iPhone 14"],

@@ -23,6 +23,7 @@ import {
   stopServers,
   takenPorts,
 } from "./states/harness.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -107,7 +108,10 @@ async function current(page, ids) {
 
 try {
   await startServers();
-  browsers = { webkit: await webkit.launch(), chromium: await chromium.launch() };
+  browsers = {
+    webkit: await webkit.launch(),
+    chromium: await chromium.launch(launchOptions("chromium")),
+  };
 
   // --- a phone: the name shown, « Valider » says what it waits for, a listed name chosen --
   let ids = await seed();

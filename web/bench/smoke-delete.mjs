@@ -16,6 +16,7 @@ import { join, resolve } from "node:path";
 import { chromium, devices, webkit } from "playwright";
 import { DIST, preview, requireTiles, WEB } from "./dist.mjs";
 import { BENCH_PASSWORD, COOKIE, sessionOf } from "./session.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -199,7 +200,7 @@ try {
   [db.dsn, db.bin] = readFileSync(dsnFile, "utf8").split("\n");
   start("npx", preview(PORT), WEB);
   await waitFor("vite preview", () => up(`${APP}/`));
-  browser = await (engine === "chromium" ? chromium : webkit).launch();
+  browser = await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine));
   await deleteFlow("ana", {
     osm: false,
     uuid: "de1e7e00-0000-4000-8000-000000000001",

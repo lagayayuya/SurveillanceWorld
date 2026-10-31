@@ -21,7 +21,7 @@ import { createRequire, stripTypeScriptTypes } from "node:module";
 import { join, resolve } from "node:path";
 import { chromium, devices, webkit } from "playwright";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { returning } from "./ui.mjs";
+import { launchOptions, returning } from "./ui.mjs";
 
 /** The map at rest (its next idle, 4 s at most), then a short pause. */
 async function idle(page) {
@@ -319,7 +319,9 @@ const FR = JSON.parse(readFileSync(join(WEB, "src/locales/fr.json"), "utf8"));
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = returning(await (engine === "chromium" ? chromium : webkit).launch());
+const browser = returning(
+  await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine)),
+);
 try {
   for (const [device, options] of [
     ["phone", devices["iPhone 14"]],

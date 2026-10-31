@@ -22,7 +22,7 @@ import { stripTypeScriptTypes } from "node:module";
 import { resolve } from "node:path";
 import { chromium, firefox, webkit } from "playwright";
 import { preview, requireTiles, WEB } from "./dist.mjs";
-import { benchBrowser } from "./ui.mjs";
+import { benchBrowser, launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -345,7 +345,9 @@ async function longestTitle(page, name) {
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-const browser = benchBrowser(await { chromium, webkit, firefox }[engine].launch());
+const browser = benchBrowser(
+  await { chromium, webkit, firefox }[engine].launch(launchOptions(engine)),
+);
 const errors = [];
 try {
   for (const [format, w, h, dpr, touch] of FORMATS) {

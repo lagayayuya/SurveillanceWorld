@@ -23,6 +23,7 @@ import { spawn } from "node:child_process";
 import { createRequire } from "node:module";
 import { chromium, devices, webkit } from "playwright";
 import { preview, requireTiles, WEB } from "./dist.mjs";
+import { launchOptions } from "./ui.mjs";
 
 const args = process.argv.slice(2);
 const arg = (name, fallback) => (args.includes(name) ? args[args.indexOf(name) + 1] : fallback);
@@ -156,7 +157,7 @@ async function axe(page, where) {
 
 const server = spawn("npx", preview(PORT), { cwd: WEB, stdio: "ignore" });
 await new Promise((r) => setTimeout(r, 2500));
-browser = await (engine === "chromium" ? chromium : webkit).launch();
+browser = await (engine === "chromium" ? chromium : webkit).launch(launchOptions(engine));
 try {
   // --- a first visit on a phone ---------------------------------------------------------
   {
