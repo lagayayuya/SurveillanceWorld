@@ -37,7 +37,6 @@ import {
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { couvertureLiee } from "../sources.ts";
 import { plain } from "../texte.ts";
 import {
   couleur,
@@ -270,7 +269,9 @@ class Sommaire extends Vue<Props, State> {
     ]
       .filter((x) => x.length > 0)
       .flatMap((x) => [" · ", ...(typeof x === "string" ? [x] : x)]);
-    const zones = couvertureLiee(cv);
+    // v2.3 (Ju): the head says when, and links what the register covers; the coverage source by
+    // source is that page's, no more a sentence here
+    const couv: RichItem = { a: { href: "/registre/couverture", text: t("sommaire.couverture") } };
     const res = (S.res ?? []).map((g) => ({
       ...repere(g.k),
       l: pluriel(g.k),
@@ -289,14 +290,8 @@ class Sommaire extends Vue<Props, State> {
       cls: wide ? "inner" : "tin",
       title: t("sommaire.titre"),
       letters: decoupe(t("sommaire.titre")),
-      idline: phraseLiee("sommaire.idline", {
-        maj: numDate(I.maj),
-        zones: { span: zones, cls: "" },
-      }),
-      idlineTel: phraseLiee("sommaire.idline_tel", {
-        maj: numDate(I.maj),
-        zones: { span: zones, cls: "" },
-      }),
+      idline: phraseLiee("sommaire.idline", { maj: numDate(I.maj), couverture: couv }),
+      idlineTel: phraseLiee("sommaire.idline_tel", { maj: numDate(I.maj), couverture: couv }),
       q: S.q,
       onQ: this.onQ,
       cherche: S.cherche,

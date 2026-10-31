@@ -144,6 +144,8 @@ export type Couverture = {
   departements: Record<
     string,
     {
+      /** its name (lot v2.3: every row carries it) */
+      nom?: string;
       etat: "collecte" | "non_collecte" | "impossible";
       raison?: string;
       depuis?: string;

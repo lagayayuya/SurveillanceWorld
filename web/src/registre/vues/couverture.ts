@@ -15,6 +15,7 @@ import { fr, longDate, shortDate } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { lienCommune, lienDepartement, lienDocument } from "../liens.ts";
 import type { VueModule } from "../modale.ts";
+import { couvertureLiee } from "../sources.ts";
 import { capital } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { large, Vue } from "../vue.ts";
@@ -174,6 +175,9 @@ class Couverture_ extends Vue<Props> {
         : { inner: "tin", cut: "cutout s", tickets: "tickets t2" },
       mots: motsDecoupes(t("couverture.titre")),
       maj: t("couverture.maj", { date: longDate(couv.maj) }),
+      // what each family covers, in one sentence, the decrees from elsewhere said (v2.3: the
+      // summary's head no longer says it; this page and the decrees' list say the same)
+      resume: couvertureLiee(couv),
       sources,
       anneeNote: annee ? t("couverture.annee_note") : "",
       deps,

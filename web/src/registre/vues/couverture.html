@@ -6,6 +6,7 @@
     <h1 class="sr">{{t.couverture.titre}}</h1><div class="{{lay.cut}}" aria-hidden="true"><sc-for list="{{mots}}" as="m"><span class="mot"><sc-for list="{{m.lettres}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></span></sc-for></div>
     <p class="idline tw">{{maj}}</p>
     <p class="lead">{{t.couverture.lead}}</p>
+    <p class="lead">{{{resume}}}</p>
 
     <section aria-labelledby="c-sources" class="sec">
       <h2 id="c-sources" class="h2">{{t.couverture.sources}}</h2>
