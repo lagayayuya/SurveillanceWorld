@@ -122,12 +122,25 @@ export type Stats = {
   carte?: number | null;
 };
 
+/** The decrees outside the collected départements' own: how many, where, and from where
+ * (`provenance` on each decree: zone, autre_prefecture, exploration; collecte for the others). */
+export type HorsCollecte = {
+  n: number;
+  departements: Record<string, number>;
+  provenances: Partial<Record<"zone" | "autre_prefecture" | "exploration", number>>;
+};
+
 export type Couverture = {
   maj: string;
   sources: { id: string; jusqu_au: string | null; collecte_le: string | null }[];
   /** what each family of documents covers (couverture.py resume): « Contrats et avis : toute la
    * France. Arrêtés : Rhône. » */
-  resume?: { familles: string[]; zone: "france" | "pilote" | string[] }[];
+  resume?: {
+    familles: string[];
+    zone: "france" | "pilote" | string[];
+    /** the decrees outside the collected départements' own (couverture.py hors_collecte) */
+    arretes_hors_collecte?: HorsCollecte;
+  }[];
   departements: Record<
     string,
     {

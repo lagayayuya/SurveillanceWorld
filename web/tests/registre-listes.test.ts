@@ -364,6 +364,29 @@ test("the summary says what the register covers, family by family, each départe
   };
   assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
   assert.ok(JSON.stringify(couvertureLiee(cv)).includes("/registre/departement/69"));
+  // the decrees outside the collected départements' own, and where they come from
+  const hors = {
+    ...cv,
+    resume: [
+      cv.resume[0],
+      {
+        familles: ["arretes"],
+        zone: ["69"],
+        arretes_hors_collecte: {
+          n: 18,
+          departements: { "13": 4, "38": 3, "75": 6 },
+          provenances: { zone: 7, autre_prefecture: 1, exploration: 10 },
+        },
+      },
+    ],
+  };
+  assert.equal(
+    texte(hors),
+    "Contrats et avis : toute la France. Arrêtés : Rhône. S'y ajoutent 18 arrêtés d'autres " +
+      "départements (Bouches-du-Rhône, Isère, Paris) : d'une préfecture de zone, de la préfecture " +
+      "d'un autre département ou relevés un à un, hors collecte.",
+  );
+  assert.ok(JSON.stringify(couvertureLiee(hors)).includes("/registre/departement/38"));
   // a build without the sentence: the pilot's areas, as before
   assert.equal(texte({ departements: {} }), "Île-de-France, Rhône, Bouches-du-Rhône");
 });

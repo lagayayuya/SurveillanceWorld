@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 from registre_docs import documents
 
-from lacarte_registre import construire, importer
+from lacarte_registre import construire, couverture, importer
 
 FIXTURE = Path(__file__).parent / "fixtures" / "registre"
 SERFIM = "431903954"
@@ -120,6 +120,69 @@ def test_a_departement_not_collected_says_so(built):
     s = paris["stats"]
     assert (s["depStats"]["docs"], s["depStats"]["sansCommune"], s["communes"]) == (1, 1, {})
     assert (s["vendeurs"], s["acheteurs"]) == ([], [])
+
+
+ZONE_ACT = "69-2025-11-28-00010"  # SYNTHETIC here, as the Rhône's recueil 319 of 2025 gives one
+
+
+@pytest.fixture(scope="module")
+def with_zone_act(tmp_path_factory) -> Path:
+    """The fixture, with one act of the préfecture de zone (Rhône) for a Savoie commune, as the
+    Rhône's recueils publish seven (Isère, Savoie, Haute-Savoie; the 2026-10-31 build)."""
+    root = tmp_path_factory.mktemp("registre")
+    importer.run(FIXTURE, root)
+    path = root / "pilote" / "REG.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    model = next(e for e in data["evenements"] if e["t"] == "arrete" and e["dep"] == "69")
+    act = {**model, "id": ZONE_ACT, "affaire": ZONE_ACT, "dep": "73", "insee": "73104",
+           "publie_par": "préfecture de zone (Rhône)", "date": "2025-11-28"}  # fmt: skip
+    data["evenements"].append(act)
+    data["affaires"][ZONE_ACT] = {"id": ZONE_ACT, "kind": "acte", "events": [ZONE_ACT]}
+    path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    construire.main(root, sans_corrections=True)
+    return root / "site"
+
+
+def test_each_decree_says_where_it_comes_from_and_the_coverage_says_the_same(with_zone_act):
+    """« Arrêtés : Rhône » and the others: the Rhône's own (collecte), the zone préfecture's act
+    for Savoie published in the Rhône's recueils (zone), the police prefecture's drone act the
+    pilot's exploration read in Paris (exploration); the coverage's sentence counts them."""
+    docs = {e["id"]: e for e in documents(with_zone_act) if e["t"].startswith("arrete")}
+    assert docs[ZONE_ACT]["provenance"] == "zone"
+    assert docs[ZONE_ACT]["recueil_dep"] == "69"
+    assert docs["75-2025-06-19-00003"]["provenance"] == "exploration"
+    assert "recueil_dep" not in docs["75-2025-06-19-00003"]
+    rhone = [e for e in docs.values() if e["dep"] == "69"]
+    assert rhone and all(e["provenance"] == "collecte" for e in rhone)
+    cov = read(with_zone_act, "couverture.json")
+    [row] = [r for r in cov["resume"] if "arretes" in r["familles"]]
+    assert row["zone"] == ["69"]
+    assert row["arretes_hors_collecte"] == {
+        "n": 2,
+        "departements": {"73": 1, "75": 1},
+        "provenances": {"zone": 1, "exploration": 1},
+    }
+    # the act a commune shares is said the same in its copies (Mions' drone acts)
+    for p in (with_zone_act / "commune").glob("*.json"):
+        for e in json.loads(p.read_text(encoding="utf-8"))["evenements"]:
+            if e["t"].startswith("arrete"):
+                assert e["provenance"] in ("collecte", "zone", "autre_prefecture", "exploration")
+
+
+def test_a_decree_s_provenance_from_its_number_and_its_publisher():
+    collected = {"69"}
+    zone = {"id": "69-2025-11-28-00007", "dep": "38", "publie_par": "préfecture de zone (Rhône)"}
+    pp = {"id": "75-2025-01-31-00013", "dep": "93", "publie_par": "préfecture de police (Paris)"}
+    assert couverture.provenance(zone, collected) == ("zone", "69")
+    assert couverture.provenance(pp, collected) == ("autre_prefecture", "75")
+    assert couverture.provenance({"id": "13-2025-11-06-00001", "dep": "13"}, collected) == (
+        "exploration",
+        "13",
+    )
+    assert couverture.provenance({"id": "69-2026-03-06-00003", "dep": "69"}, collected) == (
+        "collecte",
+        "69",
+    )
 
 
 CATALOGUE = Path(__file__).parent.parent / "web" / "src" / "locales" / "fr.json"

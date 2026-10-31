@@ -3,7 +3,7 @@
 // text); then what the register covers. One list for every fiche (socle's part `sources`).
 import { depNom } from "./corpus.ts";
 import type { RichItem } from "./dc.ts";
-import type { Couverture } from "./donnees.ts";
+import type { Couverture, HorsCollecte } from "./donnees.ts";
 import { load } from "./donnees.ts";
 import { has, t } from "./i18n.ts";
 import { lienDepartement, phrase } from "./liens.ts";
@@ -82,12 +82,35 @@ export function couvertureLiee(
               ...(j ? [", "] : []),
               lienDepartement(d, cv.departements[d]?.nom ?? depNom(d)),
             ]);
+    const hors = r.arretes_hors_collecte;
     return [
       ...(i ? [" "] : []),
       ...phrase("sommaire.par_source.ligne", {
         familles: mots.charAt(0).toUpperCase() + mots.slice(1),
         zone: { span: zone, cls: "" },
       }),
+      ...(hors?.n ? [" ", ...horsCollecte(hors, cv.departements)] : []),
     ];
+  });
+}
+
+/** « S'y ajoutent 18 arrêtés d'autres départements (Paris, Isère…) : d'une préfecture de zone,
+ * de la préfecture d'un autre département ou relevés un à un hors collecte. » (the build's
+ * provenances, each said only when there is one). */
+function horsCollecte(h: HorsCollecte, departements: Record<string, { nom?: string }>): RichItem[] {
+  const ou = new Intl.ListFormat("fr", { type: "disjunction" });
+  const deps = Object.keys(h.departements)
+    .filter(Boolean)
+    .flatMap((d, j) => [
+      ...(j ? [", "] : []),
+      lienDepartement(d, departements[d]?.nom ?? depNom(d)),
+    ]);
+  const origines = ou.format(
+    Object.keys(h.provenances).map((p) => t(`sommaire.par_source.provenance.${p}`)),
+  );
+  return phrase("sommaire.par_source.hors", {
+    n: h.n,
+    departements: { span: deps, cls: "" },
+    provenances: origines,
   });
 }

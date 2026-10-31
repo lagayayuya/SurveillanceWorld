@@ -1064,6 +1064,13 @@ DECISIONS 2026-10-28.
   A buyer no source names (the DECP, France's reference, SIRENE) carries `nom_inconnu: true`
   in every dictionary and on its fiche (`acheteur.nom_inconnu`): the share says « Un acheteur
   public (SIREN 130 001 902) », the pages are to say the same, never its SIREN as its name.
+  Every decree says where it comes from (`provenance`: `collecte`, its département's own
+  recueils; `zone`, a zone préfecture's act for another département of its zone, published in
+  its seat's recueils, `recueil_dep` that seat; `autre_prefecture`, another préfecture's act;
+  `exploration`, read one by one in recueils not collected), and the summary's coverage
+  sentence adds them to « Arrêtés : Rhône. »: « S'y ajoutent 18 arrêtés d'autres départements
+  (…) : d'une préfecture de zone, de la préfecture d'un autre département ou relevés un à un,
+  hors collecte. » (couverture.json `resume[].arretes_hors_collecte`).
 
 ## 2. State catalogue
 

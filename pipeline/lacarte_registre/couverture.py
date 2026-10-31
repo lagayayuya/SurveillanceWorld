@@ -44,10 +44,76 @@ def rules(path: Path) -> dict[str, Any]:
 FAMILLES = ("contrats", "avis", "arretes", "subventions")
 
 
-def resume(sources: list[dict[str, Any]], deps: dict[str, Any]) -> list[dict[str, Any]]:
+# Where a decree comes from (`provenance`, on every act): the collection of its own département's
+# recueils (`collecte`); a zone préfecture's act for another département of its zone, published
+# in its seat's recueils (`zone`: the Rhône's préfet is the Sud-Est zone's; « publié par la
+# préfecture de zone »); another préfecture's act for this département (`autre_prefecture`: the
+# police prefecture's for Seine-Saint-Denis); an act of a département whose recueils are not
+# collected, read one by one by the pilot's exploration (`exploration`). The recueil's
+# département is the act's number's prefix (« 69-2025-11-28-00010 »: the Rhône's).
+PROVENANCES = ("collecte", "zone", "autre_prefecture", "exploration")
+ACT_NUMBER = re.compile(r"^(\d{2,3}|2[AB])-\d{4}-")
+
+
+def provenance(e: Event, collected: set[str] | frozenset[str]) -> tuple[str, str | None]:
+    """A decree's provenance and the département of the recueil that published it."""
+    m = ACT_NUMBER.match(e.get("id") or "")
+    recueil = m.group(1) if m else None
+    dep = e.get("dep")
+    if recueil and recueil != dep:
+        if "zone" in (e.get("publie_par") or "").lower():
+            return "zone", recueil
+        return "autre_prefecture", recueil
+    return ("collecte" if dep in collected else "exploration"), recueil or dep
+
+
+def provenances(reg: Registre, conf: dict[str, Any]) -> Counter[str]:
+    """Write every decree's `provenance` (and `recueil_dep` when its recueil is another
+    département's), the copies of a shared one too; count them."""
+    collected = {k for k, d in conf["departements"].items() if d["etat"] == "collecte"}
+    every = {id(e): e for e in reg.evenements}
+    for evs in reg.by_insee.values():
+        every.update((id(e), e) for e in evs)
+    n: Counter[str] = Counter()
+    for e in every.values():
+        if not e["t"].startswith("arrete"):
+            continue
+        p, recueil = provenance(e, collected)
+        e["provenance"] = p
+        if recueil and recueil != e.get("dep"):
+            e["recueil_dep"] = recueil
+        else:
+            e.pop("recueil_dep", None)
+    for e in reg.evenements:
+        if e["t"].startswith("arrete"):
+            n[e["provenance"]] += 1
+    return n
+
+
+def hors_collecte(reg: Registre) -> dict[str, Any] | None:
+    """The decrees outside the collected départements' own: how many, in which départements,
+    from where (the summary adds them to « Arrêtés : Rhône »)."""
+    acts = [e for e in reg.evenements
+            if e["t"].startswith("arrete") and e.get("provenance") != "collecte"]  # fmt: skip
+    if not acts:
+        return None
+    deps = Counter(e.get("dep") or "" for e in acts)
+    kinds = Counter(e["provenance"] for e in acts)
+    return {
+        "n": len(acts),
+        "departements": dict(sorted(deps.items())),
+        "provenances": {k: kinds[k] for k in PROVENANCES if kinds.get(k)},
+    }
+
+
+def resume(
+    sources: list[dict[str, Any]], deps: dict[str, Any], hors: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
     """What each family of documents covers, the families that cover the same together:
     `zone` "france", "pilote" (the pilot's areas), or département codes. The decrees cover
-    the départements whose acts are collected; a family without a document is left out."""
+    the départements whose acts are collected; the row that says so carries the others
+    (`arretes_hors_collecte`, hors_collecte) when there are some; a family without a document
+    is left out."""
     zones: dict[str, Any] = {}
     for f in FAMILLES:
         rows = [s for s in sources if s["id"].startswith(f) and s["documents"]]
@@ -74,6 +140,9 @@ def resume(sources: list[dict[str, Any]], deps: dict[str, Any]) -> list[dict[str
             same["familles"].append(f)
         else:
             out.append({"familles": [f], "zone": z})
+    for r in out:
+        if "arretes" in r["familles"] and hors:
+            r["arretes_hors_collecte"] = hors
     return out
 
 
@@ -160,7 +229,7 @@ def build(
         "maj": _latest([s["collecte_le"] for s in sources]),
         "sources": sources,
         # the summary's sentence: what each family of documents covers
-        "resume": resume(sources, deps),
+        "resume": resume(sources, deps, hors_collecte(reg)),
         "departements": deps,
         "defaut": {"etat": conf["default"]["etat"]},
         "non_lus": {k: why.get(k, 0) for k in NON_LU},

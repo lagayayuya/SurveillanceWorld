@@ -308,7 +308,10 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     [contrats] = [s for s in cov["sources"] if s["id"] == "contrats"]
     assert contrats["perimetre"] == "69" and contrats["collecte_le"] == "2017-12-31"
     # the summary's sentence: the Rhône's collection, its decrees, the pilot's subsidies
-    assert cov["resume"][0] == {"familles": ["contrats", "avis", "arretes"], "zone": ["69"]}
+    first = cov["resume"][0]
+    assert (first["familles"], first["zone"]) == (["contrats", "avis", "arretes"], ["69"])
+    # and the police prefecture's drone act the pilot's exploration read in Paris
+    assert first["arretes_hors_collecte"]["provenances"] == {"exploration": 1}
 
 
 def test_the_coverage_in_one_sentence_family_by_family():
