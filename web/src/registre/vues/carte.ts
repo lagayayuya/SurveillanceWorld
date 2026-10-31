@@ -483,6 +483,9 @@ class CarteDrones extends Vue<Props, State> {
     removeEventListener("themechange", this.onTheme);
     removeEventListener("resize", this.suivreMarge);
     clearTimeout(this.tMarge);
+    // still turning by itself: nobody chose that bearing (v2.4 survey: the site's map was left
+    // turned by 38°); turned by a hand, it stays
+    const auto = this.tourne;
     this.arreterTour();
     this.roMarge?.disconnect();
     this.ro?.disconnect();
@@ -498,8 +501,10 @@ class CarteDrones extends Vue<Props, State> {
     else this.layer?.retirer();
     // the map's padding was the view's free part: the site frames with none (main.ts freePadding)
     map.setPadding({ top: 0, bottom: 0, left: 0, right: 0 }, NOTRE);
+    if (auto) map.easeTo({ bearing: 0, duration: reduced() ? 0 : MOVE_MS }, NOTRE);
     this.layer = null;
-    // the map stays where the view left it: on the commune (v2.1 A5)
+    // the map stays where the view left it: on the commune (v2.1 A5), north up unless a hand
+    // turned it
     this.map = null;
   }
   componentDidUpdate(): void {
