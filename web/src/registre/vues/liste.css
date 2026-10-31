@@ -326,3 +326,16 @@
     box-shadow: 0 -5px 0 var(--type-territoire);
   }
 }
+/* « Classer par »: the same menu, a list of the orders, the current one in ink */
+.rg .v-liste .tmenu {
+  width: 260px;
+  margin: 0;
+  list-style: none;
+}
+.rg .v-liste .tmenu .drow {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rg .v-liste .tmenu .drow[aria-selected="true"] {
+  background: var(--fg);
+  color: var(--bg-2);
+}

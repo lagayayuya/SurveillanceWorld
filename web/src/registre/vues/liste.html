@@ -15,7 +15,7 @@
       <div class="tools t0">
         <label class="filt"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><span class="sr">{{t.liste.filtrer}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{exemple}}"></label>
         <sc-if value="{{deps}}">
-          <div class="dancre">
+          <div class="dancre dep">
             <button type="button" class="dbtn" aria-haspopup="dialog" aria-expanded="{{deps.ouvert}}" onClick="{{deps.basculer}}"><span class="tw">{{t.liste.dep.bouton}}</span> <b>{{deps.etat}}</b> <span aria-hidden="true">▾</span></button>
             <sc-if value="{{deps.menu}}">
               <div class="dmenu" role="dialog" aria-label="{{t.liste.dep.menu}}" onKeyDown="{{deps.clavier}}">
@@ -31,8 +31,14 @@
             </sc-if>
           </div>
         </sc-if>
-        <span class="lbl" style="margin-left: 14px">{{t.liste.classer_par}}</span>
-        <sc-for list="{{sorts}}" as="s"><button type="button" class="key s" aria-pressed="{{s.on}}" onClick="{{s.pick}}">{{s.l}}{{s.arrow}}</button></sc-for>
+        <div class="dancre tri">
+          <button type="button" class="dbtn" aria-haspopup="listbox" aria-expanded="{{tri.ouvert}}" onClick="{{tri.basculer}}"><span class="tw">{{t.liste.classer_par}}</span> <b>{{tri.l}}</b> <span aria-hidden="true">▾</span></button>
+          <sc-if value="{{tri.menu}}">
+            <ul class="dmenu tmenu" role="listbox" aria-label="{{t.liste.classer_par}}" onKeyDown="{{tri.clavier}}">
+              <sc-for list="{{sorts}}" as="s"><li class="drow" role="option" aria-selected="{{s.on}}" tabindex="-1" onClick="{{s.pick}}"><span class="dnom">{{s.l}}{{s.arrow}}</span></li></sc-for>
+            </ul>
+          </sc-if>
+        </div>
       </div>
       <sc-if value="{{deps.chips}}"><div class="dchips" role="group" aria-label="{{t.liste.dep.choix}}"><sc-for list="{{deps.chips}}" as="c"><button type="button" class="dchip" onClick="{{c.ote}}" aria-label="{{c.aide}}">{{c.l}} <span aria-hidden="true">✕</span></button></sc-for><button type="button" class="lienbtn" onClick="{{deps.effacer}}">{{t.liste.tout_effacer}}</button></div></sc-if>
       <sc-for list="{{filtres}}" as="g">

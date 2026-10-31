@@ -89,7 +89,7 @@ type State = BaseState & {
   charge: boolean;
   echec: boolean;
   /** the menu open (« Départements », v2.3), and the words typed in its search */
-  menu: "dep" | null;
+  menu: "dep" | "tri" | null;
   menuQ: string;
 };
 const VIDE: Lexique = { entreprises: {}, acheteurs: {}, communes: {}, affaires: {} };
@@ -352,9 +352,40 @@ export class ListeVue extends Vue<Props, State> {
       );
   };
   private fermerMenu = (): void => {
-    if (!this.state.menu) return;
+    const m = this.state.menu;
+    if (!m) return;
     this.setState({ menu: null });
-    document.querySelector<HTMLElement>(".v-liste .dbtn")?.focus();
+    document.querySelector<HTMLElement>(`.v-liste .dancre.${m} > button`)?.focus();
+  };
+  /** « Classer par » (v2.3): one menu of the list's orders; the current one chosen again turns
+   * its direction. */
+  private ouvrirTri: Handler = () => {
+    const open = this.state.menu !== "tri";
+    this.setState({ menu: open ? "tri" : null });
+    if (open)
+      requestAnimationFrame(() =>
+        document
+          .querySelector<HTMLElement>(
+            ".v-liste .tmenu [aria-selected=true], .v-liste .tmenu [role=option]",
+          )
+          ?.focus(),
+      );
+  };
+  private choisirTri(k: string): Handler {
+    return (ev) => {
+      this.trier(k)(ev);
+      this.fermerMenu();
+    };
+  }
+  private clavierTri: Handler = (ev) => {
+    const opts = [...document.querySelectorAll<HTMLElement>(".v-liste .tmenu [role=option]")];
+    const i = opts.indexOf(document.activeElement as HTMLElement);
+    if (ev.key === "Escape") this.fermerMenu();
+    else if (ev.key === "ArrowDown") opts[Math.min(opts.length - 1, i + 1)]?.focus();
+    else if (ev.key === "ArrowUp") (i > 0 ? opts[i - 1] : opts[0])?.focus();
+    else if ((ev.key === " " || ev.key === "Enter") && i >= 0) opts[i].click();
+    else return;
+    ev.nativeEvent.preventDefault();
   };
   /** Its keys: Escape closes it, the arrows go through the départements, Space ticks one. */
   private clavierMenu: Handler = (ev) => {
@@ -369,7 +400,8 @@ export class ListeVue extends Vue<Props, State> {
   };
   /** A pointer down outside the menu closes it. */
   private dehors = (ev: Event): void => {
-    if (this.state.menu && !(ev.target as Element).closest?.(".v-liste .dancre")) this.fermerMenu();
+    const m = this.state.menu;
+    if (m && !(ev.target as Element).closest?.(`.v-liste .dancre.${m}`)) this.fermerMenu();
   };
 
   /** The menu's words and rows: the départements the list has, by number, each with its count and
@@ -443,8 +475,16 @@ export class ListeVue extends Vue<Props, State> {
       l: x.l,
       on: e.tri === x.k ? "true" : "false",
       arrow: arrow(x.k),
-      pick: this.trier(x.k),
+      pick: this.choisirTri(x.k),
     }));
+    const triCourant = def.tris.find((x) => x.k === e.tri) ?? def.tris[0];
+    const tri = {
+      l: `${triCourant.l}${arrow(triCourant.k)}`,
+      ouvert: S.menu === "tri" ? "true" : "false",
+      menu: S.menu === "tri",
+      basculer: this.ouvrirTri,
+      clavier: this.clavierTri,
+    };
     const filtres = def.filtres
       .filter((f) => f !== "dep")
       .map((f) => {
@@ -545,6 +585,7 @@ export class ListeVue extends Vue<Props, State> {
         `liste.exemple.${["communes", "intercommunalites", "departements", "acheteurs", "entreprises"].includes(liste) ? liste : "documents"}`,
       ),
       sorts,
+      tri,
       filtres,
       deps: def.filtres.includes("dep") ? this.menuDeps(cpt.dep ?? {}, total, k) : null,
       argent: def.argent,
