@@ -3667,7 +3667,7 @@
   "registre.partage.departement_code": "Département · {code}",
   "registre.partage.depuis": "depuis {annee}",
   "registre.partage.entreprise": "{nom} : {contrats} de vidéosurveillance avec {acheteurs} depuis {annee}{dont}.",
-  "registre.partage.entreprise_dont": ", dont {n} dans le département {code} ({departement})",
+  "registre.partage.entreprise_dont": ", dont {n} {dans}",
   "registre.partage.france": "France entière",
   "registre.partage.liens": "Fiches liées",
   "registre.partage.maj": "Registre mis à jour le {date}.",

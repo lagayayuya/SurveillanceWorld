@@ -7,6 +7,7 @@ only when what it shows changed."""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -51,6 +52,8 @@ def test_a_company_s_text_says_its_figures_sources_day_and_address(built):
     p = read(built, f"entreprise/{SERFIM}.json")["partage"]
     assert p["texte"].startswith("Serfim T.I.C. : 64 contrats de vidéosurveillance avec 44 "
                                  "acheteurs publics depuis 2018")  # fmt: skip
+    # where most of them are, said as a sentence says it
+    assert ", dont 48 dans le Rhône." in p["texte"]
     assert "prévus au contrat (une enveloppe, pas forcément dépensée en entier)" in p["texte"]
     assert "Sources : données essentielles de la commande publique" in p["texte"]
     assert "Registre mis à jour le 24/10/2026." in p["texte"]
@@ -88,6 +91,20 @@ def test_no_text_judges(built):
         assert p["url"] == "/registre/" + path.relative_to(built / "site").with_suffix(
             ""
         ).as_posix().replace("document/", "contrat/")  # noqa: E501
+
+
+def test_a_departement_is_said_as_a_sentence_says_it(built):
+    """« dans le Rhône », « dans les Bouches-du-Rhône », « à Paris »: never « dans le
+    département 69 (Rhône) », nor « dans Bouches-du-Rhône » (a name without its article)."""
+    for path in records(built):
+        texte = json.loads(path.read_text(encoding="utf-8"))["partage"]["texte"]
+        assert not re.search(r"département \d|\bdans (?!le |la |les |l'|l’)[A-ZÉÎ]", texte), (
+            path.name,
+            texte,
+        )
+    assert partage.dep_dans("13") == "dans les Bouches-du-Rhône"
+    assert partage.dep_dans("75") == "à Paris"
+    assert partage.dep_dans("30") == "dans le Gard"
 
 
 def test_an_entry_page_per_record_with_its_share_tags(built):

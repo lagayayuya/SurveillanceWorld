@@ -179,7 +179,8 @@ def entreprise(ctx: Any, siren: str, name: str, events: list[Event]) -> dict[str
     dont = ""
     if len(deps) > 1:
         d, n = deps.most_common(1)[0]
-        dont = t("entreprise_dont", n=nombre(n), code=d, departement=ctx.dep_names.get(d) or d)
+        # « , dont 52 dans le Rhône », « dans les Bouches-du-Rhône », « à Paris »
+        dont = t("entreprise_dont", n=nombre(n), dans=dep_dans(d))
     y0 = st.get("y0") or ""
     phrase = t("entreprise", nom=name, contrats=plural("n.contrat", st["n"]),
                acheteurs=plural("n.acheteur", len(st["clientes"])), annee=y0, dont=dont)  # fmt: skip
