@@ -20,7 +20,8 @@
 #      LACARTE_ROBOT_CONTACT: the author writes the robot's contact there (never in the
 #      repository); the collection refuses to start without it;
 #   5. lacarte-collecte.service (a oneshot, hardened: writes in DIR/data and DIR/sortie
-#      only, nice, idle I/O, 2 GB of memory at most, 6 hours at most) and its timer (every
+#      only, nice, idle I/O, 2 GB of memory at most, 6 hours at most: TimeoutStartSec, a
+#      oneshot's bound) and its timer (every
 #      night at 01:15 Paris time: the catching up, then the weekly update, which the
 #      collection itself decides), enabled;
 #   6. sudoers: USER may start, stop and ask the status of that unit, and read its journal,
@@ -142,7 +143,8 @@ Nice=10
 IOSchedulingClass=idle
 CPUQuota=200%
 MemoryMax=2G
-RuntimeMaxSec=6h
+# a oneshot is bounded by its start timeout (RuntimeMaxSec is ignored for it, systemd says)
+TimeoutStartSec=6h
 TimeoutStopSec=60
 NoNewPrivileges=yes
 ProtectSystem=strict

@@ -1255,6 +1255,7 @@ def test_the_collection_runs_as_its_own_user_writing_only_its_folders():
     unit = written(r.stdout, "/etc/systemd/system/lacarte-collecte.service")
     assert "User=lacarte-collecte" in unit and "EnvironmentFile=/etc/lacarte-collecte.env" in unit
     assert "ProtectSystem=strict" in unit and "NoNewPrivileges=yes" in unit
+    assert "TimeoutStartSec=6h" in unit and "RuntimeMaxSec=" not in unit
     assert "ReadWritePaths=/srv/lacarte-collecte/data /srv/lacarte-collecte/sortie" in unit
     assert "--shell /usr/sbin/nologin" in r.stdout and "tesseract-ocr-fra" in r.stdout
     # the contact: an empty line the author fills, never a value from the repository
