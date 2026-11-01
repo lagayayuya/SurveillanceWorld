@@ -222,20 +222,42 @@ def _keep(store: Store, items: list[dict[str, Any]], erased: set[str]) -> int:
     return len(kept)
 
 
-def collect_day(ctx: Contexte, f: fetch.Fetcher, day: dt.date, store: Store) -> dict[str, Any]:
+class Http:
+    """A day's folder and its files over HTTP, through fetch.py (robots.txt, the pace per
+    address): the daily flow, and everything when there is no FTPS."""
+
+    canal = "https"
+
+    def __init__(self, f: fetch.Fetcher):
+        self.f = f
+        self.base = f.conf["sources"]["boamp"]["archive"]
+
+    def files(self, folder: str) -> list[str] | None:
+        r = self.f.get(self.base + folder, cache=False)
+        if r.status != 200:
+            return None
+        return sorted(x for x in listing(r.body.decode("utf-8", "replace")) if x.endswith(".xml"))
+
+    def read(self, path: str) -> tuple[bytes, str] | None:
+        r = self.f.get(self.base + path, cache=False)
+        return (r.body, r.headers.get("last-modified", "")) if r.status == 200 else None
+
+
+def collect_day(ctx: Contexte, canal: Any, day: dt.date, store: Store) -> dict[str, Any]:
+    """One day's folder through `canal` (Http, or ftps.Ftps for the history): every notice
+    not yet read, in memory; the state saved every 50 files."""
     st = Etat(ctx.root, SOURCE)
     key = f"jour-{day.isoformat()}"
     done = set(st.get(key).get("lus") or [])
-    base = f.conf["sources"]["boamp"]["archive"]
-    folder = None
+    base = ctx.fetcher(SOURCE).conf["sources"]["boamp"]["archive"]
+    folder, files = None, []
     for p in day_paths(day, ctx.today):
-        r = f.get(base + p, cache=False)
-        if r.status == 200:
-            folder, page = p, r.body.decode("utf-8", "replace")
+        names = canal.files(p)
+        if names is not None:
+            folder, files = p, names
             break
     if folder is None:
         return st.save(key, statut="absent", termine=day < ctx.today)
-    files = sorted(x for x in listing(page) if x.endswith(".xml"))
     erased = ctx.effaces()
     found = st.get(key).get("avis_video") or 0
     for name in files:
@@ -243,16 +265,17 @@ def collect_day(ctx: Contexte, f: fetch.Fetcher, day: dt.date, store: Store) -> 
             continue
         if ctx.out_of_time():
             return st.save(key, statut="en_cours", lus=sorted(done), fichiers=len(files))
-        url = base + folder + name
-        r = f.get(url, cache=False)
-        if r.status == 200:
+        got = canal.read(folder + name)
+        if got is not None:
+            # the address to cite is the archive's public one, whatever the channel read
             mention = {
                 "source": "DILA",
-                "adresse": url,
+                "adresse": base + folder + name,
                 "fichier": name,
-                "date_fichier": r.headers.get("last-modified", ""),
+                "date_fichier": got[1],
+                "canal": canal.canal,
             }
-            n = notice(r.body, mention)
+            n = notice(got[0], mention)
             found += _keep(store, [n] if n else [], erased)
         done.add(name)
         if len(done) % 50 == 0:
@@ -265,6 +288,7 @@ def collect_day(ctx: Contexte, f: fetch.Fetcher, day: dt.date, store: Store) -> 
         fichiers=len(files),
         avis_video=found,
         termine=day < ctx.today,
+        canal=canal.canal,
     )
 
 
@@ -338,15 +362,53 @@ def days_to_read(ctx: Contexte) -> list[dt.date]:
 
 
 def collect(ctx: Contexte) -> dict[str, Any]:
+    """The daily flow over HTTP (the last `flux_jours` days), then the history: over FTPS
+    when the rules give it (one connection, a capped rate), else over HTTP; then the yearly
+    files. Never both channels at once: the archive's server has one queue."""
     f = ctx.fetcher(SOURCE)
+    conf = f.conf["sources"]["boamp"]
     store = Store(ctx.root, "avis")
-    first_year = int(f.conf["sources"]["boamp"]["first_year"])
-    read_days = 0
-    for day in days_to_read(ctx):
+    first_year = int(conf["first_year"])
+    http = Http(f)
+    flow = ctx.today - dt.timedelta(days=int(conf.get("flux_jours", 2)) - 1)
+    days = days_to_read(ctx)
+    read_days, canal_used = 0, "https"
+    for day in [d for d in days if d >= flow]:
         if ctx.out_of_time():
             break
-        collect_day(ctx, f, day, store)
+        collect_day(ctx, http, day, store)
         read_days += 1
+    history = [d for d in days if d < flow]
+    canal: Any = http
+    ftp = None
+    if history and conf.get("ftps") and not ctx.out_of_time():
+        from lacarte_collecte import ftps
+
+        try:
+            ftp = ftps.open_from(ctx, conf["ftps"], f)
+            canal, canal_used = ftp, "ftps"
+        except ftps.Indisponible as e:
+            Etat(ctx.root, SOURCE).save("", ftps=f"indisponible : {e}")
+    try:
+        for day in history:
+            if ctx.out_of_time():
+                break
+            try:
+                got = collect_day(ctx, canal, day, store)
+                if ftp is not None and got.get("statut") == "absent":
+                    # a folder FTPS does not show: asked over HTTP before calling it absent
+                    collect_day(ctx, http, day, store)
+            except Exception as e:  # a cut FTPS connection: the rest over HTTP
+                if ftp is None or not ftps_cut(e):
+                    raise
+                Etat(ctx.root, SOURCE).save("", ftps=f"coupé : {e}")
+                ftp.close()
+                ftp, canal, canal_used = None, http, "ftps puis https"
+                collect_day(ctx, canal, day, store)
+            read_days += 1
+    finally:
+        if ftp is not None:
+            ftp.close()
     st = Etat(ctx.root, SOURCE)
     for year in range(min(ctx.today.year, 2024), first_year - 1, -1):
         if ctx.out_of_time():
@@ -360,5 +422,12 @@ def collect(ctx: Contexte) -> dict[str, Any]:
         "jours_lus": read_days,
         "jours_restants": max(left, 0),
         "annees_restantes": years_left,
+        "canal_historique": canal_used,
         "requetes": f.requests,
     }
+
+
+def ftps_cut(e: Exception) -> bool:
+    import ftplib
+
+    return isinstance(e, (OSError, EOFError, ftplib.Error))

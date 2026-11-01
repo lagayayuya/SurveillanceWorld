@@ -138,6 +138,12 @@ sources:
     id: rule:registre_sources@2:source_boamp
     archive: https://echanges.dila.gouv.fr/OPENDATA/BOAMP/
     first_year: 2015
+    flux_jours: 2
+    ftps:
+      hote: echanges.dila.gouv.fr
+      racine: /OPENDATA/BOAMP/
+      debit_ko_s: 1024
+      timeout_s: 60
     rationale: >-
       The BOAMP's notices (DILA, Licence Ouverte 2.0) from the DILA's open data archives (no
       robots.txt there, a 404: no rule; read on 2026-10-31), read by lacarte_collecte. The
@@ -146,6 +152,11 @@ sources:
       and data.opendatasoft.com serve the same rule). The version 1 of this rule read the API
       on a reading of that robots.txt the file of 2026-10-31 contradicts. The notices already
       served stay until the archive has read them again, under the same idweb.
+      `flux_jours`: the last days read over HTTP (the daily flow). `ftps`: the history
+      (2024 onwards, a file per notice) over the bulk channel data.gouv.fr announces, one
+      connection, 1 MB/s at most, each file read in memory then dropped (Ju, 2026-11-01);
+      its root on the FTPS server is taken to be the HTTP path's (hypothesis, checked
+      before the first run); a folder FTPS does not show is asked over HTTP.
   dgcl:
     id: rule:registre_sources@2:source_dgcl
     dataset: https://www.data.gouv.fr/api/1/datasets/6176785207139a929a2776fe/
