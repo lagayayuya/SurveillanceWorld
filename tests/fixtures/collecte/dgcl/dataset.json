@@ -1,0 +1,19 @@
+{
+ "title": "Projets financés par les dotations de soutien à l'investissement des collectivités territoriales",
+ "license": "lov2",
+ "page": "https://www.data.gouv.fr/datasets/projets-finances-par-les-dotations-de-soutien-a-linvestissement-des-collectivites-territoriales",
+ "resources": [
+  {
+   "id": "e621419d-cef9-4460-b148-16a9be8b9149",
+   "title": "DGCL-liste-projets-dotations-investissement-local-2025.csv",
+   "format": "csv",
+   "last_modified": "2026-07-24T14:21:21.794000+00:00"
+  },
+  {
+   "id": "ba15fc37-9096-4a09-88c4-93215f91848d",
+   "title": "dgcl-liste-projets-dotations-investissement-local-2024.csv",
+   "format": "csv",
+   "last_modified": "2025-07-21T17:36:59.112000+00:00"
+  }
+ ]
+}
