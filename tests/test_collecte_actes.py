@@ -100,3 +100,26 @@ def test_the_draw_is_the_same_for_the_same_acts():
     )
     assert len(one) == 30 and one == two
     assert len(seuil.tirer(acts[:12], "69", "drone", 30)) == 12
+
+
+def test_headings_without_a_number_and_the_verb_that_is_not_one():
+    """The Bouches-du-Rhône's and the Alpes-Maritimes' recueils (measured 2026-11-01): « Arrêté
+    autorisant… » without « n° », a summary repeating it, « ARRETE » opening the dispositif."""
+    text = (
+        "RECUEIL DES ACTES ADMINISTRATIFS SPECIAL\nSommaire\n"
+        "Arrêté autorisant la captation d'images au moyen de caméras installées sur des aéronefs\n"
+        "\f\nArrêté autorisant la captation et la transmission d'images au moyen de caméras\n"
+        "installées sur des aéronefs le dimanche 1er novembre 2026\n"
+        "Vu le décret n° 2004-374 du 29 avril 2004 ;\n"
+        "ARRETE\nArticle 1 : La captation d'images au moyen de quatre caméras installées sur des "
+        "aéronefs est autorisée à Aubagne le 1er novembre 2026 de 6h00 à 23h59.\n"
+        "Article 2 : Le présent arrêté peut faire l'objet d'un recours.\n"
+        "ARRÊTÉ PORTANT OUVERTURE D'UNE ENQUÊTE PUBLIQUE\nARRÊTE\n"
+        "Article 1 : L'enquête est ouverte.\n"
+    )
+    com = parse_raa.Communes({"13005": {"nom": "Aubagne", "dep": "13"}}, {"13"})
+    pieces = parse_raa.split_acts(text)
+    assert [p.gabarit for p in pieces] == ["en-tete", "en-tete"]  # the summary's line dropped
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2026, 10, 31))
+    assert (a.type, a.insee, a.date_acte) == ("drone", "13005", "2026-10-31")  # not 2004
+    assert a.champs["dates"] == ["2026-11-01"] and a.champs["n_cameras_drone"] == 4

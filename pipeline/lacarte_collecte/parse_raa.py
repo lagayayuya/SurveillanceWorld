@@ -38,7 +38,7 @@ import yaml
 # The reader's version, written on every recueil and act it read: a recueil read by an older
 # version is read again (its text asked again: no text is kept), so the threshold is always
 # measured on what the current reader gives. Raise it with any change to what lire() returns.
-VERSION = 1
+VERSION = 2  # 2: headings without « n° » (13, 06), the act's day never from a visa
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -67,11 +67,31 @@ CIVILITY = re.compile(
     r"(?:[A-ZÉÈÀÂÎÔÛÇ][\w'’-]+\s*){1,3}",
     re.I,
 )
-HEAD = re.compile(
-    r"(?m)^[ \t|]*(?:A\s?R\s?R\s?[EÊÉ]\s?T\s?[EÉ]|Arr[êeé]t[ée])"
-    r"(?:[ \t]+(?:pr[ée]fectoral|[A-Za-z][\w/.-]*)){0,2}[ \t]*(?:N°|n°|no|n\s?°)[ \t]*"
-    r"(\d+(?:[ \t]*[-/.][ \t]*\d+)*)?"
+# An act's heading: a line starting with « Arrêté » (any accent, OCR spacing), then within
+# a few words a title's verb or its number (« Arrêté Cab/PPA n°371 », « Arrêté autorisant… »,
+# « ARRÊTÉ PORTANT… », « ARRETE CONJOINT… »). The bare « ARRÊTE » (« ARRÊTE : Article 1 »)
+# opens a dispositif and is not one.
+HEAD = re.compile(r"(?m)^[ \t|]*(?:A\s?R\s?R\s?[EÊÉ]\s?T\s?[EÉ]|Arr[êeé]t[ée])\b")
+TITLE_NEXT = re.compile(
+    r"^\W*(?:[\w/.'-]+\W+){0,6}?(?:portant|autorisant|fixant|relatif|modifiant|abrogeant"
+    r"|instituant|reglementant|prescrivant|accordant|delimitant|conjoint|prefectoral|n\s?°|no\b"
+    r"|du \d)"
 )
+NUMBER = re.compile(r"^\W*(?:[\w/.'-]+\W+){0,4}?(?:n\s?°|no\b)\s*(\d+(?:\s*[-/.]\s*\d+)*)")
+
+
+def heads(txt: str) -> list[tuple[int, str | None]]:
+    """The headings' places and their numbers (None when the heading gives none)."""
+    out = []
+    for m in HEAD.finditer(txt):
+        nxt = strip(txt[m.end() : m.end() + 250])
+        if re.match(r"\W*:?\W*article\b", nxt) or not TITLE_NEXT.match(nxt):
+            continue
+        num = NUMBER.match(nxt)
+        out.append((m.start(), re.sub(r"\s+", "", num.group(1)) if num else None))
+    return out
+
+
 HOURS = re.compile(r"(?:de|entre) (\d{1,2}) ?h ?(\d{2})? ?(?:a|et|jusqu'a) (\d{1,2}) ?h ?(\d{2})?")
 SPAN = re.compile(
     r"a (\d{1,2}) ?h ?(\d{2})? (?:au|jusqu'au) .{0,60}?20\d\d a (\d{1,2}) ?h ?(\d{2})?"
@@ -160,17 +180,20 @@ def split_acts(txt: str) -> list[Morceau]:
             )
             for i, a in enumerate(ids)
         ]
-    heads = list(HEAD.finditer(txt))
-    if not heads:
-        return [Morceau("1", re.sub(r"\s+", " ", txt[:300]).strip(), txt, "entier")]
+    found = heads(txt)
     out = []
     seen: dict[str, int] = {}
-    for i, m in enumerate(heads):
-        body = txt[m.start() : heads[i + 1].start() if i + 1 < len(heads) else len(txt)]
-        n = re.sub(r"\s+", "", m.group(1) or "").strip(".-/") or str(i + 1)
+    for i, (start, number) in enumerate(found):
+        body = txt[start : found[i + 1][0] if i + 1 < len(found) else len(txt)]
+        # a heading without articles is a summary's line or a cover, not an act
+        if not re.search(r"\barticle\s*(?:1|1er|premier)\b", strip(body)):
+            continue
+        n = (number or "").strip(".-/") or str(i + 1)
         seen[n] = seen.get(n, 0) + 1
         key = n if seen[n] == 1 else f"{n}~{seen[n]}"
         out.append(Morceau(key, re.sub(r"\s+", " ", body[:400]).strip(), body, "en-tete"))
+    if not out:
+        return [Morceau("1", re.sub(r"\s+", " ", txt[:300]).strip(), txt, "entier")]
     return out
 
 
@@ -276,8 +299,10 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
 
 
 def act_date(head: str, fallback: dt.date) -> dt.date:
-    """The act's own day, from its heading (« du 8 juillet 2026 »), else the recueil's."""
-    m = re.search(r"(?:du|le) (\d{1,2})(?:er)? " + MOISR + r" (20\d\d)", strip(head[:400]))
+    """The act's own day, from its heading (« du 8 juillet 2026 »), else the recueil's; never
+    a visa's (« Vu le décret … du 29 avril 2004 »)."""
+    top = re.split(r"\bvu\b", strip(head[:400]), maxsplit=1)[0]
+    m = re.search(r"(?:du|le) (\d{1,2})(?:er)? " + MOISR + r" (20\d\d)", top)
     if m:
         try:
             return dt.date(int(m.group(3)), MOIS[m.group(2)], int(m.group(1)))
