@@ -115,6 +115,15 @@ Sans la base, il refuse, sauf `--sans-corrections` (un essai) : un registre ains
 jamais déployé (`lacarte-registre verifier`, que lance `deploy/deploy.sh`). Les données essentielles de la commande publique, le BOAMP et SIRENE sont
 sous Licence Ouverte 2.0 ; chaque document est cité avec sa source.
 
+La collecte nationale (arrêtés, BOAMP, subventions) tourne sur le serveur, jamais depuis la
+machine de développement : ses requêtes partent d'une seule adresse, celle du serveur. Une fois,
+en root, `sudo deploy/collecte-bootstrap.sh --deploy-user <utilisateur>` crée l'utilisateur
+sans privilèges `lacarte-collecte`, ses dossiers, `/etc/lacarte-collecte.env` (le contact du
+robot, écrit à la main, jamais versionné), l'unité systemd et son timer (chaque nuit). Ensuite,
+sans root, depuis la machine qui déploie : `deploy/collecte-sync.sh envoyer` (le code),
+`lancer`, `etat`, puis `rapatrier`, qui ne ramène que les fichiers dérivés
+(`data/registre/collecte/`), jamais les données brutes.
+
 ## Vie privée par construction
 
 - Aucun traceur, aucun cookie de mesure : la carte n'appelle aucun service tiers. Le fond de

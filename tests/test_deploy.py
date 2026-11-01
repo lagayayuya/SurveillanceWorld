@@ -1241,3 +1241,31 @@ def test_rollback_swaps_the_tables_back_before_the_releases():
     assert "deploy/site.py check" in text and "lacarte.lock acquire" in text
     # Not twice: the tables kept back must be the release before's build.
     assert text.index("SELECT build_id FROM meta_prev") < text.index("db/rollback.sh '$DB_DSN'")
+
+
+# --- deploy/collecte-bootstrap.sh: the collection's user, unit and timer, in a dry run ------
+def dry_collecte(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["bash", str(ROOT / "deploy" / "collecte-bootstrap.sh"), "--dry-run",
+                           *args], capture_output=True, text=True, timeout=60)  # fmt: skip
+
+
+def test_the_collection_runs_as_its_own_user_writing_only_its_folders():
+    r = dry_collecte("--deploy-user", "preview")
+    assert r.returncode == 0, r.stderr
+    unit = written(r.stdout, "/etc/systemd/system/lacarte-collecte.service")
+    assert "User=lacarte-collecte" in unit and "EnvironmentFile=/etc/lacarte-collecte.env" in unit
+    assert "ProtectSystem=strict" in unit and "NoNewPrivileges=yes" in unit
+    assert "ReadWritePaths=/srv/lacarte-collecte/data /srv/lacarte-collecte/sortie" in unit
+    assert "--shell /usr/sbin/nologin" in r.stdout and "tesseract-ocr-fra" in r.stdout
+    # the contact: an empty line the author fills, never a value from the repository
+    env = written(r.stdout, "/etc/lacarte-collecte.env")
+    assert "LACARTE_ROBOT_CONTACT=\n" in env
+    # the deploy user reads the derived files only, and drives the unit, nothing else
+    assert "-g preview -m 2750 /srv/lacarte-collecte/sortie" in r.stdout
+    assert "-g lacarte-collecte -m 0750 /srv/lacarte-collecte/data" in r.stdout
+    sudo = written(r.stdout, "/etc/sudoers.d/lacarte-collecte")
+    assert sudo.count("NOPASSWD") == 1 and "lacarte-collecte.service" in sudo
+    assert "OnCalendar=*-*-* 01:15 Europe/Paris" in written(
+        r.stdout, "/etc/systemd/system/lacarte-collecte.timer"
+    )
+    assert dry_collecte().returncode == 2  # no deploy user: refused
