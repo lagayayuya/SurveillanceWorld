@@ -30,6 +30,8 @@ case "${1:-}" in
       cd '$REL'
       UV_PYTHON_INSTALL_DIR='$DIR/code/python' UV_PROJECT_ENVIRONMENT=.venv \
         \"\$HOME/.local/bin/uv\" sync --frozen --only-group api --no-install-project --quiet
+      # uv downloads a Python there only when the system has none of .python-version's
+      mkdir -p '$DIR/code/python'
       chmod -R a+rX '$REL' '$DIR/code/python'
       ln -sfn '$REL' '$DIR/code/current.new' && mv -T '$DIR/code/current.new' '$DIR/code/current'
       # the releases but the last three
