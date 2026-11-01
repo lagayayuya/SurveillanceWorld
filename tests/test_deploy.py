@@ -1266,7 +1266,7 @@ def test_the_collection_runs_as_its_own_user_writing_only_its_folders():
     assert "-g lacarte-collecte -m 0750 /srv/lacarte-collecte/data" in r.stdout
     sudo = written(r.stdout, "/etc/sudoers.d/lacarte-collecte")
     assert sudo.count("NOPASSWD") == 1 and "lacarte-collecte.service" in sudo
-    assert "OnCalendar=*-*-* 01:15 Europe/Paris" in written(
+    assert "OnCalendar=*-*-* 01/6:15 Europe/Paris" in written(
         r.stdout, "/etc/systemd/system/lacarte-collecte.timer"
     )
     assert dry_collecte().returncode == 2  # no deploy user: refused

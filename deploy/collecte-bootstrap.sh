@@ -21,9 +21,10 @@
 #      repository); the collection refuses to start without it;
 #   5. lacarte-collecte.service (a oneshot, hardened: writes in DIR/data and DIR/sortie
 #      only, nice, idle I/O, 2 GB of memory at most, 6 hours at most: TimeoutStartSec, a
-#      oneshot's bound) and its timer (every
-#      night at 01:15 Paris time: the catching up, then the weekly update, which the
-#      collection itself decides), enabled;
+#      oneshot's bound) and its timer (every 6 hours from 01:15 Paris time: while the
+#      collection catches up, each run goes on where the last one stopped; once it has
+#      caught up, the collection itself skips the day's runs and keeps the night's, which
+#      makes the weekly update), enabled, and restarted when it changed;
 #   6. sudoers: USER may start, stop and ask the status of that unit, and read its journal,
 #      nothing else.
 # --dry-run prints every command and file instead of running or writing it.
@@ -160,10 +161,10 @@ CapabilityBoundingSet=
 UNIT
 put /etc/systemd/system/lacarte-collecte.timer 644 root:root <<'TIMER'
 [Unit]
-Description=Registre: the national collection, every night
+Description=Registre: the national collection, every 6 hours (the night's only once caught up)
 
 [Timer]
-OnCalendar=*-*-* 01:15 Europe/Paris
+OnCalendar=*-*-* 01/6:15 Europe/Paris
 RandomizedDelaySec=10min
 Persistent=true
 
@@ -171,8 +172,12 @@ Persistent=true
 WantedBy=timers.target
 TIMER
 if [[ "$changed" == *lacarte-collecte.* ]]; then run systemctl daemon-reload; fi
-systemctl is-enabled --quiet lacarte-collecte.timer 2>/dev/null ||
+if ! systemctl is-enabled --quiet lacarte-collecte.timer 2>/dev/null; then
   run systemctl enable --now lacarte-collecte.timer
+elif [[ "$changed" == *lacarte-collecte.timer* ]]; then
+  # a new schedule: the timer computes its next run again (a run going on is not touched)
+  run systemctl restart lacarte-collecte.timer
+fi
 
 echo "== 6. sudoers: $DEPLOY_USER starts, stops and reads the collection, nothing else"
 put /etc/sudoers.d/lacarte-collecte 440 root:root <<SUDO

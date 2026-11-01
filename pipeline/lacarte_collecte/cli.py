@@ -1,10 +1,12 @@
 """`lacarte-collecte` (`python -m lacarte_collecte.cli`), on the server:
 
-- `tourner [--heures H]`: the night's run (lacarte-collecte.service): the communes, then the
+- `tourner [--heures H]`: a run (lacarte-collecte.service, every 6 hours): the communes, then the
   DGCL, then the DILA's archives and the prefectoral acts side by side (two servers, two
   queues), within H hours (default 5.5, under the unit's 6), each source resuming where the
   last run stopped; then the derived files and the report (SORTIE). Once everything is
-  caught up, a run less than 7 days after the last complete one only reads the day's flow.
+  caught up, only the night's run works (`NUIT`, Paris time; the day's end at once,
+  without a request), and one less than 7 days after the last complete one only reads the
+  day's flow.
 - `source NOM`: one source alone (dgcl, dila, arretes), the same way.
 - `effacer IDWEB…`: a BOAMP notice erased from the records (it must also be listed in
   rules/registre_effacements.yaml, which every run and construire apply), then SORTIE again.
@@ -27,6 +29,7 @@ import sys
 import threading
 import time
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import lacarte_collecte as collecte
 from lacarte_collecte import sortie
@@ -70,10 +73,19 @@ def _guarded(name: str, ctx: Contexte, out: dict[str, Any]) -> None:
         out[name] = {"statut": "echec", "raison": e.raison, "adresse": e.url}
 
 
-def tourner(ctx: Contexte, only: str | None = None) -> dict[str, Any]:
+# The night's hours (Paris time) in which a run works once the catching up is over
+NUIT = range(0, 6)
+
+
+def tourner(
+    ctx: Contexte, only: str | None = None, now: dt.datetime | None = None
+) -> dict[str, Any]:
+    now = now or dt.datetime.now(ZoneInfo("Europe/Paris"))
     started = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     run = Etat(ctx.root, "tourner")
     st = run.get()
+    if only is None and st.get("rattrapage_fini") and now.hour not in NUIT:
+        return {"hors_nuit": now.isoformat(timespec="minutes")}  # caught up: the night's only
     summary: dict[str, Any] = {}
     weekly = (
         st.get("rattrapage_fini")
@@ -151,6 +163,9 @@ def main(argv: list[str] | None = None) -> None:
             rep = {"effaces": gone, **sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(), {})}
         else:
             rep = sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(timespec="seconds"), {})
+    if isinstance(rep, dict) and rep.get("hors_nuit"):
+        print(f"rattrapage fini, hors de la nuit ({rep['hors_nuit']}) : rien à faire")
+        return
     print((collecte.SORTIE / "rapport.txt").read_text("utf-8") if a.cmd != "effacer" else rep)
 
 
