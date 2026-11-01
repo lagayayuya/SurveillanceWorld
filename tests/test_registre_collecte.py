@@ -161,6 +161,7 @@ def test_the_collection_in_the_built_registre(built):
     # La Réunion's, not measured: listed, nothing read
     reunion = next(e for e in docs.values() if e["id"].endswith(":2026-1714"))
     assert reunion["non_lu"] == ["sous_le_seuil"] and reunion["cameras"] is None
+    assert reunion["date"] == "2026-09-29"  # its recueil's day, nothing read from its text
     cov = json.loads((root / "site" / "couverture.json").read_text("utf-8"))
     assert cov["departements"]["57"]["etat"] == "collecte"
     assert "drone" not in cov["departements"]["57"]["sous_le_seuil"]

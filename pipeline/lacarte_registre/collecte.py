@@ -94,7 +94,8 @@ def act_event(
         "id": a["id"],
         "t": t,
         "sous_type": a.get("sous_type"),
-        "date": a.get("date_acte") or a["recueil_date"],
+        # an act below its threshold has nothing read, its day either: its recueil's
+        "date": (a.get("date_acte") if published else None) or a["recueil_date"],
         "insee": a.get("insee"),
         "dep": dep,
         "affaire": a["id"],
