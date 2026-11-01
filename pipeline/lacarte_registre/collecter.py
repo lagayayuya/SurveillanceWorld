@@ -2,9 +2,11 @@
 public procurement, from its sources, under the machine's lock (lacarte.lock).
 
 The sources, in this order: `communes` (the communes of France, three requests), `decp`
-(the contracts), `boamp` (the notices), `sirene` (the companies and buyers they name: after
-the other two). Each asks through fetch.py only and keeps its raw files under
-data/registre/brut/<source>/ (not versioned).
+(the contracts), `sirene` (the companies and buyers the contracts and the notices name: after
+the contracts). Each asks through fetch.py only and keeps its raw files under
+data/registre/brut/<source>/ (not versioned). The BOAMP's notices are no longer read here: the
+DILA's API forbids robots (rules/registre_sources.yaml `sources.boamp`); the notices already
+collected (national/boamp.jsonl.gz) stay as they are, read by construire and by `sirene`.
 
 All or nothing: the normalised outputs are written to data/registre/national/.prochain/,
 then moved into data/registre/national/ (one rename per file) only when every source asked
@@ -28,11 +30,10 @@ import lacarte_registre as registre
 from lacarte import lock
 from lacarte_registre import boamp, communes, decp, fetch, sirene
 
-SOURCES = ("communes", "decp", "boamp", "sirene")
+SOURCES = ("communes", "decp", "sirene")
 OUTPUTS = {
     "communes": ("communes.json",),
     "decp": ("decp.jsonl.gz", "decp.json"),
-    "boamp": ("boamp.jsonl.gz", "boamp.json"),
     "sirene": ("sirene.json",),
 }
 
@@ -83,8 +84,6 @@ def run(
                 s = communes.collect(f, nxt)
             elif name == "decp":
                 s = decp.collect(f, nxt, departements, resume)
-            elif name == "boamp":
-                s = boamp.collect(f, nxt, departements, resume, today)
             else:
                 s = sirene.collect(f, nxt, _sirens(nxt, final))
         except (fetch.Blocked, fetch.Forbidden, fetch.Failed) as e:
@@ -93,7 +92,7 @@ def run(
             raise
         s["collecte_le"] = today.isoformat()
         for out in OUTPUTS[name]:
-            if out.endswith(".json") and (nxt / out).is_file() and name in ("decp", "boamp"):
+            if out.endswith(".json") and (nxt / out).is_file() and name == "decp":
                 data = json.loads((nxt / out).read_text("utf-8"))
                 (nxt / out).write_text(json.dumps({**data, **s}, ensure_ascii=False), "utf-8")
         f.save_state(statut="termine", raison=None, curseur=None, derniere_collecte=s)

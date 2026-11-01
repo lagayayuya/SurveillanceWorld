@@ -23,11 +23,6 @@ hosts:
     rationale: >-
       One request per second, the exploration's pace (design/registre/collecte/sources.md),
       for any host that publishes no rate of its own.
-  boamp-datadila.opendatasoft.com:
-    id: rule:registre_sources@1:pace_boamp
-    interval_s: 1.0
-    rationale: >-
-      The BOAMP's API (DILA, Opendatasoft): one request per second at most, as the lot asks.
   tabular-api.data.gouv.fr:
     id: rule:registre_sources@1:pace_tabular
     interval_s: 1.0
@@ -84,7 +79,7 @@ robots:
 
 # Where each source is read. `decp`: the consolidated DECP, as a Parquet file when its host's
 # robots.txt lets us, else row by row from data.gouv.fr's tabular API (the same file's
-# rows, its CSV copy); `boamp`: the DILA's records API; `sirene`: INSEE's legal units
+# rows, its CSV copy); `boamp`: the DILA's archives; `sirene`: INSEE's legal units
 # file; `communes`: the API Découpage administratif.
 sources:
   decp:
@@ -100,14 +95,17 @@ sources:
       `Disallow: /resources` covers the Parquet's path (read on 2026-10-30): the tabular
       API (no robots.txt, a 404: no rule) serves the same rows, filtered by the server.
   boamp:
-    id: rule:registre_sources@1:source_boamp
-    api: https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp/records
+    id: rule:registre_sources@2:source_boamp
+    archive: https://echanges.dila.gouv.fr/OPENDATA/BOAMP/
     first_year: 2015
-    page_size: 100
     rationale: >-
-      The BOAMP's notices (DILA, Licence Ouverte 2.0), through the records API: its
-      robots.txt forbids the bulk export paths, not the API (exploration, sources.md). The
-      API stops at offset 10 000: the collection pages by month.
+      The BOAMP's notices (DILA, Licence Ouverte 2.0) from the DILA's open data archives (no
+      robots.txt there, a 404: no rule; read on 2026-10-31), read by lacarte_collecte. The
+      records API (boamp-datadila.opendatasoft.com) is no longer read: its robots.txt,
+      read on 2026-10-31, has `Disallow: /api/` for every agent but Googlebot (www.boamp.fr
+      and data.opendatasoft.com serve the same rule). The version 1 of this rule read the API
+      on a reading of that robots.txt the file of 2026-10-31 contradicts. The notices already
+      served stay until the archive has read them again, under the same idweb.
   sirene:
     id: rule:registre_sources@1:source_sirene
     dataset: https://www.data.gouv.fr/api/2/datasets/5b7ffc618b4c4169d30727e0/resources/?page_size=100

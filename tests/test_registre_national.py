@@ -14,7 +14,6 @@ from __future__ import annotations
 import gzip
 import http.server
 import json
-import re
 import threading
 import urllib.parse
 from collections import Counter
@@ -177,7 +176,7 @@ class Fake(http.server.ThreadingHTTPServer):
         self.rows = rows()
         self.boamp = json.loads((NATIONAL / "boamp-api.json").read_text("utf-8"))["results"]
         self.communes = json.loads((NATIONAL / "communes.json").read_text("utf-8"))
-        self.refuse_boamp = False
+        self.refuse_decp = False
         self.asked: list[str] = []
 
     @property
@@ -215,15 +214,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 {"title": "decp.csv", "id": "csv1", "url": f"{srv.base}/resources/decp.csv",
                  "last_modified": "2026-10-26T05:20:00"}]}  # fmt: skip
         elif url.path == "/tabular/csv1/data/":
-            body = tabular(srv.rows, q)
-        elif url.path == "/boamp":
-            if srv.refuse_boamp:
-                status, body = 403, "forbidden"
-            else:
-                start, end = re.findall(r"date'(\d{4}-\d{2}-\d{2})'", q["where"])
-                hits = [r for r in srv.boamp if start <= r["dateparution"] < end]
-                off, lim = int(q["offset"]), int(q["limit"])
-                body = {"total_count": len(hits), "results": hits[off : off + lim]}
+            status, body = (403, "forbidden") if srv.refuse_decp else (200, tabular(srv.rows, q))
         elif url.path == "/communes":
             body = [{"code": k, "nom": c["nom"], "codeDepartement": c["dep"],
                      "population": c["pop"], "codeEpci": c["epci"], "siren": c["siren"],
@@ -269,7 +260,6 @@ def server(monkeypatch) -> Iterator[Fake]:
     b = s.base
     src = conf["sources"]
     src["decp"].update(dataset=f"{b}/decp-dataset", tabular=f"{b}/tabular/{{resource}}/data/")
-    src["boamp"].update(api=f"{b}/boamp", first_year=2017)
     src["sirene"].update(dataset=f"{b}/sirene-dataset", api=f"{b}/search")
     src["communes"].update(communes=f"{b}/communes", epcis=f"{b}/epcis",
                            departements=f"{b}/departements")  # fmt: skip
@@ -281,6 +271,19 @@ def server(monkeypatch) -> Iterator[Fake]:
 
 
 def collect(root: Path, **kw) -> dict:
+    # the notices collected before the DILA's API was given up: kept, never asked again
+    nat = root / "national"
+    if not (nat / "boamp.jsonl.gz").is_file():
+        nat.mkdir(parents=True, exist_ok=True)
+        recs = json.loads((NATIONAL / "boamp-api.json").read_text("utf-8"))["results"]
+        hits = [boamp.clean(r) for r in recs if r["dateparution"].startswith("2017")]
+        boamp.write(nat / "boamp.jsonl.gz", boamp.notices_of(hits))
+        (nat / "boamp.json").write_text(
+            json.dumps(
+                {"source": "boamp", "avis": 1, "departements": ["69"], "collecte_le": "2017-12-31"}
+            ),
+            "utf-8",
+        )
     return collecter.run(root, departements={"69"}, today=date(2017, 12, 31), **kw)
 
 
@@ -288,7 +291,8 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     summary = collect(tmp_path)
     nat = tmp_path / "national"
     assert summary["decp"]["mode"] == "tabulaire" and summary["decp"]["contrats"] > 238
-    assert summary["boamp"]["avis"] == 1  # the call for tenders of 2017, read
+    assert "boamp" not in summary  # the DILA's API: never asked again
+    assert "/boamp" not in server.asked
     assert summary["communes"]["communes"] == 276
     assert sorted(p.name for p in nat.iterdir()) == [
         "boamp.json", "boamp.jsonl.gz", "communes.json", "decp.json", "decp.jsonl.gz",
@@ -354,17 +358,17 @@ def test_a_refused_source_leaves_the_previous_outputs_and_resumes(server, tmp_pa
     collect(tmp_path)
     nat = tmp_path / "national"
     before = {p.name: p.read_bytes() for p in nat.iterdir() if p.is_file()}
-    server.refuse_boamp = True
+    server.refuse_decp = True
     with pytest.raises(fetch.Blocked):
         collect(tmp_path)
     # nothing half-collected in place: the previous outputs, untouched
     assert {p.name: p.read_bytes() for p in nat.iterdir() if p.is_file()} == before
-    st = fetch.Fetcher("boamp", tmp_path).state()
+    st = fetch.Fetcher("decp", tmp_path).state()
     assert st["statut"] == "bloque" and st["raison"] == "refus HTTP 403"
-    server.refuse_boamp = False
+    server.refuse_decp = False
     again = collect(tmp_path, resume=True)
-    assert again["boamp"]["avis"] == 1
-    assert fetch.Fetcher("boamp", tmp_path).state()["statut"] == "termine"
+    assert again["decp"]["contrats"] > 238
+    assert fetch.Fetcher("decp", tmp_path).state()["statut"] == "termine"
 
 
 def test_no_contact_no_collection(tmp_path, monkeypatch):

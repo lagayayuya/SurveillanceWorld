@@ -90,10 +90,12 @@ LACARTE_ROBOT_CONTACT=<contact> uv run lacarte-registre collecter   # la France 
 uv run lacarte-registre construire   # data/registre/site, servi sous /data/registre/
 ```
 
-`collecter` lit les sources nationales (DECP, BOAMP, SIRENE, communes) par un seul module
+`collecter` lit les sources nationales (DECP, SIRENE, communes) par un seul module
 (`fetch.py`) qui respecte les `robots.txt` (RFC 9309), dit qui il est
 (`SurveillanceWorld/<version> (+<contact>)`, le contact venant de `LACARTE_ROBOT_CONTACT`), va
 à une requête par seconde et s'arrête sur un refus ; `--resume` reprend une collecte coupée.
+Il ne lit plus l'API du BOAMP (DILA, Opendatasoft), que son `robots.txt` interdit aux robots
+depuis au moins le 31/10/2026 ; les avis déjà collectés restent servis.
 Les sorties ne sont mises en place que si toutes les sources ont répondu. `construire` reste
 hors ligne : il fusionne la commande publique nationale et ce qui vient du pilote (arrêtés,
 zones de drones, subventions), écrit les fichiers servis, la page d'entrée et l'image d'aperçu

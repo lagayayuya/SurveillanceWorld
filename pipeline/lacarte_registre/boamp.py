@@ -1,15 +1,13 @@
 """The BOAMP (Bulletin officiel des annonces des marchés publics, DILA): the calls for tenders,
 their results and corrections about video surveillance, France since `first_year`.
 
-Collection (`collect`): the DILA's records API (rules/registre_sources.yaml `sources.boamp`),
-one request per second, the search words of rules/registre_selection.yaml `liens.recherche`,
-page by page within a month (the API stops at offset 10 000). The first collection asks every
-month since January `first_year`; the next ones ask again from the last month collected (a
-notice may be published late in a month already read) to now. Each month's notices go to
-brut/boamp/<YYYY-MM>.jsonl, written whole, without any natural person: the contact blocks
-(names, e-mails, phones), the holders' names and, in free text, e-mails, phones and a civility
-or a rank followed by a name are removed before anything is written (the exploration's
-sanitize.py). The API's pages are not cached (fetch cache=False): no raw body is kept.
+Collection: no longer here. The DILA's records API (Opendatasoft) is forbidden to robots by its
+robots.txt (`Disallow: /api/` for every agent but Googlebot, read on 2026-10-31); the notices
+come from the DILA's archives (rules/registre_sources.yaml `sources.boamp`). What this module
+keeps is what any source of notices goes through: `clean` removes every natural person before
+anything is written (the contact blocks: names, e-mails, phones; the holders' names; in free
+text, e-mails, phones and a civility or a rank followed by a name: the exploration's
+sanitize.py), `notice` reads a cleaned record.
 
 Reading (`parse`, `notices`): every notice that names video surveillance (`video_notice` in
 its objet and its text), normalised: {idweb, date, nature, famille, departements, acheteur,
@@ -21,7 +19,6 @@ groupement}}, to <root>/national/boamp.jsonl.gz.
 
 from __future__ import annotations
 
-import datetime as dt
 import gzip
 import hashlib
 import json
@@ -30,7 +27,7 @@ from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
 
-from lacarte_registre import fetch, selection
+from lacarte_registre import selection
 
 SOURCE = "boamp"
 FIELDS = (
@@ -119,79 +116,6 @@ def nom_norm(s: str) -> str:
 
 def cle(s: str) -> str:
     return hashlib.sha256(nom_norm(s).encode()).hexdigest()
-
-
-# --- collection ---------------------------------------------------------------------------
-def months(first: dt.date, last: dt.date) -> Iterator[str]:
-    y, m = first.year, first.month
-    while (y, m) <= (last.year, last.month):
-        yield f"{y:04d}-{m:02d}"
-        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
-
-
-def _where(month: str, departements: set[str] | None) -> str:
-    words = selection.rules()["liens"]["recherche"]
-    y, m = (int(x) for x in month.split("-"))
-    nxt = f"{y + 1:04d}-01-01" if m == 12 else f"{y:04d}-{m + 1:02d}-01"
-    w = "(" + " or ".join(f'search(objet, "{x}")' for x in words) + ")"
-    w += f" and dateparution >= date'{month}-01' and dateparution < date'{nxt}'"
-    if departements:
-        w += " and (" + " or ".join(f'code_departement = "{d}"' for d in sorted(departements)) + ")"
-    return w
-
-
-def collect_month(f: fetch.Fetcher, month: str, departements: set[str] | None) -> int:
-    src = f.conf["sources"][SOURCE]
-    size = int(src["page_size"])
-    out = f.dir / f"{month}.jsonl"
-    tmp = out.with_suffix(".tmp")
-    n, offset = 0, 0
-    with tmp.open("w", encoding="utf-8") as fh:
-        while True:
-            params = {"where": _where(month, departements), "select": FIELDS, "limit": size,
-                      "offset": offset, "order_by": "idweb"}  # fmt: skip
-            page = f.get_json(src["api"], params, cache=False)
-            for rec in page.get("results", []):
-                fh.write(json.dumps(clean(rec), ensure_ascii=False) + "\n")
-                n += 1
-            offset += size
-            if offset >= int(page.get("total_count") or 0) or not page.get("results"):
-                break
-    tmp.replace(out)
-    return n
-
-
-def collect(
-    f: fetch.Fetcher,
-    out_dir: Path,
-    departements: set[str] | None = None,
-    resume: bool = False,
-    today: dt.date | None = None,
-) -> dict[str, Any]:
-    """Every month not yet read (or read last), then the normalised notices."""
-    today = today or dt.date.today()
-    first = dt.date(int(f.conf["sources"][SOURCE]["first_year"]), 1, 1)
-    st = f.state()
-    done = st.get("mois_lus") or []
-    if resume and (st.get("curseur") or {}).get("mois"):
-        start = st["curseur"]["mois"]
-    elif done:
-        start = max(done)  # the last month read again: late publications
-    else:
-        start = first.strftime("%Y-%m")
-    y, m = (int(x) for x in start.split("-"))
-    total = 0
-    for month in months(dt.date(y, m, 1), today):
-        f.save_state(statut="en_cours", curseur={"mois": month})
-        total += collect_month(f, month, departements)
-        done = sorted(set(done) | {month})
-        f.save_state(mois_lus=done)
-    n = write(out_dir / "boamp.jsonl.gz", notices(sorted(f.dir.glob("????-??.jsonl"))))
-    summary = {"source": SOURCE, "avis": n, "mois": len(done), "lus_cette_fois": total,
-               "departements": sorted(departements) if departements else None,
-               "requetes": f.requests}  # fmt: skip
-    (out_dir / "boamp.json").write_text(json.dumps(summary, ensure_ascii=False), "utf-8")
-    return summary
 
 
 # --- reading ------------------------------------------------------------------------------
@@ -417,17 +341,25 @@ def notice(r: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def notices(paths: Iterable[Path]) -> Iterator[dict[str, Any]]:
+def notices_of(records: Iterable[dict[str, Any]]) -> Iterator[dict[str, Any]]:
+    """The video surveillance notices among cleaned records, each idweb once (the first)."""
     seen = set()
-    for p in paths:
-        with p.open(encoding="utf-8") as fh:
-            for line in fh:
-                r = json.loads(line)
-                if r["idweb"] in seen:
-                    continue
-                seen.add(r["idweb"])
-                if (n := notice(r)) is not None:
-                    yield n
+    for r in records:
+        if r["idweb"] in seen:
+            continue
+        seen.add(r["idweb"])
+        if (n := notice(r)) is not None:
+            yield n
+
+
+def notices(paths: Iterable[Path]) -> Iterator[dict[str, Any]]:
+    def records() -> Iterator[dict[str, Any]]:
+        for p in paths:
+            with p.open(encoding="utf-8") as fh:
+                for line in fh:
+                    yield json.loads(line)
+
+    return notices_of(records())
 
 
 def write(out: Path, items: Iterable[dict[str, Any]]) -> int:
