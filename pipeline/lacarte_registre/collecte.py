@@ -1,0 +1,186 @@
+"""The national collection (lacarte_collecte, on the server), read by construire from the
+derived files brought back to data/registre/collecte/ (`deploy/collecte-sync.sh rapatrier`):
+
+- `avis`: the DILA's notices, for national.py, beside the notices collected from the BOAMP's
+  API before it was given up: the archive's record wins by idweb, the API's stays until the
+  archive has read it again; an erased idweb (rules/registre_effacements.yaml) is out of both.
+- `fusionner`: the DGCL's subsidies and the acts read, as the pilot's events, added to it:
+  - a pilot State subsidy (the 69's and the 13's lists) of a year the DGCL has published is
+    the DGCL's; the pilot keeps the years after (the year in progress);
+  - an act in the pilot (the Rhône's, reviewed, with its zones) stays the pilot's; the
+    collection adds the others;
+  - a kind of act published in a département (lacarte_collecte.seuil: its threshold
+    reached on the reference readings, data/registre/references/) keeps its fields; below,
+    or without a measure yet, the act is listed without any field read (`sous_le_seuil`):
+    its title, date and official link only;
+  - the site names no intermediary: an act's reference is its prefecture's recueil and its
+    link the official document; `mention_site` (rules/registre_sources.yaml
+    `sources.attrap`) is the one place a mention would be added, empty by Ju's decision.
+- `couverture`: the collection's coverage per administration, and the measures, for
+  couverture.py.
+"""
+
+from __future__ import annotations
+
+import gzip
+import json
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from lacarte_registre import regles
+
+DIR = "collecte"
+KINDS = {
+    "videoprotection": ("arrete", "videoprotection"),
+    "drone": ("arrete_drone", "drone"),
+    "cameras_pietons": ("arrete_pietons", "pietons"),
+    "vsa": ("arrete_vsa", "vsa"),
+}
+# The administrations whose code is a département's (a region's code is not one)
+DEPARTEMENTAL = ("departement", "outre-mer", "prefecture_de_police")
+
+
+def _load(path: Path) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    with gzip.open(path, "rt", encoding="utf-8") as g:
+        return [json.loads(line) for line in g if line.strip()]
+
+
+def present(root: Path) -> bool:
+    return (root / DIR / "couverture.json").is_file()
+
+
+def effaces(rules: Path) -> set[str]:
+    conf = yaml.safe_load((rules / "registre_effacements.yaml").read_text("utf-8")) or {}
+    return {str(e["idweb"]) for e in conf.get("avis") or []}
+
+
+def avis(root: Path, old: list[dict[str, Any]], rules: Path) -> list[dict[str, Any]]:
+    """The notices for national.py: the API's (`old`), then the archive's over them."""
+    gone = effaces(rules)
+    by = {n["idweb"]: n for n in old}
+    by.update({n["idweb"]: n for n in _load(root / DIR / "avis.jsonl.gz")})
+    return [n for k, n in by.items() if k not in gone]
+
+
+def mesures(root: Path, rules: Path) -> dict[str, Any]:
+    """The threshold's measures per « dep-kind » (none yet: every kind is « non lu »)."""
+    from lacarte_collecte import seuil
+
+    return seuil.mesurer(_load(root / DIR / "arretes.jsonl.gz"), root / "references", rules)
+
+
+def _sources(rules: Path) -> dict[str, Any]:
+    return yaml.safe_load((rules / "registre_sources.yaml").read_text("utf-8"))["sources"]
+
+
+def _admins(rules: Path) -> dict[str, Any]:
+    path = rules / "collecte_administrations.yaml"
+    return yaml.safe_load(path.read_text("utf-8"))["administrations"]
+
+
+def act_event(
+    a: dict[str, Any], admin: dict[str, Any], published: bool, mention: str | None
+) -> regles.Event:
+    t, disp = KINDS[a["type"]]
+    f = (a.get("champs") or {}) if published else {}
+    dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else None
+    days = f.get("dates") or []
+    cams = f.get("n_cameras_drone") if a["type"] == "drone" else f.get("n_total")
+    e: regles.Event = {
+        "id": a["id"],
+        "t": t,
+        "sous_type": a.get("sous_type"),
+        "date": a.get("date_acte") or a["recueil_date"],
+        "insee": a.get("insee"),
+        "dep": dep,
+        "affaire": a["id"],
+        "entreprises": [],
+        "beneficiaire": regles.MASQUE if t == "arrete" else None,
+        "beneficiaire_siren": None,
+        "type_beneficiaire": None,
+        "cameras": float(cams) if cams is not None else None,
+        "cameras_vp": f.get("n_voie_publique"),
+        "cameras_int": f.get("n_interieur"),
+        "cameras_ext": f.get("n_exterieur"),
+        "cameras_lib": None,
+        "dossier": None,
+        "periode": " au ".join(dict.fromkeys([days[0], days[-1]])) if days else "",
+        "horaires": f.get("horaires") or [],
+        "duree": "",
+        "ref": f"préfecture ({admin['nom']}), {a['recueil_nom']}, acte {a['acte']}",
+        "url": a["url"],
+        "page": None,
+        "relu": False,
+        "dispositif": disp,
+        "titre": a.get("titre") or "",
+        "origine": "collecte",
+    }
+    if not published:
+        e["sous_le_seuil"] = True
+    if mention:
+        e["mention"] = mention
+    return e
+
+
+def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote, dict[str, int]]:
+    reg = p.reg
+    cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
+    last = (cov.get("dgcl") or {}).get("derniere_annee_publiee") or 0
+    subs = _load(root / DIR / "subventions_etat.jsonl.gz")
+    acts = _load(root / DIR / "arretes.jsonl.gz")
+    admins = _admins(rules)
+    measured = mesures(root, rules)
+    mention = _sources(rules)["attrap"].get("mention_site") or None
+    pilot_ids = {e["id"] for e in reg["evenements"]}
+
+    def replaced(e: regles.Event) -> bool:
+        return e["t"] == "subvention_etat" and bool(subs) and int(e["date"][:4]) <= last
+
+    kept = [e for e in reg["evenements"] if not replaced(e)]
+    dropped = {e["affaire"] for e in reg["evenements"] if replaced(e)}
+    new: list[regles.Event] = list(subs)
+    n_pub = 0
+    for a in acts:
+        if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
+            continue
+        admin = admins[a["administration"]]
+        dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else ""
+        ok = bool((measured.get(f"{dep}-{a['type']}") or {}).get("publie"))
+        n_pub += ok
+        new.append(act_event(a, admin, ok, mention))
+    affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
+    for e in new:
+        kind = "subvention" if e["t"].startswith("subvention") else "acte"
+        title = f"Subvention : {e['beneficiaire']}" if kind == "subvention" else e["ref"]
+        affaires[e["affaire"]] = {
+            "id": e["affaire"],
+            "kind": kind,
+            "events": [e["id"]],
+            "debut": e["date"],
+            "fin": e["date"],
+            "insee": e.get("insee"),
+            "dep": e.get("dep"),
+            "entreprises": [],
+            "titre": title,
+        }
+    out = regles.Pilote(
+        reg={**reg, "evenements": [*kept, *new], "affaires": affaires}, globals=p.globals
+    )
+    return out, {
+        "subventions_dgcl": len(subs),
+        "subventions_pilote_remplacees": len(reg["evenements"]) - len(kept),
+        "arretes": len(new) - len(subs),
+        "arretes_publies": n_pub,
+    }
+
+
+def couverture(root: Path, rules: Path) -> dict[str, Any] | None:
+    if not present(root):
+        return None
+    cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
+    cov["mesures"] = mesures(root, rules)
+    return cov

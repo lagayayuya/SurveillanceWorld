@@ -124,6 +124,7 @@ def test_a_drone_zone_not_deduced(built):
         "nombre_illisible": sum("nombre_illisible" in r["raisons"] for r in rows.values()),
         "commune_introuvable": sum("commune_introuvable" in r["raisons"] for r in rows.values()),
         "zone_non_deduite": sum("zone_non_deduite" in r["raisons"] for r in rows.values()),
+        "sous_le_seuil": 0,  # no act of the national collection in the pilot's export
     }
     assert read(built, "index.json")["non_lus"] == len(rows)
 

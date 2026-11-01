@@ -3660,6 +3660,7 @@
   "registre.n.entreprise": "{n, plural, one {# entreprise} other {# entreprises}}",
   "registre.non_lu.commune_introuvable": "commune introuvable",
   "registre.non_lu.nombre_illisible": "nombre de caméras illisible",
+  "registre.non_lu.sous_le_seuil": "lecture non publiée : sous le seuil de justesse",
   "registre.non_lu.zone_non_deduite": "zone non déduite de l'arrêté",
   "registre.page.erreur": "Cette page n'a pas pu être chargée. Rechargez-la, ou revenez au registre.",
   "registre.page.titre_seul": "Le registre · Surveillance World",

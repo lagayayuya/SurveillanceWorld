@@ -34,6 +34,7 @@ import lacarte_registre as registre
 from lacarte import lock
 from lacarte_registre import (
     apercu,
+    collecte,
     couverture,
     exporter,
     fermetures,
@@ -62,8 +63,15 @@ def run(
     nat = None
     if (root / "national" / "decp.jsonl.gz").is_file():
         # the national public procurement (lacarte-registre collecter), merged first
-        nat = national.assembler(root)
+        nat = national.assembler(root, rules=rules)
         pilote, merged = fusion.fusionner(pilote, nat)
+    col = collecte.couverture(root, rules)
+    col_summary = None
+    if col is not None:
+        # the national collection (lacarte_collecte): the DGCL's subsidies and the acts
+        pilote, col_summary = collecte.fusionner(pilote, root, rules)
+        if nat:
+            nat["sources"]["boamp"] = {"collecte_le": col["le"], "departements": None}
     export = root / exporter.FILE
     corr = regles.corrections(rules / "registre_corrections.yaml",
                               *([export] if accepted and export.is_file() else []))  # fmt: skip
@@ -71,7 +79,7 @@ def run(
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
     couverture.provenances(reg, conf)
-    cov = couverture.build(reg, conf, nat["sources"] if nat else None)
+    cov = couverture.build(reg, conf, nat["sources"] if nat else None, col)
     maps = sorted((root / "pilote" / "carte").glob("*.json"))
     contours = {m.stem: json.loads(m.read_text("utf-8")).get("contour") for m in maps}
     entiere = yaml.safe_load((rules / "registre_drones.yaml").read_text("utf-8"))
@@ -110,6 +118,8 @@ def run(
     }
     if nat:
         summary["fusion"] = merged
+    if col_summary:
+        summary["collecte"] = col_summary
     summary["non_lus"] = cov["non_lus"]
     summary["maj"] = cov["maj"]
     return summary

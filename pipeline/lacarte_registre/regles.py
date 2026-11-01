@@ -26,7 +26,8 @@ Each document (`evenements[]` of the pilot) gets the flags the pages read:
   `nombre_illisible` (a video-protection act without its number of cameras: counted in the
   acts, not in the cameras), `commune_introuvable` (no commune after placement),
   `zone_non_deduite` (a drone or algorithmic-analysis act with no zone drawn, or only zones
-  under review).
+  under review), `sous_le_seuil` (an act of the national collection whose kind is below
+  the publication threshold in its département: no field of it is read, collecte.py).
 - `nom_publie`: false when an act's beneficiary is masked (`[non retenu]`: a natural
   person, or a name not verified in SIRENE); the pilot export masks them, the build keeps
   the mask and refuses a named sole trader.
@@ -365,6 +366,9 @@ def _shares(reg: Registre, autorisations: list[dict[str, Any]]) -> dict[str, lis
 
 
 def _unread(e: Event, zones_of: dict[str, list[str]], statut: dict[str, str]) -> list[str]:
+    if e.get("sous_le_seuil"):
+        # its kind is not published in its département: listed, nothing read (collecte.py)
+        return ["sous_le_seuil"]
     why = []
     if is_camera_act(e) and e.get("cameras") is None:
         why.append("nombre_illisible")

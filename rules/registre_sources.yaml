@@ -166,6 +166,7 @@ sources:
     depuis: 2024-01-01
     texte: attrap
     fraicheur_jours: 30
+    mention_site: null
     rationale: >-
       Attrap (La Quadrature du Net) finds the recueils of 109 administrations and gives their
       full text: all 756 recueils of the pilot's official lists (Rhône, Essonne) were there,
@@ -177,7 +178,9 @@ sources:
       2026-11-01 to take those acts from Attrap too, our robot never asking those hosts.
       `fraicheur_jours`: an administration without a new recueil for that long is said
       in the collection's report and on the coverage page (Attrap's Loir-et-Cher had
-      none from 2025-09-22).
+      none from 2025-09-22). `mention_site`: the one place a mention of Attrap would be
+      added to the acts the site serves; empty (null) by Ju's decision of 2026-11-01:
+      no page, no interface text, no served file names it for now.
   parcours:
     id: rule:registre_sources@2:source_parcours
     pages_max: 40

@@ -24,7 +24,7 @@ from lacarte_registre.regles import Event, Registre
 
 # RAA_69-2025-284-031125.pdf: the Rhône's collection n° 284 of 2025, of 3 November 2025.
 RECUEIL = re.compile(r"RAA_(\d{2,3}|2[AB])-\d{4}-\d+-(\d{2})(\d{2})(\d{2})\b")
-NON_LU = ("nombre_illisible", "commune_introuvable", "zone_non_deduite")
+NON_LU = ("nombre_illisible", "commune_introuvable", "zone_non_deduite", "sous_le_seuil")
 
 
 def rules(path: Path) -> dict[str, Any]:
@@ -160,6 +160,32 @@ def recueil(e: Event) -> str | None:
     return f"20{m.group(4)}-{m.group(3)}-{m.group(2)}" if m else None
 
 
+def etat_collecte(cov: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Each département's state from the national collection's coverage: « collecte » with
+    the last day read, the kinds below the publication threshold and whether its newest
+    recueil is older than the freshness check; « impossible » (closed to robots) when its
+    host refused us; nothing (the rules' default, « non_collecte ») before it is read."""
+    measured = cov.get("mesures") or {}
+    out: dict[str, dict[str, Any]] = {}
+    for a in (cov.get("administrations") or {}).values():
+        if a["genre"] not in ("departement", "outre-mer", "prefecture_de_police"):
+            continue
+        code = a["code"]
+        if a["statut"] == "ferme_aux_robots":
+            out[code] = {"etat": "impossible", "raison": "ferme_aux_robots"}
+        elif a["statut"] in ("termine", "en_cours") and a.get("lu_jusqu_au"):
+            kinds = ("videoprotection", "drone", "cameras_pietons", "vsa")
+            out[code] = {
+                "etat": "collecte",
+                "lu_jusqu_au": a["lu_jusqu_au"],
+                "dernier_recueil": a.get("dernier_recueil"),
+                "perime": bool(a.get("perime")),
+                "sous_le_seuil": [k for k in kinds
+                                  if not (measured.get(f"{code}-{k}") or {}).get("publie")],
+            }  # fmt: skip
+    return out
+
+
 def _members(reg: Registre, src: dict[str, Any]) -> list[Event]:
     return [
         e
@@ -176,10 +202,15 @@ def _latest(values: list[str | None]) -> str | None:
 
 
 def build(
-    reg: Registre, conf: dict[str, Any], national: dict[str, Any] | None = None
+    reg: Registre,
+    conf: dict[str, Any],
+    national: dict[str, Any] | None = None,
+    collecte: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """`national`: the national collection's summaries (national/decp.json, boamp.json):
-    the sources it feeds say its collection day and « France entière »."""
+    the sources it feeds say its collection day and « France entière ». `collecte`: the
+    collection's coverage (lacarte_collecte, collecte.couverture): each département's state
+    comes from it rather than from the rules (`etat_collecte`)."""
     national = national or {}
     docs = reg.pilote.reg.get("documents", {})
     built = (reg.pilote.reg.get("meta") or {}).get("construit")
@@ -223,6 +254,14 @@ def build(
                 [recueil(e) for e in reg.by_dep.get(code, []) if e["t"].startswith("arrete")]
             )
         deps[code] = row
+    if collecte:
+        for code, row in etat_collecte(collecte).items():
+            if (conf["departements"].get(code) or {}).get("etat") == "collecte":
+                continue  # the pilot's own collection (the Rhône) keeps its state
+            nom = partage.dep_nom(
+                code, (reg.pilote.globals.get("DEP", {}).get(code) or {}).get("nom")
+            )
+            deps[code] = {**({"nom": nom} if nom else {}), **row}
     why = Counter(r for e in reg.non_lus for r in e["non_lu"])
     return {
         "v": 1,

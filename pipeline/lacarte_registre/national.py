@@ -23,7 +23,8 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
-from lacarte_registre import boamp, decp, selection
+import lacarte_registre as registre
+from lacarte_registre import boamp, collecte, decp, selection
 
 DECP_PAGE = "https://www.data.gouv.fr/datasets/608c055b35eb4e6ee20eb325"
 ARR = {
@@ -199,7 +200,7 @@ def sans_doublons(contrats: Any) -> list[dict[str, Any]]:
     return sorted(out, key=lambda c: c["uid"])
 
 
-def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
+def assembler(root: Path, today: str | None = None, rules: Path | None = None) -> dict[str, Any]:
     """The national registre from <root>/national/: {evenements, affaires, entreprises,
     communes, ACHETEURS, EPCIS, DEP, LOTS, LOTS_GROUPES, sources}."""
     nat = root / "national"
@@ -212,6 +213,8 @@ def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
     unites: dict[str, dict[str, Any]] = sir.get("unites", {})
     contrats = sans_doublons(decp.load(nat / "decp.jsonl.gz"))
     notices = list(boamp.load(nat / "boamp.jsonl.gz")) if (nat / "boamp.jsonl.gz").is_file() else []
+    # the DILA's archive over the API's notices, the erased ones out of both (collecte.py)
+    notices = collecte.avis(root, notices, rules or registre.RULES)
     sources = {
         k: json.loads((nat / f"{k}.json").read_text("utf-8"))
         for k in ("decp", "boamp")
@@ -383,6 +386,8 @@ def assembler(root: Path, today: str | None = None) -> dict[str, Any]:
         }
         if lieu:
             e["lieu_insee"] = lieu
+        if n.get("mention"):
+            e["mention"] = n["mention"]  # the DILA's: its address, the file's name and date
         ev.append(e)
         resultats[n["idweb"]] = n["resultat"]
         if aff not in affaires:

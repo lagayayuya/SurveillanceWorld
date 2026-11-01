@@ -53,6 +53,14 @@ sources:
     rationale: >-
       The State's grants (DETR) listed by the préfecture des Bouches-du-Rhône, one list per
       year.
+  - source: subventions_etat_dgcl
+    id: rule:registre_couverture@2:source_subventions_etat_dgcl
+    types: [subvention_etat]
+    ref_prefix: "DGCL"
+    rationale: >-
+      The State's grants (DETR, DSIL, DPV, DSID) of all of France, from the DGCL's national
+      dataset (lacarte_collecte.dgcl); the year in progress is published by the DGCL in July
+      of the next year.
   - source: arretes_69
     id: rule:registre_couverture@1:source_arretes_69
     types: [arrete, arrete_drone, arrete_pietons, arrete_vsa]

@@ -37,7 +37,7 @@ type Props = {
   communes: Dico["communes"];
 };
 
-const RAISONS = ["nombre_illisible", "commune_introuvable", "zone_non_deduite"];
+const RAISONS = ["nombre_illisible", "commune_introuvable", "zone_non_deduite", "sous_le_seuil"];
 /** The order of the states: collected, impossible, not yet. */
 const RANG: Record<string, number> = { collecte: 0, impossible: 1, non_collecte: 2 };
 

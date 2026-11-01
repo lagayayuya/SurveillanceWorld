@@ -54,6 +54,8 @@ def event(row: dict[str, Any], year: int, dataset_url: str, mention: dict[str, s
     return {
         "id": f"dgcl-{year}-{row['__id']}",
         "t": "subvention_etat",
+        "affaire": f"dgcl-{year}-{row['__id']}",
+        "entreprises": [],
         "date": f"{year}-12-31",
         "date_annee": True,
         "insee": row.get("beneficiaire_code_insee") or None,
