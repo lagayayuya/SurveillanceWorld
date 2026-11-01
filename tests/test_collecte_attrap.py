@@ -72,3 +72,12 @@ def test_a_recueil_read_by_an_older_reader_is_read_again():
     assert arretes.is_read(rec)
     assert not arretes.is_read({**rec, "lecteur": parse_raa.VERSION - 1})
     assert not arretes.is_read({"statut": "non_lu", "lecteur": parse_raa.VERSION})
+
+
+def test_paris_the_bouches_du_rhone_and_the_alpes_maritimes_first(tmp_path):
+    from lacarte_collecte.contexte import Contexte
+
+    ctx = Contexte(root=tmp_path, sortie=tmp_path, rules_dir=registre.RULES)
+    order = list(arretes.administrations(ctx))
+    assert order[:4] == ["ppparis", "pref75", "pref13", "pref06"]
+    assert order[4] == "pref02"  # then wave 1, by its number of surveillance recueils

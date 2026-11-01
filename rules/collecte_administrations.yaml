@@ -15,6 +15,10 @@ rationale: >-
   756 of 756 pilot recueils found there; the collectors of the Loir-et-Cher (nothing since
   2025-09-22) and of Nouvelle-Calédonie (since 2026-09-01) stopped; the Préfecture de police
   and prefectures-regions.gouv.fr behind an anti-robot check.
+# Read first, in this order, before the rest of wave 1 (Ju, 2026-11-01): Paris (the
+# Préfecture de police, then the prefecture of Paris), the Bouches-du-Rhône, the
+# Alpes-Maritimes; their threshold is measured first too.
+en_tete: [ppparis, pref75, pref13, pref06]
 administrations:
   pref02:
     nom: "Aisne"

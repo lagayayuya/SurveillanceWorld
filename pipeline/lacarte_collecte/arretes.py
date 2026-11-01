@@ -43,8 +43,15 @@ def recueil_id(url: str) -> str:
 
 
 def administrations(ctx: Contexte) -> dict[str, dict[str, Any]]:
-    conf = rules("collecte_administrations.yaml", ctx.rules_dir)["administrations"]
-    return dict(sorted(conf.items(), key=lambda kv: (kv[1]["vague"], -kv[1]["actes_12_mois"])))
+    all_ = rules("collecte_administrations.yaml", ctx.rules_dir)
+    head = {a: i for i, a in enumerate(all_.get("en_tete") or [])}
+    conf = all_["administrations"]
+    return dict(
+        sorted(
+            conf.items(),
+            key=lambda kv: (head.get(kv[0], len(head)), kv[1]["vague"], -kv[1]["actes_12_mois"]),
+        )
+    )
 
 
 def months(start: dt.date, end: dt.date) -> list[tuple[dt.date, dt.date]]:
