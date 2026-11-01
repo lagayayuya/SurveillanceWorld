@@ -132,7 +132,13 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     reg = p.reg
     cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
     last = (cov.get("dgcl") or {}).get("derniere_annee_publiee") or 0
-    subs = _load(root / DIR / "subventions_etat.jsonl.gz")
+    from lacarte_collecte import dgcl
+
+    # the département from the commune, for the grants kept before that rule (dgcl.departement)
+    subs = [
+        {**x, "dep": dgcl.departement(x.get("dep"), x.get("insee"))}
+        for x in _load(root / DIR / "subventions_etat.jsonl.gz")
+    ]
     acts = _load(root / DIR / "arretes.jsonl.gz")
     admins = _admins(rules)
     measured = mesures(root, rules)

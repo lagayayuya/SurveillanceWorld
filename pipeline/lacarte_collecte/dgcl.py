@@ -40,11 +40,20 @@ def is_video(title: str) -> bool:
     return bool(WORDS.search(t) or selection.video_notice(t))
 
 
-def departement(code: Any) -> str:
+def departement(code: Any, insee: Any = None) -> str | None:
+    """The beneficiary's département: its commune's (the INSEE code) when it has one; else the
+    DGCL's own code, « 011 » → « 11 », « 02A »/« 020A » → « 2A »; the DGCL files the Alsace's
+    communes under « 067A » (Colmar, 68163, among them): without a commune that code says no
+    département, rather than a wrong one."""
+    insee = str(insee or "").strip().upper()
+    if len(insee) == 5:
+        return insee[:3] if insee.startswith("97") else insee[:2]
     c = str(code or "").strip().upper()
-    if len(c) == 3 and c.startswith("0"):
-        c = c[1:]  # « 011 » → « 11 », « 02A » → « 2A »; « 971 » stays
-    return c
+    if len(c) in (3, 4) and c.startswith("0"):
+        c = c[1:]  # « 011 » → « 11 », « 020A » → « 20A »
+    if c in ("2A", "20A", "2B", "20B"):
+        return "2" + c[-1]
+    return c if c.isdigit() and len(c) in (2, 3) else None
 
 
 def event(row: dict[str, Any], year: int, dataset_url: str, mention: dict[str, str]) -> dict:
@@ -59,7 +68,7 @@ def event(row: dict[str, Any], year: int, dataset_url: str, mention: dict[str, s
         "date": f"{year}-12-31",
         "date_annee": True,
         "insee": row.get("beneficiaire_code_insee") or None,
-        "dep": departement(row.get("beneficiaire_dep")),
+        "dep": departement(row.get("beneficiaire_dep"), row.get("beneficiaire_code_insee")),
         "beneficiaire": str(row.get("beneficiaire_nom") or "").strip(),
         "beneficiaire_siren": str(row.get("beneficiaire_siren") or "") or None,
         "type_beneficiaire": row.get("beneficiaire_type"),

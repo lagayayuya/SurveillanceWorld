@@ -30,3 +30,11 @@ def test_the_dgcl_s_video_lines_with_their_cameras(collecte_server, tmp_path):
     before = len(collecte_server.asked)
     dgcl.collect(ctx)
     assert len(collecte_server.asked) - before == 1  # the dataset's page only
+
+
+def test_a_grant_s_departement_is_its_commune_s():
+    # Colmar (68163) filed by the DGCL under « 067A », the Collectivité européenne d'Alsace
+    assert dgcl.departement("067A", "68163") == "68"
+    assert dgcl.departement("067A", None) is None  # no commune: no département, not a wrong one
+    assert [dgcl.departement(c) for c in ("011", "005", "020A", "02B", "971")] == [
+        "11", "05", "2A", "2B", "971"]  # fmt: skip
