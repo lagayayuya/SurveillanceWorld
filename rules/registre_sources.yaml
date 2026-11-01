@@ -146,6 +146,45 @@ sources:
       and data.opendatasoft.com serve the same rule). The version 1 of this rule read the API
       on a reading of that robots.txt the file of 2026-10-31 contradicts. The notices already
       served stay until the archive has read them again, under the same idweb.
+  dgcl:
+    id: rule:registre_sources@2:source_dgcl
+    dataset: https://www.data.gouv.fr/api/1/datasets/6176785207139a929a2776fe/
+    tabular: https://tabular-api.data.gouv.fr/api/resources/{resource}/data/
+    mots: [video, vidéo, camera, caméra]
+    page_size: 200
+    rationale: >-
+      The DGCL's « Projets financés par les dotations de soutien à l'investissement des
+      collectivités territoriales » (DETR, DSIL, DPV, DSID, 2018 onwards, Licence Ouverte
+      2.0), found through the DGCL's « Bilan DI 2025 »: its 2025 file has 764 lines whose
+      title says « video », the bilan's own count (read on 2026-10-31). static and
+      files.data.gouv.fr are forbidden to robots; the tabular API serves the rows. Each word
+      is asked (the titles are written with and without accents), then kept by the
+      registre's video rule.
+  attrap:
+    id: rule:registre_sources@2:source_attrap
+    api: https://attrap.fr/api/v1/
+    depuis: 2024-01-01
+    texte: attrap
+    fraicheur_jours: 30
+    rationale: >-
+      Attrap (La Quadrature du Net) finds the recueils of 109 administrations and gives their
+      full text: all 756 recueils of the pilot's official lists (Rhône, Essonne) were there,
+      seen the day they were published (measured on 2026-10-31). `texte`: attrap (its text,
+      the default: on the 25 acts measured, its text and our reading of the PDF always gave
+      the same reading) or pdf (the official PDF, downloaded then deleted). Asked at
+      collection time only, never by the site. For the Préfecture de police and the hosts of
+      prefectures-regions.gouv.fr Attrap gets past an anti-robot check; Ju decided on
+      2026-11-01 to take those acts from Attrap too, our robot never asking those hosts.
+      `fraicheur_jours`: an administration without a new recueil for that long is said
+      in the collection's report and on the coverage page (Attrap's Loir-et-Cher had
+      none from 2025-09-22).
+  parcours:
+    id: rule:registre_sources@2:source_parcours
+    pages_max: 40
+    rationale: >-
+      Our own slow crawl of a recueils' index, where Attrap does not read: at most 40 index
+      pages a night per administration (ten seconds each on the prefectures' shared server),
+      the documents found read once.
   sirene:
     id: rule:registre_sources@1:source_sirene
     dataset: https://www.data.gouv.fr/api/2/datasets/5b7ffc618b4c4169d30727e0/resources/?page_size=100

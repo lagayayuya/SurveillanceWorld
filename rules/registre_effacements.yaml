@@ -1,0 +1,13 @@
+# Documents erased everywhere: the collection's records and raw files, its derived files,
+# the built site. The DILA asks the BOAMP's reusers to take into account the updates it
+# publishes in the dataset's forum on data.gouv.fr (notices to anonymise or to delete); a
+# notice listed here is removed by `lacarte-collecte effacer` and at every collection, and
+# `lacarte-registre construire` refuses to serve it. Each entry: the idweb, the day it was
+# asked, and where (the forum's discussion, or the person's request), never a name.
+version: 1
+id: rule:registre_effacements@1
+rationale: >-
+  The dataset's terms on data.gouv.fr: « le réutilisateur s'oblige à prendre en compte les
+  demandes de mise à jour de données publiées ponctuellement par la DILA dans le forum de
+  discussion du jeu de données » (read on 2026-10-31).
+avis: []

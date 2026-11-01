@@ -1,0 +1,1338 @@
+# The administrations whose prefectoral acts the collection reads (pipeline/lacarte_collecte):
+# the 101 départements' prefectures, the Préfecture de police, the regional prefectures and the
+# overseas ones, with what was measured on 2026-10-31 (the national framing): the Attrap id
+# when Attrap reads it (its own ids, facts, not its code), the address of the recueils' index
+# (Attrap's data/sites.tsv and our own reading), `defi` when that host answers robots with an
+# anti-robot check (our robot never asks it: no link check, no PDF), `parcours` when we read
+# the index ourselves (Attrap's collector stopped, or no Attrap), the wave of the catching up
+# (plan: 1 the prefectures read as they are, by their number of surveillance recueils over 12
+# months, newest first; 2 the templates to adapt; 3 the rest), and `actes_12_mois`, Attrap's
+# recueils with a surveillance act over the 12 months to 2026-10-31.
+version: 1
+id: rule:collecte_administrations@1
+rationale: >-
+  The framing's prefectures.csv and attrap.md (2026-10-31): 109 administrations in Attrap,
+  756 of 756 pilot recueils found there; the collectors of the Loir-et-Cher (nothing since
+  2025-09-22) and of Nouvelle-Calédonie (since 2026-09-01) stopped; the Préfecture de police
+  and prefectures-regions.gouv.fr behind an anti-robot check.
+administrations:
+  pref02:
+    nom: "Aisne"
+    code: "02"
+    genre: "departement"
+    attrap: "pref02"
+    index: "https://www.aisne.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 430
+    collecteur_arrete: null
+  pref78:
+    nom: "Yvelines"
+    code: "78"
+    genre: "departement"
+    attrap: "pref78"
+    index: "https://www.yvelines.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 258
+    collecteur_arrete: null
+  pref33:
+    nom: "Gironde"
+    code: "33"
+    genre: "departement"
+    attrap: "pref33"
+    index: "https://www.gironde.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 229
+    collecteur_arrete: null
+  pref28:
+    nom: "Eure-et-Loir"
+    code: "28"
+    genre: "departement"
+    attrap: "pref28"
+    index: "https://www.eure-et-loir.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 205
+    collecteur_arrete: null
+  pref69:
+    nom: "Rhône"
+    code: "69"
+    genre: "departement"
+    attrap: "pref69"
+    index: "https://www.rhone.gouv.fr/Publications/Recueil-des-actes-administratifs-du-Rhone-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 198
+    collecteur_arrete: null
+  pref84:
+    nom: "Vaucluse"
+    code: "84"
+    genre: "departement"
+    attrap: "pref84"
+    index: "https://www.vaucluse.gouv.fr/Publications/Recueils-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 178
+    collecteur_arrete: null
+  pref76:
+    nom: "Seine-Maritime"
+    code: "76"
+    genre: "departement"
+    attrap: "pref76"
+    index: "https://www.seine-maritime.gouv.fr/Publications/Recueils-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 158
+    collecteur_arrete: null
+  pref37:
+    nom: "Indre-et-Loire"
+    code: "37"
+    genre: "departement"
+    attrap: "pref37"
+    index: "https://www.indre-et-loire.gouv.fr/Publications/Recueil-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 148
+    collecteur_arrete: null
+  pref35:
+    nom: "Ille-et-Vilaine"
+    code: "35"
+    genre: "departement"
+    attrap: "pref35"
+    index: "https://www.ille-et-vilaine.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 139
+    collecteur_arrete: null
+  pref38:
+    nom: "Isère"
+    code: "38"
+    genre: "departement"
+    attrap: "pref38"
+    index: "https://www.isere.gouv.fr/Publications/RAA-Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 134
+    collecteur_arrete: null
+  pref80:
+    nom: "Somme"
+    code: "80"
+    genre: "departement"
+    attrap: "pref80"
+    index: "https://www.somme.gouv.fr/Publications/Recueil-des-actes-administratifs-du-departement-de-la-Somme"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 133
+    collecteur_arrete: null
+  pref30:
+    nom: "Gard"
+    code: "30"
+    genre: "departement"
+    attrap: "pref30"
+    index: "https://www.gard.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 131
+    collecteur_arrete: null
+  pref92:
+    nom: "Hauts-de-Seine"
+    code: "92"
+    genre: "departement"
+    attrap: "pref92"
+    index: "https://www.hauts-de-seine.gouv.fr/Publications/Annonces-avis/Le-Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 131
+    collecteur_arrete: null
+  pref64:
+    nom: "Pyrénées-Atlantiques"
+    code: "64"
+    genre: "departement"
+    attrap: "pref64"
+    index: "https://www.pyrenees-atlantiques.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 120
+    collecteur_arrete: null
+  pref31:
+    nom: "Haute-Garonne"
+    code: "31"
+    genre: "departement"
+    attrap: "pref31"
+    index: "https://www.haute-garonne.gouv.fr/Publications/Recueil-des-Actes-Administratifs/Recueil-des-Actes-Administratifs-Haute-Garonne"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 115
+    collecteur_arrete: null
+  pref74:
+    nom: "Haute-Savoie"
+    code: "74"
+    genre: "departement"
+    attrap: "pref74"
+    index: "https://www.haute-savoie.gouv.fr/Publications/Actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 113
+    collecteur_arrete: null
+  pref77:
+    nom: "Seine-et-Marne"
+    code: "77"
+    genre: "departement"
+    attrap: "pref77"
+    index: "https://www.seine-et-marne.gouv.fr/Publications/RECUEILS-DES-ACTES-ADMINISTRATIFS-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 108
+    collecteur_arrete: null
+  pref62:
+    nom: "Pas-de-Calais"
+    code: "62"
+    genre: "departement"
+    attrap: "pref62"
+    index: "https://www.pas-de-calais.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 98
+    collecteur_arrete: null
+  pref45:
+    nom: "Loiret"
+    code: "45"
+    genre: "departement"
+    attrap: "pref45"
+    index: "https://www.loiret.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueil-des-actes-administratifs-departementaux"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 97
+    collecteur_arrete: null
+  pref17:
+    nom: "Charente-Maritime"
+    code: "17"
+    genre: "departement"
+    attrap: "pref17"
+    index: "https://www.charente-maritime.gouv.fr/Publications/RAA-Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 90
+    collecteur_arrete: null
+  pref14:
+    nom: "Calvados"
+    code: "14"
+    genre: "departement"
+    attrap: "pref14"
+    index: "https://www.calvados.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueil-des-actes-administratifs-departemental"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 89
+    collecteur_arrete: null
+  pref83:
+    nom: "Var"
+    code: "83"
+    genre: "departement"
+    attrap: "pref83"
+    index: "https://www.var.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 80
+    collecteur_arrete: null
+  pref27:
+    nom: "Eure"
+    code: "27"
+    genre: "departement"
+    attrap: "pref27"
+    index: "https://www.eure.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 73
+    collecteur_arrete: null
+  pref42:
+    nom: "Loire"
+    code: "42"
+    genre: "departement"
+    attrap: "pref42"
+    index: "https://www.loire.gouv.fr/Publications/Publications-legales/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 73
+    collecteur_arrete: null
+  pref36:
+    nom: "Indre"
+    code: "36"
+    genre: "departement"
+    attrap: "pref36"
+    index: "https://www.indre.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 71
+    collecteur_arrete: null
+  pref07:
+    nom: "Ardèche"
+    code: "07"
+    genre: "departement"
+    attrap: "pref07"
+    index: "https://www.ardeche.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 69
+    collecteur_arrete: null
+  pref971:
+    nom: "Guadeloupe"
+    code: "971"
+    genre: "departement"
+    attrap: "pref971"
+    index: "https://www.guadeloupe.gouv.fr/Publications/Le-Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 69
+    collecteur_arrete: null
+  pref25:
+    nom: "Doubs"
+    code: "25"
+    genre: "departement"
+    attrap: "pref25"
+    index: "https://www.doubs.gouv.fr/Publications/Publications-Legales/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 68
+    collecteur_arrete: null
+  pref24:
+    nom: "Dordogne"
+    code: "24"
+    genre: "departement"
+    attrap: "pref24"
+    index: "https://www.dordogne.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 64
+    collecteur_arrete: null
+  pref50:
+    nom: "Manche"
+    code: "50"
+    genre: "departement"
+    attrap: "pref50"
+    index: "https://www.manche.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 63
+    collecteur_arrete: null
+  pref21:
+    nom: "Côte-d'Or"
+    code: "21"
+    genre: "departement"
+    attrap: "pref21"
+    index: "https://www.cote-dor.gouv.fr/Publications/Recueils-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 61
+    collecteur_arrete: null
+  pref63:
+    nom: "Puy-de-Dôme"
+    code: "63"
+    genre: "departement"
+    attrap: "pref63"
+    index: "https://www.puy-de-dome.gouv.fr/Publications/Recueils-des-actes-administratifs/Recueils-des-actes-administratifs-Puy-de-Dome"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 60
+    collecteur_arrete: null
+  pref29:
+    nom: "Finistère"
+    code: "29"
+    genre: "departement"
+    attrap: "pref29"
+    index: "https://www.finistere.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 57
+    collecteur_arrete: null
+  pref54:
+    nom: "Meurthe-et-Moselle"
+    code: "54"
+    genre: "departement"
+    attrap: "pref54"
+    index: "https://www.meurthe-et-moselle.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 56
+    collecteur_arrete: null
+  pref58:
+    nom: "Nièvre"
+    code: "58"
+    genre: "departement"
+    attrap: "pref58"
+    index: "https://www.nievre.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 56
+    collecteur_arrete: null
+  pref26:
+    nom: "Drôme"
+    code: "26"
+    genre: "departement"
+    attrap: "pref26"
+    index: "https://www.drome.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 54
+    collecteur_arrete: null
+  pref95:
+    nom: "Val-d'Oise"
+    code: "95"
+    genre: "departement"
+    attrap: "pref95"
+    index: "https://www.val-doise.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 52
+    collecteur_arrete: null
+  pref01:
+    nom: "Ain"
+    code: "01"
+    genre: "departement"
+    attrap: "pref01"
+    index: "https://www.ain.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 51
+    collecteur_arrete: null
+  pref86:
+    nom: "Vienne"
+    code: "86"
+    genre: "departement"
+    attrap: "pref86"
+    index: "https://www.vienne.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 51
+    collecteur_arrete: null
+  pref87:
+    nom: "Haute-Vienne"
+    code: "87"
+    genre: "departement"
+    attrap: "pref87"
+    index: "https://www.haute-vienne.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 50
+    collecteur_arrete: null
+  pref22:
+    nom: "Côtes-d'Armor"
+    code: "22"
+    genre: "departement"
+    attrap: "pref22"
+    index: "https://www.cotes-darmor.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 49
+    collecteur_arrete: null
+  pref18:
+    nom: "Cher"
+    code: "18"
+    genre: "departement"
+    attrap: "pref18"
+    index: "https://www.cher.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA-Arretes-et-circulaires/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 48
+    collecteur_arrete: null
+  pref91:
+    nom: "Essonne"
+    code: "91"
+    genre: "departement"
+    attrap: "pref91"
+    index: "https://www.essonne.gouv.fr/Publications/Recueils-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 48
+    collecteur_arrete: null
+  pref05:
+    nom: "Hautes-Alpes"
+    code: "05"
+    genre: "departement"
+    attrap: "pref05"
+    index: "https://www.hautes-alpes.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 47
+    collecteur_arrete: null
+  pref72:
+    nom: "Sarthe"
+    code: "72"
+    genre: "departement"
+    attrap: "pref72"
+    index: "https://www.sarthe.gouv.fr/Publications/Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 46
+    collecteur_arrete: null
+  pref2b:
+    nom: "Haute-Corse"
+    code: "2B"
+    genre: "departement"
+    attrap: "pref2b"
+    index: "https://www.haute-corse.gouv.fr/Publications/Publications-administratives-et-legales/Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 43
+    collecteur_arrete: null
+  pref79:
+    nom: "Deux-Sèvres"
+    code: "79"
+    genre: "departement"
+    attrap: "pref79"
+    index: "https://www.deux-sevres.gouv.fr/Publications/Le-Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 43
+    collecteur_arrete: null
+  pref48:
+    nom: "Lozère"
+    code: "48"
+    genre: "departement"
+    attrap: "pref48"
+    index: "https://www.lozere.gouv.fr/Publications/Recueil-des-Actes-Administratifs-R.A.A"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 42
+    collecteur_arrete: null
+  pref65:
+    nom: "Hautes-Pyrénées"
+    code: "65"
+    genre: "departement"
+    attrap: "pref65"
+    index: "https://www.hautes-pyrenees.gouv.fr/Publications/Recueil-d-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 42
+    collecteur_arrete: null
+  pref90:
+    nom: "Territoire de Belfort"
+    code: "90"
+    genre: "departement"
+    attrap: "pref90"
+    index: "https://www.territoire-de-belfort.gouv.fr/Publications/Le-recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 42
+    collecteur_arrete: null
+  pref73:
+    nom: "Savoie"
+    code: "73"
+    genre: "departement"
+    attrap: "pref73"
+    index: "https://www.savoie.gouv.fr/Publications/Recueils-hebdomadaires-et-speciaux-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 40
+    collecteur_arrete: null
+  pref47:
+    nom: "Lot-et-Garonne"
+    code: "47"
+    genre: "departement"
+    attrap: "pref47"
+    index: "https://www.lot-et-garonne.gouv.fr/Publications/Publications-legales/RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 38
+    collecteur_arrete: null
+  pref88:
+    nom: "Vosges"
+    code: "88"
+    genre: "departement"
+    attrap: "pref88"
+    index: "https://www.vosges.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 38
+    collecteur_arrete: null
+  pref39:
+    nom: "Jura"
+    code: "39"
+    genre: "departement"
+    attrap: "pref39"
+    index: "https://www.jura.gouv.fr/Publications/Publications-legales/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 37
+    collecteur_arrete: null
+  pref53:
+    nom: "Mayenne"
+    code: "53"
+    genre: "departement"
+    attrap: "pref53"
+    index: "https://www.mayenne.gouv.fr/Publications/Recueil-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 37
+    collecteur_arrete: null
+  pref89:
+    nom: "Yonne"
+    code: "89"
+    genre: "departement"
+    attrap: "pref89"
+    index: "https://www.yonne.gouv.fr/Publications/Publications-legales/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 37
+    collecteur_arrete: null
+  pref81:
+    nom: "Tarn"
+    code: "81"
+    genre: "departement"
+    attrap: "pref81"
+    index: "https://www.tarn.gouv.fr/Publications/RAA-Recueil-des-Actes-Administratifs/RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 36
+    collecteur_arrete: null
+  pref973:
+    nom: "Guyane"
+    code: "973"
+    genre: "departement"
+    attrap: "pref973"
+    index: "https://www.guyane.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 34
+    collecteur_arrete: null
+  pref2a:
+    nom: "Corse-du-Sud"
+    code: "2A"
+    genre: "departement"
+    attrap: "pref2a"
+    index: "https://www.corse-du-sud.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueil-des-actes-administratifs-de-la-prefecture-de-la-Corse-du-Sud"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 32
+    collecteur_arrete: null
+  pref972:
+    nom: "Martinique"
+    code: "972"
+    genre: "departement"
+    attrap: "pref972"
+    index: "https://www.martinique.gouv.fr/Publications/Recueils-des-actes-administratifs-publies"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 32
+    collecteur_arrete: null
+  pref09:
+    nom: "Ariège"
+    code: "09"
+    genre: "departement"
+    attrap: "pref09"
+    index: "https://www.ariege.gouv.fr/Publications/Recueil-des-actes-administratifs/Recueils-des-Actes-Administratifs-de-l-Ariege-a-partir-du-28-avril-2015"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 31
+    collecteur_arrete: null
+  pref16:
+    nom: "Charente"
+    code: "16"
+    genre: "departement"
+    attrap: "pref16"
+    index: "https://www.charente.gouv.fr/Publications/Recueil-des-actes-administratifs2"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 31
+    collecteur_arrete: null
+  pref40:
+    nom: "Landes"
+    code: "40"
+    genre: "departement"
+    attrap: "pref40"
+    index: "https://www.landes.gouv.fr//Publications/Publications-legales/Le-Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 30
+    collecteur_arrete: null
+  pref56:
+    nom: "Morbihan"
+    code: "56"
+    genre: "departement"
+    attrap: "pref56"
+    index: "https://www.morbihan.gouv.fr/RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 30
+    collecteur_arrete: null
+  pref12:
+    nom: "Aveyron"
+    code: "12"
+    genre: "departement"
+    attrap: "pref12"
+    index: "https://www.aveyron.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 22
+    collecteur_arrete: null
+  pref15:
+    nom: "Cantal"
+    code: "15"
+    genre: "departement"
+    attrap: "pref15"
+    index: "https://www.cantal.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 22
+    collecteur_arrete: null
+  pref32:
+    nom: "Gers"
+    code: "32"
+    genre: "departement"
+    attrap: "pref32"
+    index: "https://www.gers.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 21
+    collecteur_arrete: null
+  pref85:
+    nom: "Vendée"
+    code: "85"
+    genre: "departement"
+    attrap: "pref85"
+    index: "https://www.vendee.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 21
+    collecteur_arrete: null
+  pref03:
+    nom: "Allier"
+    code: "03"
+    genre: "departement"
+    attrap: "pref03"
+    index: "https://www.allier.gouv.fr/Publications/Recueil-des-actes-administratifs-arretes"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 20
+    collecteur_arrete: null
+  pref71:
+    nom: "Saône-et-Loire"
+    code: "71"
+    genre: "departement"
+    attrap: "pref71"
+    index: "https://www.saone-et-loire.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 20
+    collecteur_arrete: null
+  pref43:
+    nom: "Haute-Loire"
+    code: "43"
+    genre: "departement"
+    attrap: "pref43"
+    index: "https://www.haute-loire.gouv.fr/Publications/Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 19
+    collecteur_arrete: null
+  pref04:
+    nom: "Alpes-de-Haute-Provence"
+    code: "04"
+    genre: "departement"
+    attrap: "pref04"
+    index: "https://www.alpes-de-haute-provence.gouv.fr/Publications/Publications-administratives-et-legales/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 18
+    collecteur_arrete: null
+  pref976:
+    nom: "Mayotte"
+    code: "976"
+    genre: "departement"
+    attrap: "pref976"
+    index: "https://www.mayotte.gouv.fr/Publications/Recueil-des-actes-administratifs-R.A.A"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 18
+    collecteur_arrete: null
+  pref19:
+    nom: "Corrèze"
+    code: "19"
+    genre: "departement"
+    attrap: "pref19"
+    index: "https://www.correze.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 17
+    collecteur_arrete: null
+  pref23:
+    nom: "Creuse"
+    code: "23"
+    genre: "departement"
+    attrap: "pref23"
+    index: "https://www.creuse.gouv.fr/Publications/Les-Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 16
+    collecteur_arrete: null
+  pref70:
+    nom: "Haute-Saône"
+    code: "70"
+    genre: "departement"
+    attrap: "pref70"
+    index: "https://www.haute-saone.gouv.fr/Publications/RAA"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 15
+    collecteur_arrete: null
+  pref46:
+    nom: "Lot"
+    code: "46"
+    genre: "departement"
+    attrap: "pref46"
+    index: "https://www.lot.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 13
+    collecteur_arrete: null
+  pref82:
+    nom: "Tarn-et-Garonne"
+    code: "82"
+    genre: "departement"
+    attrap: "pref82"
+    index: "https://www.tarn-et-garonne.gouv.fr/Publications/Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 13
+    collecteur_arrete: null
+  hcpf:
+    nom: "Haut-commissariat, Polynésie française"
+    code: "987"
+    genre: "outre-mer"
+    attrap: "hcpf"
+    index: "https://www.polynesie-francaise.pref.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 1
+    actes_12_mois: 0
+    collecteur_arrete: null
+  pref59:
+    nom: "Nord"
+    code: "59"
+    genre: "departement"
+    attrap: "pref59"
+    index: "https://www.nord.gouv.fr/Publications/Recueils-des-actes-administratifs/RAA-du-departement-du-Nord"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 222
+    collecteur_arrete: null
+  pref13:
+    nom: "Bouches-du-Rhône"
+    code: "13"
+    genre: "departement"
+    attrap: "pref13"
+    index: "https://www.bouches-du-rhone.gouv.fr/Publications/RAA-et-Archives"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 214
+    collecteur_arrete: null
+  pref06:
+    nom: "Alpes-Maritimes"
+    code: "06"
+    genre: "departement"
+    attrap: "pref06"
+    index: "https://www.alpes-maritimes.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 182
+    collecteur_arrete: null
+  pref44:
+    nom: "Loire-Atlantique"
+    code: "44"
+    genre: "departement"
+    attrap: "pref44"
+    index: "https://www.loire-atlantique.gouv.fr/Publications/Recueil-des-actes-administratifs-RAA-en-Loire-Atlantique"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 153
+    collecteur_arrete: null
+  pref93:
+    nom: "Seine-Saint-Denis"
+    code: "93"
+    genre: "departement"
+    attrap: "pref93"
+    index: "https://www.seine-saint-denis.gouv.fr/Publications/Bulletin-d-informations-administratives-Recueil-des-actes-administratifs/"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 145
+    collecteur_arrete: null
+  pref34:
+    nom: "Hérault"
+    code: "34"
+    genre: "departement"
+    attrap: "pref34"
+    index: "https://www.herault.gouv.fr/Publications/Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 115
+    collecteur_arrete: null
+  pref94:
+    nom: "Val-de-Marne"
+    code: "94"
+    genre: "departement"
+    attrap: "pref94"
+    index: "https://www.val-de-marne.gouv.fr/Publications/Publications-legales/RAA-Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 103
+    collecteur_arrete: null
+  pref60:
+    nom: "Oise"
+    code: "60"
+    genre: "departement"
+    attrap: "pref60"
+    index: "https://www.oise.gouv.fr/Publications/Publications-legales/Recueils-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 93
+    collecteur_arrete: null
+  pref974:
+    nom: "La Réunion"
+    code: "974"
+    genre: "departement"
+    attrap: "pref974"
+    index: "https://www.reunion.gouv.fr/index.php/Publications/Publications-administratives-et-legales/Recueil-des-actes-administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 71
+    collecteur_arrete: null
+  pref67:
+    nom: "Bas-Rhin"
+    code: "67"
+    genre: "departement"
+    attrap: "pref67"
+    index: "https://www.bas-rhin.gouv.fr/Publications/Publications-officielles/RAA-Recueils-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 66
+    collecteur_arrete: null
+  pref61:
+    nom: "Orne"
+    code: "61"
+    genre: "departement"
+    attrap: "pref61"
+    index: "https://www.orne.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 58
+    collecteur_arrete: null
+  pref08:
+    nom: "Ardennes"
+    code: "08"
+    genre: "departement"
+    attrap: "pref08"
+    index: "https://www.ardennes.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 55
+    collecteur_arrete: null
+  pref57:
+    nom: "Moselle"
+    code: "57"
+    genre: "departement"
+    attrap: "pref57"
+    index: "https://mc.moselle.gouv.fr/index.php?op=raa&do=raa_rec"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 51
+    collecteur_arrete: null
+  pref68:
+    nom: "Haut-Rhin"
+    code: "68"
+    genre: "departement"
+    attrap: "pref68"
+    index: "https://www.haut-rhin.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 47
+    collecteur_arrete: null
+  pref49:
+    nom: "Maine-et-Loire"
+    code: "49"
+    genre: "departement"
+    attrap: "pref49"
+    index: "https://www.maine-et-loire.gouv.fr/Publications/Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 35
+    collecteur_arrete: null
+  pref10:
+    nom: "Aube"
+    code: "10"
+    genre: "departement"
+    attrap: "pref10"
+    index: "https://www.aube.gouv.fr/Publications/RAA-Recueil-des-Actes-Administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 32
+    collecteur_arrete: null
+  pref66:
+    nom: "Pyrénées-Orientales"
+    code: "66"
+    genre: "departement"
+    attrap: "pref66"
+    index: "https://www.pyrenees-orientales.gouv.fr/Publications/Le-recueil-des-actes-administratifs"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 31
+    collecteur_arrete: null
+  pref55:
+    nom: "Meuse"
+    code: "55"
+    genre: "departement"
+    attrap: "pref55"
+    index: "https://www.meuse.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 23
+    collecteur_arrete: null
+  pref11:
+    nom: "Aude"
+    code: "11"
+    genre: "departement"
+    attrap: "pref11"
+    index: "https://www.aude.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 20
+    collecteur_arrete: null
+  pref51:
+    nom: "Marne"
+    code: "51"
+    genre: "departement"
+    attrap: "pref51"
+    index: "https://www.marne.gouv.fr/Publications/Publications-administratives-et-legales/RAA-Recueils-des-actes-administratifs/RAA-Recueils-des-actes-administratifs-de-la-prefecture-de-la-Marne"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 18
+    collecteur_arrete: null
+  pref52:
+    nom: "Haute-Marne"
+    code: "52"
+    genre: "departement"
+    attrap: "pref52"
+    index: "https://www.haute-marne.gouv.fr/Publications/Recueil-des-Actes-Administratifs-RAA"
+    defi: false
+    parcours: false
+    vague: 2
+    actes_12_mois: 16
+    collecteur_arrete: null
+  pref75:
+    nom: "Paris"
+    code: "75"
+    genre: "departement"
+    attrap: "pref75"
+    index: "https://www.prefectures-regions.gouv.fr/ile-de-france/tags/view/Ile-de-France/Documents+et+publications/Recueil+des+actes+administratifs"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 292
+    collecteur_arrete: null
+  ppparis:
+    nom: "Préfecture de police (Paris, petite couronne pour certaines polices, zone de défense de Paris)"
+    code: "75"
+    genre: "prefecture_de_police"
+    attrap: "ppparis"
+    index: "https://www.prefecturedepolice.interieur.gouv.fr/actualites-et-presse/arretes/accueil-arretes?decree_date="
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 235
+    collecteur_arrete: null
+  hcnc:
+    nom: "Haut-commissariat, Nouvelle-Calédonie"
+    code: "988"
+    genre: "outre-mer"
+    attrap: "hcnc"
+    index: "https://www.nouvelle-caledonie.gouv.fr/Publications/Arretes"
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 21
+    collecteur_arrete: "2026-09-01"
+  region-11:
+    nom: "Préfecture de la région Île-de-France"
+    code: "11"
+    genre: "region"
+    attrap: "prefidf"
+    index: "https://www.prefectures-regions.gouv.fr/ile-de-france/tags/view/Ile-de-France/Documents+et+publications/Recueil+des+actes+administratifs"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 10
+    collecteur_arrete: null
+  region-44:
+    nom: "Préfecture de la région Grand Est"
+    code: "44"
+    genre: "region"
+    attrap: "prefge"
+    index: "https://www.prefectures-regions.gouv.fr/grand-est/Documents-publications/Recueil-des-actes-administratifs-regional/Recueil-des-actes-administratifs"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 3
+    collecteur_arrete: null
+  region-93:
+    nom: "Préfecture de la région Provence-Alpes-Côte d'Azur"
+    code: "93"
+    genre: "region"
+    attrap: "prefpaca"
+    index: "https://www.prefectures-regions.gouv.fr/provence-alpes-cote-dazur/Documents-publications"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 2
+    collecteur_arrete: null
+  region-84:
+    nom: "Préfecture de la région Auvergne-Rhône-Alpes"
+    code: "84"
+    genre: "region"
+    attrap: "prefara"
+    index: "https://www.prefectures-regions.gouv.fr/auvergne-rhone-alpes/Documents-publications/Recueil-regional-des-actes-administratifs-RAA"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 1
+    collecteur_arrete: null
+  pref41:
+    nom: "Loir-et-Cher"
+    code: "41"
+    genre: "departement"
+    attrap: "pref41"
+    index: "https://www.loir-et-cher.gouv.fr/Publications/Recueil-des-actes-administratifs"
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: "2025-09-22"
+  pref975:
+    nom: "Préfecture de Saint-Pierre-et-Miquelon"
+    code: "975"
+    genre: "outre-mer"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  pref977-978:
+    nom: "Préfecture de Saint-Barthélemy et Saint-Martin"
+    code: "977"
+    genre: "outre-mer"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  pref986:
+    nom: "Administration supérieure de Wallis-et-Futuna"
+    code: "986"
+    genre: "outre-mer"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-24:
+    nom: "Préfecture de la région Centre-Val de Loire"
+    code: "24"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-27:
+    nom: "Préfecture de la région Bourgogne-Franche-Comté"
+    code: "27"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-28:
+    nom: "Préfecture de la région Normandie"
+    code: "28"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-32:
+    nom: "Préfecture de la région Hauts-de-France"
+    code: "32"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-52:
+    nom: "Préfecture de la région Pays de la Loire"
+    code: "52"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-53:
+    nom: "Préfecture de la région Bretagne"
+    code: "53"
+    genre: "region"
+    attrap: "prefbretagne"
+    index: "https://www.prefectures-regions.gouv.fr/bretagne/Documents-publications/Recueils-des-actes-administratifs/Recueil-des-actes-administratifs"
+    defi: true
+    parcours: false
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-75:
+    nom: "Préfecture de la région Nouvelle-Aquitaine"
+    code: "75"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-76:
+    nom: "Préfecture de la région Occitanie"
+    code: "76"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
+  region-94:
+    nom: "Préfecture de la région Corse"
+    code: "94"
+    genre: "region"
+    attrap: null
+    index: null
+    defi: false
+    parcours: true
+    vague: 3
+    actes_12_mois: 0
+    collecteur_arrete: null
