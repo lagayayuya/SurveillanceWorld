@@ -1,0 +1,382 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:ann xmlns:ns0="http://boamp.journal-officiel.gouv.fr/XML/3.2.5" xmlns:ns1="urn:boamp:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:ns2="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ns3="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:ns4="urn:boamp:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ns5="urn:boamp:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:ns6="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1">
+                        
+   <DONNEES>
+      <EFORMS>
+         <ContractNotice>
+            <ns1:UBLExtensions>
+               <ns1:UBLExtension>
+                  <ns1:ExtensionContent>
+                     <ns2:EformsExtension>
+                        <ns3:NoticeSubType>
+                           <ns4:SubTypeCode listName="notice-subtype">16</ns4:SubTypeCode>
+                        </ns3:NoticeSubType>
+                        <ns3:Organizations>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0001</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">Avenue-Web Systèmes</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:CityName>Seyssinet-Pariset</ns4:CityName>
+                                    <ns4:PostalZone>38170</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRK24</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID schemeName="eu">E6A5ED8A-A0EB-B562-CB7D2B41E01D3828</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns4:WebsiteURI>https://canut.org</ns4:WebsiteURI>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0002</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">CANUT</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:StreetName>4 Place Amedee Bonnet</ns4:StreetName>
+                                    <ns4:CityName>Lyon</ns4:CityName>
+                                    <ns4:PostalZone>69002</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRK26</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID schemeName="eu">80939</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:Name>Service des marchés</ns4:Name>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0003</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">Tribunal administratif de Lyon</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:StreetName>184, rue Duguesclin</ns4:StreetName>
+                                    <ns4:CityName>Lyon</ns4:CityName>
+                                    <ns4:PostalZone>69433</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRK26</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID schemeName="eu">E6A5EDC2-C829-D921-4AF22059485AE65E</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:Telefax>[téléphone retiré]</ns4:Telefax>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0004</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">Tribunal administratif de Lyon</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:StreetName>184, rue Duguesclin</ns4:StreetName>
+                                    <ns4:CityName>Lyon</ns4:CityName>
+                                    <ns4:PostalZone>69433</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRK26</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID schemeName="eu">E6A5EDD0-BFB6-1D06-E95966057FE3BC50</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:Telefax>[téléphone retiré]</ns4:Telefax>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                        </ns3:Organizations>
+                     </ns2:EformsExtension>
+                  </ns1:ExtensionContent>
+               </ns1:UBLExtension>
+            </ns1:UBLExtensions>
+            <ns4:UBLVersionID>2.3</ns4:UBLVersionID>
+            <ns4:CustomizationID>eforms-sdk-1.12</ns4:CustomizationID>
+            <ns4:ID schemeName="notice-id">22119b57-f2ff-4389-9f63-18740a913698</ns4:ID>
+            <ns4:ContractFolderID>c9984ec7-72c5-4b2a-8138-ecf8f5fd3bff</ns4:ContractFolderID>
+            <ns4:IssueDate>2026-10-12+02:00</ns4:IssueDate>
+            <ns4:IssueTime>17:10:22+02:00</ns4:IssueTime>
+            <ns4:VersionID>01</ns4:VersionID>
+            <ns4:RegulatoryDomain>32014L0024</ns4:RegulatoryDomain>
+            <ns4:NoticeTypeCode listName="competition">cn-standard</ns4:NoticeTypeCode>
+            <ns4:NoticeLanguageCode>FRA</ns4:NoticeLanguageCode>
+            <ns5:ContractingParty>
+               <ns4:BuyerProfileURI>https://www.marches-publics.info/</ns4:BuyerProfileURI>
+               <ns5:ContractingPartyType>
+                  <ns4:PartyTypeCode listName="buyer-legal-type">grp-p-aut</ns4:PartyTypeCode>
+               </ns5:ContractingPartyType>
+               <ns5:ContractingActivity>
+                  <ns4:ActivityTypeCode listName="authority-activity">gen-pub</ns4:ActivityTypeCode>
+               </ns5:ContractingActivity>
+               <ns5:Party>
+                  <ns5:PartyIdentification>
+                     <ns4:ID schemeName="organization">ORG-0002</ns4:ID>
+                  </ns5:PartyIdentification>
+                  <ns5:ServiceProviderParty>
+                     <ns4:ServiceTypeCode listName="organisation-role">ted-esen</ns4:ServiceTypeCode>
+                     <ns5:Party>
+                        <ns5:PartyIdentification>
+                           <ns4:ID schemeName="organization">ORG-0001</ns4:ID>
+                        </ns5:PartyIdentification>
+                     </ns5:Party>
+                  </ns5:ServiceProviderParty>
+               </ns5:Party>
+            </ns5:ContractingParty>
+            <ns5:TenderingTerms>
+               <ns5:TendererQualificationRequest>
+                  <ns5:SpecificTendererRequirement>
+                     <ns4:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                  </ns5:SpecificTendererRequirement>
+               </ns5:TendererQualificationRequest>
+            </ns5:TenderingTerms>
+            <ns5:TenderingProcess>
+               <ns4:ProcedureCode languageID="FRA" listName="procurement-procedure-type">open</ns4:ProcedureCode>
+               <ns5:ProcessJustification>
+                  <ns4:ProcessReasonCode listName="accelerated-procedure">false</ns4:ProcessReasonCode>
+               </ns5:ProcessJustification>
+            </ns5:TenderingProcess>
+            <ns5:ProcurementProject>
+               <ns4:ID>2026_AOO_VIDEOPROTECTION_REL</ns4:ID>
+               <ns4:Name languageID="FRA">FOURNITURE, INSTALLATION, MAINTENANCE ET PRESTATIONS DE CONSEIL AUTOUR DES SYSTEMES DE VIDEOPROTECTION ET VIDEOSURVEILLANCE URBAINE</ns4:Name>
+               <ns4:Description languageID="FRA">FOURNITURE, INSTALLATION, MAINTENANCE ET PRESTATIONS DE CONSEIL AUTOUR DES SYSTEMES DE VIDEOPROTECTION ET VIDEOSURVEILLANCE URBAINE</ns4:Description>
+               <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+               <ns5:RequestedTenderTotal>
+                  <ns4:EstimatedOverallContractAmount currencyID="EUR">150000000</ns4:EstimatedOverallContractAmount>
+               </ns5:RequestedTenderTotal>
+               <ns5:MainCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">32323500</ns4:ItemClassificationCode>
+               </ns5:MainCommodityClassification>
+               <ns5:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">32323300</ns4:ItemClassificationCode>
+               </ns5:AdditionalCommodityClassification>
+               <ns5:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">32333200</ns4:ItemClassificationCode>
+               </ns5:AdditionalCommodityClassification>
+               <ns5:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">35125300</ns4:ItemClassificationCode>
+               </ns5:AdditionalCommodityClassification>
+               <ns5:RealizedLocation>
+                  <ns5:Address>
+                     <ns4:CountrySubentityCode listName="nuts">FRY40</ns4:CountrySubentityCode>
+                     <ns5:Country>
+                        <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                     </ns5:Country>
+                  </ns5:Address>
+               </ns5:RealizedLocation>
+            </ns5:ProcurementProject>
+            <ns5:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0000</ns4:ID>
+               <ns5:TenderingTerms>
+                  <ns4:VariantConstraintCode listName="permission">not-allowed</ns4:VariantConstraintCode>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns4:RecurringProcurementIndicator>false</ns4:RecurringProcurementIndicator>
+                  <ns5:CallForTendersDocumentReference>
+                     <ns4:ID>1887906</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns4:LanguageID>FRA</ns4:LanguageID>
+                     <ns4:DocumentStatusCode listName="linguistic-status">official</ns4:DocumentStatusCode>
+                     <ns5:Attachment>
+                        <ns5:ExternalReference>
+                           <ns4:URI>https://www.marches-publics.info/mpiaws/index.cfm?fuseaction=dematEnt.login&amp;amp;type=DCE&amp;amp;IDM=1887906</ns4:URI>
+                        </ns5:ExternalReference>
+                     </ns5:Attachment>
+                  </ns5:CallForTendersDocumentReference>
+                  <ns5:TendererQualificationRequest>
+                     <ns5:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns5:SpecificTendererRequirement>
+                  </ns5:TendererQualificationRequest>
+                  <ns5:TendererQualificationRequest>
+                     <ns5:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns5:SpecificTendererRequirement>
+                  </ns5:TendererQualificationRequest>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="esignature-submission">false</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:TenderRecipientParty>
+                     <ns4:EndpointID>https://www.marches-publics.info/mpiaws/index.cfm?fuseaction=demat.termes&amp;amp;IDM=1887906</ns4:EndpointID>
+                  </ns5:TenderRecipientParty>
+                  <ns5:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">6</ns4:DurationMeasure>
+                  </ns5:TenderValidityPeriod>
+                  <ns5:AppealTerms>
+                     <ns5:AppealInformationParty>
+                        <ns5:PartyIdentification>
+                           <ns4:ID schemeName="organization">ORG-0004</ns4:ID>
+                        </ns5:PartyIdentification>
+                     </ns5:AppealInformationParty>
+                     <ns5:AppealReceiverParty>
+                        <ns5:PartyIdentification>
+                           <ns4:ID schemeName="organization">ORG-0003</ns4:ID>
+                        </ns5:PartyIdentification>
+                     </ns5:AppealReceiverParty>
+                  </ns5:AppealTerms>
+                  <ns5:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns5:Language>
+                  <ns5:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns5:PostAwardProcess>
+               </ns5:TenderingTerms>
+               <ns5:TenderingProcess>
+                  <ns1:UBLExtensions>
+                     <ns1:UBLExtension>
+                        <ns1:ExtensionContent>
+                           <ns2:EformsExtension>
+                              <ns6:AccessToolName>AW Solutions</ns6:AccessToolName>
+                           </ns2:EformsExtension>
+                        </ns1:ExtensionContent>
+                     </ns1:UBLExtension>
+                  </ns1:UBLExtensions>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns5:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-17+01:00</ns4:EndDate>
+                     <ns4:EndTime>17:30:00+01:00</ns4:EndTime>
+                  </ns5:TenderSubmissionDeadlinePeriod>
+                  <ns5:OpenTenderEvent>
+                     <ns4:OccurrenceDate>2026-11-18+01:00</ns4:OccurrenceDate>
+                     <ns4:OccurrenceTime>08:30:00+01:00</ns4:OccurrenceTime>
+                  </ns5:OpenTenderEvent>
+                  <ns5:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns5:AuctionTerms>
+                  <ns5:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>1</ns4:MaximumOperatorQuantity>
+                     <ns4:Justification languageID="FRA">Ces éléments sont décrits dans le Ccap.
+-Les quatre premières années de l'Accord-Cadre doivent permettre aux Bénéficiaires d'émettre leurs bons de commande pour toutes les prestations et fournitures listées dans l'Accord-Cadre.
+-A l'issue des quatre premières années, seuls les bénéficiaires de l'Accord-Cadre ayant passé des bons de commande</ns4:Justification>
+                  </ns5:FrameworkAgreement>
+                  <ns5:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns5:ContractingSystem>
+                  <ns5:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns5:ContractingSystem>
+               </ns5:TenderingProcess>
+               <ns5:ProcurementProject>
+                  <ns4:ID schemeName="InternalID">F-PF-1887906</ns4:ID>
+                  <ns4:Name languageID="FRA">FOURNITURE, INSTALLATION, MAINTENANCE ET PRESTATIONS DE CONSEIL AUTOUR DES SYSTEMES DE VIDEOPROTECTION ET VIDEOSURVEILLANCE URBAINE</ns4:Name>
+                  <ns4:Description languageID="FRA">FOURNITURE, INSTALLATION, MAINTENANCE ET PRESTATIONS DE CONSEIL AUTOUR DES SYSTEMES DE VIDEOPROTECTION ET VIDEOSURVEILLANCE URBAINE</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns5:RequestedTenderTotal>
+                     <ns4:EstimatedOverallContractAmount currencyID="EUR">150000000</ns4:EstimatedOverallContractAmount>
+                  </ns5:RequestedTenderTotal>
+                  <ns5:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">32323500</ns4:ItemClassificationCode>
+                  </ns5:MainCommodityClassification>
+                  <ns5:AdditionalCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">32323300</ns4:ItemClassificationCode>
+                  </ns5:AdditionalCommodityClassification>
+                  <ns5:AdditionalCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">32333200</ns4:ItemClassificationCode>
+                  </ns5:AdditionalCommodityClassification>
+                  <ns5:AdditionalCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">35125300</ns4:ItemClassificationCode>
+                  </ns5:AdditionalCommodityClassification>
+                  <ns5:RealizedLocation>
+                     <ns5:Address>
+                        <ns4:Description languageID="FRA">Régions d'Outre-Mer</ns4:Description>
+                        <ns4:CountrySubentityCode listName="nuts">FRY40</ns4:CountrySubentityCode>
+                        <ns5:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns5:Country>
+                     </ns5:Address>
+                  </ns5:RealizedLocation>
+                  <ns5:PlannedPeriod>
+                     <ns4:StartDate>2027-01-16+01:00</ns4:StartDate>
+                     <ns4:EndDate>2032-09-17+02:00</ns4:EndDate>
+                  </ns5:PlannedPeriod>
+               </ns5:ProcurementProject>
+            </ns5:ProcurementProjectLot>
+         </ContractNotice>
+      </EFORMS>
+   </DONNEES>
+   <GESTION>
+      <REFERENCE>
+         <IDWEB>26-98743</IDWEB>
+         <TYPE_AVIS>
+            <FAMILLE>
+               <JOUE />
+            </FAMILLE>
+            <PERIMETRE>
+               <DIRECTIVE-24 />
+            </PERIMETRE>
+            <NATURE>
+               <APPEL_OFFRE>
+                  <STANDARD />
+               </APPEL_OFFRE>
+            </NATURE>
+            <STATUT>
+               <INITIAL />
+            </STATUT>
+         </TYPE_AVIS>
+      </REFERENCE>
+      <INDEXATION>
+         <SCHEMA>3.2.5</SCHEMA>
+         <NOMORGANISME>CANUT</NOMORGANISME>
+         <TYPE_PROCEDURE>
+            <OUVERT />
+         </TYPE_PROCEDURE>
+         <DATE_PUBLICATION>2026-10-14</DATE_PUBLICATION>
+         <DATE_LIMITE_REPONSE>2026-11-17T17:30:00+01:00</DATE_LIMITE_REPONSE>
+         <DATE_FIN_DIFFUSION>2026-11-17</DATE_FIN_DIFFUSION>
+         <DESCRIPTEURS>
+            <DESCRIPTEUR>
+               <CODE>162</CODE>
+               <LIBELLE>Informatique (matériel)</LIBELLE>
+            </DESCRIPTEUR>
+         </DESCRIPTEURS>
+         <NATURE_MARCHE>
+            <FOURNITURES />
+         </NATURE_MARCHE>
+         <DEP_PUBLICATION>69</DEP_PUBLICATION>
+         <RESUME_OBJET>FOURNITURE, INSTALLATION, MAINTENANCE ET PRESTATIONS DE CONSEIL AUTOUR DES SYSTEMES DE VIDEOPROTECTION ET VIDEOSURVEILLANCE URBAINE</RESUME_OBJET>
+      </INDEXATION>
+   </GESTION>
+   </ns0:ann>

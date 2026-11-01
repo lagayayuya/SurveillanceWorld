@@ -1,0 +1,326 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:ann xmlns:ns0="http://boamp.journal-officiel.gouv.fr/XML/3.2.5" xmlns:ns1="urn:boamp:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:ns2="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ns3="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:ns4="urn:boamp:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ns5="urn:boamp:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:ns6="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1">
+    
+   <DONNEES>
+      <EFORMS>
+         <ContractNotice>
+            <ns1:UBLExtensions>
+               <ns1:UBLExtension>
+                  <ns1:ExtensionContent>
+                     <ns2:EformsExtension>
+                        <ns3:NoticeSubType>
+                           <ns4:SubTypeCode listName="notice-subtype">16</ns4:SubTypeCode>
+                        </ns3:NoticeSubType>
+                        <ns3:Organizations>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns4:EndpointID>https://www.achatpublic.com/sdm/ent/gen/ent_detail.do?PCSLID=CSL_2026_lafv6MzQA8</ns4:EndpointID>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0001</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">Spl euralille</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:StreetName>Tour Lilleurope - 19° étage</ns4:StreetName>
+                                    <ns4:AdditionalStreetName>11 parvis de Rotterdam</ns4:AdditionalStreetName>
+                                    <ns4:CityName>Euralille</ns4:CityName>
+                                    <ns4:PostalZone>59777</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRE11</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID>37822478600020</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:Name>Service des marchés</ns4:Name>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns4:WebsiteURI>http://www.justice.gouv.fr</ns4:WebsiteURI>
+                                 <ns5:PartyIdentification>
+                                    <ns4:ID schemeName="organization">ORG-0002</ns4:ID>
+                                 </ns5:PartyIdentification>
+                                 <ns5:PartyName>
+                                    <ns4:Name languageID="FRA">Tribunal judiciaire de Lille</ns4:Name>
+                                 </ns5:PartyName>
+                                 <ns5:PostalAddress>
+                                    <ns4:StreetName>13 avenue du Peuple Belge</ns4:StreetName>
+                                    <ns4:CityName>Lille</ns4:CityName>
+                                    <ns4:PostalZone>59800</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FRE11</ns4:CountrySubentityCode>
+                                    <ns5:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns5:Country>
+                                 </ns5:PostalAddress>
+                                 <ns5:PartyLegalEntity>
+                                    <ns4:CompanyID>17590111500709</ns4:CompanyID>
+                                 </ns5:PartyLegalEntity>
+                                 <ns5:Contact>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns5:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                        </ns3:Organizations>
+                     </ns2:EformsExtension>
+                  </ns1:ExtensionContent>
+               </ns1:UBLExtension>
+            </ns1:UBLExtensions>
+            <ns4:UBLVersionID>2.3</ns4:UBLVersionID>
+            <ns4:CustomizationID>eforms-sdk-1.13</ns4:CustomizationID>
+            <ns4:ID schemeName="notice-id">8ff65932-9e41-4343-ac42-c6c6432f985f</ns4:ID>
+            <ns4:ContractFolderID>bfc4f7dd-23b6-4110-9f0e-0e8bdfb4028c</ns4:ContractFolderID>
+            <ns4:IssueDate>2026-10-12+02:00</ns4:IssueDate>
+            <ns4:IssueTime>14:58:03+02:00</ns4:IssueTime>
+            <ns4:VersionID>01</ns4:VersionID>
+            <ns4:RegulatoryDomain>32014L0024</ns4:RegulatoryDomain>
+            <ns4:NoticeTypeCode listName="competition">cn-standard</ns4:NoticeTypeCode>
+            <ns4:NoticeLanguageCode listName="language">FRA</ns4:NoticeLanguageCode>
+            <ns5:ContractingParty>
+               <ns4:BuyerProfileURI>https://www.achatpublic.com/sdm/ent2/gen/index.jsp</ns4:BuyerProfileURI>
+               <ns5:ContractingPartyType>
+                  <ns4:PartyTypeCode listName="buyer-legal-type">pub-undert-la</ns4:PartyTypeCode>
+               </ns5:ContractingPartyType>
+               <ns5:ContractingActivity>
+                  <ns4:ActivityTypeCode listName="authority-activity">hc-am</ns4:ActivityTypeCode>
+               </ns5:ContractingActivity>
+               <ns5:Party>
+                  <ns5:PartyIdentification>
+                     <ns4:ID>ORG-0001</ns4:ID>
+                  </ns5:PartyIdentification>
+               </ns5:Party>
+            </ns5:ContractingParty>
+            <ns5:TenderingTerms>
+               <ns5:TendererQualificationRequest>
+                  <ns5:SpecificTendererRequirement>
+                     <ns4:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                  </ns5:SpecificTendererRequirement>
+               </ns5:TendererQualificationRequest>
+            </ns5:TenderingTerms>
+            <ns5:TenderingProcess>
+               <ns4:ProcedureCode listName="procurement-procedure-type">open</ns4:ProcedureCode>
+               <ns5:ProcessJustification>
+                  <ns4:ProcessReasonCode listName="accelerated-procedure">false</ns4:ProcessReasonCode>
+               </ns5:ProcessJustification>
+            </ns5:TenderingProcess>
+            <ns5:ProcurementProject>
+               <ns4:ID>CV/LM - 26-423</ns4:ID>
+               <ns4:Name languageID="FRA">Service de navettes de liaison entre la station de métro des 4 cantons et le parc scientifique de la Haute Borne</ns4:Name>
+               <ns4:Description languageID="FRA">La consultation porte sur la mise en place d'un service de liaison entre la station cantons de la ligne 1 du métro et le Parc scientifique de la Haute Borne, pour desservir les entreprises situées dans un périmètre élargi d'expérimentation, à destination des collaborateurs des entreprises de ce secteur géographique, y compris une évaluation quantitative et qualitative du service.</ns4:Description>
+               <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+               <ns5:RequestedTenderTotal>
+                  <ns4:EstimatedOverallContractAmount currencyID="EUR">0.00</ns4:EstimatedOverallContractAmount>
+               </ns5:RequestedTenderTotal>
+               <ns5:MainCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">60170000</ns4:ItemClassificationCode>
+               </ns5:MainCommodityClassification>
+               <ns5:RealizedLocation>
+                  <ns4:Description languageID="FRA">Le service de navettes se limite à un périmètre défini sur Villeneuve d'Ascq et Sainghin en Mélantois.</ns4:Description>
+                  <ns5:Address>
+                     <ns4:CityName>Villeneuve d'ascq</ns4:CityName>
+                     <ns4:PostalZone>59650</ns4:PostalZone>
+                     <ns4:CountrySubentityCode listName="nuts">FRE11</ns4:CountrySubentityCode>
+                     <ns5:Country>
+                        <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                     </ns5:Country>
+                  </ns5:Address>
+               </ns5:RealizedLocation>
+            </ns5:ProcurementProject>
+            <ns5:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0001</ns4:ID>
+               <ns5:TenderingTerms>
+                  <ns4:VariantConstraintCode listName="permission">not-allowed</ns4:VariantConstraintCode>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns5:CallForTendersDocumentReference>
+                     <ns4:ID>DCE</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns5:Attachment>
+                        <ns5:ExternalReference>
+                           <ns4:URI>https://www.achatpublic.com/sdm/ent/gen/ent_detail.do?PCSLID=CSL_2026_lafv6MzQA8</ns4:URI>
+                        </ns5:ExternalReference>
+                     </ns5:Attachment>
+                  </ns5:CallForTendersDocumentReference>
+                  <ns5:TendererQualificationRequest>
+                     <ns5:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns5:SpecificTendererRequirement>
+                  </ns5:TendererQualificationRequest>
+                  <ns5:TendererQualificationRequest>
+                     <ns5:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns5:SpecificTendererRequirement>
+                  </ns5:TendererQualificationRequest>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="conditions">performance</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">not-known</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">allowed</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns5:ContractExecutionRequirement>
+                  <ns5:AwardingTerms>
+                     <ns5:AwardingCriterion>
+                        <ns5:SubordinateAwardingCriterion>
+                           <ns1:UBLExtensions>
+                              <ns1:UBLExtension>
+                                 <ns1:ExtensionContent>
+                                    <ns2:EformsExtension>
+                                       <ns3:AwardCriterionParameter>
+                                          <ns6:ParameterCode listName="number-weight">poi-exa</ns6:ParameterCode>
+                                          <ns6:ParameterNumeric>60</ns6:ParameterNumeric>
+                                       </ns3:AwardCriterionParameter>
+                                    </ns2:EformsExtension>
+                                 </ns1:ExtensionContent>
+                              </ns1:UBLExtension>
+                           </ns1:UBLExtensions>
+                           <ns4:AwardingCriterionTypeCode listName="award-criterion-type">price</ns4:AwardingCriterionTypeCode>
+                           <ns4:Description languageID="FRA">Le prix des prestations sera apprécié au regard du montant indiqué dans l’acte d’engagement. La note maximale sera attribuée au mieux disant. Les autres notes seront attribuées au prorata selon la règle suivante :  N = (P1/P)*60  où N : Note attribuée au candidat pour la mission notée ; P1 : Prix du mieux-disant ; P : Prix de l’offre</ns4:Description>
+                        </ns5:SubordinateAwardingCriterion>
+                        <ns5:SubordinateAwardingCriterion>
+                           <ns1:UBLExtensions>
+                              <ns1:UBLExtension>
+                                 <ns1:ExtensionContent>
+                                    <ns2:EformsExtension>
+                                       <ns3:AwardCriterionParameter>
+                                          <ns6:ParameterCode listName="number-weight">poi-exa</ns6:ParameterCode>
+                                          <ns6:ParameterNumeric>40</ns6:ParameterNumeric>
+                                       </ns3:AwardCriterionParameter>
+                                    </ns2:EformsExtension>
+                                 </ns1:ExtensionContent>
+                              </ns1:UBLExtension>
+                           </ns1:UBLExtensions>
+                           <ns4:AwardingCriterionTypeCode listName="award-criterion-type">quality</ns4:AwardingCriterionTypeCode>
+                           <ns4:Description languageID="FRA">-	Compréhension du contexte : 5 points
+-	Qualité de service aux usagers : 10 points
+-	Organisation, performance et adéquation horaire : 10 points
+-	Évaluation et pérennisation du service : 5 points
+-	Développement durable : 10 points</ns4:Description>
+                        </ns5:SubordinateAwardingCriterion>
+                     </ns5:AwardingCriterion>
+                  </ns5:AwardingTerms>
+                  <ns5:TenderRecipientParty>
+                     <ns4:EndpointID>https://www.achatpublic.com/sdm/ent2/gen/ficheCsl.action?PCSLID=CSL_2026_lafv6MzQA8</ns4:EndpointID>
+                  </ns5:TenderRecipientParty>
+                  <ns5:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns5:TenderValidityPeriod>
+                  <ns5:AppealTerms>
+                     <ns5:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Tribunal judiciaire de Lille</ns4:Description>
+                     </ns5:PresentationPeriod>
+                     <ns5:AppealReceiverParty>
+                        <ns5:PartyIdentification>
+                           <ns4:ID>ORG-0002</ns4:ID>
+                        </ns5:PartyIdentification>
+                     </ns5:AppealReceiverParty>
+                  </ns5:AppealTerms>
+                  <ns5:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns5:Language>
+                  <ns5:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns5:PostAwardProcess>
+               </ns5:TenderingTerms>
+               <ns5:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns5:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-18+02:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+02:00</ns4:EndTime>
+                  </ns5:TenderSubmissionDeadlinePeriod>
+                  <ns5:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns5:AuctionTerms>
+                  <ns5:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">none</ns4:ContractingSystemTypeCode>
+                  </ns5:ContractingSystem>
+                  <ns5:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns5:ContractingSystem>
+               </ns5:TenderingProcess>
+               <ns5:ProcurementProject>
+                  <ns4:ID>1</ns4:ID>
+                  <ns4:Name languageID="FRA">Service de navettes de liaison entre la station de métro des 4 cantons et le parc scientifique de la Haute Borne</ns4:Name>
+                  <ns4:Description languageID="FRA">La consultation porte sur la mise en place d'un service de liaison entre la station cantons de la ligne 1 du métro et le Parc scientifique de la Haute Borne, pour desservir les entreprises situées dans un périmètre élargi d'expérimentation, à destination des collaborateurs des entreprises de ce secteur géographique, y compris une évaluation quantitative et qualitative du service.</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  <ns5:RequestedTenderTotal>
+                     <ns4:EstimatedOverallContractAmount currencyID="EUR">0.00</ns4:EstimatedOverallContractAmount>
+                  </ns5:RequestedTenderTotal>
+                  <ns5:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">60170000</ns4:ItemClassificationCode>
+                  </ns5:MainCommodityClassification>
+                  <ns5:RealizedLocation>
+                     <ns4:Description languageID="FRA">Le service de navettes se limite à un périmètre défini sur Villeneuve d'Ascq et Sainghin en Mélantois.</ns4:Description>
+                     <ns5:Address>
+                        <ns4:CityName>Villeneuve d'Ascq</ns4:CityName>
+                        <ns4:CountrySubentityCode listName="nuts">FRE11</ns4:CountrySubentityCode>
+                        <ns5:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns5:Country>
+                     </ns5:Address>
+                  </ns5:RealizedLocation>
+                  <ns5:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">22</ns4:DurationMeasure>
+                  </ns5:PlannedPeriod>
+               </ns5:ProcurementProject>
+            </ns5:ProcurementProjectLot>
+         </ContractNotice>
+      </EFORMS>
+   </DONNEES>
+   <GESTION>
+      <REFERENCE>
+         <IDWEB>26-98588</IDWEB>
+         <TYPE_AVIS>
+            <FAMILLE>
+               <JOUE />
+            </FAMILLE>
+            <PERIMETRE>
+               <DIRECTIVE-24 />
+            </PERIMETRE>
+            <NATURE>
+               <APPEL_OFFRE>
+                  <STANDARD />
+               </APPEL_OFFRE>
+            </NATURE>
+            <STATUT>
+               <INITIAL />
+            </STATUT>
+         </TYPE_AVIS>
+      </REFERENCE>
+      <INDEXATION>
+         <SCHEMA>3.2.5</SCHEMA>
+         <NOMORGANISME>Spl euralille</NOMORGANISME>
+         <TYPE_PROCEDURE>
+            <OUVERT />
+         </TYPE_PROCEDURE>
+         <DATE_PUBLICATION>2026-10-14</DATE_PUBLICATION>
+         <DATE_LIMITE_REPONSE>2026-11-18T12:00:00+02:00</DATE_LIMITE_REPONSE>
+         <DATE_FIN_DIFFUSION>2026-12-17</DATE_FIN_DIFFUSION>
+         <DESCRIPTEURS>
+            <DESCRIPTEUR>
+               <CODE>474</CODE>
+               <LIBELLE>Véhicules (location)</LIBELLE>
+            </DESCRIPTEUR>
+         </DESCRIPTEURS>
+         <NATURE_MARCHE>
+            <SERVICES />
+         </NATURE_MARCHE>
+         <DEP_PUBLICATION>59</DEP_PUBLICATION>
+         <DEP_PUBLICATION>62</DEP_PUBLICATION>
+         <DEP_PUBLICATION>02</DEP_PUBLICATION>
+         <DEP_PUBLICATION>80</DEP_PUBLICATION>
+         <RESUME_OBJET>Service de navettes de liaison entre la station de métro des 4 cantons et le parc scientifique de la Haute Borne</RESUME_OBJET>
+      </INDEXATION>
+   </GESTION>
+   </ns0:ann>

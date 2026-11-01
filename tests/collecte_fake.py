@@ -42,7 +42,6 @@ class Fake(http.server.ThreadingHTTPServer):
     def __init__(self) -> None:
         super().__init__(("127.0.0.1", 0), Handler)
         self.asked: list[str] = []
-        self.rows = json.loads((FIX / "dgcl" / "lignes-2025.json").read_text("utf-8"))
 
     @property
     def base(self) -> str:
@@ -74,7 +73,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = (FIX / "dgcl" / "dataset.json").read_bytes()
         elif path.startswith("/tabular/"):
             year_2025 = "e621419d" in path
-            rows = [r for r in srv.rows if q["intitule__contains"].lower() in r["intitule"].lower()]
+            lines = json.loads((FIX / "dgcl" / "lignes-2025.json").read_text("utf-8"))
+            rows = [r for r in lines if q["intitule__contains"].lower() in r["intitule"].lower()]
             rows = rows if year_2025 else []
             body = json.dumps({"data": rows, "meta": {"page": 1, "page_size": 200,
                                                       "total": len(rows)}}).encode()  # fmt: skip

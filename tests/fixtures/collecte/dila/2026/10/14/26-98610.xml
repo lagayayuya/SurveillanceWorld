@@ -1,0 +1,1000 @@
+<?xml version='1.0' encoding='utf-8'?>
+<ns0:ann xmlns:ns0="http://boamp.journal-officiel.gouv.fr/XML/3.2.5" xmlns:ns1="urn:boamp:names:specification:ubl:schema:xsd:CommonExtensionComponents-2" xmlns:ns2="http://data.europa.eu/p27/eforms-ubl-extensions/1" xmlns:ns3="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1" xmlns:ns4="urn:boamp:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:ns5="http://data.europa.eu/p27/eforms-ubl-extension-basic-components/1" xmlns:ns6="urn:boamp:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+    
+   <DONNEES>
+      <EFORMS>
+         <ContractNotice>
+            <ns1:UBLExtensions>
+               <ns1:UBLExtension>
+                  <ns1:ExtensionContent>
+                     <ns2:EformsExtension>
+                        <ns3:NoticeSubType>
+                           <ns4:SubTypeCode listName="notice-subtype">16</ns4:SubTypeCode>
+                        </ns3:NoticeSubType>
+                        <ns3:Organizations>
+                           <ns3:Organization>
+                              <ns5:AcquiringCPBIndicator>false</ns5:AcquiringCPBIndicator>
+                              <ns3:Company>
+                                 <ns4:WebsiteURI>https://www.marches-securises.fr</ns4:WebsiteURI>
+                                 <ns4:EndpointID>https://marches-securises.fr</ns4:EndpointID>
+                                 <ns6:PartyIdentification>
+                                    <ns4:ID>ORG-0001</ns4:ID>
+                                 </ns6:PartyIdentification>
+                                 <ns6:PartyName>
+                                    <ns4:Name languageID="FRA">Ville de Vanves (92)</ns4:Name>
+                                 </ns6:PartyName>
+                                 <ns6:PostalAddress>
+                                    <ns4:StreetName>23 rue Mary Besseyre
+CS 40001</ns4:StreetName>
+                                    <ns4:CityName>VANVES CEDEX</ns4:CityName>
+                                    <ns4:PostalZone>92172</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                                    <ns6:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns6:Country>
+                                 </ns6:PostalAddress>
+                                 <ns6:PartyLegalEntity>
+                                    <ns4:CompanyID>21920075500011</ns4:CompanyID>
+                                 </ns6:PartyLegalEntity>
+                                 <ns6:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns6:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns6:PartyIdentification>
+                                    <ns4:ID>ORG-0003</ns4:ID>
+                                 </ns6:PartyIdentification>
+                                 <ns6:PartyName>
+                                    <ns4:Name languageID="FRA">Tribunal Administratif de cergy-pontoise</ns4:Name>
+                                 </ns6:PartyName>
+                                 <ns6:PostalAddress>
+                                    <ns4:CityName>CERGY PONTOISE</ns4:CityName>
+                                    <ns4:PostalZone>95027</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FR108</ns4:CountrySubentityCode>
+                                    <ns6:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns6:Country>
+                                 </ns6:PostalAddress>
+                                 <ns6:PartyLegalEntity>
+                                    <ns4:CompanyID>179 507 025 00015</ns4:CompanyID>
+                                 </ns6:PartyLegalEntity>
+                                 <ns6:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns6:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                           <ns3:Organization>
+                              <ns3:Company>
+                                 <ns6:PartyIdentification>
+                                    <ns4:ID>ORG-0004</ns4:ID>
+                                 </ns6:PartyIdentification>
+                                 <ns6:PartyName>
+                                    <ns4:Name languageID="FRA">CCIRA PARIS</ns4:Name>
+                                 </ns6:PartyName>
+                                 <ns6:PostalAddress>
+                                    <ns4:CityName>PARIS cedex 15</ns4:CityName>
+                                    <ns4:PostalZone>75911</ns4:PostalZone>
+                                    <ns4:CountrySubentityCode listName="nuts">FR101</ns4:CountrySubentityCode>
+                                    <ns6:Country>
+                                       <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                                    </ns6:Country>
+                                 </ns6:PostalAddress>
+                                 <ns6:PartyLegalEntity>
+                                    <ns4:CompanyID>177 500 006 00024</ns4:CompanyID>
+                                 </ns6:PartyLegalEntity>
+                                 <ns6:Contact>
+                                    <ns4:Telephone>[téléphone retiré]</ns4:Telephone>
+                                    <ns4:ElectronicMail>[courriel retiré]</ns4:ElectronicMail>
+                                 </ns6:Contact>
+                              </ns3:Company>
+                           </ns3:Organization>
+                        </ns3:Organizations>
+                     </ns2:EformsExtension>
+                  </ns1:ExtensionContent>
+               </ns1:UBLExtension>
+            </ns1:UBLExtensions>
+            <ns4:UBLVersionID>2.3</ns4:UBLVersionID>
+            <ns4:CustomizationID>eforms-sdk-1.12</ns4:CustomizationID>
+            <ns4:ID schemeName="notice-id">d626b090-e784-491f-9fa0-ecbbe876a788</ns4:ID>
+            <ns4:ContractFolderID>138b946c-e9ee-4cad-9a0f-50cbab9fd4e4</ns4:ContractFolderID>
+            <ns4:IssueDate>2026-10-12Z</ns4:IssueDate>
+            <ns4:IssueTime>15:10:25Z</ns4:IssueTime>
+            <ns4:VersionID>01</ns4:VersionID>
+            <ns4:RegulatoryDomain>32014L0024</ns4:RegulatoryDomain>
+            <ns4:NoticeTypeCode listName="competition">cn-standard</ns4:NoticeTypeCode>
+            <ns4:NoticeLanguageCode listName="language">FRA</ns4:NoticeLanguageCode>
+            <ns6:ContractingParty>
+               <ns4:BuyerProfileURI>https://www.marches-securises.fr</ns4:BuyerProfileURI>
+               <ns6:ContractingPartyType>
+                  <ns4:PartyTypeCode listName="buyer-legal-type">body-pl</ns4:PartyTypeCode>
+               </ns6:ContractingPartyType>
+               <ns6:ContractingActivity>
+                  <ns4:ActivityTypeCode listName="authority-activity">gen-pub</ns4:ActivityTypeCode>
+               </ns6:ContractingActivity>
+               <ns6:Party>
+                  <ns6:PartyIdentification>
+                     <ns4:ID>ORG-0001</ns4:ID>
+                  </ns6:PartyIdentification>
+               </ns6:Party>
+            </ns6:ContractingParty>
+            <ns6:TenderingTerms>
+               <ns6:TendererQualificationRequest>
+                  <ns6:SpecificTendererRequirement>
+                     <ns4:TendererRequirementTypeCode listName="exclusion-grounds-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                  </ns6:SpecificTendererRequirement>
+               </ns6:TendererQualificationRequest>
+               <ns6:LotDistribution>
+                  <ns4:MaximumLotsAwardedNumeric>5</ns4:MaximumLotsAwardedNumeric>
+                  <ns4:MaximumLotsSubmittedNumeric>5</ns4:MaximumLotsSubmittedNumeric>
+               </ns6:LotDistribution>
+            </ns6:TenderingTerms>
+            <ns6:TenderingProcess>
+               <ns4:ProcedureCode listName="procurement-procedure-type">open</ns4:ProcedureCode>
+               <ns6:ProcessJustification>
+                  <ns4:ProcessReasonCode listName="accelerated-procedure">false</ns4:ProcessReasonCode>
+               </ns6:ProcessJustification>
+            </ns6:TenderingProcess>
+            <ns6:ProcurementProject>
+               <ns4:ID>AOO/2026-03</ns4:ID>
+               <ns4:Name languageID="FRA">ENTRETIEN, DEPANNAGE, FOURNITURE  ET TRAVAUX D'INSTALLATION ET D'EXTENSION DES EQUIPEMENTS DE SURETE ET SECURITE DES BATIMENTS COMMUNAUX DE LA VILLE DE VANVES.</ns4:Name>
+               <ns4:Description languageID="FRA">ENTRETIEN, DEPANNAGE, FOURNITURE ET TRAVAUX D'INSTALLATION ET D'EXTENSION DES EQUIPEMENTS DE SURETE ET SECURITE DES BATIMENTS COMMUNAUX DE LA VILLE DE VANVES.</ns4:Description>
+               <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+               <ns6:ProcurementAdditionalType>
+                  <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+               </ns6:ProcurementAdditionalType>
+               <ns6:RequestedTenderTotal>
+                  <ns1:UBLExtensions>
+                     <ns1:UBLExtension>
+                        <ns1:ExtensionContent>
+                           <ns2:EformsExtension>
+                              <ns5:FrameworkMaximumAmount currencyID="EUR">2400000</ns5:FrameworkMaximumAmount>
+                           </ns2:EformsExtension>
+                        </ns1:ExtensionContent>
+                     </ns1:UBLExtension>
+                  </ns1:UBLExtensions>
+               </ns6:RequestedTenderTotal>
+               <ns6:MainCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">35121000</ns4:ItemClassificationCode>
+               </ns6:MainCommodityClassification>
+               <ns6:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">35111200</ns4:ItemClassificationCode>
+               </ns6:AdditionalCommodityClassification>
+               <ns6:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">31216100</ns4:ItemClassificationCode>
+               </ns6:AdditionalCommodityClassification>
+               <ns6:AdditionalCommodityClassification>
+                  <ns4:ItemClassificationCode listName="cpv">42521000</ns4:ItemClassificationCode>
+               </ns6:AdditionalCommodityClassification>
+               <ns6:RealizedLocation>
+                  <ns6:Address>
+                     <ns4:CityName>VANVES</ns4:CityName>
+                     <ns4:PostalZone>92170</ns4:PostalZone>
+                     <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                     <ns6:Country>
+                        <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                     </ns6:Country>
+                  </ns6:Address>
+               </ns6:RealizedLocation>
+            </ns6:ProcurementProject>
+            <ns6:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0002</ns4:ID>
+               <ns6:TenderingTerms>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns6:CallForTendersDocumentReference>
+                     <ns4:ID>_DEFAULT_VALUE_CHANGE_ME_</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns6:Attachment>
+                        <ns6:ExternalReference>
+                           <ns4:URI>www.marches-securises.fr</ns4:URI>
+                        </ns6:ExternalReference>
+                     </ns6:Attachment>
+                  </ns6:CallForTendersDocumentReference>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns4:CompanyLegalFormCode listName="required">false</ns4:CompanyLegalFormCode>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:AwardingTerms>
+                     <ns6:AwardingCriterion>
+                        <ns4:CalculationExpression languageID="FRA">Cf. Réglement de la consultation</ns4:CalculationExpression>
+                     </ns6:AwardingCriterion>
+                  </ns6:AwardingTerms>
+                  <ns6:AdditionalInformationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:AdditionalInformationParty>
+                  <ns6:DocumentProviderParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:DocumentProviderParty>
+                  <ns6:TenderRecipientParty>
+                     <ns4:EndpointID>www.marches-securises.fr</ns4:EndpointID>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderRecipientParty>
+                  <ns6:TenderEvaluationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderEvaluationParty>
+                  <ns6:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns6:TenderValidityPeriod>
+                  <ns6:AppealTerms>
+                     <ns6:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Délais de recours</ns4:Description>
+                     </ns6:PresentationPeriod>
+                     <ns6:AppealInformationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealInformationParty>
+                     <ns6:AppealReceiverParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealReceiverParty>
+                     <ns6:MediationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0004</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:MediationParty>
+                  </ns6:AppealTerms>
+                  <ns6:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns6:Language>
+                  <ns6:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns6:PostAwardProcess>
+               </ns6:TenderingTerms>
+               <ns6:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns6:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-16+01:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+01:00</ns4:EndTime>
+                  </ns6:TenderSubmissionDeadlinePeriod>
+                  <ns6:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns6:AuctionTerms>
+                  <ns6:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>100</ns4:MaximumOperatorQuantity>
+                  </ns6:FrameworkAgreement>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+               </ns6:TenderingProcess>
+               <ns6:ProcurementProject>
+                  <ns4:ID>AOO/2026-03-2</ns4:ID>
+                  <ns4:Name languageID="FRA">EQUIPEMENTS DE DESEMFUMAGE NATUREL</ns4:Name>
+                  <ns4:Description languageID="FRA">EQUIPEMENTS DE DESEMFUMAGE NATUREL</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns6:ProcurementAdditionalType>
+                     <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  </ns6:ProcurementAdditionalType>
+                  <ns6:RequestedTenderTotal>
+                     <ns1:UBLExtensions>
+                        <ns1:UBLExtension>
+                           <ns1:ExtensionContent>
+                              <ns2:EformsExtension>
+                                 <ns5:FrameworkMaximumAmount currencyID="EUR">200000</ns5:FrameworkMaximumAmount>
+                              </ns2:EformsExtension>
+                           </ns1:ExtensionContent>
+                        </ns1:UBLExtension>
+                     </ns1:UBLExtensions>
+                  </ns6:RequestedTenderTotal>
+                  <ns6:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">42521000</ns4:ItemClassificationCode>
+                  </ns6:MainCommodityClassification>
+                  <ns6:RealizedLocation>
+                     <ns6:Address>
+                        <ns4:CityName>VANVES</ns4:CityName>
+                        <ns4:PostalZone>92170</ns4:PostalZone>
+                        <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                        <ns6:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns6:Country>
+                     </ns6:Address>
+                  </ns6:RealizedLocation>
+                  <ns6:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">12</ns4:DurationMeasure>
+                  </ns6:PlannedPeriod>
+                  <ns6:ContractExtension>
+                     <ns4:MaximumNumberNumeric>3</ns4:MaximumNumberNumeric>
+                  </ns6:ContractExtension>
+               </ns6:ProcurementProject>
+            </ns6:ProcurementProjectLot>
+            <ns6:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0001</ns4:ID>
+               <ns6:TenderingTerms>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns6:CallForTendersDocumentReference>
+                     <ns4:ID>_DEFAULT_VALUE_CHANGE_ME_</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns6:Attachment>
+                        <ns6:ExternalReference>
+                           <ns4:URI>www.marches-securises.fr</ns4:URI>
+                        </ns6:ExternalReference>
+                     </ns6:Attachment>
+                  </ns6:CallForTendersDocumentReference>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns4:CompanyLegalFormCode listName="required">false</ns4:CompanyLegalFormCode>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:AwardingTerms>
+                     <ns6:AwardingCriterion>
+                        <ns4:CalculationExpression languageID="FRA">Cf. Règlement de la Consultation</ns4:CalculationExpression>
+                     </ns6:AwardingCriterion>
+                  </ns6:AwardingTerms>
+                  <ns6:AdditionalInformationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:AdditionalInformationParty>
+                  <ns6:DocumentProviderParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:DocumentProviderParty>
+                  <ns6:TenderRecipientParty>
+                     <ns4:EndpointID>www.marches-securises.fr</ns4:EndpointID>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderRecipientParty>
+                  <ns6:TenderEvaluationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderEvaluationParty>
+                  <ns6:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns6:TenderValidityPeriod>
+                  <ns6:AppealTerms>
+                     <ns6:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Délais de recours</ns4:Description>
+                     </ns6:PresentationPeriod>
+                     <ns6:AppealInformationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealInformationParty>
+                     <ns6:AppealReceiverParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealReceiverParty>
+                     <ns6:MediationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0004</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:MediationParty>
+                  </ns6:AppealTerms>
+                  <ns6:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns6:Language>
+                  <ns6:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns6:PostAwardProcess>
+               </ns6:TenderingTerms>
+               <ns6:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns6:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-16+01:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+01:00</ns4:EndTime>
+                  </ns6:TenderSubmissionDeadlinePeriod>
+                  <ns6:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns6:AuctionTerms>
+                  <ns6:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>100</ns4:MaximumOperatorQuantity>
+                  </ns6:FrameworkAgreement>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+               </ns6:TenderingProcess>
+               <ns6:ProcurementProject>
+                  <ns4:ID>AOO/2026-03-1</ns4:ID>
+                  <ns4:Name languageID="FRA">EQUIPEMENTS DETECTION INTRUSION, CONTROLE ACCES ,VIDEOSURVEILLANCE, VIDEOPHONIE, INTERPHONIE, ALARMES TECHNIQUES ET PPMS</ns4:Name>
+                  <ns4:Description languageID="FRA">EQUIPEMENTS DETECTION INTRUSION, CONTROLE ACCES ,VIDEOSURVEILLANCE, VIDEOPHONIE, INTERPHONIE, ALARMES TECHNIQUES ET PPMS</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns6:ProcurementAdditionalType>
+                     <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  </ns6:ProcurementAdditionalType>
+                  <ns6:RequestedTenderTotal>
+                     <ns1:UBLExtensions>
+                        <ns1:UBLExtension>
+                           <ns1:ExtensionContent>
+                              <ns2:EformsExtension>
+                                 <ns5:FrameworkMaximumAmount currencyID="EUR">800000</ns5:FrameworkMaximumAmount>
+                              </ns2:EformsExtension>
+                           </ns1:ExtensionContent>
+                        </ns1:UBLExtension>
+                     </ns1:UBLExtensions>
+                  </ns6:RequestedTenderTotal>
+                  <ns6:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">35113100</ns4:ItemClassificationCode>
+                  </ns6:MainCommodityClassification>
+                  <ns6:RealizedLocation>
+                     <ns6:Address>
+                        <ns4:CityName>VANVES</ns4:CityName>
+                        <ns4:PostalZone>92170</ns4:PostalZone>
+                        <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                        <ns6:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns6:Country>
+                     </ns6:Address>
+                  </ns6:RealizedLocation>
+                  <ns6:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">12</ns4:DurationMeasure>
+                  </ns6:PlannedPeriod>
+                  <ns6:ContractExtension>
+                     <ns4:MaximumNumberNumeric>3</ns4:MaximumNumberNumeric>
+                  </ns6:ContractExtension>
+               </ns6:ProcurementProject>
+            </ns6:ProcurementProjectLot>
+            <ns6:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0003</ns4:ID>
+               <ns6:TenderingTerms>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns6:CallForTendersDocumentReference>
+                     <ns4:ID>_DEFAULT_VALUE_CHANGE_ME_</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns6:Attachment>
+                        <ns6:ExternalReference>
+                           <ns4:URI>www.marches-securises.fr</ns4:URI>
+                        </ns6:ExternalReference>
+                     </ns6:Attachment>
+                  </ns6:CallForTendersDocumentReference>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns4:CompanyLegalFormCode listName="required">false</ns4:CompanyLegalFormCode>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:AwardingTerms>
+                     <ns6:AwardingCriterion>
+                        <ns4:CalculationExpression languageID="FRA">Cf. Règlement de la Consultation</ns4:CalculationExpression>
+                     </ns6:AwardingCriterion>
+                  </ns6:AwardingTerms>
+                  <ns6:AdditionalInformationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:AdditionalInformationParty>
+                  <ns6:DocumentProviderParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:DocumentProviderParty>
+                  <ns6:TenderRecipientParty>
+                     <ns4:EndpointID>www.marches-securises.fr</ns4:EndpointID>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderRecipientParty>
+                  <ns6:TenderEvaluationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderEvaluationParty>
+                  <ns6:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns6:TenderValidityPeriod>
+                  <ns6:AppealTerms>
+                     <ns6:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Délais de recours</ns4:Description>
+                     </ns6:PresentationPeriod>
+                     <ns6:AppealInformationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealInformationParty>
+                     <ns6:AppealReceiverParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealReceiverParty>
+                     <ns6:MediationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0004</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:MediationParty>
+                  </ns6:AppealTerms>
+                  <ns6:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns6:Language>
+                  <ns6:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns6:PostAwardProcess>
+               </ns6:TenderingTerms>
+               <ns6:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns6:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-16+01:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+01:00</ns4:EndTime>
+                  </ns6:TenderSubmissionDeadlinePeriod>
+                  <ns6:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns6:AuctionTerms>
+                  <ns6:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>100</ns4:MaximumOperatorQuantity>
+                  </ns6:FrameworkAgreement>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+               </ns6:TenderingProcess>
+               <ns6:ProcurementProject>
+                  <ns4:ID>AOO/2026-03-3</ns4:ID>
+                  <ns4:Name languageID="FRA">EQUIPEMENTS RIA, COLONNES SECHES ET HUMIDES, EXTINCTEURS ET SIGNALETIQUE SPECIFIQUE INCENDIE</ns4:Name>
+                  <ns4:Description languageID="FRA">EQUIPEMENTS RIA, COLONNES SECHES ET HUMIDES, EXTINCTEURS ET SIGNALETIQUE SPECIFIQUE INCENDIE</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns6:ProcurementAdditionalType>
+                     <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  </ns6:ProcurementAdditionalType>
+                  <ns6:RequestedTenderTotal>
+                     <ns1:UBLExtensions>
+                        <ns1:UBLExtension>
+                           <ns1:ExtensionContent>
+                              <ns2:EformsExtension>
+                                 <ns5:FrameworkMaximumAmount currencyID="EUR">400000</ns5:FrameworkMaximumAmount>
+                              </ns2:EformsExtension>
+                           </ns1:ExtensionContent>
+                        </ns1:UBLExtension>
+                     </ns1:UBLExtensions>
+                  </ns6:RequestedTenderTotal>
+                  <ns6:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">35111200</ns4:ItemClassificationCode>
+                  </ns6:MainCommodityClassification>
+                  <ns6:RealizedLocation>
+                     <ns6:Address>
+                        <ns4:CityName>VANVES</ns4:CityName>
+                        <ns4:PostalZone>92170</ns4:PostalZone>
+                        <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                        <ns6:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns6:Country>
+                     </ns6:Address>
+                  </ns6:RealizedLocation>
+                  <ns6:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">12</ns4:DurationMeasure>
+                  </ns6:PlannedPeriod>
+                  <ns6:ContractExtension>
+                     <ns4:MaximumNumberNumeric>3</ns4:MaximumNumberNumeric>
+                  </ns6:ContractExtension>
+               </ns6:ProcurementProject>
+            </ns6:ProcurementProjectLot>
+            <ns6:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0004</ns4:ID>
+               <ns6:TenderingTerms>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns6:CallForTendersDocumentReference>
+                     <ns4:ID>_DEFAULT_VALUE_CHANGE_ME_</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns6:Attachment>
+                        <ns6:ExternalReference>
+                           <ns4:URI>www.marches-securises.fr</ns4:URI>
+                        </ns6:ExternalReference>
+                     </ns6:Attachment>
+                  </ns6:CallForTendersDocumentReference>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns4:CompanyLegalFormCode listName="required">false</ns4:CompanyLegalFormCode>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:AwardingTerms>
+                     <ns6:AwardingCriterion>
+                        <ns4:CalculationExpression languageID="FRA">Cf. Règlement de la Consultation</ns4:CalculationExpression>
+                     </ns6:AwardingCriterion>
+                  </ns6:AwardingTerms>
+                  <ns6:AdditionalInformationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:AdditionalInformationParty>
+                  <ns6:DocumentProviderParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:DocumentProviderParty>
+                  <ns6:TenderRecipientParty>
+                     <ns4:EndpointID>www.marches-securises.fr</ns4:EndpointID>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderRecipientParty>
+                  <ns6:TenderEvaluationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderEvaluationParty>
+                  <ns6:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns6:TenderValidityPeriod>
+                  <ns6:AppealTerms>
+                     <ns6:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Délais de recours</ns4:Description>
+                     </ns6:PresentationPeriod>
+                     <ns6:AppealInformationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealInformationParty>
+                     <ns6:AppealReceiverParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealReceiverParty>
+                     <ns6:MediationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0004</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:MediationParty>
+                  </ns6:AppealTerms>
+                  <ns6:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns6:Language>
+                  <ns6:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns6:PostAwardProcess>
+               </ns6:TenderingTerms>
+               <ns6:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns6:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-16+01:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+01:00</ns4:EndTime>
+                  </ns6:TenderSubmissionDeadlinePeriod>
+                  <ns6:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns6:AuctionTerms>
+                  <ns6:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>100</ns4:MaximumOperatorQuantity>
+                  </ns6:FrameworkAgreement>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+               </ns6:TenderingProcess>
+               <ns6:ProcurementProject>
+                  <ns4:ID>AOO/2026-03-4</ns4:ID>
+                  <ns4:Name languageID="FRA">SYSTEMES DE SECURITE INCENDIE ET EQUIPEMENTS DE DESENFUMAGE MECANIQUE</ns4:Name>
+                  <ns4:Description languageID="FRA">SYSTEMES DE SECURITE INCENDIE ET EQUIPEMENTS DE DESENFUMAGE MECANIQUE</ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns6:ProcurementAdditionalType>
+                     <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  </ns6:ProcurementAdditionalType>
+                  <ns6:RequestedTenderTotal>
+                     <ns1:UBLExtensions>
+                        <ns1:UBLExtension>
+                           <ns1:ExtensionContent>
+                              <ns2:EformsExtension>
+                                 <ns5:FrameworkMaximumAmount currencyID="EUR">800000</ns5:FrameworkMaximumAmount>
+                              </ns2:EformsExtension>
+                           </ns1:ExtensionContent>
+                        </ns1:UBLExtension>
+                     </ns1:UBLExtensions>
+                  </ns6:RequestedTenderTotal>
+                  <ns6:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">42521000</ns4:ItemClassificationCode>
+                  </ns6:MainCommodityClassification>
+                  <ns6:RealizedLocation>
+                     <ns6:Address>
+                        <ns4:CityName>VANVES</ns4:CityName>
+                        <ns4:PostalZone>92170</ns4:PostalZone>
+                        <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                        <ns6:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns6:Country>
+                     </ns6:Address>
+                  </ns6:RealizedLocation>
+                  <ns6:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">12</ns4:DurationMeasure>
+                  </ns6:PlannedPeriod>
+                  <ns6:ContractExtension>
+                     <ns4:MaximumNumberNumeric>3</ns4:MaximumNumberNumeric>
+                  </ns6:ContractExtension>
+               </ns6:ProcurementProject>
+            </ns6:ProcurementProjectLot>
+            <ns6:ProcurementProjectLot>
+               <ns4:ID schemeName="Lot">LOT-0005</ns4:ID>
+               <ns6:TenderingTerms>
+                  <ns4:FundingProgramCode listName="eu-funded">no-eu-funds</ns4:FundingProgramCode>
+                  <ns6:CallForTendersDocumentReference>
+                     <ns4:ID>_DEFAULT_VALUE_CHANGE_ME_</ns4:ID>
+                     <ns4:DocumentType>non-restricted-document</ns4:DocumentType>
+                     <ns6:Attachment>
+                        <ns6:ExternalReference>
+                           <ns4:URI>www.marches-securises.fr</ns4:URI>
+                        </ns6:ExternalReference>
+                     </ns6:Attachment>
+                  </ns6:CallForTendersDocumentReference>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="selection-criteria-source">epo-procurement-document</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns6:SpecificTendererRequirement>
+                        <ns4:TendererRequirementTypeCode listName="reserved-procurement">none</ns4:TendererRequirementTypeCode>
+                     </ns6:SpecificTendererRequirement>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:TendererQualificationRequest>
+                     <ns4:CompanyLegalFormCode listName="required">false</ns4:CompanyLegalFormCode>
+                  </ns6:TendererQualificationRequest>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="reserved-execution">no</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="einvoicing">required</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:ContractExecutionRequirement>
+                     <ns4:ExecutionRequirementCode listName="ecatalog-submission">not-allowed</ns4:ExecutionRequirementCode>
+                  </ns6:ContractExecutionRequirement>
+                  <ns6:AwardingTerms>
+                     <ns6:AwardingCriterion>
+                        <ns4:CalculationExpression languageID="FRA">Cf. Règlement de la Consultation</ns4:CalculationExpression>
+                     </ns6:AwardingCriterion>
+                  </ns6:AwardingTerms>
+                  <ns6:AdditionalInformationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:AdditionalInformationParty>
+                  <ns6:DocumentProviderParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:DocumentProviderParty>
+                  <ns6:TenderRecipientParty>
+                     <ns4:EndpointID>www.marches-securises.fr</ns4:EndpointID>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderRecipientParty>
+                  <ns6:TenderEvaluationParty>
+                     <ns6:PartyIdentification>
+                        <ns4:ID>ORG-0001</ns4:ID>
+                     </ns6:PartyIdentification>
+                  </ns6:TenderEvaluationParty>
+                  <ns6:TenderValidityPeriod>
+                     <ns4:DurationMeasure unitCode="DAY">120</ns4:DurationMeasure>
+                  </ns6:TenderValidityPeriod>
+                  <ns6:AppealTerms>
+                     <ns6:PresentationPeriod>
+                        <ns4:Description languageID="FRA">Délais de recours</ns4:Description>
+                     </ns6:PresentationPeriod>
+                     <ns6:AppealInformationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealInformationParty>
+                     <ns6:AppealReceiverParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0003</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:AppealReceiverParty>
+                     <ns6:MediationParty>
+                        <ns6:PartyIdentification>
+                           <ns4:ID>ORG-0004</ns4:ID>
+                        </ns6:PartyIdentification>
+                     </ns6:MediationParty>
+                  </ns6:AppealTerms>
+                  <ns6:Language>
+                     <ns4:ID>FRA</ns4:ID>
+                  </ns6:Language>
+                  <ns6:PostAwardProcess>
+                     <ns4:ElectronicOrderUsageIndicator>false</ns4:ElectronicOrderUsageIndicator>
+                     <ns4:ElectronicPaymentUsageIndicator>false</ns4:ElectronicPaymentUsageIndicator>
+                  </ns6:PostAwardProcess>
+               </ns6:TenderingTerms>
+               <ns6:TenderingProcess>
+                  <ns4:SubmissionMethodCode listName="esubmission">required</ns4:SubmissionMethodCode>
+                  <ns4:GovernmentAgreementConstraintIndicator>true</ns4:GovernmentAgreementConstraintIndicator>
+                  <ns6:TenderSubmissionDeadlinePeriod>
+                     <ns4:EndDate>2026-11-16+01:00</ns4:EndDate>
+                     <ns4:EndTime>12:00:00+01:00</ns4:EndTime>
+                  </ns6:TenderSubmissionDeadlinePeriod>
+                  <ns6:AuctionTerms>
+                     <ns4:AuctionConstraintIndicator>false</ns4:AuctionConstraintIndicator>
+                  </ns6:AuctionTerms>
+                  <ns6:FrameworkAgreement>
+                     <ns4:MaximumOperatorQuantity>100</ns4:MaximumOperatorQuantity>
+                  </ns6:FrameworkAgreement>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="framework-agreement">fa-wo-rc</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+                  <ns6:ContractingSystem>
+                     <ns4:ContractingSystemTypeCode listName="dps-usage">none</ns4:ContractingSystemTypeCode>
+                  </ns6:ContractingSystem>
+               </ns6:TenderingProcess>
+               <ns6:ProcurementProject>
+                  <ns4:ID>AOO/2026-03-5</ns4:ID>
+                  <ns4:Name languageID="FRA">EQUIPEMENTS DE PROTECTION CONTRE LA FOUDRE</ns4:Name>
+                  <ns4:Description languageID="FRA">EQUIPEMENTS DE PROTECTION CONTRE LA FOUDRE </ns4:Description>
+                  <ns4:ProcurementTypeCode listName="contract-nature">supplies</ns4:ProcurementTypeCode>
+                  <ns6:ProcurementAdditionalType>
+                     <ns4:ProcurementTypeCode listName="contract-nature">services</ns4:ProcurementTypeCode>
+                  </ns6:ProcurementAdditionalType>
+                  <ns6:RequestedTenderTotal>
+                     <ns1:UBLExtensions>
+                        <ns1:UBLExtension>
+                           <ns1:ExtensionContent>
+                              <ns2:EformsExtension>
+                                 <ns5:FrameworkMaximumAmount currencyID="EUR">200000</ns5:FrameworkMaximumAmount>
+                              </ns2:EformsExtension>
+                           </ns1:ExtensionContent>
+                        </ns1:UBLExtension>
+                     </ns1:UBLExtensions>
+                  </ns6:RequestedTenderTotal>
+                  <ns6:MainCommodityClassification>
+                     <ns4:ItemClassificationCode listName="cpv">31216100</ns4:ItemClassificationCode>
+                  </ns6:MainCommodityClassification>
+                  <ns6:RealizedLocation>
+                     <ns6:Address>
+                        <ns4:CityName>VANVES</ns4:CityName>
+                        <ns4:PostalZone>92170</ns4:PostalZone>
+                        <ns4:CountrySubentityCode listName="nuts">FR105</ns4:CountrySubentityCode>
+                        <ns6:Country>
+                           <ns4:IdentificationCode listName="country">FRA</ns4:IdentificationCode>
+                        </ns6:Country>
+                     </ns6:Address>
+                  </ns6:RealizedLocation>
+                  <ns6:PlannedPeriod>
+                     <ns4:DurationMeasure unitCode="MONTH">12</ns4:DurationMeasure>
+                  </ns6:PlannedPeriod>
+                  <ns6:ContractExtension>
+                     <ns4:MaximumNumberNumeric>3</ns4:MaximumNumberNumeric>
+                  </ns6:ContractExtension>
+               </ns6:ProcurementProject>
+            </ns6:ProcurementProjectLot>
+         </ContractNotice>
+      </EFORMS>
+   </DONNEES>
+   <GESTION>
+      <REFERENCE>
+         <IDWEB>26-98610</IDWEB>
+         <TYPE_AVIS>
+            <FAMILLE>
+               <JOUE />
+            </FAMILLE>
+            <PERIMETRE>
+               <DIRECTIVE-24 />
+            </PERIMETRE>
+            <NATURE>
+               <APPEL_OFFRE>
+                  <STANDARD />
+               </APPEL_OFFRE>
+            </NATURE>
+            <STATUT>
+               <INITIAL />
+            </STATUT>
+         </TYPE_AVIS>
+      </REFERENCE>
+      <INDEXATION>
+         <SCHEMA>3.2.5</SCHEMA>
+         <NOMORGANISME>Ville de Vanves (92)</NOMORGANISME>
+         <TYPE_PROCEDURE>
+            <OUVERT />
+         </TYPE_PROCEDURE>
+         <DATE_PUBLICATION>2026-10-14</DATE_PUBLICATION>
+         <DATE_LIMITE_REPONSE>2026-11-16T12:00:00+01:00</DATE_LIMITE_REPONSE>
+         <DATE_FIN_DIFFUSION>2026-12-16</DATE_FIN_DIFFUSION>
+         <DESCRIPTEURS>
+            <DESCRIPTEUR>
+               <CODE>115</CODE>
+               <LIBELLE>Equipements spécialisés</LIBELLE>
+            </DESCRIPTEUR>
+            <DESCRIPTEUR>
+               <CODE>81</CODE>
+               <LIBELLE>Contrôle d'accès</LIBELLE>
+            </DESCRIPTEUR>
+            <DESCRIPTEUR>
+               <CODE>90</CODE>
+               <LIBELLE>Détection incendie</LIBELLE>
+            </DESCRIPTEUR>
+         </DESCRIPTEURS>
+         <NATURE_MARCHE>
+            <FOURNITURES />
+         </NATURE_MARCHE>
+         <CRITERES_SOCIAUX_ENV>
+            <SOCIAUX />
+            <ENVIRONNEMENTAUX />
+         </CRITERES_SOCIAUX_ENV>
+         <DEP_PUBLICATION>92</DEP_PUBLICATION>
+         <RESUME_OBJET>ENTRETIEN, DEPANNAGE, FOURNITURE D'EQUIPEMENTS ET TRAVAUX D'INSTALLATION OU D'EXTENSION DES EQUIPEMENTS DE SURETE ET DE SECURITE DES BATIMENTS COMMUNAUX DE LA VILLE DE VANVES</RESUME_OBJET>
+      </INDEXATION>
+   </GESTION>
+   </ns0:ann>
