@@ -1,0 +1,240 @@
+"""The prefectoral acts of all of France: found and read through Attrap, with our own slow crawl
+where Attrap does not read (rules/collecte_administrations.yaml).
+
+Attrap (attrap.fr, La Quadrature du Net) indexes the recueils of 109 administrations and
+gives each one's full text (OCR included) and its official PDF's address. Its API, read on
+2026-10-31: `/api/v1/search` (full text, by administration and dates, 10 results a page,
+at most 10 000 results), `/api/v1/raa/<id>` (the text, the address, the dates),
+`/api/v1/administration/<id>` (the list, newest first). A recueil's id is the SHA-256 of
+its PDF's address, percent-decoded (`recueil_id`): what is already read is known without a
+request. Attrap is asked at collection time only, never by the site; its code (CeCILL) is
+not used, only these facts.
+
+For each administration, in the waves' order, since `depuis` (2024-01-01): every act kind
+of rules/collecte_actes.yaml is searched month by month (a month with too many results is
+cut in two), each recueil found is read once (`texte`: Attrap's text by default; `pdf`, or
+Attrap's text missing or unreadable: the official PDF, downloaded then deleted, never on a
+host behind an anti-robot check, `defi`), by parse_raa.lire. A recueil whose act is kept has
+its official link checked once (its first bytes), except on a `defi` host. The administration's
+newest recueil in Attrap, whatever its acts, is its freshness (`dernier_recueil`).
+
+Nothing of a text is kept: the acts' fields, their titles (civilities masked), the recueil's
+name, date and official address.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import hashlib
+import urllib.parse
+from typing import Any
+
+from lacarte_collecte import parcours, parse_raa, pdf
+from lacarte_collecte.contexte import Contexte, rules
+from lacarte_collecte.etat import Etat, Store
+from lacarte_registre import fetch
+
+SOURCE = "attrap"
+CAP = 10_000
+
+
+def recueil_id(url: str) -> str:
+    return hashlib.sha256(urllib.parse.unquote(url).encode()).hexdigest()
+
+
+def administrations(ctx: Contexte) -> dict[str, dict[str, Any]]:
+    conf = rules("collecte_administrations.yaml", ctx.rules_dir)["administrations"]
+    return dict(sorted(conf.items(), key=lambda kv: (kv[1]["vague"], -kv[1]["actes_12_mois"])))
+
+
+def months(start: dt.date, end: dt.date) -> list[tuple[dt.date, dt.date]]:
+    out, d = [], start.replace(day=1)
+    while d <= end:
+        nxt = (d.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+        out.append((max(d, start), min(nxt - dt.timedelta(days=1), end)))
+        d = nxt
+    return out
+
+
+def search(f: fetch.Fetcher, base: str, aid: str, words: str, a: dt.date, b: dt.date) -> list[dict]:
+    """Every hit of `words` in `aid`'s recueils between a and b (both included); a period with
+    more than Attrap's 10 000 results is cut in two."""
+    hits: list[dict] = []
+    page = 1
+    while True:
+        params = {
+            "s": words,
+            "administration": aid,
+            "start_date": a.isoformat(),
+            "end_date": b.isoformat(),
+            "sort": "desc",
+            "page": page,
+        }
+        d = f.get_json(base + "search", params, cache=False)
+        total = int(d.get("total") or 0)
+        if total >= CAP and b > a:
+            mid = a + (b - a) // 2
+            return search(f, base, aid, words, a, mid) + search(
+                f, base, aid, words, mid + dt.timedelta(days=1), b
+            )
+        hits += d.get("elements") or []
+        if not d.get("elements") or len(hits) >= total:
+            return hits
+        page += 1
+
+
+def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
+    return a.acte if a.gabarit == "identifiants" else f"{admin}:{rid[:12]}:{a.acte}"
+
+
+def read_recueil(
+    ctx: Contexte,
+    admin: str,
+    conf: dict[str, Any],
+    rec: dict[str, Any],
+    text: str | None,
+    kinds: list[parse_raa.Type],
+    communes: parse_raa.Communes,
+    mode: str,
+) -> dict[str, Any]:
+    """One recueil's text (Attrap's, else the official PDF's), read; its acts kept."""
+    origin = "attrap"
+    if mode == "pdf" or not text or not pdf.readable(text):
+        if conf.get("defi"):
+            return {**rec, "statut": "non_lu", "raison": "texte absent ou illisible (hôte à défi)"}
+        f = ctx.fetcher("pdf")
+        try:
+            text, info = pdf.read(f, rec["url"], ctx.root / "tmp")
+        except (fetch.Blocked, fetch.Forbidden, fetch.Failed) as e:
+            return {**rec, "statut": "non_lu", "raison": f"PDF : {e.raison}"}
+        origin = "pdf"
+        if not text or not pdf.readable(text):
+            return {**rec, "statut": "non_lu", "raison": "PDF illisible"}
+    acts = parse_raa.lire(text, communes, kinds, dt.date.fromisoformat(rec["date"]))
+    rid = rec["id"]
+    Store(ctx.root, "actes").add(
+        {
+            **a.as_dict(),
+            "id": _act_id(admin, rid, a),
+            "administration": admin,
+            "departement": conf["code"],
+            "recueil": rid,
+            "recueil_nom": rec["name"],
+            "recueil_date": rec["date"],
+            "url": rec["url"],
+            "texte": origin,
+        }
+        for a in acts
+    )
+    return {**rec, "statut": "lu", "texte": origin, "actes": len(acts)}
+
+
+def check_link(ctx: Contexte, conf: dict[str, Any], rec: dict[str, Any]) -> str | None:
+    """The official link, checked once: "ok", "absent" (an error status), "refus", or None
+    when it is not asked (a host behind an anti-robot check)."""
+    if conf.get("defi"):
+        return None
+    try:
+        r = ctx.fetcher("liens").first_bytes(rec["url"])
+    except (fetch.Blocked, fetch.Forbidden):
+        return "refus"
+    except fetch.Failed:
+        return "injoignable"
+    return "ok" if r.status in (200, 206) and r.body[:4] == b"%PDF" else f"HTTP {r.status}"
+
+
+def collect_admin(
+    ctx: Contexte,
+    admin: str,
+    conf: dict[str, Any],
+    kinds: list[parse_raa.Type],
+    communes: parse_raa.Communes,
+    mode: str,
+) -> dict[str, Any]:
+    f = ctx.fetcher(SOURCE)
+    base = f.conf["sources"]["attrap"]["api"]
+    since = dt.date.fromisoformat(str(f.conf["sources"]["attrap"]["depuis"]))
+    st = Etat(ctx.root, SOURCE)
+    state = st.get(admin)
+    aid = conf["attrap"]
+    # freshness: the newest recueil Attrap has, whatever it holds
+    latest = (
+        f.get_json(
+            f"{base}administration/{aid}", {"page": 1, "size": 1, "sort": "desc"}, cache=False
+        ).get("elements")
+        or []
+    )
+    state = st.save(admin, dernier_recueil=latest[0]["date"] if latest else None)
+    store = Store(ctx.root, "recueils")
+    known = {r["id"]: r for r in store.records() if r.get("administration") == admin}
+    raw = ctx.rules_dir / "collecte_actes.yaml"
+    words = {k: v["recherche"] for k, v in rules(raw.name, raw.parent)["types"].items()}
+    done = state.get("mois") or {}  # {kind: the last month fully searched}
+    for kind, q in words.items():
+        last = done.get(kind)
+        for a, b in months(since, ctx.today):
+            # the last month searched is asked again (a recueil indexed late)
+            if last and b.isoformat() < last:
+                continue
+            if ctx.out_of_time():
+                return st.save(admin, statut="en_cours", mois=done)
+            for h in search(f, base, aid, q, a, b):
+                rid = h["id"]
+                if rid in known and known[rid].get("statut") == "lu":
+                    continue
+                if ctx.out_of_time():
+                    return st.save(admin, statut="en_cours", mois=done)
+                d = f.get_json(f"{base}raa/{rid}", cache=False)
+                rec = {
+                    "id": rid,
+                    "administration": admin,
+                    "date": d.get("date") or h["date"],
+                    "name": parse_raa.mask(d.get("name") or h.get("name") or ""),
+                    "url": d.get("url") or h.get("url"),
+                    "familles": [kind],
+                }
+                rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
+                if rec.get("actes"):
+                    rec["lien"] = check_link(ctx, conf, rec)
+                store.add([rec])
+                known[rid] = rec
+            done[kind] = a.isoformat()
+            st.save(admin, mois=done)
+    found = [r["date"] for r in known.values()]
+    return st.save(
+        admin,
+        statut="termine",
+        mois=done,
+        dernier_document=max(found) if found else state.get("dernier_document"),
+    )
+
+
+def collect(ctx: Contexte, vagues: set[int] | None = None) -> dict[str, Any]:
+    kinds = parse_raa.types(ctx.rules_dir / "collecte_actes.yaml")
+    f = ctx.fetcher(SOURCE)
+    mode = str(f.conf["sources"]["attrap"].get("texte", "attrap"))
+    path = ctx.root / "communes.json"
+    summary: dict[str, Any] = {"source": SOURCE, "administrations": {}}
+    for admin, conf in administrations(ctx).items():
+        if vagues and conf["vague"] not in vagues:
+            continue
+        if ctx.out_of_time():
+            break
+        deps = {conf["code"]} if conf["genre"] != "region" else set()
+        communes = (
+            parse_raa.Communes.load(path, deps) if path.is_file() else parse_raa.Communes({}, set())
+        )
+        try:
+            if conf.get("attrap") and not conf.get("collecteur_arrete"):
+                s = collect_admin(ctx, admin, conf, kinds, communes, mode)
+            elif conf.get("parcours") and conf.get("index"):
+                s = parcours.collect_admin(ctx, admin, conf, kinds, communes)
+            else:
+                s = Etat(ctx.root, SOURCE).save(admin, statut="non_couvert")
+        except (fetch.Blocked, fetch.Forbidden) as e:
+            s = Etat(ctx.root, SOURCE).save(admin, statut="ferme_aux_robots", raison=e.raison)
+        except fetch.Failed as e:
+            s = Etat(ctx.root, SOURCE).save(admin, statut="echec", raison=e.raison)
+        summary["administrations"][admin] = s.get("statut")
+    summary["requetes"] = ctx.requetes()
+    return summary

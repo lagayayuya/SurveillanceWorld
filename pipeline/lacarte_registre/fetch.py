@@ -383,6 +383,16 @@ class Fetcher:
             )
         return resp
 
+    def first_bytes(self, url: str, n: int = 1024) -> Response:
+        """The first `n` bytes of `url` (a Range request, robots.txt first, never cached): to
+        check that a link still serves its document without downloading it."""
+        try:
+            self.check(url)
+            return self._send(url, {"Range": f"bytes=0-{n - 1}"})
+        except Blocked as e:
+            self._stop(e)
+            raise
+
     def get_json(self, url: str, params: dict[str, Any] | None = None, **kw: Any) -> Any:
         r = self.get(url, params, **kw)
         if r.status != 200:
