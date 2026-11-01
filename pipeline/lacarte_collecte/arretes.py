@@ -11,11 +11,12 @@ request. Attrap is asked at collection time only, never by the site; its code (C
 not used, only these facts.
 
 For each administration, in the waves' order, since `depuis` (2024-01-01): every act kind
-of rules/collecte_actes.yaml is searched month by month (a month with too many results is
-cut in two), each recueil found is read once (`texte`: Attrap's text by default; `pdf`, or
-Attrap's text missing or unreadable: the official PDF, downloaded then deleted, never on a
-host behind an anti-robot check, `defi`), by parse_raa.lire. A recueil whose act is kept has
-its official link checked once (its first bytes), except on a `defi` host. The administration's
+of rules/collecte_actes.yaml is searched once over the whole period (cut in two only past
+Attrap's 10 000 results; then from a month before the last search); each recueil found is
+read once (`texte`: Attrap's text by default; `pdf`, or Attrap's text missing or
+unreadable: the official PDF, downloaded then deleted, never on a host behind an
+anti-robot check, `defi`) by parse_raa.lire. A recueil whose act is kept has its official
+link checked once (its first bytes), except on a `defi` host. The administration's
 newest recueil in Attrap, whatever its acts, is its freshness (`dernier_recueil`).
 
 Nothing of a text is kept: the acts' fields, their titles (civilities masked), the recueil's
@@ -52,15 +53,6 @@ def administrations(ctx: Contexte) -> dict[str, dict[str, Any]]:
             key=lambda kv: (head.get(kv[0], len(head)), kv[1]["vague"], -kv[1]["actes_12_mois"]),
         )
     )
-
-
-def months(start: dt.date, end: dt.date) -> list[tuple[dt.date, dt.date]]:
-    out, d = [], start.replace(day=1)
-    while d <= end:
-        nxt = (d.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
-        out.append((max(d, start), min(nxt - dt.timedelta(days=1), end)))
-        d = nxt
-    return out
 
 
 def search(f: fetch.Fetcher, base: str, aid: str, words: str, a: dt.date, b: dt.date) -> list[dict]:
@@ -188,42 +180,47 @@ def collect_admin(
     known = {r["id"]: r for r in store.records() if r.get("administration") == admin}
     raw = ctx.rules_dir / "collecte_actes.yaml"
     words = {k: v["recherche"] for k, v in rules(raw.name, raw.parent)["types"].items()}
-    done = state.get("mois") or {}  # {kind: the last month fully searched}
+    # {kind: the day its search last went to}: the next search starts a month before it
+    # (a recueil indexed late); a state of the former monthly searches starts at its month
+    upto = state.get("jusqu_au") or {}
+    months_done = state.get("mois") or {}
     for kind, q in words.items():
-        last = done.get(kind)
-        for a, b in months(since, ctx.today):
-            # the last month searched is asked again (a recueil indexed late)
-            if last and b.isoformat() < last:
+        if kind in upto:
+            start = max(since, dt.date.fromisoformat(upto[kind]) - dt.timedelta(days=31))
+        elif kind in months_done:
+            start = dt.date.fromisoformat(months_done[kind])
+        else:
+            start = since
+        if ctx.out_of_time():
+            return st.save(admin, statut="en_cours", jusqu_au=upto)
+        # one search over the whole period, newest first (cut in two only past 10 000)
+        for h in search(f, base, aid, q, start, ctx.today):
+            rid = h["id"]
+            if is_read(known.get(rid)):
                 continue
             if ctx.out_of_time():
-                return st.save(admin, statut="en_cours", mois=done)
-            for h in search(f, base, aid, q, a, b):
-                rid = h["id"]
-                if is_read(known.get(rid)):
-                    continue
-                if ctx.out_of_time():
-                    return st.save(admin, statut="en_cours", mois=done)
-                d = f.get_json(f"{base}raa/{rid}", cache=False)
-                rec = {
-                    "id": rid,
-                    "administration": admin,
-                    "date": d.get("date") or h["date"],
-                    "name": parse_raa.mask(d.get("name") or h.get("name") or ""),
-                    "url": d.get("url") or h.get("url"),
-                    "familles": [kind],
-                }
-                rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
-                if rec.get("actes"):
-                    rec["lien"] = check_link(ctx, conf, rec)
-                store.add([rec])
-                known[rid] = rec
-            done[kind] = a.isoformat()
-            st.save(admin, mois=done)
+                return st.save(admin, statut="en_cours", jusqu_au=upto)
+            d = f.get_json(f"{base}raa/{rid}", cache=False)
+            rec = {
+                "id": rid,
+                "administration": admin,
+                "date": d.get("date") or h["date"],
+                "name": parse_raa.mask(d.get("name") or h.get("name") or ""),
+                "url": d.get("url") or h.get("url"),
+                "familles": [kind],
+            }
+            rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
+            if rec.get("actes"):
+                rec["lien"] = check_link(ctx, conf, rec)
+            store.add([rec])
+            known[rid] = rec
+        upto[kind] = ctx.today.isoformat()
+        st.save(admin, jusqu_au=upto)
     found = [r["date"] for r in known.values()]
     return st.save(
         admin,
         statut="termine",
-        mois=done,
+        jusqu_au=upto,
         dernier_document=max(found) if found else state.get("dernier_document"),
     )
 

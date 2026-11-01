@@ -57,6 +57,10 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
     assert cov["administrations"]["pref69"]["dernier_recueil"] == "2026-07-03"
     assert cov["administrations"]["pref69"]["perime"] is True  # nothing since July
     assert "sans nouveau recueil" in (tmp_path / "sortie" / "rapport.txt").read_text("utf-8")
+    # the pace observed per address: the smallest gap between two requests
+    rep = json.loads((tmp_path / "sortie" / "rapport.json").read_text("utf-8"))
+    assert rep["journal"]["adresses"]["127.0.0.1"]["ecart_min_s"] is not None
+    assert "écart minimal" in (tmp_path / "sortie" / "rapport.txt").read_text("utf-8")
 
 
 def test_the_recueil_id_is_the_sha256_of_the_decoded_address():

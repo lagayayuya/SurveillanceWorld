@@ -65,7 +65,10 @@ def couverture(ctx: Contexte) -> dict[str, Any]:
         st = {**att.get(admin, {}), **par.get(admin, {})}
         newest = st.get("dernier_recueil") or st.get("dernier_document")
         months = st.get("mois") or {}
+        upto = st.get("jusqu_au") or {}
         read_to = min(months.values()) if months else None
+        if upto and st.get("statut") == "termine":
+            read_to = None  # every kind searched over the whole period: to the search's day
         if read_to:
             # the month given is the last one searched: read to its end
             d = dt.date.fromisoformat(read_to)
@@ -86,7 +89,8 @@ def couverture(ctx: Contexte) -> dict[str, Any]:
             "defi": bool(c.get("defi")),
             "statut": st.get("statut") or "pas_encore_lu",
             "raison": st.get("raison"),
-            "lu_jusqu_au": read_to,
+            "lu_jusqu_au": read_to
+            or (min(upto.values()) if upto and st.get("statut") == "termine" else None),
             "dernier_recueil": newest,
             "perime": stale,
         }
@@ -119,21 +123,29 @@ def journal(root: Path, since: str) -> dict[str, Any]:
     number, their time, their cuts (network errors) and refusals."""
     per_source: dict[str, Counter] = defaultdict(Counter)
     per_address: dict[str, Counter] = defaultdict(Counter)
+    last: dict[str, dt.datetime] = {}
+    gap: dict[str, float] = {}
     for p in sorted((root / "brut" / "_journal").glob("requetes-*.tsv")):
         with p.open(encoding="utf-8") as fh:
             for row in csv.reader(fh, delimiter="\t"):
                 if len(row) < 6 or row[0] < since:
                     continue
-                _, address, _, status, ms, source = row[:6]
+                when, address, _, status, ms, source = row[:6]
+                at = dt.datetime.fromisoformat(when)
+                if address in last:
+                    d = (at - last[address]).total_seconds()
+                    gap[address] = min(gap.get(address, d), d)
+                last[address] = at
                 for c in (per_source[source], per_address[address]):
                     c["requetes"] += 1
                     c["ms"] += int(float(ms or 0))
                     c["coupures"] += status == "réseau"
                     c["refus"] += status in ("401", "403", "429")
-    return {
-        "sources": {k: dict(v) for k, v in per_source.items()},
-        "adresses": {k: dict(v) for k, v in per_address.items()},
+    adresses = {
+        k: {**dict(v), "ecart_min_s": round(gap[k], 2) if k in gap else None}
+        for k, v in per_address.items()
     }
+    return {"sources": {k: dict(v) for k, v in per_source.items()}, "adresses": adresses}
 
 
 def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, Any]:
@@ -170,7 +182,10 @@ def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, An
             f"{c['coupures']} coupures, {c['refus']} refus"
         )
     for a, c in sorted(rep["journal"]["adresses"].items(), key=lambda kv: -kv[1]["requetes"]):
-        lines.append(f"  adresse {a} : {c['requetes']} requêtes, {c['coupures']} coupures")
+        lines.append(
+            f"  adresse {a} : {c['requetes']} requêtes, {c['coupures']} coupures, "
+            f"écart minimal {c['ecart_min_s']} s"
+        )
     if stale:
         names = ", ".join(f"{cov['administrations'][a]['nom']} ({a})" for a in stale)
         lines.append(f"  sans nouveau recueil depuis {cov['fraicheur_jours']} jours : {names}")

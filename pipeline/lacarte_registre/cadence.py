@@ -152,7 +152,7 @@ class Cadence:
         now = dt.datetime.now(dt.UTC)
         line = "\t".join(
             [
-                now.isoformat(timespec="seconds"),
+                now.isoformat(timespec="milliseconds"),
                 address,
                 url,
                 str(status),
