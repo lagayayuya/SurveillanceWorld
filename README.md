@@ -92,8 +92,12 @@ uv run lacarte-registre construire   # data/registre/site, servi sous /data/regi
 
 `collecter` lit les sources nationales (DECP, SIRENE, communes) par un seul module
 (`fetch.py`) qui respecte les `robots.txt` (RFC 9309), dit qui il est
-(`SurveillanceWorld/<version> (+<contact>)`, le contact venant de `LACARTE_ROBOT_CONTACT`), va
-à une requête par seconde et s'arrête sur un refus ; `--resume` reprend une collecte coupée.
+(`SurveillanceWorld/<version> (+<contact>)`, le contact venant de `LACARTE_ROBOT_CONTACT`), règle
+sa cadence par adresse IP et non par nom d'hôte (une seule file par serveur, partagée entre
+processus : 10 s pour le serveur commun des préfectures et pour attrap.fr, 1 s pour les
+archives de la DILA et data.gouv.fr), ralentit sur 429 et 5xx, laisse 45 min de repos à une
+adresse qui l'a coupé trois fois de suite, note chaque requête dans un journal et s'arrête sur
+un refus ; `--resume` reprend une collecte coupée.
 Il ne lit plus l'API du BOAMP (DILA, Opendatasoft), que son `robots.txt` interdit aux robots
 depuis au moins le 31/10/2026 ; les avis déjà collectés restent servis.
 Les sorties ne sont mises en place que si toutes les sources ont répondu. `construire` reste

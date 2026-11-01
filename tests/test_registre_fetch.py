@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from lacarte_registre import fetch, robots
+from lacarte_registre import cadence, fetch, robots
 
 CONTACT = "https://example.org/contact"
 
@@ -337,3 +337,88 @@ def test_robots_wildcards_and_the_longest_rule_rfc9309():
     text = "User-agent: surveillance\nDisallow: /\n"
     assert fetch.robots_decision(200, text, "https://h/x", ua)[0] is True
     assert robots.crawl_delay("User-agent: *\nCrawl-delay: 30\n", "surveillanceworld") == 30
+
+
+# --- the pace per IP address (cadence.py) ---------------------------------------------------
+def cad(tmp_path: Path, clock: Clock, addresses: dict[str, str], **kw) -> cadence.Cadence:
+    return cadence.Cadence(
+        tmp_path / "cadence", fetch.rules(), resolver=addresses.__getitem__,
+        clock=clock.now, sleep=clock.sleep, **kw,
+    )  # fmt: skip
+
+
+SHARED = {"www.rhone.gouv.fr": "192.0.2.7", "www.isere.gouv.fr": "192.0.2.7",
+          "attrap.fr": "198.51.100.3", "echanges.dila.gouv.fr": "203.0.113.9"}  # fmt: skip
+
+
+def test_two_hosts_on_one_address_share_one_queue(tmp_path):
+    clock = Clock()
+    c = cad(tmp_path, clock, SHARED)
+    c.turn("www.rhone.gouv.fr")
+    c.turn("www.isere.gouv.fr")  # another name, the same server: it waits its turn
+    c.turn("attrap.fr")  # another server: no wait
+    assert clock.sleeps == [10.0]
+    # a second process (another Cadence on the same folder) waits for the first one's turn
+    other = cad(tmp_path, clock, SHARED)
+    other.turn("www.rhone.gouv.fr")
+    assert clock.sleeps == [10.0, 10.0]
+
+
+def test_an_address_takes_the_slowest_of_its_hosts(tmp_path):
+    clock = Clock()
+    one = {"echanges.dila.gouv.fr": "192.0.2.1", "www.rhone.gouv.fr": "192.0.2.1"}
+    c = cad(tmp_path, clock, one)
+    c.turn("echanges.dila.gouv.fr")
+    c.turn("echanges.dila.gouv.fr")
+    assert clock.sleeps == [1.0]
+    c.turn("www.rhone.gouv.fr")  # 10 s from now on, for both names
+    c.turn("echanges.dila.gouv.fr")
+    assert clock.sleeps == [1.0, 10.0, 10.0]
+    # a robots.txt crawl-delay larger than the rule's
+    clock2 = Clock()
+    c2 = cad(tmp_path / "b", clock2, SHARED)
+    c2.turn("attrap.fr", crawl_delay=30)
+    c2.turn("attrap.fr", crawl_delay=30)
+    assert clock2.sleeps == [30.0]
+
+
+def test_slower_after_a_429_back_after_answers(tmp_path):
+    clock = Clock()
+    c = cad(tmp_path, clock, SHARED)
+    a = c.turn("attrap.fr")
+    c.answered(a, 429)
+    c.turn("attrap.fr")
+    c.answered(a, 503)
+    c.turn("attrap.fr")
+    c.answered(a, 200)
+    c.turn("attrap.fr")
+    assert clock.sleeps == [20.0, 40.0, 20.0]
+
+
+def test_three_cuts_pause_the_address_for_every_process(tmp_path):
+    clock = Clock()
+    c = cad(tmp_path, clock, SHARED, journal=tmp_path / "journal")
+    a = c.turn("www.rhone.gouv.fr")
+    for _ in range(3):
+        c.cut(a)
+    with pytest.raises(cadence.Paused, match="pause jusqu'à"):
+        cad(tmp_path, clock, SHARED).turn("www.isere.gouv.fr")
+    clock.t += 2700
+    cad(tmp_path, clock, SHARED).turn("www.isere.gouv.fr")
+    c.log(a, "https://www.rhone.gouv.fr/x", 200, 12.3)
+    [line] = (tmp_path / "journal").glob("requetes-*.tsv")
+    date, address, url, status, ms, _src = line.read_text("utf-8").rstrip("\n").split("\t")
+    assert (address, url, status, ms) == ("192.0.2.7", "https://www.rhone.gouv.fr/x", "200", "12")
+
+
+def test_the_fetcher_journals_every_request_with_its_address(server, tmp_path):
+    server.routes["/robots.txt"] = text("", 404)
+    server.routes["/a"] = text("ok")
+    f = make(tmp_path, resolver=lambda h: "127.0.0.1")
+    f.get(f"{server.base}/a", cache=False)
+    [j] = (tmp_path / "brut" / "_journal").glob("requetes-*.tsv")
+    rows = [r.split("\t") for r in j.read_text("utf-8").splitlines()]
+    assert [(r[1], r[2].rsplit("/", 1)[-1], r[3], r[5]) for r in rows] == [
+        ("127.0.0.1", "robots.txt", "404", "essai"),
+        ("127.0.0.1", "a", "200", "essai"),
+    ]

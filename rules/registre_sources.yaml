@@ -14,8 +14,21 @@ robot:
     An honest name, a version and a way to reach whoever runs it: what a host needs to tell
     us apart and to write to us rather than block us.
 
-# The pace: at most one request per `interval_s` on a host, whatever the source; `default`
-# for a host not listed.
+# The pace (pipeline/lacarte_registre/cadence.py): one queue per IP address, whatever the
+# source and the process. An address's interval is the largest of the hosts met on it: a
+# host's exact name below, else its longest matching pattern, else `default`; a host's
+# robots.txt crawl-delay when it is larger.
+pace:
+  id: rule:registre_sources@2:pace
+  strikes: 3
+  pause_s: 2700
+  slow_max: 8
+  rationale: >-
+    Three network cuts in a row on one address pause it 45 minutes for every process: a
+    server that cuts us is left alone rather than asked again (the prefectures' shared
+    server, 2026-10-31). A 429 or a 5xx doubles the address's interval, up to eight times;
+    each other answer halves it back.
+
 hosts:
   default:
     id: rule:registre_sources@1:pace_default
@@ -23,6 +36,33 @@ hosts:
     rationale: >-
       One request per second, the exploration's pace (design/registre/collecte/sources.md),
       for any host that publishes no rate of its own.
+  "*.gouv.fr":
+    id: rule:registre_sources@2:pace_gouv
+    interval_s: 10.0
+    rationale: >-
+      The 101 sites of the prefectures (www.<département>.gouv.fr) and others of the State
+      answer on one shared server, which cut our connections on 2026-10-31 after parallel
+      collections sent it about a request per second: ten seconds between two requests on
+      that server. The State's hosts listed by name below keep their own pace.
+  attrap.fr:
+    id: rule:registre_sources@2:pace_attrap
+    interval_s: 10.0
+    rationale: >-
+      Attrap (La Quadrature du Net), an association's server, which publishes no rate: ten
+      seconds, the pace of the national framing (2026-10-31), about 1 000 requests then
+      without a refusal.
+  echanges.dila.gouv.fr:
+    id: rule:registre_sources@2:pace_dila
+    interval_s: 1.0
+    rationale: >-
+      The DILA's open data archives (the BOAMP): one request per second, as before; the
+      daily folder is about 370 files.
+  www.data.gouv.fr:
+    id: rule:registre_sources@2:pace_datagouv
+    interval_s: 1.0
+    rationale: >-
+      data.gouv.fr's catalogue API (a dataset's resources): a few requests a collection, one
+      per second; named so that `*.gouv.fr` does not slow its server's tabular API.
   tabular-api.data.gouv.fr:
     id: rule:registre_sources@1:pace_tabular
     interval_s: 1.0

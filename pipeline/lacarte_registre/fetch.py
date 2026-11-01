@@ -7,7 +7,12 @@
   exploration's robots_rule.py).
 - Who asks: `SurveillanceWorld/<version> (+<contact>)`, the contact from LACARTE_ROBOT_CONTACT;
   without it the Fetcher refuses to start (NoContact). No address is written in the repository.
-- How fast: at most one request per `interval_s` on a host (rules/registre_sources.yaml).
+- How fast: one queue per IP address, not per host name (cadence.py): at most one request
+  per interval on a server, the largest of its hosts' (rules/registre_sources.yaml `hosts`,
+  a host's robots.txt crawl-delay), shared by every process of the machine; slower after a
+  429 or a 5xx; an address cut three times in a row rests 45 minutes. Every request is
+  written in the journal (brut/_journal/requetes-<month>.tsv: date, address, URL, status,
+  duration).
 - What it keeps: a response's ETag and Last-Modified beside its body (brut/<source>/cache/),
   sent again as If-None-Match and If-Modified-Since: a 304 gives the kept body back.
 - Large files (`download`): written to <dest>.part, resumed with Range (and If-Range, so a
@@ -45,7 +50,7 @@ from typing import Any
 import yaml
 
 import lacarte_registre as registre
-from lacarte_registre import robots
+from lacarte_registre import cadence, robots
 
 CONTACT_ENV = "LACARTE_ROBOT_CONTACT"
 STATE = "etat.json"
@@ -152,8 +157,9 @@ class Fetcher:
         conf: dict[str, Any] | None = None,
         contact: str | None = None,
         sleep: Callable[[float], None] = time.sleep,
-        clock: Callable[[], float] = time.monotonic,
+        clock: Callable[[], float] = time.time,
         opener: urllib.request.OpenerDirector | None = None,
+        resolver: Callable[[str], str] = cadence.resolve,
     ):
         self.source = source
         self.conf = conf or rules()
@@ -165,7 +171,11 @@ class Fetcher:
         self.cache.mkdir(parents=True, exist_ok=True)
         self.sleep, self.clock = sleep, clock
         self.opener = opener or urllib.request.build_opener()
-        self._last: dict[str, float] = {}
+        base = root or registre.ROOT
+        self.cadence = cadence.Cadence(
+            base / "brut" / "_cadence", self.conf, source=source, resolver=resolver,
+            clock=clock, sleep=sleep, journal=base / "brut" / "_journal",
+        )  # fmt: skip
         self._robots: dict[str, tuple[int | None, str, float]] = {}
         self.requests = 0  # every request sent, robots.txt included (tests, reports)
         self.retries = 0
@@ -190,16 +200,15 @@ class Fetcher:
 
     # --- pace and robots ----------------------------------------------------------------
     def interval(self, host: str) -> float:
-        hosts = self.conf["hosts"]
-        return float((hosts.get(host.split(":")[0]) or hosts["default"])["interval_s"])
+        return cadence.interval_of(self.conf["hosts"], host)
 
-    def _wait_turn(self, host: str) -> None:
-        last = self._last.get(host)
-        if last is not None:
-            wait = self.interval(host) - (self.clock() - last)
-            if wait > 0:
-                self.sleep(wait)
-        self._last[host] = self.clock()
+    def _wait_turn(self, host: str, url: str) -> str:
+        kept = self._robots.get(host)
+        delay = robots.crawl_delay(kept[1], self.agent.split("/", 1)[0]) if kept else None
+        try:
+            return self.cadence.turn(host, delay)
+        except cadence.Paused as e:
+            raise Failed(url, str(e)) from None
 
     def _robots_txt(self, url: str) -> tuple[int | None, str]:
         p = urllib.parse.urlsplit(url)
@@ -264,12 +273,15 @@ class Fetcher:
                     headers = {"Range": f"bytes={stream_to.stat().st_size}-"}
                     if validator:
                         headers["If-Range"] = validator
-            self._wait_turn(host)
+            address = self._wait_turn(host, url)
             req = urllib.request.Request(url, headers={"User-Agent": self.agent, **headers})
             self.requests += 1
+            t0 = time.perf_counter()
             try:
                 with self.opener.open(req, timeout=float(r["timeout_s"])) as resp:
                     status = resp.status
+                    self.cadence.answered(address, status)
+                    self.cadence.log(address, url, status, (time.perf_counter() - t0) * 1000)
                     hdrs = {k.lower(): v for k, v in resp.headers.items()}
                     if stream_to is None:
                         body = resp.read()
@@ -295,6 +307,8 @@ class Fetcher:
                     return Response(url, status, b"", hdrs)
             except urllib.error.HTTPError as e:
                 status = e.code
+                self.cadence.answered(address, status)
+                self.cadence.log(address, url, status, (time.perf_counter() - t0) * 1000)
                 hdrs = {k.lower(): v for k, v in (e.headers or {}).items()}
                 body = e.read() or b""
                 if status == 304:
@@ -321,6 +335,8 @@ class Fetcher:
             except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
                 status = None
                 why = f"réseau : {getattr(e, 'reason', e)}"
+                self.cadence.cut(address)
+                self.cadence.log(address, url, "réseau", (time.perf_counter() - t0) * 1000)
         raise Failed(url, f"sans réponse après {attempt + 1} essais ({why})", status)
 
     def get(
