@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from lacarte_registre import fetch
+from lacarte_registre import fetch, robots
 
 CONTACT = "https://example.org/contact"
 
@@ -308,3 +308,32 @@ def test_robots_decision_follows_rfc9309():
     robots = "User-agent: *\nDisallow: /resources\nDisallow: /api/1/datasets/r/\n"
     pq = "https://static.data.gouv.fr/resources/donnees-essentielles/x/decp.parquet"
     assert fetch.robots_decision(200, robots, pq, ua)[0] is False
+
+
+def test_robots_wildcards_and_the_longest_rule_rfc9309():
+    ua = "SurveillanceWorld/1.0"
+    # the BOAMP's API, read on 2026-10-31: forbidden to every agent but Googlebot
+    boamp = "User-agent: Googlebot\nAllow: /api/\n\nUser-agent: *\nDisallow: /api/\n"
+    api = "https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp"
+    assert fetch.robots_decision(200, boamp, api, ua) == (
+        False, "robots.txt interdit cette adresse (disallow: /api/)")  # fmt: skip
+    # `*` and `$`, which urllib.robotparser ignores
+    text = "User-agent: *\nDisallow: /*.pdf$\nDisallow: /recherche*?q=\n"
+    assert fetch.robots_decision(200, text, "https://h/a/b.pdf", ua)[0] is False
+    assert fetch.robots_decision(200, text, "https://h/a/b.pdf?x=1", ua)[0] is True
+    assert fetch.robots_decision(200, text, "https://h/recherche-avancee?q=v", ua)[0] is False
+    # the longest rule wins; allow wins a tie; our own group replaces `*`
+    text = (
+        "User-agent: *\nDisallow: /a\nAllow: /a/b\n\nUser-agent: surveillanceworld\nDisallow: /c\n"
+    )
+    assert fetch.robots_decision(200, text, "https://h/a/x", ua)[0] is True  # only our group
+    assert fetch.robots_decision(200, text, "https://h/c", ua)[0] is False
+    text = "User-agent: *\nDisallow: /a\nAllow: /a/b\nAllow: /x\nDisallow: /x\n"
+    assert fetch.robots_decision(200, text, "https://h/a/x", ua)[0] is False
+    assert fetch.robots_decision(200, text, "https://h/a/b/c", ua)[0] is True
+    assert fetch.robots_decision(200, text, "https://h/x", ua)[0] is True
+    # robots.txt itself, always; a name that only contains ours is not ours
+    assert fetch.robots_decision(200, "User-agent: *\nDisallow: /", "https://h/robots.txt", ua)[0]
+    text = "User-agent: surveillance\nDisallow: /\n"
+    assert fetch.robots_decision(200, text, "https://h/x", ua)[0] is True
+    assert robots.crawl_delay("User-agent: *\nCrawl-delay: 30\n", "surveillanceworld") == 30

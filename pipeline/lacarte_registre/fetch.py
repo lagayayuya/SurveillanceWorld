@@ -1,9 +1,10 @@
 """The registre's only way to the network: every collection module asks through a Fetcher.
 
-- robots.txt, RFC 9309: read once per host (and kept `robots.cache_h` hours, § 2.4); a 2xx
-  robots file is obeyed for our User-Agent, a 4xx means no rule (§ 2.3.1.3), a 5xx or no
-  answer forbids everything (§ 2.3.1.4), an HTML page instead of a robots file is taken for
-  an anti-robot check and forbids everything too (the exploration's robots_rule.py).
+- robots.txt, RFC 9309 (robots.py: wildcards, the longest rule): read once per host (and
+  kept `robots.cache_h` hours, § 2.4); a 2xx robots file is obeyed for our User-Agent, a 4xx
+  means no rule (§ 2.3.1.3), a 5xx or no answer forbids everything (§ 2.3.1.4), an HTML page
+  instead of a robots file is taken for an anti-robot check and forbids everything too (the
+  exploration's robots_rule.py).
 - Who asks: `SurveillanceWorld/<version> (+<contact>)`, the contact from LACARTE_ROBOT_CONTACT;
   without it the Fetcher refuses to start (NoContact). No address is written in the repository.
 - How fast: at most one request per `interval_s` on a host (rules/registre_sources.yaml).
@@ -36,7 +37,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-import urllib.robotparser
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,6 +45,7 @@ from typing import Any
 import yaml
 
 import lacarte_registre as registre
+from lacarte_registre import robots
 
 CONTACT_ENV = "LACARTE_ROBOT_CONTACT"
 STATE = "etat.json"
@@ -121,10 +122,10 @@ def robots_decision(status: int | None, text: str, url: str, agent: str) -> tupl
         return True, f"robots.txt {status} : aucune règle"
     if "<html" in text[:500].lower():
         return False, "robots.txt répond par une page HTML (vérification anti-robot ?)"
-    rp = urllib.robotparser.RobotFileParser()
-    rp.parse(text.splitlines())
-    ok = rp.can_fetch(agent, url)
-    return ok, "robots.txt autorise" if ok else "robots.txt interdit cette adresse"
+    ok, rule = robots.allowed(text, url, agent.split("/", 1)[0])
+    if ok:
+        return True, "robots.txt autorise"
+    return False, f"robots.txt interdit cette adresse ({rule})"
 
 
 def _host(url: str) -> str:
