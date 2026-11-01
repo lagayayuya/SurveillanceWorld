@@ -1,0 +1,35 @@
+# The kinds of prefectoral acts the collection reads (pipeline/lacarte_collecte/parse_raa.py).
+# Each kind: `titre`, a pattern on the act's title, and `dispositif`, a pattern on the first
+# lines of what it decides (both on accent-free lower-case text); `exclure`, titles that
+# are never a kind (a delegation of signature names cameras without authorising any);
+# `priorite`, the order they are tried in (a drone act also names cameras). The search words
+# (`recherche`) are what Attrap's full-text search is asked, per kind. Adding a kind (the
+# protection perimeters, say) is an entry here and its fields in parse_raa.lire.
+version: 1
+id: rule:collecte_actes@1
+rationale: >-
+  The rules of the pilot's reader (rhone_raa/extract.py classify), measured on the Rhône
+  (17 acts right out of 20) and the Moselle; the search words are those of the national
+  framing's deep pass (2026-10-31).
+types:
+  drone:
+    priorite: 1
+    titre: 'aeronef|drone'
+    dispositif: 'captation.{0,60}cameras installees sur (?:un|des|deux|plusieurs)? ?aeronefs?'
+    exclure: 'delegation de signature|subdelegation|ordre du jour|habilitation aem|cdac'
+    recherche: '"caméras installées sur des aéronefs"'
+  cameras_pietons:
+    priorite: 2
+    titre: 'cameras? individuelles|cameras?.pietons?|enregistrement audiovisuel des interventions'
+    dispositif: 'cameras? individuelles|cameras?.pietons?|enregistrement audiovisuel des interventions'
+    recherche: '"caméras individuelles" OR "caméras-piétons" OR "caméras piétons"'
+  vsa:
+    priorite: 3
+    titre: 'traitement algorithmique|algorithmi'
+    dispositif: 'traitement algorithmique'
+    recherche: '"traitement algorithmique"'
+  videoprotection:
+    priorite: 4
+    titre: 'video.?protection|video.?surveillance'
+    dispositif: '(?:systeme|dispositif) de videoprotection.{0,400}(?:autoris|modifi|renouvel|abrog)'
+    recherche: 'vidéoprotection OR "vidéo-protection" OR vidéosurveillance'

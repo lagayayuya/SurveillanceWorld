@@ -121,3 +121,11 @@ def ci_contrib_pipeline(tmp_path_factory):
     """The same with the synthetic contributions of tests/fixtures/contrib-ci.jsonl."""
     data = (regions.ROOT / "tests" / "fixtures" / "contrib-ci.jsonl").read_bytes()
     return run_pipeline(tmp_path_factory, "contrib", data)
+
+
+@pytest.fixture
+def collecte_server():
+    """lacarte_collecte's fake sources (tests/collecte_fake.py), on 127.0.0.1."""
+    import collecte_fake
+
+    yield from collecte_fake.serve()

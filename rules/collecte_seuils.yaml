@@ -1,0 +1,23 @@
+# The publication threshold of the acts read (pipeline/lacarte_collecte/seuil.py), per
+# département and kind: an act is right when every field the reference reading gives is
+# right (its kind, its commune, and the kind's numbers, dates and hours); a number of
+# cameras present and different is wrong (worse than absent). A kind is published in a
+# département when its rate reaches `taux` and no number is wrong, measured on `echantillon`
+# acts drawn at random since `depuis` (all of them when there are fewer), each read blind
+# on the official PDF (on Attrap's text for the hosts we never ask). Below, the kind stays
+# « non lu »: the list of its acts (title, date, official link), without a field read.
+version: 1
+id: rule:collecte_seuils@1
+echantillon: 30
+depuis: 2024-01-01
+graine: 20261101
+rationale: >-
+  Ju's thresholds (2026-11-01): 95 % for video protection, whose numbers of cameras are
+  counted on every page of the registre, 85 % for drones, read from freer texts (the Rhône:
+  17 of 20, all 16 video-protection acts right); a wrong number never. Re-measured at every
+  change of the reader.
+types:
+  videoprotection: {taux: 0.95}
+  drone: {taux: 0.85}
+  cameras_pietons: {taux: 0.95}
+  vsa: {taux: 0.85}
