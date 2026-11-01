@@ -83,6 +83,11 @@ def search(f: fetch.Fetcher, base: str, aid: str, words: str, a: dt.date, b: dt.
         page += 1
 
 
+def is_read(rec: dict[str, Any] | None) -> bool:
+    """Read already, by the current reader (an older one's reading is done again)."""
+    return bool(rec) and rec.get("statut") == "lu" and rec.get("lecteur") == parse_raa.VERSION
+
+
 def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
     return a.acte if a.gabarit == "identifiants" else f"{admin}:{rid[:12]}:{a.acte}"
 
@@ -116,6 +121,7 @@ def read_recueil(
         {
             **a.as_dict(),
             "id": _act_id(admin, rid, a),
+            "lecteur": parse_raa.VERSION,
             "administration": admin,
             "departement": conf["code"],
             "recueil": rid,
@@ -126,7 +132,13 @@ def read_recueil(
         }
         for a in acts
     )
-    return {**rec, "statut": "lu", "texte": origin, "actes": len(acts)}
+    return {
+        **rec,
+        "statut": "lu",
+        "texte": origin,
+        "actes": len(acts),
+        "lecteur": parse_raa.VERSION,
+    }
 
 
 def check_link(ctx: Contexte, conf: dict[str, Any], rec: dict[str, Any]) -> str | None:
@@ -180,7 +192,7 @@ def collect_admin(
                 return st.save(admin, statut="en_cours", mois=done)
             for h in search(f, base, aid, q, a, b):
                 rid = h["id"]
-                if rid in known and known[rid].get("statut") == "lu":
+                if is_read(known.get(rid)):
                     continue
                 if ctx.out_of_time():
                     return st.save(admin, statut="en_cours", mois=done)

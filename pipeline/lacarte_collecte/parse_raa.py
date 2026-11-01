@@ -35,6 +35,10 @@ from typing import Any
 
 import yaml
 
+# The reader's version, written on every recueil and act it read: a recueil read by an older
+# version is read again (its text asked again: no text is kept), so the threshold is always
+# measured on what the current reader gives. Raise it with any change to what lire() returns.
+VERSION = 1
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,

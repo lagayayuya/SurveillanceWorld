@@ -13,7 +13,7 @@ import urllib.parse
 from collecte_fake import ATTRAP, ctx_for, raa
 
 import lacarte_registre as registre
-from lacarte_collecte import arretes, sortie
+from lacarte_collecte import arretes, parse_raa, sortie
 from lacarte_collecte.etat import Store
 
 
@@ -65,3 +65,10 @@ def test_the_recueil_id_is_the_sha256_of_the_decoded_address():
            "recueil-13-2026-273-recueil-des-actes-administratifs-special%20du%2008%20septembre"
            "%202026.pdf")  # fmt: skip
     assert arretes.recueil_id(url).startswith("d54740f49e84ce8d")
+
+
+def test_a_recueil_read_by_an_older_reader_is_read_again():
+    rec = {"statut": "lu", "lecteur": parse_raa.VERSION}
+    assert arretes.is_read(rec)
+    assert not arretes.is_read({**rec, "lecteur": parse_raa.VERSION - 1})
+    assert not arretes.is_read({"statut": "non_lu", "lecteur": parse_raa.VERSION})

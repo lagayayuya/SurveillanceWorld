@@ -68,7 +68,7 @@ def collect_admin(
     index = conf["index"]
     prefix = urllib.parse.urlsplit(index).path.rsplit("/", 1)[0]
     store = Store(ctx.root, "recueils")
-    known = {r["id"] for r in store.records() if r.get("statut") == "lu"}
+    known = {r["id"] for r in store.records() if arretes.is_read(r)}
     seen_pages: set[str] = set(st.get(admin).get("pages_lues") or [])
     queue, pages, newest = [index], 0, st.get(admin).get("dernier_document")
     while queue and pages < int(src["pages_max"]):

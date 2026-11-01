@@ -134,7 +134,7 @@ EnvironmentFile=/etc/lacarte-collecte.env
 Environment=PYTHONPATH=$DIR/code/current/pipeline
 Environment=LACARTE_COLLECTE_DIR=$DIR/data
 Environment=LACARTE_COLLECTE_SORTIE=$DIR/sortie
-Environment=TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
+Environment=PYTHONDONTWRITEBYTECODE=1
 WorkingDirectory=$DIR/data
 UMask=0027
 ExecStart=$DIR/code/current/.venv/bin/python -m lacarte_collecte.cli tourner
