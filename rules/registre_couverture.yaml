@@ -57,6 +57,7 @@ sources:
     id: rule:registre_couverture@2:source_subventions_etat_dgcl
     types: [subvention_etat]
     ref_prefix: "DGCL"
+    collecte: dgcl
     rationale: >-
       The State's grants (DETR, DSIL, DPV, DSID) of all of France, from the DGCL's national
       dataset (lacarte_collecte.dgcl); the year in progress is published by the DGCL in July

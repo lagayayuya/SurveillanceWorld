@@ -29,6 +29,7 @@ from typing import Any
 
 import yaml
 
+from lacarte_collecte import arretes
 from lacarte_registre import regles
 
 DIR = "collecte"
@@ -91,14 +92,14 @@ def act_event(
     days = f.get("dates") or []
     cams = f.get("n_cameras_drone") if a["type"] == "drone" else f.get("n_total")
     e: regles.Event = {
-        "id": a["id"],
+        "id": arretes.safe_id(a["id"]),
         "t": t,
         "sous_type": a.get("sous_type"),
         # an act below its threshold has nothing read, its day either: its recueil's
         "date": (a.get("date_acte") if published else None) or a["recueil_date"],
         "insee": a.get("insee"),
         "dep": dep,
-        "affaire": a["id"],
+        "affaire": arretes.safe_id(a["id"]),
         "entreprises": [],
         "beneficiaire": regles.MASQUE if t == "arrete" else None,
         "beneficiaire_siren": None,

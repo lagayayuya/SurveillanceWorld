@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import datetime as dt
 import hashlib
+import re
 import urllib.parse
 from typing import Any
 
@@ -87,8 +88,15 @@ def is_read(rec: dict[str, Any] | None) -> bool:
     return bool(rec) and rec.get("statut") == "lu" and rec.get("lecteur") == parse_raa.VERSION
 
 
+def safe_id(key: str) -> str:
+    """An act's id as the site can name a file and a route by it: a heading's number may hold
+    a « / » (« 24-08/322 », the Eure-et-Loir's)."""
+    return re.sub(r"[^\w.~:-]", "-", key)
+
+
 def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
-    return a.acte if a.gabarit == "identifiants" else f"{admin}:{rid[:12]}:{a.acte}"
+    key = a.acte if a.gabarit == "identifiants" else f"{admin}:{rid[:12]}:{a.acte}"
+    return safe_id(key)
 
 
 def read_recueil(

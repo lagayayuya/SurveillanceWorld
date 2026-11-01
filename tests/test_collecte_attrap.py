@@ -85,3 +85,9 @@ def test_paris_the_bouches_du_rhone_and_the_alpes_maritimes_first(tmp_path):
     order = list(arretes.administrations(ctx))
     assert order[:4] == ["ppparis", "pref75", "pref13", "pref06"]
     assert order[4] == "pref02"  # then wave 1, by its number of surveillance recueils
+
+
+def test_an_act_id_names_a_file_and_a_route():
+    # the Eure-et-Loir's heading numbers (measured on the first run)
+    assert arretes.safe_id("pref28:340699bdb845:24-08/322") == "pref28:340699bdb845:24-08-322"
+    assert arretes.safe_id("69-2026-07-02-00001") == "69-2026-07-02-00001"

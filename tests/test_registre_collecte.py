@@ -167,6 +167,12 @@ def test_the_collection_in_the_built_registre(built):
     assert "drone" not in cov["departements"]["57"]["sous_le_seuil"]
     assert cov["departements"]["974"]["sous_le_seuil"][:2] == ["videoprotection", "drone"]
     assert cov["non_lus"]["sous_le_seuil"] == 1
+    # the DGCL: all of France, the year in progress not yet published
+    [dgcl] = [s for s in cov["sources"] if s["id"] == "subventions_etat_dgcl"]
+    assert (dgcl["perimetre"], dgcl["pas_encore_publie"]) == ("france", 2026)
+    assert {"familles": ["avis", "subventions"], "zone": "france"} in cov["resume"]
+    # the départements the collection read are collected: their acts are not « hors collecte »
+    assert m371["provenance"] == "collecte" and reunion["provenance"] == "collecte"
     # the DGCL's grants, the pilot's for the years the DGCL publishes replaced
     assert summary["collecte"]["subventions_dgcl"] > 0
     assert summary["collecte"]["subventions_pilote_remplacees"] > 0

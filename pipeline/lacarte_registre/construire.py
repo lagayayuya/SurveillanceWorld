@@ -78,7 +78,7 @@ def run(
     reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
-    couverture.provenances(reg, conf)
+    couverture.provenances(reg, conf, col)
     cov = couverture.build(reg, conf, nat["sources"] if nat else None, col)
     maps = sorted((root / "pilote" / "carte").glob("*.json"))
     contours = {m.stem: json.loads(m.read_text("utf-8")).get("contour") for m in maps}

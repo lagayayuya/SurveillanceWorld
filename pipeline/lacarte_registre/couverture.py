@@ -67,10 +67,15 @@ def provenance(e: Event, collected: set[str] | frozenset[str]) -> tuple[str, str
     return ("collecte" if dep in collected else "exploration"), recueil or dep
 
 
-def provenances(reg: Registre, conf: dict[str, Any]) -> Counter[str]:
+def provenances(
+    reg: Registre, conf: dict[str, Any], collecte: dict[str, Any] | None = None
+) -> Counter[str]:
     """Write every decree's `provenance` (and `recueil_dep` when its recueil is another
-    département's), the copies of a shared one too; count them."""
+    département's), the copies of a shared one too; count them. The départements the national
+    collection has read (`collecte`) are collected too."""
     collected = {k for k, d in conf["departements"].items() if d["etat"] == "collecte"}
+    if collecte:
+        collected |= {k for k, d in etat_collecte(collecte).items() if d["etat"] == "collecte"}
     every = {id(e): e for e in reg.evenements}
     for evs in reg.by_insee.values():
         every.update((id(e), e) for e in evs)
@@ -125,7 +130,9 @@ def resume(
         if not rows:
             continue
         per = {s["perimetre"] for s in rows}
-        if per == {"france"}:
+        if "france" in per:
+            # one of its sources covers all of France (the DGCL's grants, beside the pilot's
+            # regions): the family is said for France, its sources' table says the rest
             zones[f] = "france"
         elif per <= {"pilote"}:
             zones[f] = "pilote"
@@ -230,6 +237,14 @@ def build(
             ),
             "perimetre": src.get("perimetre", "pilote"),
         }
+        dgcl = (collecte or {}).get("dgcl") if src.get("collecte") == "dgcl" else None
+        if dgcl and evs:
+            # the DGCL's national dataset: all of France, to its last year published; the
+            # year in progress comes in July of the next one
+            last = dgcl.get("derniere_annee_publiee")
+            row.update(perimetre="france", collecte_le=(collecte or {}).get("le"))
+            if last:
+                row["pas_encore_publie"] = int(last) + 1
         nat = national.get(src.get("national") or "")
         if nat:
             # the national collection: its day, all of France (a pilot-only document of the
