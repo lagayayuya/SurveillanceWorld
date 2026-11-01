@@ -141,7 +141,8 @@ sources:
     flux_jours: 2
     ftps:
       hote: echanges.dila.gouv.fr
-      racine: /OPENDATA/BOAMP/
+      port: 990
+      racine: /BOAMP/
       debit_ko_s: 1024
       timeout_s: 60
     rationale: >-
@@ -155,8 +156,10 @@ sources:
       `flux_jours`: the last days read over HTTP (the daily flow). `ftps`: the history
       (2024 onwards, a file per notice) over the bulk channel data.gouv.fr announces, one
       connection, 1 MB/s at most, each file read in memory then dropped (Ju, 2026-11-01);
-      its root on the FTPS server is taken to be the HTTP path's (hypothesis, checked
-      before the first run); a folder FTPS does not show is asked over HTTP.
+      implicit TLS on port 990 (port 21 does not answer), the tree under /BOAMP/ (both
+      measured on 2026-11-01: a day of 503 files listed, a file of 51 715 bytes read, as
+      over HTTP); a folder FTPS lists empty (its answer for a folder that does not exist)
+      is asked over HTTP.
   dgcl:
     id: rule:registre_sources@2:source_dgcl
     dataset: https://www.data.gouv.fr/api/1/datasets/6176785207139a929a2776fe/

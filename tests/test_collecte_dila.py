@@ -67,18 +67,17 @@ class FakeFtp:
         self.asked: list[str] = []
 
     def nlst(self, path: str) -> list[str]:
-        import ftplib
 
         self.asked.append(f"NLST {path}")
-        local = self.root / path.removeprefix("/OPENDATA/BOAMP/")
+        local = self.root / path.removeprefix("/BOAMP/")
         if not local.is_dir():
-            raise ftplib.error_perm("550 No such file or directory")
+            return []  # the DILA's server: an empty list, no 550
         return [f"{path}{p.name}" for p in sorted(local.iterdir())]
 
     def retrbinary(self, cmd: str, callback, blocksize: int = 8192) -> str:
         path = cmd.removeprefix("RETR ")
         self.asked.append(f"RETR {path}")
-        data = (self.root / path.removeprefix("/OPENDATA/BOAMP/")).read_bytes()
+        data = (self.root / path.removeprefix("/BOAMP/")).read_bytes()
         for i in range(0, len(data), blocksize):
             callback(data[i : i + blocksize])
         return "226 Transfer complete"
@@ -99,7 +98,7 @@ def test_the_history_over_one_ftps_connection_at_a_capped_rate(collecte_server, 
         slept.append(s)
         clock["t"] += s
 
-    canal = ftps.Ftps(ftp, "/OPENDATA/BOAMP/", rate_kb=64, sleep=sleep, clock=lambda: clock["t"])
+    canal = ftps.Ftps(ftp, "/BOAMP/", rate_kb=64, sleep=sleep, clock=lambda: clock["t"])
     store = Store(tmp_path, "avis")
     st = dila.collect_day(ctx, canal, dt.date(2026, 10, 14), store)
     assert st["termine"] and st["canal"] == "ftps"
@@ -111,5 +110,5 @@ def test_the_history_over_one_ftps_connection_at_a_capped_rate(collecte_server, 
     assert m["date_fichier"] == "20261014221500"
     # the rate: ~110 KB read at 64 KB/s take at least ~1.7 s of waiting, no request made
     assert sum(slept) >= 1.5 and not any("/2026/10/14/" in a for a in collecte_server.asked)
-    # a folder FTPS does not show is « absent » to it (collect() asks HTTP then)
+    # a folder FTPS lists empty is unknown to it (collect() asks HTTP then)
     assert canal.files("2026/10/13/") is None and canal.files("FluxHistorique/x/") is None

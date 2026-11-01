@@ -3,7 +3,8 @@ dataset, for the history only (2024 onwards, one XML per notice): the daily flow
 HTTP (dila.Http). Ju's decision (2026-11-01): one connection, a capped rate, each file read
 in memory then dropped.
 
-- One connection for a run (FTP over explicit TLS, `PROT P`: the data channel encrypted too),
+- One connection for a run (FTP over implicit TLS on port 990, `PROT P`: the data channel
+  encrypted too; the archive's tree is under /BOAMP/ there, not /OPENDATA/BOAMP/),
   anonymous, opened after the address's turn in the HTTP queue (cadence.py: an address
   resting after cuts is not asked over FTPS either); a cut ends FTPS for the run, the rest
   goes over HTTP, and the cut counts in the address's strikes.
@@ -25,6 +26,34 @@ from typing import Any
 
 from lacarte_collecte.contexte import Contexte
 from lacarte_registre import cadence, fetch
+
+
+class Implicite(ftplib.FTP_TLS):
+    """FTP over implicit TLS (port 990: the DILA's port 21 does not answer, measured on
+    2026-11-01): the control connection is TLS from its first byte, and each data connection
+    reuses its TLS session (vsFTPd asks for it)."""
+
+    def __init__(self, *args: Any, **kw: Any):
+        super().__init__(*args, **kw)
+        self._sock: Any = None
+
+    @property  # type: ignore[override]
+    def sock(self) -> Any:
+        return self._sock
+
+    @sock.setter
+    def sock(self, value: Any) -> None:
+        if value is not None and not isinstance(value, ssl.SSLSocket):
+            value = self.context.wrap_socket(value, server_hostname=self.host)
+        self._sock = value
+
+    def ntransfercmd(self, cmd: str, rest: Any = None) -> tuple[Any, int | None]:
+        conn, size = ftplib.FTP.ntransfercmd(self, cmd, rest)
+        if self._prot_p:
+            conn = self.context.wrap_socket(
+                conn, server_hostname=self.host, session=self.sock.session
+            )
+        return conn, size
 
 
 class Indisponible(RuntimeError):
@@ -54,7 +83,10 @@ class Ftps:
             self.log(self.root + folder, str(e)[:3], (self.clock() - t0) * 1000)
             return None
         self.log(self.root + folder, 226, (self.clock() - t0) * 1000)
-        return sorted({n.rsplit("/", 1)[-1] for n in names if n.endswith(".xml")})
+        xml = sorted({n.rsplit("/", 1)[-1] for n in names if n.endswith(".xml")})
+        # the DILA's server lists a folder that does not exist as empty (no 550, measured
+        # 2026-11-01): an empty day is not taken for read, HTTP is asked instead
+        return xml or None
 
     def read(self, path: str) -> tuple[bytes, str] | None:
         chunks: list[bytes] = []
@@ -92,14 +124,16 @@ class Ftps:
 def open_from(ctx: Contexte, conf: dict[str, Any], f: fetch.Fetcher) -> Ftps:
     host = conf["hote"]
     try:
-        f.check(f"https://{host}{conf['racine']}")  # the HTTP side's rule for the same path
+        f.check(f.conf["sources"]["boamp"]["archive"])  # the HTTP side's rule, read again
         address = f.cadence.turn(host)
     except (fetch.Forbidden, cadence.Paused) as e:
         raise Indisponible(str(e)) from None
     t0 = time.perf_counter()
     try:
-        ftp = ftplib.FTP_TLS(host, timeout=int(conf.get("timeout_s", 60)),
-                             context=ssl.create_default_context())  # fmt: skip
+        ftp = Implicite(
+            context=ssl.create_default_context(), timeout=int(conf.get("timeout_s", 60))
+        )
+        ftp.connect(host, int(conf.get("port", 990)))
         ftp.login()
         ftp.prot_p()
     except (OSError, EOFError, ftplib.Error) as e:
