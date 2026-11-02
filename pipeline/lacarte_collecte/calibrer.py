@@ -216,3 +216,97 @@ def calibrer(
     out = {"effort": effort, "actes": len(acts), "textes": len(ready), "passes": runs}
     (dossier / "calibration.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
     return out
+
+
+def textes_en_morceaux(
+    acts: list[dict[str, Any]], contact: str, avant: str, taille: int = 20
+) -> dict[str, dict[str, Any]]:
+    """The texts asked chunk by chunk, each after checking the collection's unit is still
+    idle and the time (UTC, « HH:MM ») is before `avant`: the unit's next run is not shared."""
+    import datetime as dt
+
+    got: dict[str, dict[str, Any]] = {}
+    for i in range(0, len(acts), taille):
+        if dt.datetime.now(dt.UTC).strftime("%H:%M") >= avant:
+            break
+        try:
+            got.update(textes_du_serveur(acts[i : i + taille], contact))
+        except RuntimeError:
+            break  # the unit started: the rest waits for its end
+    return got
+
+
+def mesurer_lot(
+    lot: Path,
+    dossier: Path,
+    avant: str,
+    modele: str = "claude-haiku-5-5",
+    arbitre: str = "claude-opus-5-5",
+    effort: str = "medium",
+    contact: str | None = None,
+) -> dict[str, Any]:
+    """The reference readings of a drawn lot (JSON lines: id, administration, recueil, acte,
+    departement, type): `modele` reads then rereads; where its reading and our reader's
+    disagree, `arbitre` reads the act and its reading is the reference; the references per
+    département and kind under `dossier` (<dep>-<type>.csv), the measure, the real costs."""
+    import os
+
+    from lacarte_collecte import seuil, sortie
+
+    acts = [json.loads(x) for x in lot.read_text("utf-8").splitlines() if x.strip()]
+    contact = contact or os.environ.get("LACARTE_ROBOT_CONTACT") or ""
+    texts = textes_en_morceaux(acts, contact, avant)
+    ready = [{**a, **texts[a["id"]]} for a in acts if a["id"] in texts]
+    prix = yaml.safe_load((collecte.RULES / "collecte_seuils.yaml").read_text("utf-8"))
+    prix = prix["references"]["prix"]
+    c = references.client()
+    first = references.recuperer(c, references.soumettre(c, ready, modele, effort), ready, modele)
+    second = references.recuperer(
+        c,
+        references.soumettre(c, ready, modele, effort, [r.get("lecture") for r in first]),
+        ready,
+        modele,
+    )
+    ours = {a["id"]: a for a in sortie.load(collecte.SORTIE / "arretes.jsonl.gz")}
+    cols = {r["id"]: references.en_colonnes(r, r["id"]) for r in second}
+    disputed = [a for a in ready if not seuil.juger(ours.get(a["id"]), cols[a["id"]])["juste"]]
+    third = (
+        references.recuperer(
+            c, references.soumettre(c, disputed, arbitre, effort), disputed, arbitre
+        )
+        if disputed
+        else []
+    )
+    for r in third:
+        if r.get("lecture"):
+            cols[r["id"]] = references.en_colonnes(r, r["id"])
+    by_kind: dict[str, list[dict[str, Any]]] = {}
+    for a in ready:
+        by_kind.setdefault(f"{a['departement']}-{a['type']}", []).append(cols[a["id"]])
+    for key, rows in by_kind.items():
+        references.ecrire(dossier / f"{key}.csv", rows)
+    measure = seuil.mesurer(list(ours.values()), dossier, collecte.RULES)
+    out = {
+        "actes": len(acts),
+        "textes": len(ready),
+        "desaccords": len(disputed),
+        "arbitre_suit_notre_lecteur": sum(
+            1
+            for r in third
+            if r.get("lecture")
+            and seuil.juger(ours.get(r["id"]), references.en_colonnes(r, r["id"]))["juste"]
+        ),
+        "cout": {
+            "lecture": references.cout(first, prix),
+            "relecture": references.cout(second, prix),
+            "arbitrage": references.cout(third, prix),
+        },
+        "mesure": {
+            k: {x: v[x] for x in ("mesures", "justes", "taux", "nombres_faux", "publie")}
+            for k, v in measure.items()
+            if k in by_kind
+        },
+        "lots": sorted({r["lot"] for r in [*first, *second, *third] if r.get("lot")}),
+    }
+    (dossier / "lot.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), "utf-8")
+    return out

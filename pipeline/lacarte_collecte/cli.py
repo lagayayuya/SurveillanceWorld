@@ -149,13 +149,21 @@ def main(argv: list[str] | None = None) -> None:
     ca.add_argument("--effort", default="medium")
     ca.add_argument("--dossier", type=Path, required=True)
     ca.add_argument("--reference", type=Path, required=True)
+    me = sse.add_parser("mesurer-lot", help="a drawn lot's references and measure (the Mac)")
+    me.add_argument("lot", type=Path)
+    me.add_argument("--dossier", type=Path, required=True)
+    me.add_argument("--avant", required=True, help="UTC HH:MM: no text asked after it")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
         from lacarte_collecte import seuil
 
         refs = collecte.SORTIE.parent / "references"
-        if a.action == "calibrer":
+        if a.action == "mesurer-lot":
+            from lacarte_collecte import calibrer
+
+            out = calibrer.mesurer_lot(a.lot, a.dossier, a.avant)
+        elif a.action == "calibrer":
             from lacarte_collecte import calibrer
 
             out = calibrer.calibrer(

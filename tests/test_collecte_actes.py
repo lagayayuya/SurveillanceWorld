@@ -123,3 +123,11 @@ def test_headings_without_a_number_and_the_verb_that_is_not_one():
     [a] = parse_raa.lire(text, com, KINDS, dt.date(2026, 10, 31))
     assert (a.type, a.insee, a.date_acte) == ("drone", "13005", "2026-10-31")  # not 2004
     assert a.champs["dates"] == ["2026-11-01"] and a.champs["n_cameras_drone"] == 4
+
+
+def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
+    read = {"type": "videoprotection", "insee": "69383", "commune": "Lyon",
+            "champs": {"n_total": 4}}  # fmt: skip
+    ref = {"dispositif": "videoprotection", "commune": "Lyon 3ème", "n_total": "4"}
+    assert seuil.juger(read, ref)["juste"]
+    assert not seuil.juger(read, {**ref, "commune": "Villeurbanne"})["juste"]

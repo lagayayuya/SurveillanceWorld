@@ -67,6 +67,12 @@ def _norm(s: Any) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
+def _place(s: Any) -> str:
+    """A commune's name, compared: no accent, hyphen or arrondissement (« Lyon 3ème »)."""
+    t = _norm(str(s or "").replace("-", " ").replace("'", " "))
+    return re.sub(r"\s+\d+\s*(?:e|er|eme|ème)?$", "", t).strip()
+
+
 def _num(x: Any) -> int | None:
     try:
         return int(float(str(x).strip()))
@@ -94,7 +100,11 @@ def juger(read: dict[str, Any] | None, ref: dict[str, str]) -> dict[str, Any]:
     f = read.get("champs") or {}
     if read["type"] != ref["dispositif"]:
         errs.append(f"type {read['type']}≠{ref['dispositif']}")
-    if ref.get("insee") and _norm(read.get("insee")) != _norm(ref["insee"]):
+    if ref.get("insee") and _norm(read.get("insee")) != _norm(ref["insee"]) or (
+        not ref.get("insee")
+        and ref.get("commune")
+        and _place(read.get("commune")) != _place(ref["commune"])
+    ):
         errs.append(f"commune {read.get('commune')}≠{ref.get('commune')}")
     counts: list[tuple[str, Any]] = []
     if ref["dispositif"] in ("videoprotection", "cameras_pietons"):
@@ -109,9 +119,9 @@ def juger(read: dict[str, Any] | None, ref: dict[str, str]) -> dict[str, Any]:
             errs.append(f"dates {_span(f.get('dates'))}≠{ref.get('dates')}")
         if _hours(f.get("horaires")) != _hours(ref.get("horaires")):
             errs.append(f"horaires {f.get('horaires')}≠{ref.get('horaires')}")
-        key = _norm(ref.get("zone_mot"))
-        if key and key not in _norm(f.get("zone_extrait")) + " " + _norm(read.get("commune")):
-            errs.append(f"zone sans « {ref.get('zone_mot')} »")
+        # the perimeter's word is not part of the measure (Ju's criterion: the kind, the
+        # commune, the numbers, the dates, the hours): a reference's own word for a place
+        # rarely is the dispositif's
     for k, v in counts:
         truth = _num(ref.get(k, ""))
         if v is None and truth is None:
