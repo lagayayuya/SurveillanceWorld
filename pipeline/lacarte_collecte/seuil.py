@@ -100,10 +100,14 @@ def juger(read: dict[str, Any] | None, ref: dict[str, str]) -> dict[str, Any]:
     f = read.get("champs") or {}
     if read["type"] != ref["dispositif"]:
         errs.append(f"type {read['type']}≠{ref['dispositif']}")
-    if ref.get("insee") and _norm(read.get("insee")) != _norm(ref["insee"]) or (
-        not ref.get("insee")
-        and ref.get("commune")
-        and _place(read.get("commune")) != _place(ref["commune"])
+    if (
+        ref.get("insee")
+        and _norm(read.get("insee")) != _norm(ref["insee"])
+        or (
+            not ref.get("insee")
+            and ref.get("commune")
+            and _place(read.get("commune")) != _place(ref["commune"])
+        )
     ):
         errs.append(f"commune {read.get('commune')}≠{ref.get('commune')}")
     counts: list[tuple[str, Any]] = []

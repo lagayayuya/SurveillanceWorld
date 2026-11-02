@@ -163,3 +163,33 @@ def test_a_rereading_sends_the_first_reading_and_skips_an_act_without_one():
 
     bid = references.soumettre(C(), [act, act], "m", "medium", [None, {"n_total": 1}])
     assert bid == "msgbatch_x" and [x["custom_id"] for x in C.messages.batches.sent] == ["a1"]
+
+
+def test_the_texts_wait_for_an_idle_window(monkeypatch):
+    states = iter([(False, 200.0), (True, 5.0), (True, 40.0), (True, 39.0)])
+    monkeypatch.setattr(calibrer, "_target", lambda: "deploy@example.test")
+    monkeypatch.setattr(calibrer, "libre", lambda t: next(states))
+    asked = []
+
+    def fake(acts, contact, timeout=0):
+        asked.append([a["id"] for a in acts])
+        return {a["id"]: {"id": a["id"], "texte": "t"} for a in acts}
+
+    monkeypatch.setattr(calibrer, "textes_du_serveur", fake)
+    slept = []
+    acts = [{"id": f"a{i}"} for i in range(30)]
+    got = calibrer.textes_en_morceaux(acts, "c", sleep=slept.append)
+    # the unit running, then its next run 5 minutes away: two waits; then two chunks
+    assert slept == [300, 300] and [len(x) for x in asked] == [20, 10] and len(got) == 30
+
+
+def test_a_recueil_without_a_summary_is_cut_in_linear_time():
+    import time
+
+    from lacarte_collecte import parse_raa
+
+    foot = "\n13_Pref - 13-2026-09-08-{:05d} - Arrêté portant autorisation\n" + "texte " * 40
+    txt = "".join(foot.format(i // 3) for i in range(3000))
+    t = time.monotonic()
+    assert len(parse_raa.split_acts(txt)) == 1000
+    assert time.monotonic() - t < 2  # 15 s with the unbounded summary pattern

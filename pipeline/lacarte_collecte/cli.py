@@ -152,7 +152,7 @@ def main(argv: list[str] | None = None) -> None:
     me = sse.add_parser("mesurer-lot", help="a drawn lot's references and measure (the Mac)")
     me.add_argument("lot", type=Path)
     me.add_argument("--dossier", type=Path, required=True)
-    me.add_argument("--avant", required=True, help="UTC HH:MM: no text asked after it")
+    me.add_argument("--attente", type=float, default=30, help="hours to wait for idle windows")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
@@ -162,7 +162,7 @@ def main(argv: list[str] | None = None) -> None:
         if a.action == "mesurer-lot":
             from lacarte_collecte import calibrer
 
-            out = calibrer.mesurer_lot(a.lot, a.dossier, a.avant)
+            out = calibrer.mesurer_lot(a.lot, a.dossier, a.attente)
         elif a.action == "calibrer":
             from lacarte_collecte import calibrer
 

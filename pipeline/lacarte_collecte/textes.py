@@ -27,10 +27,10 @@ MARGE = 2000
 REPLI = 8000
 
 
-def fenetre(text: str, acte: str) -> str | None:
+def fenetre(text: str, acte: str, pieces: list[parse_raa.Morceau] | None = None) -> str | None:
     """The act's window in its recueil's text: our cut widened by MARGE on each side, else
-    the text around the act's number."""
-    for m in parse_raa.split_acts(text):
+    the text around the act's number. `pieces`: the recueil's cut, made once for its acts."""
+    for m in pieces if pieces is not None else parse_raa.split_acts(text):
         key = re.sub(r"[^\w.~:-]", "-", m.acte)
         if acte in (m.acte, key):
             start = text.find(m.texte)
@@ -49,6 +49,7 @@ def lire(f: fetch.Fetcher, asked: Iterable[dict[str, Any]], api: str) -> Iterato
     for rid, acts in by_recueil.items():
         d = f.get_json(f"{api}raa/{rid}", cache=False)
         text = d.get("content") or ""
+        pieces = parse_raa.split_acts(text)  # once per recueil, whatever its acts asked
         for a in acts:
             # the act's own number in its recueil: the national id, or the heading's
             number = a["acte"].rsplit(":", 1)[-1]
@@ -57,7 +58,7 @@ def lire(f: fetch.Fetcher, asked: Iterable[dict[str, Any]], api: str) -> Iterato
                 "recueil_nom": parse_raa.mask(d.get("name") or ""),
                 "date": d.get("date"),
                 "acte": number,
-                "texte": fenetre(text, number),
+                "texte": fenetre(text, number, pieces),
             }
 
 

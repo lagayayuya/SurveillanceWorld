@@ -158,7 +158,10 @@ class Morceau:
 
 def split_acts(txt: str) -> list[Morceau]:
     titles: dict[str, str] = {}
-    for m in re.finditer(r"(" + ID + r")\s*-\s*(.+?)\((\d+)\s*pages?\)", txt, re.S):
+    # a summary's line: the act's id, its title, its pages; the title bounded (a recueil
+    # without a summary repeats each id in its page feet: unbounded, each would scan the rest
+    # of the text, hours on a recueil of the Bouches-du-Rhône's size)
+    for m in re.finditer(r"(" + ID + r")\s*-\s*(.{1,800}?)\((\d+)\s*pages?\)", txt, re.S):
         titles.setdefault(m.group(1), re.sub(r"\s+", " ", m.group(2)).strip())
     som_end = 0
     for m in re.finditer(r"\((\d+)\s*pages?\)\s*Page\s*\d+", txt):

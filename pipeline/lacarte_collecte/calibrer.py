@@ -31,7 +31,9 @@ def _target(path: Path = DEPLOY_ENV) -> str:
     raise RuntimeError(f"{path}: no DEPLOY_TARGET")
 
 
-def textes_du_serveur(acts: list[dict[str, Any]], contact: str) -> dict[str, dict[str, Any]]:
+def textes_du_serveur(
+    acts: list[dict[str, Any]], contact: str, timeout: float = 3600
+) -> dict[str, dict[str, Any]]:
     target = _target()
     state = subprocess.run(
         [
@@ -61,7 +63,7 @@ def textes_du_serveur(acts: list[dict[str, Any]], contact: str) -> dict[str, dic
         input=asked,
         capture_output=True,
         text=True,
-        timeout=3600,
+        timeout=timeout,
         check=True,
     )
     return {x["id"]: x for x in map(json.loads, r.stdout.splitlines()) if x.get("texte")}
@@ -218,28 +220,74 @@ def calibrer(
     return out
 
 
-def textes_en_morceaux(
-    acts: list[dict[str, Any]], contact: str, avant: str, taille: int = 20
-) -> dict[str, dict[str, Any]]:
-    """The texts asked chunk by chunk, each after checking the collection's unit is still
-    idle and the time (UTC, « HH:MM ») is before `avant`: the unit's next run is not shared."""
+def libre(target: str) -> tuple[bool, float]:
+    """Is the collection's unit idle, and in how many minutes does its timer fire next?"""
     import datetime as dt
 
+    out = subprocess.run(
+        [
+            "ssh",
+            "-o",
+            "BatchMode=yes",
+            "-o",
+            "ConnectTimeout=20",
+            target,
+            "sudo -n /usr/bin/systemctl status --no-pager lacarte-collecte.service | sed -n 3p;"
+            " systemctl show lacarte-collecte.timer -p NextElapseUSecRealtime --value",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    ).stdout.splitlines()
+    if len(out) < 2:
+        return False, 0.0
+    idle = not re.search(r"Active: (activating|active|deactivating|reloading)\b", out[0])
+    try:
+        nxt = dt.datetime.strptime(out[1].strip(), "%a %Y-%m-%d %H:%M:%S %Z").replace(tzinfo=dt.UTC)
+    except ValueError:
+        return False, 0.0
+    return idle, (nxt - dt.datetime.now(dt.UTC)).total_seconds() / 60
+
+
+def textes_en_morceaux(
+    acts: list[dict[str, Any]],
+    contact: str,
+    attente_h: float = 30,
+    taille: int = 20,
+    marge_min: float = 10,
+    sleep: Any = None,
+) -> dict[str, dict[str, Any]]:
+    """The texts asked chunk by chunk, each only while the collection's unit is idle and its
+    next run more than `marge_min` minutes away (its attrap.fr queue is not shared): between
+    two runs the process waits, the texts it has held in memory, for at most `attente_h`
+    hours. A chunk that takes more than 15 minutes is given up (its acts stay unread)."""
+    import time
+
+    sleep = sleep or time.sleep
+    target = _target()
     got: dict[str, dict[str, Any]] = {}
-    for i in range(0, len(acts), taille):
-        if dt.datetime.now(dt.UTC).strftime("%H:%M") >= avant:
-            break
+    end = time.monotonic() + attente_h * 3600
+    i = 0
+    while i < len(acts) and time.monotonic() < end:
+        idle, minutes = libre(target)
+        if not idle or minutes < marge_min:
+            sleep(300)
+            continue
         try:
-            got.update(textes_du_serveur(acts[i : i + taille], contact))
+            got.update(textes_du_serveur(acts[i : i + taille], contact, timeout=900))
         except RuntimeError:
-            break  # the unit started: the rest waits for its end
+            continue  # the unit started between the check and the chunk: wait again
+        except subprocess.TimeoutExpired:
+            print(f"paquet {i // taille + 1} abandonné : plus de 15 min", flush=True)
+        i += taille
+        print(f"textes : {len(got)} sur {len(acts)}", flush=True)
     return got
 
 
 def mesurer_lot(
     lot: Path,
     dossier: Path,
-    avant: str,
+    attente_h: float = 30,
     modele: str = "claude-haiku-5-5",
     arbitre: str = "claude-opus-5-5",
     effort: str = "medium",
@@ -255,7 +303,7 @@ def mesurer_lot(
 
     acts = [json.loads(x) for x in lot.read_text("utf-8").splitlines() if x.strip()]
     contact = contact or os.environ.get("LACARTE_ROBOT_CONTACT") or ""
-    texts = textes_en_morceaux(acts, contact, avant)
+    texts = textes_en_morceaux(acts, contact, attente_h)
     ready = [{**a, **texts[a["id"]]} for a in acts if a["id"] in texts]
     prix = yaml.safe_load((collecte.RULES / "collecte_seuils.yaml").read_text("utf-8"))
     prix = prix["references"]["prix"]
