@@ -21,3 +21,14 @@ types:
   drone: {taux: 0.85}
   cameras_pietons: {taux: 0.95}
   vsa: {taux: 0.85}
+# The reference readings through Anthropic's Message Batches API (lacarte_collecte/
+# references.py): the price per million tokens of each model the readings may use, input and
+# output, read in the Claude API's model table (cached on 2026-10-06; Haiku's for prompts
+# up to 100 000 tokens), and the batch's discount; a cache write costs 1.25 times the input,
+# a read 0.1 times. They give each lot's real cost from the usage the API returns.
+references:
+  prix:
+    remise_lot: 0.5
+    claude-haiku-5-5: {entree: 0.10, sortie: 0.50}
+    claude-sonnet-5-5: {entree: 2.00, sortie: 10.00}
+    claude-opus-5-5: {entree: 4.00, sortie: 20.00}

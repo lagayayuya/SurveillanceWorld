@@ -25,9 +25,11 @@ import datetime as dt
 import fcntl
 import importlib
 import json
+import os
 import sys
 import threading
 import time
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -134,18 +136,35 @@ def main(argv: list[str] | None = None) -> None:
     ti.add_argument("type")
     ti.add_argument("--n", type=int, default=30)
     sse.add_parser("mesurer")
+    lr = sse.add_parser("lire", help="reference readings through the Batch API (the Mac)")
+    lr.add_argument("actes", type=Path, help="JSON lines: id, administration, recueil, acte")
+    lr.add_argument("--modele", default="claude-haiku-5-5")
+    lr.add_argument("--effort", default="medium")
+    lr.add_argument("--sortie", type=Path, required=True, help="the readings' CSV")
+    lr.add_argument("--reference", type=Path, help="a reference CSV to compare with")
+    sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
         from lacarte_collecte import seuil
 
         refs = collecte.SORTIE.parent / "references"
-        if a.action == "tirer":
+        if a.action == "lire":
+            from lacarte_collecte import calibrer
+
+            out = calibrer.lire(a.actes, a.modele, a.effort, a.sortie, a.reference)
+        elif a.action == "tirer":
             out = seuil.tirer(sortie.load(collecte.SORTIE / "arretes.jsonl.gz"), a.dep, a.type, a.n)
         else:
             out = seuil.mesurer(
                 sortie.load(collecte.SORTIE / "arretes.jsonl.gz"), refs, collecte.RULES
             )
         json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
+        return
+    if a.cmd == "textes":
+        from lacarte_collecte import textes
+
+        root = Path(os.environ.get("LACARTE_TEXTES_DIR") or "/tmp/lacarte-textes")
+        textes.main(root, os.environ.get(fetch.CONTACT_ENV))
         return
     collecte.ROOT.mkdir(parents=True, exist_ok=True)
     with (collecte.ROOT / ".tourner.lock").open("w") as lk:
