@@ -123,24 +123,27 @@ def journal(root: Path, since: str) -> dict[str, Any]:
     number, their time, their cuts (network errors) and refusals."""
     per_source: dict[str, Counter] = defaultdict(Counter)
     per_address: dict[str, Counter] = defaultdict(Counter)
-    last: dict[str, dt.datetime] = {}
-    gap: dict[str, float] = {}
+    starts: dict[str, list[dt.datetime]] = {}
     for p in sorted((root / "brut" / "_journal").glob("requetes-*.tsv")):
         with p.open(encoding="utf-8") as fh:
             for row in csv.reader(fh, delimiter="\t"):
                 if len(row) < 6 or row[0] < since:
                     continue
                 when, address, _, status, ms, source = row[:6]
-                at = dt.datetime.fromisoformat(when)
-                if address in last:
-                    d = (at - last[address]).total_seconds()
-                    gap[address] = min(gap.get(address, d), d)
-                last[address] = at
+                # the journal dates a request when it ends: its start is that less its time,
+                # and the pace is between two starts (cadence.py waits from a start)
+                at = dt.datetime.fromisoformat(when) - dt.timedelta(milliseconds=float(ms or 0))
+                starts.setdefault(address, []).append(at)
                 for c in (per_source[source], per_address[address]):
                     c["requetes"] += 1
                     c["ms"] += int(float(ms or 0))
                     c["coupures"] += status == "réseau"
                     c["refus"] += status in ("401", "403", "429")
+    gap: dict[str, float] = {}
+    for address, ts in starts.items():
+        ts.sort()
+        if len(ts) > 1:
+            gap[address] = min((b - a).total_seconds() for a, b in zip(ts, ts[1:], strict=False))
     adresses = {
         k: {**dict(v), "ecart_min_s": round(gap[k], 2) if k in gap else None}
         for k, v in per_address.items()

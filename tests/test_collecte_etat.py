@@ -31,3 +31,18 @@ def test_once_caught_up_only_the_night_s_run_works(tmp_path):
     # no request, no file: the day's run of a collection caught up ends at once
     assert cli.tourner(ctx, now=noon) == {"hors_nuit": "2026-11-03T13:15+01:00"}
     assert not (tmp_path / "sortie").exists()
+
+
+def test_the_smallest_gap_is_between_two_starts_not_two_ends(tmp_path):
+    from lacarte_collecte import sortie
+
+    j = tmp_path / "brut" / "_journal"
+    j.mkdir(parents=True)
+    # a 6 s PDF started at 00:00:00, a 0.2 s request started at 00:00:10: ends 4.2 s apart
+    (j / "requetes-2026-11.tsv").write_text(
+        "2026-11-02T00:00:06.000+00:00\t192.0.2.7\thttps://a/x.pdf\t200\t6000\tpdf\n"
+        "2026-11-02T00:00:10.200+00:00\t192.0.2.7\thttps://a/y\t200\t200\tliens\n",
+        "utf-8",
+    )
+    got = sortie.journal(tmp_path, "2026-11-01")["adresses"]["192.0.2.7"]
+    assert got["ecart_min_s"] == 10.0
