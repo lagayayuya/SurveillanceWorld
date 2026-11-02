@@ -63,14 +63,17 @@ cameras_pietons (caméras individuelles des agents, L.241-1 et L.241-2), vsa (tr
 algorithmique des images), autre (rien de cela) ;
 - sous_type : autorisation, renouvellement, modification, abrogation, refus ou provisoire ;
 - commune : la commune où le dispositif est installé ou opère (pour un drone, celle de \
-l'événement ; s'il y en a plusieurs, la première citée), son nom seul ;
+l'événement ; s'il y en a plusieurs, la première citée dans le dispositif), son nom seul ;
 - vidéoprotection : nombres de caméras intérieures, extérieures, visionnant la voie publique, \
-et n_total ; si l'acte dit « dont N visionnant la voie publique », la voie publique est \
-comprise dans les extérieures et n_total = intérieures + extérieures ; un nombre que l'acte \
-n'écrit pas est null ;
+et n_total, le total des caméras autorisées ; quand l'acte n'écrit pas de total, n_total est \
+la somme des nombres qu'il écrit (intérieures + extérieures + voie publique énoncées à part) ; \
+si l'acte dit « dont N visionnant la voie publique », la voie publique est comprise dans les \
+extérieures et n_total = intérieures + extérieures ; relis chaque nombre de l'article qui les \
+énumère, n'en omets aucun ; un nombre que l'acte n'écrit pas est null ;
 - drone : dates, chaque jour autorisé au format AAAA-MM-JJ (une période : son premier et son \
 dernier jour) ; horaires, chaque plage au format HHhMM-HHhMM (24 h ; une plage qui finit le \
-lendemain garde son heure de fin, 18h00-03h00) ; n_cameras_drone, le nombre maximal de caméras \
+lendemain garde son heure de fin, 18h00-03h00 ; une plage sans heure de fin écrite, « jusqu'à \
+la fin du dispositif », s'écrit HHhMM-fin) ; n_cameras_drone, le nombre maximal de caméras \
 ou d'aéronefs autorisé tel qu'il est écrit, null s'il n'est pas écrit (un modèle d'appareil \
 cité sans nombre : null) ;
 - caméras-piétons : n_total, le nombre de caméras autorisées s'il est écrit ;
@@ -144,7 +147,18 @@ def client() -> Any:
     return anthropic.Anthropic(api_key=cle())
 
 
-def requete(i: int, act: dict[str, Any], model: str, effort: str) -> Any:
+RELIRE = (
+    "Une première lecture de cet acte, au même schéma :\n<lecture>\n{lecture}\n</lecture>\n"
+    "Vérifie chaque champ contre le dispositif de l'acte, dans l'extrait, et rends la lecture "
+    "juste, corrigée là où elle se trompe, au même schéma."
+)
+
+
+def requete(
+    i: int, act: dict[str, Any], model: str, effort: str, premiere: dict[str, Any] | None = None
+) -> Any:
+    """One act's request; with `premiere` (a first reading), a rereading: the model checks it
+    against the act and answers the corrected reading."""
     from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
     from anthropic.types.messages.batch_create_params import Request
 
@@ -152,6 +166,8 @@ def requete(i: int, act: dict[str, Any], model: str, effort: str) -> Any:
         f"Recueil : {act['recueil_nom']} (publié le {act['date']}).\n"
         f"Acte à lire : n° {act['acte']}.\n\n<extrait>\n{act['texte']}\n</extrait>"
     )
+    if premiere is not None:
+        user += "\n\n" + RELIRE.format(lecture=json.dumps(premiere, ensure_ascii=False))
     return Request(
         custom_id=f"a{i}",
         params=MessageCreateParamsNonStreaming(
@@ -164,24 +180,31 @@ def requete(i: int, act: dict[str, Any], model: str, effort: str) -> Any:
     )
 
 
-def lire(
+def soumettre(
+    c: Any,
     acts: list[dict[str, Any]],
     model: str,
-    effort: str = "medium",
-    wait_s: float = 30,
-    out: Any = None,
+    effort: str,
+    premieres: list[dict[str, Any] | None] | None = None,
+) -> str:
+    """One batch; its id. `premieres`: the first readings to reread, act by act (an act
+    without one is not sent)."""
+    reqs = [
+        requete(i, a, model, effort, premieres[i] if premieres else None)
+        for i, a in enumerate(acts)
+        if premieres is None or premieres[i] is not None
+    ]
+    return str(c.messages.batches.create(requests=reqs).id)
+
+
+def recuperer(
+    c: Any, batch_id: str, acts: list[dict[str, Any]], model: str, wait_s: float = 30
 ) -> list[dict[str, Any]]:
-    """One batch for `acts` (each with its text), waited for; each act's answer and usage."""
-    c = client()
-    batch = c.messages.batches.create(
-        requests=[requete(i, a, model, effort) for i, a in enumerate(acts)]
-    )
-    if out:
-        out(f"lot {batch.id} : {len(acts)} actes, {model}")
-    while (b := c.messages.batches.retrieve(batch.id)).processing_status != "ended":
+    """The batch, waited for: each act's answer and usage, by its custom_id."""
+    while c.messages.batches.retrieve(batch_id).processing_status != "ended":
         time.sleep(wait_s)
     rows: list[dict[str, Any]] = [{"id": a["id"], "statut": "absent"} for a in acts]
-    for r in c.messages.batches.results(batch.id):
+    for r in c.messages.batches.results(batch_id):
         i = int(r.custom_id[1:])
         if r.result.type != "succeeded":
             rows[i] = {"id": acts[i]["id"], "statut": r.result.type}
@@ -200,7 +223,22 @@ def lire(
                 "cache_read": u.cache_read_input_tokens or 0,
             },
         }
-    return [{**r, "lot": b.id, "modele": model} for r in rows]
+    return [{**r, "lot": batch_id, "modele": model} for r in rows]
+
+
+def lire(
+    acts: list[dict[str, Any]],
+    model: str,
+    effort: str = "medium",
+    wait_s: float = 30,
+    out: Any = None,
+) -> list[dict[str, Any]]:
+    """One batch for `acts` (each with its text), waited for."""
+    c = client()
+    bid = soumettre(c, acts, model, effort)
+    if out:
+        out(f"lot {bid} : {len(acts)} actes, {model}")
+    return recuperer(c, bid, acts, model, wait_s)
 
 
 def cout(rows: Iterable[dict[str, Any]], prix: dict[str, Any]) -> dict[str, Any]:

@@ -142,13 +142,31 @@ def main(argv: list[str] | None = None) -> None:
     lr.add_argument("--effort", default="medium")
     lr.add_argument("--sortie", type=Path, required=True, help="the readings' CSV")
     lr.add_argument("--reference", type=Path, help="a reference CSV to compare with")
+    ca = sse.add_parser("calibrer", help="several models, rereadings, one set of texts (the Mac)")
+    ca.add_argument("actes", type=Path)
+    ca.add_argument("--modeles", default="claude-haiku-5-5,claude-sonnet-5-5,claude-opus-5-5")
+    ca.add_argument("--relire", default="claude-haiku-5-5,claude-sonnet-5-5")
+    ca.add_argument("--effort", default="medium")
+    ca.add_argument("--dossier", type=Path, required=True)
+    ca.add_argument("--reference", type=Path, required=True)
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
         from lacarte_collecte import seuil
 
         refs = collecte.SORTIE.parent / "references"
-        if a.action == "lire":
+        if a.action == "calibrer":
+            from lacarte_collecte import calibrer
+
+            out = calibrer.calibrer(
+                a.actes,
+                a.modeles.split(","),
+                [m for m in a.relire.split(",") if m],
+                a.effort,
+                a.dossier,
+                a.reference,
+            )
+        elif a.action == "lire":
             from lacarte_collecte import calibrer
 
             out = calibrer.lire(a.actes, a.modele, a.effort, a.sortie, a.reference)

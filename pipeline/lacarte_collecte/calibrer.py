@@ -129,3 +129,90 @@ def lire(
         json.dumps({**out, "lectures": rows}, ensure_ascii=False, indent=1), "utf-8"
     )
     return out
+
+
+def _score(cols: list[dict[str, Any]], refs: dict[str, dict[str, str]]) -> dict[str, Any]:
+    per: dict[str, dict[str, bool]] = {}
+    for c in cols:
+        ref = refs.get(c["acte"].rsplit(":", 1)[-1]) or refs.get(c["acte"])
+        if ref:
+            per[c["acte"]] = references.comparer(c, ref)
+    fields = ("commune", "nombres", "dates", "horaires")
+    return {
+        "justes": {
+            f: f"{sum(v[f] for v in per.values() if f in v)}/"
+            f"{sum(1 for v in per.values() if f in v)}"
+            for f in fields
+        },
+        "tout_juste": f"{sum(all(v.values()) for v in per.values())}/{len(per)}",
+        "ecarts": {
+            k: [f for f, ok in v.items() if not ok] for k, v in per.items() if not all(v.values())
+        },
+    }
+
+
+def calibrer(
+    actes: Path,
+    modeles: list[str],
+    relire: list[str],
+    effort: str,
+    dossier: Path,
+    reference: Path,
+    contact: str | None = None,
+) -> dict[str, Any]:
+    """Every model reads the same acts from the same texts (asked once, held in memory);
+    the models in `relire` then reread their own first reading. Each pass's readings, cost
+    and score against `reference`, and how many acts a rereading changed."""
+    import os
+
+    acts = [json.loads(x) for x in actes.read_text("utf-8").splitlines() if x.strip()]
+    contact = contact or os.environ.get("LACARTE_ROBOT_CONTACT") or ""
+    texts = textes_du_serveur(acts, contact)
+    ready = [{**a, **texts[a["id"]]} for a in acts if a["id"] in texts]
+    prix = yaml.safe_load((collecte.RULES / "collecte_seuils.yaml").read_text("utf-8"))
+    prix = prix["references"]["prix"]
+    with reference.open(encoding="utf-8", newline="") as fh:
+        refs = {r["acte"]: r for r in csv.DictReader(fh)}
+    c = references.client()
+    first = {m: references.soumettre(c, ready, m, effort) for m in modeles}
+    runs: dict[str, Any] = {}
+    reads: dict[str, list[dict[str, Any]]] = {}
+
+    def record(name: str, model: str, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        cols = [references.en_colonnes(r, r["id"]) for r in rows]
+        references.ecrire(dossier / f"{name}.csv", cols)
+        runs[name] = {
+            "modele": model,
+            "lot": rows[0]["lot"] if rows else None,
+            **references.cout(rows, prix),
+            **_score(cols, refs),
+        }
+        return cols
+
+    for m, bid in first.items():
+        reads[m] = references.recuperer(c, bid, ready, m)
+        record(m, m, reads[m])
+    second = {
+        m: references.soumettre(c, ready, m, effort, [r.get("lecture") for r in reads[m]])
+        for m in relire
+    }
+    for m, bid in second.items():
+        rows = references.recuperer(c, bid, ready, m)
+        cols = record(f"{m}-relu", m, rows)
+        before = {x["acte"]: x for x in (references.en_colonnes(r, r["id"]) for r in reads[m])}
+        keys = (
+            "commune",
+            "n_interieur",
+            "n_exterieur",
+            "n_voie_publique",
+            "n_total",
+            "n_cameras_drone",
+            "dates",
+            "horaires",
+        )
+        runs[f"{m}-relu"]["changes"] = sum(
+            any(str(x.get(k)) != str(before[x["acte"]].get(k)) for k in keys) for x in cols
+        )
+    out = {"effort": effort, "actes": len(acts), "textes": len(ready), "passes": runs}
+    (dossier / "calibration.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
+    return out

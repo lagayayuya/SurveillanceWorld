@@ -141,3 +141,25 @@ def test_the_texts_wait_for_the_collection_s_run(monkeypatch):
     assert calibrer.textes_du_serveur(
         [{"id": "x", "administration": "a", "recueil": "r", "acte": "1"}], "contact"
     ) == {"x": {"id": "x", "texte": "t"}}
+
+
+def test_a_rereading_sends_the_first_reading_and_skips_an_act_without_one():
+    act = {"recueil_nom": "R", "date": "2026-07-08", "acte": "371", "texte": "…"}
+    r = references.requete(0, act, "claude-haiku-5-5", "medium", {"n_total": 39})
+    assert '<lecture>\n{"n_total": 39}\n</lecture>' in r["params"]["messages"][0]["content"]
+
+    class Batches:
+        def create(self, requests):
+            self.sent = requests
+
+            class B:
+                id = "msgbatch_x"
+
+            return B()
+
+    class C:
+        class messages:  # noqa: N801 (the SDK's attribute)
+            batches = Batches()
+
+    bid = references.soumettre(C(), [act, act], "m", "medium", [None, {"n_total": 1}])
+    assert bid == "msgbatch_x" and [x["custom_id"] for x in C.messages.batches.sent] == ["a1"]
