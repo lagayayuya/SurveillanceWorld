@@ -26,7 +26,10 @@ types:
 # output, read in the Claude API's model table (cached on 2026-10-06; Haiku's for prompts
 # up to 100 000 tokens), and the batch's discount; a cache write costs 1.25 times the input,
 # a read 0.1 times. They give each lot's real cost from the usage the API returns.
+# `budget_dollars`: what the API may cost in all, reading and references (Ju, 2026-11-03);
+# reached, no new reading is sent until Ju raises it.
 references:
+  budget_dollars: 150
   prix:
     remise_lot: 0.5
     claude-haiku-5-5: {entree: 0.10, sortie: 0.50}

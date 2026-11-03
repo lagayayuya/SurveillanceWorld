@@ -108,6 +108,18 @@ def tourner(
         t.start()
     for t in threads:
         t.join()
+    # the reading by the model (the API's key in the unit's environment): the batches sent by
+    # the last run fetched, the acts not yet read sent; without the API, the rules alone
+    if only in (None, "arretes") and os.environ.get("LACARTE_ANTHROPIC_KEY"):
+        from lacarte_collecte import modele
+
+        try:
+            summary["modele"] = modele.suivre(ctx)
+            todo = modele.a_lire(ctx)[:2000]
+            summary["modele"]["envoyes"] = len(todo) if modele.envoyer(ctx, todo) else 0
+            summary["modele"]["depense"] = modele.depense(ctx)
+        except Exception as e:  # noqa: BLE001 (the API down: the run goes on, said in the report)
+            summary["modele"] = {"erreur": f"{type(e).__name__}: {e}"[:300]}
     rep = sortie.ecrire(ctx, started, summary)
     if only is None and not weekly:
         d = summary.get("dila") or {}
@@ -163,6 +175,10 @@ def main(argv: list[str] | None = None) -> None:
     mo.add_argument("acte")
     er = sub.add_parser("effacer-recueil", help="a recueil's text, acts and record, erased")
     er.add_argument("recueil", nargs="+")
+    md = sub.add_parser("modele", help="the reading by the model (the server, as its user)")
+    md.add_argument("action", choices=("lire", "suivre", "calibrer"))
+    md.add_argument("--admin")
+    md.add_argument("--actes", help="act ids, comma-separated")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
@@ -204,6 +220,19 @@ def main(argv: list[str] | None = None) -> None:
         out = arretes.relire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
         sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(timespec="seconds"), {"relire": out})
         print(json.dumps(out, ensure_ascii=False))
+        return
+    if a.cmd == "modele":
+        from lacarte_collecte import modele
+
+        ctx = contexte(5.0)
+        if a.action == "calibrer":
+            out = modele.calibrer(ctx, json.load(sys.stdin))
+        elif a.action == "lire":
+            todo = modele.a_lire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
+            out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo)}
+        else:
+            out = modele.suivre(ctx)
+        print(json.dumps(out, ensure_ascii=False, indent=1))
         return
     if a.cmd == "montrer":
         from lacarte_collecte import textes
