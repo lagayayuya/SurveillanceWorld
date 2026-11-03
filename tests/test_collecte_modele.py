@@ -137,6 +137,9 @@ def test_the_threshold_field_by_field(tmp_path):
         )
     Store(tmp_path, "champs").add(final)
     Store(tmp_path, "references").add(refs)
+    Store(tmp_path, "actes").add(
+        [{"id": f"a{i}", "departement": "57", "type": "drone"} for i in range(20)]
+    )
     m = modele.mesurer(ctx)["57-drone"]
     assert m["commune"]["publie"] and m["horaires"]["publie"]
     # 19 of 20 right but one number wrong: never published
@@ -146,3 +149,22 @@ def test_the_threshold_field_by_field(tmp_path):
         False,
     )
     assert m["dates"]["justes"] == 15 and not m["dates"]["publie"]  # 75 % < 85 %
+
+
+def test_a_sample_smaller_than_due_publishes_nothing(tmp_path):
+    import lacarte_registre as registre
+    from lacarte_collecte.contexte import Contexte
+    from lacarte_collecte.etat import Store
+
+    ctx = Contexte(root=tmp_path, sortie=tmp_path / "s", rules_dir=registre.RULES)
+    Store(tmp_path, "actes").add(
+        [{"id": f"a{i}", "departement": "13", "type": "drone"} for i in range(300)]
+    )
+    Store(tmp_path, "champs").add(
+        [{"id": "a0", "champs": {"commune": {"valeur": "Aubagne", "origine": "accord"}}}]
+    )
+    Store(tmp_path, "references").add(
+        [{"id": "a0", "departement": "13", "type": "drone", "reference": {"commune": "Aubagne"}}]
+    )
+    m = modele.mesurer(ctx)["13-drone"]["commune"]
+    assert (m["justes"], m["mesures"], m["du"], m["publie"]) == (1, 1, 30, False)

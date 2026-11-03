@@ -190,7 +190,9 @@ def main(argv: list[str] | None = None) -> None:
     er = sub.add_parser("effacer-recueil", help="a recueil's text, acts and record, erased")
     er.add_argument("recueil", nargs="+")
     md = sub.add_parser("modele", help="the reading by the model (the server, as its user)")
-    md.add_argument("action", choices=("lire", "suivre", "calibrer", "references", "mesurer"))
+    md.add_argument(
+        "action", choices=("lire", "suivre", "calibrer", "references", "mesurer", "statut")
+    )
     md.add_argument("--types", help="dep-kind pairs, comma-separated (references)")
     md.add_argument("--graine", type=int, default=20261103)
     md.add_argument("--admin")
@@ -248,6 +250,8 @@ def main(argv: list[str] | None = None) -> None:
             exclure = set(json.load(sys.stdin)) if not sys.stdin.isatty() else set()
             pairs = [tuple(x.split("-", 1)) for x in (a.types or "").split(",") if x]
             out = modele.references_lot(ctx, pairs, a.graine, exclure)
+        elif a.action == "statut":
+            out = modele.statut(ctx)
         elif a.action == "mesurer":
             out = modele.mesurer(ctx)
             (ctx.sortie / "mesures.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))

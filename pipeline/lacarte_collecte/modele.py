@@ -767,18 +767,56 @@ def mesurer(ctx: Any) -> dict[str, Any]:
             t[0] += all(r for r, _ in res)
             t[1] += 1
             t[2] += any(w for _, w in res)
+    # the sample due: 30 acts (rules), or every act of the kind when it has fewer; a smaller
+    # sample (texts not yet cached, say) publishes nothing
+    n_due = int(conf.get("echantillon", 30))
+    avail: dict[str, int] = {}
+    for a in Store(ctx.root, "actes").records():
+        k = f"{a['departement']}-{a['type']}"
+        avail[k] = avail.get(k, 0) + 1
     out = {}
     for key, gs in tally.items():
         kind = key.split("-", 1)[1]
         need = float(conf["types"].get(kind, {}).get("taux", 1.0))
+        due = min(n_due, avail.get(key, 0))
         out[key] = {
             g: {
                 "justes": a,
                 "mesures": b,
                 "taux": round(a / b, 3) if b else 0.0,
                 "nombres_faux": w,
-                "publie": bool(b) and a / b >= need and w == 0,
+                "du": due,
+                "publie": b >= due > 0 and a / b >= need and w == 0,
             }
             for g, (a, b, w) in gs.items()
         }
     return out
+
+
+def statut(ctx: Any) -> dict[str, Any]:
+    """Where the reading stands: the cache per administration, the acts read by the model,
+    the batches in flight, the dollars spent and the budget."""
+    from lacarte_collecte.cache import Cache
+    from lacarte_collecte.etat import Etat, Store
+
+    cached: dict[str, int] = {}
+    for d in Cache(ctx.root).all():
+        cached[d["administration"]] = cached.get(d["administration"], 0) + 1
+    acts: dict[str, int] = {}
+    for a in Store(ctx.root, "actes").records():
+        acts[a["administration"]] = acts.get(a["administration"], 0) + 1
+    read = {r["id"] for r in Store(ctx.root, "champs").records()}
+    per_read: dict[str, int] = {}
+    for a in Store(ctx.root, "actes").records():
+        if a["id"] in read:
+            per_read[a["administration"]] = per_read.get(a["administration"], 0) + 1
+    return {
+        "cache": Cache(ctx.root).taille(),
+        "recueils_en_cache": cached,
+        "actes": acts,
+        "actes_lus_par_le_modele": per_read,
+        "references": sum(1 for _ in Store(ctx.root, "references").records()),
+        "lots_en_cours": len(Etat(ctx.root, "modele").get().get("lots") or []),
+        "depense": depense(ctx),
+        "budget": budget(ctx),
+    }
