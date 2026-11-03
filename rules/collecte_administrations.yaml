@@ -7,7 +7,9 @@
 # the index ourselves (Attrap's collector stopped, or no Attrap), the wave of the catching up
 # (plan: 1 the prefectures read as they are, by their number of surveillance recueils over 12
 # months, newest first; 2 the templates to adapt; 3 the rest), and `actes_12_mois`, Attrap's
-# recueils with a surveillance act over the 12 months to 2026-10-31.
+# recueils with a surveillance act over the 12 months to 2026-10-31. `communes`: the
+# départements whose communes an administration's acts name, when not only its own (the
+# Préfecture de police acts in the inner suburbs; Paris's recueils hold the airports' acts).
 version: 1
 id: rule:collecte_administrations@1
 rationale: >-
@@ -1131,6 +1133,7 @@ administrations:
     vague: 3
     actes_12_mois: 292
     collecteur_arrete: null
+    communes: ["75", "77", "78", "91", "92", "93", "94", "95"]
   ppparis:
     nom: "Préfecture de police (Paris, petite couronne pour certaines polices, zone de défense de Paris)"
     code: "75"
@@ -1142,6 +1145,7 @@ administrations:
     vague: 3
     actes_12_mois: 235
     collecteur_arrete: null
+    communes: ["75", "77", "78", "91", "92", "93", "94", "95"]
   hcnc:
     nom: "Haut-commissariat, Nouvelle-Calédonie"
     code: "988"

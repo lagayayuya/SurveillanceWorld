@@ -248,7 +248,9 @@ def collect(ctx: Contexte, vagues: set[int] | None = None) -> dict[str, Any]:
             continue
         if ctx.out_of_time():
             break
-        deps = {conf["code"]} if conf["genre"] != "region" else set()
+        # the départements whose communes its acts name: its own, or the rule's (the
+        # Préfecture de police acts in the inner suburbs, Paris's recueils for the airports)
+        deps = set(conf.get("communes") or ([conf["code"]] if conf["genre"] != "region" else []))
         communes = (
             parse_raa.Communes.load(path, deps) if path.is_file() else parse_raa.Communes({}, set())
         )

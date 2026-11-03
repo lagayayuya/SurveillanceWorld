@@ -89,6 +89,10 @@ def act_event(
     t, disp = KINDS[a["type"]]
     f = (a.get("champs") or {}) if published else {}
     dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else None
+    insee = a.get("insee") or ""
+    if len(insee) == 5:
+        # the commune's département (a Préfecture de police act in Saint-Denis is the 93's)
+        dep = insee[:3] if insee.startswith("97") else insee[:2]
     days = f.get("dates") or []
     cams = f.get("n_cameras_drone") if a["type"] == "drone" else f.get("n_total")
     e: regles.Event = {

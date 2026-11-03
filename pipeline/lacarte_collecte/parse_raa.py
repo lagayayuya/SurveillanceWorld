@@ -38,7 +38,9 @@ import yaml
 # The reader's version, written on every recueil and act it read: a recueil read by an older
 # version is read again (its text asked again: no text is kept), so the threshold is always
 # measured on what the current reader gives. Raise it with any change to what lire() returns.
-VERSION = 2  # 2: headings without « n° » (13, 06), the act's day never from a visa
+# 2: headings without « n° » (13, 06), the act's day never from a visa; 3: the signature
+# bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total
+VERSION = 3
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -92,9 +94,12 @@ def heads(txt: str) -> list[tuple[int, str | None]]:
     return out
 
 
-HOURS = re.compile(r"(?:de|entre) (\d{1,2}) ?h ?(\d{2})? ?(?:a|et|jusqu'a) (\d{1,2}) ?h ?(\d{2})?")
+HOURS = re.compile(
+    r"(?:de|entre|a partir de|des) (\d{1,2}) ?h(?:eures?)? ?(\d{2})? ?(?:a|et|jusqu'a) ?"
+    r"(\d{1,2}) ?h(?:eures?)? ?(\d{2})?"
+)
 SPAN = re.compile(
-    r"a (\d{1,2}) ?h ?(\d{2})? (?:au|jusqu'au) .{0,60}?20\d\d a (\d{1,2}) ?h ?(\d{2})?"
+    r"(?:a|de|des) (\d{1,2}) ?h ?(\d{2})? (?:au|jusqu'au) .{0,60}?20\d\d a (\d{1,2}) ?h ?(\d{2})?"
 )
 
 
@@ -217,7 +222,9 @@ def operative(n: str) -> str:
 # « À Metz, le 08 juil. 2026 »), the article on appeals; else the page's foot would be read
 # (the Moselle's opening hours, « de 8h30 à 12h00 », taken for flight hours).
 END = re.compile(
-    r"(?:sont charges|est charge),? chacun en ce qui|\b(?:fait )?a [a-z' -]{2,40},? le \d"
+    r"(?:sont charges|est charge),? chacun en ce qui|\bfait a [a-z' -]{2,40},? le \d"
+    # « À Metz, le 08 juil. 2026 », a comma before « le »: not « autorisés à Paris le 20 … »
+    r"|\ba [a-z' -]{2,40}, le \d"
     r"|peut faire l'objet,? (?:dans un delai de deux mois[^,]*, )?d'un recours"
 )
 
@@ -266,6 +273,12 @@ def subtype(title: str, n: str) -> str:
 # --- the fields of each kind -------------------------------------------------------------------
 def cams_vp(n: str, sub: str) -> dict[str, Any]:
     w = art1(n)
+    # a modification quotes the former act (« composé de 86 caméras … est modifié comme
+    # suit : … composé de 87 caméras »): the numbers are read in its new wording
+    if (k := w.find("modifie comme suit")) >= 0:
+        w = w[k:]
+    # « 17 camerasexterieures »: the OCR's words run together
+    w = re.sub(r"(cameras?)(interieure|exterieure|visionnant)", r"\1 \2", w)
     out: dict[str, Any] = {
         "n_interieur": None,
         "n_exterieur": None,
@@ -285,7 +298,14 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
         out["n_voie_publique"] = num(subset.group(1))
     parts = ("n_interieur", "n_exterieur", "n_voie_publique")
     vals = [out[k] for k in parts if out[k] is not None]
-    if vals:
+    stated = re.search(
+        r"nombre total (?:de cameras )?(?:a|est porte a|est fixe a|de|s'eleve a) " + NUMW,
+        dispositif(n),
+    )
+    if stated:
+        # « portant ainsi le nombre total à 736 caméras » (a modification's article 2)
+        out["n_total"] = num(stated.group(1))
+    elif vals:
         out["n_total"] = sum(out[k] or 0 for k in parts[:2]) if subset else sum(vals)
     elif m := re.search(
         r"(?:pour|de|comprenant|compose de|constitue de) " + NUMW + r" cameras?\b", w
@@ -332,7 +352,7 @@ def drone_dates(d: str, when: dt.date) -> list[str]:
 
 
 def drone_fields(n: str, title_n: str, when: dt.date) -> dict[str, Any]:
-    d = dispositif(n)
+    d = re.sub(r"\bminuit\b", "00h00", dispositif(n))
     hours = {
         f"{int(a):02d}h{b or '00'}-{int(c):02d}h{e or '00'}" for a, b, c, e in HOURS.findall(d)
     }
@@ -341,8 +361,12 @@ def drone_fields(n: str, title_n: str, when: dt.date) -> dict[str, Any]:
             f"{int(a):02d}h{b or '00'}-{int(c):02d}h{e or '00'}"
             for a, b, c, e in SPAN.findall(title_n + " " + d)
         }
+    # the number the act sets, never « une caméra » or « un aéronef » said in passing (the
+    # law's wording): an absent number is better than a wrong one
     m = re.search(r"nombre maximal de cameras?.{0,160}?(?:fixe a|est de) " + NUMW, d) or re.search(
-        NUMW + r" (?:cameras?|aeronefs?|drones?)\b", d
+        r"(?:au moyen|par le biais) de (\d{1,3}|deux|trois|quatre|cinq|six|sept|huit|neuf|dix)"
+        r" (?:\(\d+\) )?cameras?\b",
+        d,
     )
     zones = [
         z.group(0).strip()
