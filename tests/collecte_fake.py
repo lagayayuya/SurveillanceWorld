@@ -126,7 +126,7 @@ def ctx_for(
     src = conf["sources"]
     src["boamp"].update(archive=f"{b}/dila/", first_year=2024)
     src["dgcl"].update(dataset=f"{b}/dgcl/dataset", tabular=f"{b}/tabular/{{resource}}/data/")
-    src["attrap"].update(api=f"{b}/api/v1/", depuis="2026-06-01")
+    src["attrap"].update(api=f"{b}/api/v1/", depuis="2026-06-01", verifier_liens=True)
     (tmp_path / "communes.json").write_text(json.dumps(COMMUNES), "utf-8")
     return Contexte(
         root=tmp_path, sortie=tmp_path / "sortie", rules_dir=rules_dir or registre.RULES,

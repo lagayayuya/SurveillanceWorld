@@ -153,6 +153,10 @@ def check_link(ctx: Contexte, conf: dict[str, Any], rec: dict[str, Any]) -> str 
     when it is not asked (a host behind an anti-robot check)."""
     if conf.get("defi"):
         return None
+    # stopped while the prefectures' platform cuts or refuses us (2026-11-03: 74 cuts and
+    # 56 refusals at one request per 10 s): never asked again until the rule says so
+    if not ctx.fetcher("liens").conf["sources"]["attrap"].get("verifier_liens", True):
+        return None
     try:
         r = ctx.fetcher("liens").first_bytes(rec["url"])
     except (fetch.Blocked, fetch.Forbidden):

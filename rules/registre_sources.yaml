@@ -181,6 +181,7 @@ sources:
     texte: attrap
     fraicheur_jours: 30
     mention_site: null
+    verifier_liens: false
     rationale: >-
       Attrap (La Quadrature du Net) finds the recueils of 109 administrations and gives their
       full text: all 756 recueils of the pilot's official lists (Rhône, Essonne) were there,

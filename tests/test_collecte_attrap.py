@@ -91,3 +91,11 @@ def test_an_act_id_names_a_file_and_a_route():
     # the Eure-et-Loir's heading numbers (measured on the first run)
     assert arretes.safe_id("pref28:340699bdb845:24-08/322") == "pref28:340699bdb845:24-08-322"
     assert arretes.safe_id("69-2026-07-02-00001") == "69-2026-07-02-00001"
+
+
+def test_no_link_is_checked_while_the_rule_says_no(collecte_server, tmp_path):
+    ctx = ctx_for(collecte_server, tmp_path, dt.date(2026, 10, 31))
+    ctx.fetcher("liens").conf["sources"]["attrap"]["verifier_liens"] = False
+    rec = {"url": f"{collecte_server.base}/pdf/RAA.pdf"}
+    assert arretes.check_link(ctx, {"defi": False}, rec) is None
+    assert not any("/pdf/" in a for a in collecte_server.asked)
