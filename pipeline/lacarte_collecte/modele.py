@@ -440,8 +440,12 @@ def suivre(ctx: Any) -> dict[str, Any]:
                     if m.get(k) is not None:
                         fields[k] = (m[k], "arbitrage")
                 _garder(ctx, a, fields, m, old.get("modele"), arbitre=res[a["id"]]["modele"])
-    st.save(lots=keep)
-    return {"lots_en_cours": len(keep), **done}
+    # the batches this call sent (relecture, arbitrage) were appended meanwhile: keep them,
+    # remove only the ones processed here
+    processed = {lot["lot"] for lot in lots} - {lot["lot"] for lot in keep}
+    current = [x for x in st.get().get("lots") or [] if x["lot"] not in processed]
+    st.save(lots=current)
+    return {"lots_en_cours": len(current), **done}
 
 
 def _garder(
