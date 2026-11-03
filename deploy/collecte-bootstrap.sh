@@ -136,7 +136,8 @@ put /usr/local/bin/lacarte-collecte 755 root:root <<WRAP
 #!/bin/sh
 set -eu
 case "\${1:-}" in relire|montrer|modele) ;; *) echo "refusé : relire, montrer ou modele" >&2; exit 2 ;; esac
-set -a; . /etc/lacarte-collecte.env; set +a
+# the environment file read by the CLI as systemd reads it (« KEY= value » too), not sourced
+export LACARTE_ENV_FILE=/etc/lacarte-collecte.env
 export PYTHONPATH=$DIR/code/current/pipeline LACARTE_COLLECTE_DIR=$DIR/data \\
   LACARTE_COLLECTE_SORTIE=$DIR/sortie PYTHONDONTWRITEBYTECODE=1
 cd $DIR/data

@@ -46,3 +46,17 @@ def test_the_smallest_gap_is_between_two_starts_not_two_ends(tmp_path):
     )
     got = sortie.journal(tmp_path, "2026-11-01")["adresses"]["192.0.2.7"]
     assert got["ecart_min_s"] == 10.0
+
+
+def test_the_environment_file_is_read_as_systemd_reads_it(tmp_path, monkeypatch):
+    from lacarte_collecte import cli
+
+    f = tmp_path / "env"
+    f.write_text("# c\nLACARTE_ROBOT_CONTACT= robot@example.org\nLACARTE_ANTHROPIC_KEY='k'\n")
+    monkeypatch.delenv("LACARTE_ROBOT_CONTACT", raising=False)
+    monkeypatch.delenv("LACARTE_ANTHROPIC_KEY", raising=False)
+    cli.charger_env(str(f))
+    import os
+
+    assert os.environ["LACARTE_ROBOT_CONTACT"] == "robot@example.org"
+    assert os.environ["LACARTE_ANTHROPIC_KEY"] == "k"

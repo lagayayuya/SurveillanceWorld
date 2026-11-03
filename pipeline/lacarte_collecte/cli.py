@@ -133,7 +133,21 @@ def tourner(
     return rep
 
 
+def charger_env(path: str | None) -> None:
+    """An environment file read as systemd's EnvironmentFile: KEY=VALUE lines, whitespace
+    around the value stripped, quotes removed, comments ignored; the environment wins."""
+    if not path or not Path(path).is_file():
+        return
+    for line in Path(path).read_text("utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith(("#", ";")) or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        os.environ.setdefault(k.strip(), v.strip().strip("'\""))
+
+
 def main(argv: list[str] | None = None) -> None:
+    charger_env(os.environ.get("LACARTE_ENV_FILE"))
     p = argparse.ArgumentParser(prog="lacarte-collecte", description=__doc__.split("\n\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("tourner")
