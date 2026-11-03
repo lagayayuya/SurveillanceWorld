@@ -164,6 +164,8 @@ def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, An
         ),
         "arretes": _write_gz(out / "arretes.jsonl.gz", Store(ctx.root, "actes").records()),
         "recueils": _write_gz(out / "recueils.jsonl.gz", Store(ctx.root, "recueils").records()),
+        # the fields read by the rules and the model, checked, with their origin (no text)
+        "champs": _write_gz(out / "champs.jsonl.gz", Store(ctx.root, "champs").records()),
     }
     cov = couverture(ctx)
     _write_json(out / "couverture.json", cov)

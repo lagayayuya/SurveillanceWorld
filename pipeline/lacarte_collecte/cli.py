@@ -176,7 +176,9 @@ def main(argv: list[str] | None = None) -> None:
     er = sub.add_parser("effacer-recueil", help="a recueil's text, acts and record, erased")
     er.add_argument("recueil", nargs="+")
     md = sub.add_parser("modele", help="the reading by the model (the server, as its user)")
-    md.add_argument("action", choices=("lire", "suivre", "calibrer"))
+    md.add_argument("action", choices=("lire", "suivre", "calibrer", "references", "mesurer"))
+    md.add_argument("--types", help="dep-kind pairs, comma-separated (references)")
+    md.add_argument("--graine", type=int, default=20261103)
     md.add_argument("--admin")
     md.add_argument("--actes", help="act ids, comma-separated")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
@@ -227,6 +229,14 @@ def main(argv: list[str] | None = None) -> None:
         ctx = contexte(5.0)
         if a.action == "calibrer":
             out = modele.calibrer(ctx, json.load(sys.stdin))
+        elif a.action == "references":
+            # stdin: the ids that tuned the reader or the instruction, never drawn
+            exclure = set(json.load(sys.stdin)) if not sys.stdin.isatty() else set()
+            pairs = [tuple(x.split("-", 1)) for x in (a.types or "").split(",") if x]
+            out = modele.references_lot(ctx, pairs, a.graine, exclure)
+        elif a.action == "mesurer":
+            out = modele.mesurer(ctx)
+            (ctx.sortie / "mesures.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
         elif a.action == "lire":
             todo = modele.a_lire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
             out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo)}

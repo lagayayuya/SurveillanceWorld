@@ -116,14 +116,12 @@ def built(tmp_path) -> tuple[Path, dict]:
         ),
         "utf-8",
     )
-    # the Moselle's drones measured (one act, read right): published; La Réunion's not measured
-    [m371] = [a for a in acts if a["acte"] == "371"]
-    refs = tmp_path / "references"
-    refs.mkdir()
-    (refs / "57-drone.csv").write_text(
-        "acte,dispositif,sous_type,commune,insee,n_cameras_drone,dates,horaires,zone_mot,lisible,source\n"
-        f"{m371['id']},drone,autorisation,Metz,57463,2,2026-07-09 au 2026-07-19,18h00-03h00,"
-        "Metz centre ville,oui,pdf\n",
+    # the Moselle's drones measured field by field (the server's mesures.json): all published
+    pub = {"justes": 1, "mesures": 1, "taux": 1.0, "nombres_faux": 0, "publie": True}
+    (col / "mesures.json").write_text(
+        json.dumps(
+            {"57-drone": {g: pub for g in ("commune", "nombre", "dates", "horaires", "perimetre")}}
+        ),
         "utf-8",
     )
     rules = tmp_path / "rules"

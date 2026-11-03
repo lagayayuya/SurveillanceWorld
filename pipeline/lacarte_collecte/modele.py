@@ -654,3 +654,127 @@ def calibrer(ctx: Any, data: dict[str, Any]) -> dict[str, Any]:
         "lots": res["lots"],
         "cout": references.cout(res["usage"], prix["references"]["prix"]),
     }
+
+
+# --- the threshold, field by field: blind references by Opus on a new draw ----------------------
+MESURES = ("commune", "nombre", "dates", "horaires", "perimetre")
+
+
+def references_lot(
+    ctx: Any, deps_types: list[tuple[str, str]], graine: int, exclure: set[str], n: int = 30
+) -> dict[str, Any]:
+    """Opus reads blind (neither the rules nor the reading model shown) `n` acts drawn per
+    département and kind with `graine`, never an act in `exclure` (those that tuned the reader
+    or the instruction); the readings, checked, kept as references (Store « references »)."""
+    from lacarte_collecte import seuil
+    from lacarte_collecte.etat import Store
+
+    acts = [a for a in Store(ctx.root, "actes").records() if a["id"] not in exclure]
+    picks = []
+    for dep, kind in deps_types:
+        picks += [p["acte"] for p in seuil.tirer(acts, dep, kind, n, seed=graine)]
+    by = {a["id"]: a for a in acts}
+    rows = {i: t for i in picks if (t := _texte(ctx, by[i]))}
+    res = _lot(client(), list(rows.values()), ARBITRE)
+    keep = []
+    for i, r in res.items():
+        if i == "_lot":
+            continue
+        a = by[i]
+        m = controler(
+            r.get("lecture") or {},
+            rows[i]["texte"],
+            _communes(ctx, a["administration"]),
+            dt.date.fromisoformat(a["recueil_date"]),
+        )
+        keep.append(
+            {
+                "id": i,
+                "departement": a["departement"],
+                "type": a["type"],
+                "graine": graine,
+                "reference": m,
+                "modele": r["modele"],
+            }
+        )
+        Store(ctx.root, "couts").add(
+            [
+                {
+                    "id": f"{res['_lot']}:{i}",
+                    "phase": "reference",
+                    "modele": r["modele"],
+                    "usage": r["usage"],
+                }
+            ]
+        )
+    Store(ctx.root, "references").add(keep)
+    return {"references": len(keep), "lot": res["_lot"]}
+
+
+def _juste(k: str, got: Any, ref: Any) -> tuple[bool, bool]:
+    """(right, a wrong number) for one field."""
+    if got in (None, [], "") and ref in (None, [], ""):
+        return True, False
+    if got in (None, [], ""):
+        return False, False  # absent: not right, not wrong either
+    if ref in (None, [], ""):
+        return False, k.startswith("n_")
+    if k.startswith("n_"):
+        return got == ref, got != ref
+    if k == "dates":
+        return _same(k, got, ref), False
+    if k in ("commune", "perimetre"):
+        return parse_raa.loose(str(got)) == parse_raa.loose(str(ref)), False
+    return sorted(got) == sorted(ref), False
+
+
+def mesurer(ctx: Any) -> dict[str, Any]:
+    """Per département, kind and field: the final readings against the references; a field is
+    published at its kind's rate with no wrong number (rules/collecte_seuils.yaml)."""
+    import yaml
+
+    from lacarte_collecte.etat import Store
+
+    conf = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
+    final = {r["id"]: r for r in Store(ctx.root, "champs").records()}
+    tally: dict[str, dict[str, list[int]]] = {}
+    for ref in Store(ctx.root, "references").records():
+        got = {
+            k: v["valeur"] for k, v in ((final.get(ref["id"]) or {}).get("champs") or {}).items()
+        }
+        key = f"{ref['departement']}-{ref['type']}"
+        counts = (
+            ("n_total", "n_interieur", "n_exterieur", "n_voie_publique")
+            if ref["type"] != "drone"
+            else ("n_cameras_drone",)
+        )
+        groups = {
+            "commune": ("commune",),
+            "nombre": counts,
+            "dates": ("dates",),
+            "horaires": ("horaires",),
+            "perimetre": ("perimetre",),
+        }
+        if ref["type"] != "drone":
+            groups = {g: v for g, v in groups.items() if g in ("commune", "nombre")}
+        for g, ks in groups.items():
+            res = [_juste(k, got.get(k), ref["reference"].get(k)) for k in ks]
+            t = tally.setdefault(key, {}).setdefault(g, [0, 0, 0])
+            t[0] += all(r for r, _ in res)
+            t[1] += 1
+            t[2] += any(w for _, w in res)
+    out = {}
+    for key, gs in tally.items():
+        kind = key.split("-", 1)[1]
+        need = float(conf["types"].get(kind, {}).get("taux", 1.0))
+        out[key] = {
+            g: {
+                "justes": a,
+                "mesures": b,
+                "taux": round(a / b, 3) if b else 0.0,
+                "nombres_faux": w,
+                "publie": bool(b) and a / b >= need and w == 0,
+            }
+            for g, (a, b, w) in gs.items()
+        }
+    return out

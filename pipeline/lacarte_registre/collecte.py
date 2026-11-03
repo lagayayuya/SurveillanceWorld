@@ -69,10 +69,10 @@ def avis(root: Path, old: list[dict[str, Any]], rules: Path) -> list[dict[str, A
 
 
 def mesures(root: Path, rules: Path) -> dict[str, Any]:
-    """The threshold's measures per « dep-kind » (none yet: every kind is « non lu »)."""
-    from lacarte_collecte import seuil
-
-    return seuil.mesurer(_load(root / DIR / "arretes.jsonl.gz"), root / "references", rules)
+    """The threshold's measure per « dep-kind » and field (the server's `modele mesurer`, in
+    mesures.json); none yet: every field is « non lu »."""
+    path = root / DIR / "mesures.json"
+    return json.loads(path.read_text("utf-8")) if path.is_file() else {}
 
 
 def _sources(rules: Path) -> dict[str, Any]:
@@ -105,14 +105,45 @@ def uniques(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return out
 
 
+GROUPS = {
+    "commune": ("commune",),
+    "nombre": ("n_total", "n_interieur", "n_exterieur", "n_voie_publique", "n_cameras_drone"),
+    "dates": ("dates",),
+    "horaires": ("horaires",),
+    "perimetre": ("perimetre",),
+}
+
+
 def act_event(
-    a: dict[str, Any], admin: dict[str, Any], published: bool, mention: str | None
+    a: dict[str, Any],
+    admin: dict[str, Any],
+    published: set[str],
+    final: dict[str, Any] | None,
+    mention: str | None,
 ) -> regles.Event:
+    """The act as an event: the fields of the groups published in its département and kind,
+    from the checked reading (rules, model, both, arbitration) else the rules'; the others
+    empty, said in `champs_non_lus`."""
     t, disp = KINDS[a["type"]]
-    f = (a.get("champs") or {}) if published else {}
+    read = {k: v["valeur"] for k, v in ((final or {}).get("champs") or {}).items()}
+    origins = {k: v["origine"] for k, v in ((final or {}).get("champs") or {}).items()}
+    if final is None:
+        r = a.get("champs") or {}
+        read = {
+            **{k: r.get(k) for k in GROUPS["nombre"]},
+            "dates": r.get("dates"),
+            "horaires": r.get("horaires"),
+            "commune": a.get("commune"),
+        }
+        origins = {k: "regles" for k, v in read.items() if v not in (None, [])}
+    f = {k: read.get(k) for g in published for k in GROUPS[g]}
+    insee = (
+        ((final or {}).get("insee") if final else a.get("insee"))
+        if "commune" in published
+        else None
+    )
     dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else None
-    insee = a.get("insee") or ""
-    if len(insee) == 5:
+    if insee and len(insee) == 5:
         # the commune's département (a Préfecture de police act in Saint-Denis is the 93's)
         dep = insee[:3] if insee.startswith("97") else insee[:2]
     days = f.get("dates") or []
@@ -121,9 +152,9 @@ def act_event(
         "id": arretes.safe_id(a["id"]),
         "t": t,
         "sous_type": a.get("sous_type"),
-        # an act below its threshold has nothing read, its day either: its recueil's
-        "date": (a.get("date_acte") if published else None) or a["recueil_date"],
-        "insee": a.get("insee"),
+        # a day read only when the dates are published; else its recueil's
+        "date": (days[0] if days else None) or a["recueil_date"],
+        "insee": insee,
         "dep": dep,
         "affaire": arretes.safe_id(a["id"]),
         "entreprises": [],
@@ -146,9 +177,14 @@ def act_event(
         "dispositif": disp,
         "titre": a.get("titre") or "",
         "origine": "collecte",
+        "origines": {k: origins[k] for k in f if k in origins and f[k] not in (None, [])},
     }
+    if f.get("perimetre"):
+        e["perimetre"] = f["perimetre"]
     if not published:
         e["sous_le_seuil"] = True
+    else:
+        e["champs_non_lus"] = sorted(set(GROUPS) - published)
     if mention:
         e["mention"] = mention
     return e
@@ -166,6 +202,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         for x in _load(root / DIR / "subventions_etat.jsonl.gz")
     ]
     acts = _load(root / DIR / "arretes.jsonl.gz")
+    finals = {r["id"]: r for r in _load(root / DIR / "champs.jsonl.gz")}
     admins = _admins(rules)
     measured = mesures(root, rules)
     mention = _sources(rules)["attrap"].get("mention_site") or None
@@ -183,9 +220,10 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
             continue
         admin = admins[a["administration"]]
         dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else ""
-        ok = bool((measured.get(f"{dep}-{a['type']}") or {}).get("publie"))
-        n_pub += ok
-        new.append(act_event(a, admin, ok, mention))
+        groups = measured.get(f"{dep}-{a['type']}") or {}
+        published = {g for g, v in groups.items() if v.get("publie") and g in GROUPS}
+        n_pub += bool(published)
+        new.append(act_event(a, admin, published, finals.get(a["id"]), mention))
     affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
     for e in new:
         kind = "subvention" if e["t"].startswith("subvention") else "acte"

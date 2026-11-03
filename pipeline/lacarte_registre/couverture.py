@@ -187,8 +187,8 @@ def etat_collecte(cov: dict[str, Any]) -> dict[str, dict[str, Any]]:
                 "lu_jusqu_au": a["lu_jusqu_au"],
                 "dernier_recueil": a.get("dernier_recueil"),
                 "perime": bool(a.get("perime")),
-                "sous_le_seuil": [k for k in kinds
-                                  if not (measured.get(f"{code}-{k}") or {}).get("publie")],
+                "sous_le_seuil": [k for k in kinds if not any(
+                    v.get("publie") for v in (measured.get(f"{code}-{k}") or {}).values())],
             }  # fmt: skip
     return out
 

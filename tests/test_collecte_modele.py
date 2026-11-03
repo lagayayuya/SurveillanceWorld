@@ -102,3 +102,47 @@ def test_no_new_reading_once_the_budget_is_spent(tmp_path):
     )
     assert modele.depense(ctx) == 1000
     assert modele.envoyer(ctx, [{"id": "a"}]) is None  # no client asked: nothing sent
+
+
+def test_the_threshold_field_by_field(tmp_path):
+    import lacarte_registre as registre
+    from lacarte_collecte.contexte import Contexte
+    from lacarte_collecte.etat import Store
+
+    ctx = Contexte(root=tmp_path, sortie=tmp_path / "s", rules_dir=registre.RULES)
+    final, refs = [], []
+    for i in range(20):
+        final.append(
+            {
+                "id": f"a{i}",
+                "champs": {
+                    "commune": {"valeur": "Metz", "origine": "accord"},
+                    "n_cameras_drone": {"valeur": 2 if i else 3, "origine": "modele"},
+                    "horaires": {"valeur": ["18h00-03h00"], "origine": "regles"},
+                },
+            }
+        )
+        refs.append(
+            {
+                "id": f"a{i}",
+                "departement": "57",
+                "type": "drone",
+                "reference": {
+                    "commune": "Metz",
+                    "n_cameras_drone": 2,
+                    "horaires": ["18h00-03h00"],
+                    "dates": ["2026-07-09"] if i < 5 else None,
+                },
+            }
+        )
+    Store(tmp_path, "champs").add(final)
+    Store(tmp_path, "references").add(refs)
+    m = modele.mesurer(ctx)["57-drone"]
+    assert m["commune"]["publie"] and m["horaires"]["publie"]
+    # 19 of 20 right but one number wrong: never published
+    assert (m["nombre"]["justes"], m["nombre"]["nombres_faux"], m["nombre"]["publie"]) == (
+        19,
+        1,
+        False,
+    )
+    assert m["dates"]["justes"] == 15 and not m["dates"]["publie"]  # 75 % < 85 %
