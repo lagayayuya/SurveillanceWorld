@@ -114,6 +114,8 @@ def tourner(
         from lacarte_collecte import modele
 
         try:
+            lk = (ctx.root / ".modele.lock").open("w")
+            fcntl.flock(lk, fcntl.LOCK_EX)
             summary["modele"] = modele.suivre(ctx)
             todo = modele.a_lire(ctx)[:2000]
             summary["modele"]["envoyes"] = len(todo) if modele.envoyer(ctx, todo) else 0
@@ -243,6 +245,11 @@ def main(argv: list[str] | None = None) -> None:
         from lacarte_collecte import modele
 
         ctx = contexte(5.0)
+        ctx.root.mkdir(parents=True, exist_ok=True)
+        # one follower of the batches at a time (this command, the run's end): a batch is
+        # never processed twice
+        lk = (ctx.root / ".modele.lock").open("w")
+        fcntl.flock(lk, fcntl.LOCK_EX)
         if a.action == "calibrer":
             out = modele.calibrer(ctx, json.load(sys.stdin))
         elif a.action == "references":
