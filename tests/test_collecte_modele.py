@@ -89,7 +89,7 @@ def test_no_new_reading_once_the_budget_is_spent(tmp_path):
     from lacarte_collecte.etat import Store
 
     ctx = Contexte(root=tmp_path, sortie=tmp_path / "s", rules_dir=registre.RULES)
-    assert modele.budget(ctx) == 150 and modele.depense(ctx) == 0
+    assert modele.budget(ctx) == 110 and modele.depense(ctx) == 0
     # 100 million Opus output tokens at the batch's price: $1 000
     Store(tmp_path, "couts").add(
         [
