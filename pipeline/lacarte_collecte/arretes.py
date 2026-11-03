@@ -232,6 +232,20 @@ def collect_admin(
             known[rid] = rec
         upto[kind] = ctx.today.isoformat()
         st.save(admin, jusqu_au=upto)
+    # the recueils read before by an older reader, searched no more (a search starts a month
+    # back): their text asked one last time, or taken from the cache, read, and cached
+    for rid, old in list(known.items()):
+        if is_read(old) or old.get("statut") != "lu" or not old.get("actes"):
+            continue
+        if ctx.out_of_time():
+            return st.save(admin, statut="en_cours", jusqu_au=upto)
+        d = Cache(ctx.root).get(rid) or f.get_json(f"{base}raa/{rid}", cache=False)
+        rec = {k: old.get(k) for k in ("id", "administration", "date", "name", "url", "familles")}
+        rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
+        if rec.get("actes") and d.get("content"):
+            Cache(ctx.root).put(rec, d["content"])
+        store.add([rec])
+        known[rid] = rec
     found = [r["date"] for r in known.values()]
     return st.save(
         admin,
