@@ -115,10 +115,33 @@ if [ ! -f /etc/lacarte-collecte.env ]; then
 # committed. The robot's contact, said in its User-Agent: an address or a page where
 # whoever runs it can be reached (one line, no parentheses).
 LACARTE_ROBOT_CONTACT=
+# The Anthropic API key of the acts' reading (a key of its own, from a console workspace
+# with a spending limit): the collection reads it from here, on the server only.
+LACARTE_ANTHROPIC_KEY=
 ENV
 else
   echo "= /etc/lacarte-collecte.env kept (the author's)"
+  if ! grep -q '^LACARTE_ANTHROPIC_KEY=' /etc/lacarte-collecte.env; then
+    # appended once, empty: the author writes the key (sudoedit), never this script
+    if [ "$DRY" = 1 ]; then echo "+ append LACARTE_ANTHROPIC_KEY= to /etc/lacarte-collecte.env"
+    else printf '\n# The Anthropic API key of the acts reading (its own workspace, a spending limit).\nLACARTE_ANTHROPIC_KEY=\n' >> /etc/lacarte-collecte.env; fi
+  fi
 fi
+
+echo "== 5b. the collection's commands for the deploy user, as the collection's user"
+# /usr/local/bin/lacarte-collecte: the environment file, the unit's folders, then the CLI;
+# only `relire` (the cached texts read again, no request), `montrer` (an act's text, to
+# diagnose) and `modele` (the reading by the model and its references); never `tourner`.
+put /usr/local/bin/lacarte-collecte 755 root:root <<WRAP
+#!/bin/sh
+set -eu
+case "\${1:-}" in relire|montrer|modele) ;; *) echo "refusé : relire, montrer ou modele" >&2; exit 2 ;; esac
+set -a; . /etc/lacarte-collecte.env; set +a
+export PYTHONPATH=$DIR/code/current/pipeline LACARTE_COLLECTE_DIR=$DIR/data \\
+  LACARTE_COLLECTE_SORTIE=$DIR/sortie PYTHONDONTWRITEBYTECODE=1
+cd $DIR/data
+exec $DIR/code/current/.venv/bin/python -m lacarte_collecte.cli "\$@"
+WRAP
 
 echo "== 5. the unit and its timer"
 put /etc/systemd/system/lacarte-collecte.service 644 root:root <<UNIT
@@ -182,6 +205,9 @@ fi
 echo "== 6. sudoers: $DEPLOY_USER starts, stops and reads the collection, nothing else"
 put /etc/sudoers.d/lacarte-collecte 440 root:root <<SUDO
 $DEPLOY_USER ALL=(root) NOPASSWD: /usr/bin/systemctl start --no-block lacarte-collecte.service, /usr/bin/systemctl stop lacarte-collecte.service, /usr/bin/systemctl status --no-pager lacarte-collecte.service, /usr/bin/journalctl -u lacarte-collecte.service *
+$DEPLOY_USER ALL=($UNIT_USER) NOPASSWD: /usr/local/bin/lacarte-collecte relire, /usr/local/bin/lacarte-collecte relire *
+$DEPLOY_USER ALL=($UNIT_USER) NOPASSWD: /usr/local/bin/lacarte-collecte montrer *
+$DEPLOY_USER ALL=($UNIT_USER) NOPASSWD: /usr/local/bin/lacarte-collecte modele *
 SUDO
 if [ "$DRY" = 0 ]; then visudo -cf /etc/sudoers.d/lacarte-collecte >/dev/null; fi
 

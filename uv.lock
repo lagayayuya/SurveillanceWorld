@@ -759,6 +759,9 @@ api = [
     { name = "shapely" },
     { name = "uvicorn" },
 ]
+collecte = [
+    { name = "anthropic" },
+]
 dev = [
     { name = "anthropic" },
     { name = "httpx2" },
@@ -794,6 +797,7 @@ api = [
     { name = "shapely", specifier = ">=2.1.2" },
     { name = "uvicorn", specifier = ">=0.54.0" },
 ]
+collecte = [{ name = "anthropic", specifier = ">=2.3.0" }]
 dev = [
     { name = "anthropic", specifier = ">=2.3.0" },
     { name = "httpx2", specifier = ">=2.13.1" },

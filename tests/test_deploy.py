@@ -1265,7 +1265,12 @@ def test_the_collection_runs_as_its_own_user_writing_only_its_folders():
     assert "-g preview -m 2750 /srv/lacarte-collecte/sortie" in r.stdout
     assert "-g lacarte-collecte -m 0750 /srv/lacarte-collecte/data" in r.stdout
     sudo = written(r.stdout, "/etc/sudoers.d/lacarte-collecte")
-    assert sudo.count("NOPASSWD") == 1 and "lacarte-collecte.service" in sudo
+    assert sudo.count("NOPASSWD") == 4 and "lacarte-collecte.service" in sudo
+    # relire, montrer, modele as the collection's user, through its wrapper only
+    assert "(lacarte-collecte) NOPASSWD: /usr/local/bin/lacarte-collecte montrer *" in sudo
+    wrap = written(r.stdout, "/usr/local/bin/lacarte-collecte")
+    assert "relire|montrer|modele" in wrap and "tourner" not in wrap.split("esac")[0]
+    assert "LACARTE_ANTHROPIC_KEY=\n" in env
     assert "OnCalendar=*-*-* 01/6:15 Europe/Paris" in written(
         r.stdout, "/etc/systemd/system/lacarte-collecte.timer"
     )

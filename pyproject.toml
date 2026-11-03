@@ -30,6 +30,9 @@ api = [
     "shapely>=2.1.2",
     "uvicorn>=0.54.0",
 ]
+collecte = [
+    "anthropic>=2.3.0",
+]
 dev = [
     "anthropic>=2.3.0",
     "httpx2>=2.13.1",
