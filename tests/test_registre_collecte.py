@@ -183,3 +183,25 @@ def test_attrap_is_named_in_no_file_the_site_serves(built):
     for p in _site(root):
         if p.suffix in (".json", ".html", ".txt", ".svg"):
             assert "attrap" not in p.read_text("utf-8", "replace").lower(), p
+
+
+def test_a_decree_published_by_both_paris_prefectures_is_served_once():
+    from lacarte_registre import collecte
+
+    pp = {
+        "id": "ppparis:aa:2026-01495",
+        "administration": "ppparis",
+        "type": "drone",
+        "titre": "Arrêté n°2026-01495 autorisant la captation",
+    }
+    paris = {
+        "id": "75-2026-10-30-00007",
+        "administration": "pref75",
+        "type": "drone",
+        "titre": "Arrêté n° 2026 - 01495 autorisant la captation",
+    }
+    other = {**pp, "id": "ppparis:bb:2026-01496", "titre": "Arrêté n°2026-01496"}
+    assert [a["id"] for a in collecte.uniques([pp, paris, other])] == [
+        "75-2026-10-30-00007",
+        "ppparis:bb:2026-01496",
+    ]

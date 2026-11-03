@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -81,6 +82,27 @@ def _sources(rules: Path) -> dict[str, Any]:
 def _admins(rules: Path) -> dict[str, Any]:
     path = rules / "collecte_administrations.yaml"
     return yaml.safe_load(path.read_text("utf-8"))["administrations"]
+
+
+DOUBLONS = ("ppparis", "pref75")
+NUMERO = re.compile(r"n\s*°\s*(\d{4}\s*-\s*\d{3,6})")
+
+
+def uniques(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """A decree published by both the Préfecture de police and the prefecture of Paris, once:
+    the same kind and the same « n° » in the title; the prefecture of Paris's record (its
+    national id) is kept."""
+    seen: set[tuple[str, str]] = set()
+    out = []
+    for a in sorted(acts, key=lambda a: (a.get("administration") != "pref75", a["id"])):
+        m = NUMERO.search(a.get("titre") or "") if a.get("administration") in DOUBLONS else None
+        key = (a["type"], re.sub(r"\s", "", m.group(1))) if m else None
+        if key and key in seen:
+            continue
+        if key:
+            seen.add(key)
+        out.append(a)
+    return out
 
 
 def act_event(
@@ -156,7 +178,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     dropped = {e["affaire"] for e in reg["evenements"] if replaced(e)}
     new: list[regles.Event] = list(subs)
     n_pub = 0
-    for a in acts:
+    for a in uniques(acts):
         if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
             continue
         admin = admins[a["administration"]]
