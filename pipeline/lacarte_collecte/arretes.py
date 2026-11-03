@@ -32,6 +32,7 @@ import urllib.parse
 from typing import Any
 
 from lacarte_collecte import parcours, parse_raa, pdf
+from lacarte_collecte.cache import Cache
 from lacarte_collecte.contexte import Contexte, rules
 from lacarte_collecte.etat import Etat, Store
 from lacarte_registre import fetch
@@ -212,7 +213,8 @@ def collect_admin(
                 continue
             if ctx.out_of_time():
                 return st.save(admin, statut="en_cours", jusqu_au=upto)
-            d = f.get_json(f"{base}raa/{rid}", cache=False)
+            # its text from the server's cache when it is there: no request
+            d = Cache(ctx.root).get(rid) or f.get_json(f"{base}raa/{rid}", cache=False)
             rec = {
                 "id": rid,
                 "administration": admin,
@@ -222,6 +224,8 @@ def collect_admin(
                 "familles": [kind],
             }
             rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
+            if rec.get("actes") and d.get("content"):
+                Cache(ctx.root).put(rec, d["content"])  # a surveillance recueil: kept
             if rec.get("actes"):
                 rec["lien"] = check_link(ctx, conf, rec)
             store.add([rec])
@@ -268,3 +272,30 @@ def collect(ctx: Contexte, vagues: set[int] | None = None) -> dict[str, Any]:
         summary["administrations"][admin] = s.get("statut")
     summary["requetes"] = ctx.requetes()
     return summary
+
+
+def relire(
+    ctx: Contexte, admin: str | None = None, actes: set[str] | None = None
+) -> dict[str, Any]:
+    """The cached recueils read again by the code sent (`lacarte-collecte relire`): no request,
+    derived fields only; `admin` or `actes` narrow it."""
+    kinds = parse_raa.types(ctx.rules_dir / "collecte_actes.yaml")
+    admins = administrations(ctx)
+    store, recs = Store(ctx.root, "actes"), Store(ctx.root, "recueils")
+    by_rec = {a["recueil"] for a in store.records() if actes and a["id"] in actes}
+    path = ctx.root / "communes.json"
+    done, n_acts = [], 0
+    for d in Cache(ctx.root).all():
+        if admin and d["administration"] != admin or actes and d["id"] not in by_rec:
+            continue
+        conf = admins[d["administration"]]
+        deps = set(conf.get("communes") or ([conf["code"]] if conf["genre"] != "region" else []))
+        com = (
+            parse_raa.Communes.load(path, deps) if path.is_file() else parse_raa.Communes({}, set())
+        )
+        rec = {k: d.get(k) for k in ("id", "administration", "date", "name", "url")}
+        rec = read_recueil(ctx, d["administration"], conf, rec, d["content"], kinds, com, "attrap")
+        recs.add([rec])
+        done.append(d["id"])
+        n_acts += rec.get("actes") or 0
+    return {"recueils": len(done), "actes": n_acts, "lecteur": parse_raa.VERSION}

@@ -23,13 +23,37 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
     for name in ("collecte_actes.yaml", "registre_effacements.yaml", "registre_sources.yaml"):
         (rules_dir / name).write_text((registre.RULES / name).read_text("utf-8"), "utf-8")
     base = collecte_server.base
-    (rules_dir / "collecte_administrations.yaml").write_text(json.dumps({"administrations": {
-        "pref69": {"nom": "Rhône", "code": "69", "genre": "departement", "attrap": "pref69",
-                   "index": None, "defi": False, "parcours": False, "vague": 1, "actes_12_mois": 9},
-        "pref974": {"nom": "La Réunion", "code": "974", "genre": "departement",
-                    "attrap": "pref974", "index": None, "defi": True, "parcours": False,
-                    "vague": 3, "actes_12_mois": 1},
-    }}), "utf-8")  # fmt: skip
+    (rules_dir / "collecte_administrations.yaml").write_text(
+        json.dumps(
+            {
+                "administrations": {
+                    "pref69": {
+                        "nom": "Rhône",
+                        "code": "69",
+                        "genre": "departement",
+                        "attrap": "pref69",
+                        "index": None,
+                        "defi": False,
+                        "parcours": False,
+                        "vague": 1,
+                        "actes_12_mois": 9,
+                    },
+                    "pref974": {
+                        "nom": "La Réunion",
+                        "code": "974",
+                        "genre": "departement",
+                        "attrap": "pref974",
+                        "index": None,
+                        "defi": True,
+                        "parcours": False,
+                        "vague": 3,
+                        "actes_12_mois": 1,
+                    },
+                }
+            }
+        ),
+        "utf-8",
+    )
     ATTRAP["pref69"] = {**raa("pref69"), "url": f"{base}/pdf/RAA_69.pdf"}
     ATTRAP["pref974"] = {**raa("pref974"), "url": f"{base}/pdf/arrete_974.pdf", "content": ""}
     for d in ATTRAP.values():
@@ -47,8 +71,10 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
     assert not any("arrete_974" in a for a in collecte_server.asked)
     acts = {a["id"]: a for a in Store(tmp_path, "actes").records()}
     assert acts["69-2026-07-02-00001"]["departement"] == "69"
-    assert acts["69-2026-07-02-00001"]["recueil"] == hashlib.sha256(
-        urllib.parse.unquote(f"{base}/pdf/RAA_69.pdf").encode()).hexdigest()  # fmt: skip
+    assert (
+        acts["69-2026-07-02-00001"]["recueil"]
+        == hashlib.sha256(urllib.parse.unquote(f"{base}/pdf/RAA_69.pdf").encode()).hexdigest()
+    )
     # then the derived files, with the coverage
     sortie.ecrire(ctx, "2026-10-31T00:00:00+00:00", out)
     with gzip.open(tmp_path / "sortie" / "arretes.jsonl.gz", "rt") as g:
@@ -65,9 +91,11 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
 
 def test_the_recueil_id_is_the_sha256_of_the_decoded_address():
     # Attrap's id for a Bouches-du-Rhône recueil whose address has %20 (measured 2026-11-01)
-    url = ("https://www.bouches-du-rhone.gouv.fr/contenu/telechargement/65285/455604/file/"
-           "recueil-13-2026-273-recueil-des-actes-administratifs-special%20du%2008%20septembre"
-           "%202026.pdf")  # fmt: skip
+    url = (
+        "https://www.bouches-du-rhone.gouv.fr/contenu/telechargement/65285/455604/file/"
+        "recueil-13-2026-273-recueil-des-actes-administratifs-special%20du%2008%20septembre"
+        "%202026.pdf"
+    )
     assert arretes.recueil_id(url).startswith("d54740f49e84ce8d")
 
 
@@ -99,3 +127,36 @@ def test_no_link_is_checked_while_the_rule_says_no(collecte_server, tmp_path):
     rec = {"url": f"{collecte_server.base}/pdf/RAA.pdf"}
     assert arretes.check_link(ctx, {"defi": False}, rec) is None
     assert not any("/pdf/" in a for a in collecte_server.asked)
+
+
+def test_a_surveillance_recueil_s_text_is_kept_on_the_server_and_read_again_without_a_request(
+    collecte_server, tmp_path
+):
+    import datetime as dt2
+
+    from lacarte_collecte.cache import Cache
+
+    ctx = ctx_for(collecte_server, tmp_path, dt.date(2026, 10, 31))
+    d = raa("pref69")
+    rec = {
+        "id": d["id"],
+        "administration": "pref69",
+        "date": d["date"],
+        "name": d["name"],
+        "url": d["url"],
+    }
+    Cache(tmp_path).put(rec, d["content"])
+    assert Cache(tmp_path).get(d["id"])["content"] == d["content"]
+    before = len(collecte_server.asked)
+    out = arretes.relire(ctx, admin="pref69")
+    assert out["recueils"] == 1 and out["actes"] == 3
+    assert len(collecte_server.asked) == before  # no request at all
+    sortie.ecrire(ctx, "2026-10-31T00:00:00+00:00", {})
+    served = b"".join(p.read_bytes() for p in (tmp_path / "sortie").iterdir())
+    assert b"Article 1" not in served and b"captation" not in gzip.decompress(
+        (tmp_path / "sortie" / "recueils.jsonl.gz").read_bytes()
+    )
+    # 12 months, then gone; an erasure at once
+    assert Cache(tmp_path).purger(dt2.date.today() + dt2.timedelta(days=366)) == 1
+    Cache(tmp_path).put(rec, d["content"])
+    assert Cache(tmp_path).effacer(d["id"]) and Cache(tmp_path).get(d["id"]) is None

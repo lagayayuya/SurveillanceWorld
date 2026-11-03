@@ -95,6 +95,9 @@ def tourner(
         and (ctx.today - dt.date.fromisoformat(st["derniere_complete"])).days < 7
     )
     _communes(ctx)
+    from lacarte_collecte.cache import Cache
+
+    Cache(ctx.root).purger(ctx.today)  # the texts kept longer than 12 months
     if only in (None, "dgcl") and not weekly:
         _guarded("dgcl", ctx, summary)
     jobs = [n for n in ("dila", "arretes") if only in (None, n)]
@@ -153,6 +156,13 @@ def main(argv: list[str] | None = None) -> None:
     me.add_argument("lot", type=Path)
     me.add_argument("--dossier", type=Path, required=True)
     me.add_argument("--attente", type=float, default=30, help="hours to wait for idle windows")
+    rl = sub.add_parser("relire", help="the cached texts read again by the code sent, no request")
+    rl.add_argument("--admin")
+    rl.add_argument("--actes", help="act ids, comma-separated")
+    mo = sub.add_parser("montrer", help="an act's text, from the cache (the server, to diagnose)")
+    mo.add_argument("acte")
+    er = sub.add_parser("effacer-recueil", help="a recueil's text, acts and record, erased")
+    er.add_argument("recueil", nargs="+")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
     a = p.parse_args(argv)
     if a.cmd == "seuil":
@@ -186,6 +196,26 @@ def main(argv: list[str] | None = None) -> None:
             )
         json.dump(out, sys.stdout, ensure_ascii=False, indent=1)
         return
+    if a.cmd == "relire":
+        # beside a run if need be (Ju: iterate without waiting): it only appends records
+        from lacarte_collecte import arretes
+
+        ctx = contexte(1.0)
+        out = arretes.relire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
+        sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(timespec="seconds"), {"relire": out})
+        print(json.dumps(out, ensure_ascii=False))
+        return
+    if a.cmd == "montrer":
+        from lacarte_collecte import textes
+        from lacarte_collecte.cache import Cache
+
+        act = next((x for x in Store(collecte.ROOT, "actes").records() if x["id"] == a.acte), None)
+        d = Cache(collecte.ROOT).get(act["recueil"]) if act else None
+        if not d:
+            sys.exit(f"{a.acte}: no act, or its recueil's text is not in the cache")
+        print(f"{act['id']} · {act['type']} · {d['name']} · {d['date']}\n")
+        print(textes.fenetre(d["content"], act["acte"].rsplit(":", 1)[-1]) or d["content"][:20000])
+        return
     if a.cmd == "textes":
         from lacarte_collecte import textes
 
@@ -203,6 +233,16 @@ def main(argv: list[str] | None = None) -> None:
             rep = tourner(ctx)
         elif a.cmd == "source":
             rep = tourner(ctx, a.nom)
+        elif a.cmd == "effacer-recueil":
+            from lacarte_collecte.cache import Cache
+
+            gone = set(a.recueil)
+            for rid in gone:
+                Cache(ctx.root).effacer(rid)
+            acts = Store(ctx.root, "actes")
+            acts.compact({x["id"] for x in acts.records() if x.get("recueil") in gone})
+            Store(ctx.root, "recueils").compact(gone)
+            rep = sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(timespec="seconds"), {})
         elif a.cmd == "effacer":
             gone = Store(ctx.root, "avis").forget(set(a.idweb))
             rep = {"effaces": gone, **sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(), {})}
