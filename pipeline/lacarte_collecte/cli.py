@@ -1,12 +1,12 @@
 """`lacarte-collecte` (`python -m lacarte_collecte.cli`), on the server:
 
-- `tourner [--heures H]`: a run (lacarte-collecte.service, every 6 hours): the communes, then the
-  DGCL, then the DILA's archives and the prefectoral acts side by side (two servers, two
-  queues), within H hours (default 5.5, under the unit's 6), each source resuming where the
-  last run stopped; then the derived files and the report (SORTIE). Once everything is
-  caught up, only the night's run works (`NUIT`, Paris time; the day's end at once,
-  without a request), and one less than 7 days after the last complete one only reads the
-  day's flow.
+- `tourner [--heures H]`: a run (lacarte-collecte.service, every 6 hours): the communes, then
+  the DGCL, then the DILA's archives and the prefectoral acts side by side (two servers, two
+  queues), within H hours (default 5: an hour free before the next run, for the reference
+  readings' texts), each source resuming where the last run stopped; then the derived files and
+  the report (SORTIE). Once everything is caught up, only the night's run works (`NUIT`, Paris
+  time; the day's end at once, without a request), and one less than 7 days after the last
+  complete one only reads the day's flow.
 - `source NOM`: one source alone (dgcl, dila, arretes), the same way.
 - `effacer IDWEB…`: a BOAMP notice erased from the records (it must also be listed in
   rules/registre_effacements.yaml, which every run and construire apply), then SORTIE again.
@@ -122,10 +122,10 @@ def main(argv: list[str] | None = None) -> None:
     p = argparse.ArgumentParser(prog="lacarte-collecte", description=__doc__.split("\n\n")[0])
     sub = p.add_subparsers(dest="cmd", required=True)
     t = sub.add_parser("tourner")
-    t.add_argument("--heures", type=float, default=5.5)
+    t.add_argument("--heures", type=float, default=5.0)
     s = sub.add_parser("source")
     s.add_argument("nom", choices=("dgcl", "dila", "arretes"))
-    s.add_argument("--heures", type=float, default=5.5)
+    s.add_argument("--heures", type=float, default=5.0)
     e = sub.add_parser("effacer")
     e.add_argument("idweb", nargs="+")
     sub.add_parser("sortie")
