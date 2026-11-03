@@ -237,7 +237,24 @@ class Fetcher:
         status, text = self._robots_txt(url)
         return robots_decision(status, text, url, self.agent)
 
+    def blocked_host(self, url: str) -> str | None:
+        """A host this collection must not ask at all, whatever its robots.txt (rules:
+        `sources.plateforme_prefectures`): the reason, or None."""
+        import fnmatch
+
+        rule = (self.conf.get("sources") or {}).get("plateforme_prefectures") or {}
+        host = _host(url).split(":")[0]
+        if not rule.get("bloquee") or host in (rule.get("sauf") or []):
+            return None
+        if any(fnmatch.fnmatch(host, m) for m in rule.get("motifs") or []):
+            return str(rule.get("raison") or "hôte bloqué par décision")
+        return None
+
     def check(self, url: str) -> None:
+        if why := self.blocked_host(url):
+            exc = Forbidden(url, why)
+            self._stop(exc)
+            raise exc
         ok, why = self.allowed(url)
         if not ok:
             exc = Forbidden(url, why)

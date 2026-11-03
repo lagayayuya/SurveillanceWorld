@@ -203,6 +203,17 @@ sources:
       Our own slow crawl of a recueils' index, where Attrap does not read: at most 40 index
       pages a night per administration (ten seconds each on the prefectures' shared server),
       the documents found read once.
+  plateforme_prefectures:
+    id: rule:registre_sources@2:plateforme_prefectures
+    bloquee: true
+    motifs: ["www.*.gouv.fr"]
+    sauf: [www.data.gouv.fr]
+    raison: "plateforme des préfectures : aucune requête jusqu'à la réponse à notre message"
+    rationale: >-
+      The prefectures' platform (their sites www.<département>.gouv.fr, on shared servers)
+      cut 74 of our requests and refused 56 in the run of 2026-11-03, at one request per
+      10 s: no request at all there until Ju has an answer to his message (no link check,
+      no official PDF, no slow crawl). data.gouv.fr is not that platform.
   sirene:
     id: rule:registre_sources@1:source_sirene
     dataset: https://www.data.gouv.fr/api/2/datasets/5b7ffc618b4c4169d30727e0/resources/?page_size=100

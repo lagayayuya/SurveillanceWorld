@@ -85,9 +85,14 @@ def make(tmp_path: Path, clock: Clock | None = None, **kw) -> fetch.Fetcher:
     conf["retries"]["attempts"] = 4
     conf["retries"]["timeout_s"] = 5
     return fetch.Fetcher(
-        "essai", tmp_path, conf=conf, contact=kw.pop("contact", CONTACT),
-        sleep=clock.sleep, clock=clock.now, **kw,
-    )  # fmt: skip
+        "essai",
+        tmp_path,
+        conf=conf,
+        contact=kw.pop("contact", CONTACT),
+        sleep=clock.sleep,
+        clock=clock.now,
+        **kw,
+    )
 
 
 def text(body: str, status: int = 200, **headers: str):
@@ -148,8 +153,10 @@ def test_robots_disallow_is_obeyed_for_our_agent(server, tmp_path):
 
 def test_an_html_page_for_robots_is_a_check_not_a_robots_file(server, tmp_path):
     server.routes["/robots.txt"] = lambda _r: (
-        200, {"Content-Type": "text/html"}, b"<html><body>Please wait</body></html>"
-    )  # fmt: skip
+        200,
+        {"Content-Type": "text/html"},
+        b"<html><body>Please wait</body></html>",
+    )
     server.routes["/a"] = text("ok")
     with pytest.raises(fetch.Forbidden):
         make(tmp_path).get(f"{server.base}/a")
@@ -193,9 +200,10 @@ def test_a_403_stops_the_source_never_tried_again(server, tmp_path):
 def test_an_anti_robot_page_stops_the_source(server, tmp_path):
     server.routes["/robots.txt"] = text("", 404)
     server.routes["/a"] = lambda _r: (
-        200, {"Content-Type": "text/html"},
+        200,
+        {"Content-Type": "text/html"},
         b"<html><title>Just a moment...</title><div id='cf-chl-widget'></div></html>",
-    )  # fmt: skip
+    )
     f = make(tmp_path)
     with pytest.raises(fetch.Blocked):
         f.get(f"{server.base}/a")
@@ -232,8 +240,11 @@ def ranged(cut_at: int | None, etag: str = '"big"'):
         if rng and req.headers.get("If-Range") not in (None, etag):
             start = 0
         body = BIG[start:]
-        headers = {"ETag": etag, "Content-Type": "application/octet-stream",
-                   "Content-Length": str(len(body))}  # fmt: skip
+        headers = {
+            "ETag": etag,
+            "Content-Type": "application/octet-stream",
+            "Content-Length": str(len(body)),
+        }
         status = 200
         if start:
             status = 206
@@ -316,7 +327,9 @@ def test_robots_wildcards_and_the_longest_rule_rfc9309():
     boamp = "User-agent: Googlebot\nAllow: /api/\n\nUser-agent: *\nDisallow: /api/\n"
     api = "https://boamp-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/boamp"
     assert fetch.robots_decision(200, boamp, api, ua) == (
-        False, "robots.txt interdit cette adresse (disallow: /api/)")  # fmt: skip
+        False,
+        "robots.txt interdit cette adresse (disallow: /api/)",
+    )
     # `*` and `$`, which urllib.robotparser ignores
     text = "User-agent: *\nDisallow: /*.pdf$\nDisallow: /recherche*?q=\n"
     assert fetch.robots_decision(200, text, "https://h/a/b.pdf", ua)[0] is False
@@ -342,13 +355,21 @@ def test_robots_wildcards_and_the_longest_rule_rfc9309():
 # --- the pace per IP address (cadence.py) ---------------------------------------------------
 def cad(tmp_path: Path, clock: Clock, addresses: dict[str, str], **kw) -> cadence.Cadence:
     return cadence.Cadence(
-        tmp_path / "cadence", fetch.rules(), resolver=addresses.__getitem__,
-        clock=clock.now, sleep=clock.sleep, **kw,
-    )  # fmt: skip
+        tmp_path / "cadence",
+        fetch.rules(),
+        resolver=addresses.__getitem__,
+        clock=clock.now,
+        sleep=clock.sleep,
+        **kw,
+    )
 
 
-SHARED = {"www.rhone.gouv.fr": "192.0.2.7", "www.isere.gouv.fr": "192.0.2.7",
-          "attrap.fr": "198.51.100.3", "echanges.dila.gouv.fr": "203.0.113.9"}  # fmt: skip
+SHARED = {
+    "www.rhone.gouv.fr": "192.0.2.7",
+    "www.isere.gouv.fr": "192.0.2.7",
+    "attrap.fr": "198.51.100.3",
+    "echanges.dila.gouv.fr": "203.0.113.9",
+}
 
 
 def test_two_hosts_on_one_address_share_one_queue(tmp_path):
@@ -422,3 +443,18 @@ def test_the_fetcher_journals_every_request_with_its_address(server, tmp_path):
         ("127.0.0.1", "robots.txt", "404", "essai"),
         ("127.0.0.1", "a", "200", "essai"),
     ]
+
+
+def test_no_request_to_the_prefectures_platform(server, tmp_path):
+    f = make(tmp_path)
+    f.conf["sources"]["plateforme_prefectures"] = {
+        "bloquee": True,
+        "motifs": ["www.*.gouv.fr"],
+        "sauf": ["www.data.gouv.fr"],
+        "raison": "plateforme des préfectures",
+    }
+    with pytest.raises(fetch.Forbidden, match="plateforme"):
+        f.get("https://www.rhone.gouv.fr/contenu/telechargement/1/2/file/RAA.pdf")
+    assert f.requests == 0  # not even its robots.txt
+    assert f.blocked_host("https://www.data.gouv.fr/api/1/datasets/x/") is None
+    assert f.blocked_host("https://echanges.dila.gouv.fr/OPENDATA/BOAMP/") is None
