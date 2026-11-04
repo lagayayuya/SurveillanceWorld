@@ -4,8 +4,8 @@
 // site shows, and count the tickets. Times are the pilot's: ms, read in UTC (the acts' local hours
 // stored as such, as the prototype reads them).
 import type { Donnees } from "../commun.ts";
-import { fr } from "../format.ts";
-import { t } from "../i18n.ts";
+import { count, fr, longDate } from "../format.ts";
+import { has, t } from "../i18n.ts";
 
 export type Creneau = {
   t0: number;
@@ -21,16 +21,52 @@ export type Creneau = {
   sites: string[];
   statut: "relu" | "indicatif" | string;
 };
+/** A place the act names (lot R4.2): its words, its kind, the shape that draws it (drones.formes);
+ * none: cited, never drawn. */
+export type Lieu = { texte: string; genre: string; forme?: string };
+/** An act listed without a drawn zone. The fields after `raisons` are the R4.2 contract's: one not
+ * published is absent, and the view shows nothing in its place. */
 export type NonDeduit = {
   acte: string;
   kind: string;
+  /** the first day of flight published, else the recueil's date */
   date: string | null;
   url: string | null;
-  ref: string | null;
+  ref?: string | null;
   page: string | null;
   raisons: string[];
+  /** « plan_annexe » (the act sends to an annexed plan) or « non_lue » */
+  zone?: string;
+  /** « publies », « non_publies » (read, their accuracy being measured) or « absents » */
+  horaires_etat?: string;
+  /** the days of flight read (YYYY-MM-DD); a period may have only its first and last day */
+  jours?: string[];
+  /** « 07h30-15h30 », « 20h00-fin » */
+  horaires?: string[];
+  cameras?: number;
+  n_perimetres?: number;
+  /** the act's number as written */
+  numero?: string;
+  /** the administration's id: « ppparis », « pref75 », … */
+  autorite?: string;
+  /** the act's title: never shown raw */
+  titre?: string;
+  service?: string;
+  motif?: { categorie: string | null; libelle: string | null };
+  finalites?: string[];
+  lieux?: Lieu[];
 };
-export type Drones = { creneaux: Creneau[]; non_deduits: NonDeduit[] };
+/** A cited place's shape, approximate: an arrondissement's outline, a widened street, a circle. */
+export type Forme = {
+  genre?: string;
+  geometry: { type: "Polygon" | "MultiPolygon"; coordinates: unknown };
+  approximatif?: boolean;
+};
+export type Drones = {
+  creneaux: Creneau[];
+  non_deduits: NonDeduit[];
+  formes: Record<string, Forme>;
+};
 /** A period [start, end[ in ms; null: every date. */
 export type Periode = [number, number] | null;
 
@@ -183,29 +219,338 @@ export const genre = (s: string | null | undefined): Genre =>
   s === "drone" || s === "vsa" ? s : null;
 export const deGenre = (k: Genre, kind: string): boolean => !k || kind === k;
 
-/** The tickets over a period: the acts of the kind shown (drones by default) that authorise a
- * flight or an analysis in it, the hours they authorise there (the slots whose act states them:
- * the others count none), the slots whose act does not state the hours (B2: what the board's
- * « zones non déduites · 21 » counted, its acts' `heures_sures` false), and the acts whose zone was
- * not deduced (a slot without a site, or an act the build lists without a slot, dated in the
- * period), shown only when there are some. */
+/** The tickets over a period (board B): the acts of the kind shown (drones by default) that
+ * authorise a flight or an analysis in it; those whose hours were read (a slot's stated hours, an
+ * act's `horaires_etat` other than « absents »: published or not yet); those with a drawn zone (a
+ * slot over a site); those without one, « zones non lues » (a slot without a site, an act listed
+ * without a slot). Each act once. */
 export function tickets(
   T: Creneau[],
   ND: NonDeduit[],
   r: Periode,
   k: Genre = "drone",
-): { actes: number; heures: number; sansHoraires: number; nonDeduites: number } {
-  const drones = T.filter((c) => deGenre(k, c.kind) && inPeriod(c, r));
-  const ndIn = ND.filter((a) => deGenre(k, a.kind) && dansPeriode(a.date, r));
+): { actes: number; horairesLus: number; tracees: number; nonLues: number } {
+  const cs = T.filter((c) => deGenre(k, c.kind) && inPeriod(c, r));
+  const ns = ND.filter((a) => deGenre(k, a.kind) && ndDans(a, r));
+  const n = (xs: string[]) => new Set(xs).size;
   return {
-    actes: new Set([...drones.flatMap((c) => c.actes), ...ndIn.map((a) => a.acte)]).size,
-    heures: sumHours(drones, r),
-    sansHoraires: drones.filter((c) => c.heures == null).length,
-    nonDeduites: new Set([
-      ...drones.filter((c) => !c.sites.length).flatMap((c) => c.actes),
-      ...ndIn.map((a) => a.acte),
-    ]).size,
+    actes: n([...cs.flatMap((c) => c.actes), ...ns.map((a) => a.acte)]),
+    horairesLus: n([
+      ...cs.filter((c) => c.heures != null).flatMap((c) => c.actes),
+      ...ns.filter((a) => a.horaires_etat && a.horaires_etat !== "absents").map((a) => a.acte),
+    ]),
+    tracees: n(cs.filter((c) => c.sites.length).flatMap((c) => c.actes)),
+    nonLues: n([
+      ...cs.filter((c) => !c.sites.length).flatMap((c) => c.actes),
+      ...ns.map((a) => a.acte),
+    ]),
   };
+}
+
+// --- « Jours de vol autorisés » (lot R4.2, board B) ---------------------------------------------
+
+/** A day's ms (00:00 UTC) from YYYY-MM-DD. */
+export const jourMs = (s: string): number => Date.parse(`${s}T00:00:00Z`);
+/** YYYY-MM-DD of a day's ms. */
+export const jourIso = (ms: number): string => new Date(ms).toISOString().slice(0, 10);
+/** ?jour=YYYY-MM-DD: that day, [start, end[ in ms. */
+export function jourDe(s: string | null | undefined): [number, number] | null {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+  const t0 = jourMs(s);
+  if (Number.isNaN(t0) || jourIso(t0) !== s) return null;
+  return [t0, t0 + DAY];
+}
+/** The days an act listed without a slot authorises: its `jours` as read (never filled in between:
+ * a period read as its first and last day shows those two), else its date for an older file. */
+export const joursDe = (a: NonDeduit): string[] => a.jours ?? (a.date ? [a.date] : []);
+/** An act listed without a slot in a period: one of its days in it; an act without any day (an
+ * older file's undated act) is in every period. */
+export function ndDans(a: NonDeduit, r: Periode): boolean {
+  if (!r) return true;
+  const js = joursDe(a);
+  if (!js.length) return a.jours == null;
+  return js.some((d) => {
+    const ms = jourMs(d);
+    return ms < r[1] && ms + DAY > r[0];
+  });
+}
+/** The calendar's first day: 1 January 2024, a Monday (the brief: « de 2024 à aujourd'hui »). */
+export const DEBUT_CAL = Date.UTC(2024, 0, 1);
+
+/** For each day of [A, B[, how many acts of the kind shown authorise a flight on it: the days an
+ * act listed without a slot reads (joursDe), every day a slot meets; an act once a day, its hours
+ * read or not. Days without any act are left out. */
+export function joursComptes(
+  T: Creneau[],
+  ND: NonDeduit[],
+  k: Genre,
+  A: number,
+  B: number,
+): Map<number, number> {
+  const out = new Map<number, Set<string>>();
+  const add = (d: number, acte: string) => {
+    if (d < A || d >= B) return;
+    const s = out.get(d) ?? new Set<string>();
+    s.add(acte);
+    out.set(d, s);
+  };
+  for (const c of T) {
+    if (!deGenre(k, c.kind)) continue;
+    for (let d = Math.floor(c.t0 / DAY) * DAY; d < c.t1; d += DAY)
+      for (const a of c.actes) add(d, a);
+  }
+  for (const a of ND) if (deGenre(k, a.kind)) for (const j of joursDe(a)) add(jourMs(j), a.acte);
+  return new Map([...out].map(([d, s]) => [d, s.size]));
+}
+/** A day's shade: none, 1, 2, 3, 4 acts or more (the board's legend shows 0, 1, 3 and 4+). */
+export const niveau = (n: number): 0 | 1 | 2 | 3 | 4 =>
+  n >= 4 ? 4 : n <= 0 ? 0 : (n as 1 | 2 | 3);
+/** The fill's opacity of the ink for each shade (the board's .28, .5, .72 and full ink). */
+export const TEINTE_JOUR = [0, 0.28, 0.5, 0.72, 1] as const;
+
+export type Case = { t: number; n: number; col: number; row: number };
+/** The wide screen's calendar: one column per week from A's Monday, one row per weekday (Monday
+ * at the top), every day of [A, B[. */
+export function grilleSemaines(
+  counts: Map<number, number>,
+  A: number,
+  B: number,
+): { cols: number; cases: Case[] } {
+  const a = lundi(A);
+  const cases: Case[] = [];
+  for (let t = A; t < B; t += DAY)
+    cases.push({
+      t,
+      n: counts.get(t) ?? 0,
+      col: Math.floor((t - a) / WEEK),
+      row: Math.round((t - lundi(t)) / DAY),
+    });
+  return { cols: cases.length ? cases[cases.length - 1].col + 1 : 0, cases };
+}
+export type LigneMois = { t0: number; l: string };
+/** The phone's calendar (the brief): one row per month, the most recent at the top, one column per
+ * day of the month (31), every day of [A, B[; a month's word carries its year on the first row
+ * and on each December (the top of its year). */
+export function grilleMois(
+  counts: Map<number, number>,
+  A: number,
+  B: number,
+): { mois: LigneMois[]; cases: Case[] } {
+  const firsts: number[] = [];
+  const a = new Date(A);
+  for (let k = 0; ; k++) {
+    const t0 = Date.UTC(a.getUTCFullYear(), a.getUTCMonth() + k, 1);
+    if (t0 >= B) break;
+    firsts.push(t0);
+  }
+  firsts.reverse();
+  const row = new Map(firsts.map((t0, i) => [t0, i]));
+  const mois = firsts.map((t0, i) => {
+    const d = new Date(t0);
+    const m = MONTH[d.getUTCMonth()];
+    return { t0, l: i === 0 || d.getUTCMonth() === 11 ? `${m}${NBSP}${d.getUTCFullYear()}` : m };
+  });
+  const cases: Case[] = [];
+  for (let t = A; t < B; t += DAY) {
+    const d = new Date(t);
+    cases.push({
+      t,
+      n: counts.get(t) ?? 0,
+      col: d.getUTCDate() - 1,
+      row: row.get(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)) ?? 0,
+    });
+  }
+  return { mois, cases };
+}
+/** The wide calendar's marks under its columns: each year at its first week (bold, its number) and
+ * each quarter's month (« avr. », « juil. », « oct. »), at the column of the week that holds the
+ * month's first day. */
+export function reperesCal(A: number, B: number): { col: number; l: string; an: boolean }[] {
+  const a = lundi(A);
+  const out: { col: number; l: string; an: boolean }[] = [];
+  const d = new Date(A);
+  for (let k = 0; ; k++) {
+    const t0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 1);
+    if (t0 >= B) break;
+    const m = new Date(t0).getUTCMonth();
+    if (m % 3) continue;
+    const an = m === 0;
+    out.push({
+      col: Math.floor((lundi(Math.max(t0, A)) - a) / WEEK),
+      l: an ? String(new Date(t0).getUTCFullYear()) : MONTH[m],
+      an,
+    });
+  }
+  return out;
+}
+
+const WEEKDAY = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "UTC" });
+/** « Mer. 4 nov. 2026 »: a day with its weekday (the board's calendar sentence and panel title). */
+export function jourLong(ms: number): string {
+  const w = WEEKDAY.format(ms);
+  return `${w.charAt(0).toUpperCase()}${w.slice(1)}${NBSP}${dateTxt(ms)}`;
+}
+/** « 07h30-15h30 » → « 7 h 30 – 15 h 30 », « 20h00-fin » → « 20 h 00 – fin »; anything else as
+ * written. */
+export function horaireTxt(h: string): string {
+  const m = /^\s*(\d{1,2})\s*h\s*(\d{2})?\s*[-–]\s*(?:(\d{1,2})\s*h\s*(\d{2})?|(fin))\s*$/i.exec(h);
+  if (!m) return h;
+  const hm = (a: string, b?: string) => t("carte.heure", { h: String(+a), m: b ?? "00" });
+  return t("carte.de_a_heure", { de: hm(m[1], m[2]), a: m[5] ? t("carte.h_fin") : hm(m[3], m[4]) });
+}
+/** An act's hours in words: those published; « horaires non précisés » only when the act gives
+ * none; « horaires non publiés (justesse en cours de mesure) » when read but not published;
+ * nothing when the file does not say (an older build). */
+export function horairesMots(a: NonDeduit): string {
+  if (a.horaires?.length) return a.horaires.map(horaireTxt).join(", ");
+  if (a.horaires_etat === "absents") return t("carte.horaires_non_precises");
+  if (a.horaires_etat === "non_publies") return t("carte.horaires_non_publies");
+  return "";
+}
+/** The act's reason: its words as read, else its category's; nothing when not published. */
+export function motifTxt(a: NonDeduit): string {
+  const m = a.motif;
+  if (!m) return "";
+  if (m.libelle) return m.libelle;
+  return m.categorie && has(`registre.carte.motif_${m.categorie}`)
+    ? t(`carte.motif_${m.categorie}`)
+    : "";
+}
+/** The purposes (CSI L. 242-5) the act ticks, in words, in its order; unknown ids left out. */
+export const finalitesTxt = (a: NonDeduit): string[] =>
+  (a.finalites ?? [])
+    .filter((f) => has(`registre.carte.finalite_${f}`))
+    .map((f) => t(`carte.finalite_${f}`));
+/** The zone's state in a row: « zone non lue (plan annexé) » when the act sends to an annexed plan,
+ * « zone non lue » otherwise. */
+export const zoneMot = (a: NonDeduit): string =>
+  t(a.zone === "plan_annexe" ? "carte.zone_non_lue_plan" : "carte.zone_non_lue");
+/** The places a row cites: the named ones (an arrondissement, a street, …), not the free words. */
+export const secteurCourt = (a: NonDeduit): string =>
+  (a.lieux ?? [])
+    .filter((l) => l.genre !== "autre" && l.texte)
+    .map((l) => l.texte)
+    .join(", ");
+/** A row of the list (section 1 of the brief): its hours, its service and reason, its zone's
+ * state and cited sector; a field not published is not there and nothing takes its place. */
+export function motsLigne(a: NonDeduit): { h: string; svc: string; zst: string } {
+  const sec = secteurCourt(a);
+  return {
+    h: horairesMots(a),
+    svc: [a.service ?? "", motifTxt(a)].filter(Boolean).join(" · "),
+    zst: [zoneMot(a), sec ? t("carte.secteur_cite_court", { l: sec }) : ""]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+/** « Préfecture de police »; « Préfecture de Paris », « Préfecture du Rhône », « Préfecture des
+ * Bouches-du-Rhône » for prefNN; « Préfecture » alone for a code the catalogue lacks. */
+export function autoriteTxt(id: string | null | undefined): string {
+  if (!id) return "";
+  if (id === "ppparis") return t("carte.autorite_ppparis");
+  const dep = /^pref([0-9]{2,3}|2[AB])$/i.exec(id)?.[1]?.toUpperCase();
+  if (!dep || !has(`registre.departement.art_${dep}`)) return t("carte.autorite_pref_seule");
+  const art = t(`departement.art_${dep}`);
+  const de = /^le /.test(art)
+    ? t("carte.de_le", { x: art.slice(3) })
+    : /^les /.test(art)
+      ? t("carte.de_les", { x: art.slice(4) })
+      : t("carte.de_x", { x: art });
+  return t("carte.autorite_pref", { de });
+}
+/** The act's own date when its id carries it (a recueil's act number, « 75-2026-11-03-00006 »:
+ * département, date, rank), else null. */
+export function dateActe(acte: string): string | null {
+  const m = /^(?:\d{2,3}|2[AB])-(\d{4}-\d{2}-\d{2})-\d+$/.exec(acte);
+  return m && jourDe(m[1]) ? m[1] : null;
+}
+/** The panel's line under its title: « Préfecture de police, arrêté n° 2026-01518 du 3 novembre
+ * 2026 », built from the authority, the number and the act's date, each left out when unknown;
+ * never the act's ref nor its recueil's file name. */
+export function enTete(a: NonDeduit): string {
+  const d = dateActe(a.acte);
+  const arr = [
+    a.numero ? t("carte.arrete_n", { n: a.numero }) : t("carte.arrete_mot"),
+    d ? t("carte.du_date", { date: longDate(d) }) : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return [autoriteTxt(a.autorite), arr].filter(Boolean).join(", ");
+}
+/** The panel's « Zone » line: the annexed plans' perimeters, which the register does not read, or
+ * a zone not read. */
+export function zonePanneau(a: NonDeduit): string {
+  if (a.zone !== "plan_annexe") return t("carte.zone_panneau_non_lue");
+  return a.n_perimetres
+    ? t("carte.zone_panneau_plans", { n: a.n_perimetres })
+    : t("carte.zone_panneau_plan");
+}
+/** The panel's cited sector: the named places, then the free words between guillemets
+ * (« 14e arrondissement, « aux abords des lycées et des universités » »); nothing when none. */
+export function secteurPanneau(a: NonDeduit): string {
+  const ls = (a.lieux ?? []).filter((l) => l.texte);
+  if (!ls.length) return "";
+  const mots = ls.map((l) => (l.genre === "autre" ? t("carte.cite", { x: l.texte }) : l.texte));
+  return t("carte.secteur_cite", { l: mots.join(", ") });
+}
+/** A slot's hours, « 7 h 00 – 11 h 00 » (its end's hour, whatever its day). */
+function heuresCreneau(c: Creneau): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const hm = (ms: number) => {
+    const d = new Date(ms);
+    return t("carte.heure", { h: String(d.getUTCHours()), m: pad(d.getUTCMinutes()) });
+  };
+  return t("carte.de_a_heure", { de: hm(c.t0), a: hm(c.t1) });
+}
+/** The sentence under the calendar on a day (board B): « Mer. 4 nov. 2026 » apart (bold), then the
+ * acts that authorise a flight on it, their hours (those read, else why there are none), the
+ * sectors they cite, the zone's state; a part the acts do not give is left out. */
+export function phraseJour(
+  d: number,
+  T: Creneau[],
+  ND: NonDeduit[],
+  k: Genre,
+): { date: string; reste: string } {
+  const r: [number, number] = [d, d + DAY];
+  const cs = T.filter((c) => deGenre(k, c.kind) && overlaps(c, r[0], r[1]));
+  const ns = ND.filter((a) => deGenre(k, a.kind) && ndDans(a, r));
+  const n = new Set([...cs.flatMap((c) => c.actes), ...ns.map((a) => a.acte)]).size;
+  const lues = [
+    ...cs.filter((c) => c.heures != null).map(heuresCreneau),
+    ...ns.flatMap((a) => (a.horaires ?? []).map(horaireTxt)),
+  ];
+  const heures = lues.length
+    ? [...new Set(lues)].join(", ")
+    : ns.some((a) => a.horaires_etat === "non_publies")
+      ? t("carte.horaires_non_publies")
+      : ns.some((a) => a.horaires_etat === "absents") || cs.length
+        ? t("carte.horaires_non_precises")
+        : "";
+  const sec = [...new Set(ns.map(secteurCourt).filter(Boolean))].join(", ");
+  const tracees = new Set(cs.filter((c) => c.sites.length).flatMap((c) => c.actes)).size;
+  const nonLues = new Set([
+    ...cs.filter((c) => !c.sites.length).flatMap((c) => c.actes),
+    ...ns.map((a) => a.acte),
+  ]).size;
+  return {
+    date: jourLong(d),
+    reste: [
+      n ? count(n, "arrete") : t("carte.jour_aucun"),
+      heures,
+      sec ? t("carte.secteur_cite_jour", { l: sec }) : "",
+      tracees ? t("carte.n_zones_tracees", { n: tracees }) : "",
+      nonLues ? t("carte.n_zones_non_lues", { n: nonLues }) : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+/** « 6 », « 6, soit 2 par périmètre » when the perimeters share them evenly. */
+export function camerasTxt(a: NonDeduit): string {
+  const n = a.cameras;
+  if (typeof n !== "number" || !(n > 0)) return "";
+  const p = a.n_perimetres;
+  return p && p > 1 && n % p === 0 ? t("carte.cameras_par", { n: fr(n), k: fr(n / p) }) : fr(n);
 }
 
 /** A listed act's date (YYYY-MM-DD) in a period; an act without a date is in every period. */
@@ -242,7 +587,11 @@ export function volLabel(v: { heures: number; n: number }): string {
 /** The commune file's slots (an older file has none: no slot). */
 export function drones(d: Donnees): Drones {
   const x = (d.f as { drones?: Partial<Drones> }).drones;
-  return { creneaux: x?.creneaux ?? [], non_deduits: x?.non_deduits ?? [] };
+  return {
+    creneaux: x?.creneaux ?? [],
+    non_deduits: x?.non_deduits ?? [],
+    formes: x?.formes ?? {},
+  };
 }
 
 // --- a slot's keys, its zones, its words (v2.1 A4, A8) -----------------------------------------

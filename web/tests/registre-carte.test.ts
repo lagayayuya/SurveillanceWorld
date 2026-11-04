@@ -155,14 +155,16 @@ test("the tickets: drone acts of the period, their hours, the acts whose zone wa
   ];
   const ND = [nd({ acte: "n1", date: "2026-10-20" }), nd({ acte: "n2", date: "2026-09-01" })];
   T.push(slot({ t0: at("2026-10-22", 9), t1: at("2026-10-22", 15), actes: ["a4"] }));
-  assert.deepEqual(tickets(T, ND, null), { actes: 6, heures: 18, sansHoraires: 1, nonDeduites: 3 });
+  // board B's tickets (lot R4.2): acts, hours read, drawn zones, zones not read; an older file's
+  // row (no `horaires_etat`) has no hours read
+  assert.deepEqual(tickets(T, ND, null), { actes: 6, horairesLus: 3, tracees: 3, nonLues: 3 });
   const oct20 = [Date.UTC(2026, 9, 19), Date.UTC(2026, 9, 26)] as [number, number];
-  assert.deepEqual(tickets(T, ND, oct20), { actes: 3, heures: 6, sansHoraires: 1, nonDeduites: 2 });
+  assert.deepEqual(tickets(T, ND, oct20), { actes: 3, horairesLus: 1, tracees: 1, nonLues: 2 });
   assert.equal(dansPeriode(null, oct20), true);
   assert.equal(dansPeriode("2026-10-18", oct20), false);
   // the filter « algorithmes », then both kinds (A5)
-  assert.deepEqual(tickets(T, ND, null, "vsa"), { actes: 1, heures: 6, sansHoraires: 0, nonDeduites: 0 });
-  assert.deepEqual(tickets(T, ND, null, null), { actes: 7, heures: 24, sansHoraires: 1, nonDeduites: 3 });
+  assert.deepEqual(tickets(T, ND, null, "vsa"), { actes: 1, horairesLus: 1, tracees: 1, nonLues: 0 });
+  assert.deepEqual(tickets(T, ND, null, null), { actes: 7, horairesLus: 4, tracees: 4, nonLues: 3 });
   assert.equal(genre("vsa"), "vsa");
   assert.equal(genre("drone"), "drone");
   assert.equal(genre("tout"), null);
@@ -229,7 +231,11 @@ test("the words: dates, hours, the chart's tooltip, the tickets, the list's titl
 });
 
 test("a commune file without `drones` (an older build) has no slot and no act listed", () => {
-  assert.deepEqual(drones({ f: {} } as unknown as Donnees), { creneaux: [], non_deduits: [] });
+  assert.deepEqual(drones({ f: {} } as unknown as Donnees), {
+    creneaux: [],
+    non_deduits: [],
+    formes: {},
+  });
   const f = { drones: { creneaux: [slot({ t0: 0, t1: H })], non_deduits: [] } };
   assert.equal(drones({ f } as unknown as Donnees).creneaux.length, 1);
 });

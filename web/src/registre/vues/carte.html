@@ -34,9 +34,9 @@
     <sc-if value="{{hasGenres}}">
     <div class="minit">
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
-      <div class="ticket"><div class="v">{{nH}}</div><div class="l">{{t.carte.t_heures_hors}}</div></div>
-      <div class="ticket"><div class="v">{{nSH}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_sans_horaires}}">{{lSH}}</span></div></div>
-      <sc-if value="{{hasND}}"><div class="ticket"><div class="v">{{nND}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_nd}}">{{lND}}</span></div></div></sc-if>
+      <div class="ticket"><div class="v">{{nHL}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_horaires_lus}}">{{t.carte.t_horaires_lus}}</span></div></div>
+      <div class="ticket"><div class="v">{{nTR}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_tracees}}">{{lTR}}</span></div></div>
+      <div class="ticket"><div class="v">{{nNL}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_non_lues}}">{{lNL}}</span></div></div>
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
     </sc-if>

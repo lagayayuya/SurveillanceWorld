@@ -1045,12 +1045,12 @@ class CarteDrones extends Vue<Props, State> {
           n: tk.actes,
         },
       ),
-      nH: fr(tk.heures),
-      nSH: String(tk.sansHoraires),
-      lSH: t("carte.t_sans_horaires", { n: tk.sansHoraires }),
-      hasND: tk.nonDeduites > 0,
-      nND: String(tk.nonDeduites),
-      lND: t("carte.t_nd", { n: tk.nonDeduites }),
+      // board B's four tickets (lot R4.2): acts, hours read, drawn zones, zones not read
+      nHL: fr(tk.horairesLus),
+      nTR: fr(tk.tracees),
+      lTR: t("carte.t_tracees", { n: tk.tracees }),
+      nNL: fr(tk.nonLues),
+      lNL: t("carte.t_non_lues", { n: tk.nonLues }),
       rangeL: r
         ? t("carte.du_au", { de: dateTxt(r[0]), a: dateTxt(r[1] - DAY) })
         : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
