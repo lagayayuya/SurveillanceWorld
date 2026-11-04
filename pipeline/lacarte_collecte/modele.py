@@ -1029,7 +1029,7 @@ def recontroler_references(ctx: Any) -> dict[str, Any]:
     from lacarte_collecte.etat import Store
 
     lots = sorted(
-        {r["id"].rsplit(":", 1)[0] for r in Store(ctx.root, "couts").records()
+        {r["id"].split(":", 1)[0] for r in Store(ctx.root, "couts").records()
          if r.get("phase") == "reference"}
     )  # fmt: skip
     acts = {a["id"]: a for a in Store(ctx.root, "actes").records()}
