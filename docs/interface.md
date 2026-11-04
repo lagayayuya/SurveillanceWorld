@@ -1005,11 +1005,19 @@ DECISIONS 2026-10-28.
   in one view, a filter « drones » / « algorithmes », both in the documents' colour, drones solid,
   algorithms hatched; a zone over 80 % of its commune or more a hatched band on the ground
   (« toute la commune »), the others opaque volumes; the hover a feature state, the selection in
-  ink (a thin outline hovered, full with a thick outline and its label chosen, the others aside;
-  the week chosen full of ink on the chart); its tickets « arrêtés », « heures autorisées, hors
-  créneaux sans horaires », « créneaux aux horaires non précisés » (and « zones non déduites » when
-  there are some); « N créneaux, dans M arrêtés »; a decree opens in its panel, the view's state in
-  its address. Opening it frames the commune and tilts the map; closing the register leaves the
+  ink (a thin outline hovered, full with a thick outline and its label chosen, the others aside);
+  board B (lot R4.2): three ways of saying where, all in the drones' blue (`--drone-trait`): a
+  drawn zone its volume, a cited sector hatched (`drones.formes`, under the cameras), a zone not
+  read a dotted commune edge with a label set on the boundary (« zone non lue · N arrêtés »), a
+  click on it keeping the list to the acts without a drawn zone (`?zone=non-lue`); « Jours de vol
+  autorisés », a calendar (a cell per day, a column per week from 2024; on a phone a row per
+  month, the latest on top), darker by the acts of the day, a day clicked (`?jour=`) filtering
+  the map, the tickets and the list, its sentence under the calendar; the tickets « arrêtés »,
+  « avec horaires lus », « zones tracées », « zones non lues »; a row its date, hours, service,
+  reason and zone's state, nothing for a field not published; an act's panel its authority,
+  number and date, « Où » (cited sector, zone), reason, service, purposes, cameras; a decree
+  opens in its panel, the view's state in its address. Opening it frames the commune and tilts
+  the map, which turns by itself only around a drawn volume; closing the register leaves the
   map there.
 - **« Partager »** (`src/registre/partage.ts`): a small window on a wide screen (the fiche's
   preview image when the build has made it, « Copier le lien », « Copier le texte » when the build
@@ -1915,7 +1923,7 @@ owner's machine's to make (« — »).
 |---|---|---|---|---|---|---|
 | `reg-not-found-subject` | A page whose subject the register does not hold (a département code, a SIREN, an affaire): « PAGE INTROUVABLE », « Le registre → » | registre/donnees.ts Absent; registre/modale.ts afficher; registre/vues/introuvable.ts | IMPROVISED | `/registre/entreprise/000000000`, `/registre/departement/00`, `/registre/contrat/nexistepas` | — | yes |
 | `reg-carte-no-hours` | A slot whose act states no hours: dashed bar, the lowest volume, « horaires non précisés dans l'arrêté » | registre/vues/carte.ts; registre/carte3d.ts volumeHeight | IMPROVISED (the owner's rule) | web/tests/registre-carte.test.ts | — | yes |
-| `reg-carte-not-deduced` | Acts whose zone is not deduced: « N arrêtés sans zone déduite · listés, jamais dessinés », each « zone non déduite de l'arrêté · <ref> », its source in the panel | registre/vues/carte.ts; pipeline drones.py | IMPROVISED (DECISIONS 2026-10-28) | tests/test_registre_drones.py (none in the extract's communes) | — | yes |
+| `reg-carte-not-deduced` | Acts without a drawn zone (lot R4.2): « · N sans zone tracée », each row « zone non lue (plan annexé) » or « zone non lue », never its ref; on the map the dotted edge and its label | registre/vues/carte.ts; pipeline drones.py | IMPROVISED (DECISIONS 2026-10-28) | tests/test_registre_drones.py (none in the extract's communes) | — | yes |
 | `reg-carte-empty` | No slot: no frieze, « Aucun créneau de vol · 0 », the list says why (« … (2 arrêtés). Voir les autorisations → », the département not collected, or no act) | registre/vues/carte.ts | IMPROVISED | `/registre/commune/69283/carte` | — | yes |
 | `reg-contrat` | A contract's record: its path (call for tenders → contract → modifications, more than two in one step → « Fin prévue », dashed, « (calculée) »), the four figures, « Contrat précédent » and « Appel d'offres suivant », « Ce que dit le contrat », the money line, Sources, « Copier la référence », « Signaler une erreur », the panel | registre/vues/contrat.ts, contrat-outils.ts; pipeline parcours.py | Contrat-grand | `/registre/contrat/21690283300013202520240600_32323500` | — | yes |
 | `reg-contrat-date` | A contract whose date is to be checked: « ? » beside the date, explained in the panel at rest | registre/vues/contrat.ts | IMPROVISED (DECISIONS 2026-10-28 « Discreet mentions ») | `/registre/contrat/216902833000132020_32323500` | — | yes |
@@ -1982,9 +1990,14 @@ repository. The R1 states above hold inside the frame unless replaced here.
 | `reg2-fiche` | A fiche: its type's sticker, its name cut out, its identity; the band stuck at the top with its sections (the one read marked) and « Partager »; the sections in order, numbered; the panel on the right | vues/socle.html; vue.ts | V2-Entreprise | Serfim T.I.C., Lyon, Mions, Sytral, the Rhône | — | yes |
 | `reg2-detail-drawer` | On a phone, something touched: the detail rises as a drawer with its ✕; at rest no panel | vues/socle.html; registre.css | V2-Tel-Entreprise (08b) | a year of Serfim at 390 px | — | yes |
 | `reg2-share` | « Partager »: on a wide screen a window (« Copier le lien », « Copier le texte » when the build wrote one, the image when the build made it); on a phone a drawer (« Partager… » when the device has a share sheet, « Copier le lien »); the link keeps the section; « Lien copié » | registre/partage.ts | V2-Entreprise (share), V2-Tel-Entreprise | Serfim's band | — | yes |
-| `reg2-carte` | Drones et algorithmes: the register a panel on the right, the map live and tilted, its outline and drone volumes, « 3D », ↺, ↻, N, the legend, « Heures de vol autorisées, par semaine »; the map's own panels put away | registre/vues/carte.ts; drones.ts | V2-CarteDrones | `/registre/commune/69123/carte` | — | yes |
+| `reg2-carte` | Drones et algorithmes: the register a panel on the right, the map live and tilted, its outline and drone volumes, « 3D », ↺, ↻, N, the legend (volume, hatching, dotted edge), « Jours de vol autorisés »; the map's own panels put away | registre/vues/carte.ts; drones.ts | V2-CarteDrones | `/registre/commune/69123/carte` | — | yes |
 | `reg2-carte-chosen` | A volume pointed at: a thin ink outline; chosen: full, a thick ink outline, its label, the others aside, its week full of ink on the chart, the decree's detail in the panel (places, slots, service, purpose, devices, the zone's status, act, page) | registre/vues/carte.ts; drones.ts | V2-CarteDrones | a Lyon slot | — | yes |
-| `reg2-carte-week` | A week or a month clicked (or chosen with the arrows and Enter): the map, the tickets and the list filtered to it; « Toute la période » | registre/vues/carte.ts | V2-CarteDrones | Lyon, a week of October | — | yes |
+| `reg2-carte-week` | A day of the calendar clicked (or chosen with the arrows and Enter; `?jour=`; `?mois=` and `?semaine=` still read): the map (that day's sectors and their labels, « … ce jour »), the tickets, the list (« Mer. 4 nov. 2026 · 1 arrêté ») and the sentence under the calendar filtered to it, its cell outlined in pink; « Toute la période » | registre/vues/carte.ts | Drones-Paris-B-calendrier (Ju's, lot R4.2) | `/registre/commune/75056/carte?jour=2026-11-04` | — | yes |
+| `reg2-carte-calendar` | « Jours de vol autorisés »: a cell per day, a column per week from 1 January 2024 to today's week, darker by the acts that authorise a flight that day (their read `jours`, a slot's days), the legend « aucun / 1 arrêté / 3 / 4 ou plus / jour choisi »; a day hovered or reached by the keyboard says its sentence | registre/vues/carte.ts; carte-outils.ts `joursComptes`, `grilleSemaines` | Drones-Paris-B-calendrier | `/registre/commune/75056/carte` | — | tests/registre-carte-jours.test.ts |
+| `reg2-carte-calendar-phone` | The calendar on a phone: a row of 31 cells per month, the latest month on top, in its own box scrolling vertically | registre/vues/carte.ts; carte-outils.ts `grilleMois` | IMPROVISED (brief R4.2 § 4; no phone board) | a phone, `/registre/commune/75056/carte` | — | tests/registre-carte-jours.test.ts |
+| `reg2-carte-sector` | A cited sector: its shape hatched in the drones' blue over a light blue at 22 %, under the cameras' fields and the filmed streets; every sector of the period at once, a chosen day's only; its label « secteur cité · … » for a chosen day or act; « Voir sur la carte » in the panel frames it | registre/drones.ts; vues/carte.ts | Drones-Paris-B-calendrier | the 4 Nov 2026 act with its places (a fixture with its places) | — | yes |
+| `reg2-carte-not-read` | Acts without a drawn zone in the period: the commune's edge dotted in the drones' blue (in place of its ink line) and a label on the boundary, along it, in the free part of the map, « zone non lue · N arrêtés » (« … ce jour » on a day); a click on either keeps the list to them (« N arrêtés sans zone tracée », « Tous les arrêtés »), pressed again it lets go | registre/drones.ts `poseBord`; vues/carte.ts | Drones-Paris-B-calendrier | `/registre/commune/75056/carte`, the label | — | yes |
+| `reg2-carte-act-not-drawn` | The panel of an act without a drawn zone (panneau.png): its day and hours, « Préfecture de police, arrêté n° … du … », « Où » (« Secteur cité : … » with « Voir sur la carte », « Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas »), then Motif, Service, Finalités, Caméras (« 6, soit 2 par périmètre »), « Horaires » when not published, the source and « Signaler une erreur »; each line only when its field is published | registre/vues/carte.ts; carte-outils.ts | Drones-Paris-panneau | `/registre/commune/75056/carte?jour=2026-11-04&acte=75-2026-11-03-00006` | — | tests/registre-carte-jours.test.ts |
 
 ### The register v2.3 (2026-10-31)
 
@@ -1999,7 +2012,7 @@ for the map.
 | `reg2-list-panel-row` | A list of names' row in the panel: its type and département, name, figures as tiles, « Ouvrir la fiche → », its drones' door, « Voir sur la carte », the keys' line | registre/vues/liste.ts; socle.html panneau | liste-communes-* (Ju's) | `/registre/communes`, a row hovered | captures/apres | yes |
 | `reg2-list-row-reopened` | A list opened from a fiche's breadcrumb: the fiche's row marked and scrolled to | registre/vues/liste.ts (`?ligne=`) | — | `/registre/communes?ligne=69290` | — | smoke |
 | `reg2-band-doors` | A fiche's band: its sections, then its doors (« Drones et algorithmes », « Fiche ») with their pictograms | registre/vues/commune-outils.ts; socle.html | — | `/registre/commune/69290` | captures/apres | yes |
-| `reg2-carte-folded` | Drones et algorithmes on a wide screen: the legend a ticket « Légende » beside the commands, the chart a band with the chosen week | registre/vues/carte.ts | drones-zone-choisie (Ju's) | `/registre/commune/69123/carte` | captures/apres | yes |
+| `reg2-carte-folded` | Drones et algorithmes on a wide screen: the legend a ticket « Légende » beside the commands, the calendar a band with the chosen day's sentence (« Replier le calendrier » unfolded) | registre/vues/carte.ts | drones-zone-choisie (Ju's) | `/registre/commune/69123/carte` | captures/apres | yes |
 | `reg2-carte-left` | The register closed over the drone view: the map tilted with its volumes, a ticket « Quitter la vue drones » | registre/vues/carte.ts | — | the drone view, ✕ | — | smoke script |
 | `map-ticket-doors` | The map's ticket: under its squares, « Filtres et légende » on paper and « Le registre » in pink | machine.ts; theme/punk/map.css | — | `/` | captures/apres | yes |
 
@@ -2499,6 +2512,19 @@ rows above hold for the content of the fiches.
 | V2-CarteDrones: yellow on the volume chosen and its week | ink (a thin outline hovered; chosen full, a thick outline, the others aside) | Ju's review A1: yellow is the territories' |
 | V2-CarteDrones: « zones non déduites · 21 » | « créneaux aux horaires non précisés » (13 at Lyon), « zones non déduites » only when there are some | Ju's review B2: the board's 21 counted unread hours |
 | V2-CarteDrones: the panel « en bref » | what to hover or choose; filled on a choice only | Ju's review B3; a hover that filled it moved the row under the pointer |
+| Drones-Paris-B-calendrier: the calendar always open, the legend open | both folded by default on a wide screen, a band « Jours de vol autorisés · … » (« Replier le calendrier » when open) | DECISIONS 2026-10-31 (the legend and the chart folded, the map left free) |
+| Drones-Paris-B-calendrier: the shades rgba(17,17,17,…), the chosen day #fe48b0 | the theme's ink at the same opacities, the frame's pink (--type-registre, #ff48b0) | dark mode (the board has none); the token of the same pink |
+| Drones-Paris-B-calendrier: the blue #2c6f9e | the token --drone-trait (#2c6f9e in light, the drone colour in dark) | the theme's tokens only (tests/theme.test.ts); the board has no dark mode |
+| Drones-Paris-B-calendrier: « zones sur plan annexé, non lues » | « zones non lues » | data: 90 of Paris's 645 acts are not on an annexed plan (`zone: non_lue`); the brief's wording |
+| Drones-Paris-B-calendrier: the list's title « … · 8 h de vol » | « · N h de vol » only when slots give hours | data: an act's hours are not published yet (`horaires_etat: non_publies`) |
+| Drones-Paris-B-calendrier: the map at the 14e's scale on the chosen day | the commune framed (its box), the 14e reached by « Voir sur la carte » | the view frames its commune once and moves the camera only when asked (v2.4) |
+| Drones-Paris-B-calendrier: « secteur cité · 14e » in Archivo on the map | the map's own font (Noto Sans Medium), white on the blue, set by the map with its collisions; only for a chosen day or act | the map's glyphs are not the page's fonts; on the whole period every sector at once would cover the map with labels |
+| Drones-Paris-B-calendrier: the edge's label at a fixed place | on the edge's leftmost point in the free part of the map, along it, kept there while it stays free | the map moves and the page has any size |
+| Drones-Paris-panneau: the « nouveau » marks | not drawn | the board's annotation of the fields new to it, not the interface's |
+| Drones-Paris-panneau: « Document officiel ↗ » | « Voir l'arrêté (recueil de la préfecture) » | DECISIONS 2026-10-28 |
+| Drones-Paris-panneau: the row « DSPAP · … » | the service's whole name, as published | data: no short form is published |
+| Drones-Paris-panneau: « zone : 3 plans annexés, non lus » in a row | « zone non lue (plan annexé) » | brief R4.2 § 1 (the words of the zone's state) |
+| Drones-Paris-panneau: the title's hours | the hours when published; else the date alone and a row « Horaires : horaires non publiés (justesse en cours de mesure) » | data (`horaires_etat`) |
 | V2-* « ← Carte » | « ← Retour » when the register has a step before | Ju's review A4 |
 | V2-*: the breadcrumb's steps 19 px high | 40 px rows, their ground on hover | Ju's review A2 (the row is the target); on the black bar a lighter ink (#2e2b33), the soft ground unreadable under light words |
 | A sorted number column's arrow after its words | before them (« ↓ MONTANT ») | Ju's review A6: the words end where the values end |
