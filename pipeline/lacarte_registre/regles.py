@@ -426,6 +426,10 @@ def appliquer(p: Pilote, corr: list[Correction]) -> Registre:
         if e.get("insee"):
             reg.by_insee.setdefault(e["insee"], []).append(e)
         reg.by_dep.setdefault(e.get("dep") or "", []).append(e)
+        # an act naming several départements (collecte.py): in each one's list, once
+        for d in e.get("departements") or []:
+            if d != (e.get("dep") or ""):
+                reg.by_dep.setdefault(d, []).append(e)
     for act, named in shares.items():
         e = reg.by_id[act]
         for k in named:

@@ -85,24 +85,93 @@ def _admins(rules: Path) -> dict[str, Any]:
 
 
 DOUBLONS = ("ppparis", "pref75")
-NUMERO = re.compile(r"n\s*°\s*(\d{4}\s*-\s*\d{3,6})")
+# the decree's number in its title, « n° » or not, as the text layer spells it (« Arrêté
+# 2026-01518 du… » at the prefecture of Paris, « Arrété n°2025-01485autorisant… », « n 2025-
+# 00640 », « n02025-00895 »); the Préfecture de police's reader already keys its acts by it
+NUMERO = re.compile(r"arr[êeé]t[ée]\s*(?:n\s*[°o0]?\s*)?(\d{4})\s*-\s*(\d{3,6})(?!\d)", re.I)
+NUMERO_ACTE = re.compile(r"^(\d{4})-(\d{3,6})$")
+
+
+def noms_departements(admins: dict[str, Any]) -> re.Pattern[str]:
+    """The départements' names (the administrations' rules), longest first, as whole names
+    (« Marne » is not « Val-de-Marne »), « Paris » among them."""
+    names = sorted(
+        {
+            a["nom"]: a["code"]
+            for a in admins.values()
+            if a["genre"] in ("departement", "outre-mer")
+        },
+        key=len,
+        reverse=True,
+    )
+    alt = "|".join(re.escape(n).replace("\\-", "[-\\s]") for n in names)
+    return re.compile(rf"(?<![\w-])({alt})(?![\w-])", re.I)
+
+
+def departements_vises(
+    a: dict[str, Any], pattern: re.Pattern[str], codes: dict[str, str]
+) -> list[str]:
+    """The départements a drone or algorithm act names in its title, after « aéronefs » or
+    « algorithmique » (« à Paris, en Seine-Saint-Denis et dans le Val-de-Marne »: 75, 93, 94),
+    in its order; none when it names none."""
+    if a["type"] not in ("drone", "vsa"):
+        return []
+    title = a.get("titre") or ""
+    m = re.search(r"a[ée]ronefs|algorithm", title, re.I)
+    found = pattern.findall(title[m.end() :] if m else "")
+    return list(dict.fromkeys(codes[parse_raa_key(n)] for n in found))
+
+
+def parse_raa_key(name: str) -> str:
+    return re.sub(r"[-\s]+", "-", name.strip().lower())
+
+
+def numero(a: dict[str, Any]) -> str | None:
+    """The decree's number, « 2026-1518 » (the zeros of padding dropped: « 2024-0067 » is
+    « 2024-00067 »), or None."""
+    m = NUMERO_ACTE.match(a.get("acte") or "") if a.get("administration") == "ppparis" else None
+    m = m or NUMERO.search(a.get("titre") or "")
+    return f"{m.group(1)}-{int(m.group(2))}" if m else None
 
 
 def uniques(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """A decree published by both the Préfecture de police and the prefecture of Paris, once:
     the same kind and the same « n° » in the title; the prefecture of Paris's record (its
     national id) is kept."""
-    seen: set[tuple[str, str]] = set()
+    seen: dict[tuple[str, str], dict[str, Any]] = {}
     out = []
     for a in sorted(acts, key=lambda a: (a.get("administration") != "pref75", a["id"])):
-        m = NUMERO.search(a.get("titre") or "") if a.get("administration") in DOUBLONS else None
-        key = (a["type"], re.sub(r"\s", "", m.group(1))) if m else None
+        n = numero(a) if a.get("administration") in DOUBLONS else None
+        key = (a["type"], n) if n else None
         if key and key in seen:
+            # what the kept record's reading left empty, from the other's (the prefecture of
+            # Paris's text layer often loses the zone's article)
+            kept = seen[key]
+            mine, theirs = kept.get("champs") or {}, a.get("champs") or {}
+            kept["champs"] = {
+                **mine,
+                **{k: v for k, v in theirs.items() if mine.get(k) in (None, "", [])},
+            }
             continue
         if key:
-            seen.add(key)
+            a = {**a}
+            seen[key] = a
         out.append(a)
     return out
+
+
+# the act sends its zone to a plan or a map annexed, which the registre does not read (« le
+# périmètre géographique figurant sur le plan en annexe », « plan joint enannexe », « défini en
+# annexe », « cartographie en annexe »): a rule on the zone's sentences (parse_raa.drone)
+PLAN_ANNEXE = re.compile(
+    r"(?:plans?|cartographies?|cartes?|p[ée]rim[eè]tres?)\b[^.;|]{0,80}?(?:en\s*)?annex"
+    r"|annexes?\s*(?:\d+\s*)?(?:cartographique|graphique|plan)",
+    re.I,
+)
+
+
+def plan_annexe(a: dict[str, Any]) -> bool:
+    return bool(PLAN_ANNEXE.search((a.get("champs") or {}).get("zone_extrait") or ""))
 
 
 GROUPS = {
@@ -120,6 +189,7 @@ def act_event(
     published: set[str],
     final: dict[str, Any] | None,
     mention: str | None,
+    deps: list[str] | None = None,
 ) -> regles.Event:
     """The act as an event: the fields of the groups published in its département and kind,
     from the checked reading (rules, model, both, arbitration) else the rules'; the others
@@ -146,6 +216,11 @@ def act_event(
     if insee and len(insee) == 5:
         # the commune's département (a Préfecture de police act in Saint-Denis is the 93's)
         dep = insee[:3] if insee.startswith("97") else insee[:2]
+    deps = deps or []
+    if deps and dep not in deps:
+        # the title names other départements (« dans le département des Hauts-de-Seine »): the
+        # commune read is not one of theirs, the act is theirs alone
+        insee, dep = None, deps[0]
     days = f.get("dates") or []
     cams = f.get("n_cameras_drone") if a["type"] == "drone" else f.get("n_total")
     e: regles.Event = {
@@ -181,6 +256,11 @@ def act_event(
     }
     if f.get("perimetre"):
         e["perimetre"] = f["perimetre"]
+    if a["type"] in ("drone", "vsa") and not f.get("perimetre") and plan_annexe(a):
+        e["plan_annexe"] = True
+    if len(deps) > 1:
+        # listed in each département it names, counted once in each (regles.appliquer)
+        e["departements"] = deps
     if not published:
         e["sous_le_seuil"] = True
     else:
@@ -207,6 +287,12 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     measured = mesures(root, rules)
     mention = _sources(rules)["attrap"].get("mention_site") or None
     pilot_ids = {e["id"] for e in reg["evenements"]}
+    names = noms_departements(admins)
+    codes = {
+        parse_raa_key(a["nom"]): a["code"]
+        for a in admins.values()
+        if a["genre"] in ("departement", "outre-mer")
+    }
 
     def replaced(e: regles.Event) -> bool:
         return e["t"] == "subvention_etat" and bool(subs) and int(e["date"][:4]) <= last
@@ -223,7 +309,8 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         groups = measured.get(f"{dep}-{a['type']}") or {}
         published = {g for g, v in groups.items() if v.get("publie") and g in GROUPS}
         n_pub += bool(published)
-        new.append(act_event(a, admin, published, finals.get(a["id"]), mention))
+        deps = departements_vises(a, names, codes)
+        new.append(act_event(a, admin, published, finals.get(a["id"]), mention, deps))
     affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
     for e in new:
         kind = "subvention" if e["t"].startswith("subvention") else "acte"

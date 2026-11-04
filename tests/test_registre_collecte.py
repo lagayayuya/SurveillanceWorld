@@ -203,3 +203,71 @@ def test_a_decree_published_by_both_paris_prefectures_is_served_once():
         "75-2026-10-30-00007",
         "ppparis:bb:2026-01496",
     ]
+
+
+def test_the_prefecture_of_paris_titles_without_n_and_the_padding():
+    """« Arrêté 2026-01518 du 03 novembre 2026 » (no « n° ») is the Préfecture de police's
+    2026-01518, served in production twice before; « 2024-0067 » is « 2024-00067 »."""
+    from lacarte_registre import collecte
+
+    pp = {
+        "id": "ppparis:88445d1be87c:2026-01518",
+        "acte": "2026-01518",
+        "administration": "ppparis",
+        "type": "drone",
+        "titre": "Arrêté n°2026-01518 autorisant la captation, l'enregistrement",
+    }
+    paris = {
+        "id": "75-2026-11-03-00006",
+        "acte": "75-2026-11-03-00006",
+        "administration": "pref75",
+        "type": "drone",
+        "titre": "Arrêté 2026-01518 du 03 novembre 2026 autorisant la captation",
+    }
+    glued = {**pp, "id": "ppparis:cc:2024-0067", "acte": "2024-0067", "titre": "Arrêté"}
+    padded = {**paris, "id": "75-2024-01-01-00001", "titre": "Arrété n°2024-00067autorisant"}
+    assert [a["id"] for a in collecte.uniques([pp, paris, glued, padded])] == [
+        "75-2024-01-01-00001",
+        "75-2026-11-03-00006",
+    ]
+
+
+def test_an_act_naming_several_departements_is_in_each():
+    """2026-01510 « à Paris, en Seine-Saint-Denis et dans le Val-de-Marne »: Paris's commune,
+    and the 93's and 94's lists; an act « dans le département des Hauts-de-Seine » the reader
+    put in Paris is the 92's alone."""
+    from lacarte_registre import collecte
+
+    admins = collecte._admins(registre.RULES)
+    names = collecte.noms_departements(admins)
+    codes = {
+        collecte.parse_raa_key(a["nom"]): a["code"]
+        for a in admins.values()
+        if a["genre"] in ("departement", "outre-mer")
+    }
+    a = {
+        "id": "75-2026-11-02-00011",
+        "acte": "75-2026-11-02-00011",
+        "type": "drone",
+        "titre": "Arrêté n°2026-01510 autorisant la captation, l'enregistrement et la "
+        "transmission d'images au moyen de caméras installées sur des aéronefs à Paris, en "
+        "Seine-Saint-Denis et dans le Val-de-Marne le mardi",
+        "insee": "75056",
+        "commune": "Paris",
+        "recueil_date": "2026-11-03",
+        "recueil_nom": "recueil",
+        "url": "https://example.org/r.pdf",
+    }
+    deps = collecte.departements_vises(a, names, codes)
+    assert deps == ["75", "93", "94"]
+    e = collecte.act_event(a, admins["pref75"], {"commune"}, None, None, deps)
+    assert (e["insee"], e["dep"], e["departements"]) == ("75056", "75", ["75", "93", "94"])
+    hds = {**a, "titre": "Arrêté … aéronefs le vendredi 24 mai 2024 dans le département des "
+           "Hauts-de-Seine"}  # fmt: skip
+    deps = collecte.departements_vises(hds, names, codes)
+    e = collecte.act_event(hds, admins["pref75"], {"commune"}, None, None, deps)
+    assert (deps, e["insee"], e["dep"], "departements" in e) == (["92"], None, "92", False)
+    # a « Marne » is not the Val-de-Marne's
+    assert collecte.departements_vises({**a, "titre": "aéronefs dans la Marne"}, names, codes) == [
+        "51"
+    ]
