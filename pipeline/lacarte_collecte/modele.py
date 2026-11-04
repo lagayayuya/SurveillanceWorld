@@ -820,3 +820,52 @@ def statut(ctx: Any) -> dict[str, Any]:
         "depense": depense(ctx),
         "budget": budget(ctx),
     }
+
+
+# --- reading on the Mac once the API's budget is spent (DECISIONS 2026-11-04) ---
+def exporter(ctx: Any, n: int, admin: str | None = None) -> list[dict[str, Any]]:
+    """Up to `n` acts not yet read, with their text window, for a lot read on the Mac; each
+    transfer journaled (Store « transferts »: the act, the day, never the text)."""
+    from lacarte_collecte.etat import Store
+
+    out = []
+    for a in a_lire(ctx, admin):
+        t = _texte(ctx, a)
+        if t:
+            out.append({**t, "type": a["type"], "consigne": CONSIGNE, "schema": SCHEMA})
+        if len(out) >= n:
+            break
+    Store(ctx.root, "transferts").add(
+        {
+            "id": f"{x['id']}:{dt.date.today()}",
+            "acte": x["id"],
+            "le": dt.datetime.now(dt.UTC).isoformat(),
+        }
+        for x in out
+    )
+    return out
+
+
+def importer(ctx: Any, rows: list[dict[str, Any]], qui: str = "local") -> dict[str, Any]:
+    """Readings made on the Mac ({id, lecture}: the schema's answer), checked and agreed with
+    the rules exactly as the API's; a disagreement keeps the rules' value out (no arbitrator
+    here): the field stays empty."""
+    from lacarte_collecte.etat import Store
+
+    acts = {a["id"]: a for a in Store(ctx.root, "actes").records()}
+    kept = 0
+    for r in rows:
+        a = acts.get(r["id"])
+        t = _texte(ctx, a) if a else None
+        if not a or not t:
+            continue
+        m = controler(
+            r.get("lecture") or {},
+            t["texte"],
+            _communes(ctx, a["administration"]),
+            dt.date.fromisoformat(a["recueil_date"]),
+        )
+        fields, _disputed = accorder(regles(a), m)
+        _garder(ctx, a, fields, m, qui)
+        kept += 1
+    return {"importes": kept, "recus": len(rows)}

@@ -257,6 +257,12 @@ def main(argv: list[str] | None = None) -> None:
             exclure = set(json.load(sys.stdin)) if not sys.stdin.isatty() else set()
             pairs = [tuple(x.split("-", 1)) for x in (a.types or "").split(",") if x]
             out = modele.references_lot(ctx, pairs, a.graine, exclure)
+        elif a.action == "exporter":
+            for row in modele.exporter(ctx, a.n, a.admin):
+                print(json.dumps(row, ensure_ascii=False))
+            return
+        elif a.action == "importer":
+            out = modele.importer(ctx, [json.loads(x) for x in sys.stdin if x.strip()])
         elif a.action == "statut":
             out = modele.statut(ctx)
         elif a.action == "mesurer":

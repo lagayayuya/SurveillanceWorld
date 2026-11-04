@@ -168,3 +168,50 @@ def test_a_sample_smaller_than_due_publishes_nothing(tmp_path):
     )
     m = modele.mesurer(ctx)["13-drone"]["commune"]
     assert (m["justes"], m["mesures"], m["du"], m["publie"]) == (1, 1, 30, False)
+
+
+def test_a_reading_made_on_the_mac_is_checked_like_the_api_s(collecte_server, tmp_path):
+    from collecte_fake import ctx_for
+
+    from lacarte_collecte import arretes
+    from lacarte_collecte.cache import Cache
+    from lacarte_collecte.etat import Store
+
+    ctx = ctx_for(collecte_server, tmp_path, dt.date(2026, 10, 31))
+    d = raa("pref57")
+    Cache(tmp_path).put(
+        {
+            "id": d["id"],
+            "administration": "pref57",
+            "date": d["date"],
+            "name": d["name"],
+            "url": d["url"],
+        },
+        d["content"],
+    )
+    Store(tmp_path, "recueils").add([{"id": d["id"], "administration": "pref57"}])
+    rules = tmp_path / "r"
+    rules.mkdir()
+    import shutil
+
+    import lacarte_registre as registre
+
+    for f_ in registre.RULES.glob("*.yaml"):
+        shutil.copy(f_, rules / f_.name)
+    ctx.rules_dir = rules
+    (rules / "collecte_administrations.yaml").write_text(
+        "administrations:\n  pref57: {nom: Moselle, code: '57', genre: departement, attrap: pref57,"
+        " index: null, defi: false, parcours: false, vague: 1, actes_12_mois: 1}\n"
+    )
+    arretes.relire(ctx, admin="pref57")
+    out = modele.exporter(ctx, 5)
+    assert out and "texte" in out[0] and Store(tmp_path, "transferts").ids()
+    act = out[0]["id"]
+    lu = reading(
+        n_cameras_drone=f(2, "au moyen de deux caméras installées sur des drones"),
+        commune=f("Paris", "sur cinq secteurs de Metz et de Woippy"),
+    )
+    assert modele.importer(ctx, [{"id": act, "lecture": lu}]) == {"importes": 1, "recus": 1}
+    [r] = [x for x in Store(tmp_path, "champs").records() if x["id"] == act]
+    assert r["modele"] == "local" and r["champs"]["n_cameras_drone"]["valeur"] == 2
+    assert r["champs"]["commune"]["origine"] == "regles"  # Paris is not proved: the rules' Metz
