@@ -163,3 +163,24 @@ def test_an_act_read_already_gets_its_complementary_fields_alone(tmp_path):
     assert set(modele.CHAMPS) <= set(s["required"]) and set(nouveaux.CHAMPS) <= set(s["required"])
     assert set(nouveaux.schema_seul(CONF)["required"]) == {"trouve", *nouveaux.CHAMPS}
     _ = COMMUNES
+
+
+def test_the_whole_schema_stays_within_the_api_s_16_union_parameters():
+    """The batches refused the first whole schema: 39 parameters with unions, the API's limit
+    is 16 (the first fields' schema has 16 by itself)."""
+
+    def unions(x):
+        if isinstance(x, dict):
+            here = int(isinstance(x.get("type"), list) or "anyOf" in x)
+            return here + sum(unions(v) for v in x.values())
+        if isinstance(x, list):
+            return sum(unions(v) for v in x)
+        return 0
+
+    assert unions(modele.schema_complet(CONF)) <= 16
+    assert unions(nouveaux.schema_seul(CONF)) <= 16
+    m = nouveaux.controler(
+        {"motif": f("aucun", ""), "n_perimetres": f(0, ""), "service": f("", "")},
+        TEXT, PARIS, WHEN, CONF, "drone",
+    )  # fmt: skip
+    assert m["motif"] is None and m["n_perimetres"] is None and m["service"] is None

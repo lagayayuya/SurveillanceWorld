@@ -90,7 +90,8 @@ forme du nom du pétitionnaire (la citation : ce nom tel qu'il est écrit) ;
   · echeance : la date de fin de l'autorisation, AAAA-MM-JJ ;
   · nature : nouvelle, renouvellement ou modification.
 Un champ qui ne concerne pas le dispositif de l'acte, ou que le texte ne prouve pas : valeur \
-null (ou liste vide) et citation null."""
+vide ("" pour un texte, 0 pour un nombre, « aucun » pour une catégorie, liste vide) et \
+citation vide ("")."""
 
 
 def consigne_seule(conf: dict[str, Any]) -> str:
@@ -105,21 +106,25 @@ def consigne_seule(conf: dict[str, Any]) -> str:
     )
 
 
+# No union type here (no null, no anyOf): the API compiles at most 16 parameters with unions in
+# a schema, and the first fields' schema has 16 (2026-11-04, the batches' error: « too many
+# parameters with union types »). An empty value is "", 0, « aucun » or [], a missing
+# passage "".
 def _champ(kind: dict[str, Any]) -> dict[str, Any]:
     return {
         "type": "object",
-        "properties": {"valeur": kind, "citation": {"type": ["string", "null"]}},
+        "properties": {"valeur": kind, "citation": {"type": "string"}},
         "required": ["valeur", "citation"],
         "additionalProperties": False,
     }
 
 
 def _choix(values: list[str]) -> dict[str, Any]:
-    return {"anyOf": [{"type": "string", "enum": list(values)}, {"type": "null"}]}
+    return {"type": "string", "enum": [*values, "aucun"]}
 
 
 def proprietes(conf: dict[str, Any]) -> dict[str, Any]:
-    s = {"type": ["string", "null"]}
+    s = {"type": "string"}
     return {
         "motif": _champ(_choix(conf["motifs"])),
         "motif_libelle": _champ(s),
@@ -132,20 +137,20 @@ def proprietes(conf: dict[str, Any]) -> dict[str, Any]:
                 "properties": {
                     "texte": {"type": "string"},
                     "genre": {"type": "string", "enum": conf["genres_lieux"]},
-                    "citation": {"type": ["string", "null"]},
+                    "citation": {"type": "string"},
                 },
                 "required": ["texte", "genre", "citation"],
                 "additionalProperties": False,
             },
         },
-        "n_perimetres": _champ({"type": ["integer", "null"]}),
+        "n_perimetres": _champ({"type": "integer"}),
         "communes": _champ({"type": "array", "items": {"type": "string"}}),
         "etablissement": _champ(_choix(conf["etablissements"])),
         "adresse": _champ(s),
         "petitionnaire": _champ(
             _choix(["personne_morale", "organisme_public", "entrepreneur_individuel"])
         ),
-        "conservation_jours": _champ({"type": ["integer", "null"]}),
+        "conservation_jours": _champ({"type": "integer"}),
         "echeance": _champ(s),
         "nature": _champ(_choix(conf["natures"])),
     }

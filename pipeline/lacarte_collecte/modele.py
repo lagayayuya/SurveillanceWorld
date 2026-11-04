@@ -898,6 +898,38 @@ def _opus_nouveaux(
     }
 
 
+def schemas(ctx: Any) -> dict[str, Any]:
+    """Each phase's schema submitted to the API's token counting (free): « ok » or the API's
+    error, to find a schema the batches refuse."""
+    conf = nouveaux.regles(ctx.rules_dir)
+    c, out = client(), {}
+    for ph in ("lecture", "complement", "arbitrage"):
+        system, schema = _phase(conf, ph)
+        try:
+            c.messages.count_tokens(
+                model=LECTEUR,
+                system=system,
+                messages=[
+                    {"role": "user", "content": "Acte à lire : n° 1.\n\n<extrait>\n…\n</extrait>"}
+                ],
+                extra_body={"output_config": {"format": {"type": "json_schema", "schema": schema}}},
+            )
+            out[ph] = "ok"
+        except Exception as e:  # noqa: BLE001 (the API's refusal, said as it is)
+            out[ph] = f"{type(e).__name__}: {e}"[:800]
+    return out
+
+
+def erreurs(lot: str, n: int = 3) -> dict[str, Any]:
+    """A batch's results by type, and its first errors as the API gives them (no new call)."""
+    c, kinds, errs = client(), {}, []
+    for r in c.messages.batches.results(lot):
+        kinds[r.result.type] = kinds.get(r.result.type, 0) + 1
+        if r.result.type != "succeeded" and len(errs) < n:
+            errs.append(str(getattr(r.result, "error", r.result))[:800])
+    return {"types": kinds, "erreurs": errs}
+
+
 def couts(ctx: Any) -> dict[str, Any]:
     """The real cost per phase (the journaled usage at the batch's price): the requests, the
     dollars, the dollars per request."""
