@@ -42,6 +42,39 @@ def fenetre(text: str, acte: str, pieces: list[parse_raa.Morceau] | None = None)
     return None
 
 
+# What the reading never needs (lot R4.2): the « Vu » of pure form (codes, laws, decrees, the
+# appointments and delegations), the ways and delays of appeal, the formulas of signature and
+# execution. « Vu la demande… », the considerations and the articles stay: the purpose and the
+# places are there. Each is one clause, up to its « ; » or its sentence's end.
+# a « Vu » ends at its « ; », or where the next clause starts when the text layer lost it
+FIN_VU = (
+    r"(?:;|(?=\s*(?:Vu|VU|Consid[ée]rant|CONSID[ÉE]RANT|Sur (?:la )?proposition"
+    r"|ARR[ÊE]TE|Arr[êée]te)\b))"
+)
+FORME = [
+    re.compile(p, re.I)
+    for p in (
+        r"\bVu (?:le |la |l['’]|les )?(?:code|loi|constitution|ordonnance|r[èe]glement"
+        r"|d[ée]cret|directive)\b[^;]{0,700}?" + FIN_VU,
+        r"\bVu (?:l['’]|les? )arr[êe]t[ée]s?\b[^;]{0,500}?(?:d[ée]l[ée]gation|nomm|nomination"
+        r"|organisation|attributions?)[^;]{0,300}?" + FIN_VU,
+        r"[^.;]{0,300}?\b(?:recours (?:gracieux|hi[ée]rarchique|contentieux)|t[ée]l[ée]recours"
+        r"|tribunal administratif|d[ée]lai de deux mois)\b[^.]{0,500}\.",
+        r"[^.;]{0,300}?\bcharg[ée]s?,? (?:chacun en ce qui (?:le|les) concerne,? )?"
+        r"de l['’]ex[ée]cution\b[^.]{0,500}\.",
+        r"\bFait [àa] [A-ZÉ][\w' -]{1,40},? le \d{1,2}(?:er)? \w+ 20\d\d",
+        r"\bPour le pr[ée]fet(?: de police)?(?:,| et) par d[ée]l[ée]gation\b[^\n]{0,120}",
+    )
+]
+
+
+def alleger(w: str) -> str:
+    """The window without what the reading never needs (FORME)."""
+    for p in FORME:
+        w = p.sub(" ", w)
+    return re.sub(r"[ \t]{2,}", " ", w)
+
+
 def lire(f: fetch.Fetcher, asked: Iterable[dict[str, Any]], api: str) -> Iterator[dict[str, Any]]:
     by_recueil: dict[str, list[dict[str, Any]]] = {}
     for a in asked:

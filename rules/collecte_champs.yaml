@@ -1,0 +1,40 @@
+# The fields the model reads beyond the first ones (lot R4.2, Ju 2026-11-04), their closed lists
+# and their check (pipeline/lacarte_collecte/nouveaux.py). Each field carries the passage that
+# proves it; a value outside its list, a passage not in the text word for word, a date that
+# does not parse or an address not found in the act's commune leaves the field empty.
+version: 1
+id: rule:collecte_champs@1
+rationale: >-
+  The list of an act shows its date, hours, service, purpose and zone, and the drone view its
+  places (lot R4.2). The categories are closed so that the check is deterministic; a free
+  label taken from the text gives the act's own words.
+# drones and body cameras: the event the act gives as its reason
+motifs:
+  manifestation: manifestation ou mouvement social
+  sport: événement sportif
+  concert_fete: concert ou fête
+  commemoration: commémoration ou cérémonie
+  violences_urbaines: violences urbaines
+  stupefiants: trafic de stupéfiants
+  frontiere: frontière
+  securisation_lieu: sécurisation d'un lieu
+  autre: autre
+# the purposes of article L. 242-5 of the code de la sécurité intérieure (hypothesis: its I,
+# as the acts quote it; Légifrance not reached on 2026-11-04, to confirm)
+finalites:
+  atteintes_personnes_biens: prévention des atteintes à la sécurité des personnes et des biens
+  rassemblements: sécurité des rassemblements de personnes
+  terrorisme: prévention d'actes de terrorisme
+  flux_transport: régulation des flux de transport
+  frontieres: surveillance des frontières
+  secours: secours aux personnes
+  infractions: constatation des infractions et poursuite de leurs auteurs
+# the places a drone act cites, by kind (the shape drawn: rules/registre_lieux.yaml)
+genres_lieux: [arrondissement, quartier, place, rue, stade, gare, etablissement, autre]
+# video protection
+etablissements: [commerce, banque, pharmacie, restauration, hotel, transport, sante, enseignement,
+  culte, sport_loisirs, administration, voie_publique, logement, industrie, autre]
+natures: [nouvelle, renouvellement, modification]
+# the check of a date of expiry: within this many days after the act (an authorisation is
+# given for five years at most)
+echeance_jours_max: 1900

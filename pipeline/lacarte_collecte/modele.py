@@ -28,7 +28,7 @@ import re
 import unicodedata
 from typing import Any
 
-from lacarte_collecte import parse_raa, references
+from lacarte_collecte import nouveaux, parse_raa, references
 
 LECTEUR = "claude-haiku-5-5"
 ARBITRE = "claude-opus-5-5"
@@ -87,9 +87,48 @@ SCHEMA: dict[str, Any] = {
 
 
 def empreinte() -> str:
-    """The instruction's and schema's fingerprint: a change reads every act again."""
+    """The first fields' instruction and schema's fingerprint: a change reads every act again.
+    The complementary fields have theirs (nouveaux.empreinte): the two are read apart."""
     raw = CONSIGNE + ARBITRER + json.dumps(SCHEMA, sort_keys=True)
     return hashlib.sha256(raw.encode()).hexdigest()[:16]
+
+
+# the first fields Opus arbitrates (lot R4.2): a disagreement on any other leaves it empty
+ARBITRES = ("commune", "n_interieur", "n_exterieur", "n_voie_publique", "n_total",
+            "n_cameras_drone", "dates", "horaires")  # fmt: skip
+
+
+def consigne_complete(conf: dict[str, Any]) -> str:
+    """An act never read: the first fields and the complementary ones in one request."""
+    return CONSIGNE + "\n\n" + nouveaux.consigne(conf)
+
+
+def schema_complet(conf: dict[str, Any]) -> dict[str, Any]:
+    return {
+        **SCHEMA,
+        "properties": {**SCHEMA["properties"], **nouveaux.proprietes(conf)},
+        "required": [*SCHEMA["required"], *nouveaux.CHAMPS],
+    }
+
+
+def sans_citation(lu: dict[str, Any], text: str) -> list[str]:
+    """The first fields given a value whose passage is missing or not in the text: the reading
+    is reread for them (lot R4.2)."""
+    return [
+        k
+        for k in CHAMPS
+        if ((lu.get(k) or {}).get("valeur") not in (None, [], ""))
+        and not _in_text((lu.get(k) or {}).get("citation"), text)
+    ]
+
+
+def _phase(conf: dict[str, Any], phase: str) -> tuple[str, dict[str, Any]]:
+    """The instruction and the schema of a phase."""
+    if phase == "complement":
+        return nouveaux.consigne_seule(conf), nouveaux.schema_seul(conf)
+    if phase == "arbitrage":
+        return CONSIGNE, SCHEMA
+    return consigne_complete(conf), schema_complet(conf)
 
 
 # --- the deterministic check ------------------------------------------------------------------
@@ -220,7 +259,14 @@ def client() -> Any:
     return anthropic.Anthropic(api_key=key)
 
 
-def requete(i: int, act: dict[str, Any], model: str, extra: str = "") -> Any:
+def requete(
+    i: int,
+    act: dict[str, Any],
+    model: str,
+    extra: str = "",
+    system: str = CONSIGNE,
+    schema: dict[str, Any] | None = None,
+) -> Any:
     from anthropic.types.message_create_params import MessageCreateParamsNonStreaming
     from anthropic.types.messages.batch_create_params import Request
 
@@ -233,9 +279,12 @@ def requete(i: int, act: dict[str, Any], model: str, extra: str = "") -> Any:
         params=MessageCreateParamsNonStreaming(
             model=model,
             max_tokens=16000,
-            system=[{"type": "text", "text": CONSIGNE, "cache_control": {"type": "ephemeral"}}],
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": user}],
-            output_config={"effort": "medium", "format": {"type": "json_schema", "schema": SCHEMA}},
+            output_config={
+                "effort": "medium",
+                "format": {"type": "json_schema", "schema": schema or SCHEMA},
+            },
         ),
     )
 
@@ -249,6 +298,7 @@ def _texte(ctx: Any, a: dict[str, Any]) -> dict[str, Any] | None:
         return None
     number = a["acte"].rsplit(":", 1)[-1]
     w = textes.fenetre(d["content"], number)
+    w = textes.alleger(w) if w else w  # the « Vu » of form, the appeal, the signature: out
     return (
         {
             "id": a["id"],
@@ -269,6 +319,25 @@ def _communes(ctx: Any, admin: str) -> parse_raa.Communes:
     deps = set(conf.get("communes") or ([conf["code"]] if conf["genre"] != "region" else []))
     path = ctx.root / "communes.json"
     return parse_raa.Communes.load(path, deps) if path.is_file() else parse_raa.Communes({}, set())
+
+
+def a_completer(
+    ctx: Any, admin: str | None = None, types: tuple[str, ...] | None = None
+) -> list[dict]:
+    """The acts read already by the current instruction whose complementary fields are not
+    (lot R4.2, step 2): asked alone, on the lighter window."""
+    from lacarte_collecte.etat import Store
+
+    fp, fp2 = empreinte(), nouveaux.empreinte(nouveaux.regles(ctx.rules_dir))
+    done = {r["id"]: r for r in Store(ctx.root, "champs").records()}
+    out = []
+    for a in Store(ctx.root, "actes").records():
+        if admin and a["administration"] != admin or types and a["type"] not in types:
+            continue
+        r = done.get(a["id"])
+        if r and r.get("empreinte") == fp and r.get("empreinte_nouveaux") != fp2:
+            out.append(a)
+    return out
 
 
 def a_lire(ctx: Any, admin: str | None = None, actes: set[str] | None = None) -> list[dict]:
@@ -324,9 +393,10 @@ def envoyer(
 ) -> str | None:
     from lacarte_collecte.etat import Etat
 
-    if phase == "lecture" and depense(ctx) >= budget(ctx):
+    if phase in ("lecture", "complement") and depense(ctx) >= budget(ctx):
         return None  # the budget Ju set is spent: no new reading, ask him
     rows = [t for a in acts if (t := _texte(ctx, a))]
+    system, schema = _phase(nouveaux.regles(ctx.rules_dir), phase)
     reqs = []
     for i, t in enumerate(rows):
         extra = ""
@@ -338,7 +408,7 @@ def envoyer(
             extra = "\n\n" + ARBITRER.format(
                 deux=json.dumps(premieres[t["id"]], ensure_ascii=False)
             )
-        reqs.append(requete(i, t, model, extra))
+        reqs.append(requete(i, t, model, extra, system, schema))
     if not reqs:
         return None
     bid = str(client().messages.batches.create(requests=reqs).id)
@@ -351,6 +421,7 @@ def envoyer(
             "modele": model,
             "actes": [t["id"] for t in rows],
             "empreinte": empreinte(),
+            "empreinte_nouveaux": nouveaux.empreinte(nouveaux.regles(ctx.rules_dir)),
             "le": dt.datetime.now(dt.UTC).isoformat(),
         }
     )
@@ -380,9 +451,33 @@ def _resultats(c: Any, lot: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+def _verifier(ctx: Any, a: dict[str, Any], lu: dict[str, Any]) -> tuple[dict, dict, str]:
+    """A reading checked: the first fields, the complementary ones, and the text."""
+    text = (_texte(ctx, a) or {}).get("texte") or ""
+    com = _communes(ctx, a["administration"])
+    when = dt.date.fromisoformat(a["recueil_date"])
+    conf = nouveaux.regles(ctx.rules_dir)
+    return (
+        controler(lu, text, com, when),
+        nouveaux.controler(lu, text, com, when, conf, a["type"]),
+        text,
+    )
+
+
+def premiere_lecture(
+    a: dict[str, Any], lu: dict[str, Any], m: dict[str, Any], text: str
+) -> tuple[dict[str, Any], list[str], bool]:
+    """(fields, disputes, reread): the first reading agreed with the rules; it is reread only
+    when they disagree or a field's passage is missing (lot R4.2)."""
+    fields, disputed = accorder(regles(a), m)
+    return fields, disputed, bool(disputed or sans_citation(lu, text))
+
+
 def suivre(ctx: Any) -> dict[str, Any]:
     """Every batch in flight: an ended one moves its acts to the next phase; the readings
-    checked and agreed are kept field by field (Store « champs »); the cost journaled."""
+    checked and agreed are kept field by field (Store « champs »); the cost journaled.
+    lecture → (relecture when the rules disagree or a passage is missing) → arbitrage of the
+    first fields Opus arbitrates; complement: the complementary fields alone, kept as read."""
     from lacarte_collecte.etat import Etat, Store
 
     st = Etat(ctx.root, "modele")
@@ -391,7 +486,9 @@ def suivre(ctx: Any) -> dict[str, Any]:
         return {"lots": 0}
     c = client()
     acts = {a["id"]: a for a in Store(ctx.root, "actes").records()}
-    keep, done = [], {"lecture": 0, "relecture": 0, "arbitrage": 0}
+    olds = {r["id"]: r for r in Store(ctx.root, "champs").records()}
+    keep: list[dict[str, Any]] = []
+    done = {"lecture": 0, "relecture": 0, "arbitrage": 0, "complement": 0}
     for lot in lots:
         if c.messages.batches.retrieve(lot["lot"]).processing_status != "ended":
             keep.append(lot)
@@ -406,49 +503,49 @@ def suivre(ctx: Any) -> dict[str, Any]:
             }
             for k, v in res.items()
         )
-        done[lot["phase"]] += len(res)
+        done[lot["phase"]] = done.get(lot["phase"], 0) + len(res)
         todo = [acts[k] for k in res if k in acts]
-        if lot["phase"] == "lecture":
-            envoyer(ctx, todo, "relecture", {k: v["lecture"] for k, v in res.items()})
-        elif lot["phase"] == "relecture":
-            disputes: dict[str, Any] = {}
+        if lot["phase"] in ("lecture", "relecture"):
+            again, disputes = {}, {}
             for a in todo:
                 lu = res[a["id"]]["lecture"] or {}
-                text = (_texte(ctx, a) or {}).get("texte") or ""
-                m = controler(
-                    lu,
-                    text,
-                    _communes(ctx, a["administration"]),
-                    dt.date.fromisoformat(a["recueil_date"]),
-                )
-                r = regles(a)
-                fields, disputed = accorder(r, m)
-                _garder(ctx, a, fields, m, res[a["id"]]["modele"])
+                m, nv, text = _verifier(ctx, a, lu)
+                fields, disputed, reread = premiere_lecture(a, lu, m, text)
+                if lot["phase"] == "lecture" and reread:
+                    again[a["id"]] = lu
+                    continue
+                _garder(ctx, a, fields, m, res[a["id"]]["modele"], olds=olds, nouv=nv)
+                disputed = [k for k in disputed if k in ARBITRES]
                 if disputed:
+                    r = regles(a)
                     disputes[a["id"]] = {
                         "regles": {k: r[k] for k in disputed},
                         "modele": {k: m[k] for k in disputed},
                     }
+            if again:
+                envoyer(ctx, [acts[k] for k in again], "relecture", again)
             if disputes:
                 envoyer(ctx, [acts[k] for k in disputes], "arbitrage", disputes, ARBITRE)
+        elif lot["phase"] == "complement":
+            for a in todo:
+                _, nv, _t = _verifier(ctx, a, res[a["id"]]["lecture"] or {})
+                old = olds.get(a["id"]) or {}
+                fields = {
+                    k: (v["valeur"], v["origine"]) for k, v in (old.get("champs") or {}).items()
+                }
+                _garder(ctx, a, fields, {}, old.get("modele"), old.get("arbitre"), olds, nv,
+                        res[a["id"]]["modele"], keep_disputes=True)  # fmt: skip
         else:  # arbitrage: Opus's answer, checked, for the disputed fields only
             for a in todo:
-                lu = res[a["id"]]["lecture"] or {}
-                text = (_texte(ctx, a) or {}).get("texte") or ""
-                m = controler(
-                    lu,
-                    text,
-                    _communes(ctx, a["administration"]),
-                    dt.date.fromisoformat(a["recueil_date"]),
-                )
-                old = {r["id"]: r for r in Store(ctx.root, "champs").records()}.get(a["id"]) or {}
+                m, _nv, _t = _verifier(ctx, a, res[a["id"]]["lecture"] or {})
+                old = olds.get(a["id"]) or {}
                 fields = {
                     k: (v["valeur"], v["origine"]) for k, v in (old.get("champs") or {}).items()
                 }
                 for k in old.get("disputes") or []:
-                    if m.get(k) is not None:
+                    if k in ARBITRES and m.get(k) is not None:
                         fields[k] = (m[k], "arbitrage")
-                _garder(ctx, a, fields, m, old.get("modele"), arbitre=res[a["id"]]["modele"])
+                _garder(ctx, a, fields, m, old.get("modele"), res[a["id"]]["modele"], olds)
     # the batches this call sent (relecture, arbitrage) were appended meanwhile: keep them,
     # remove only the ones processed here
     processed = {lot["lot"] for lot in lots} - {lot["lot"] for lot in keep}
@@ -464,32 +561,56 @@ def _garder(
     m: dict[str, Any],
     modele: str | None,
     arbitre: str | None = None,
+    olds: dict[str, Any] | None = None,
+    nouv: dict[str, Any] | None = None,
+    modele_nouveaux: str | None = None,
+    keep_disputes: bool = False,
 ) -> None:
+    """One act's record: the first fields with their origins, and the complementary ones
+    (`nouveaux`, the model's, checked); the part not given here is the record's before."""
     from lacarte_collecte.etat import Store
 
+    old = (olds or {}).get(a["id"]) or {}
     r = regles(a)
-    disputed = [
-        k for k in CHAMPS if k not in fields and r.get(k) is not None and m.get(k) is not None
-    ]
-    insee = (
-        m.get("insee")
-        if "commune" in fields and fields["commune"][1] != "regles"
-        else r.get("insee")
-    )
-    Store(ctx.root, "champs").add(
-        [
-            {
-                "id": a["id"],
-                "lecteur": a.get("lecteur"),
-                "empreinte": empreinte(),
-                "modele": modele,
-                "arbitre": arbitre,
-                "insee": insee if "commune" in fields else None,
-                "champs": {k: {"valeur": v, "origine": o} for k, (v, o) in fields.items()},
-                "disputes": disputed,
-            }
+    disputed = (
+        old.get("disputes") or []
+        if keep_disputes
+        else [
+            k for k in CHAMPS if k not in fields and r.get(k) is not None and m.get(k) is not None
         ]
     )
+    if keep_disputes:
+        insee = old.get("insee")
+    else:
+        insee = (
+            m.get("insee")
+            if "commune" in fields and fields["commune"][1] != "regles"
+            else r.get("insee")
+        )
+        insee = insee if "commune" in fields else None
+    rec = {
+        "id": a["id"],
+        "lecteur": a.get("lecteur"),
+        "empreinte": empreinte() if not keep_disputes else old.get("empreinte"),
+        "modele": modele,
+        "arbitre": arbitre,
+        "insee": insee,
+        "champs": {k: {"valeur": v, "origine": o} for k, (v, o) in fields.items()},
+        "disputes": disputed,
+    }
+    if nouv is not None:
+        rec["nouveaux"] = {k: v for k, v in nouv.items() if v not in (None, [], "")}
+        rec["empreinte_nouveaux"] = nouveaux.empreinte(nouveaux.regles(ctx.rules_dir))
+        rec["modele_nouveaux"] = modele_nouveaux or modele
+    else:
+        for k in ("nouveaux", "empreinte_nouveaux", "modele_nouveaux"):
+            if k in old:
+                rec[k] = old[k]
+    if "qui" in old and keep_disputes:
+        rec["qui"] = old["qui"]
+    Store(ctx.root, "champs").add([rec])
+    if olds is not None:
+        olds[a["id"]] = rec
 
 
 # --- synchronous: the calibration and the reference readings -------------------------------------
@@ -499,11 +620,18 @@ def _lot(
     model: str,
     extras: dict[str, str] | None = None,
     wait_s: float = 30,
+    system: str = CONSIGNE,
+    schema: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """One batch for `rows` (each with its text), waited for: {id: result}."""
     import time
 
-    reqs = [requete(i, t, model, (extras or {}).get(t["id"], "")) for i, t in enumerate(rows)]
+    if not rows:
+        return {}
+    reqs = [
+        requete(i, t, model, (extras or {}).get(t["id"], ""), system, schema)
+        for i, t in enumerate(rows)
+    ]
     bid = str(c.messages.batches.create(requests=reqs).id)
     while c.messages.batches.retrieve(bid).processing_status != "ended":
         time.sleep(wait_s)
@@ -516,34 +644,52 @@ def traiter(
     com: dict[str, parse_raa.Communes],
     texts: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    """Read, reread, check, agree, arbitrate, waiting for each batch: {id: fields}, the cost."""
+    """The chain of suivre, waiting for each batch: read (the first fields and the
+    complementary ones), reread only when the rules disagree or a passage is missing, check,
+    agree, arbitrate the fields Opus arbitrates: {id: fields}, the usage per phase."""
     c = client()
+    conf = nouveaux.regles(ctx.rules_dir)
+    full = (consigne_complete(conf), schema_complet(conf))
     rows = [texts[a["id"]] for a in acts if a["id"] in texts]
-    first = _lot(c, rows, LECTEUR)
+    first = _lot(c, rows, LECTEUR, system=full[0], schema=full[1])
+    by = {a["id"]: a for a in acts}
+
+    def check(i: str, lu: dict[str, Any]) -> tuple[dict, dict]:
+        a = by[i]
+        when = dt.date.fromisoformat(a["recueil_date"])
+        t = texts[i]["texte"]
+        return controler(lu, t, com[i], when), nouveaux.controler(
+            lu, t, com[i], when, conf, a["type"]
+        )
+
+    again = {}
+    for i, v in first.items():
+        if i == "_lot":
+            continue
+        lu = v["lecture"] or {}
+        m, _ = check(i, lu)
+        if premiere_lecture(by[i], lu, m, texts[i]["texte"])[2]:
+            again[i] = lu
     second = _lot(
         c,
-        rows,
+        [texts[i] for i in again],
         LECTEUR,
         {
-            i: "\n\n"
-            + references.RELIRE.format(lecture=json.dumps(v["lecture"], ensure_ascii=False))
-            for i, v in first.items()
-            if i != "_lot"
+            i: "\n\n" + references.RELIRE.format(lecture=json.dumps(lu, ensure_ascii=False))
+            for i, lu in again.items()
         },
+        system=full[0],
+        schema=full[1],
     )
     out, disputes = {}, {}
     for a in acts:
-        if a["id"] not in second:
+        src = second if a["id"] in again else first
+        if a["id"] not in src:
             continue
-        t = texts[a["id"]]["texte"]
-        m = controler(
-            second[a["id"]]["lecture"] or {},
-            t,
-            com[a["id"]],
-            dt.date.fromisoformat(a["recueil_date"]),
-        )
+        m, nv = check(a["id"], src[a["id"]]["lecture"] or {})
         fields, disputed = accorder(regles(a), m)
-        out[a["id"]] = {"champs": fields, "m": m}
+        out[a["id"]] = {"champs": fields, "m": m, "nouveaux": nv}
+        disputed = [k for k in disputed if k in ARBITRES]
         if disputed:
             disputes[a["id"]] = {
                 "regles": {k: regles(a)[k] for k in disputed},
@@ -561,19 +707,13 @@ def traiter(
             },
         )
         for i, v in disputes.items():
-            a = next(x for x in acts if x["id"] == i)
-            m = controler(
-                (third.get(i) or {}).get("lecture") or {},
-                texts[i]["texte"],
-                com[i],
-                dt.date.fromisoformat(a["recueil_date"]),
-            )
+            m, _ = check(i, (third.get(i) or {}).get("lecture") or {})
             for k in v["regles"]:
                 if m.get(k) is not None:
                     out[i]["champs"][k] = (m[k], "arbitrage")
     usage = [
-        {"modele": x["modele"], "usage": x["usage"]}
-        for lot in (first, second, third)
+        {"phase": ph, "modele": x["modele"], "usage": x["usage"]}
+        for ph, lot in (("lecture", first), ("relecture", second), ("arbitrage", third))
         for k, x in lot.items()
         if k != "_lot"
     ]
@@ -581,6 +721,7 @@ def traiter(
         "actes": out,
         "usage": usage,
         "disputes": len(disputes),
+        "relus": len(again),
         "lots": [x["_lot"] for x in (first, second, third) if x],
     }
 
@@ -624,13 +765,14 @@ def calibrer(ctx: Any, data: dict[str, Any]) -> dict[str, Any]:
             "acte": number,
             "recueil_nom": parse_raa.mask(d["name"]),
             "date": d["date"],
-            "texte": textes.fenetre(d["content"], number),
+            "texte": textes.alleger(textes.fenetre(d["content"], number) or ""),
         }
     res = traiter(ctx, acts, com, texts)
     from lacarte_collecte.etat import Store
 
     Store(ctx.root, "couts").add(
-        {"id": f"calibration:{i}", "phase": "calibration", **u} for i, u in enumerate(res["usage"])
+        {"id": f"calibration:{res['lots'][0]}:{i}", **u, "phase": f"calibration:{u['phase']}"}
+        for i, u in enumerate(res["usage"])
     )
     refs = {r["acte"]: r for r in data["verite"]}
     per = {}
@@ -664,9 +806,124 @@ def calibrer(ctx: Any, data: dict[str, Any]) -> dict[str, Any]:
         },
         "origines": origins,
         "desaccords": res["disputes"],
+        "relus": res["relus"],
         "lots": res["lots"],
         "cout": references.cout(res["usage"], prix["references"]["prix"]),
+        "cout_par_phase": {
+            ph: references.cout(
+                [u for u in res["usage"] if u["phase"] == ph], prix["references"]["prix"]
+            )
+            for ph in ("lecture", "relecture", "arbitrage")
+        },
+        "nouveaux": {k: v["nouveaux"] for k, v in res["actes"].items()},
+        "nouveaux_opus": _opus_nouveaux(ctx, acts, com, texts, set(data.get("opus") or []), res),
     }
+
+
+def _pareil(k: str, a: Any, b: Any) -> bool:
+    if a in (None, [], "") or b in (None, [], ""):
+        return a in (None, [], "") and b in (None, [], "")
+    if k == "lieux":
+        return {parse_raa.loose(x["texte"]) for x in a} == {parse_raa.loose(x["texte"]) for x in b}
+    if k in ("finalites", "communes"):
+        return sorted(map(str, a)) == sorted(map(str, b))
+    if k in ("motif_libelle", "service", "adresse"):
+        x, y = parse_raa.loose(str(a)), parse_raa.loose(str(b))
+        return x in y or y in x
+    return a == b
+
+
+def _opus_nouveaux(
+    ctx: Any,
+    acts: list[dict[str, Any]],
+    com: dict[str, parse_raa.Communes],
+    texts: dict[str, dict[str, Any]],
+    ids: set[str],
+    res: dict[str, Any],
+) -> dict[str, Any]:
+    """The complementary fields of `ids` read by Opus with the whole instruction, checked, and
+    compared field by field with the chain's (lot R4.2's calibration: 15 acts, 10 of Paris)."""
+    if not ids:
+        return {}
+    conf = nouveaux.regles(ctx.rules_dir)
+    rows = [texts[a["id"]] for a in acts if a["id"] in ids and a["id"] in texts]
+    got = _lot(client(), rows, ARBITRE, system=consigne_complete(conf), schema=schema_complet(conf))
+    from lacarte_collecte.etat import Store
+
+    Store(ctx.root, "couts").add(
+        {"id": f"calibration:{got.get('_lot')}:{i}", "phase": "calibration:reference",
+         "modele": v["modele"], "usage": v["usage"]}
+        for i, v in got.items() if i != "_lot"
+    )  # fmt: skip
+    by = {a["id"]: a for a in acts}
+    per: dict[str, list[int]] = {}
+    ecarts = []
+    for i, v in got.items():
+        if i == "_lot":
+            continue
+        a = by[i]
+        ref = nouveaux.controler(
+            v["lecture"] or {}, texts[i]["texte"], com[i],
+            dt.date.fromisoformat(a["recueil_date"]), conf, a["type"],
+        )  # fmt: skip
+        mine = (res["actes"].get(i) or {}).get("nouveaux") or {}
+        own = nouveaux.DRONE if a["type"] != "videoprotection" else nouveaux.VIDEO
+        for k in own:
+            if k == "petitionnaire":
+                continue
+            ok = _pareil(k, mine.get(k), ref.get(k))
+            t = per.setdefault(k, [0, 0])
+            t[0] += ok
+            t[1] += 1
+            if not ok:
+                ecarts.append({"id": i, "champ": k, "chaine": mine.get(k), "opus": ref.get(k)})
+    import yaml
+
+    prix = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
+    return {
+        "justes": {k: f"{a}/{b}" for k, (a, b) in per.items()},
+        "ecarts": ecarts,
+        "cout": references.cout(
+            [{"modele": v["modele"], "usage": v["usage"]} for i, v in got.items() if i != "_lot"],
+            prix["references"]["prix"],
+        ),
+    }
+
+
+def jetons(ctx: Any, n: int = 50, graine: int = 20261104) -> dict[str, Any]:
+    """The input tokens of `n` cached acts, the old request (whole window, first fields) against
+    the new ones (lighter window, every field; the complementary fields alone): counted by the
+    API's token counting, which costs nothing."""
+    import random
+
+    from lacarte_collecte import textes
+    from lacarte_collecte.cache import Cache
+    from lacarte_collecte.etat import Store
+
+    conf = nouveaux.regles(ctx.rules_dir)
+    acts = [a for a in Store(ctx.root, "actes").records()]
+    random.Random(graine).shuffle(acts)
+    c, tot, k = client(), {"avant": 0, "apres": 0, "complement": 0}, 0
+    for a in acts:
+        if k >= n:
+            break
+        d = Cache(ctx.root).get(a["recueil"])
+        number = a["acte"].rsplit(":", 1)[-1]
+        w = textes.fenetre(d["content"], number) if d else None
+        if not w:
+            continue
+        k += 1
+        for key, system, text in (
+            ("avant", CONSIGNE, w),
+            ("apres", consigne_complete(conf), textes.alleger(w)),
+            ("complement", nouveaux.consigne_seule(conf), textes.alleger(w)),
+        ):
+            user = f"Acte à lire : n° {number}.\n\n<extrait>\n{text}\n</extrait>"
+            r = c.messages.count_tokens(
+                model=LECTEUR, system=system, messages=[{"role": "user", "content": user}]
+            )
+            tot[key] += r.input_tokens
+    return {"actes": k, **{f"{x}_par_acte": round(v / max(k, 1)) for x, v in tot.items()}}
 
 
 # --- the threshold, field by field: blind references by Opus on a new draw ----------------------

@@ -193,8 +193,21 @@ def main(argv: list[str] | None = None) -> None:
     er.add_argument("recueil", nargs="+")
     md = sub.add_parser("modele", help="the reading by the model (the server, as its user)")
     md.add_argument(
-        "action", choices=("lire", "suivre", "calibrer", "references", "mesurer", "statut")
+        "action",
+        choices=(
+            "lire",
+            "completer",
+            "suivre",
+            "calibrer",
+            "references",
+            "mesurer",
+            "statut",
+            "jetons",
+            "exporter",
+            "importer",
+        ),  # fmt: skip
     )
+    md.add_argument("--n", type=int, default=0, help="at most n acts (completer, jetons, exporter)")
     md.add_argument("--types", help="dep-kind pairs, comma-separated (references)")
     md.add_argument("--graine", type=int, default=20261103)
     md.add_argument("--ecarts", help="« dep-kind:field »: the pairs that differ (mesurer)")
@@ -268,7 +281,17 @@ def main(argv: list[str] | None = None) -> None:
             out = modele.statut(ctx)
         elif a.action == "mesurer":
             out = modele.mesurer(ctx, a.ecarts)
-            (ctx.sortie / "mesures.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
+            if not a.ecarts:  # the differences are for the eye, never the published measure
+                (ctx.sortie / "mesures.json").write_text(
+                    json.dumps(out, ensure_ascii=False, indent=1)
+                )
+        elif a.action == "completer":
+            # the acts read already: their complementary fields alone (lot R4.2, step 2)
+            kinds = tuple(a.types.split(",")) if a.types else None
+            todo = modele.a_completer(ctx, a.admin, kinds)[: a.n or None]
+            out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo, "complement")}
+        elif a.action == "jetons":
+            out = modele.jetons(ctx, a.n or 50)
         elif a.action == "lire":
             todo = modele.a_lire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
             out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo)}
