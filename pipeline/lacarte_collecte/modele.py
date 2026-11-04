@@ -898,6 +898,28 @@ def _opus_nouveaux(
     }
 
 
+def couts(ctx: Any) -> dict[str, Any]:
+    """The real cost per phase (the journaled usage at the batch's price): the requests, the
+    dollars, the dollars per request."""
+    import yaml
+
+    from lacarte_collecte.etat import Store
+
+    prix = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
+    by: dict[str, list[dict[str, Any]]] = {}
+    for r in Store(ctx.root, "couts").records():
+        by.setdefault(r.get("phase") or "?", []).append(r)
+    out = {}
+    for ph, rows in sorted(by.items()):
+        d = float(references.cout(rows, prix["references"]["prix"])["dollars"])
+        out[ph] = {
+            "requetes": len(rows),
+            "dollars": round(d, 4),
+            "par_requete": round(d / len(rows), 5),
+        }
+    return out
+
+
 def jetons(ctx: Any, n: int = 50, graine: int = 20261104) -> dict[str, Any]:
     """The input tokens of `n` cached acts, the old request (whole window, first fields) against
     the new ones (lighter window, every field; the complementary fields alone): counted by the

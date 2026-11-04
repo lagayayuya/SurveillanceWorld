@@ -206,6 +206,7 @@ def main(argv: list[str] | None = None) -> None:
             "exporter",
             "importer",
             "recontroler",
+            "couts",
         ),  # fmt: skip
     )
     md.add_argument("--n", type=int, default=0, help="at most n acts (completer, jetons, exporter)")
@@ -295,6 +296,8 @@ def main(argv: list[str] | None = None) -> None:
         elif a.action == "recontroler":
             # the references checked again from their batches' results: no new model call
             out = modele.recontroler_references(ctx)
+        elif a.action == "couts":
+            out = modele.couts(ctx)
         elif a.action == "jetons":
             out = modele.jetons(ctx, a.n or 50)
         elif a.action == "lire":
