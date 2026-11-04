@@ -216,6 +216,7 @@ def main(argv: list[str] | None = None) -> None:
     md.add_argument("--types", help="dep-kind pairs, comma-separated (references)")
     md.add_argument("--graine", type=int, default=20261103)
     md.add_argument("--ecarts", help="« dep-kind:field »: the pairs that differ (mesurer)")
+    md.add_argument("--nouveaux", action="store_true", help="the complementary fields only")
     md.add_argument("--admin")
     md.add_argument("--actes", help="act ids, comma-separated")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
@@ -275,7 +276,7 @@ def main(argv: list[str] | None = None) -> None:
             # stdin: the ids that tuned the reader or the instruction, never drawn
             exclure = set(json.load(sys.stdin)) if not sys.stdin.isatty() else set()
             pairs = [tuple(x.split("-", 1)) for x in (a.types or "").split(",") if x]
-            out = modele.references_lot(ctx, pairs, a.graine, exclure)
+            out = modele.references_lot(ctx, pairs, a.graine, exclure, seul_nouveaux=a.nouveaux)
         elif a.action == "exporter":
             for row in modele.exporter(ctx, a.n, a.admin):
                 print(json.dumps(row, ensure_ascii=False))

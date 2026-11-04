@@ -186,3 +186,42 @@ def test_the_whole_schema_stays_within_the_api_s_16_union_parameters():
         TEXT, PARIS, WHEN, CONF, "drone",
     )  # fmt: skip
     assert m["motif"] is None and m["n_perimetres"] is None and m["service"] is None
+
+
+def test_a_complementary_field_is_measured_on_its_own(tmp_path):
+    from lacarte_collecte.contexte import Contexte
+    from lacarte_collecte.etat import Store
+
+    ctx = Contexte(root=tmp_path, sortie=tmp_path / "s", rules_dir=registre.RULES)
+    Store(tmp_path, "actes").add(
+        [{"id": f"a{i}", "departement": "75", "type": "drone"} for i in range(30)]
+    )
+    Store(tmp_path, "champs").add(
+        [
+            {
+                "id": f"a{i}",
+                "champs": {},
+                "nouveaux": {"motif": "manifestation", "service": "DSPAP"},
+            }
+            for i in range(30)
+        ]
+    )
+    Store(tmp_path, "references").add(
+        [
+            {
+                "id": f"a{i}",
+                "departement": "75",
+                "type": "drone",
+                "reference": {},
+                "seulement_nouveaux": True,
+                "reference_nouveaux": {
+                    "motif": "manifestation",
+                    "service": "DSPAP" if i else "autre",
+                },
+            }
+            for i in range(30)
+        ]
+    )
+    m = modele.mesurer(ctx)["75-drone"]
+    assert "commune" not in m  # the first fields were not read again on this draw
+    assert m["motif"]["publie"] and (m["service"]["justes"], m["service"]["publie"]) == (29, True)

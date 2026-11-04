@@ -1048,7 +1048,12 @@ MESURES = ("commune", "nombre", "dates", "horaires", "perimetre")
 
 
 def references_lot(
-    ctx: Any, deps_types: list[tuple[str, str]], graine: int, exclure: set[str], n: int = 30
+    ctx: Any,
+    deps_types: list[tuple[str, str]],
+    graine: int,
+    exclure: set[str],
+    n: int = 30,
+    seul_nouveaux: bool = False,
 ) -> dict[str, Any]:
     """Opus reads blind (neither the rules nor the reading model shown) `n` acts drawn per
     département and kind with `graine`, never an act in `exclure` (those that tuned the reader
@@ -1056,6 +1061,8 @@ def references_lot(
     from lacarte_collecte import seuil
     from lacarte_collecte.etat import Store
 
+    # a new draw: never an act already a reference either
+    exclure = exclure | Store(ctx.root, "references").ids()
     acts = [a for a in Store(ctx.root, "actes").records() if a["id"] not in exclure]
     picks = []
     for dep, kind in deps_types:
@@ -1064,7 +1071,8 @@ def references_lot(
     rows = {i: t for i in picks if (t := _texte(ctx, by[i]))}
     conf = nouveaux.regles(ctx.rules_dir)
     c = client()
-    res = _lot(c, list(rows.values()), ARBITRE)
+    # the complementary fields alone (lot R4.2, step 3): the first ones are measured already
+    res = {} if seul_nouveaux else _lot(c, list(rows.values()), ARBITRE)
     comp = _lot(
         c,
         list(rows.values()),
@@ -1079,15 +1087,19 @@ def references_lot(
                   "usage": r["usage"]}]
             )  # fmt: skip
     keep = []
-    for i, r in res.items():
+    for i, r in (comp if seul_nouveaux else res).items():
         if i == "_lot":
             continue
         a = by[i]
-        m = controler(
-            r.get("lecture") or {},
-            rows[i]["texte"],
-            _communes(ctx, a["administration"]),
-            dt.date.fromisoformat(a["recueil_date"]),
+        m = (
+            {}
+            if seul_nouveaux
+            else controler(
+                r.get("lecture") or {},
+                rows[i]["texte"],
+                _communes(ctx, a["administration"]),
+                dt.date.fromisoformat(a["recueil_date"]),
+            )
         )
         keep.append(
             {
@@ -1106,8 +1118,11 @@ def references_lot(
                 ),
                 "empreinte_nouveaux": nouveaux.empreinte(conf),
                 "modele": r["modele"],
+                **({"seulement_nouveaux": True} if seul_nouveaux else {}),
             }
         )
+        if seul_nouveaux:
+            continue  # its cost is journaled with the complement's above
         Store(ctx.root, "couts").add(
             [
                 {
@@ -1119,7 +1134,7 @@ def references_lot(
             ]
         )
     Store(ctx.root, "references").add(keep)
-    return {"references": len(keep), "lot": res["_lot"]}
+    return {"references": len(keep), "lot": (res or comp).get("_lot")}
 
 
 def couverture(slots: list[str]) -> frozenset[int] | None:
@@ -1256,6 +1271,8 @@ def mesurer(ctx: Any, ecarts: str | None = None) -> Any:
         }
         if ref["type"] != "drone":
             groups = {g: v for g, v in groups.items() if g in ("commune", "nombre")}
+        if ref.get("seulement_nouveaux"):
+            groups = {}  # its first fields were not read again: not measured on it
         if "reference_nouveaux" in ref:
             # the complementary fields, each its own group, against Opus's blind reading
             mine = (final.get(ref["id"]) or {}).get("nouveaux") or {}
