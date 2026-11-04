@@ -312,6 +312,7 @@ def main(argv: list[str] | None = None) -> None:
             out = modele.jetons(ctx, a.n or 50)
         elif a.action == "lire":
             todo = modele.a_lire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
+            todo = todo[: a.n] if a.n else todo  # at most n (the budget's share, by hand)
             out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo)}
         else:
             out = modele.suivre(ctx)
