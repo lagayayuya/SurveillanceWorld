@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
+import { hachuresSecteur, pave, poseBord } from "../src/registre/drones.ts";
 import { setMessages } from "../src/registre/i18n.ts";
 import {
   autoriteTxt,
@@ -240,4 +241,31 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
     "sécurité des rassemblements de personnes",
   ]);
   assert.deepEqual(finalitesTxt(aujourdhui), []);
+});
+
+test("the map's board B pieces: the label on the free part of the edge, a hatching the map shows through", () => {
+  // a rectangle's edge on the screen; the free part leaves out its right side (the panel)
+  const pts: [number, number][] = [
+    [100, 100],
+    [300, 100],
+    [500, 100],
+    [500, 300],
+    [300, 300],
+    [100, 300],
+  ];
+  const cadre = { x0: 50, y0: 50, x1: 350, y1: 350 };
+  const p = poseBord(pts, cadre, null);
+  assert.equal(p?.i, 0); // the leftmost free point
+  assert.ok(p && p.angle > -90 && p.angle <= 90); // read from left to right
+  // kept while it stays free (no jump as the map moves), never where the panel is
+  assert.equal(poseBord(pts, cadre, 5)?.i, 5);
+  assert.equal(poseBord(pts, cadre, 2)?.i, 0);
+  assert.equal(poseBord(pts, { x0: 600, y0: 0, x1: 700, y1: 50 }, null), null);
+  const h = hachuresSecteur("#2c6f9e");
+  assert.equal(h.width, 14);
+  const alpha = [...h.data].filter((_, i) => i % 4 === 3);
+  // its lines opaque, the rest the board's light blue at 22 %: the cameras under it stay seen
+  assert.ok(alpha.every((a) => a === 255 || a === 56));
+  assert.ok(alpha.filter((a) => a === 56).length > alpha.length / 2);
+  assert.deepEqual([...pave("#2c6f9e", 2).data.slice(0, 4)], [0x2c, 0x6f, 0x9e, 255]);
 });
