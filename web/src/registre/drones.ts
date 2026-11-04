@@ -249,9 +249,13 @@ export function poseBord(
   pts: [number, number][],
   cadre: { x0: number; y0: number; x1: number; y1: number },
   avant: number | null,
+  eviter: { x: number; y: number; r: number }[] = [],
 ): { i: number; x: number; y: number; angle: number } | null {
+  // never over a cited sector's label (`eviter`: its anchor on the screen and a radius)
+  const loin = (p: [number, number]) =>
+    eviter.every((e) => Math.hypot(p[0] - e.x, p[1] - e.y) > e.r);
   const dedans = (p: [number, number]) =>
-    p[0] >= cadre.x0 && p[0] <= cadre.x1 && p[1] >= cadre.y0 && p[1] <= cadre.y1;
+    p[0] >= cadre.x0 && p[0] <= cadre.x1 && p[1] >= cadre.y0 && p[1] <= cadre.y1 && loin(p);
   let i = avant != null && pts[avant] && dedans(pts[avant]) ? avant : -1;
   if (i < 0)
     for (let k = 0; k < pts.length; k++)
@@ -390,6 +394,8 @@ export type Calque = {
   nonLue(on: boolean): void;
   /** The commune's outline (its file's), for the label set on it. */
   bordure(): LonLat[] | null;
+  /** Where the cited sectors' labels stand (lon, lat), for the edge's label to keep off. */
+  ancres(): LonLat[];
   /** Removes every source, layer and listener it added. */
   retirer(): void;
 };
@@ -1005,6 +1011,12 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       secLabs = [...labels];
       set(SRC_SEC, secteursData());
       set(SRC_SEC_LAB, secLabsData());
+    },
+    ancres() {
+      return secLabs.flatMap((l) => {
+        const c = centroid(rings(formeDe(l.id)));
+        return c ? [c as LonLat] : [];
+      });
     },
     nonLue(on) {
       if (on === nonLueOn) return;

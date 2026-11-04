@@ -261,6 +261,8 @@ test("the map's board B pieces: the label on the free part of the edge, a hatchi
   assert.equal(poseBord(pts, cadre, 5)?.i, 5);
   assert.equal(poseBord(pts, cadre, 2)?.i, 0);
   assert.equal(poseBord(pts, { x0: 600, y0: 0, x1: 700, y1: 50 }, null), null);
+  // never over a cited sector's label: the points near its anchor are left out
+  assert.equal(poseBord(pts, cadre, 0, [{ x: 100, y: 120, r: 60 }])?.i, 5);
   const h = hachuresSecteur("#2c6f9e");
   assert.equal(h.width, 14);
   const alpha = [...h.data].filter((_, i) => i % 4 === 3);

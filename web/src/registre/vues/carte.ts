@@ -551,10 +551,16 @@ class CarteDrones extends Vue<Props, State> {
       const q = map.project(p);
       return [q.x, q.y] as [number, number];
     });
+    // the cited sector's label (its words, ~280 px wide) and the edge's half-width kept apart
+    const loin = (this.layer?.ancres() ?? []).map((c) => {
+      const q = map.project(c);
+      return { x: q.x, y: q.y, r: 150 + m };
+    });
     const pose = poseBord(
       pts,
       { x0: f.left + m, y0: f.top + 16, x1: W - f.right - m, y1: H - f.bottom - 16 },
       this.etiqI,
+      loin,
     );
     if (!pose) {
       b.style.display = "none";
