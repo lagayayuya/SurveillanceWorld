@@ -117,8 +117,8 @@ def tourner(
             lk = (ctx.root / ".modele.lock").open("w")
             fcntl.flock(lk, fcntl.LOCK_EX)
             summary["modele"] = modele.suivre(ctx)
-            todo = modele.a_lire(ctx)[:2000]
-            summary["modele"]["envoyes"] = len(todo) if modele.envoyer(ctx, todo) else 0
+            todo = modele.a_lire(ctx)[:2000] if modele.envoi_automatique(ctx) else []
+            summary["modele"]["envoyes"] = len(todo) if todo and modele.envoyer(ctx, todo) else 0
             summary["modele"]["depense"] = modele.depense(ctx)
         except Exception as e:  # noqa: BLE001 (the API down: the run goes on, said in the report)
             summary["modele"] = {"erreur": f"{type(e).__name__}: {e}"[:300]}
@@ -197,6 +197,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     md.add_argument("--types", help="dep-kind pairs, comma-separated (references)")
     md.add_argument("--graine", type=int, default=20261103)
+    md.add_argument("--ecarts", help="« dep-kind:field »: the pairs that differ (mesurer)")
     md.add_argument("--admin")
     md.add_argument("--actes", help="act ids, comma-separated")
     sub.add_parser("textes", help="acts' texts from Attrap, JSON lines on stdout (the server)")
@@ -266,7 +267,7 @@ def main(argv: list[str] | None = None) -> None:
         elif a.action == "statut":
             out = modele.statut(ctx)
         elif a.action == "mesurer":
-            out = modele.mesurer(ctx)
+            out = modele.mesurer(ctx, a.ecarts)
             (ctx.sortie / "mesures.json").write_text(json.dumps(out, ensure_ascii=False, indent=1))
         elif a.action == "lire":
             todo = modele.a_lire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)

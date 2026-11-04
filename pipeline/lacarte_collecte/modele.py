@@ -306,6 +306,15 @@ def budget(ctx: Any) -> float:
     return float(conf["references"].get("budget_dollars", 0))
 
 
+def envoi_automatique(ctx: Any) -> bool:
+    """Whether a run sends the acts not yet read at its end (rules/collecte_seuils.yaml,
+    `references.envoi_automatique`): off while a new instruction is calibrated."""
+    import yaml
+
+    conf = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
+    return bool(conf["references"].get("envoi_automatique", True))
+
+
 def envoyer(
     ctx: Any,
     acts: list[dict[str, Any]],
@@ -732,9 +741,10 @@ def _juste(k: str, got: Any, ref: Any) -> tuple[bool, bool]:
     return sorted(got) == sorted(ref), False
 
 
-def mesurer(ctx: Any) -> dict[str, Any]:
+def mesurer(ctx: Any, ecarts: str | None = None) -> Any:
     """Per département, kind and field: the final readings against the references; a field is
-    published at its kind's rate with no wrong number (rules/collecte_seuils.yaml)."""
+    published at its kind's rate with no wrong number (rules/collecte_seuils.yaml). With
+    `ecarts` (« 75-drone:horaires »), the pairs that differ instead, to classify them."""
     import yaml
 
     from lacarte_collecte.etat import Store
@@ -742,6 +752,7 @@ def mesurer(ctx: Any) -> dict[str, Any]:
     conf = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
     final = {r["id"]: r for r in Store(ctx.root, "champs").records()}
     tally: dict[str, dict[str, list[int]]] = {}
+    diffs: list[dict[str, Any]] = []
     for ref in Store(ctx.root, "references").records():
         got = {
             k: v["valeur"] for k, v in ((final.get(ref["id"]) or {}).get("champs") or {}).items()
@@ -763,10 +774,22 @@ def mesurer(ctx: Any) -> dict[str, Any]:
             groups = {g: v for g, v in groups.items() if g in ("commune", "nombre")}
         for g, ks in groups.items():
             res = [_juste(k, got.get(k), ref["reference"].get(k)) for k in ks]
+            if ecarts == f"{key}:{g}" and not all(r for r, _ in res):
+                mine = (final.get(ref["id"]) or {}).get("champs") or {}
+                diffs.append(
+                    {
+                        "id": ref["id"],
+                        "lu": {k: got.get(k) for k in ks},
+                        "origine": {k: (mine.get(k) or {}).get("origine") for k in ks},
+                        "reference": {k: ref["reference"].get(k) for k in ks},
+                    }
+                )
             t = tally.setdefault(key, {}).setdefault(g, [0, 0, 0])
             t[0] += all(r for r, _ in res)
             t[1] += 1
             t[2] += any(w for _, w in res)
+    if ecarts:
+        return diffs
     # the sample due: 30 acts (rules), or every act of the kind when it has fewer; a smaller
     # sample (texts not yet cached, say) publishes nothing
     n_due = int(conf.get("echantillon", 30))

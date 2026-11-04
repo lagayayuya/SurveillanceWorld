@@ -27,9 +27,12 @@ types:
 # up to 100 000 tokens), and the batch's discount; a cache write costs 1.25 times the input,
 # a read 0.1 times. They give each lot's real cost from the usage the API returns.
 # `budget_dollars`: what the API may cost in all, reading and references (Ju, 2026-11-03: 110);
-# reached, no new reading is sent until Ju raises it.
+# reached, no new reading is sent until Ju raises it. `envoi_automatique`: whether a run sends
+# the acts not yet read at its end (Ju, 2026-11-04: off until the R4.2 instruction is
+# calibrated; the lots are then sent by hand, `modele lire`).
 references:
   budget_dollars: 110
+  envoi_automatique: false
   prix:
     remise_lot: 0.5
     claude-haiku-5-5: {entree: 0.10, sortie: 0.50}
