@@ -438,11 +438,16 @@ def envoyer(
     return bid
 
 
-def _resultats(c: Any, lot: dict[str, Any]) -> dict[str, Any]:
+def _resultats(c: Any, lot: dict[str, Any], echecs: dict[str, int] | None = None) -> dict[str, Any]:
+    """A batch's succeeded results per act; the others counted by type in `echecs` (its act
+    stays to read)."""
     out = {}
     for r in c.messages.batches.results(lot["lot"]):
         aid = lot["actes"][int(r.custom_id[1:])]
         if r.result.type != "succeeded":
+            if echecs is not None:
+                k = f"{lot['phase']}:{r.result.type}"
+                echecs[k] = echecs.get(k, 0) + 1
             continue
         msg = r.result.message
         text = next((x.text for x in msg.content if x.type == "text"), "")
@@ -498,11 +503,12 @@ def suivre(ctx: Any) -> dict[str, Any]:
     olds = {r["id"]: r for r in Store(ctx.root, "champs").records()}
     keep: list[dict[str, Any]] = []
     done = {"lecture": 0, "relecture": 0, "arbitrage": 0, "complement": 0}
+    echecs: dict[str, int] = {}
     for lot in lots:
         if c.messages.batches.retrieve(lot["lot"]).processing_status != "ended":
             keep.append(lot)
             continue
-        res = _resultats(c, lot)
+        res = _resultats(c, lot, echecs)
         Store(ctx.root, "couts").add(
             {
                 "id": f"{lot['lot']}:{k}",
@@ -561,7 +567,7 @@ def suivre(ctx: Any) -> dict[str, Any]:
     processed = {lot["lot"] for lot in lots} - {lot["lot"] for lot in keep}
     current = [x for x in st.get().get("lots") or [] if x["lot"] not in processed]
     st.save(lots=current)
-    return {"lots_en_cours": len(current), **done}
+    return {"lots_en_cours": len(current), **done, "echecs": echecs}
 
 
 def _garder(
@@ -972,8 +978,22 @@ def essai(ctx: Any) -> dict[str, Any]:
 
 
 def erreurs(lot: str, n: int = 3) -> dict[str, Any]:
-    """A batch's results by type, and its first errors as the API gives them (no new call)."""
+    """A batch's results by type, and its first errors as the API gives them (no new call);
+    without a batch, the last 40 batches and their counts."""
     c, kinds, errs = client(), {}, []
+    counts = ("succeeded", "errored", "expired", "canceled")
+    if not lot:
+        return {
+            "lots": [
+                {
+                    "lot": b.id,
+                    "cree": b.created_at.isoformat(timespec="minutes"),
+                    "etat": b.processing_status,
+                    **{k: getattr(b.request_counts, k) for k in counts},
+                }
+                for b in c.messages.batches.list(limit=40).data
+            ]
+        }
     for r in c.messages.batches.results(lot):
         kinds[r.result.type] = kinds.get(r.result.type, 0) + 1
         if r.result.type != "succeeded" and len(errs) < n:

@@ -225,3 +225,23 @@ def test_a_complementary_field_is_measured_on_its_own(tmp_path):
     m = modele.mesurer(ctx)["75-drone"]
     assert "commune" not in m  # the first fields were not read again on this draw
     assert m["motif"]["publie"] and (m["service"]["justes"], m["service"]["publie"]) == (29, True)
+
+
+def test_a_batch_s_failed_requests_are_counted_not_dropped():
+    """Four lots of step 1 came back errored and nothing said so: suivre counts them by type."""
+
+    class R:
+        def __init__(self, i, kind):
+            self.custom_id, self.result = f"a{i}", type("Res", (), {"type": kind})()
+
+    class C:
+        class messages:  # noqa: N801 (the SDK's attribute)
+            class batches:  # noqa: N801
+                @staticmethod
+                def results(_lot):
+                    return [R(0, "errored"), R(1, "expired"), R(2, "errored")]
+
+    echecs: dict[str, int] = {}
+    lot = {"lot": "msgbatch_x", "phase": "lecture", "actes": ["x0", "x1", "x2"]}
+    assert modele._resultats(C(), lot, echecs) == {}
+    assert echecs == {"lecture:errored": 2, "lecture:expired": 1}
