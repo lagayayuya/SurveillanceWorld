@@ -124,6 +124,16 @@ sans root, depuis la machine qui déploie : `deploy/collecte-sync.sh envoyer` (l
 `lancer`, `etat`, puis `rapatrier`, qui ne ramène que les fichiers dérivés
 (`data/registre/collecte/`), jamais les données brutes.
 
+Les arrêtés sont lus par des règles, puis par un modèle de langue sur le serveur
+(`pipeline/lacarte_collecte/modele.py`, `nouveaux.py`) : chaque champ cite le passage qui le
+prouve et n'est gardé que si un contrôle déterministe le vérifie dans le texte ; il n'est publié
+que si sa justesse, mesurée par département contre des lectures de référence, atteint le seuil
+de `rules/collecte_seuils.yaml`. Les envois au modèle se font à la main (`lacarte-collecte
+modele lire`, `completer`, `suivre`), jamais en fin de passage tant qu'une consigne n'est pas
+calibrée. Les lieux qu'un arrêté de drones cite sont placés à la construction, avec les seules
+données locales (Admin Express, l'extrait OpenStreetMap de la carte), jamais par un service de
+géocodage (`pipeline/lacarte_registre/lieux.py`).
+
 ## Vie privée par construction
 
 - Aucun traceur, aucun cookie de mesure : la carte n'appelle aucun service tiers. Le fond de
