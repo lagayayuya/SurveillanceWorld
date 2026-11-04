@@ -126,12 +126,14 @@ def parse_raa_key(name: str) -> str:
     return re.sub(r"[-\s]+", "-", name.strip().lower())
 
 
-def numero(a: dict[str, Any]) -> str | None:
-    """The decree's number, « 2026-1518 » (the zeros of padding dropped: « 2024-0067 » is
-    « 2024-00067 »), or None."""
+def numero(a: dict[str, Any], tel_quel: bool = False) -> str | None:
+    """The decree's number to match, « 2026-1518 » (the zeros of padding dropped: « 2024-0067 »
+    is « 2024-00067 »), or as written, « 2026-01518 » (`tel_quel`); None without one."""
     m = NUMERO_ACTE.match(a.get("acte") or "") if a.get("administration") == "ppparis" else None
     m = m or NUMERO.search(a.get("titre") or "")
-    return f"{m.group(1)}-{int(m.group(2))}" if m else None
+    if not m:
+        return None
+    return f"{m.group(1)}-{m.group(2) if tel_quel else int(m.group(2))}"
 
 
 def uniques(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -147,6 +149,8 @@ def uniques(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
             # what the kept record's reading left empty, from the other's (the prefecture of
             # Paris's text layer often loses the zone's article)
             kept = seen[key]
+            if a.get("administration") == "ppparis":
+                kept["autorite"] = "ppparis"  # the decree is the Préfecture de police's
             mine, theirs = kept.get("champs") or {}, a.get("champs") or {}
             kept["champs"] = {
                 **mine,
@@ -181,6 +185,9 @@ GROUPS = {
     "horaires": ("horaires",),
     "perimetre": ("perimetre",),
 }
+# the complementary fields (lot R4.2), each its own group, published on its own measure
+NOUVEAUX = ("motif", "motif_libelle", "service", "finalites", "lieux", "n_perimetres", "communes",
+            "etablissement", "adresse", "conservation_jours", "echeance", "nature")  # fmt: skip
 
 
 def act_event(
@@ -206,7 +213,8 @@ def act_event(
             "commune": a.get("commune"),
         }
         origins = {k: "regles" for k, v in read.items() if v not in (None, [])}
-    f = {k: read.get(k) for g in published for k in GROUPS[g]}
+    f = {k: read.get(k) for g in published if g in GROUPS for k in GROUPS[g]}
+    nv = {k: v for k, v in ((final or {}).get("nouveaux") or {}).items() if k in published}
     insee = (
         ((final or {}).get("insee") if final else a.get("insee"))
         if "commune" in published
@@ -258,6 +266,28 @@ def act_event(
         e["perimetre"] = f["perimetre"]
     if a["type"] in ("drone", "vsa") and not f.get("perimetre") and plan_annexe(a):
         e["plan_annexe"] = True
+    # what the list and the panel show (lot R4.2): the days, the decree's number and its
+    # author; the hours read but not published said as such, never their value
+    if days:
+        e["jours"] = days
+    if n := numero(a, tel_quel=True):
+        e["numero"] = n
+    e["autorite"] = a.get("autorite") or a.get("administration")
+    if "horaires" not in published and read.get("horaires"):
+        e["horaires_lus"] = True
+    if "motif" in nv or "motif_libelle" in nv:
+        e["motif"] = {"categorie": nv.get("motif"), "libelle": nv.get("motif_libelle")}
+    for k in ("service", "finalites", "lieux", "n_perimetres", "etablissement", "adresse",
+              "conservation_jours", "echeance", "nature"):  # fmt: skip
+        if k in nv:
+            e[k] = nv[k]
+    if len(nv.get("communes") or []) > 1:
+        e["communes"] = nv["communes"]  # every commune it names (regles.appliquer)
+        deps = list(
+            dict.fromkeys(
+                [*deps, *(k[:3] if k.startswith("97") else k[:2] for k in nv["communes"])]
+            )
+        )
     if len(deps) > 1:
         # listed in each département it names, counted once in each (regles.appliquer)
         e["departements"] = deps
@@ -307,7 +337,9 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         admin = admins[a["administration"]]
         dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else ""
         groups = measured.get(f"{dep}-{a['type']}") or {}
-        published = {g for g, v in groups.items() if v.get("publie") and g in GROUPS}
+        published = {
+            g for g, v in groups.items() if v.get("publie") and (g in GROUPS or g in NOUVEAUX)
+        }
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
         new.append(act_event(a, admin, published, finals.get(a["id"]), mention, deps))

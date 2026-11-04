@@ -77,6 +77,27 @@ def non_deduite(e: Event | None) -> bool:
     return bool(e) and NON_DEDUITE in (e.get("non_lu") or [])
 
 
+# what a row of the list shows besides its date (lot R4.2), each only when published: the days
+# (the calendar), the hours, the service, the purpose, the purposes, the places, the number of
+# cameras and of perimeters; the decree's number and author; the zone's state
+CHAMPS_LIGNE = ("jours", "horaires", "service", "motif", "finalites", "lieux", "cameras",
+                "n_perimetres", "numero", "autorite", "titre")  # fmt: skip
+
+
+def etat_zone(e: Event) -> str:
+    """« plan_annexe » (the act sends its zone to an annexed plan the registre does not read),
+    else « non_lue »."""
+    return "plan_annexe" if e.get("plan_annexe") else "non_lue"
+
+
+def etat_horaires(e: Event) -> str:
+    """« publies », « non_publies » (read, their accuracy still being measured) or
+    « absents » (the act gives none)."""
+    if e.get("horaires"):
+        return "publies"
+    return "non_publies" if e.get("horaires_lus") or e.get("sous_le_seuil") else "absents"
+
+
 def non_deduits(events: list[Event]) -> list[dict[str, Any]]:
     """The drone and algorithmic-analysis acts whose zone was not deduced, newest first."""
     rows = [
@@ -88,6 +109,9 @@ def non_deduits(events: list[Event]) -> list[dict[str, Any]]:
             "ref": e.get("ref"),
             "page": e.get("page"),
             "raisons": e["non_lu"],
+            "zone": etat_zone(e),
+            "horaires_etat": etat_horaires(e),
+            **{k: e[k] for k in CHAMPS_LIGNE if e.get(k) not in (None, [], "")},
         }
         for e in events
         if e.get("t") in KINDS and non_deduite(e)
@@ -145,9 +169,22 @@ def creneaux(
 
 def commune(p: Pilote, events: list[Event], by_id: dict[str, Event], insee: str) -> dict[str, Any]:
     """The commune file's `drones` key: its slots and its acts whose zone was not deduced."""
-    return {
+    rows = non_deduits(events)
+    out = {
         "creneaux": creneaux(
             p.get("AUTORISATIONS", []), p.get("ZONES", []), p.get("SITES", []), by_id, insee
         ),
-        "non_deduits": non_deduits(events),
+        "non_deduits": rows,
     }
+    if any(r.get("lieux") for r in rows):
+        # the cited places, placed from local data when found without ambiguity (lieux.py)
+        import copy
+
+        import lacarte_registre as registre
+        from lacarte_registre import lieux
+
+        rows[:] = copy.deepcopy(rows)  # the events' places stay as read
+        shapes = lieux.formes(rows, insee, lieux.regles(registre.RULES))
+        if shapes:
+            out["formes"] = shapes
+    return out

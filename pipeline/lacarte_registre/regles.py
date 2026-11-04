@@ -405,6 +405,13 @@ def appliquer(p: Pilote, corr: list[Correction]) -> Registre:
     masquer_ei(reg)
     autorisations = p.get("AUTORISATIONS", [])
     shares = _shares(reg, autorisations)
+    # the collection's acts naming several communes (collecte.py `communes`, the model's)
+    for e in events:
+        named = [k for k in dict.fromkeys(e.get("communes") or []) if k in reg.communes]
+        if len(named) >= 2 and e["id"] not in shares:
+            if e.get("insee") not in named:
+                e["insee"] = named[0]
+            shares[e["id"]] = named
     lots, groupes = p.get("LOTS", {}), p.get("LOTS_GROUPES", {})
     zones_of = {a["acte"]: a.get("zones") or [] for a in autorisations}
     statut = {z["id"]: z.get("statut") for z in p.get("ZONES", [])}

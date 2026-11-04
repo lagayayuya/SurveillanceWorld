@@ -945,7 +945,14 @@ def references_lot(
         picks += [p["acte"] for p in seuil.tirer(acts, dep, kind, n, seed=graine)]
     by = {a["id"]: a for a in acts}
     rows = {i: t for i in picks if (t := _texte(ctx, by[i]))}
-    res = _lot(client(), list(rows.values()), ARBITRE)
+    conf = nouveaux.regles(ctx.rules_dir)
+    res = _lot(
+        client(),
+        list(rows.values()),
+        ARBITRE,
+        system=consigne_complete(conf),
+        schema=schema_complet(conf),
+    )
     keep = []
     for i, r in res.items():
         if i == "_lot":
@@ -964,6 +971,15 @@ def references_lot(
                 "type": a["type"],
                 "graine": graine,
                 "reference": m,
+                "reference_nouveaux": nouveaux.controler(
+                    r.get("lecture") or {},
+                    rows[i]["texte"],
+                    _communes(ctx, a["administration"]),
+                    dt.date.fromisoformat(a["recueil_date"]),
+                    conf,
+                    a["type"],
+                ),
+                "empreinte_nouveaux": nouveaux.empreinte(conf),
                 "modele": r["modele"],
             }
         )
@@ -1029,6 +1045,25 @@ def mesurer(ctx: Any, ecarts: str | None = None) -> Any:
         }
         if ref["type"] != "drone":
             groups = {g: v for g, v in groups.items() if g in ("commune", "nombre")}
+        if "reference_nouveaux" in ref:
+            # the complementary fields, each its own group, against Opus's blind reading
+            mine = (final.get(ref["id"]) or {}).get("nouveaux") or {}
+            own = nouveaux.DRONE if ref["type"] != "videoprotection" else nouveaux.VIDEO
+            for k in own:
+                if k == "petitionnaire":
+                    continue
+                ok = _pareil(k, mine.get(k), ref["reference_nouveaux"].get(k))
+                t = tally.setdefault(key, {}).setdefault(k, [0, 0, 0])
+                t[0] += ok
+                t[1] += 1
+                if ecarts == f"{key}:{k}" and not ok:
+                    diffs.append(
+                        {
+                            "id": ref["id"],
+                            "lu": mine.get(k),
+                            "reference": ref["reference_nouveaux"].get(k),
+                        }
+                    )
         for g, ks in groups.items():
             res = [_juste(k, got.get(k), ref["reference"].get(k)) for k in ks]
             if ecarts == f"{key}:{g}" and not all(r for r, _ in res):

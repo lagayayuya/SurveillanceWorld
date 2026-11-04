@@ -1,0 +1,14 @@
+# The shapes of the places a drone act cites (pipeline/lacarte_registre/lieux.py, lot R4.2):
+# placed at the build from local data (Admin Express, the map's OSM build), never a geocoding
+# service. Every shape is « approximatif ».
+version: 1
+id: rule:registre_lieux@1
+rationale: >-
+  Ju's shapes (2026-11-04): an arrondissement its outline; a street the street widened by
+  50 m; a square, a stadium, a station or a building a circle of about 250 m. A name whose
+  ways spread wider than `groupe_rue_m` (a street) or `groupe_lieu_m` (any other place)
+  within the commune is two places: not drawn, cited only.
+rue_m: 50
+cercle_m: 250
+groupe_rue_m: 8000
+groupe_lieu_m: 1500
