@@ -281,6 +281,15 @@ def act_event(
               "conservation_jours", "echeance", "nature"):  # fmt: skip
         if k in nv:
             e[k] = nv[k]
+    if e.get("adresse"):
+        # an address served only when its street is found in the act's commune (lieux.py)
+        from lacarte_registre import lieux
+
+        point = lieux.adresse(e["adresse"], e["insee"]) if e.get("insee") else None
+        if point is None:
+            e.pop("adresse")
+        else:
+            e["adresse_point"] = point
     if len(nv.get("communes") or []) > 1:
         e["communes"] = nv["communes"]  # every commune it names (regles.appliquer)
         deps = list(

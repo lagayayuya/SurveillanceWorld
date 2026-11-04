@@ -144,6 +144,12 @@ def _pois(dep: str) -> Any:
     return g.assign(cle=g["name"].map(loose))
 
 
+def _inside(frame: Any, town: Any) -> Any:
+    """The rows whose middle is inside the commune (a street of the next town that touches its
+    edge is the next town's)."""
+    return frame[frame.geometry.representative_point().within(town)]
+
+
 def placer(lieu: dict[str, Any], insee: str, conf: dict[str, Any]) -> dict[str, Any] | None:
     """The place's shape (GeoJSON, WGS 84) with its kind, or None (cited only)."""
     import geopandas as gpd
@@ -167,14 +173,14 @@ def placer(lieu: dict[str, Any], insee: str, conf: dict[str, Any]) -> dict[str, 
     key = loose(lieu.get("texte") or "")
     if len(key) < 4:
         return None
-    hits = ways[(ways["cle"] == key) & ways.intersects(town)]
+    hits = _inside(ways[ways["cle"] == key], town)
     if genre != "rue":
         pois = _pois(dep)
         if pois is not None:
-            more = pois[(pois["cle"] == key) & pois.intersects(town)]
+            more = _inside(pois[pois["cle"] == key], town)
             if more.empty and hits.empty:
                 # « gare du Nord » is OSM's « Paris Gare du Nord »: the name holds the words
-                near = pois[pois.intersects(town)]
+                near = _inside(pois, town)
                 more = near[near["cle"].str.contains(rf"\b{re.escape(key)}\b", regex=True)]
             hits = more if not more.empty else hits
     if hits.empty:
@@ -213,3 +219,36 @@ def formes(rows: list[dict[str, Any]], insee: str, conf: dict[str, Any]) -> dict
                     "approximatif": True,
                 }
     return out
+
+
+NUMERO_VOIE = re.compile(r"^\s*\d+\s*(?:bis|ter|quater|[a-d])?\b[\s,]*", re.I)
+
+
+def adresse(texte: str, insee: str) -> list[float] | None:
+    """A video-protection site's address checked in the act's commune: its street (the number
+    left out) among the commune's named ways; the street's middle (WGS 84, approximate), or
+    None when the street is not found or is found far apart."""
+    import geopandas as gpd
+    import shapely
+
+    try:
+        _arr, com = _admin()
+    except (FileNotFoundError, IndexError):
+        return None
+    dep = insee[:3] if insee.startswith("97") else insee[:2]
+    ways = _ways(dep)
+    if ways is None or insee not in com.index:
+        return None
+    key = loose(NUMERO_VOIE.sub("", texte))
+    if len(key) < 4:
+        return None
+    town = gpd.GeoSeries([com.loc[insee, "geometrie"]], crs="OGC:CRS84").to_crs(ways.crs).iloc[0]
+    hits = _inside(ways[ways["cle"] == key], town)
+    if hits.empty:
+        return None
+    union = shapely.union_all(hits.geometry.values)
+    minx, miny, maxx, maxy = union.bounds
+    if max(maxx - minx, maxy - miny) > 8000:
+        return None
+    p = gpd.GeoSeries([union.centroid], crs=ways.crs).to_crs("OGC:CRS84").iloc[0]
+    return [round(p.x, 6), round(p.y, 6)]

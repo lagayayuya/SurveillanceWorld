@@ -96,3 +96,9 @@ def test_an_ambiguous_or_absent_place_is_cited_only(local):
     ]
     assert shapes["75056:rue:boulevard-raspail"]["approximatif"] is True
     _ = Point
+
+
+def test_an_address_is_kept_only_when_its_street_is_in_the_commune(local):
+    assert lieux.adresse("12 bis boulevard Raspail", "75056") is not None
+    assert lieux.adresse("3 rue Imaginaire", "75056") is None
+    assert lieux.adresse("1 rue Dehors", "75056") is None  # the next town's street
