@@ -3,7 +3,7 @@
   <div class="maptag">
     <a class="mback" href="/registre/">{{t.carte.retour_registre}}</a>
     <sc-if value="{{legOuverte}}"><div class="leg" id="cd-legende">
-      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_zone}}</span></sc-if>
+      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte.leg_non_lue_plan}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
       <span class="leg-in" style="color: var(--muted)">{{t.carte.leg_trace}}</span>
@@ -45,24 +45,21 @@
       <sc-if value="{{friseBande}}"><button type="button" class="frise-bande" aria-expanded="{{friseExp}}" aria-label="{{friseAide}}" onClick="{{togFrise}}"><span class="tw">{{friseBandeL}}</span> <span aria-hidden="true">▾</span></button></sc-if>
       <sc-if value="{{friseOuverte}}">
       <div class="frise-h">
-        <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.frise_titre}}</h2>
-        <span class="tw" style="font-size: 13px; color: var(--muted)">{{rangeL}}</span>
+        <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.cal_titre}}</h2>
+        <span class="tw" style="font-size: 13px; color: var(--muted)">{{calSous}}</span>
         <button class="key s" type="button" style="margin-left: auto; align-self: center" aria-pressed="{{allOn}}" onClick="{{allYear}}">{{t.carte.toute_la_periode}}</button>
       </div>
-      <div class="frise-g">
-        <svg width="{{fw}}" height="112" viewBox="{{vb}}" tabindex="0" role="group" aria-roledescription="{{t.carte.frise_role}}" aria-label="{{friseAlt}}" aria-describedby="cd-frise-aide" onKeyDown="{{wkKey}}" onFocus="{{wkFocus}}" onPointerLeave="{{wkLeave}}">
-          <line x1="0" x2="{{fw}}" y1="{{gridY}}" y2="{{gridY}}" style="stroke: var(--rule); stroke-width: 1; stroke-dasharray: 2 3"></line>
-          <text x="2" y="{{gridTY}}" style="font: 400 11px 'Special Elite', monospace; fill: var(--muted)">{{gridL}}</text>
-          <line x1="0" x2="{{fw}}" y1="104" y2="104" style="stroke: var(--line); stroke-width: 1.5"></line>
-          <sc-for list="{{wk}}" as="w"><rect x="{{w.x}}" y="{{w.y}}" width="{{w.w}}" height="{{w.h}}" style="{{w.st}}"></rect></sc-for>
-          <sc-for list="{{wk}}" as="w"><rect x="{{w.hx}}" y="0" width="{{w.hw}}" height="104" style="fill: transparent; cursor: pointer" onMouseEnter="{{w.hover}}" onClick="{{w.pick}}"></rect></sc-for>
-          <sc-for list="{{tips}}" as="p"><g style="pointer-events: none"><rect x="{{p.x}}" y="0" width="{{p.w}}" height="22" style="fill: var(--fg)"></rect><text x="{{p.tx}}" y="15" style="font: 700 12px Archivo, sans-serif; fill: var(--bg)">{{p.t}}</text></g></sc-for>
+      <div class="frise-g {{calCls}}">
+        <svg width="{{fw}}" height="{{calH}}" viewBox="{{vb}}" style="overflow: visible" tabindex="0" role="group" aria-roledescription="{{t.carte.cal_role}}" aria-label="{{calAlt}}" aria-describedby="cd-frise-aide" onKeyDown="{{calKey}}" onClick="{{calClick}}" onPointerMove="{{calMove}}" onPointerLeave="{{calLeave}}">
+          <sc-for list="{{calTxt}}" as="x"><text x="{{x.x}}" y="{{x.y}}" text-anchor="{{x.a}}" style="{{x.st}}">{{x.t}}</text></sc-for>
+          <sc-for list="{{cases}}" as="c"><rect x="{{c.x}}" y="{{c.y}}" width="{{c.w}}" height="{{c.h}}" style="{{c.st}}"></rect></sc-for>
+          <sc-for list="{{calLin}}" as="l"><line x1="{{l.x1}}" x2="{{l.x2}}" y1="{{l.y1}}" y2="{{l.y2}}" style="{{l.st}}"></line></sc-for>
         </svg>
-        <p id="cd-frise-aide" class="sr">{{t.carte.frise_aide}}</p>
-        <p class="sr" aria-live="polite">{{tipLive}}</p>
+        <p id="cd-frise-aide" class="sr">{{calAide}}</p>
+        <p class="sr" aria-live="polite">{{calLive}}</p>
       </div>
-      <div class="frise-m"><sc-for list="{{months}}" as="m"><button class="mt" type="button" style="{{m.st}}" aria-pressed="{{m.on}}" aria-label="{{m.aria}}" onClick="{{m.pick}}">{{m.l}}</button></sc-for></div>
-    <sc-if value="{{semChoisie}}"><p class="frise-leg tw"><i aria-hidden="true"></i>{{t.carte.semaine_choisie}}</p></sc-if>
+      <p class="fl"><span><i class="cal0"></i>{{t.carte.cal_leg_aucun}}</span><span><i class="cal1"></i>{{t.carte.cal_leg_1}}</span><span><i class="cal3"></i>{{t.carte.cal_leg_3}}</span><span><i class="cal4"></i>{{t.carte.cal_leg_4}}</span><span><i class="calc"></i>{{t.carte.cal_leg_choisi}}</span></p>
+      <sc-if value="{{hasSum}}"><p class="cal-sum"><b>{{sum.date}}</b> · {{sum.reste}}</p></sc-if>
       </sc-if>
     </section></sc-if>
 
@@ -72,7 +69,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center"><span class="stk" style="{{det.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{det.i}}"></path></svg>{{det.k}}</span><button class="ibtn" type="button" onClick="{{clear}}" aria-label="{{t.carte.fermer_detail}}"><span aria-hidden="true">✕</span></button></div>
         <h3 class="h3" style="font-size: 20px; margin-top: 4px">{{det.title}}</h3>
         <sc-if value="{{det.sub}}"><p class="tw cd-sub">{{det.sub}}</p></sc-if>
-        <sc-if value="{{det.hasLieux}}"><div class="cd-bloc"><h4 class="cd-k">{{t.carte.lieux_k}}</h4><ul class="cd-lieux"><sc-for list="{{det.lieux}}" as="x"><li><span>{{x.l}}</span><sc-if value="{{x.has}}"><button class="lk" type="button" onClick="{{x.voir}}">{{t.carte.voir_carte}}</button></sc-if></li></sc-for></ul></div></sc-if>
+        <sc-if value="{{det.hasLieux}}"><div class="cd-bloc"><h4 class="cd-k">{{det.lieuxK}}</h4><ul class="cd-lieux"><sc-for list="{{det.lieux}}" as="x"><li><span>{{x.l}}</span><sc-if value="{{x.has}}"><button class="lk" type="button" onClick="{{x.voir}}">{{t.carte.voir_carte}}</button></sc-if></li></sc-for></ul></div></sc-if>
         <sc-if value="{{det.hasCreneaux}}"><div class="cd-bloc"><h4 class="cd-k">{{t.carte.creneaux_k}}</h4><ul class="cd-cren"><sc-for list="{{det.creneaux}}" as="x"><li><a class="rl" href="{{x.href}}" aria-current="{{x.cur}}" onClick="{{x.pick}}">{{x.l}}</a></li></sc-for></ul></div></sc-if>
         <sc-for list="{{det.rows}}" as="r"><div class="prow"><span>{{r.k}}</span><b style="text-align: right">{{r.v}}</b></div></sc-for>
         <sc-if value="{{det.note}}"><p class="tw" style="margin: 2px 0 0; font-size: 13px; color: var(--muted)">{{det.note}}</p></sc-if>
@@ -81,8 +78,9 @@
     </div></sc-if>
 
     <h3 class="h3" style="margin-top: 6px"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_creneau}}">{{listT}}</span></h3>
+    <sc-if value="{{hasSz}}"><div><button class="key s" type="button" onClick="{{szTous}}">{{t.carte.sz_tous}}</button></div></sc-if>
     <div style="border-top: 2px solid var(--line)" onPointerLeave="{{unhover}}">
-      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<span class="m">{{r.fin}}</span></span><span class="h num">{{r.h}}</span></div></sc-for>
+      <sc-for list="{{rows}}" as="r"><div class="{{r.cls}}" aria-current="{{r.sel}}" style="{{r.c}}" onMouseEnter="{{r.hover}}" onFocus="{{r.hover}}" onClick="{{r.pick}}"><a class="rl tw" href="{{r.href}}">{{r.d}}</a><span>{{r.svc}}<sc-if value="{{r.fin}}"><span class="m">{{r.fin}}</span></sc-if><sc-if value="{{r.zst}}"><span class="zst">{{r.zst}}</span></sc-if></span><span class="{{r.hc}}">{{r.h}}</span></div></sc-for>
     </div>
     <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>

@@ -375,6 +375,9 @@
   --sub: #2e7d4f;
   --sub-ink: #ffffff;
   --drone: #0089c7;
+  /* The drone view's blue (board B, lot R4.2): a cited sector's hatching, a zone not read's
+     dotted edge, their labels on the map. */
+  --drone-trait: #2c6f9e;
   --rule: #c9c4b6;
   --soft: #e9e5da;
   /* The register's four families (mockup V2-Types), the same in light and dark (said again in
@@ -643,6 +646,7 @@
   --sub: #7fd18f;
   --sub-ink: #111111;
   --drone: #7fd4ff;
+  --drone-trait: #7fd4ff;
   --rule: #3a3640;
   --soft: #26232a;
   --type-territoire: #ffe800;

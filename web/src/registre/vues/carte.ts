@@ -14,18 +14,20 @@ import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Handler, Rich } from "../dc.ts";
 import {
   type BBox,
+  bboxOf,
   type Calque,
   type Contour,
   calque,
   entieres,
   lireContour,
+  rings,
   type Site,
   TEINTES,
   type Teintes,
   zoomAuDessus,
   zoomIncline,
 } from "../drones.ts";
-import { count, fr, longMonth } from "../format.ts";
+import { count, fr } from "../format.ts";
 import { carteDuSite, laisser, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
 import type { Miette, VueModule } from "../modale.ts";
@@ -39,33 +41,50 @@ import "./carte.css";
 import {
   appareils,
   type Creneau,
+  camerasTxt,
   cles,
-  dansPeriode,
+  DEBUT_CAL,
   dateTxt,
   deAdresse,
   deGenre,
   drones,
+  enTete,
+  finalitesTxt,
   type Genre,
   genre,
+  grilleMois,
+  grilleSemaines,
   heuresTxt,
-  jourTxt,
+  horairesMots,
+  jourDe,
+  jourIso,
+  jourLong,
+  jourMs,
+  joursComptes,
+  joursDe,
   lieux,
+  lundi,
   mois,
-  moisAxe,
+  motifTxt,
+  motsLigne,
   type NonDeduit,
+  ndDans,
+  niveau,
   overlaps,
   type Periode,
+  phraseJour,
   plage,
-  repere,
-  type Semaine,
+  reperesCal,
+  secteurPanneau,
   semaineDe,
-  semaines,
   sitesHours,
-  span,
+  sumHours,
+  TEINTE_JOUR,
   tickets,
   versAdresse,
   volLabel,
   type ZoneLue,
+  zonePanneau,
   zonesDe,
 } from "./carte-outils.ts";
 
@@ -85,16 +104,28 @@ const MOVE_MS = 900;
 const REFAIRE_MS = 6000;
 /** The mark on the view's own camera moves (maplibre passes it to their events). */
 const NOTRE = { rgcd: true };
-/** The chart's height in its viewBox: the axis at 104, the reference line at 14. */
-const AXE = 104;
-const HAUT = 14;
+/** « Jours de vol autorisés » on a wide screen, in its viewBox (board B, Drones-Paris-B-calendrier:
+ * 528 × 86, a cell 2.92 × 7.6 every 3.52 × 8.2 from x 3.82, y 6.3; the marks under it from 66.4). */
+const CAL_X = 3.82;
+const CAL_W = 0.83;
+const CAL_Y0 = 6.3;
+const CAL_DY = 8.2;
+const CAL_CH = 7.6;
+const CAL_H = 86;
+/** On a phone (the brief: a row of 31 days per month, the latest on top): the months' words'
+ * column and a row's height. */
+const TEL_LW = 52;
+const TEL_RH = 12;
 
 type Props = Extract<Route, { view: "carte" }> & { d: Donnees };
 type State = BaseState & {
   r0: number | null;
   r1: number | null;
-  /** the week shown in the chart's tooltip (-1: none) */
-  wk: number;
+  /** the calendar's day under the pointer, and the one the keyboard is on (ms; -1: none) */
+  jv: number;
+  jf: number;
+  /** the list kept to the acts without a drawn zone (the commune's dotted edge clicked) */
+  sz: boolean;
   /** the chart's width, CSS px */
   fw: number;
   /** the sites over the whole commune, or nearly (the build's, drones.ts entieres) */
@@ -238,12 +269,14 @@ class CarteDrones extends Vue<Props, State> {
 
   protected init(p: Props): Partial<State> {
     const q = new URLSearchParams(typeof location === "object" ? location.search : "");
-    const r = mois(p.mois) ?? semaineDe(q.get("semaine"));
+    const r = jourDe(q.get("jour")) ?? mois(p.mois) ?? semaineDe(q.get("semaine"));
     return {
       r0: r?.[0] ?? null,
       r1: r?.[1] ?? null,
       sel: deAdresse(q.get("acte"), q.get("creneau")),
-      wk: -1,
+      jv: -1,
+      jf: -1,
+      sz: q.get("zone") === "non-lue",
       fw: large() ? 868 : 340,
       ent: [],
       k: genre(q.get("genre")),
@@ -530,10 +563,12 @@ class CarteDrones extends Vue<Props, State> {
     const r = this.periode();
     if (r) {
       const a = new Date(r[0]).toISOString();
-      if (r[1] - r[0] === 7 * DAY) q.set("semaine", a.slice(0, 10));
+      if (r[1] - r[0] === DAY) q.set("jour", a.slice(0, 10));
+      else if (r[1] - r[0] === 7 * DAY) q.set("semaine", a.slice(0, 10));
       else q.set("mois", a.slice(0, 7));
     }
     if (S.k) q.set("genre", S.k);
+    if (S.sz) q.set("zone", "non-lue");
     if (sel) {
       const x = versAdresse(sel);
       q.set("acte", x.acte);
@@ -614,8 +649,16 @@ class CarteDrones extends Vue<Props, State> {
       f(e);
     };
   }
-  private setPeriode(r: Periode): void {
-    this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, sel: null, vu: null });
+  private setPeriode(r: Periode, more: Partial<State> = {}): void {
+    this.setState({ r0: r?.[0] ?? null, r1: r?.[1] ?? null, sel: null, vu: null, ...more });
+  }
+  /** « Voir sur la carte » for a cited sector: its shape framed (drones.formes). */
+  private voirForme(id: string): Handler {
+    return () => {
+      const f = drones(this.props.d).formes[id];
+      const b = f ? bboxOf(rings(f.geometry as Parameters<typeof rings>[0])) : null;
+      if (this.map && b) this.voler(this.map, b);
+    };
   }
   /** « Voir sur la carte »: the zone framed, as the commune is at the opening. */
   private voir(site: string): Handler {
@@ -698,6 +741,53 @@ class CarteDrones extends Vue<Props, State> {
     this.quart = false;
   }
 
+  /** The calendar's geometry, the same for its drawing and its pointer (board B: 2.92 × 7.6 cells
+   * every 3.52 × 8.2 at 528 px; the phone: a row of 31 days per month). */
+  private cal(W: number) {
+    const A = DEBUT_CAL;
+    const B = lundi(today()) + 7 * DAY;
+    if (large()) {
+      const cols = Math.max(1, Math.round((B - A) / (7 * DAY)));
+      const step = (W - CAL_X) / (cols - 1 + CAL_W);
+      return { tel: false as const, A, B, cols, step, H: CAL_H };
+    }
+    const nMois =
+      (new Date(B - DAY).getUTCFullYear() - 2024) * 12 + new Date(B - DAY).getUTCMonth() + 1;
+    const step = (W - TEL_LW) / 31;
+    return { tel: true as const, A, B, cols: 31, step, H: nMois * TEL_RH, nMois };
+  }
+  /** The day under a point of the calendar (its client coordinates), null for none. */
+  private jourSous(e: { clientX: number; clientY: number; currentTarget: Element }): number | null {
+    const g = this.cal(Math.max(200, this.state.fw));
+    const b = e.currentTarget.getBoundingClientRect();
+    if (!b.width || !b.height) return null;
+    const W = Math.max(200, this.state.fw);
+    const x = ((e.clientX - b.left) * W) / b.width;
+    const y = ((e.clientY - b.top) * g.H) / b.height;
+    const now = today();
+    let d: number;
+    if (!g.tel) {
+      const col = Math.floor((x - CAL_X + (g.step * (1 - CAL_W)) / 2) / g.step);
+      const row = Math.floor((y - CAL_Y0 + (CAL_DY - CAL_CH) / 2) / CAL_DY);
+      if (col < 0 || col >= g.cols || row < 0 || row > 6) return null;
+      d = g.A + col * 7 * DAY + row * DAY;
+    } else {
+      const row = Math.floor(y / TEL_RH);
+      const col = Math.floor((x - TEL_LW) / g.step);
+      if (row < 0 || row >= g.nMois || col < 0 || col > 30) return null;
+      const last = new Date(g.B - DAY);
+      const t0 = Date.UTC(last.getUTCFullYear(), last.getUTCMonth() - row, 1);
+      d = t0 + col * DAY;
+      if (new Date(d).getUTCMonth() !== new Date(t0).getUTCMonth()) return null;
+    }
+    return d < g.A || d > now ? null : d;
+  }
+  /** The day chosen (a period of one day), else null. */
+  private jourChoisi(): number | null {
+    const r = this.periode();
+    return r && r[1] - r[0] === DAY ? r[0] : null;
+  }
+
   renderVals() {
     const S = this.state;
     const d = this.props.d;
@@ -705,103 +795,133 @@ class CarteDrones extends Vue<Props, State> {
     const nom = d.f.commune.nom;
     const T = this.T;
     const ND = this.ND;
+    const formes = drones(d).formes;
     const r = this.periode();
     const now = today();
-    const { A, B } = span(T, now);
-    const drone = S.k === "vsa" ? [] : T.filter((c) => c.kind === "drone");
+    const jour = this.jourChoisi();
+    const kCal: Genre = "drone";
+    const droneT = S.k === "vsa" ? [] : T.filter((c) => c.kind === "drone");
+    const droneND = S.k === "vsa" ? [] : ND.filter((a) => a.kind === "drone");
+    const ndIn = (a: NonDeduit) => deGenre(S.k, a.kind) && ndDans(a, r);
 
     // the tickets: the period's
     const tk = tickets(T, ND, r, S.k);
 
-    // the chart: one bar per week, the months under it
+    // « Jours de vol autorisés » (board B): one cell per day, darker by the acts of the day
     const W = Math.max(200, S.fw);
-    const weeks = semaines(drone, A, B);
-    const n = weeks.length;
-    const step = (W - 4) / n;
-    const bw = Math.max(2, Math.min(18, step * 0.62));
-    const top = repere(Math.max(0, ...weeks.map((w) => w.heures)));
-    const yOf = (h: number) => AXE - (h / top) * (AXE - HAUT);
-    const xOf = (ms: number) => 2 + ((ms - A) / (B - A)) * (W - 4);
-    const cur = this.idx(S.sel);
-    const hov = this.idx(S.vu);
-    const focus = hov >= 0 ? hov : cur;
-    const weekOf = (i: number) =>
-      i >= 0 ? weeks.findIndex((w) => T[i].t0 >= w.t0 && T[i].t0 < w.t1) : -1;
-    const selWeek = weekOf(focus);
-    // chosen: the week of the slot chosen, or the week the period is; hovered: the week of the row
-    // hovered or the bar pointed at (v2.1 A1: ink, never yellow)
-    const choisie = weekOf(cur);
-    const pointee = hov >= 0 ? weekOf(hov) : S.wk;
-    const inR = (w: Semaine) => !r || (w.t1 > r[0] && w.t0 < r[1]);
-    const wk = weeks.map((w, i) => {
-      const h = w.heures > 0 ? Math.max(2, AXE - yOf(w.heures)) : 0;
-      const x = 2 + i * step;
-      const plein = i === choisie || (!!r && r[0] === w.t0 && r[1] === w.t1);
-      const fin = i === pointee;
-      return {
-        x: (x + (step - bw) / 2).toFixed(1),
-        y: (AXE - h).toFixed(1),
-        w: bw.toFixed(1),
-        h: h.toFixed(1),
-        hx: x.toFixed(1),
-        hw: step.toFixed(1),
-        st: `fill: ${plein ? "var(--fg)" : "var(--type-document)"}; stroke: ${fin ? "var(--fg)" : "var(--line)"}; stroke-width: ${h ? (fin ? 2 : 1) : 0}; opacity: ${plein || fin || inR(w) ? 1 : 0.35}`,
-        hover: (() => {
-          if (S.wk !== i) this.setState({ wk: i });
-        }) as Handler,
-        pick: (() => this.setPeriode([w.t0, w.t1])) as Handler,
-      };
-    });
-    const tipTxt = (w: Semaine) =>
-      t("carte.semaine_tip", {
-        de: jourTxt(w.t0),
-        h: heuresTxt(w.heures),
-        n: w.actes,
-      });
-    const tips =
-      S.wk >= 0 && weeks[S.wk]
-        ? (() => {
-            const txt = tipTxt(weeks[S.wk]);
-            const tw = Math.round(txt.length * 6.3 + 16);
-            const cx = 2 + S.wk * step + step / 2;
-            const x = Math.max(0, Math.min(W - tw, cx - tw / 2));
-            return [{ x: x.toFixed(1), w: tw, tx: (x + 8).toFixed(1), t: txt }];
-          })()
-        : [];
-    const ms = moisAxe(drone, A, B);
-    // the months' words as wide as the narrowest whole month allows, the same form for all:
-    // « janv. 26 », else « janv », else « J » (the button's name says the month in full)
-    const CH = 6.6;
-    const wOf = (m: { t0: number; t1: number }) =>
-      Math.max(0, xOf(Math.min(m.t1, B)) - xOf(Math.max(m.t0, A)));
-    const whole = ms.filter((m) => m.t0 >= A && m.t1 <= B);
-    const narrow = Math.min(...(whole.length ? whole : ms).map(wOf));
-    const longest = Math.max(...ms.map((m) => m.l.length));
-    const form = narrow >= longest * CH + 6 ? 2 : narrow >= 4 * CH + 4 ? 1 : 0;
-    const word = (l: string) =>
-      form === 2 ? l : form === 1 ? l.replace(/\..*$/, "") : l.slice(0, 1).toUpperCase();
-    const months = ms.map((m) => {
-      const wpx = wOf(m);
-      const on = !!r && r[0] === m.t0 && r[1] === m.t1;
-      const full = new Date(m.t0).toISOString().slice(0, 10);
-      return {
-        l: wpx < word(m.l).length * CH ? "" : word(m.l),
-        aria: t("carte.mois_aria", { mois: longMonth(full), h: heuresTxt(m.heures) }),
-        on: on ? "true" : "false",
-        st: `width: ${wpx.toFixed(1)}px${wpx < 12 ? "; visibility: hidden" : ""}`,
-        pick: (() => this.setPeriode(on ? null : [m.t0, m.t1])) as Handler,
-      };
-    });
-    const shownWeek = (i: number) => {
-      const k = Math.max(0, Math.min(n - 1, i));
-      if (k !== S.wk) this.setState({ wk: k });
+    const g = this.cal(W);
+    const counts = joursComptes(droneT, droneND, kCal, g.A, g.B);
+    const vu = S.jv >= 0 ? S.jv : S.jf >= 0 ? S.jf : jour;
+    const style = (n: number, t0: number) => {
+      const lv = niveau(n);
+      const fill = lv ? `fill: var(--fg); fill-opacity: ${TEINTE_JOUR[lv]}` : "fill: var(--bg-2)";
+      const stroke =
+        t0 === jour
+          ? "stroke: var(--type-registre); stroke-width: 2"
+          : t0 === S.jf || t0 === S.jv
+            ? "stroke: var(--fg); stroke-width: 1"
+            : "stroke: none";
+      return `${fill}; ${stroke}`;
     };
+    const f2 = (x: number) => x.toFixed(2);
+    type Txt = { x: string; y: string; a: string; st: string; t: string };
+    type Lin = { x1: string; x2: string; y1: string; y2: string; st: string };
+    const calTxt: Txt[] = [];
+    const calLin: Lin[] = [];
+    let cases: { x: string; y: string; w: string; h: string; st: string }[];
+    const MUTED = "font: 400 9px 'Special Elite', monospace; fill: var(--muted)";
+    if (!g.tel) {
+      const grid = grilleSemaines(counts, g.A, g.B);
+      const cw = g.step * CAL_W;
+      const xOf = (col: number) => CAL_X + col * g.step;
+      cases = grid.cases.map((c) => ({
+        x: f2(xOf(c.col)),
+        y: f2(CAL_Y0 + c.row * CAL_DY),
+        w: f2(cw),
+        h: f2(CAL_CH),
+        st: style(c.n, c.t),
+      }));
+      calTxt.push(
+        ...["cal_l", "cal_m", "cal_v", "cal_d"].map((k, i) => ({
+          x: "-6",
+          y: f2(CAL_Y0 + i * 2 * CAL_DY + 6.7),
+          a: "end",
+          st: MUTED,
+          t: t(`carte.${k}`),
+        })),
+      );
+      for (const m of reperesCal(g.A, g.B)) {
+        const x = xOf(m.col) - 0.32;
+        calLin.push({
+          x1: f2(x),
+          x2: f2(x),
+          y1: "66.4",
+          y2: m.an ? "70.4" : "69.4",
+          st: m.an
+            ? "stroke: var(--line); stroke-width: 1.5"
+            : "stroke: var(--muted); stroke-width: 1",
+        });
+        calTxt.push({
+          x: f2(x + 2),
+          y: m.an ? "81.4" : "80.4",
+          a: "start",
+          st: m.an
+            ? "font: 800 11px Archivo, sans-serif; fill: var(--fg)"
+            : "font: 400 10px 'Special Elite', monospace; fill: var(--muted)",
+          t: m.l,
+        });
+      }
+      const sel = jour != null ? grid.cases.find((c) => c.t === jour) : undefined;
+      if (sel) {
+        const x = xOf(sel.col) + cw / 2;
+        calLin.push({
+          x1: f2(x),
+          x2: f2(x),
+          y1: "0",
+          y2: "6",
+          st: "stroke: var(--type-registre); stroke-width: 2",
+        });
+      }
+    } else {
+      const grid = grilleMois(counts, g.A, g.B);
+      const cw = g.step - 1.2;
+      cases = grid.cases.map((c) => ({
+        x: f2(TEL_LW + c.col * g.step),
+        y: f2(c.row * TEL_RH + 1),
+        w: f2(cw),
+        h: f2(TEL_RH - 2),
+        st: style(c.n, c.t),
+      }));
+      calTxt.push(
+        ...grid.mois.map((m, i) => ({
+          x: "0",
+          y: f2(i * TEL_RH + 9.5),
+          a: "start",
+          st: /\d/.test(m.l)
+            ? "font: 800 10px Archivo, sans-serif; fill: var(--fg)"
+            : "font: 400 10px 'Special Elite', monospace; fill: var(--muted)",
+          t: m.l,
+        })),
+      );
+    }
+    const phrase = vu != null && vu >= 0 ? phraseJour(vu, droneT, droneND, kCal) : null;
+    // the keyboard (as the weeks' chart had it): the arrows go from day to day, Enter chooses
+    const bouger = (pas: number) => {
+      const base = S.jf >= 0 ? S.jf : (jour ?? now);
+      const x = Math.max(g.A, Math.min(now, base + pas));
+      if (x !== S.jf) this.setState({ jf: x });
+    };
+    const moisPas = (k: number) => {
+      const base = new Date(S.jf >= 0 ? S.jf : (jour ?? now));
+      const x = Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + k, base.getUTCDate());
+      this.setState({ jf: Math.max(g.A, Math.min(now, x)) });
+    };
+    const choisirJour = (x: number) =>
+      this.setPeriode(x === jour ? null : [x, x + DAY], { jf: -1, jv: -1 });
 
     // the detail (A8, B3): the slot chosen or the act chosen without a slot, all its act says;
-    // by default the panel only says what to hover or choose. A hover fills it not (B3: « il ne se
-    // remplit qu'à la sélection »): the panel stands above the list, a hover that changed its
-    // height would move the row under the pointer, again and again; a hover shows the zone on the
-    // map and the week in the chart.
+    // by default the panel only says what to hover or choose. A hover fills it not (B3).
+    const cur = this.idx(S.sel);
     const shownKey = S.sel;
     const shownNd = shownKey && cur < 0 ? (ND.find((a) => a.acte === shownKey) ?? null) : null;
     const zones = d.f.zones.zones as unknown as ZoneLue[];
@@ -816,6 +936,7 @@ class CarteDrones extends Vue<Props, State> {
       k: string;
       title: string;
       sub: string;
+      lieuxK: string;
       lieux: { l: string; voir: Handler | null; has: boolean }[];
       hasLieux: boolean;
       creneaux: { l: string; cur: string; href: string; pick: Handler }[];
@@ -824,40 +945,34 @@ class CarteDrones extends Vue<Props, State> {
       note: string;
       links: Lien[];
     } | null = null;
-    if (cur >= 0 || shownNd) {
-      const c = cur >= 0 ? T[cur] : null;
-      const a = shownNd;
-      const acte = c ? c.actes[0] : (a?.acte ?? "");
+    if (cur >= 0) {
+      const c = T[cur];
+      const acte = c.actes[0];
       const e = d.ev.get(acte);
-      const vsa = (c?.kind ?? a?.kind) === "vsa";
-      const zs = c ? zonesDe(c, zones) : zones.filter((z) => z.acte === acte);
+      const vsa = c.kind === "vsa";
+      const zs = zonesDe(c, zones);
       const n = appareils(zs, e?.cameras);
-      const statut = c?.sites.length ? c.statut : null;
+      const statut = c.sites.length ? c.statut : null;
       const uniques = (xs: (string | null | undefined)[]) =>
         [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))].join(" ; ");
       const haut = zs.find((z) => z.hauteur_lue && z.hauteur);
-      const dateActe = e?.date
-        ? dateTxt(Date.parse(`${e.date}T00:00:00Z`))
-        : a?.date
-          ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
-          : null;
-      const ref = e?.ref ?? a?.ref ?? null;
-      const page = e?.page ?? a?.page ?? null;
+      const dateA = e?.date ? dateTxt(jourMs(e.date)) : null;
+      const ref = e?.ref ?? null;
+      const page = e?.page ?? null;
       const nature = typeof e?.nature_vol === "string" ? e.nature_vol : "";
       const natureK = `carte.nature_${nature.replace(/\W+/g, "_")}`;
       const autres = (e?.partage ?? []).map((i) => d.f.communes[i]?.nom ?? i);
       const sig = signaler(e ?? { id: acte, affaire: acte });
-      const freres = c
-        ? T.map((x, i) => [x, i] as const)
-            .filter(([x]) => x.actes[0] === acte)
-            .sort(([x], [y]) => x.t0 - y.t0)
-        : [];
+      const freres = T.map((x, i) => [x, i] as const)
+        .filter(([x]) => x.actes[0] === acte)
+        .sort(([x], [y]) => x.t0 - y.t0);
       det = {
         c: aut.c,
         i: icone("aut"),
         k: t(vsa ? "carte.det_vsa" : "carte.det_drone"),
-        title: c ? plage(c) : (dateActe ?? t("format.date_non_publiee")),
-        sub: dateActe ? t("carte.det_acte_du", { date: dateActe }) : "",
+        title: plage(c),
+        sub: dateA ? t("carte.det_acte_du", { date: dateA }) : "",
+        lieuxK: t("carte.lieux_k"),
         lieux: lieux(zs).map((x) => ({
           l: x.l,
           voir: x.site ? this.voir(x.site) : null,
@@ -875,8 +990,8 @@ class CarteDrones extends Vue<Props, State> {
             : [],
         hasCreneaux: freres.length > 1,
         rows: [
-          ...ligne("carte.service", c?.service ?? (e ? benefLabel(e) : null)),
-          ...ligne("carte.pour_k", c?.finalite ?? e?.objet ?? t("carte.finalite_non_lue")),
+          ...ligne("carte.service", c.service ?? (e ? benefLabel(e) : null)),
+          ...ligne("carte.pour_k", c.finalite ?? e?.objet ?? t("carte.finalite_non_lue")),
           ...(vsa
             ? ligne(
                 "carte.cameras_k",
@@ -886,12 +1001,10 @@ class CarteDrones extends Vue<Props, State> {
           ...(nature
             ? ligne("carte.nature_k", has(`registre.${natureK}`) ? t(natureK) : nature)
             : []),
-          ...(c
-            ? ligne(
-                "carte.duree",
-                c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises_arrete"),
-              )
-            : []),
+          ...ligne(
+            "carte.duree",
+            c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises_arrete"),
+          ),
           ...ligne(
             "carte.zone",
             statut
@@ -902,7 +1015,7 @@ class CarteDrones extends Vue<Props, State> {
                       ? "carte.zone_relecture"
                       : "carte.zone_indicative",
                 )
-              : t("arretes.zone_non_deduite"),
+              : t("carte.zone_non_lue"),
           ),
           ...(haut ? ligne("carte.hauteur_k", t("carte.hauteur_m", { n: haut.hauteur ?? 0 })) : []),
           ...ligne("carte.type_acte_k", e?.sous_type),
@@ -912,28 +1025,76 @@ class CarteDrones extends Vue<Props, State> {
             ref ? (page ? t("carte.ref_page", { ref, page: String(page) }) : ref) : null,
           ),
         ],
-        note: c ? uniques(zs.map((z) => z.alerte)) : t("carte.nd_note"),
-        links: [...voirArrete(c?.url ?? e?.url ?? a?.url), { ...sig, cls: "", c: "" }],
+        note: uniques(zs.map((z) => z.alerte)),
+        links: [...voirArrete(c.url ?? e?.url), { ...sig, cls: "", c: "" }],
       };
-      det.hasLieux = det.lieux.length > 0;
+    } else if (shownNd) {
+      // an act without a drawn zone (panneau.png): its day and hours, who and which act, where
+      // (the cited sector, the zone not read), then its reason, service, purposes and cameras
+      const a = shownNd;
+      const e = d.ev.get(a.acte);
+      const js = joursDe(a);
+      const jourA =
+        jour != null && js.includes(jourIso(jour)) ? jour : js[0] ? jourMs(js[0]) : null;
+      const hs = a.horaires?.length ? horairesMots(a) : "";
+      const secteur = secteurPanneau(a);
+      const dessine = (a.lieux ?? []).find((l) => l.forme && formes[l.forme]);
+      det = {
+        c: aut.c,
+        i: icone("aut"),
+        k: t(a.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
+        title: [jourA != null ? jourLong(jourA) : t("format.date_non_publiee"), hs]
+          .filter(Boolean)
+          .join(" · "),
+        sub: enTete(a),
+        lieuxK: t("carte.ou_k"),
+        lieux: [
+          ...(secteur
+            ? [
+                {
+                  l: secteur,
+                  voir: dessine?.forme ? this.voirForme(dessine.forme) : null,
+                  has: !!dessine && S.calque,
+                },
+              ]
+            : []),
+          { l: zonePanneau(a), voir: null, has: false },
+        ],
+        hasLieux: true,
+        creneaux: [],
+        hasCreneaux: false,
+        rows: [
+          ...ligne("carte.motif_k", motifTxt(a)),
+          ...ligne("carte.service", a.service),
+          ...ligne("carte.finalites_k", finalitesTxt(a).join(" ; ")),
+          ...ligne("carte.cameras_drone_k", camerasTxt(a)),
+          ...(hs ? [] : ligne("carte.horaires_k", horairesMots(a))),
+          ...(js.length > 1
+            ? ligne("carte.jours_k", js.map((j) => dateTxt(jourMs(j))).join(", "))
+            : []),
+        ],
+        note: "",
+        links: [
+          ...voirArrete(a.url ?? e?.url),
+          { ...signaler(e ?? { id: a.acte, affaire: a.acte }), cls: "", c: "" },
+        ],
+      };
     }
+    if (det) det.hasLieux = det.lieux.length > 0;
 
     // the list: every slot of the period (DECISIONS 2026-10-29), newest first, the acts listed
     // without a slot among them by their date; each row's link is the view's own address with
-    // its act (A4), the row the contract's (cadre.css « rows »)
+    // its act (A4), the row the contract's (cadre.css « rows »). A row shows its date, hours,
+    // service, reason and zone's state; a field not published is not there, nothing in its place.
     type Row = { at: number; row: Record<string, unknown> };
     const rows: Row[] = [];
     const href = (k: string) => `${communeHref(insee, "carte")}${this.requete(k)}`;
+    const LONG = t("carte.horaires_non_publies");
     T.forEach((c, i) => {
-      if (!this.inP(c)) return;
+      if (!this.inP(c) || (S.sz && c.sites.length)) return;
       const k = this.K[i];
       const toute = c.sites.length > 0 && c.sites.every((s) => S.ent.includes(s));
-      const fin = [
-        ...(c.sites.length ? [] : [t("carte.zone_non_deduite_court")]),
-        ...(toute ? [t("carte.toute_la_commune")] : []),
-        t(c.kind === "vsa" ? "carte.analyse_algorithmique" : "carte.mot_drones"),
-        c.finalite ?? t("carte.finalite_non_lue"),
-      ].join(" · ");
+      const h = c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises");
       rows.push({
         at: c.t0,
         row: {
@@ -941,37 +1102,43 @@ class CarteDrones extends Vue<Props, State> {
           pick: this.choix(k),
           href: href(k),
           d: dateTxt(c.t0),
-          svc: c.service ?? t("commun.non_precise"),
-          fin,
-          h: c.heures != null ? heuresTxt(c.heures) : t("carte.horaires_non_precises"),
+          svc: c.service ?? "",
+          fin: [
+            ...(toute ? [t("carte.toute_la_commune")] : []),
+            t(c.kind === "vsa" ? "carte.analyse_algorithmique" : "carte.mot_drones"),
+            ...(c.finalite ? [c.finalite] : []),
+          ].join(" · "),
+          zst: c.sites.length ? "" : t("carte.zone_non_lue"),
+          h,
+          hc: "h num",
         },
       });
     });
     ND.forEach((a) => {
-      if (!deGenre(S.k, a.kind) || !dansPeriode(a.date, r)) return;
-      const e = d.ev.get(a.acte);
-      const when = a.date
-        ? dateTxt(Date.parse(`${a.date}T00:00:00Z`))
-        : t("format.date_non_publiee");
+      if (!ndIn(a)) return;
+      const m = motsLigne(a);
+      const js = joursDe(a);
+      const at = jour != null && js.includes(jourIso(jour)) ? jour : a.date ? jourMs(a.date) : 0;
       rows.push({
-        at: a.date ? Date.parse(`${a.date}T00:00:00Z`) : 0,
+        at,
         row: {
           ...this.ligne(a.acte, "aut", "r zrow"),
           pick: this.choix(a.acte),
           href: href(a.acte),
-          d: when,
-          svc: e ? benefLabel(e) : t("commun.non_precise"),
-          fin: [t("carte.zone_non_deduite_court"), a.ref].filter(Boolean).join(" · "),
-          h: t("carte.non_dessine"),
+          d: at ? dateTxt(at) : t("format.date_non_publiee"),
+          svc: m.svc,
+          fin: "",
+          zst: m.zst,
+          h: m.h,
+          hc: m.h === LONG ? "h hl" : "h num",
         },
       });
     });
     rows.sort((a, b) => b.at - a.at);
-    // « 57 créneaux, dans 50 arrêtés » (B2): the list's slots and the acts they come from
-    const shownT = T.filter((c) => this.inP(c));
-    const shownND = ND.filter((a) => deGenre(S.k, a.kind) && dansPeriode(a.date, r));
+    const shownT = T.filter((c) => this.inP(c) && !(S.sz && c.sites.length));
+    const shownND = ND.filter(ndIn);
     const nSlots = shownT.length;
-    const nNd = shownND.length;
+    const nNd = shownND.length + shownT.filter((c) => !c.sites.length).length;
     const nActes = new Set([...shownT.flatMap((c) => c.actes), ...shownND.map((a) => a.acte)]).size;
 
     // nothing to list: said, with why when it is known
@@ -996,7 +1163,7 @@ class CarteDrones extends Vue<Props, State> {
     // the filter: drones, algorithms, or both, with the slots of each over the period
     const nDe = (k: Genre) =>
       T.filter((c) => deGenre(k, c.kind) && (!r || overlaps(c, r[0], r[1]))).length +
-      ND.filter((a) => deGenre(k, a.kind) && dansPeriode(a.date, r)).length;
+      ND.filter((a) => deGenre(k, a.kind) && ndDans(a, r)).length;
     const genres = ([null, "drone", "vsa"] as Genre[]).map((k) => {
       const n = nDe(k);
       return {
@@ -1007,16 +1174,36 @@ class CarteDrones extends Vue<Props, State> {
         on: S.k === k ? "true" : "false",
         off: n === 0 && S.k !== k ? "true" : "false",
         pick: (() => {
-          if (S.k !== k && (n > 0 || k === null)) this.setState({ k, sel: null, vu: null, wk: -1 });
+          if (S.k !== k && (n > 0 || k === null)) this.setState({ k, sel: null, vu: null });
         }) as Handler,
       };
     });
 
     // the kind the tickets count: the one chosen, else the only one the commune has
-    const vu: Genre = S.k ?? (genres[2].n === "0" ? "drone" : genres[1].n === "0" ? "vsa" : null);
+    const vuK: Genre = S.k ?? (genres[2].n === "0" ? "drone" : genres[1].n === "0" ? "vsa" : null);
+
+    // the list's title: the day (board B: « Mer. 4 nov. 2026 · 1 arrêté · 8 h de vol »), the acts
+    // without a drawn zone, or the period
+    const hJour = jour != null ? sumHours(shownT, r) : 0;
+    const arr = count(nActes, "arrete");
+    const listT = S.sz
+      ? t("carte.liste_sz", { arr })
+      : jour != null
+        ? `${t("carte.liste_jour", { date: jourLong(jour), arr })}${
+            hJour ? t("carte.liste_h_vol", { h: heuresTxt(hJour) }) : ""
+          }`
+        : !rows.length
+          ? t("carte.liste_t", { n: 0 })
+          : nSlots
+            ? `${t("carte.liste_t2", { n: nSlots, arr })}${nNd ? t("carte.liste_nd", { n: nNd }) : ""}`
+            : `${t("carte.liste_arretes", { arr })}${nNd ? t("carte.liste_nd", { n: nNd }) : ""}`;
 
     const isLarge = large();
-    const lastDay = new Date(B - DAY).getTime();
+    const finCal = Math.min(g.B - DAY, now);
+    const sousCal = t("carte.cal_sous", {
+      de: String(new Date(g.A).getUTCFullYear()),
+      a: String(new Date(finCal).getUTCFullYear()),
+    });
     return {
       ...this.base("carte"),
       band: {
@@ -1028,9 +1215,9 @@ class CarteDrones extends Vue<Props, State> {
         tel: !isLarge,
       },
       hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length) && S.k !== "drone",
-      hasDrone: drone.some((c) => c.sites.length),
+      hasDrone: S.k !== "vsa",
       hasEnt: S.ent.length > 0 && S.k !== "vsa",
-      hasFrise: drone.length > 0,
+      hasFrise: droneT.length + droneND.length > 0,
       is3d: S.is3d ? "true" : "false",
       tog3d: (() => this.ease({ pitch: S.is3d ? 0 : inclinaison() })) as Handler,
       rotL: (() => this.ease({ bearing: (this.map?.getBearing() ?? 0) + TURN })) as Handler,
@@ -1038,12 +1225,10 @@ class CarteDrones extends Vue<Props, State> {
       north: (() => this.ease({ bearing: 0 })) as Handler,
       titreLong: t("carte.titre_long"),
       genres,
-      nA: String(tk.actes),
+      nA: fr(tk.actes),
       lA: t(
-        vu === "vsa" ? "carte.t_arretes_vsa" : vu ? "carte.t_arretes" : "carte.t_arretes_tous",
-        {
-          n: tk.actes,
-        },
+        vuK === "vsa" ? "carte.t_arretes_vsa" : vuK ? "carte.t_arretes" : "carte.t_arretes_tous",
+        { n: tk.actes },
       ),
       // board B's four tickets (lot R4.2): acts, hours read, drawn zones, zones not read
       nHL: fr(tk.horairesLus),
@@ -1051,13 +1236,11 @@ class CarteDrones extends Vue<Props, State> {
       lTR: t("carte.t_tracees", { n: tk.tracees }),
       nNL: fr(tk.nonLues),
       lNL: t("carte.t_non_lues", { n: tk.nonLues }),
-      rangeL: r
-        ? t("carte.du_au", { de: dateTxt(r[0]), a: dateTxt(r[1] - DAY) })
-        : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
-      allOn: r ? "false" : "true",
-      allYear: (() => this.setPeriode(null)) as Handler,
-      // v2.3 (Ju): the legend a ticket beside the commands, the chart a thin band, both folded by
-      // default on a wide screen; folded, the chosen act's week stays in the band
+      calSous: sousCal,
+      allOn: r || S.sz ? "false" : "true",
+      allYear: (() => this.setPeriode(null, { sz: false })) as Handler,
+      // v2.3 (Ju): the legend a ticket beside the commands, the calendar a thin band, both folded
+      // by default on a wide screen (DECISIONS 2026-10-31); folded, the chosen day stays in the band
       legOuverte: !isLarge || S.leg,
       legTicket: isLarge,
       legPressed: S.leg ? "true" : "false",
@@ -1065,50 +1248,54 @@ class CarteDrones extends Vue<Props, State> {
       friseOuverte: !isLarge || S.frise,
       friseBande: isLarge,
       friseExp: S.frise ? "true" : "false",
-      // the map's free part changes with it: its padding follows (suivreMarge)
       togFrise: (() => this.setState({ frise: !S.frise })) as Handler,
-      friseBandeL: [
-        t("carte.frise_bandeau"),
-        r
-          ? t("carte.du_au", { de: dateTxt(r[0]), a: dateTxt(r[1] - DAY) })
-          : t("carte.du_au", { de: dateTxt(A), a: dateTxt(Math.min(lastDay, now)) }),
-        ...(selWeek >= 0 && weeks[selWeek] ? [tipTxt(weeks[selWeek])] : []),
-      ].join(" · "),
-      friseAide: t(S.frise ? "carte.frise_replier" : "carte.frise_deplier"),
-      semChoisie: selWeek >= 0,
+      // unfolded, the band only folds it (the calendar's own title says the rest)
+      friseBandeL: S.frise
+        ? t("carte.cal_replier")
+        : [
+            t("carte.cal_titre"),
+            ...(jour != null && phrase && vu === jour
+              ? [`${phrase.date} · ${phrase.reste}`]
+              : [sousCal]),
+          ].join(" · "),
+      friseAide: t(S.frise ? "carte.cal_replier" : "carte.cal_deplier"),
       fw: String(W),
-      vb: `0 0 ${W} 112`,
-      gridY: String(HAUT),
-      gridTY: String(HAUT - 3),
-      gridL: heuresTxt(top),
-      wk,
-      tips,
-      tipLive: S.wk >= 0 && weeks[S.wk] ? tipTxt(weeks[S.wk]) : "",
-      friseAlt: t("carte.frise_alt2", {
-        nom,
-        de: dateTxt(A),
-        a: dateTxt(Math.min(lastDay, now)),
-      }),
-      wkFocus: (() => {
-        if (S.wk < 0) shownWeek(selWeek >= 0 ? selWeek : n - 1);
+      calH: String(g.H),
+      vb: `0 0 ${W} ${g.H}`,
+      calCls: g.tel ? "cal-tel" : "cal-large",
+      cases,
+      calTxt,
+      calLin,
+      calAlt: t("carte.cal_alt", { nom, de: dateTxt(g.A), a: dateTxt(finCal) }),
+      calAide: t(g.tel ? "carte.cal_aide_tel" : "carte.cal_aide"),
+      calLive: S.jf >= 0 && phrase ? `${phrase.date} · ${phrase.reste}` : "",
+      hasSum: !!phrase,
+      sum: phrase ?? { date: "", reste: "" },
+      calClick: ((e) => {
+        const x = this.jourSous(e);
+        if (x != null) choisirJour(x);
       }) as Handler,
-      wkLeave: (() => {
-        if (S.wk >= 0 && document.activeElement?.closest(".frise-g") == null)
-          this.setState({ wk: -1 });
+      calMove: ((e) => {
+        const x = this.jourSous(e) ?? -1;
+        if (x !== S.jv) this.setState({ jv: x });
       }) as Handler,
-      wkKey: ((e) => {
+      calLeave: (() => {
+        if (S.jv >= 0) this.setState({ jv: -1 });
+      }) as Handler,
+      calKey: ((e) => {
         const k = e.key;
-        if (k === "ArrowRight" || k === "ArrowDown") shownWeek(S.wk + 1);
-        else if (k === "ArrowLeft" || k === "ArrowUp") shownWeek(S.wk < 0 ? n - 1 : S.wk - 1);
-        else if (k === "Home") shownWeek(0);
-        else if (k === "End") shownWeek(n - 1);
-        else if ((k === "Enter" || k === " ") && weeks[S.wk])
-          this.setPeriode([weeks[S.wk].t0, weeks[S.wk].t1]);
-        else if (k === "Escape" && S.wk >= 0) this.setState({ wk: -1 });
+        const [hb, gd] = g.tel ? [0, DAY] : [DAY, 7 * DAY];
+        if (k === "ArrowRight") bouger(gd);
+        else if (k === "ArrowLeft") bouger(-gd);
+        else if (k === "ArrowDown") g.tel ? moisPas(-1) : bouger(hb);
+        else if (k === "ArrowUp") g.tel ? moisPas(1) : bouger(-hb);
+        else if (k === "Home") this.setState({ jf: g.A });
+        else if (k === "End") this.setState({ jf: now });
+        else if ((k === "Enter" || k === " ") && S.jf >= 0) choisirJour(S.jf);
+        else if (k === "Escape" && S.jf >= 0) this.setState({ jf: -1 });
         else return;
         e.preventDefault();
       }) as Handler,
-      months,
       hasDet: det !== null,
       // nothing to choose: no hint about choosing (Paris, a period without a flight)
       noDet: det === null && rows.length > 0,
@@ -1117,11 +1304,9 @@ class CarteDrones extends Vue<Props, State> {
       det,
       clear: (() => this.setState({ sel: null, vu: null })) as Handler,
       unhover: this.quitter(),
-      listT: rows.length
-        ? `${t("carte.liste_t2", { n: nSlots, arr: count(nActes, "arrete") })}${
-            nNd ? t("carte.liste_nd", { n: nNd }) : ""
-          }`
-        : t("carte.liste_t", { n: 0 }),
+      listT,
+      hasSz: S.sz,
+      szTous: (() => this.setState({ sz: false, sel: null, vu: null })) as Handler,
       rows: rows.map((x) => x.row),
       vide,
     };

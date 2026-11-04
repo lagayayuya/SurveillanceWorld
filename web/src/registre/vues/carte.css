@@ -71,19 +71,6 @@
   outline: 3px solid var(--fg);
   outline-offset: 3px;
 }
-.rg .v-carte .frise-m {
-  display: flex;
-  padding-left: 2px;
-}
-.rg .v-carte .frise-m .mt {
-  box-sizing: border-box;
-  flex: none;
-  overflow: hidden;
-  white-space: nowrap;
-  text-align: left;
-  min-height: 22px;
-}
-.rg .v-carte .frise-m .mt:focus-visible,
 .rg .v-carte .zrow:focus-within {
   outline: 2px solid var(--fg);
   outline-offset: -2px;
@@ -114,11 +101,124 @@
   border-top: 1px solid var(--rule);
   padding-top: 8px;
 }
+/* board B (Drones-Paris-B-calendrier, panneau): the block's word in the small capitals */
 .rg .v-carte .cd-k {
   margin: 0;
-  font-size: 13px;
-  font-weight: 400;
+  font:
+    800 12px Archivo,
+    sans-serif;
+  font-stretch: 78%;
+  text-transform: uppercase;
   color: var(--muted);
+}
+
+/* lot R4.2, board B. The drones' blue is --drone-trait (tokens.css: the board's #2c6f9e in light,
+   the drone colour in dark, which the board does not draw); the map reads it too (carte.ts). */
+/* « Jours de vol autorisés »: the board's calendar, its legend and its sentence */
+.rg .v-carte .frise-g.cal-large {
+  padding-left: 12px;
+}
+.rg .v-carte .frise-g svg {
+  cursor: pointer;
+}
+.rg .v-carte .fl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  font:
+    400 12px / 1.3 "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .v-carte .fl i {
+  display: inline-block;
+  width: 12px;
+  height: 11px;
+  margin-right: 5px;
+  vertical-align: -1px;
+  border: 1.5px solid var(--fg);
+}
+/* the board's shades, rgba(17,17,17,…) there: the theme's ink here, so that dark mode keeps them */
+.rg .v-carte .fl i.cal0 {
+  background: var(--bg);
+  border-color: var(--rule);
+}
+.rg .v-carte .fl i.cal1 {
+  background: color-mix(in srgb, var(--fg) 28%, transparent);
+}
+.rg .v-carte .fl i.cal3 {
+  background: color-mix(in srgb, var(--fg) 72%, transparent);
+}
+.rg .v-carte .fl i.cal4 {
+  background: var(--fg);
+}
+.rg .v-carte .fl i.calc {
+  border-color: var(--type-registre);
+  border-width: 2px;
+}
+.rg .v-carte .cal-sum {
+  margin: 8px 0 0;
+  font:
+    400 13px / 1.35 "Special Elite",
+    monospace;
+}
+.rg .v-carte .cal-sum b {
+  font:
+    900 15px Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+}
+/* the phone's calendar: a month a row, scrolling within its box, the latest months on top */
+.rg .v-carte .frise-g.cal-tel {
+  max-height: 216px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+/* the rows: the zone's state on a line of its own; the selected row the frame's pink */
+.rg .v-carte .zst {
+  display: block;
+  color: var(--muted);
+  font:
+    400 11.5px / 1.2 "Special Elite",
+    monospace;
+}
+.rg .v-carte .r.zrow[aria-current="true"] {
+  background: var(--accent-fill);
+  color: var(--on-accent, #111);
+}
+.rg .v-carte .r.zrow[aria-current="true"] .zst {
+  color: inherit;
+}
+/* « horaires non publiés (justesse en cours de mesure) » wraps (390 px: it would push the row) */
+.rg .v-carte .zrow .h.hl {
+  white-space: normal;
+  max-width: 11em;
+  text-align: right;
+  font-size: 12px;
+}
+/* the legend's two new states (board B): a cited sector hatched, a zone not read a dotted edge */
+.rg .v-carte .leg i.lg-sc {
+  display: inline-block;
+  width: 14px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border: 2px solid var(--drone-trait);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--drone-trait) 0 2px,
+    color-mix(in srgb, var(--drone-trait) 25%, transparent) 2px 6px
+  );
+}
+.rg .v-carte .leg i.lg-nl {
+  display: inline-block;
+  width: 14px;
+  height: 12px;
+  margin-right: 6px;
+  vertical-align: -1px;
+  border: 3px dotted var(--drone-trait);
 }
 .rg .v-carte .cd-lieux,
 .rg .v-carte .cd-cren {
@@ -299,19 +399,6 @@
 }
 .rg .v-carte .frise-bande[aria-expanded="true"] {
   border-bottom: 2px solid var(--line);
-}
-.rg .v-carte .frise-leg {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 6px 0 0;
-  font-size: 12.5px;
-  color: var(--muted);
-}
-.rg .v-carte .frise-leg i {
-  width: 10px;
-  height: 12px;
-  background: var(--fg);
 }
 @media (min-width: 960px) {
   /* folded, the chart is its band alone */
