@@ -271,3 +271,12 @@ def test_an_act_naming_several_departements_is_in_each():
     assert collecte.departements_vises({**a, "titre": "aéronefs dans la Marne"}, names, codes) == [
         "51"
     ]
+
+
+def test_an_act_keyed_by_an_older_reader_with_a_slash_is_served_once():
+    from lacarte_registre import collecte
+
+    a = {"id": "pref28:5e6c9c435c5f:26-04/452", "lecteur": 1}
+    b = {"id": "pref28:5e6c9c435c5f:26-04-452", "lecteur": 3}
+    c = {"id": "pref28:5e6c9c435c5f:26-04-453", "lecteur": 3}
+    assert collecte.derniers([a, b, c]) == [b, c]

@@ -309,6 +309,17 @@ def act_event(
     return e
 
 
+def derniers(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """One act per served id: an act an older reader keyed with a « / » (« 26-04/452 ») and the
+    current one with a « - » is one act; the most recent reader's kept."""
+    best: dict[str, dict[str, Any]] = {}
+    for a in acts:
+        k = arretes.safe_id(a["id"])
+        if k not in best or (a.get("lecteur") or 0) > (best[k].get("lecteur") or 0):
+            best[k] = a
+    return list(best.values())
+
+
 def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote, dict[str, int]]:
     reg = p.reg
     cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
@@ -321,6 +332,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         for x in _load(root / DIR / "subventions_etat.jsonl.gz")
     ]
     acts = _load(root / DIR / "arretes.jsonl.gz")
+    acts = derniers(acts)
     finals = {r["id"]: r for r in _load(root / DIR / "champs.jsonl.gz")}
     admins = _admins(rules)
     measured = mesures(root, rules)
