@@ -997,6 +997,25 @@ def references_lot(
     return {"references": len(keep), "lot": res["_lot"]}
 
 
+def couverture(slots: list[str]) -> frozenset[int] | None:
+    """The minutes of a day the slots cover (« 18h00-03h00 » runs past midnight; « 23h59 » as
+    an end is midnight; slots repeated or cut at midnight cover the same minutes), or None when
+    one does not parse or ends « fin »."""
+    out: set[int] = set()
+    for h in slots:
+        m = re.fullmatch(r"(\d{2})h(\d{2})-(\d{2})h(\d{2})", h)
+        if not m:
+            return None
+        a = int(m.group(1)) % 24 * 60 + int(m.group(2))
+        b = int(m.group(3)) * 60 + int(m.group(4))
+        b = 1440 if b in (1439, 1440) or (b == 0 and a > 0) else b % 1440
+        if b <= a:
+            out |= set(range(a, 1440)) | set(range(0, b))
+        else:
+            out |= set(range(a, b))
+    return frozenset(out)
+
+
 def _juste(k: str, got: Any, ref: Any) -> tuple[bool, bool]:
     """(right, a wrong number) for one field."""
     if got in (None, [], "") and ref in (None, [], ""):
@@ -1143,11 +1162,19 @@ def exporter(ctx: Any, n: int, admin: str | None = None) -> list[dict[str, Any]]
     transfer journaled (Store « transferts »: the act, the day, never the text)."""
     from lacarte_collecte.etat import Store
 
+    conf = nouveaux.regles(ctx.rules_dir)
     out = []
     for a in a_lire(ctx, admin):
         t = _texte(ctx, a)
         if t:
-            out.append({**t, "type": a["type"], "consigne": CONSIGNE, "schema": SCHEMA})
+            out.append(
+                {
+                    **t,
+                    "type": a["type"],
+                    "consigne": consigne_complete(conf),
+                    "schema": schema_complet(conf),
+                }
+            )
         if len(out) >= n:
             break
     Store(ctx.root, "transferts").add(
@@ -1174,13 +1201,9 @@ def importer(ctx: Any, rows: list[dict[str, Any]], qui: str = "local") -> dict[s
         t = _texte(ctx, a) if a else None
         if not a or not t:
             continue
-        m = controler(
-            r.get("lecture") or {},
-            t["texte"],
-            _communes(ctx, a["administration"]),
-            dt.date.fromisoformat(a["recueil_date"]),
-        )
+        m, nv, _text = _verifier(ctx, a, r.get("lecture") or {})
         fields, _disputed = accorder(regles(a), m)
-        _garder(ctx, a, fields, m, qui)
+        # the model that read it on the Mac, said by the reader (« local:claude-opus-5-5 »)
+        _garder(ctx, a, fields, m, r.get("modele") or qui, nouv=nv)
         kept += 1
     return {"importes": kept, "recus": len(rows)}

@@ -276,6 +276,7 @@ def main(argv: list[str] | None = None) -> None:
                 print(json.dumps(row, ensure_ascii=False))
             return
         elif a.action == "importer":
+            # stdin: {id, lecture, modele}, one per line; `modele` the model that read it
             out = modele.importer(ctx, [json.loads(x) for x in sys.stdin if x.strip()])
         elif a.action == "statut":
             out = modele.statut(ctx)
