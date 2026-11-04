@@ -205,6 +205,7 @@ def main(argv: list[str] | None = None) -> None:
             "jetons",
             "exporter",
             "importer",
+            "recontroler",
         ),  # fmt: skip
     )
     md.add_argument("--n", type=int, default=0, help="at most n acts (completer, jetons, exporter)")
@@ -291,6 +292,9 @@ def main(argv: list[str] | None = None) -> None:
             kinds = tuple(a.types.split(",")) if a.types else None
             todo = modele.a_completer(ctx, a.admin, kinds)[: a.n or None]
             out = {"actes": len(todo), "lot": modele.envoyer(ctx, todo, "complement")}
+        elif a.action == "recontroler":
+            # the references checked again from their batches' results: no new model call
+            out = modele.recontroler_references(ctx)
         elif a.action == "jetons":
             out = modele.jetons(ctx, a.n or 50)
         elif a.action == "lire":

@@ -215,3 +215,21 @@ def test_a_reading_made_on_the_mac_is_checked_like_the_api_s(collecte_server, tm
     [r] = [x for x in Store(tmp_path, "champs").records() if x["id"] == act]
     assert r["modele"] == "local" and r["champs"]["n_cameras_drone"]["valeur"] == 2
     assert r["champs"]["commune"]["origine"] == "regles"  # Paris is not proved: the rules' Metz
+
+
+def test_an_hour_or_a_day_written_with_a_zero_is_shown_by_its_passage():
+    """« de 09h00 à 14h00 », « le 07/01 »: before 2026-11-04 the check compared « 9 » with
+    « 09 » as text and dropped every hour before 10 h (9 of Paris's 10 differences)."""
+    text = "La présente autorisation est délivrée pour le 07/01/2026 de 09h00 à 14h00."
+    lu = reading(
+        horaires=f(["09h00-14h00"], "de 09h00 à 14h00"),
+        dates=f(["2026-01-07"], "pour le 07/01/2026"),
+    )
+    m = modele.controler(lu, text, METZ, dt.date(2026, 1, 6))
+    assert m["horaires"] == ["09h00-14h00"] and m["dates"] == ["2026-01-07"]
+
+
+def test_the_same_hours_written_otherwise_are_the_same():
+    assert modele._juste("horaires", ["16h00-01h00"], ["16h00-01h00", "16h00-01h00"])[0]
+    assert modele._juste("horaires", ["18h00-03h00"], ["18h00-23h59", "00h00-03h00"])[0]
+    assert not modele._juste("horaires", ["08h00-12h00"], ["08h00-13h00"])[0]

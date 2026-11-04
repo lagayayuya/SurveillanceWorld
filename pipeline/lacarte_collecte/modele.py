@@ -174,7 +174,9 @@ def controler(
             except ValueError:
                 continue
             near = all(abs((d - when).days) <= 400 for d in days)
-            shown = all(str(d.day) in re.findall(r"\d{1,2}", c) for d in days[:1] + days[-1:])
+            # « 09/07 » shows the 9th: the passage's numbers compared as numbers
+            nums = {int(x) for x in re.findall(r"\d{1,2}", c)}
+            shown = all(d.day in nums for d in days[:1] + days[-1:])
             if near and shown:
                 out[k] = [d.isoformat() for d in days]
         elif k == "horaires":
@@ -186,7 +188,9 @@ def controler(
                     and int(m.group(1)) < 25
                     and int(m.group(2)) < 60
                     and (m.group(3) is None or (int(m.group(3)) < 25 and int(m.group(4)) < 60))
-                    and str(int(m.group(1))) in re.findall(r"\d{1,2}", c)
+                    # « 09h00 » shows 9 h (before 2026-11-04 compared as text, every hour
+                    # before 10 h was dropped)
+                    and int(m.group(1)) in {int(x) for x in re.findall(r"\d{1,2}", c)}
                 ):
                     ok.append(h)
             out[k] = ok or None
@@ -289,7 +293,7 @@ def requete(
     )
 
 
-def _texte(ctx: Any, a: dict[str, Any]) -> dict[str, Any] | None:
+def _texte(ctx: Any, a: dict[str, Any], leger: bool = True) -> dict[str, Any] | None:
     from lacarte_collecte import textes
     from lacarte_collecte.cache import Cache
 
@@ -298,7 +302,9 @@ def _texte(ctx: Any, a: dict[str, Any]) -> dict[str, Any] | None:
         return None
     number = a["acte"].rsplit(":", 1)[-1]
     w = textes.fenetre(d["content"], number)
-    w = textes.alleger(w) if w else w  # the « Vu » of form, the appeal, the signature: out
+    # the « Vu » of form, the appeal, the signature: out (`leger`; a reading made before
+    # 2026-11-04 is checked again on the whole window it was made on)
+    w = textes.alleger(w) if w and leger else w
     return (
         {
             "id": a["id"],
@@ -1016,6 +1022,67 @@ def couverture(slots: list[str]) -> frozenset[int] | None:
     return frozenset(out)
 
 
+def recontroler_references(ctx: Any) -> dict[str, Any]:
+    """The reference readings checked again by the current check, from their batches' results
+    as the API keeps them (29 days): no new call to a model. The references whose batch is no
+    longer served stay as they were."""
+    from lacarte_collecte.etat import Store
+
+    lots = sorted(
+        {r["id"].rsplit(":", 1)[0] for r in Store(ctx.root, "couts").records()
+         if r.get("phase") == "reference"}
+    )  # fmt: skip
+    acts = {a["id"]: a for a in Store(ctx.root, "actes").records()}
+    refs = {r["id"]: r for r in Store(ctx.root, "references").records()}
+    conf = nouveaux.regles(ctx.rules_dir)
+    c, changed, seen, missing = client(), 0, 0, []
+    for lot in lots:
+        try:
+            results = list(c.messages.batches.results(lot))
+        except Exception:  # noqa: BLE001 (expired or unknown: kept as it was)
+            missing.append(lot)
+            continue
+        # the act of each result: the one whose journaled usage is the result's, exactly (the
+        # request's order is not kept)
+        by_usage = {}
+        for row in Store(ctx.root, "couts").records():
+            if row["id"].startswith(lot + ":"):
+                u = row["usage"]
+                key = (u["input"], u["output"], u["cache_write"], u["cache_read"])
+                by_usage.setdefault(key, []).append(row["id"].split(":", 1)[1])
+        for r in results:
+            if r.result.type != "succeeded":
+                continue
+            msg = r.result.message
+            text = next((x.text for x in msg.content if x.type == "text"), "")
+            if not text or msg.stop_reason != "end_turn":
+                continue
+            u = msg.usage
+            key = (u.input_tokens, u.output_tokens, u.cache_creation_input_tokens or 0,
+                   u.cache_read_input_tokens or 0)  # fmt: skip
+            match = by_usage.get(key) or []
+            if len(match) != 1 or match[0] not in refs:
+                continue  # two acts of the same usage: left as they were
+            i = match[0]
+            lu = json.loads(text)
+            a, t = acts.get(i), _texte(ctx, acts[i], leger=False) if i in acts else None
+            if not a or not t:
+                continue
+            seen += 1
+            when = dt.date.fromisoformat(a["recueil_date"])
+            com = _communes(ctx, a["administration"])
+            m = controler(lu, t["texte"], com, when)
+            rec = {**refs[i], "reference": m, "recontrole": dt.date.today().isoformat()}
+            if "reference_nouveaux" in refs[i]:
+                rec["reference_nouveaux"] = nouveaux.controler(
+                    lu, t["texte"], com, when, conf, a["type"]
+                )
+            if rec["reference"] != refs[i]["reference"]:
+                changed += 1
+            Store(ctx.root, "references").add([rec])
+    return {"lots": len(lots), "relus": seen, "changes": changed, "lots_expires": missing}
+
+
 def _juste(k: str, got: Any, ref: Any) -> tuple[bool, bool]:
     """(right, a wrong number) for one field."""
     if got in (None, [], "") and ref in (None, [], ""):
@@ -1030,6 +1097,12 @@ def _juste(k: str, got: Any, ref: Any) -> tuple[bool, bool]:
         return _same(k, got, ref), False
     if k in ("commune", "perimetre"):
         return parse_raa.loose(str(got)) == parse_raa.loose(str(ref)), False
+    if k == "horaires":
+        # the same minutes of the day written otherwise (a slot repeated, cut at midnight,
+        # « 23h59 » for midnight): the same hours; anything else is a difference
+        a, b = couverture(got), couverture(ref)
+        if a is not None and b is not None:
+            return a == b, False
     return sorted(got) == sorted(ref), False
 
 
