@@ -161,7 +161,9 @@ def test_an_act_read_already_gets_its_complementary_fields_alone(tmp_path):
     # the whole instruction holds the first fields' schema and the complementary ones
     s = modele.schema_complet(CONF)
     assert set(modele.CHAMPS) <= set(s["required"]) and set(nouveaux.CHAMPS) <= set(s["required"])
-    assert set(nouveaux.schema_seul(CONF)["required"]) == {"trouve", *nouveaux.CHAMPS}
+    seul = nouveaux.schema_seul(CONF)
+    assert set(seul["required"]) == set(seul["properties"]) >= {"trouve", *nouveaux.CHAMPS}
+    assert set(s["required"]) == set(s["properties"])
     _ = COMMUNES
 
 

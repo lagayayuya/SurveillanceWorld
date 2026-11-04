@@ -68,7 +68,8 @@ def consigne(conf: dict[str, Any]) -> str:
     motifs = " ; ".join(f"{k} ({v})" for k, v in conf["motifs"].items())
     fins = " ; ".join(f"{k} ({v})" for k, v in conf["finalites"].items())
     return f"""\
-Champs complémentaires, chacun avec sa valeur et la citation exacte qui la prouve :
+Champs complémentaires, chacun avec sa valeur et, dans le champ <nom>_citation qui le suit, \
+la citation exacte qui la prouve :
 - drone et caméras-piétons :
   · motif : la raison de l'autorisation, une catégorie parmi {motifs} ; motif_libelle : un \
 libellé court tiré du texte (« mouvement social lycéen et étudiant ») ;
@@ -110,57 +111,42 @@ def consigne_seule(conf: dict[str, Any]) -> str:
 # a schema, and the first fields' schema has 16 (2026-11-04, the batches' error: « too many
 # parameters with union types »). An empty value is "", 0, « aucun » or [], a missing
 # passage "".
-def _champ(kind: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "type": "object",
-        "properties": {"valeur": kind, "citation": {"type": "string"}},
-        "required": ["valeur", "citation"],
-        "additionalProperties": False,
-    }
-
-
-def _choix(values: list[str]) -> dict[str, Any]:
-    return {"type": "string", "enum": [*values, "aucun"]}
-
-
 def proprietes(conf: dict[str, Any]) -> dict[str, Any]:
-    s = {"type": "string"}
-    return {
-        "motif": _champ(_choix(conf["motifs"])),
-        "motif_libelle": _champ(s),
-        "service": _champ(s),
-        "finalites": _champ({"type": "array", "items": {"type": "string"}}),
-        "lieux": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "texte": {"type": "string"},
-                    "genre": {"type": "string", "enum": conf["genres_lieux"]},
-                    "citation": {"type": "string"},
-                },
-                "required": ["texte", "genre", "citation"],
-                "additionalProperties": False,
-            },
+    """Flat: each field and its passage side by side (« motif », « motif_citation »), no enum
+    (the check holds the closed lists): the batches refused the nested form, « the compiled
+    grammar is too large » (2026-11-04)."""
+    s, n, lst = (
+        {"type": "string"},
+        {"type": "integer"},
+        {"type": "array", "items": {"type": "string"}},
+    )
+    kinds = {
+        "motif": s, "motif_libelle": s, "service": s, "finalites": lst, "n_perimetres": n,
+        "communes": lst, "etablissement": s, "adresse": s, "petitionnaire": s,
+        "conservation_jours": n, "echeance": s, "nature": s,
+    }  # fmt: skip
+    out: dict[str, Any] = {}
+    for k, v in kinds.items():
+        out[k] = v
+        out[f"{k}_citation"] = s
+    out["lieux"] = {
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {"texte": s, "genre": s, "citation": s},
+            "required": ["texte", "genre", "citation"],
+            "additionalProperties": False,
         },
-        "n_perimetres": _champ({"type": "integer"}),
-        "communes": _champ({"type": "array", "items": {"type": "string"}}),
-        "etablissement": _champ(_choix(conf["etablissements"])),
-        "adresse": _champ(s),
-        "petitionnaire": _champ(
-            _choix(["personne_morale", "organisme_public", "entrepreneur_individuel"])
-        ),
-        "conservation_jours": _champ({"type": "integer"}),
-        "echeance": _champ(s),
-        "nature": _champ(_choix(conf["natures"])),
     }
+    return out
 
 
 def schema_seul(conf: dict[str, Any]) -> dict[str, Any]:
+    props = proprietes(conf)
     return {
         "type": "object",
-        "properties": {"trouve": {"type": "boolean"}, **proprietes(conf)},
-        "required": ["trouve", *CHAMPS],
+        "properties": {"trouve": {"type": "boolean"}, **props},
+        "required": ["trouve", *props],
         "additionalProperties": False,
     }
 
@@ -198,8 +184,10 @@ def controler(
     own = DRONE if kind != "videoprotection" else VIDEO
 
     def get(k: str) -> tuple[Any, str | None]:
-        f = lu.get(k) or {}
-        return f.get("valeur"), f.get("citation")
+        f = lu.get(k)
+        if isinstance(f, dict) and "valeur" in f:  # the nested form (the tests', older readings)
+            return f.get("valeur"), f.get("citation")
+        return f, lu.get(f"{k}_citation")
 
     for k in own:
         if k == "lieux":

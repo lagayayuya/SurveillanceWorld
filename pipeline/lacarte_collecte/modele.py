@@ -107,7 +107,7 @@ def schema_complet(conf: dict[str, Any]) -> dict[str, Any]:
     return {
         **SCHEMA,
         "properties": {**SCHEMA["properties"], **nouveaux.proprietes(conf)},
-        "required": [*SCHEMA["required"], *nouveaux.CHAMPS],
+        "required": [*SCHEMA["required"], *nouveaux.proprietes(conf)],
     }
 
 
@@ -126,9 +126,10 @@ def _phase(conf: dict[str, Any], phase: str) -> tuple[str, dict[str, Any]]:
     """The instruction and the schema of a phase."""
     if phase == "complement":
         return nouveaux.consigne_seule(conf), nouveaux.schema_seul(conf)
-    if phase == "arbitrage":
-        return CONSIGNE, SCHEMA
-    return consigne_complete(conf), schema_complet(conf)
+    # the first fields and the complementary ones cannot share a request: the API refuses the
+    # whole schema, « the compiled grammar is too large » (2026-11-04); an act never read gets
+    # both requests in the same sending (envoyer), on the same lighter window
+    return CONSIGNE, SCHEMA
 
 
 # --- the deterministic check ------------------------------------------------------------------
@@ -432,6 +433,8 @@ def envoyer(
         }
     )
     st.save(lots=lots)
+    if phase == "lecture":
+        envoyer(ctx, acts, "complement")
     return bid
 
 
@@ -520,7 +523,8 @@ def suivre(ctx: Any) -> dict[str, Any]:
                 if lot["phase"] == "lecture" and reread:
                     again[a["id"]] = lu
                     continue
-                _garder(ctx, a, fields, m, res[a["id"]]["modele"], olds=olds, nouv=nv)
+                # the complementary fields come from their own request (complement)
+                _garder(ctx, a, fields, m, res[a["id"]]["modele"], olds=olds)
                 disputed = [k for k in disputed if k in ARBITRES]
                 if disputed:
                     r = regles(a)
@@ -655,9 +659,10 @@ def traiter(
     agree, arbitrate the fields Opus arbitrates: {id: fields}, the usage per phase."""
     c = client()
     conf = nouveaux.regles(ctx.rules_dir)
-    full = (consigne_complete(conf), schema_complet(conf))
+    seule = (nouveaux.consigne_seule(conf), nouveaux.schema_seul(conf))
     rows = [texts[a["id"]] for a in acts if a["id"] in texts]
-    first = _lot(c, rows, LECTEUR, system=full[0], schema=full[1])
+    first = _lot(c, rows, LECTEUR)
+    comp = _lot(c, rows, LECTEUR, system=seule[0], schema=seule[1])
     by = {a["id"]: a for a in acts}
 
     def check(i: str, lu: dict[str, Any]) -> tuple[dict, dict]:
@@ -684,15 +689,14 @@ def traiter(
             i: "\n\n" + references.RELIRE.format(lecture=json.dumps(lu, ensure_ascii=False))
             for i, lu in again.items()
         },
-        system=full[0],
-        schema=full[1],
     )
     out, disputes = {}, {}
     for a in acts:
         src = second if a["id"] in again else first
         if a["id"] not in src:
             continue
-        m, nv = check(a["id"], src[a["id"]]["lecture"] or {})
+        m, _ = check(a["id"], src[a["id"]]["lecture"] or {})
+        _, nv = check(a["id"], (comp.get(a["id"]) or {}).get("lecture") or {})
         fields, disputed = accorder(regles(a), m)
         out[a["id"]] = {"champs": fields, "m": m, "nouveaux": nv}
         disputed = [k for k in disputed if k in ARBITRES]
@@ -719,7 +723,12 @@ def traiter(
                     out[i]["champs"][k] = (m[k], "arbitrage")
     usage = [
         {"phase": ph, "modele": x["modele"], "usage": x["usage"]}
-        for ph, lot in (("lecture", first), ("relecture", second), ("arbitrage", third))
+        for ph, lot in (
+            ("lecture", first),
+            ("complement", comp),
+            ("relecture", second),
+            ("arbitrage", third),
+        )
         for k, x in lot.items()
         if k != "_lot"
     ]
@@ -728,7 +737,7 @@ def traiter(
         "usage": usage,
         "disputes": len(disputes),
         "relus": len(again),
-        "lots": [x["_lot"] for x in (first, second, third) if x],
+        "lots": [x["_lot"] for x in (first, comp, second, third) if x],
     }
 
 
@@ -821,7 +830,7 @@ def calibrer(ctx: Any, data: dict[str, Any]) -> dict[str, Any]:
             ph: references.cout(
                 [u for u in res["usage"] if u["phase"] == ph], prix["references"]["prix"]
             )
-            for ph in ("lecture", "relecture", "arbitrage")
+            for ph in ("lecture", "complement", "relecture", "arbitrage")
         },
         "nouveaux": {k: v["nouveaux"] for k, v in res["actes"].items()},
         "nouveaux_opus": _opus_nouveaux(ctx, acts, com, texts, set(data.get("opus") or []), res),
@@ -855,7 +864,13 @@ def _opus_nouveaux(
         return {}
     conf = nouveaux.regles(ctx.rules_dir)
     rows = [texts[a["id"]] for a in acts if a["id"] in ids and a["id"] in texts]
-    got = _lot(client(), rows, ARBITRE, system=consigne_complete(conf), schema=schema_complet(conf))
+    got = _lot(
+        client(),
+        rows,
+        ARBITRE,
+        system=nouveaux.consigne_seule(conf),
+        schema=nouveaux.schema_seul(conf),
+    )
     from lacarte_collecte.etat import Store
 
     Store(ctx.root, "couts").add(
@@ -920,6 +935,42 @@ def schemas(ctx: Any) -> dict[str, Any]:
     return out
 
 
+def essai(ctx: Any) -> dict[str, Any]:
+    """One real request per phase on a few lines (Haiku, a fraction of a cent), synchronous:
+    « ok » or the API's error. The token count does not compile a schema; this does."""
+    conf = nouveaux.regles(ctx.rules_dir)
+    c, out = client(), {}
+    user = (
+        "Acte à lire : n° 1.\n\n<extrait>\nArrêté n° 1. Article 1 : autorisé à Paris.\n</extrait>"
+    )
+    for ph in ("lecture", "complement", "arbitrage"):
+        system, schema = _phase(conf, ph)
+        try:
+            msg = c.messages.create(
+                model=LECTEUR,
+                max_tokens=4000,
+                system=system,
+                messages=[{"role": "user", "content": user}],
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": schema},
+                },
+            )
+            u = msg.usage
+            from lacarte_collecte.etat import Store
+
+            Store(ctx.root, "couts").add(
+                [{"id": f"essai:{msg.id}", "phase": "essai", "modele": msg.model,
+                  "usage": {"input": u.input_tokens, "output": u.output_tokens,
+                            "cache_write": u.cache_creation_input_tokens or 0,
+                            "cache_read": u.cache_read_input_tokens or 0}}]
+            )  # fmt: skip
+            out[ph] = f"ok ({msg.stop_reason})"
+        except Exception as e:  # noqa: BLE001 (the API's refusal, said as it is)
+            out[ph] = f"{type(e).__name__}: {e}"[:600]
+    return out
+
+
 def erreurs(lot: str, n: int = 3) -> dict[str, Any]:
     """A batch's results by type, and its first errors as the API gives them (no new call)."""
     c, kinds, errs = client(), {}, []
@@ -978,7 +1029,7 @@ def jetons(ctx: Any, n: int = 50, graine: int = 20261104) -> dict[str, Any]:
         k += 1
         for key, system, text in (
             ("avant", CONSIGNE, w),
-            ("apres", consigne_complete(conf), textes.alleger(leger)),
+            ("apres", CONSIGNE, textes.alleger(leger)),
             ("complement", nouveaux.consigne_seule(conf), textes.alleger(leger)),
         ):
             user = f"Acte à lire : n° {number}.\n\n<extrait>\n{text}\n</extrait>"
@@ -986,7 +1037,10 @@ def jetons(ctx: Any, n: int = 50, graine: int = 20261104) -> dict[str, Any]:
                 model=LECTEUR, system=system, messages=[{"role": "user", "content": user}]
             )
             tot[key] += r.input_tokens
-    return {"actes": k, **{f"{x}_par_acte": round(v / max(k, 1)) for x, v in tot.items()}}
+    per = {f"{x}_par_acte": round(v / max(k, 1)) for x, v in tot.items()}
+    # an act never read: the first fields' request and the complement's, on the same window
+    per["nouvel_acte_par_acte"] = per["apres_par_acte"] + per["complement_par_acte"]
+    return {"actes": k, **per}
 
 
 # --- the threshold, field by field: blind references by Opus on a new draw ----------------------
@@ -1009,13 +1063,21 @@ def references_lot(
     by = {a["id"]: a for a in acts}
     rows = {i: t for i in picks if (t := _texte(ctx, by[i]))}
     conf = nouveaux.regles(ctx.rules_dir)
-    res = _lot(
-        client(),
+    c = client()
+    res = _lot(c, list(rows.values()), ARBITRE)
+    comp = _lot(
+        c,
         list(rows.values()),
         ARBITRE,
-        system=consigne_complete(conf),
-        schema=schema_complet(conf),
+        system=nouveaux.consigne_seule(conf),
+        schema=nouveaux.schema_seul(conf),
     )
+    for i, r in comp.items():
+        if i != "_lot":
+            Store(ctx.root, "couts").add(
+                [{"id": f"{comp['_lot']}:{i}", "phase": "reference", "modele": r["modele"],
+                  "usage": r["usage"]}]
+            )  # fmt: skip
     keep = []
     for i, r in res.items():
         if i == "_lot":
@@ -1035,7 +1097,7 @@ def references_lot(
                 "graine": graine,
                 "reference": m,
                 "reference_nouveaux": nouveaux.controler(
-                    r.get("lecture") or {},
+                    (comp.get(i) or {}).get("lecture") or {},
                     rows[i]["texte"],
                     _communes(ctx, a["administration"]),
                     dt.date.fromisoformat(a["recueil_date"]),
