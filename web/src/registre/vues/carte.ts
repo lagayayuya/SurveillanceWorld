@@ -938,8 +938,9 @@ class CarteDrones extends Vue<Props, State> {
     const droneND = S.k === "vsa" ? [] : ND.filter((a) => a.kind === "drone");
     const ndIn = (a: NonDeduit) => deGenre(S.k, a.kind) && ndDans(a, r);
 
-    // the tickets: the period's
-    const tk = tickets(T, ND, r, S.k);
+    // the tickets: the period's; a chosen day keeps the whole period's, as board B does (675
+    // arrêtés on Wed. 4 Nov.), the day being said by the calendar's sentence and the edge's label
+    const tk = tickets(T, ND, jour != null ? null : r, S.k);
 
     // « Jours de vol autorisés » (board B): one cell per day, darker by the acts of the day
     const W = Math.max(200, S.fw);
@@ -1294,10 +1295,12 @@ class CarteDrones extends Vue<Props, State> {
       else vide = t("carte.vide_aucun", { nom });
     } else if (!rows.length) vide = t("carte.vide_periode");
 
-    // the filter: drones, algorithms, or both, with the slots of each over the period
+    // the filter: drones, algorithms, or both, with the slots of each over the period (a chosen
+    // day's: the whole period's, as the tickets and board B)
+    const rk = jour != null ? null : r;
     const nDe = (k: Genre) =>
-      T.filter((c) => deGenre(k, c.kind) && (!r || overlaps(c, r[0], r[1]))).length +
-      ND.filter((a) => deGenre(k, a.kind) && ndDans(a, r)).length;
+      T.filter((c) => deGenre(k, c.kind) && (!rk || overlaps(c, rk[0], rk[1]))).length +
+      ND.filter((a) => deGenre(k, a.kind) && ndDans(a, rk)).length;
     const genres = ([null, "drone", "vsa"] as Genre[]).map((k) => {
       const n = nDe(k);
       return {
