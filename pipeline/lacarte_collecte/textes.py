@@ -23,11 +23,16 @@ from lacarte_collecte import parse_raa
 from lacarte_registre import fetch
 
 MARGE = 2000
+# the margin of the lighter window (lot R4.2): the cut is good enough on its own for most acts;
+# the calibration measures it (25 of 25 kept, or it goes back)
+MARGE_LEGERE = 600
 # when our reader does not find the act: the text around its first mention
 REPLI = 8000
 
 
-def fenetre(text: str, acte: str, pieces: list[parse_raa.Morceau] | None = None) -> str | None:
+def fenetre(
+    text: str, acte: str, pieces: list[parse_raa.Morceau] | None = None, marge: int = MARGE
+) -> str | None:
     """The act's window in its recueil's text: our cut widened by MARGE on each side, else
     the text around the act's number. `pieces`: the recueil's cut, made once for its acts."""
     for m in pieces if pieces is not None else parse_raa.split_acts(text):
@@ -35,7 +40,7 @@ def fenetre(text: str, acte: str, pieces: list[parse_raa.Morceau] | None = None)
         if acte in (m.acte, key):
             start = text.find(m.texte)
             if start >= 0:
-                return text[max(0, start - MARGE) : start + len(m.texte) + MARGE]
+                return text[max(0, start - marge) : start + len(m.texte) + marge]
     hit = re.search(re.escape(acte.rsplit(":", 1)[-1]), text)
     if hit:
         return text[max(0, hit.start() - REPLI // 4) : hit.start() + REPLI]

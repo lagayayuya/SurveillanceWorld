@@ -301,7 +301,7 @@ def _texte(ctx: Any, a: dict[str, Any], leger: bool = True) -> dict[str, Any] | 
     if not d:
         return None
     number = a["acte"].rsplit(":", 1)[-1]
-    w = textes.fenetre(d["content"], number)
+    w = textes.fenetre(d["content"], number, marge=textes.MARGE_LEGERE if leger else textes.MARGE)
     # the « Vu » of form, the appeal, the signature: out (`leger`; a reading made before
     # 2026-11-04 is checked again on the whole window it was made on)
     w = textes.alleger(w) if w and leger else w
@@ -771,7 +771,9 @@ def calibrer(ctx: Any, data: dict[str, Any]) -> dict[str, Any]:
             "acte": number,
             "recueil_nom": parse_raa.mask(d["name"]),
             "date": d["date"],
-            "texte": textes.alleger(textes.fenetre(d["content"], number) or ""),
+            "texte": textes.alleger(
+                textes.fenetre(d["content"], number, marge=textes.MARGE_LEGERE) or ""
+            ),
         }
     res = traiter(ctx, acts, com, texts)
     from lacarte_collecte.etat import Store
@@ -916,13 +918,14 @@ def jetons(ctx: Any, n: int = 50, graine: int = 20261104) -> dict[str, Any]:
         d = Cache(ctx.root).get(a["recueil"])
         number = a["acte"].rsplit(":", 1)[-1]
         w = textes.fenetre(d["content"], number) if d else None
-        if not w:
+        leger = textes.fenetre(d["content"], number, marge=textes.MARGE_LEGERE) if d else None
+        if not w or not leger:
             continue
         k += 1
         for key, system, text in (
             ("avant", CONSIGNE, w),
-            ("apres", consigne_complete(conf), textes.alleger(w)),
-            ("complement", nouveaux.consigne_seule(conf), textes.alleger(w)),
+            ("apres", consigne_complete(conf), textes.alleger(leger)),
+            ("complement", nouveaux.consigne_seule(conf), textes.alleger(leger)),
         ):
             user = f"Acte à lire : n° {number}.\n\n<extrait>\n{text}\n</extrait>"
             r = c.messages.count_tokens(
