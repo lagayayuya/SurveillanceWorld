@@ -31,7 +31,7 @@ from typing import Any
 import yaml
 
 from lacarte_collecte import arretes
-from lacarte_registre import regles
+from lacarte_registre import regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -258,7 +258,9 @@ def act_event(
         "page": None,
         "relu": False,
         "dispositif": disp,
-        "titre": a.get("titre") or "",
+        # a letterhead's agent, a contact, are cut from the title the reader took (pref28's
+        # « Affaire suivie par : … » was served in 2024-2026)
+        "titre": selection._sans_personne(a.get("titre") or ""),
         "origine": "collecte",
         "origines": {k: origins[k] for k in f if k in origins and f[k] not in (None, [])},
     }

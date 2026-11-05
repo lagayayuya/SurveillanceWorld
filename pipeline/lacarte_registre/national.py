@@ -375,7 +375,7 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
             "dep": dep,
             "affaire": aff,
             "entreprises": [],
-            "acheteur": n["acheteur"],
+            "acheteur": selection._sans_personne(n["acheteur"]),  # a switchboard was served
             "acheteur_siren": siren,
             "cameras": n.get("cameras"),
             "objet": n["objet"],

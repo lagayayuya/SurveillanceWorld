@@ -135,12 +135,19 @@ STREET_BEFORE = re.compile(
     r"|montée|montee|pont|passage|square|esplanade|rond-point|voie|parvis)\s+(?:\S+\s+)?$",
     re.I,
 )
+# A letterhead's agent, « Affaire suivie par : <prénom NOM> » (glued to the next words when
+# the PDF's text runs together: « …NOMLibertéÉgalité »): the name and what is glued to it
+FOLLOWED = re.compile(
+    r"((?i:affaire|dossier)\s+(?i:suivie?s?)\s+(?i:par)\s*:?\s*)"
+    r"(?:[A-ZÉÈÀÂÎÔÛÇ][\w'’.-]*\s*){1,3}"
+)
 
 
 def _sans_personne(s: str) -> str:
     s = EMAIL.sub("[courriel retiré]", s)
     s = PHONE.sub("[téléphone retiré]", s)
     s = CIVILITY.sub("[nom retiré] ", s)
+    s = FOLLOWED.sub(lambda m: f"{m.group(1)}[nom retiré] ", s)
     s = TRIBUTE.sub(lambda m: f"{m.group(1)}[nom retiré] ", s)
 
     def rank(m: re.Match[str]) -> str:

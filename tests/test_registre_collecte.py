@@ -280,3 +280,28 @@ def test_an_act_keyed_by_an_older_reader_with_a_slash_is_served_once():
     b = {"id": "pref28:5e6c9c435c5f:26-04-452", "lecteur": 3}
     c = {"id": "pref28:5e6c9c435c5f:26-04-453", "lecteur": 3}
     assert collecte.derniers([a, b, c]) == [b, c]
+
+
+def test_an_acts_title_and_a_notices_buyer_carry_no_agent_and_no_contact():
+    """pref28's letterhead, « Affaire suivie par : <prénom NOM> », glued to the motto, was
+    served in the titles of 2024-2026; a notice's buyer carried a switchboard. The names
+    below are invented."""
+    from lacarte_registre import collecte, selection
+
+    admins = collecte._admins(registre.RULES)
+    a = {
+        "id": "pref28:x:1", "acte": "28-2026-01-01-00001", "type": "videoprotection",
+        "titre": "Pôle Polices Administratives | Affaire suivie par : Camille EXEMPLELiberté"
+        "Égalité pref-polices@exemple.gouv.fr Arrêté portant autorisation",
+        "insee": "28085", "commune": "Chartres", "recueil_date": "2026-01-02",
+        "recueil_nom": "recueil", "url": "https://example.org/r.pdf",
+    }  # fmt: skip
+    t = collecte.act_event(a, admins["pref28"], {"commune"}, None, None, [])["titre"]
+    assert "EXEMPLE" not in t and "Camille" not in t and "@" not in t
+    assert "Affaire suivie par : [nom retiré]" in t and t.endswith("Arrêté portant autorisation")
+    # initials too; a street or a « dossier » word without « par » is left
+    assert "CE" not in selection._sans_personne("Affaire suivie par : CELiberté")
+    assert selection._sans_personne("le dossier suivi de la rue Jean Moulin") == (
+        "le dossier suivi de la rue Jean Moulin"
+    )
+    assert "01 56" not in selection._sans_personne("CND, 93698 Pantin Téléphone : 01 56 00 00 00")
