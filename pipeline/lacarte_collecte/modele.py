@@ -979,21 +979,22 @@ def essai(ctx: Any) -> dict[str, Any]:
 
 def erreurs(lot: str, n: int = 3) -> dict[str, Any]:
     """A batch's results by type, and its first errors as the API gives them (no new call);
-    without a batch, the last 40 batches and their counts."""
+    without a batch, every batch the API keeps (its pages walked), the last `n` (40 by default)
+    and those with a request that failed."""
     c, kinds, errs = client(), {}, []
     counts = ("succeeded", "errored", "expired", "canceled")
     if not lot:
-        return {
-            "lots": [
-                {
-                    "lot": b.id,
-                    "cree": b.created_at.isoformat(timespec="minutes"),
-                    "etat": b.processing_status,
-                    **{k: getattr(b.request_counts, k) for k in counts},
-                }
-                for b in c.messages.batches.list(limit=40).data
-            ]
-        }
+        rows = [
+            {
+                "lot": b.id,
+                "cree": b.created_at.isoformat(timespec="minutes"),
+                "etat": b.processing_status,
+                **{k: getattr(b.request_counts, k) for k in counts},
+            }
+            for b in c.messages.batches.list(limit=100)
+        ]
+        failed = [r for r in rows if any(r[k] for k in counts[1:])]
+        return {"total": len(rows), "lots": rows[: n if n > 3 else 40], "en_echec": failed}
     for r in c.messages.batches.results(lot):
         kinds[r.result.type] = kinds.get(r.result.type, 0) + 1
         if r.result.type != "succeeded" and len(errs) < n:
@@ -1354,6 +1355,33 @@ def mesurer(ctx: Any, ecarts: str | None = None) -> Any:
             for g, (a, b, w) in gs.items()
         }
     return out
+
+
+def sans_texte(ctx: Any) -> dict[str, dict[str, int]]:
+    """Per administration, the acts to read that `envoyer` leaves out for want of a text (no new
+    call): their collection not in the cache; their number not found in it (the whole window);
+    or a window found whole but not light (`_texte`, the one `envoyer` sends)."""
+    from lacarte_collecte import textes
+    from lacarte_collecte.cache import Cache
+
+    cache, out = Cache(ctx.root), {}
+    for a in a_lire(ctx):
+        n = out.setdefault(
+            a["administration"],
+            {"a_lire": 0, "sans_recueil": 0, "sans_fenetre": 0, "sans_fenetre_legere": 0},
+        )
+        n["a_lire"] += 1
+        d = cache.get(a["recueil"])
+        if d:  # the day its collection's text was kept: an act is sent only once it is
+            k = f"garde_le:{d.get('garde_le')}"
+            n[k] = n.get(k, 0) + 1
+        if not d:
+            n["sans_recueil"] += 1
+        elif not textes.fenetre(d["content"], a["acte"].rsplit(":", 1)[-1]):
+            n["sans_fenetre"] += 1
+        elif not _texte(ctx, a):
+            n["sans_fenetre_legere"] += 1
+    return dict(sorted(out.items()))
 
 
 def statut(ctx: Any) -> dict[str, Any]:

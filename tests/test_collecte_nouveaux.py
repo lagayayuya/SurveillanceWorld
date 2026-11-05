@@ -142,7 +142,10 @@ def test_an_act_read_already_gets_its_complementary_fields_alone(tmp_path):
 
     ctx = Contexte(root=tmp_path, sortie=tmp_path / "s", rules_dir=registre.RULES)
     Store(tmp_path, "actes").add(
-        [{"id": i, "administration": "ppparis", "type": "drone"} for i in ("lu", "neuf", "fait")]
+        [
+            {"id": i, "administration": "ppparis", "type": "drone", "recueil": "r1"}
+            for i in ("lu", "neuf", "fait")
+        ]
     )
     fp2 = nouveaux.empreinte(CONF)
     Store(tmp_path, "champs").add(
@@ -158,6 +161,10 @@ def test_an_act_read_already_gets_its_complementary_fields_alone(tmp_path):
     )
     assert [a["id"] for a in modele.a_completer(ctx)] == ["lu"]
     assert [a["id"] for a in modele.a_lire(ctx)] == ["neuf"]
+    # an act to read whose collection's text is not kept is one `envoyer` leaves out: said
+    assert modele.sans_texte(ctx) == {
+        "ppparis": {"a_lire": 1, "sans_recueil": 1, "sans_fenetre": 0, "sans_fenetre_legere": 0}
+    }
     # the whole instruction holds the first fields' schema and the complementary ones
     s = modele.schema_complet(CONF)
     assert set(modele.CHAMPS) <= set(s["required"]) and set(nouveaux.CHAMPS) <= set(s["required"])

@@ -209,6 +209,7 @@ def main(argv: list[str] | None = None) -> None:
             "couts",
             "schemas",
             "erreurs",
+            "sans-texte",
             "essai",
         ),  # fmt: skip
     )
@@ -303,7 +304,9 @@ def main(argv: list[str] | None = None) -> None:
         elif a.action == "essai":
             out = modele.essai(ctx)
         elif a.action == "erreurs":
-            out = modele.erreurs(a.actes or "")
+            out = modele.erreurs(a.actes or "", a.n or 3)
+        elif a.action == "sans-texte":
+            out = modele.sans_texte(ctx)
         elif a.action == "schemas":
             out = modele.schemas(ctx)
         elif a.action == "couts":
