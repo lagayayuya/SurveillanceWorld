@@ -1,0 +1,139 @@
+# The figures of a commune, an intercommunality, a département, a région and a company
+# (pipeline/lacarte_registre/chiffres.py, lot R5 « les données », section 4). Not served: the
+# exploration measures them (chiffres.md) before a page shows one.
+version: 1
+
+# Every figure is a value with a state: « lu » (the source covers the place), « partiel »
+# (part of its documents read), « non_lu » (not covered yet: never 0).
+etats:
+  id: rule:registre_chiffres@1:etats
+  rationale: >-
+    The procurement data (DECP) and the State's grants (DGCL) are national: a commune
+    without a contract has 0. The prefectoral acts (cameras authorised, drone flights) are
+    read département by département (collecte/couverture.json): a département not read yet
+    has no value, said « non lu », never 0, or the page would say « no drone » where we
+    have not looked.
+
+# Population strata for the ranks. The DGCL's strata of the communes' finances (« Les
+# collectivités locales en chiffres »), the last one cut at 200 000 for the large cities.
+# hypothesis: the bounds are the DGCL's as remembered, to check at the source before a
+# page cites them.
+strates:
+  id: rule:registre_chiffres@1:strates
+  rationale: >-
+    A rank means something among communes of one size: Lyon against Paris, Marseille,
+    Toulouse, not against a village of 300. Ranked: the communes of the stratum whose
+    figure is « lu » (a 0 included); the rank says among how many.
+  bornes: [500, 2000, 3500, 5000, 10000, 20000, 50000, 100000, 200000]
+  libelles:
+    - moins de 500 habitants
+    - de 500 à 1 999 habitants
+    - de 2 000 à 3 499 habitants
+    - de 3 500 à 4 999 habitants
+    - de 5 000 à 9 999 habitants
+    - de 10 000 à 19 999 habitants
+    - de 20 000 à 49 999 habitants
+    - de 50 000 à 99 999 habitants
+    - de 100 000 à 199 999 habitants
+    - 200 000 habitants et plus
+
+montants:
+  id: rule:registre_chiffres@1:montants
+  rationale: >-
+    The euros per inhabitant of a commune add its own counted contracts (the buyer is the
+    commune or its CCAS, not the out-of-totals, the national ones, the copies: comptes.py)
+    since `depuis`, over its population. An intercommunality's own contracts are its own
+    figure, over its communes' population: nothing is shared out between communes. A
+    département's adds every counted contract placed in it (communes, intercommunalities,
+    the département, the hospitals, the social landlords), a broader sum, said so. Amounts
+    are the contracts' ceilings (a framework's maximum), never what was spent.
+  depuis: "2018-01-01"
+
+subventions:
+  id: rule:registre_chiffres@1:subventions
+  rationale: >-
+    The share financed by grants: the State's (DGCL: DETR, DSIL, DPV, FIPD when read) and
+    the Région's granted amounts since `depuis`, over the contracts' amounts. Not the
+    same euros: a grant pays works whose contract may be under the publication threshold;
+    a share above 1 says « contracts missing », not « paid twice ». A Région not read
+    leaves the State's alone, said.
+  depuis: "2018-01-01"
+
+offre_unique:
+  id: rule:registre_chiffres@1:offre_unique
+  rationale: >-
+    The share of contracts awarded on a single offer, among those whose number of offers is
+    published and valid (registre_champs.yaml `offres`); fewer than `min_contrats` such
+    contracts give no share (one contract out of one is not a rate).
+  min_contrats: 3
+
+vols:
+  id: rule:registre_chiffres@1:vols
+  rationale: >-
+    The days a drone was authorised to film the commune over the last `fenetre_jours`
+    (the acts' own days, each day once), and the most frequent motive. The motive is read
+    from the act's title and its article by the words below, first match wins (the most
+    specific first); « autre » when none. Our records keep the act's title and the article
+    of its perimeter, rarely the one of its purposes: « autre » is mostly « not read », the
+    most frequent motive is the one among those read.
+  fenetre_jours: 365
+  motifs:
+    - id: stupefiants
+      libelle: lutte contre les trafics de stupéfiants
+      mots: ['stupefiant', 'trafic de drogue', 'trafics? de produits', 'point de deal', 'dealers?\b', 'points? de vente']
+    - id: rodeos
+      libelle: rodéos urbains
+      mots: ['rodeo']
+    - id: frontiere
+      libelle: surveillance de la frontière et du littoral
+      mots: ['frontiere', 'franchissement', 'traversees?', 'littoral', 'migrants?', 'embarcation']
+    - id: violences_urbaines
+      libelle: violences urbaines
+      mots: ['violences urbaines', 'emeutes?', 'violences? (de|du|en) quartier', 'mortiers']
+    - id: evenement
+      libelle: sécurisation d'un événement
+      mots: ['festival', 'concert', '\bmatch', 'rencontre de (football|rugby)', '\bfete', 'feu d.artifice',
+             'course', 'marathon', 'salon', 'ceremonie', 'commemoration', 'visite (officielle|presidentielle|du president|du ministre)',
+             'sommet', 'nouvel an', 'saint sylvestre', 'reveillon', '14 juillet', 'carnaval', 'tour de france',
+             'jeux olympiques', '\bvs\b', 'grand prix', 'spectacle', 'braderie', 'foire', 'feria', 'stade', 'competition']
+    - id: manifestation
+      libelle: manifestations et rassemblements
+      mots: ['manifestation', '\bmanif\b', 'cortege', 'rassemblement', 'mobilisation', 'revendicati', 'appel a']
+    - id: secours
+      libelle: secours et recherche de personnes
+      mots: ['secours', 'recherche de personnes?', 'disparu']
+    - id: circulation
+      libelle: régulation des flux de transport
+      mots: ['flux', 'circulation', 'trafic routier', 'axes routiers']
+
+# The régions of the départements (INSEE, code officiel géographique, régions since 2016).
+regions:
+  "84": {nom: Auvergne-Rhône-Alpes, deps: ["01", "03", "07", "15", "26", "38", "42", "43", "63", "69", "73", "74"]}
+  "27": {nom: Bourgogne-Franche-Comté, deps: ["21", "25", "39", "58", "70", "71", "89", "90"]}
+  "53": {nom: Bretagne, deps: ["22", "29", "35", "56"]}
+  "24": {nom: Centre-Val de Loire, deps: ["18", "28", "36", "37", "41", "45"]}
+  "94": {nom: Corse, deps: ["2A", "2B"]}
+  "44": {nom: Grand Est, deps: ["08", "10", "51", "52", "54", "55", "57", "67", "68", "88"]}
+  "32": {nom: Hauts-de-France, deps: ["02", "59", "60", "62", "80"]}
+  "11": {nom: Île-de-France, deps: ["75", "77", "78", "91", "92", "93", "94", "95"]}
+  "28": {nom: Normandie, deps: ["14", "27", "50", "61", "76"]}
+  "75": {nom: Nouvelle-Aquitaine, deps: ["16", "17", "19", "23", "24", "33", "40", "47", "64", "79", "86", "87"]}
+  "76": {nom: Occitanie, deps: ["09", "11", "12", "30", "31", "32", "34", "46", "48", "65", "66", "81", "82"]}
+  "52": {nom: Pays de la Loire, deps: ["44", "49", "53", "72", "85"]}
+  "93": {nom: Provence-Alpes-Côte d'Azur, deps: ["04", "05", "06", "13", "83", "84"]}
+  "01": {nom: Guadeloupe, deps: ["971"]}
+  "02": {nom: Martinique, deps: ["972"]}
+  "03": {nom: Guyane, deps: ["973"]}
+  "04": {nom: La Réunion, deps: ["974"]}
+  "06": {nom: Mayotte, deps: ["976"]}
+
+entreprises:
+  id: rule:registre_chiffres@1:entreprises
+  rationale: >-
+    A company's figures add the counted contracts it holds (alone or in a group). Its
+    « concurrents » are not its rivals in a tender: DECP lists the winners, never the
+    bidders. Two honest neighbours instead: the other holders of contracts of its buyers
+    (« a aussi travaillé pour ses clients »), and the holders of contracts of the same
+    nature in its départements. Its partners of a group (co-holders of one contract) are
+    neither, listed apart. Sole traders are masked (regles.masquer_ei).
+  top: 10

@@ -23,6 +23,7 @@ from typing import Any
 import lacarte_registre as registre
 from lacarte_registre import (
     champs,
+    chiffres,
     collecte,
     dossiers,
     fusion,
@@ -201,6 +202,124 @@ def entrees_dossiers(
     return affaires, grants, acts
 
 
+# --- section 4: figures ---------------------------------------------------------------------
+def _insee(k: str | None, dep: str | None = None) -> str | None:
+    """A city for its arrondissements; Paris for an act of the département of Paris."""
+    return national.ARR.get(k or "", k) or ("75056" if dep == "75" else None)
+
+
+def entrees_chiffres(
+    d: Donnees, nat: dict[str, dict[str, Any]], cf: dict[str, Any]
+) -> dict[str, list[dict[str, Any]]]:
+    """The contracts, grants, acts and flights as chiffres.py reads them."""
+    reg = d.reg
+    contrats, grants, acts, flights = [], [], [], []
+    holders = {
+        "commune": "mairie",
+        "epci": "mairie",
+        "commerce": "commerces",
+        "banque": "commerces",
+    }
+    noms = {k: v["nom"] for k, v in d.communes.items()}
+    rd = dossiers.rules(registre.RULES / "registre_dossiers.yaml")
+    for e in reg.evenements:
+        t = e["t"]
+        if t == "attribution":
+            raw = d.decp.get(e["affaire"]) or {}
+            contrats.append({
+                "id": e["id"], "insee": _insee(e.get("insee")), "dep": e.get("dep"),
+                "acheteur": reg.buyer(e), "communal": e["communal"], "compte": e["compte"],
+                "date": e.get("date"), "montant": champs.montant_ok(e.get("montant"), cf),
+                "offres": champs.offres_ok(raw.get("offres"), cf),
+                "entreprises": [s for s in e.get("entreprises") or [] if s != regles.EI],
+                "natures": (nat.get(e["id"]) or {}).get("natures", []),
+            })  # fmt: skip
+        elif t.startswith("subvention"):
+            raw = d.subventions.get(e["id"]) or {}
+            grants.append({
+                "id": e["id"],
+                "siren": raw.get("beneficiaire_siren") or e.get("beneficiaire_siren"),
+                "insee": _insee(e.get("insee")), "dep": e.get("dep"), "communal": e["communal"],
+                "date": e.get("date"), "montant": e.get("montant"),
+                "source": "region" if t == "subvention_region" else "etat",
+            })  # fmt: skip
+        elif t == "arrete":
+            insee = _insee(e.get("insee"), e.get("dep"))
+            titre = (d.actes.get(e["id"]) or {}).get("titre")
+            who = holders.get(e.get("type_beneficiaire") or "") or (
+                "autres" if e.get("type_beneficiaire") else None
+            )
+            if (
+                who is None
+                and insee
+                and dossiers.arrete_communal({**e, "titre": titre}, noms.get(insee), rd)
+            ):
+                who = "mairie"
+            acts.append({
+                "id": e["id"], "insee": insee, "dep": e.get("dep"),
+                "dossier": e.get("dossier") or e.get("affaire"),
+                "date": _jour_acte(e["id"]) or e.get("date"), "sous_type": e.get("sous_type"),
+                "titulaire": who, "cameras": e.get("cameras"),
+            })  # fmt: skip
+        elif t == "arrete_drone":
+            raw = d.actes.get(e["id"]) or {}
+            ch = raw.get("champs") or {}
+            shared = e.get("partage") or []
+            flights.append({
+                "id": e["id"], "dep": e.get("dep"),
+                "insees": [_insee(k, e.get("dep")) for k in [e.get("insee"), *shared]
+                           if k or e.get("dep") == "75"],
+                "dates": ch.get("dates") or ([e["periode"]] if e.get("periode") else []),
+                "texte": f"{raw.get('titre') or ''} {ch.get('zone_extrait') or ''}",
+            })  # fmt: skip
+    return {"contrats": contrats, "subventions": grants, "actes": acts, "vols": flights}
+
+
+def figures(d: Donnees, inp: dict[str, list[dict[str, Any]]], cams: dict[str, list[str | None]],
+            today: str, conf: dict[str, Any]) -> dict[str, Any]:  # fmt: skip
+    """The communes', intercommunalities', départements', régions' and companies' figures."""
+    etats = chiffres.etats_actes(d.couverture)
+    rows = chiffres.communes(d.communes, inp["contrats"], inp["subventions"], inp["actes"],
+                             inp["vols"], {k: len(v) for k, v in cams.items()}, etats, today,
+                             conf)  # fmt: skip
+    reg_of = chiffres.region_of(conf)
+    regions_lues = {reg_of.get(g.get("dep") or "") for g in inp["subventions"]
+                    if g["source"] == "region"}  # fmt: skip
+    counted = [c for c in inp["contrats"] if c["compte"]]
+
+    def terr(ks: list[str], cs: list[dict[str, Any]], gs: list[dict[str, Any]], reg: str | None):
+        return chiffres.territoire(ks, rows, cs, gs, inp["vols"], today, conf, reg in regions_lues)
+
+    members: dict[str, list[str]] = defaultdict(list)
+    for k, c in d.communes.items():
+        if c.get("epci"):
+            members[c["epci"]].append(k)
+    epcis = {}
+    for code, ks in members.items():
+        cs = [c for c in counted if c["acheteur"] == code]
+        gs = [g for g in inp["subventions"] if g["siren"] == code]
+        reg = reg_of.get(d.communes[ks[0]]["dep"])
+        epcis[code] = {"siren": code, **terr(ks, cs, gs, reg)}
+    deps, regs = {}, {}
+    for dep in sorted({c["dep"] for c in d.communes.values() if c.get("dep")}):
+        ks = [k for k, c in d.communes.items() if c.get("dep") == dep]
+        deps[dep] = {"etat_actes": etats.get(dep, chiffres.NON_LU), **terr(
+            ks, [c for c in counted if c["dep"] == dep],
+            [g for g in inp["subventions"] if g["dep"] == dep], reg_of.get(dep))}  # fmt: skip
+    for code, r in conf["regions"].items():
+        ks = [k for k, c in d.communes.items() if c.get("dep") in r["deps"]]
+        regs[code] = {"nom": r["nom"], **terr(
+            ks, [c for c in counted if c["dep"] in r["deps"]],
+            [g for g in inp["subventions"] if g["dep"] in r["deps"]], code)}  # fmt: skip
+    return {
+        "communes": rows,
+        "epci": epcis,
+        "departements": deps,
+        "regions": regs,
+        "entreprises": chiffres.entreprises(inp["contrats"], conf),
+    }
+
+
 def run(out: Path, root: Path | None = None, rules: Path | None = None,
         build: Path | None = None, today: str | None = None) -> dict[str, Any]:  # fmt: skip
     root = root or registre.ROOT
@@ -242,4 +361,12 @@ def run(out: Path, root: Path | None = None, rules: Path | None = None,
     put("dossiers.json", res)
     summary["dossiers"] = len(res["dossiers"])
     summary["sans_lien"] = {k: len(v) for k, v in res["sans_lien"].items()}
+    # 4. the figures
+    inp = entrees_chiffres(d, nat, cf)
+    fg = figures(d, inp, cams, today, chiffres.rules(rules / "registre_chiffres.yaml"))
+    some = {k: r for k, r in fg["communes"].items()
+            if r["cameras_carte"]["v"] or r["montant"]["v"] or r["jours_vol"]["v"]
+            or r["cameras_autorisees"].get("dossiers")}  # fmt: skip
+    put("chiffres.json", {**fg, "communes": some})
+    summary["chiffres"] = {"communes": len(some), "entreprises": len(fg["entreprises"])}
     return summary
