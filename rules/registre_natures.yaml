@@ -1,0 +1,214 @@
+# What a contract or a notice buys, read from its objet and its CPV codes, no model
+# (pipeline/lacarte_registre/natures.py, lot R5 « les données », section 2). A document takes
+# one or more natures; none found, it is `autre`. Each nature has an id, a rationale, the
+# words of the objet (regular expressions on the folded text: lower case, no accents, « ° »
+# read as « on ») and the CPV prefixes that give it when the objet says nothing of that kind.
+# Not served: measured on 100 contracts read by hand (natures.md) before any page uses it.
+version: 1
+
+# The objet first, then the CPV: a nature of the « action » kind (supply, maintenance, works,
+# advice) is taken from the CPV only when the objet names no action at all; a nature of the
+# « domaine » kind (a supervision centre, plates, algorithms, drones, a network) is taken
+# from the objet only — a CPV says what is bought, not what for.
+# A CPV gives one action at most: the nature of its longest prefix.
+# Advice absorbs the other actions: « assistance à maîtrise d'ouvrage pour la fourniture et
+# l'installation » buys advice, the supply is its subject.
+# An objet that buys a watching service (remote monitoring, guards) takes no nature from its
+# CPV: the CPV of the equipment watched would make it a supply.
+sans_repli_cpv:
+  id: rule:registre_natures@1:sans_repli_cpv
+  rationale: >-
+    « Gestion de télésurveillance dans les bâtiments communaux » under CPV 32323500 is a
+    service, not an installation (sample B, 2026-11-05).
+  mots:
+    - \bteles?urveillan
+    - \btele-?videosurveillance
+    - \bgardiennage
+    - \b(securite|surveillance) humaine
+
+natures:
+  fourniture_installation:
+    id: rule:registre_natures@1:fourniture_installation
+    genre: action
+    role: installe
+    rationale: >-
+      Buying and setting up equipment: supply, installation, extension, renewal, replacement,
+      upgrade. « Travaux de mise en œuvre d'un dispositif » is an installation, not civil works.
+    mots:
+      - \bfourniture\b
+      - \bfournir\b
+      - \bfournitures?,? (et )?(pose|installation|mise|raccordement)
+      - \b(pose|poser)\b
+      - \binstall(er|ation\b|ati\b)
+      - \bacqui(sition|erir)\b
+      - \bachat\b
+      - \bmise(s)? en (place|oeuvre|uvre|service)
+      - \bdeploi(ement|er)
+      - \bextension
+      - \brenouvel(lement|er)
+      - \bremplacement
+      - \b(mise|remise)(s)? (a niveau|aux normes|en conformite)
+      - \bintegration
+      - \brefonte
+      - \brefection
+      - \bequipement (des|de|du|d.un|d.une) 
+      - \btravaux neufs
+      - \bequiper\b
+      # a building's works whose lot is the video one: the lot buys an installation
+      - \b(electricite|courants? faibles?)\b.{0,30}video
+      - \blot (n.? ?)?\d+\s*[:-]?\s*(-\s*)?video
+      - \btravaux (et maintenance|de video|d.extension|de mise|de deploiement|de modernisation|d.installation)
+      - \bmoderni(sation|ser)
+      - \bevolution
+      - \bcreation d.(un|une) (systeme|dispositif|reseau de video)
+    cpv: ["32", "35", "4523329", "45222300", "4531", "51", "48"]
+
+  maintenance:
+    id: rule:registre_natures@1:maintenance
+    genre: action
+    role: entretient
+    rationale: >-
+      Keeping equipment working: maintenance (preventive, corrective), upkeep, repairs,
+      periodic checks, « maintien en condition opérationnelle ».
+    mots:
+      - \bmainten(ance|ir)
+      - \bmaintien en (condition|etat)
+      - \bmco\b
+      - \bentretien
+      - \brepar(ation|er)
+      - \bverifications? periodique
+      - \bdepann
+      - \bmaint\b
+      - \bexploitation et maintenance
+    cpv: ["50"]
+
+  travaux_genie_civil:
+    id: rule:registre_natures@1:travaux_genie_civil
+    genre: action
+    role: realise les travaux
+    rationale: >-
+      Civil works around the cameras: trenches, ducts, masts' foundations, roads, a building
+      or a room built or refurbished. The word « travaux » alone is not enough (most
+      installations are called « travaux »).
+    mots:
+      - \bgenie civil
+      - \btranchee
+      - \bterrassement
+      - \bvrd\b
+      - \bvoirie
+      - \bfourreaux?\b
+      - \bgros oeuvre
+      - \bmaconnerie
+      - \bconstruction d
+      - \b(rehabilitation|renovation|restructuration|reamenagement|amenagement) d
+      - \b(construction|realisation|rehabilitation|renovation|extension) (d.un|d.une|du|de la|des) (nouve(l|au|lle) )?(caserne|hotel de police|commissariat|batiment|local|locaux|siege)
+      - \beclairage public
+      - \bclotures?\b
+      - \bportails?\b
+    cpv: ["450", "451", "452", "4532", "4533", "4534", "4540", "4541", "4542", "4543", "4544", "4545"]
+
+  conseil_amo:
+    id: rule:registre_natures@1:conseil_amo
+    genre: action
+    role: conseille
+    rationale: >-
+      Advice to the buyer: assistance to the contracting authority (AMO), project management
+      (maîtrise d'œuvre), studies, audits, diagnostics. It absorbs the other actions named in
+      the same objet: they are the subject of the advice.
+    absorbe: [fourniture_installation, maintenance, travaux_genie_civil]
+    mots:
+      - \bassistan(ce|t) (a|au|technique a) (la )?(maitrise|maitre) d.ouvrage
+      - \bamo\b
+      - \bmaitrise d.oeuvre
+      - \bmaitrise d.uvre
+      - \bmoe\b
+      - \baudits?\b
+      - \bschema directeur
+      - \bmission d.(assistance|accompagnement|ingenierie|etude|conseil)
+      - \bconduite d.operation
+      - \bredaction des pieces
+      - \banalyse des offres
+    # weak words: advice only when the objet names no other action (« prestations d'étude,
+    # d'essai et de mise en service » are part of an installation)
+    mots_faibles:
+      - \betudes?\b
+      - \bdiagnostics?\b
+      - (?<!du )(?<!des )\bconseils?\b(?! (municipal|departemental|regional|communautaire|general|d.administration|d.etat|constitutionnel))
+      - \baccompagn
+      - \bexpertise
+      - \bprogrammation\b
+    cpv: ["710", "711", "712", "713", "714", "715", "716", "7941", "7942", "73", "7222"]
+
+  centre_supervision:
+    id: rule:registre_natures@1:centre_supervision
+    genre: domaine
+    rationale: >-
+      The room where images are watched: a centre de supervision urbain (CSU), intercommunal
+      (CSI), a « poste central », a wall of screens, an hypervision platform.
+    mots:
+      - \bcs[ui]\b
+      - \bcentres? (urbains? |intercommunaux? |communaux? |de )?(de )?supervision
+      - \bcentre de (visionnage|commandement|videoprotection|securite urbaine)
+      - \bsalle (de )?(supervision|visionnage|d.exploitation)
+      - \bmurs? d.images
+      - \bhypervision
+      - \bposte (central|de commandement)
+      - \bpc (securite|video)
+  lecture_plaques:
+    id: rule:registre_natures@1:lecture_plaques
+    genre: domaine
+    rationale: >-
+      Automatic number-plate reading (LAPI), plate cameras, « vidéo-verbalisation » excluded
+      (a fine sent from an image read by an agent, not a plate read by a machine).
+    mots:
+      - \blapi\b
+      - \blecture automati(que|see) (des |de )?plaques
+      - \bplaques? d.immatriculation
+      - \banpr\b
+      - \bvlpr\b
+  video_algorithmique:
+    id: rule:registre_natures@1:video_algorithmique
+    genre: domaine
+    rationale: >-
+      Software that analyses images by itself: « vidéoprotection algorithmique » (VSA),
+      intelligent video, image analysis, artificial intelligence, automatic detection.
+    mots:
+      - \bvsa\b
+      - \balgorithmi
+      - \bvideo[ -]?(intelligente|analyse|analytique)
+      - \banalyse (video|d.images|automatique|comportementale)
+      - \bintelligence artificielle
+      - \bia\b
+      - \bdetection automatique
+      - \breconnaissance (faciale|biometrique)
+      - \bsolutions? intelligentes?
+  drones:
+    id: rule:registre_natures@1:drones
+    genre: domaine
+    rationale: Drones and their services (aircraft without a crew on board, remote pilots).
+    mots:
+      - \bdrones?\b
+      - \baeronefs? (sans|telepilote)
+      - \buav\b
+      - \btelepilot
+  reseau_fibre:
+    id: rule:registre_natures@1:reseau_fibre
+    genre: domaine
+    rationale: >-
+      The network that carries the images: optical fibre, radio links, a multiservice or IP
+      network, the cabling.
+    mots:
+      - \bfibres?( optique| noire)?s?\b
+      - \bfaisceaux? hertzien
+      - \bliaisons? (radio|hertzienne|sans fil|optique)
+      - \breseaux? (de transmission|multiservices?|ip|telecom|de telecommunication|de communication|informatique|fibre)
+      - \bcablage
+      - \bwifi\b
+      - \btransmission
+      - \binterconnexion
+      - \btransport (longue distance )?des (images|flux)
+      - \bthd\b
+      - \btres haut debit
+      - \btelecommunications?\b
+      - \bliaisons? de proximite
+      - \bliaisons?\b
