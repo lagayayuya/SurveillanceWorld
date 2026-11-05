@@ -163,7 +163,8 @@ def subvention_sans_contrat(g: dict[str, Any], conf: dict[str, Any]) -> dict[str
     fait = (f"Subvention de {_euros(g.get('montant'))} ({prog}) sans contrat du bénéficiaire "
             "trouvé dans la fenêtre de la règle.")  # fmt: skip
     fp = conf["signaux"]["subvention_sans_contrat"]["faux_positifs"]
-    why = [fp[0]] if (g.get("base") or 0) < 40000 else []
+    low = seuil("publication_decp", g.get("date"), False, conf) or 0
+    why = [fp[0]] if (g.get("base") or 0) < low else []
     return _hit("subvention_sans_contrat", c, fait, conf, why)
 
 

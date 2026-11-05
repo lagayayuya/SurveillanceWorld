@@ -71,3 +71,10 @@ def test_over_the_publicity_threshold_without_a_notice():
     assert signaux.sans_avis(_c(montant=120000.0), CONF)
     assert signaux.sans_avis(_c(montant=80000.0), CONF) is None
     assert signaux.sans_avis(_c(montant=120000.0, avec_avis=True), CONF) is None
+
+
+def test_a_small_grant_says_the_decp_publication_threshold_of_its_year():
+    g = {"id": "g", "beneficiaire": "B", "date": "2019-12-31", "montant": 9000.0,
+         "base": 30000.0, "programme": "DETR"}  # fmt: skip
+    assert signaux.subvention_sans_contrat(g, CONF)["a_verifier"] == []
+    assert signaux.subvention_sans_contrat({**g, "date": "2022-12-31"}, CONF)["a_verifier"]

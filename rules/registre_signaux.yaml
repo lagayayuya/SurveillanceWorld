@@ -17,6 +17,10 @@ seuils:
   dispense:
     - {depuis: "2016-04-01", fournitures_services: 25000, travaux: 25000}
     - {depuis: "2020-01-01", fournitures_services: 40000, travaux: 40000}
+  # from it, the contract's essential data are published (the DECP): what we can see
+  publication_decp:
+    - {depuis: "2018-10-01", fournitures_services: 25000, travaux: 25000}
+    - {depuis: "2020-01-01", fournitures_services: 40000, travaux: 40000}
   # from it, an adapted procedure is published in the BOAMP or a legal journal
   publicite:
     - {depuis: "2016-04-01", fournitures_services: 90000, travaux: 90000}
@@ -105,7 +109,7 @@ signaux:
       beneficiary is found from six months before to three years after
       (registre_dossiers.yaml `subvention`). Mostly a gap in our sources: say so first.
     faux_positifs:
-      - des contrats sous le seuil de publication des DECP (40 000 € HT)
+      - des contrats sous le seuil de publication des DECP (25 000 € HT, 40 000 € depuis 2020)
       - un acheteur qui ne publie pas ses données (obligation mal suivie)
       - un contrat passé par l'intercommunalité ou un groupement de commandes
       - une subvention annulée ou non consommée
