@@ -113,8 +113,11 @@ def delai_court(c: dict[str, Any], conf: dict[str, Any]) -> dict[str, Any] | Non
 def sans_avis(c: dict[str, Any], conf: dict[str, Any]) -> dict[str, Any] | None:
     if c.get("avis_jours") is not None or c.get("avec_avis"):
         return None
-    s = seuil("publicite", c.get("date"), TRAVAUX in (c.get("natures") or []), conf)
-    if not s or (c.get("montant") or 0) < s:
+    works = TRAVAUX in (c.get("natures") or [])
+    s = seuil("publicite", c.get("date"), works, conf)
+    # under the dispense no notice is due (works: 100 000 € from 2026, over the publicity one)
+    low = max(s or 0, seuil("dispense", c.get("date"), works, conf) or 0)
+    if not s or (c.get("montant") or 0) < low:
         return None
     fp = conf["signaux"]["sans_avis_publicite"]["faux_positifs"]
     fait = (f"Contrat de {_euros(c['montant'])}, au-dessus du seuil de publicité "

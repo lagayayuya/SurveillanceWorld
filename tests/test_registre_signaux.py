@@ -19,6 +19,11 @@ def test_the_threshold_in_force_on_the_day():
     assert signaux.seuil("dispense", "2020-01-01", False, CONF) == 40000
     assert signaux.seuil("formalise", "2024-03-01", True, CONF) == 5538000
     assert signaux.seuil("formalise", "2017-06-01", False, CONF) is None
+    # décret 2025-1386: works 100 000 € from 1 January 2026, supplies 60 000 € from 1 April
+    assert signaux.seuil("dispense", "2026-01-01", True, CONF) == 100000
+    assert signaux.seuil("dispense", "2026-03-31", False, CONF) == 40000
+    assert signaux.seuil("dispense", "2026-04-01", False, CONF) == 60000
+    assert signaux.seuil("formalise", "2026-06-01", False, CONF) == 216000
 
 
 def test_a_single_offer_says_the_framework_it_follows():
@@ -71,6 +76,10 @@ def test_over_the_publicity_threshold_without_a_notice():
     assert signaux.sans_avis(_c(montant=120000.0), CONF)
     assert signaux.sans_avis(_c(montant=80000.0), CONF) is None
     assert signaux.sans_avis(_c(montant=120000.0, avec_avis=True), CONF) is None
+    # works of 95 000 €: a notice was due in 2025, not under the 2026 dispense
+    works = {"montant": 95000.0, "natures": ["travaux_genie_civil"]}
+    assert signaux.sans_avis(_c(date="2025-06-01", **works), CONF)
+    assert signaux.sans_avis(_c(date="2026-06-01", **works), CONF) is None
 
 
 def test_a_small_grant_says_the_decp_publication_threshold_of_its_year():
