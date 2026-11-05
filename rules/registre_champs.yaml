@@ -1,0 +1,69 @@
+# The fields already collected, read by rules, no model (pipeline/lacarte_registre/champs.py,
+# lot R5 « les données »): which value of a field is aberrant, and what the reading does with
+# it. Each rule has an id and a rationale. `action`: `ecarte` reads the value as absent (it
+# never counts in a total or a rate), `signale` keeps it and lists it for review. Not served:
+# the exploration's measures only, until a lot wires a field to a page.
+version: 1
+
+montant:
+  id: rule:registre_champs@1:montant
+  rationale: >-
+    A contract's or a notice's amount of 1 € or less is a placeholder (« 1 », « 0 », one
+    « -1397 ») put by a buyer's software when the field is mandatory, not a price: 68 DECP
+    contracts and 26 notice amounts (read on 2026-11-05). Above 100 M€ the amount is a
+    national or regional framework's ceiling, or a typing slip (99 999 999 999 in two
+    notices): kept, listed.
+  min_exclu: 1
+  max_signale: 100000000
+  action_min: ecarte
+  action_max: signale
+
+offres:
+  id: rule:registre_champs@1:offres
+  rationale: >-
+    A contract is awarded on at least one offer: 0 is a missing value written as a number.
+    More than 100 offers for a video surveillance contract is a slip (10 000) or a platform's
+    default (126, repeated on 25 contracts of one source): read as absent.
+  min: 1
+  max: 100
+  action: ecarte
+
+duree_mois:
+  id: rule:registre_champs@1:duree_mois
+  rationale: >-
+    A duration of 0 months is absent; above 20 years (240 months) it is a slip (a framework
+    lasts 4 years at most, a concession rarely more than 20).
+  min: 1
+  max: 240
+  action: ecarte
+
+date:
+  id: rule:registre_champs@1:date
+  rationale: >-
+    The DECP start in 2018 (decree of 2016, notified contracts from 1 October 2018) and the
+    BOAMP's archive in 2015: a date before 2010 is a slip (« 0004 », « 1989 »), as is a
+    date after the collection's day; a notice's award date after its publication cannot be.
+  min: "2010-01-01"
+  action: ecarte
+
+taux:
+  id: rule:registre_champs@1:taux
+  rationale: >-
+    The DGCL's rate is the grant over its eligible cost: above 100 % the grant exceeds the
+    cost (two lines in 2018-2025, a cost entered in thousands or a grant summed over
+    several projects). Kept, listed: the line is the State's own.
+  max: 100
+  action: signale
+
+# An amendment's amount in the DECP: the modification's « montant » is read as the contract's
+# new total (hypothesis, to check against the DECP schema). A modification below the initial
+# amount is then a decrease, or a delta written instead of a total: the gap is computed only
+# when every modification is at or above the initial amount, else « ambigu ».
+avenant:
+  id: rule:registre_champs@1:avenant
+  rationale: >-
+    Of the 1 056 contracts with a modification, some carry a total that grows step by step
+    (1 045 736 € → 1 384 929 €) and some a smaller amount (500 000 € → 164 179 €) that reads
+    as a subsequent order or a delta: without the schema's answer the second kind gives no
+    gap rather than a false one.
+  seuil_pct: 15
