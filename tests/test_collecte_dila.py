@@ -112,3 +112,37 @@ def test_the_history_over_one_ftps_connection_at_a_capped_rate(collecte_server, 
     assert sum(slept) >= 1.5 and not any("/2026/10/14/" in a for a in collecte_server.asked)
     # a folder FTPS lists empty is unknown to it (collect() asks HTTP then)
     assert canal.files("2026/10/13/") is None and canal.files("FluxHistorique/x/") is None
+
+
+AWARD = b"""<?xml version='1.0' encoding='utf-8'?>
+<ns0:ann xmlns:ns0="http://boamp.journal-officiel.gouv.fr/XML/3.2.5"
+ xmlns:ns1="urn:boamp:names:specification:ubl:schema:xsd:CommonExtensionComponents-2"
+ xmlns:ns2="http://data.europa.eu/p27/eforms-ubl-extensions/1"
+ xmlns:ns3="http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1"
+ xmlns:ns4="urn:boamp:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+ xmlns:ns5="urn:boamp:names:specification:ubl:schema:xsd:CommonAggregateComponents-2">
+ <GESTION><REFERENCE><IDWEB>26-1</IDWEB></REFERENCE>
+  <TYPE_AVIS><NATURE><ATTRIBUTION/></NATURE></TYPE_AVIS></GESTION>
+ <DONNEES><EFORMS><ContractAwardNotice><ns1:UBLExtensions><ns1:UBLExtension>
+  <ns1:ExtensionContent><ns2:EformsExtension>
+   <ns3:NoticeResult>
+    <ns3:SettledContract><ns4:IssueDate>2026-01-06+01:00</ns4:IssueDate></ns3:SettledContract>
+    <ns3:TenderingParty><ns3:Tenderer><ns4:ID>ORG-0002</ns4:ID></ns3:Tenderer></ns3:TenderingParty>
+   </ns3:NoticeResult>
+   <ns3:Organizations><ns3:Organization><ns3:Company>
+    <ns5:PartyIdentification><ns4:ID>ORG-0002</ns4:ID></ns5:PartyIdentification>
+    <ns5:PartyName><ns4:Name>Video Exemple SAS</ns4:Name></ns5:PartyName>
+    <ns5:PartyLegalEntity><ns4:CompanyID>100000009</ns4:CompanyID></ns5:PartyLegalEntity>
+   </ns3:Company></ns3:Organization></ns3:Organizations>
+  </ns2:EformsExtension></ns1:ExtensionContent></ns1:UBLExtension></ns1:UBLExtensions>
+ </ContractAwardNotice></EFORMS></DONNEES></ns0:ann>"""
+
+
+def test_an_eforms_award_keeps_its_prefixes_and_says_its_holder_and_date():
+    # the eForms namespaces end in /1: read without their prefix, the holder was lost
+    rec = dila.record(AWARD)
+    ext = rec["donnees"]["ext:UBLExtensions"]["ext:UBLExtension"]["ext:ExtensionContent"]
+    assert set(ext["efext:EformsExtension"]) == {"efac:NoticeResult", "efac:Organizations"}
+    got = dila.boamp._resultat(dila.boamp.clean(rec)["donnees"])
+    assert got["titulaires"] == ["100000009"] and got["date_attribution"] == "2026-01-06"
+    assert got["cles"]  # the holder's name, as its fingerprint only

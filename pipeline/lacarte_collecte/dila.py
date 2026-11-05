@@ -46,14 +46,16 @@ NATURES = {
     "RECTIFICATIF": "Rectificatif",
     "ANNULATION": "Rectificatif",
 }
-# The eForms namespaces, as the BOAMP's API wrote them (its JSON kept the prefixes)
+# The eForms namespaces, as the BOAMP's API wrote them (its JSON kept the prefixes). A
+# namespace is known by its name, its version aside: the eForms ones end in `/1`
+# (http://data.europa.eu/p27/eforms-ubl-extension-aggregate-components/1).
 PREFIXES = {
     "CommonBasicComponents-2": "cbc",
     "CommonAggregateComponents-2": "cac",
     "CommonExtensionComponents-2": "ext",
-    "eforms-extension-basic": "efbc",
-    "eforms-extension-aggregate": "efac",
-    "eforms-extension-components": "efext",
+    "eforms-ubl-extension-basic-components": "efbc",
+    "eforms-ubl-extension-aggregate-components": "efac",
+    "eforms-ubl-extensions": "efext",
 }
 LINK = re.compile(r'href="([^"?/][^"]*)"')
 IDWEB = re.compile(r"\d{2}-\d{3,7}")
@@ -63,6 +65,7 @@ IDWEB = re.compile(r"\d{2}-\d{3,7}")
 def _tag(t: str) -> str:
     if t.startswith("{"):
         uri, local = t[1:].split("}", 1)
+        uri = re.sub(r"/\d+$", "", uri)
         for end, prefix in PREFIXES.items():
             if uri.endswith(end):
                 return f"{prefix}:{local}"
