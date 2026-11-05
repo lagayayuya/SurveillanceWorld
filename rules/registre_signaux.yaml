@@ -1,0 +1,122 @@
+# Facts worth a second look across France (pipeline/lacarte_registre/signaux.py, lot R5
+# « les données », section 5). Exploration only, never published as such: each signal is a
+# fact, the rule that finds it and the document that shows it, in neutral words; never an
+# accusation. Each lists the ordinary reasons that produce it (its known false positives).
+version: 1
+
+# The thresholds of public procurement, as dated series (the value in force on the
+# contract's notification day). Amounts HT, for a local authority (« pouvoir adjudicateur »
+# other than the State). verifie: false until read at the official source (Légifrance, the
+# Code de la commande publique and the biennial notice of the European thresholds): the
+# values below are remembered, a hypothesis.
+seuils:
+  id: rule:registre_signaux@1:seuils
+  verifie: false
+  source: "[à vérifier] Code de la commande publique, art. R2122-8 (dispense), R2131-12 (publicité des MAPA), avis annexé au code (seuils européens)"
+  # under it, a contract may be awarded without publicity nor competition
+  dispense:
+    - {depuis: "2016-04-01", fournitures_services: 25000, travaux: 25000}
+    - {depuis: "2020-01-01", fournitures_services: 40000, travaux: 40000}
+  # from it, an adapted procedure is published in the BOAMP or a legal journal
+  publicite:
+    - {depuis: "2016-04-01", fournitures_services: 90000, travaux: 90000}
+  # from it, a formal procedure (call for tenders) and a notice in the OJEU
+  formalise:
+    - {depuis: "2018-01-01", fournitures_services: 221000, travaux: 5548000}
+    - {depuis: "2020-01-01", fournitures_services: 214000, travaux: 5350000}
+    - {depuis: "2022-01-01", fournitures_services: 215000, travaux: 5382000}
+    - {depuis: "2024-01-01", fournitures_services: 221000, travaux: 5538000}
+    - {depuis: "2026-01-01", fournitures_services: 216000, travaux: 5404000}
+
+signaux:
+  offre_unique:
+    id: rule:registre_signaux@1:offre_unique
+    titre: Une seule offre reçue
+    rationale: >-
+      The buyer received one offer (DECP « offresRecues » = 1, a valid value:
+      registre_champs.yaml). A competition with one bidder is a fact a reader may weigh;
+      it is common and lawful.
+    faux_positifs:
+      - un marché subséquent d'accord-cadre (la concurrence a eu lieu à l'accord-cadre)
+      - la maintenance d'un système par son installateur (monopole technique, licences)
+      - un lot très spécialisé ou un petit montant sur un territoire peu doté
+  avenant:
+    id: rule:registre_signaux@1:avenant
+    titre: Avenants de plus de 15 % du montant initial
+    rationale: >-
+      The contract's amount after its modifications exceeds its initial amount by more than
+      `seuil_pct` (registre_champs.yaml `avenant`; a decrease is « ambigu » and left out).
+      The code allows small modifications without a new procedure under a ceiling
+      ([à vérifier] R2194-8: 10 % for supplies and services, 15 % for works).
+    seuil_pct: 15
+    faux_positifs:
+      - une reconduction ou une tranche optionnelle déclarée comme modification
+      - un accord-cadre dont le « montant » publié est une estimation
+      - une erreur de saisie (montant total ressaisi comme montant de l'avenant)
+  sans_publicite:
+    id: rule:registre_signaux@1:sans_publicite
+    titre: Procédure négociée sans publicité
+    rationale: >-
+      The contract's procedure, as the DECP state it, is negotiated without prior publicity
+      or competition. Our files do not keep the DECP « procedure » field yet: the signal is
+      measured on a sample read again (champs.md).
+    procedures:
+      - 'sans publicit'
+      - 'sans mise en concurrence'
+    faux_positifs:
+      - l'urgence impérieuse (catastrophe, sinistre)
+      - un seul opérateur possible (exclusivité technique, droits)
+      - un appel d'offres infructueux relancé sans publicité
+      - un montant sous le seuil de dispense
+  sous_seuil:
+    id: rule:registre_signaux@1:sous_seuil
+    titre: Montants groupés juste sous un seuil
+    rationale: >-
+      Among the buyer's contracts of one year, at least `min_contrats` whose amounts lie
+      within `bande_pct` under a threshold (publicity, formal procedure), and more than
+      over it. One contract under a threshold is ordinary; several from one buyer, of one
+      nature, in one year, is a pattern a reader may want to see. The dispense threshold
+      is not tested: the DECP are published from it, the band under it is not observable.
+    seuils: [publicite, formalise]
+    bande_pct: 10
+    min_contrats: 2
+    faux_positifs:
+      - des lots distincts d'une même opération, estimés ensemble (le seuil s'applique alors au total)
+      - un budget voté juste sous un seuil, sans fractionnement
+  delai_court:
+    id: rule:registre_signaux@1:delai_court
+    titre: Contrat notifié peu après l'avis
+    rationale: >-
+      The contract is notified less than `min_jours` after its call for tenders was
+      published, or less than `min_jours_formalise` for an amount at or over the formal
+      threshold ([à vérifier] R2161-2: 35 days for an open call, 30 by electronic means,
+      before any analysis of the offers).
+    min_jours: 15
+    min_jours_formalise: 30
+    faux_positifs:
+      - l'avis lié est un rectificatif ou un avis d'un autre lot (lien « suggéré »)
+      - le contrat est un marché subséquent, l'avis celui de l'accord-cadre (sens inversé)
+      - une date de notification saisie à la place de la date de signature
+  subvention_sans_contrat:
+    id: rule:registre_signaux@1:subvention_sans_contrat
+    titre: Subvention sans contrat trouvé
+    rationale: >-
+      The State or the Région granted money for video protection and no contract of the
+      beneficiary is found from six months before to three years after
+      (registre_dossiers.yaml `subvention`). Mostly a gap in our sources: say so first.
+    faux_positifs:
+      - des contrats sous le seuil de publication des DECP (40 000 € HT)
+      - un acheteur qui ne publie pas ses données (obligation mal suivie)
+      - un contrat passé par l'intercommunalité ou un groupement de commandes
+      - une subvention annulée ou non consommée
+  sans_avis_publicite:
+    id: rule:registre_signaux@1:sans_avis_publicite
+    titre: Contrat au-dessus du seuil de publicité sans avis trouvé
+    rationale: >-
+      Proposed beyond the brief: a contract at or over the publicity threshold with no
+      notice found in the BOAMP. The notice may be elsewhere (a buyer profile, a legal
+      journal) or out of our selection.
+    faux_positifs:
+      - un avis publié dans un journal d'annonces légales ou sur le profil d'acheteur seul
+      - un marché subséquent d'accord-cadre
+      - un avis hors de notre sélection (objet sans mot de la vidéo)

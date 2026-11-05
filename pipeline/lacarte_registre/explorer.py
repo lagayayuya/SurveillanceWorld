@@ -30,6 +30,7 @@ from lacarte_registre import (
     national,
     natures,
     regles,
+    signaux,
 )
 
 
@@ -320,6 +321,56 @@ def figures(d: Donnees, inp: dict[str, list[dict[str, Any]]], cams: dict[str, li
     }
 
 
+# --- section 5: signals --------------------------------------------------------------------
+def entrees_signaux(
+    d: Donnees,
+    nat: dict[str, dict[str, Any]],
+    affaires: list[dict[str, Any]],
+    res: dict[str, Any],
+    grants: list[dict[str, Any]],
+    cf: dict[str, Any],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """The counted contracts and the grants without a contract, as signaux.py reads them."""
+    reg = d.reg
+    by_aff = {a["id"]: a for a in affaires}
+    sure = {
+        (lk["de"], lk["vers"])
+        for x in res["dossiers"]
+        for lk in x["liens"]
+        if lk["type"] == "avis" and lk["niveau"] == dossiers.SUR
+    }
+    contrats = []
+    for e in reg.evenements:
+        if e["t"] != "attribution" or not e["compte"]:
+            continue
+        raw = d.decp.get(e["affaire"]) or {}
+        tech = (raw.get("techniques") or "").lower()
+        aff = by_aff.get(e["affaire"]) or {}
+        calls = [v for v in aff.get("avis") or [] if v["nature"] == "avis" and v.get("date")]
+        first = min(calls, key=lambda v: v["date"]) if calls else None
+        contrats.append({
+            "id": e["id"], "acheteur": reg.buyer(e), "acheteur_nom": raw.get("acheteur_nom"),
+            "date": e.get("date"), "montant": champs.montant_ok(e.get("montant"), cf),
+            "offres": champs.offres_ok(raw.get("offres"), cf),
+            "accord_cadre": "accord-cadre" in tech, "subsequent": bool(raw.get("idAccordCadre")),
+            "natures": (nat.get(e["id"]) or {}).get("natures", []),
+            "avenant": champs.avenant(raw.get("lignes") or [], cf),
+            "procedure": raw.get("procedure"),
+            "avis_jours": dossiers._days(first["date"], e["date"]) if first and e.get("date")
+            else None,
+            "avis_sur": bool(first) and (first["id"], e["affaire"]) in sure,
+            "avec_avis": bool(aff.get("avis")),
+            "titre": e.get("objet"), "document": e.get("ref"),
+        })  # fmt: skip
+    alone = set(res["sans_lien"]["subvention_sans_contrat"])
+    out = []
+    for g in grants:
+        if g["id"] in alone:
+            e = reg.by_id.get(g["id"]) or {}
+            out.append({**g, "beneficiaire": e.get("beneficiaire"), "document": e.get("ref")})
+    return contrats, out
+
+
 def run(out: Path, root: Path | None = None, rules: Path | None = None,
         build: Path | None = None, today: str | None = None) -> dict[str, Any]:  # fmt: skip
     root = root or registre.ROOT
@@ -369,4 +420,9 @@ def run(out: Path, root: Path | None = None, rules: Path | None = None,
             or r["cameras_autorisees"].get("dossiers")}  # fmt: skip
     put("chiffres.json", {**fg, "communes": some})
     summary["chiffres"] = {"communes": len(some), "entreprises": len(fg["entreprises"])}
+    # 5. the signals
+    cs, gs = entrees_signaux(d, nat, affaires, res, grants, cf)
+    sg = signaux.trouver(cs, gs, signaux.rules(rules / "registre_signaux.yaml"))
+    put("signaux.json", sg)
+    summary["signaux"] = {k: len(v) for k, v in sg.items()}
     return summary
