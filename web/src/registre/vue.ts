@@ -32,7 +32,12 @@ export type Porte = { l: string; href: string; i: string; cur: "page" | null };
 /** A row of tickets as the reader sees it (v2.2 point 5, v2.3): a ticket carries a figure or a date,
  * never a dash; one that has none is not shown (its sentence, when there is one, is elsewhere). */
 export const sansTiret = <K extends { v: string }>(kpis: K[]): K[] =>
-  kpis.filter((k) => k.v.trim() !== "—");
+  coupeAnnee(kpis.filter((k) => k.v.trim() !== "—"));
+
+/** A ticket's date may break before its year: « 28 janv. 2026 » at 38 px is wider than a quarter
+ * of the wide frame (the gate's proofreading), its no-break spaces (format.ts) kept elsewhere. */
+export const coupeAnnee = <K extends { v: string }>(kpis: K[]): K[] =>
+  kpis.map((k) => ({ ...k, v: k.v.replace(/\u00a0(\d{4})$/, " $1") }));
 
 export type Sections = {
   /** the sections shown, in order: { k, n, l, href } */

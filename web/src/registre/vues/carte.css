@@ -104,9 +104,9 @@
 /* board B (Drones-Paris-B-calendrier, panneau): the block's word in the small capitals */
 .rg .v-carte .cd-k {
   margin: 0;
-  font:
-    800 12px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
   font-stretch: 78%;
   text-transform: uppercase;
   color: var(--muted);
@@ -164,9 +164,9 @@
     monospace;
 }
 .rg .v-carte .cal-sum b {
-  font:
-    900 15px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
   font-stretch: 75%;
   text-transform: uppercase;
 }

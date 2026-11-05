@@ -17,7 +17,7 @@ import type { Route } from "../routes.ts";
 import { HASH, ouvrir, signaler } from "../signaler.ts";
 import { couverture, sources } from "../sources.ts";
 import { icone, repere, type TypeCle } from "../types.ts";
-import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
+import { type BaseState, coupeAnnee, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./contrat.css";
 import template from "./contrat.html?raw";
 import {
@@ -206,7 +206,7 @@ class Contrat extends Vue<Props, State> {
         steps: wide ? "par" : "par un",
       },
       lead: F.lead,
-      kpis: F.kpis,
+      kpis: coupeAnnee(F.kpis),
       argent: F.argent,
       ditTitre: F.ditTitre,
       maxNote: F.ditNote,
