@@ -1,0 +1,72 @@
+# How the documents of one project are tied into a dossier (pipeline/lacarte_registre/
+# dossiers.py, lot R5 « les données », section 3): a grant, the notices, the contract and its
+# modifications, the commune's prefectoral authorisation, the cameras mapped afterwards.
+# Each link has a level, « sur » (every strict condition holds) or « suggere » (the best
+# candidate, some condition loose), and keeps its reason in words. Not served: measured on
+# 50 dossiers read by hand (dossiers.md) before any page shows a link.
+version: 1
+
+# The notice and the contract are already one affaire (rules/registre_selection.yaml `liens`:
+# same buyer, the contract notified within the notice's window, close objets; or a cited
+# notice). The dossier grades that link.
+avis_contrat:
+  id: rule:registre_dossiers@1:avis_contrat
+  rationale: >-
+    A cited notice, or objets that share half their words, leave no doubt; a Jaccard index
+    between 0.2 and 0.5 (the affaire's threshold) does: the same buyer often publishes two
+    video contracts a year (maintenance and extension).
+  jaccard_sur: 0.5
+  # the contract's amount over the notice's estimated value, when both are known
+  ratio_sur: [0.5, 2.0]
+
+subvention:
+  id: rule:registre_dossiers@1:subvention
+  rationale: >-
+    A grant is decided in its year (the DGCL's lists are yearly; the Région's committees
+    dated) and pays works that follow: the contract is notified from six months before to
+    three years after. It pays equipment or works, not maintenance or advice alone. Its
+    eligible cost (« base », HT) and the contract's amount (HT, a ceiling for a framework)
+    should be of one size: between half and twice, « sur » within 0.8-1.25 and when the
+    buyer has only one such contract in the window.
+  avant_jours: 180
+  apres_jours: 1095
+  natures: [fourniture_installation, travaux_genie_civil, centre_supervision, reseau_fibre,
+            lecture_plaques, video_algorithmique, drones]
+  ratio: [0.5, 2.0]
+  ratio_sur: [0.8, 1.25]
+  # the buyer's only contract in the window, its amount far from the cost: kept as a
+  # suggestion within these bounds only (a police uniforms contract at 0.04 of a grant's
+  # cost is not what it paid; a framework's ceiling at 2.24 can be)
+  ratio_seul: [0.25, 4.0]
+
+arrete:
+  id: rule:registre_dossiers@1:arrete
+  rationale: >-
+    The prefect authorises the commune's own system before the cameras film: from a year
+    before the contract (the authorisation asked while the contract is prepared) to two
+    years after (an extension authorised once installed). The act is the commune's when its
+    title names the commune itself as the holder (« commune de Bonne », « mairie de Rumilly »,
+    « ville de Besançon »): « sur la commune de Nice » is a place, « en faveur de
+    l'établissement » a third party (sample of 50 dossiers, 2026-11-05: 6 of 14 links wrong
+    before this rule; 9 of 25 on a second sample, before the bracket and event rules). Its date is the act's, not its recueil's (an act of 2020 published in
+    2024). Only a project that installs: maintenance or advice alone is not authorised. No
+    identifier is shared: « sur » only when the act's number of cameras is the one the
+    contract or its notice announces.
+  avant_jours: 365
+  apres_jours: 730
+  sous_types: [autorisation, renouvellement, modification, provisoire]
+  titulaire: '\b(commune|mairie|ville|hotel de ville|police municipale)( de la| de| d| du) '
+  # « Commune de Sanary-sur-Mer (Supermarché Casino) »: the Var writes the place, then the
+  # holder in brackets; the commune's own system says what it covers there
+  parenthese_communale: '^\s*\((territoire|voie publique|mairie|hotel de ville|police municipale|perimetre|centre ville)'
+  # an event's system (Fête des Lumières, a Christmas market) is not a project's
+  evenement: '\b(fete|marche de noel|festival|manifestation|evenement|temporaire|feu d artifice|course|salon)\b'
+  natures: [fourniture_installation, travaux_genie_civil, centre_supervision]
+
+cameras:
+  id: rule:registre_dossiers@1:cameras
+  rationale: >-
+    The cameras mapped in the commune (OpenStreetMap, the map's last build) whose first
+    version was saved within two years after the authorisation: a lower bound, a camera
+    edited since has lost its first date. Mapping, never the ground truth.
+  apres_jours: 730

@@ -6,7 +6,8 @@ or LACARTE_REGISTRE_PILOTE; `lacarte-registre construire [--dsn DSN | --ssh HOST
 the machine's lock (construire.py); `lacarte-registre verifier` says whether the built site may
 be deployed;
 `lacarte-registre corrections exporter [--dsn DSN | --ssh HOST]` writes the corrections alone
-(exporter.py).
+(exporter.py); `lacarte-registre explorer SORTIE` writes the lot R5 exploration's measures
+into SORTIE, never into the site (explorer.py).
 
 A command of its own, beside `lacarte`: the map's build id covers every source of the lacarte
 package (buildinfo.py), its command line included, and the deploy refuses a build made by
@@ -25,6 +26,7 @@ from lacarte_registre import (
     collecter,
     comparer,
     construire,
+    explorer,
     exporter,
     fetch,
     importer,
@@ -79,7 +81,16 @@ def main(argv: list[str] | None = None) -> None:
     where = cor.add_mutually_exclusive_group()
     where.add_argument("--dsn", help="a local database (libpq connection string)")
     where.add_argument("--ssh", help="the server, over ssh (default: DEPLOY_TARGET)")
+    exp = sub.add_parser("explorer", help="the lot R5 exploration's measures (explorer.py)")
+    exp.add_argument("sortie", type=Path, help="the folder the JSON files are written to")
+    exp.add_argument("--jour", help="the measures' day (default: today)")
+    exp.add_argument("--racine", type=Path, help="data/registre to read (default: this tree's)")
+    exp.add_argument("--build", type=Path, help="the map's builds (default: data/build)")
     args = parser.parse_args(argv)
+    if args.cmd == "explorer":
+        summary = explorer.run(args.sortie, root=args.racine, build=args.build, today=args.jour)
+        print(json.dumps(summary, ensure_ascii=False, indent=1))
+        return
     if args.cmd == "collecter":
         try:
             summary = collecter.main(

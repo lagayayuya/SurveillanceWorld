@@ -1,0 +1,245 @@
+"""`lacarte-registre explorer SORTIE`: the lot R5 exploration's measures, written as JSON into
+SORTIE, never into the site (lot R5 « les données »: nothing here is served).
+
+It assembles the registre as construire does (pilot, national procurement, collection,
+corrections), without writing anything under data/registre, then reads it with champs.py
+(section 1), natures.py (2), dossiers.py (3), chiffres.py (4) and signaux.py (5). The
+map's cameras come from the last map build (data/build/, OpenStreetMap, ODbL): their commune
+and the date of their first version.
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import glob
+import gzip
+import json
+import re
+from collections import Counter, defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import lacarte_registre as registre
+from lacarte_registre import (
+    champs,
+    collecte,
+    dossiers,
+    fusion,
+    national,
+    natures,
+    regles,
+)
+
+
+@dataclass
+class Donnees:
+    reg: regles.Registre
+    decp: dict[str, dict[str, Any]]
+    avis: dict[str, dict[str, Any]]
+    actes: dict[str, dict[str, Any]]
+    subventions: dict[str, dict[str, Any]]
+    sirene: dict[str, dict[str, Any]]
+    communes: dict[str, dict[str, Any]]
+    couverture: dict[str, Any] | None
+
+
+def _jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.is_file():
+        return []
+    with gzip.open(path, "rt", encoding="utf-8") as g:
+        return [json.loads(line) for line in g]
+
+
+def charger(root: Path, rules: Path) -> Donnees:
+    """The registre as construire assembles it (nothing written), and the raw records."""
+    pilote = regles.charger(root / "pilote")
+    nat = national.assembler(root, rules=rules)
+    pilote, _ = fusion.fusionner(pilote, nat)
+    if collecte.present(root):
+        pilote, _ = collecte.fusionner(pilote, root, rules)
+    export = root / "corrections.yaml"
+    corr = regles.corrections(rules / "registre_corrections.yaml",
+                              *([export] if export.is_file() else []))  # fmt: skip
+    reg = regles.appliquer(pilote, corr)
+    col = root / "collecte"
+    com = json.loads((root / "national" / "communes.json").read_text("utf-8"))["communes"]
+    cov = col / "couverture.json"
+    return Donnees(
+        reg=reg,
+        decp={c["uid"]: c for c in _jsonl(root / "national" / "decp.jsonl.gz")},
+        avis={a["idweb"]: a for a in _jsonl(col / "avis.jsonl.gz")},
+        actes={a["id"]: a for a in _jsonl(col / "arretes.jsonl.gz")},
+        subventions={s["id"]: s for s in _jsonl(col / "subventions_etat.jsonl.gz")},
+        sirene=json.loads((root / "national" / "sirene.json").read_text("utf-8"))["unites"],
+        communes=com,
+        couverture=json.loads(cov.read_text("utf-8")) if cov.is_file() else None,
+    )
+
+
+def cameras_carte(build: Path) -> dict[str, list[str | None]]:
+    """{insee (a city for its arrondissements): [first version's day or None]} of the map's
+    cameras (is_camera, not gone), from the last France build and the regions' communes."""
+    import geopandas as gpd
+    import pandas as pd
+
+    cams = gpd.read_parquet(
+        build / "france" / "cameras_applied.parquet",
+        columns=["camera_id", "osm_version", "osm_timestamp", "is_camera", "gone", "geometry"],
+    )
+    cams = cams[cams.is_camera & ~cams.gone.fillna(False).astype(bool)]
+    parts = [
+        gpd.read_parquet(f) for f in sorted(glob.glob(str(build / "fr-*" / "communes.parquet")))
+    ]
+    com = gpd.GeoDataFrame(pd.concat(parts).drop_duplicates("insee"), crs=parts[0].crs)
+    j = gpd.sjoin(cams.to_crs(com.crs), com[["insee", "geometry"]], predicate="within")
+    out: dict[str, list[str | None]] = defaultdict(list)
+    for r in j.drop_duplicates("camera_id").itertuples():
+        v = r.osm_version
+        first = not pd.isna(v) and int(v) == 1 and isinstance(r.osm_timestamp, str)
+        insee = national.ARR.get(r.insee, r.insee)
+        out[insee].append(r.osm_timestamp[:10] if first else None)
+    return dict(out)
+
+
+def _jour_acte(act_id: str) -> str | None:
+    """The day an act's number carries (« 74-2022-11-18-00014 »), else None."""
+    m = re.match(r"^\d{2,3}[AB]?-(\d{4})-(\d{2})-(\d{2})-", act_id)
+    return f"{m[1]}-{m[2]}-{m[3]}" if m else None
+
+
+# --- section 2: natures -------------------------------------------------------------------
+def natures_documents(d: Donnees, rn: natures.Regles) -> dict[str, dict[str, Any]]:
+    """{event id: classer(...)} for every contract, modification and notice."""
+    out = {}
+    for e in d.reg.evenements:
+        if e["t"] in ("attribution", "modification"):
+            c = d.decp.get(e["affaire"]) or {}
+            out[e["id"]] = natures.classer(e.get("objet") or c.get("objet"), [c.get("codeCPV")], rn)
+        elif e["t"] in ("avis", "resultat", "rectificatif"):
+            a = d.avis.get(e["id"]) or {}
+            out[e["id"]] = natures.classer(e.get("objet"), a.get("cpv") or [], rn)
+    return out
+
+
+# --- section 3: dossiers ------------------------------------------------------------------
+def entrees_dossiers(
+    d: Donnees, nat: dict[str, dict[str, Any]]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    """The affaires, grants and acts as dossiers.assembler reads them."""
+    reg = d.reg
+    affaires = []
+    for a in reg.affaires.values():
+        if a.get("kind") not in ("contrat", "contrat_non_retrouve"):
+            continue
+        evs = [reg.by_id[i] for i in a.get("events") or [] if i in reg.by_id]
+        con = next((e for e in evs if e["t"] == "attribution"), None)
+        avis = [e for e in evs if e["t"] in ("avis", "resultat")]
+        ids = {e["id"] for e in avis}
+        cited = {x for e in avis for x in (d.avis.get(e["id"]) or {}).get("avis_lies", [])}
+        nats = sorted({k for e in evs for k in (nat.get(e["id"]) or {}).get("natures", [])})
+        cams = [e.get("cameras") for e in evs if e.get("cameras")]
+        if con:
+            cams += [int(x) for x in national.CAM_IN_OBJET.findall(con.get("objet") or "")]
+        affaires.append({
+            "id": a["id"],
+            "acheteur_siren": a.get("acheteur_siren"),
+            "insee": a.get("insee"),
+            "communal": bool(a.get("acheteur_communal")) or any(e.get("communal") for e in evs),
+            "natures": [n for n in nats if n != natures.AUTRE] or [natures.AUTRE],
+            "cameras": max(cams) if cams else None,
+            "titre": a.get("titre") or (con or {}).get("objet"),
+            "contrat": {"id": con["id"], "date": con["date"], "montant": con.get("montant")}
+            if con and con.get("date") else None,
+            "modifications": [e["id"] for e in evs if e["t"] == "modification"],
+            "avis": [
+                {
+                    "id": e["id"],
+                    "date": e["date"],
+                    "nature": e["t"],
+                    "objet": e.get("objet"),
+                    "valeur_estimee": ((d.avis.get(e["id"]) or {}).get("resultat") or {}).get(
+                        "valeur_estimee"),
+                    "cite": e["id"] in cited and len(ids) > 1,
+                }
+                for e in avis
+            ],
+        })  # fmt: skip
+    grants = []
+    for e in reg.evenements:
+        if not e["t"].startswith("subvention"):
+            continue
+        raw = d.subventions.get(e["id"]) or {}
+        grants.append({
+            "id": e["id"],
+            "date": e["date"],
+            "annee": e["date"][:4] if e.get("date_annee") else None,
+            "siren": raw.get("beneficiaire_siren") or e.get("beneficiaire_siren"),
+            "insee": e.get("insee"),
+            "base": e.get("base"),
+            "montant": e.get("montant"),
+            "programme": e.get("programme") or raw.get("programme"),
+        })  # fmt: skip
+    acts = []
+    for e in reg.evenements:
+        if e["t"] != "arrete" or not e.get("date"):
+            continue
+        raw = d.actes.get(e["id"]) or {}
+        titre = raw.get("titre") or (
+            f"commune {e.get('beneficiaire') or ''}"
+            if e.get("type_beneficiaire") in ("commune", "epci") else ""
+        )  # fmt: skip
+        acts.append({
+            "id": e["id"],
+            # the act's own day: its recueil may be years later (an act of 2020 in 2024)
+            "date": _jour_acte(e["id"]) or raw.get("date_acte") or e["date"],
+            "insee": national.ARR.get(e.get("insee") or "", e.get("insee")) or raw.get("insee"),
+            "sous_type": e.get("sous_type"),
+            "titre": titre,
+            "cameras": e.get("cameras"),
+        })  # fmt: skip
+    return affaires, grants, acts
+
+
+def run(out: Path, root: Path | None = None, rules: Path | None = None,
+        build: Path | None = None, today: str | None = None) -> dict[str, Any]:  # fmt: skip
+    root = root or registre.ROOT
+    rules = rules or registre.RULES
+    build = build or registre.ROOT.parent / "build"
+    today = today or dt.date.today().isoformat()
+    out.mkdir(parents=True, exist_ok=True)
+    d = charger(root, rules)
+    summary: dict[str, Any] = {"documents": len(d.reg.evenements)}
+
+    def put(name: str, data: Any) -> None:
+        (out / name).write_text(json.dumps(data, ensure_ascii=False, indent=1), "utf-8")
+
+    # 1. the fields
+    cf = champs.rules(rules / "registre_champs.yaml")
+    rows = champs.charger(root, cf, today)
+    fields = {
+        "contrats": ["date", "offres", "duree", "cpv", "accord_cadre", "montant", "titulaires",
+                     "avenant"],
+        "avis": ["date", "valeur_estimee", "montant_attribue", "date_attribution", "titulaires",
+                 "lieu", "cpv"],
+        "entreprises": ["naf", "categorie", "actif", "ei"],
+        "subventions": ["base", "taux", "montant", "programme"],
+    }  # fmt: skip
+    put("champs.json", {k: {"remplissage": champs.remplissage(rows[k], f),
+                            "aberrations": champs.aberrations(rows[k], cf)}
+                        for k, f in fields.items()})  # fmt: skip
+    # 2. the natures
+    rn = natures.load(rules / "registre_natures.yaml")
+    nat = natures_documents(d, rn)
+    put("natures.json", nat)
+    summary["natures"] = dict(Counter(k for v in nat.values() for k in v["natures"]))
+    # 3. the dossiers
+    affaires, grants, acts = entrees_dossiers(d, nat)
+    cams = cameras_carte(build) if (build / "france" / "cameras_applied.parquet").is_file() else {}
+    noms = {k: v["nom"] for k, v in d.communes.items()}
+    res = dossiers.assembler(affaires, grants, acts, cams, noms,
+                             dossiers.rules(rules / "registre_dossiers.yaml"))  # fmt: skip
+    put("dossiers.json", res)
+    summary["dossiers"] = len(res["dossiers"])
+    summary["sans_lien"] = {k: len(v) for k, v in res["sans_lien"].items()}
+    return summary
