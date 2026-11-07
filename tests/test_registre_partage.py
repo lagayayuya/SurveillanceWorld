@@ -111,6 +111,9 @@ def test_a_departement_is_said_as_a_sentence_says_it(built):
     assert partage.dep_dans("13") == "dans les Bouches-du-Rhône"
     assert partage.dep_dans("75") == "à Paris"
     assert partage.dep_dans("30") == "dans le Gard"
+    assert [partage.dep_du(c) for c in ("69", "80", "78", "01", "75", "974")] == [
+        "du Rhône", "de la Somme", "des Yvelines", "de l'Ain", "de Paris", "de La Réunion",
+    ]  # fmt: skip
 
 
 def test_an_entry_page_per_record_with_its_share_tags(built):

@@ -31,7 +31,7 @@ from typing import Any
 import yaml
 
 from lacarte_collecte import arretes
-from lacarte_registre import regles, selection
+from lacarte_registre import partage, regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -253,7 +253,14 @@ def act_event(
         "periode": " au ".join(dict.fromkeys([days[0], days[-1]])) if days else "",
         "horaires": f.get("horaires") or [],
         "duree": "",
-        "ref": f"préfecture ({admin['nom']}), {a['recueil_nom']}, acte {a['acte']}",
+        # « préfecture du Rhône, … » ; a region's, an overseas one's, the police's own name
+        "ref": partage.t(
+            "ref_arrete" if admin["genre"] == "departement" else "ref_arrete_autre",
+            du=partage.dep_du(admin["code"]),
+            nom=admin["nom"],
+            recueil=a["recueil_nom"],
+            acte=a["acte"],
+        ),
         "url": a["url"],
         "page": None,
         "relu": False,

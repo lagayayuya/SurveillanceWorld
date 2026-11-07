@@ -3769,6 +3769,8 @@
   "registre.partage.depuis": "depuis {annee}",
   "registre.partage.entreprise": "{nom} : {contrats} de vidéosurveillance avec {acheteurs} depuis {annee}{dont}.",
   "registre.partage.entreprise_dont": ", dont {n} {dans}",
+  "registre.partage.ref_arrete": "préfecture {du}, {recueil}, acte {acte}",
+  "registre.partage.ref_arrete_autre": "{nom}, {recueil}, acte {acte}",
   "registre.partage.france": "France entière",
   "registre.partage.liens": "Fiches liées",
   "registre.partage.maj": "Registre mis à jour le {date}.",

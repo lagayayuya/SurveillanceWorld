@@ -156,6 +156,8 @@ def test_the_collection_in_the_built_registre(built):
     m371 = next(e for e in docs.values() if e["id"].endswith(":371"))
     assert m371["periode"] == "2026-07-09 au 2026-07-19" and m371["cameras"] == 2
     assert "sous_le_seuil" not in m371
+    # its source said as a sentence says it: « préfecture de la Moselle », not « (Moselle) »
+    assert m371["ref"].startswith("préfecture de la Moselle, "), m371["ref"]
     # La Réunion's, not measured: listed, nothing read
     reunion = next(e for e in docs.values() if e["id"].endswith(":2026-1714"))
     assert reunion["non_lu"] == ["sous_le_seuil"] and reunion["cameras"] is None
