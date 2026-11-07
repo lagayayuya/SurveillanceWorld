@@ -111,3 +111,21 @@ def test_a_companys_partners_are_not_its_competitors():
     assert x["memes_clients"] == {"Y": 1}
     assert x["memes_natures_departements"] == {"Y": 1, "Z": 1}
     assert x["clients"] == ["B1"] and x["montant"] == 100
+
+
+def test_drone_acts_published_against_their_flight():
+    from lacarte_registre import explorer
+
+    def act(admin, vol, recueil, vu=None):
+        return {"type": "drone", "administration": admin, "recueil_date": recueil,
+                "vu_le": vu, "champs": {"dates": vol}}  # fmt: skip
+
+    res = explorer.delais_drones([
+        act("pref13", ["2026-07-10", "2026-07-09"], "2026-07-12"),  # first day 09: +3
+        act("pref13", ["2026-07-10"], "2026-07-10"),  # the same day
+        act("pref13", ["2026-07-20"], "2026-07-01", vu="2026-07-02"),  # seen 18 days before
+        act("pref69", [], "2026-07-01"),  # no flight read: not counted
+        {"type": "videoprotection", "administration": "pref69", "recueil_date": "2026-07-01"},
+    ])  # fmt: skip
+    assert res == {"pref13": {"n": 3, "apres_vol": 0.333, "jour_meme": 0.333,
+                              "mediane_jours": 0, "base": {"recueil": 2, "vu_le": 1}}}  # fmt: skip

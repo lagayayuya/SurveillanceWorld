@@ -15,7 +15,9 @@ import glob
 import gzip
 import json
 import re
+import statistics
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -115,6 +117,37 @@ def _jour_acte(act_id: str) -> str | None:
     """The day an act's number carries (« 74-2022-11-18-00014 »), else None."""
     m = re.match(r"^\d{2,3}[AB]?-(\d{4})-(\d{2})-(\d{2})-", act_id)
     return f"{m[1]}-{m[2]}-{m[3]}" if m else None
+
+
+def delais_drones(actes: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """By prefecture, when its drone acts are published against their first flight's day:
+    the share published after it, the share the same day, the median of the days between
+    (negative: before the flight). Published = the day Attrap first saw the recueil
+    (`vu_le`), else the recueil's own day, which is said (`base`)."""
+    ecarts: dict[str, list[int]] = defaultdict(list)
+    bases: dict[str, Counter[str]] = defaultdict(Counter)
+    for a in actes:
+        days = sorted((a.get("champs") or {}).get("dates") or [])
+        pub = a.get("vu_le") or a.get("recueil_date")
+        if a.get("type") != "drone" or not days or not pub:
+            continue
+        try:
+            gap = (dt.date.fromisoformat(pub[:10]) - dt.date.fromisoformat(days[0])).days
+        except ValueError:
+            continue
+        ecarts[a["administration"]].append(gap)
+        bases[a["administration"]]["vu_le" if a.get("vu_le") else "recueil"] += 1
+    out = {}
+    for admin, gaps in sorted(ecarts.items()):
+        n = len(gaps)
+        out[admin] = {
+            "n": n,
+            "apres_vol": round(sum(g > 0 for g in gaps) / n, 3),
+            "jour_meme": round(sum(g == 0 for g in gaps) / n, 3),
+            "mediane_jours": float(statistics.median(gaps)),
+            "base": dict(bases[admin]),
+        }
+    return out
 
 
 # --- section 2: natures -------------------------------------------------------------------
@@ -427,6 +460,7 @@ def run(out: Path, root: Path | None = None, rules: Path | None = None,
     put("champs.json", {k: {"remplissage": champs.remplissage(rows[k], f),
                             "aberrations": champs.aberrations(rows[k], cf)}
                         for k, f in fields.items()})  # fmt: skip
+    put("delais_drones.json", delais_drones(d.actes.values()))
     # 2. the natures
     rn = natures.load(rules / "registre_natures.yaml")
     nat = natures_documents(d, rn)
