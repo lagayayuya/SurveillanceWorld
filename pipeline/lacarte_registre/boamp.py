@@ -40,6 +40,8 @@ DROP_KEYS = {
     "CORRESPONDANT", "CONTACT", "MEL", "TEL", "FAX", "nomContact", "telContact",
     "adresseMailContact", "PersonnePhysique", "cac:Contact", "titulaire",
     "RENS_COMPLEMENT", "ADRESSES_COMPLEMENTAIRES",
+    # eForms: a holder's beneficial owners are persons, whatever they carry
+    "efac:UltimateBeneficialOwner", "cbc:FirstName", "cbc:FamilyName",
 }  # fmt: skip
 
 
@@ -53,10 +55,21 @@ def _holder(h: Any) -> dict[str, Any]:
     return out
 
 
-def _walk(o: Any) -> Any:
+# What an eForms organisation that is a natural person loses: everything that names or places
+# it (its indicator is efac:Organization's child, its name and address efac:Company's, one
+# level down: the flag is carried down); its notice-local id (ORG-0005) stays, so a result
+# can say « a holder who is a person » without naming them
+PERSON_KEYS = {
+    "cac:PartyName", "cac:PostalAddress", "cac:PartyLegalEntity", "cac:Contact",
+    "cbc:WebsiteURI", "cbc:EndpointID",
+}  # fmt: skip
+
+
+def _walk(o: Any, natural: bool = False) -> Any:
     if isinstance(o, dict):
-        natural = str(o.get("efbc:NaturalPersonIndicator", "")).lower() == "true"
-        out = {}
+        ind = _t(o.get("efbc:NaturalPersonIndicator", ""))
+        natural = natural or str(ind or "").lower() == "true"
+        out: dict[str, Any] = {"personne_physique": True} if natural and ind else {}
         for k, v in o.items():
             if k in DROP_KEYS:
                 continue
@@ -64,17 +77,17 @@ def _walk(o: Any) -> Any:
                 v = [_holder(x) for x in v] if isinstance(v, list) else _holder(v)
                 out[k] = v
                 continue
-            if natural and k in ("cac:PartyName", "cac:PostalAddress"):
+            if natural and k in PERSON_KEYS:
                 continue
             if k == "cac:PartyName":
                 # an organisation's name (a holder may be a sole trader): its fingerprint only;
                 # the buyer's name is the record's own `nomacheteur`
                 out[k] = [_party(x) for x in v] if isinstance(v, list) else _party(v)
                 continue
-            out[k] = _walk(v)
+            out[k] = _walk(v, natural)
         return out
     if isinstance(o, list):
-        return [_walk(v) for v in o]
+        return [_walk(v, natural) for v in o]
     if isinstance(o, str):
         return selection._sans_personne(o)
     return o
@@ -224,6 +237,148 @@ def _lieu(d: Any) -> dict[str, str]:
     return {"cp": cp or "", "ville": ville or ""}
 
 
+# --- an eForms notice's own fields (from 2024: the DILA's daily files) ----------------------
+# The codes are eForms' code lists (winner-selection-status, procurement-procedure-type,
+# award-criterion-type, number-weight), kept as they are; the site words them.
+ISSUES = {"selec-w": "attribue", "clos-nw": "sans_attributaire", "open-nw": "pas_encore"}
+MOIS = {"MONTH": 1.0, "YEAR": 12.0, "DAY": 12 / 365.25, "WEEK": 12 / 52.18}
+
+
+def _dict(v: Any) -> dict[str, Any]:
+    v = _first(v)
+    return v if isinstance(v, dict) else {}
+
+
+def _num(v: Any) -> float | None:
+    n = _amount(v)
+    return int(n) if n is not None and n == int(n) else n
+
+
+def _duree(project: dict[str, Any]) -> float | None:
+    """A lot's duration in months: its DurationMeasure, else its start and end days."""
+    pp = _dict(project.get("cac:PlannedPeriod"))
+    dm = pp.get("cbc:DurationMeasure")
+    if dm is not None:
+        unit = dm.get("@unitCode") if isinstance(dm, dict) else None
+        n = _amount(dm)
+        if n is not None and unit in MOIS:
+            return round(n * MOIS[unit], 1)
+    a, b = str(_t(pp.get("cbc:StartDate")) or "")[:10], str(_t(pp.get("cbc:EndDate")) or "")[:10]
+    if re.fullmatch(r"\d{4}-\d\d-\d\d", a) and re.fullmatch(r"\d{4}-\d\d-\d\d", b):
+        import datetime as dt
+
+        days = (dt.date.fromisoformat(b) - dt.date.fromisoformat(a)).days + 1
+        return round(days * 12 / 365.25, 1) if days > 0 else None
+    return None
+
+
+def _adresse(a: Any) -> dict[str, str]:
+    a = _dict(a)
+    ville = str(_t(a.get("cbc:CityName")) or "").strip()
+    ville = re.sub(r"\s+cedex.*$", "", ville, flags=re.I).strip()
+    return {
+        "cp": str(_t(a.get("cbc:PostalZone")) or "").strip(),
+        "ville": ville,
+        "nuts": str(_t(a.get("cbc:CountrySubentityCode")) or "").strip(),
+    }
+
+
+def _criteres(lot: dict[str, Any]) -> list[dict[str, Any]]:
+    out = []
+    terms = _dict(_dict(lot.get("cac:TenderingTerms")).get("cac:AwardingTerms"))
+    for c in _items(terms.get("cac:AwardingCriterion") or []):
+        for sub in _items(_dict(c).get("cac:SubordinateAwardingCriterion") or []):
+            if not isinstance(sub, dict):
+                continue
+            param = next(iter(_under(sub, "efac:AwardCriterionParameter")), None)
+            param = _dict(param)
+            out.append(
+                {
+                    "type": _t(sub.get("cbc:AwardingCriterionTypeCode")),
+                    "poids": _num(param.get("efbc:ParameterNumeric")),
+                    "unite": _t(param.get("efbc:ParameterCode")),
+                }
+            )
+    return out
+
+
+def eforms(don: Any) -> dict[str, Any] | None:
+    """What an eForms notice says besides its holders: the procedure, the buyer's place and
+    where the contract is performed, each lot (its duration, renewals, criteria and the price's
+    weight) and each lot's result (awarded or not, the tenders received). None for a notice
+    of the former schema."""
+    if not isinstance(don, dict) or not any(_under(don, "efac:Organizations")):
+        return None
+    orgs = {}
+    for o in _under(don, "efac:Organization"):
+        for x in _items(o):
+            comp = _dict(x.get("efac:Company")) if isinstance(x, dict) else {}
+            oid = _t(_dict(comp.get("cac:PartyIdentification")).get("cbc:ID"))
+            if oid:
+                orgs[oid] = _adresse(comp.get("cac:PostalAddress"))
+    party = _dict(_dict(don.get("cac:ContractingParty")).get("cac:Party"))
+    buyer = _t(_dict(party.get("cac:PartyIdentification")).get("cbc:ID"))
+    project = _dict(don.get("cac:ProcurementProject"))
+    lots, where = [], _adresse(_dict(project.get("cac:RealizedLocation")).get("cac:Address"))
+    for lot in _items(don.get("cac:ProcurementProjectLot") or []):
+        if not isinstance(lot, dict):
+            continue
+        lp = _dict(lot.get("cac:ProcurementProject"))
+        ext = _dict(lp.get("cac:ContractExtension"))
+        crit = _criteres(lot)
+        prix = [c["poids"] for c in crit if c["type"] == "price" and c["poids"] is not None]
+        lots.append(
+            {
+                "lot": _t(lot.get("cbc:ID")),
+                "titre": selection.texte(_t(lp.get("cbc:Name"))),
+                "duree_mois": _duree(lp),
+                "reconductions": _num(ext.get("cbc:MaximumNumberNumeric")),
+                "criteres": crit,
+                "poids_prix": sum(prix)
+                if prix and all(str(c["unite"] or "").startswith("per") for c in crit)
+                else None,
+            }
+        )
+        if not where["ville"] and not where["cp"]:
+            where = _adresse(_dict(lp.get("cac:RealizedLocation")).get("cac:Address"))
+    results = []
+    for nr in _under(don, "efac:NoticeResult"):
+        for lr in _items(_dict(nr).get("efac:LotResult") or []):
+            if not isinstance(lr, dict):
+                continue
+            offres = [
+                _num(st.get("efbc:StatisticsNumeric"))
+                for st in _items(lr.get("efac:ReceivedSubmissionsStatistics") or [])
+                if isinstance(st, dict) and _t(st.get("efbc:StatisticsCode")) == "tenders"
+            ]
+            code = _t(lr.get("cbc:TenderResultCode"))
+            results.append(
+                {
+                    "lot": _t(_dict(lr.get("efac:TenderLot")).get("cbc:ID")),
+                    "issue": ISSUES.get(str(code), code),
+                    "offres": offres[0] if offres else None,
+                    "motif": _t(
+                        _dict(lr.get("efac:DecisionReason")).get("efbc:DecisionReasonCode")
+                    ),
+                }
+            )
+    issues = {r["issue"] for r in results}
+    one = len(results) == 1
+    return {
+        "procedure": _t(_dict(don.get("cac:TenderingProcess")).get("cbc:ProcedureCode")),
+        "lieu_acheteur": orgs.get(buyer) or {"cp": "", "ville": "", "nuts": ""},
+        "lieu_execution": where,
+        "lots": lots,
+        "resultats": results,
+        "issue": (issues.pop() if len(issues) == 1 else "mixte") if results else None,
+        "offres": results[0]["offres"] if one else None,
+        "duree_mois": max((x["duree_mois"] for x in lots if x["duree_mois"]), default=None),
+        "reconductions": max(
+            (x["reconductions"] for x in lots if x["reconductions"]), default=None
+        ),
+    }
+
+
 def _resultat(don: Any) -> dict[str, Any]:
     sirens, keys, montants, estim, dates = set(), set(), [], [], set()
     for t in _under(don, "TITULAIRE"):
@@ -252,12 +407,17 @@ def _resultat(don: Any) -> dict[str, Any]:
                 oid = _t(_first(comp.get("cac:PartyIdentification")).get("cbc:ID"))
                 le = _first(_first(comp.get("cac:PartyLegalEntity")).get("cbc:CompanyID"))
                 key = _first(comp.get("cac:PartyName")).get("cbc:Name_cle") or ""
-                orgs[oid] = (selection.siren_of(_t(le)), key)
+                orgs[oid] = (selection.siren_of(_t(le)), key, bool(x.get("personne_physique")))
+    personnes = set()
     for tp in _under(don, "efac:TenderingParty"):
         for x in _items(tp):
             for ten in _under(x, "efac:Tenderer"):
                 for y in _items(ten):
-                    s, k = orgs.get(_t(y.get("cbc:ID")) if isinstance(y, dict) else None, ("", ""))
+                    oid = _t(y.get("cbc:ID")) if isinstance(y, dict) else None
+                    s, k, person = orgs.get(oid, ("", "", False))
+                    if person:
+                        personnes.add(oid)  # a holder who is a person: counted, never named
+                        continue
                     if s:
                         sirens.add(s)
                     if k:
@@ -291,6 +451,7 @@ def _resultat(don: Any) -> dict[str, Any]:
         "date_attribution": min(dates) if dates else None,
         "valeur_estimee": max(estim) if estim else None,
         "groupement": groupement,
+        "titulaires_personnes": len(personnes),
     }
 
 
@@ -322,6 +483,7 @@ def notice(r: dict[str, Any]) -> dict[str, Any] | None:
         if k == "nouvelles":
             nouvelles = max(nouvelles, n)
     natures = selection.rules()["liens"]["natures"]
+    ef = eforms(d)
     lies = set(_linked(r.get("annonce_lie")) + _linked(r.get("annonces_anterieures")))
     return {
         "idweb": r["idweb"],
@@ -336,9 +498,22 @@ def notice(r: dict[str, Any]) -> dict[str, Any] | None:
         "avis_lies": sorted(lies - {r["idweb"]}),
         "cameras": nouvelles or None,
         "url": r.get("url_avis"),
-        "lieu": _lieu(d),
+        "lieu": _lieu_de(d, ef),
         "resultat": _resultat(d),
+        "eforms": ef,
     }
+
+
+def _lieu_de(d: Any, ef: dict[str, Any] | None) -> dict[str, str]:
+    """Where a notice is: an eForms notice's buyer (its own organisation, never the first
+    address met, which is often the platform that sent it: Avenue-Web Systèmes at
+    Seyssinet-Pariset for Lyon's 25-71998), else where it is performed; a former notice's
+    first address."""
+    if ef:
+        for k in ("lieu_acheteur", "lieu_execution"):
+            if ef[k]["ville"] or ef[k]["cp"]:
+                return {"cp": ef[k]["cp"], "ville": ef[k]["ville"]}
+    return _lieu(d)
 
 
 def notices_of(records: Iterable[dict[str, Any]]) -> Iterator[dict[str, Any]]:

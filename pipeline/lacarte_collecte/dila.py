@@ -57,6 +57,10 @@ PREFIXES = {
     "eforms-ubl-extension-aggregate-components": "efac",
     "eforms-ubl-extensions": "efext",
 }
+# The reading's version: a kept notice read by an older one (from 2024, one XML each) is read
+# again by its address (`relire`): 2 = the eForms prefixes (05/11), the lots, results, tenders,
+# criteria and the buyer's own place (07/11).
+LECTURE = 2
 LINK = re.compile(r'href="([^"?/][^"]*)"')
 IDWEB = re.compile(r"\d{2}-\d{3,7}")
 
@@ -171,7 +175,49 @@ def notice(xml: bytes, mention: dict[str, str]) -> dict[str, Any] | None:
     n = boamp.notice(boamp.clean(rec))
     if n is None:
         return None
-    return {**n, "id": n["idweb"], "mention": mention}
+    return {**n, "id": n["idweb"], "mention": mention, "lecture": LECTURE}
+
+
+def a_relire(n: dict[str, Any]) -> bool:
+    """A kept notice of one XML (from 2024) read by an older reading."""
+    adresse = str((n.get("mention") or {}).get("adresse") or "")
+    return adresse.endswith(".xml") and n.get("lecture") != LECTURE
+
+
+def relire(ctx: Contexte, http: Http, store: Store) -> dict[str, Any]:
+    """The kept notices an older reading read, each asked again by its address (one request,
+    at the archive's pace) and read by the current one; resumed by the next run where the
+    deadline stopped it. A notice no longer about video surveillance keeps its former reading
+    (marked, so it is not asked again); one the archive no longer serves, too."""
+    st = Etat(ctx.root, SOURCE)
+    erased = ctx.effaces()
+    todo = [n for n in store.records() if a_relire(n) and n["idweb"] not in erased]
+    done = dict(st.get("relecture").get("faits") or {})
+    for i, old in enumerate(todo):
+        if ctx.out_of_time():
+            break
+        m = dict(old["mention"])
+        path = m["adresse"][len(http.base) :] if m["adresse"].startswith(http.base) else ""
+        got = http.read(path) if path else None
+        if got is None and path:
+            # a year over: its folder moved under FluxHistorique (or back)
+            day = dt.date.fromisoformat(old["date"]) if old.get("date") else None
+            for alt in day_paths(day, ctx.today) if day else []:
+                if alt + m["fichier"] != path and (got := http.read(alt + m["fichier"])):
+                    path = alt + m["fichier"]
+                    break
+        n = (
+            notice(got[0], {**m, "adresse": http.base + path, "date_fichier": got[1]})
+            if got
+            else None
+        )
+        issue = "relu" if n else ("absent" if got is None else "plus_video")
+        store.add([n or {**old, "lecture": LECTURE, "relecture": issue}])
+        done[issue] = done.get(issue, 0) + 1
+        if i % 50 == 0:
+            st.save("relecture", faits=done, restant=len(todo) - i - 1)
+    left = sum(1 for n in store.records() if a_relire(n) and n["idweb"] not in erased)
+    return st.save("relecture", faits=done, restant=left, lecture=LECTURE)
 
 
 # --- the archive's folders --------------------------------------------------------------
@@ -381,6 +427,8 @@ def collect(ctx: Contexte) -> dict[str, Any]:
             break
         collect_day(ctx, http, day, store)
         read_days += 1
+    # the notices read by an older reading, again by their address, before the history
+    relecture = relire(ctx, http, store) if not ctx.out_of_time() else {}
     history = [d for d in days if d < flow]
     canal: Any = http
     ftp = None
@@ -426,6 +474,7 @@ def collect(ctx: Contexte) -> dict[str, Any]:
         "jours_restants": max(left, 0),
         "annees_restantes": years_left,
         "canal_historique": canal_used,
+        "relecture": {k: relecture.get(k) for k in ("faits", "restant", "lecture")},
         "requetes": f.requests,
     }
 
