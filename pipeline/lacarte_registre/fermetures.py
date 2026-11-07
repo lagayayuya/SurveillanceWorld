@@ -602,6 +602,7 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     idx["totaux"].update(recherche.totaux(ctx, lists))
     write("index.json", {**idx, "comptes": lists["comptes"]})
     write("listes.json", lists)
+    write("graphe/aretes.json", recherche.aretes(ctx))
     write("non_lus.json", non_lus_file(ctx))
     write("couverture.json", ctx.couverture)
     # a file per commune with a document (its own, or an act it shares), per département,

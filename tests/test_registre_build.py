@@ -315,3 +315,20 @@ def test_a_commune_s_point_is_its_town_hall_to_about_a_hundred_metres():
     assert [
         d for d in ("69", "2A", "974", "976", "975", "987") if recherche.DEPARTEMENT.match(d)
     ] == ["69", "2A", "974", "976"]
+
+
+def test_the_national_graph_s_edges_are_legal_persons_counted_once(built):
+    """graphe/aretes.json: [buyer, company, amount, n], every contract once, never a sole
+    trader; its buyers and companies are the lists'."""
+    edges = read(built, "graphe/aretes.json")["aretes"]
+    listes = read(built, "listes.json")
+    assert edges and all(len(x) == 4 and x[3] >= 1 for x in edges)
+    ents = listes["dico"]["entreprises"]
+    for _, s, _, _ in edges:
+        assert s != "EI" and not (ents.get(s) or {}).get("entrepreneur_individuel"), s
+    assert len({(b, s) for b, s, _, _ in edges}) == len(edges)
+    assert all(b != s for b, s, _, _ in edges)
+    # a company's contracts in its edges, as many as its row in the lists
+    rows = listes["lignes"]["entreprises"]
+    s = max(rows, key=lambda k: rows[k]["n"])
+    assert sum(n for _, x, _, n in edges if x == s) >= rows[s]["n"]

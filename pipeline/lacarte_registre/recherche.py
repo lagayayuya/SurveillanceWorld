@@ -258,6 +258,31 @@ def totaux(ctx: fermetures.Context, lists: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def aretes(ctx: fermetures.Context) -> dict[str, Any]:
+    """The national graph of buyers and companies (« chemin entre deux… »): one edge per buyer
+    and company that signed a contract together, [buyer, company, amount, n]. A contract
+    counted once (a copy never), its whole amount when it counts (`compte`) on each of its
+    holders' edges, so the edges do not add up to the total; legal persons only: a sole
+    trader is in no edge, whatever its contracts."""
+    reg = ctx.reg
+    edges: dict[tuple[str, str], list[float]] = {}
+    for e in reg.evenements:
+        if e["t"] != "attribution" or e.get("copie") or not (b := reg.buyer(e)):
+            continue
+        for s in dict.fromkeys(e.get("entreprises") or []):
+            # a buyer named as its own holder (a SIREN on both sides) is no path
+            if s in (EI, b) or ctx.entreprise(s).get("entrepreneur_individuel"):
+                continue
+            o = edges.setdefault((b, s), [0.0, 0])
+            o[0] += (e.get("montant") or 0) if e.get("compte") else 0
+            o[1] += 1
+    return {
+        "v": 1,
+        "maj": ctx.couverture["maj"],
+        "aretes": [[b, s, round(m), n] for (b, s), (m, n) in sorted(edges.items())],
+    }
+
+
 def epci(ctx: fermetures.Context, siren: str) -> dict[str, Any]:
     out: dict[str, Any] = {"nom": ctx.nom_court(siren) or ctx.epcis.get(siren)}
     if r := ctx.fiches.acheteur(siren):
