@@ -32,6 +32,7 @@ from lacarte_registre import (
     fetch,
     importer,
     national,
+    selection,
     sirene,
 )
 
@@ -454,3 +455,16 @@ def test_a_mixed_contract_s_objet(objet, famille):
         else ""
     )
     assert got == famille
+
+
+def test_a_mixed_contract_carries_its_family_counted_or_not(tmp_path):
+    (tmp_path / "national").mkdir()
+    decp.write(tmp_path / "national" / "decp.jsonl.gz", decp.contracts(rows()))
+    (tmp_path / "national" / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    ev = national.assembler(tmp_path)["evenements"]
+    mixed = [e for e in ev if e.get("mixte")]
+    assert mixed and {e["mixte"] for e in mixed} <= {"surete", "autres"}
+    out = set(selection.rules()["mixte"]["hors_totaux"])
+    for e in mixed:
+        if e.get("hors_totaux") not in ("centrale", "a_verifier"):
+            assert (e["hors_totaux"] == f"mixte_{e['mixte']}") == (e["mixte"] in out), e["id"]

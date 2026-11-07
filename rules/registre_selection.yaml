@@ -146,7 +146,13 @@ mixte:
     électrique », « réseaux secs » (the Morbihan's energy syndicate's lot 8, 60 M€, six
     rows; a street's renewal), and « sous-systèmes concourant à la sûreté »; « réseau de
     communication » alone is not one (« extension du système de vidéo protection et de son
-    réseau de communication » is video only).
+    réseau de communication » is video only). Every mixed contract's documents carry its
+    family (`mixte`), counted or not, so that it can be shown apart. Ju, 2026-11-07, would
+    count the `surete` family (« des sous-systèmes concourant à la sûreté relèvent de la
+    surveillance »); awaiting her confirmation, since the whole family is access control
+    (502 affaires, 207 M€) and intrusion (192, 165 M€), the sub-systems none: +370 M€.
+  # the families whose contracts leave the totals (`hors_totaux: mixte_<famille>`)
+  hors_totaux: [autres, surete]
   surete: 'controle d.?acces|intrusion|alarme|interphon|courants? faibles|\bgtb\b|sous.?systemes concourant a la surete'
   autres: 'securite humaine|surveillance humaine|gardiennage|agents? de (?:securite|surete)|incendie|\bssi\b|eclairage|signalisation lumineuse|feux tricolores|multi ?techni|telephon|equipements? urbains?|flexibilite electrique|reseaux secs'
 national:

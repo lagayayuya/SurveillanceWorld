@@ -574,9 +574,12 @@ def _quality(
                 x["hors_totaux"] = (
                     "centrale" if a["centrale_achat"]
                     else "a_verifier" if raisons
-                    else f"mixte_{a['mixte_famille']}" if a["contrat_mixte"]
+                    else f"mixte_{a['mixte_famille']}"
+                    if a["mixte_famille"] in mix["hors_totaux"]
                     else ""
                 )  # fmt: skip
+                if a["contrat_mixte"]:
+                    x["mixte"] = a["mixte_famille"]  # counted or not, shown apart
                 x["national"] = a["acheteur_national"]
                 if saisie:
                     x["a_verifier"] = "erreur_saisie_probable"
