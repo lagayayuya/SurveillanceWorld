@@ -14,10 +14,14 @@ etats:
     has no value, said « non lu », never 0, or the page would say « no drone » where we
     have not looked.
 
-# Population strata for the ranks. The DGCL's strata of the communes' finances (« Les
-# collectivités locales en chiffres »), the last one cut at 200 000 for the large cities.
-# hypothesis: the bounds are the DGCL's as remembered, to check at the source before a
-# page cites them.
+# Population strata for the ranks. The DGCL's strata of the communes' finances, read on
+# 2026-11-07 in « Les collectivités locales en chiffres 2024 », p. 54 (« Ratios financiers
+# des communes par strate de population en 2023 »: moins de 100, 100 à 200, 200 à 500,
+# 500 à 2 000, 2 000 à 3 500, 3 500 à 5 000, 5 000 à 10 000, 10 000 à 20 000, 20 000 à
+# 50 000, 50 000 à 100 000, 100 000 hab. ou plus hors Paris),
+# https://www.collectivites-locales.gouv.fr/files/files/Etudes-et-statistiques/Les%20collectivit%C3%A9s%20locales%20en%20chiffres/Les%20collectivit%C3%A9s%20en%20chiffres/2024/BAT2web-CL_en_chiffres_2024.pdf
+# Ours: the three below 500 in one (few buy cameras), and a cut at 200 000 that is ours, not
+# the DGCL's, for the large cities.
 strates:
   id: rule:registre_chiffres@1:strates
   rationale: >-
