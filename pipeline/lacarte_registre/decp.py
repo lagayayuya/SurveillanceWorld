@@ -87,7 +87,8 @@ def resources(f: fetch.Fetcher) -> dict[str, Any]:
     out = {}
     for r in ds.get("resources", []):
         for kind in ("parquet", "csv"):
-            if r.get("title") == src[f"{kind}_title"]:
+            titles = src[f"{kind}_title"]
+            if r.get("title") in ([titles] if isinstance(titles, str) else titles):
                 out[kind] = {
                     "url": r["url"],
                     "id": r["id"],

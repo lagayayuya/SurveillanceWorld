@@ -126,7 +126,8 @@ sources:
     id: rule:registre_sources@1:source_decp
     dataset: https://www.data.gouv.fr/api/1/datasets/donnees-essentielles-de-la-commande-publique-consolidees-format-tabulaire/
     parquet_title: decp.parquet
-    csv_title: decp.csv
+    # the CSV was renamed decp.csv.gz on 2026-11-06, same resource id (22847056…)
+    csv_title: [decp.csv, decp.csv.gz]
     tabular: https://tabular-api.data.gouv.fr/api/resources/{resource}/data/
     page_size: 200
     rationale: >-

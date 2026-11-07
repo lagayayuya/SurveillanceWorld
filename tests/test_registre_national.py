@@ -211,7 +211,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = {"resources": [
                 {"title": "decp.parquet", "id": "pq", "url": f"{srv.base}/resources/decp.parquet",
                  "last_modified": "2026-10-29T05:28:00"},
-                {"title": "decp.csv", "id": "csv1", "url": f"{srv.base}/resources/decp.csv",
+                {"title": "decp.csv.gz", "id": "csv1", "url": f"{srv.base}/resources/decp.csv",
                  "last_modified": "2026-10-26T05:20:00"}]}  # fmt: skip
         elif url.path == "/tabular/csv1/data/":
             status, body = (403, "forbidden") if srv.refuse_decp else (200, tabular(srv.rows, q))
