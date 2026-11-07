@@ -446,7 +446,7 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
             # named by none of its sources: its SIREN alone (fermetures.Context.acheteur)
             acheteurs[s]["nom_inconnu"] = True
     communes = {
-        k: {kk: c.get(kk) for kk in ("nom", "dep", "pop", "epci", "bbox")}
+        k: {kk: c.get(kk) for kk in ("nom", "dep", "pop", "epci", "bbox", "mairie")}
         for k, c in ref.communes.items()
     }
     return {

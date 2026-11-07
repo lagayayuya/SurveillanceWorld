@@ -598,7 +598,9 @@ def write_all(ctx: Context, out: Path, write: Writer) -> dict[str, int]:
     from lacarte_registre import recherche  # recherche reads this module's dictionaries
 
     lists = recherche.listes(ctx)
-    write("index.json", {**index_file(ctx), "comptes": lists["comptes"]})
+    idx = index_file(ctx)
+    idx["totaux"].update(recherche.totaux(ctx, lists))
+    write("index.json", {**idx, "comptes": lists["comptes"]})
     write("listes.json", lists)
     write("non_lus.json", non_lus_file(ctx))
     write("couverture.json", ctx.couverture)

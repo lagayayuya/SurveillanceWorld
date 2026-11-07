@@ -1,9 +1,11 @@
 """The communes of France (API Découpage administratif, INSEE's COG): what turns a buyer's
 SIREN into its commune, a commune into its intercommunality and département, and gives the
-populations the amounts per inhabitant are measured with, and each commune's box (west, south,
-east, north), which frames the commune on the drone view's map whatever it holds.
+populations the amounts per inhabitant are measured with, each commune's box (west, south,
+east, north), which frames the commune on the drone view's map whatever it holds, and its
+town hall's point (the API's `mairie`), where the lists place it.
 
-Out: <root>/national/communes.json {"communes": {insee: {nom, dep, pop, epci, siren, bbox}},
+Out: <root>/national/communes.json {"communes": {insee: {nom, dep, pop, epci, siren, bbox,
+mairie}},
 "epcis": {siren: nom}, "departements": {code: nom}}. Three requests.
 """
 
@@ -31,6 +33,17 @@ def box(g: dict[str, Any] | None) -> list[float] | None:
     return [round(min(xs), 5), round(min(ys), 5), round(max(xs), 5), round(max(ys), 5)]
 
 
+def point(g: dict[str, Any] | None) -> list[float] | None:
+    """[lon, lat] of the API's Point, to 5 decimals (about a metre)."""
+    try:
+        lon, lat = g["coordinates"][:2] if g and g.get("type") == "Point" else (None, None)
+    except (KeyError, TypeError, ValueError):
+        return None
+    if lon is None or lat is None:
+        return None
+    return [round(float(lon), 5), round(float(lat), 5)]
+
+
 def collect(f: fetch.Fetcher, out_dir: Path) -> dict[str, Any]:
     src = f.conf["sources"][SOURCE]
     communes = {
@@ -41,6 +54,7 @@ def collect(f: fetch.Fetcher, out_dir: Path) -> dict[str, Any]:
             "epci": c.get("codeEpci") or "",
             "siren": c.get("siren"),
             "bbox": box(c.get("bbox")),
+            "mairie": point(c.get("mairie")),
         }
         for c in f.get_json(src["communes"])
     }

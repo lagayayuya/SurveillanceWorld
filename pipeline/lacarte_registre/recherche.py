@@ -20,11 +20,12 @@ from __future__ import annotations
 
 import gzip
 import json
+import re
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from lacarte_registre import fermetures
+from lacarte_registre import comptes, fermetures
 from lacarte_registre.regles import EI, Event, disp, sort_key, typ, year_group
 from lacarte_registre.selection import plain
 
@@ -165,7 +166,19 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             o["centrale"] = True
         o["ents"] |= {s for s in e.get("entreprises") or [] if s != EI}
     for k, c in coms.items():
-        c["carte"] = ctx.commune_stats(k).get("carte")
+        st = ctx.commune_stats(k)
+        c["carte"] = st.get("carte")
+        # its own counted contracts (comptes.commune, as departement/<d>.json stats.communes)
+        c["amt"] = round(st.get("montant") or 0, 2)
+    # a département's map counts every commune of it, a document or not; its acts as its
+    # page counts them (comptes.departement)
+    carte_dep: Counter[str] = Counter()
+    for k, n in (reg.pilote.get("CARTE_N_ALL", {}) or {}).items():
+        if n and (d := (reg.communes.get(k) or {}).get("dep")):
+            carte_dep[d] += n
+    for d, o in deps.items():
+        dst = comptes.departement(reg, d)
+        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"])
     # a company named in a contract that counts, never a sole trader
     dico_ent = {s: ctx.entreprise(s) for s in sorted(ents)}
     ent_rows = {
@@ -211,12 +224,37 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
                 for s, a in dico_buy.items()
                 if LISTE_CAT.get(a.get("categorie") or "") or s in epcis
             },  # fmt: skip
-            "communes": {k: ctx.commune(k) for k in sorted(coms)},
+            # its town hall's point, [lon, lat] to 3 decimals (about 100 m): « autour de moi »
+            "communes": {k: {**ctx.commune(k), **_ll(reg.communes.get(k))} for k in sorted(coms)},
             # every intercommunality of a listed commune, named by France's reference (the
             # buyers' dictionary names only those that buy): its fiche, its buyer's page, when
             # this build writes one, else `sans_fiche` (its row leads nowhere and says so)
             "epcis": {s: epci(ctx, s) for s in sorted(epcis)},
         },
+    }
+
+
+def _ll(c: dict[str, Any] | None) -> dict[str, list[float]]:
+    m = (c or {}).get("mairie")
+    return {"ll": [round(m[0], 3), round(m[1], 3)]} if m else {}
+
+
+# a département of the Code officiel géographique, not a collectivity beyond (975, 977, 987…)
+DEPARTEMENT = re.compile(r"^(\d\d|2[AB]|97[1-46])$")
+
+
+def totaux(ctx: fermetures.Context, lists: dict[str, Any]) -> dict[str, Any]:
+    """The home page's totals, from the lists it does not load: the public money (the sum of
+    the départements' counted contracts, as the lists add them), the cameras on the map (every
+    commune of France, a document or not), the départements whose acts are read."""
+    deps = lists["lignes"]["departements"]
+    cov = ctx.couverture["departements"]
+    return {
+        "montant": round(sum(o["amt"] for o in deps.values())),
+        "carte": sum(n or 0 for n in (ctx.reg.pilote.get("CARTE_N_ALL", {}) or {}).values()),
+        "deps_lus": sum(
+            1 for d, v in cov.items() if v.get("etat") == "collecte" and DEPARTEMENT.match(d)
+        ),
     }
 
 

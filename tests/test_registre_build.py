@@ -281,3 +281,37 @@ def test_a_commune_file_says_whether_its_map_is_served(built):
     assert others and all(
         read(built, f"commune/{f.name}")["carte"]["decoupee"] is False for f in others
     )
+
+
+def test_the_home_totals_and_the_lists_money_map_and_acts(built):
+    """The home's totals from the lists it does not load (index.json `totaux`): the money is
+    the départements' sum, the map counts every commune of France, the départements read are
+    départements; a commune's own money and a département's map and acts in the lists, as
+    their pages count them."""
+    index, listes = read(built, "index.json"), read(built, "listes.json")
+    deps, coms = listes["lignes"]["departements"], listes["lignes"]["communes"]
+    tot = index["totaux"]
+    assert tot["montant"] == round(sum(o["amt"] for o in deps.values())) > 0
+    assert tot["carte"] >= sum(c.get("carte") or 0 for c in coms.values())
+    cov = read(built, "couverture.json")["departements"]
+    lus = [d for d, v in cov.items() if v.get("etat") == "collecte"]
+    assert 0 < tot["deps_lus"] <= len(lus)
+    page = read(built, "departement/69.json")["stats"]
+    assert (deps["69"]["cam"], deps["69"]["dr"]) == (
+        page["depStats"]["cam"],
+        page["depStats"]["dr"],
+    )
+    assert deps["69"]["carte"] >= sum(c.get("carte") or 0 for k, c in coms.items() if k[:2] == "69")
+    assert coms[MIONS]["amt"] == round(page["communes"][MIONS]["montant"], 2)
+
+
+def test_a_commune_s_point_is_its_town_hall_to_about_a_hundred_metres():
+    from lacarte_registre import communes, recherche
+
+    assert communes.point({"type": "Point", "coordinates": [4.835, 45.7676]}) == [4.835, 45.7676]
+    assert communes.point(None) is None and communes.point({"type": "Polygon"}) is None
+    assert recherche._ll({"mairie": [4.83512, 45.76764]}) == {"ll": [4.835, 45.768]}
+    assert recherche._ll({}) == {}
+    assert [
+        d for d in ("69", "2A", "974", "976", "975", "987") if recherche.DEPARTEMENT.match(d)
+    ] == ["69", "2A", "974", "976"]
