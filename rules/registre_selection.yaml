@@ -147,10 +147,10 @@ mixte:
     rows; a street's renewal), and « sous-systèmes concourant à la sûreté »; « réseau de
     communication » alone is not one (« extension du système de vidéo protection et de son
     réseau de communication » is video only). Every mixed contract's documents carry its
-    family (`mixte`), counted or not, so that it can be shown apart. Ju, 2026-11-07, would
-    count the `surete` family (« des sous-systèmes concourant à la sûreté relèvent de la
-    surveillance »); awaiting her confirmation, since the whole family is access control
-    (502 affaires, 207 M€) and intrusion (192, 165 M€), the sub-systems none: +370 M€.
+    family (`mixte`), counted or not, so that it can be shown apart. Both families stay out
+    of the totals (Ju, 2026-11-07): the `surete` family is mostly access control (502
+    affaires, 207 M€) and intrusion (192, 165 M€), money that buys no camera; counted, it
+    would add 369.5 M€ (+20.8 %).
   # the families whose contracts leave the totals (`hors_totaux: mixte_<famille>`)
   hors_totaux: [autres, surete]
   surete: 'controle d.?acces|intrusion|alarme|interphon|courants? faibles|\bgtb\b|sous.?systemes concourant a la surete'
