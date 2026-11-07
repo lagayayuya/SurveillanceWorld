@@ -159,7 +159,12 @@ a_verifier:
     €; a study or assistance mission over `etude_min` €; more than `estimee_x` times the
     notice's estimated value (and `ecart_min` € above it), or `attribue_x` times its awarded
     amount; the same amount of at least `meme_montant_min` € published by `meme_montant_acheteurs`
-    buyers within `meme_montant_jours` days (a joint purchase).
+    buyers within `meme_montant_jours` days (a joint purchase); a modification raising the
+    contract more than `hausse_pct` % above its initial amount, every later amount at or
+    above it (a growing total, champs.avenant's reading): one of the two amounts is a
+    probable typing error, which we cannot tell (Sciez 176 883 → 4 000 000 €, Saint-Aubin-
+    lès-Elbeuf 1 321 113 → 130 134 720 €), so the whole affaire leaves the totals and its
+    documents say « erreur de saisie probable » (Ju, 2026-11-07).
   par_habitant: 250
   par_habitant_min: 500000
   etude_min: 1000000
@@ -170,6 +175,7 @@ a_verifier:
   meme_montant_min: 1000000
   meme_montant_acheteurs: 3
   meme_montant_jours: 31
+  hausse_pct: 500
 
 # --- 4. Lots and doublons (faits.py § 2) ---------------------------------------------------
 # Signed contracts with holders, same commune, buyer and day, grouped when they have the same

@@ -403,3 +403,27 @@ def test_an_eforms_result_serves_its_tenders_procedure_and_duration(tmp_path):
         ("LOT-0001", 2),
         ("LOT-0002", 1),
     ]
+
+
+def test_an_increase_over_five_hundred_percent_is_a_probable_typing_error(tmp_path):
+    """Sciez's 176 883 → 4 000 000 €: one of the two amounts is wrong, which we cannot tell;
+    the affaire leaves the totals and each of its documents says so (Ju, 2026-11-07). A
+    smaller increase, or a decrease, does not."""
+    data = rows()
+    base = {**data[0], "montant": 176883}
+    data = [
+        base,
+        {**base, "modification_id": 1, "montant": 4_000_000, "dateNotification": "2026-10-20"},
+    ]
+    other = {**rows()[1]}
+    data += [other, {**other, "modification_id": 1, "montant": other["montant"] * 5}]  # +400 %
+    (tmp_path / "national").mkdir()
+    decp.write(tmp_path / "national" / "decp.jsonl.gz", decp.contracts(data))
+    (tmp_path / "national" / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    nat = national.assembler(tmp_path)
+    evs = [e for e in nat["evenements"] if e["affaire"] == base["uid"]]
+    assert len(evs) == 2
+    assert all(e["a_verifier"] == "erreur_saisie_probable" for e in evs)
+    assert all(e["hors_totaux"] in ("a_verifier", "centrale") for e in evs)
+    assert "hausse de 2 161 %" in nat["affaires"][base["uid"]]["montant_a_verifier"]
+    assert not any(e.get("a_verifier") for e in nat["evenements"] if e["affaire"] == other["uid"])

@@ -563,6 +563,10 @@ def _quality(
                 raisons.append(
                     "même montant publié par au moins 3 acheteurs le même mois (groupement de commandes ?)"
                 )
+        saisie = _hausse(mt, [evd[i] for i in a["events"] if evd[i]["t"] == "modification"],
+                         av["hausse_pct"])  # fmt: skip
+        if saisie:
+            raisons.append(saisie)
         a["montant_a_verifier"] = "; ".join(dict.fromkeys(raisons))
         for i in a["events"]:
             x = evd[i]
@@ -574,6 +578,23 @@ def _quality(
                     else ""
                 )  # fmt: skip
                 x["national"] = a["acheteur_national"]
+                if saisie:
+                    x["a_verifier"] = "erreur_saisie_probable"
+
+
+def _hausse(initial: float, mods: list[dict[str, Any]], pct: float) -> str:
+    """A modification raising the contract more than pct % above its initial amount, every
+    later amount at or above it: the reason, in words; else ""."""
+    later = [m["montant"] for m in sorted(mods, key=lambda m: m.get("modif_n") or 0)
+             if m.get("montant")]  # fmt: skip
+    if not initial or not later or any(v < initial for v in later):
+        return ""
+    gap = (later[-1] / initial - 1) * 100
+    if gap <= pct:
+        return ""
+    fe = lambda v: f"{v:,.0f}".replace(",", " ")  # noqa: E731
+    return (f"hausse de {fe(gap)} % par modification ({fe(initial)} → {fe(later[-1])} €) : "
+            "erreur de saisie probable")  # fmt: skip
 
 
 def _probables(
