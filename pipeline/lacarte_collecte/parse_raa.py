@@ -40,11 +40,12 @@ import yaml
 # measured on what the current reader gives. Raise it with any change to what lire() returns.
 # 2: headings without « n° » (13, 06), the act's day never from a visa; 3: the signature
 # bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total;
-# 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed
-VERSION = 4
+# 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed;
+# 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »)
+VERSION = 5
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
-MEME_TEXTE = {4: {3, 4}}
+MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -325,16 +326,29 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
     return out
 
 
+# Measured on 2026-11-07 over 62 437 acts: 660 are dated 1-7 days after their recueil, 35
+# 8-31 days, then misprints (2075, 2029) and flights' days.
+APRES_RECUEIL = dt.timedelta(days=31)
+
+
 def act_date(head: str, fallback: dt.date) -> dt.date:
-    """The act's own day, from its heading (« du 8 juillet 2026 »), else the recueil's; never
-    a visa's (« Vu le décret … du 29 avril 2004 »)."""
+    """The act's own day, from its heading (« du 8 juillet 2026 », « du 12/09/2024 »), the
+    first one written, else the recueil's; never a visa's (« Vu le décret … du 29 avril
+    2004 »), never a day more than a month after the recueil's (a misprint, « 11 mars
+    2075 », or a flight's day): a recueil's own day is often a few days before its acts'."""
     top = re.split(r"\bvu\b", strip(head[:400]), maxsplit=1)[0]
-    m = re.search(r"(?:du|le) (\d{1,2})(?:er)? " + MOISR + r" (20\d\d)", top)
-    if m:
+    found = []
+    for m in re.finditer(r"(?:du|le) (\d{1,2})(?:er)? " + MOISR + r" (20\d\d)", top):
+        found.append((m.start(), int(m.group(3)), MOIS[m.group(2)], int(m.group(1))))
+    for m in re.finditer(r"(?:du|le) (\d{1,2})(?:er)?[/.-](\d{1,2})[/.-](20\d\d)\b", top):
+        found.append((m.start(), int(m.group(3)), int(m.group(2)), int(m.group(1))))
+    for _, y, mo, d in sorted(found):
         try:
-            return dt.date(int(m.group(3)), MOIS[m.group(2)], int(m.group(1)))
+            day = dt.date(y, mo, d)
         except ValueError:
-            pass
+            continue
+        if day <= fallback + APRES_RECUEIL:
+            return day
     return fallback
 
 

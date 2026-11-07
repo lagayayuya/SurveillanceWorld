@@ -151,3 +151,25 @@ def test_an_acts_article_1_as_written_from_arrete_to_article_2():
         "Article premier : X."
     )
     assert parse_raa.article_1("Aucun article ici.") == ""
+
+
+def test_the_act_s_day_written_in_figures_in_its_heading():
+    # Hauts-de-Seine: the recueil of 24 January 2025 carries an act of 12 September 2024
+    fallback = dt.date(2025, 1, 24)
+    head = (
+        "Arrêté CAB/DS/BPS n° 2024.885 du 12/09/2024 modifiant l'exploitation d'un "
+        "système de vidéoprotection délivré à la commune de Rueil-Malmaison"
+    )
+    assert parse_raa.act_date(head, fallback) == dt.date(2024, 9, 12)
+    # the first day written wins, whichever its form; a visa's is never read
+    late = dt.date(2025, 6, 1)
+    assert parse_raa.act_date("Arrêté du 3 mars 2025 (modifié le 05/04/2025)", late) == (
+        dt.date(2025, 3, 3)
+    )
+    assert parse_raa.act_date("Arrêté n° 2024.1 Vu le décret du 29/04/2004", fallback) == fallback
+    assert parse_raa.act_date("Arrêté du 31/02/2024", fallback) == fallback
+    # a recueil is often dated a few days before its acts; a year later is a misprint
+    assert parse_raa.act_date("Arrêté du 11 mars 2075 ; du 11/03/2025", dt.date(2025, 3, 11)) == (
+        dt.date(2025, 3, 11)
+    )
+    assert parse_raa.act_date("Arrêté du 18/09/2025", dt.date(2025, 9, 17)) == dt.date(2025, 9, 18)
