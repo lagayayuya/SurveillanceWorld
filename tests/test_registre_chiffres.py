@@ -80,9 +80,11 @@ def test_a_departement_not_read_is_never_zero():
     rows = chiffres.communes(noms, contrats, [], [], [], {}, {"69": "lu"}, "2026-11-05", CONF)
     assert rows["2"]["jours_vol"] == {"v": None, "etat": "non_lu", "motif": None, "motifs": {}}
     assert rows["1"]["jours_vol"]["v"] == 0
-    # the contracts are national: B has 0, and is ranked
-    assert rows["2"]["montant"]["v"] == 0 and rows["2"]["montant"]["rang"] == 2
+    # the contracts are national: B has 0; the money is ranked among the communes that buy
+    # themselves, so B (no contract of its own) is not ranked, A is first of one
+    assert rows["2"]["montant"]["v"] == 0 and "rang" not in rows["2"]["montant"]
     assert rows["1"]["euros_hab"]["v"] == 10.0 and rows["1"]["euros_hab"]["rang"] == 1
+    assert rows["1"]["montant"]["parmi"] == "parmi 1 commune ayant des contrats"
     # a share of nothing is not ranked
     assert "rang" not in rows["1"]["offre_unique"]
 

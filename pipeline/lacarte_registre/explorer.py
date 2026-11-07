@@ -301,6 +301,27 @@ def figures(d: Donnees, inp: dict[str, list[dict[str, Any]]], cams: dict[str, li
         gs = [g for g in inp["subventions"] if g["siren"] == code]
         reg = reg_of.get(d.communes[ks[0]]["dep"])
         epcis[code] = {"siren": code, **terr(ks, cs, gs, reg)}
+    # the public money of a commune on three levels, side by side and never added up: the
+    # commune itself, its intercommunality (its own contracts), every buyer on its territory
+    # (the commune, a hospital, a transport authority, a social landlord…)
+    on_site: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for c in counted:
+        if c.get("insee"):
+            on_site[c["insee"]].append(c)
+    for k, r in rows.items():
+        code = d.communes[k].get("epci")
+        e = epcis.get(code) if code else None
+        here = chiffres._since(on_site.get(k, []), conf["montants"]["depuis"])
+        r["argent_niveaux"] = {
+            "commune": r["montant"],
+            "intercommunalite": {**e["montant"], "siren": code} if e else chiffres.fig(None),
+            "territoire": chiffres.fig(
+                round(sum(c.get("montant") or 0 for c in here)),
+                n=len(here),
+                acheteurs=len({c.get("acheteur") for c in here}),
+            ),
+            "note": "trois niveaux, jamais additionnés",
+        }
     deps, regs = {}, {}
     for dep in sorted({c["dep"] for c in d.communes.values() if c.get("dep")}):
         ks = [k for k, c in d.communes.items() if c.get("dep") == dep]

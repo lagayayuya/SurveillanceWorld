@@ -230,20 +230,26 @@ def communes(
             ),  # fmt: skip
             "jours_vol": fig(vo["jours"], etat, motif=vo["motif"], motifs=vo["motifs"]),
         }
-    rangs(out, ["cameras_carte", "montant", "euros_hab", "jours_vol"], conf)
+    rangs(out, ["cameras_carte", "jours_vol"], conf)
+    # money: ranked among the communes that buy themselves (« parmi N communes ayant des
+    # contrats »), never among all, most of which have none in our sources
+    rangs(out, ["montant", "euros_hab"], conf, acheteuses=True)
     rangs(out, ["offre_unique", "part_subventions"], conf, numeric=True)
     return out
 
 
 def rangs(rows: dict[str, dict[str, Any]], keys: Iterable[str], conf: dict[str, Any],
-          numeric: bool = False) -> None:  # fmt: skip
+          numeric: bool = False, acheteuses: bool = False) -> None:  # fmt: skip
     """Each figure's rank within the commune's stratum, the highest first, among the
     communes whose figure is « lu » (ties share a rank). `numeric`: only the communes with
-    a value take part (a share of nothing is not 0)."""
+    a value take part (a share of nothing is not 0). `acheteuses`: only the communes with at
+    least one contract of their own take part (`parmi` says so)."""
     for key in keys:
         groups: dict[int, list[dict[str, Any]]] = defaultdict(list)
         for r in rows.values():
             f = r[key]
+            if acheteuses and not (r.get("montant") or {}).get("n"):
+                continue
             if r["strate"] is not None and f["etat"] == LU and (f["v"] is not None or not numeric):
                 groups[r["strate"]].append(r)
         for s, rs in groups.items():
@@ -255,6 +261,9 @@ def rangs(rows: dict[str, dict[str, Any]], keys: Iterable[str], conf: dict[str, 
                 r[key]["rang"] = first[r[key]["v"] or 0]
                 r[key]["sur"] = len(rs)
                 r[key]["strate"] = conf["strates"]["libelles"][s]
+                if acheteuses:
+                    n = len(rs)
+                    r[key]["parmi"] = f"parmi {n} commune{'s' if n > 1 else ''} ayant des contrats"
 
 
 # --- the territories -----------------------------------------------------------------------------
