@@ -29,6 +29,7 @@ import datetime as dt
 import hashlib
 import re
 import urllib.parse
+from pathlib import Path
 from typing import Any
 
 from lacarte_collecte import parcours, parse_raa, pdf
@@ -100,6 +101,27 @@ def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
     return safe_id(key)
 
 
+EN_COURS = "en_cours.json"
+
+
+def _en_cours(ctx: Contexte, admin: str, rec: dict[str, Any]) -> None:
+    """The recueil being read, in SORTIE/en_cours.json (readable from the Mac: no root): a
+    run that never ends says which text holds it. Its id, administration, day and address
+    only, which the derived files say anyway."""
+    import json
+
+    from lacarte_collecte.etat import _write
+
+    if not ctx.sortie:
+        return
+    since = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
+    keep = {k: rec.get(k) for k in ("id", "date", "url")}
+    _write(
+        Path(ctx.sortie) / EN_COURS,
+        json.dumps({**keep, "administration": admin, "depuis": since}, ensure_ascii=False),
+    )
+
+
 def read_recueil(
     ctx: Contexte,
     admin: str,
@@ -111,6 +133,7 @@ def read_recueil(
     mode: str,
 ) -> dict[str, Any]:
     """One recueil's text (Attrap's, else the official PDF's), read; its acts kept."""
+    _en_cours(ctx, admin, rec)
     origin = "attrap"
     if mode == "pdf" or not text or not pdf.readable(text):
         if conf.get("defi"):
@@ -222,6 +245,8 @@ def collect_admin(
                 "name": parse_raa.mask(d.get("name") or h.get("name") or ""),
                 "url": d.get("url") or h.get("url"),
                 "familles": [kind],
+                # when Attrap first saw it online (`first_seen_on`, UTC): a drone act's delay
+                "vu_le": h.get("first_seen_on") or d.get("first_seen_on"),
             }
             rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
             if rec.get("actes") and d.get("content"):
@@ -241,11 +266,16 @@ def collect_admin(
             return st.save(admin, statut="en_cours", jusqu_au=upto)
         d = Cache(ctx.root).get(rid) or f.get_json(f"{base}raa/{rid}", cache=False)
         rec = {k: old.get(k) for k in ("id", "administration", "date", "name", "url", "familles")}
+        rec["vu_le"] = old.get("vu_le") or d.get("first_seen_on")
         rec = read_recueil(ctx, admin, conf, rec, d.get("content"), kinds, communes, mode)
         if rec.get("actes") and d.get("content"):
             Cache(ctx.root).put(rec, d["content"])
         store.add([rec])
         known[rid] = rec
+    if not state.get("vu_le_fait"):
+        if not vus_le(ctx, f, base, aid, since, store, known):
+            return st.save(admin, statut="en_cours", jusqu_au=upto)
+        st.save(admin, vu_le_fait=True)
     found = [r["date"] for r in known.values()]
     return st.save(
         admin,
@@ -253,6 +283,39 @@ def collect_admin(
         jusqu_au=upto,
         dernier_document=max(found) if found else state.get("dernier_document"),
     )
+
+
+def vus_le(
+    ctx: Contexte,
+    f: fetch.Fetcher,
+    base: str,
+    aid: str,
+    since: dt.date,
+    store: Store,
+    known: dict[str, dict[str, Any]],
+) -> bool:
+    """Once per administration: the day and hour Attrap first saw each recueil kept before
+    `vu_le` was (its list, 100 a page, newest first, down to `since`); False when the deadline
+    stopped it (the next run starts again)."""
+    missing = {rid for rid, r in known.items() if not r.get("vu_le")}
+    page = 1
+    while missing:
+        if ctx.out_of_time():
+            return False
+        params = {"page": page, "size": 100, "sort": "desc"}
+        d = f.get_json(f"{base}administration/{aid}", params, cache=False)
+        els = d.get("elements") or []
+        for e in els:
+            rid = e.get("id")
+            if rid in missing and e.get("first_seen_on"):
+                store.add([{**known[rid], "vu_le": e["first_seen_on"]}])
+                known[rid] = {**known[rid], "vu_le": e["first_seen_on"]}
+                missing.discard(rid)
+        last = str(els[-1].get("date") or "") if els else ""
+        if not els or last < since.isoformat() or page * 100 >= int(d.get("total") or 0):
+            return True
+        page += 1
+    return True
 
 
 def collect(ctx: Contexte, vagues: set[int] | None = None) -> dict[str, Any]:
@@ -299,6 +362,7 @@ def relire(
     by_rec = {a["recueil"] for a in store.records() if actes and a["id"] in actes}
     path = ctx.root / "communes.json"
     done, n_acts = [], 0
+    olds = {r["id"]: r for r in recs.records()}
     for d in Cache(ctx.root).all():
         if admin and d["administration"] != admin or actes and d["id"] not in by_rec:
             continue
@@ -308,6 +372,9 @@ def relire(
             parse_raa.Communes.load(path, deps) if path.is_file() else parse_raa.Communes({}, set())
         )
         rec = {k: d.get(k) for k in ("id", "administration", "date", "name", "url")}
+        old = olds.get(d["id"]) or {}
+        # what the record says besides the reading: its families, link, when Attrap saw it
+        rec.update({k: old[k] for k in ("familles", "lien", "vu_le") if old.get(k)})
         rec = read_recueil(ctx, d["administration"], conf, rec, d["content"], kinds, com, "attrap")
         recs.add([rec])
         done.append(d["id"])

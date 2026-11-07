@@ -80,9 +80,9 @@ class Handler(http.server.BaseHTTPRequestHandler):
                                                       "total": len(rows)}}).encode()  # fmt: skip
         elif path.startswith("/api/v1/administration/"):
             aid = path.rsplit("/", 1)[-1]
-            body = json.dumps(
-                {"elements": [{"date": ATTRAP[aid]["date"]}] if aid in ATTRAP else []}
-            ).encode()
+            d = ATTRAP.get(aid)
+            el = [{k: d.get(k) for k in ("id", "date", "name", "first_seen_on")}] if d else []
+            body = json.dumps({"total": len(el), "elements": el}).encode()
         elif path == "/api/v1/search":
             d = ATTRAP.get(q["administration"])
             ok = d and q["start_date"] <= d["date"] <= q["end_date"] and "aéronefs" in q["s"]

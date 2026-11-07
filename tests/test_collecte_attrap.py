@@ -54,7 +54,11 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
         ),
         "utf-8",
     )
-    ATTRAP["pref69"] = {**raa("pref69"), "url": f"{base}/pdf/RAA_69.pdf"}
+    ATTRAP["pref69"] = {
+        **raa("pref69"),
+        "url": f"{base}/pdf/RAA_69.pdf",
+        "first_seen_on": "2026-07-03T16:26:00+00:00",
+    }
     ATTRAP["pref974"] = {**raa("pref974"), "url": f"{base}/pdf/arrete_974.pdf", "content": ""}
     for d in ATTRAP.values():
         d["id"] = arretes.recueil_id(d["url"])
@@ -66,6 +70,23 @@ def test_the_acts_through_attrap_and_never_a_challenge_host(collecte_server, tmp
     assert out["administrations"] == {"pref69": "termine", "pref974": "termine"}
     recs = {r["administration"]: r for r in Store(tmp_path, "recueils").records()}
     assert recs["pref69"]["statut"] == "lu" and recs["pref69"]["lien"] == "ok"
+    # when Attrap first saw it, for a drone act's delay; and what the run was reading last
+    assert recs["pref69"]["vu_le"] == "2026-07-03T16:26:00+00:00"
+    assert json.loads((tmp_path / "sortie" / "en_cours.json").read_text("utf-8"))["id"]
+    # a recueil kept before `vu_le` gets it once from the administration's list
+    Store(tmp_path, "recueils").add([{**recs["pref69"], "vu_le": None}])
+    known = {r["id"]: r for r in Store(tmp_path, "recueils").records()}
+    f = ctx.fetcher("attrap")
+    api = f.conf["sources"]["attrap"]["api"]
+    since = dt.date(2026, 6, 1)
+    ATTRAP["pref69"] = {**raa("pref69"), "id": recs["pref69"]["id"],
+                        "first_seen_on": "2026-07-03T16:26:00+00:00"}  # fmt: skip
+    try:
+        assert arretes.vus_le(ctx, f, api, "pref69", since, Store(tmp_path, "recueils"), known)
+    finally:
+        ATTRAP.update(pref69=raa("pref69"))
+    recs = {r["administration"]: r for r in Store(tmp_path, "recueils").records()}
+    assert recs["pref69"]["vu_le"] == "2026-07-03T16:26:00+00:00"
     # its text missing behind an anti-robot host: « non lu », and its PDF never asked
     assert recs["pref974"]["statut"] == "non_lu" and "lien" not in recs["pref974"]
     assert not any("arrete_974" in a for a in collecte_server.asked)
