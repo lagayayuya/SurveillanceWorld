@@ -41,11 +41,12 @@ import yaml
 # 2: headings without « n° » (13, 06), the act's day never from a visa; 3: the signature
 # bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total;
 # 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed;
-# 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »)
-VERSION = 5
+# 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »); 6: an aerial act that is
+# no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act
+VERSION = 6
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
-MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}}
+MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,

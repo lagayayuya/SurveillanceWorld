@@ -16,7 +16,13 @@ types:
     priorite: 1
     titre: 'aeronef|drone'
     dispositif: 'captation.{0,60}cameras installees sur (?:un|des|deux|plusieurs)? ?aeronefs?'
-    exclure: 'delegation de signature|subdelegation|ordre du jour|habilitation aem|cdac'
+    # and, unless the title authorises a captation, the acts on aircraft that film nothing for
+    # the State: a flight ban (« interdiction de survol », « interdiction temporaire
+    # d'exploitation et d'évolution », even « …de survol, de captation… »: a ban), jamming
+    # (« brouillage », « rendre inopérant », « neutraliser », « anti-drone »), a show
+    # (« spectacle aérien »), an overflight allowed, an ULM platform: 306 of the 7 825
+    # drone acts collected by 2026-11-07, every one of two samples (25, 15) read by its title
+    exclure: 'delegation de signature|subdelegation|ordre du jour|habilitation aem|cdac|^(?!.*autoris\w*.{0,80}(?:captation|cameras? installees?)).*(?:spectacles? (?:aeriens?|de drones?)|aeromodelisme|interdi\w*(?: temporaire)?(?: et)? (?:de |des |du |d.)?(?:survols?|exploitation|evolution|transport|voler|vol\b|usage|utilisation)|interdictionsurvol|survols?.{0,60}interdi|brouillage|rendre inoperant|neutraliser|anti.?drones?|autorisant le survol|ultra.?legers|\bulm\b)'
     recherche: '"caméras installées sur des aéronefs"'
   cameras_pietons:
     priorite: 2

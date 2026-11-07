@@ -173,3 +173,29 @@ def test_the_act_s_day_written_in_figures_in_its_heading():
         dt.date(2025, 3, 11)
     )
     assert parse_raa.act_date("Arrêté du 18/09/2025", dt.date(2025, 9, 17)) == dt.date(2025, 9, 18)
+
+
+def test_an_aerial_act_that_films_nothing_for_the_state_is_no_drone_act():
+    op = "article 1er : la captation est autorisee au moyen de cameras installees sur des aeronefs"
+    kept = [
+        "Arrêté autorisant la captation, l'enregistrement et la transmission d'images au moyen de "
+        "caméras installées sur des aéronefs à l'occasion du concert et du feu d'artifice",
+        "AP Drones DIPN76 LE HAVRE JNA 18 septembre 2025",
+        "Arrêté portant autorisation de captation d'images par aéronefs et interdiction de survol",
+    ]
+    for t in kept:
+        assert parse_raa.classify(t, op, KINDS) == "drone", t
+    gone = [
+        "Arrêté portant interdiction temporaire de survol du Centre Pénitentiaire des Baumettes à "
+        "Marseille par des aéronefs télé-pilotés (drones)",
+        "Arrêté portant interdiction de survol, de captation, d'enregistrement et de transmission "
+        "d'images au moyen d'aéronefs sans équipage à bord sur la commune de Sens",
+        "Arrêté autorisant le brouillage des aéronefs circulant sans personne à bord",
+        "Arrêté autorisant les services de la police nationale à utiliser des dispositifs destinés "
+        "à rendre inopérant l'équipement radioélectrique d'aéronefs",
+        "Arrêté n°2026-01215 autorisant un spectacle aérien public d'aéronefs sans équipage à bord",
+        "Arrêté préfectoral portant interdiction temporaire et d'évolution des aéronefs",
+        "20260824 AP InterdictionSurvolDrone AerodromeAuxerreBranche",
+    ]
+    for t in gone:
+        assert parse_raa.classify(t, op, KINDS) is None, t
