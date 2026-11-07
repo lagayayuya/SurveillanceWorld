@@ -77,6 +77,34 @@ def _guarded(name: str, ctx: Contexte, out: dict[str, Any]) -> None:
 
 # The night's hours (Paris time) in which a run works once the catching up is over
 NUIT = range(0, 6)
+# what a source has after the run's deadline to end on its own, before the run writes its
+# report without it (TimeoutStartSec is 6 h, the deadline 5 h: well within)
+GRACE = 600.0
+PILE = "pile.txt"
+
+
+def _pile_a_l_echeance(ctx: Contexte) -> str:
+    """Every thread's stack written to SORTIE/pile.txt once the run's deadline and half the
+    grace have passed, so a source that never ends says where, without root on the server."""
+    import faulthandler
+
+    left = ctx.deadline - ctx.clock()
+    if left == float("inf"):
+        return ""
+    path = Path(ctx.sortie) / PILE
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fh = path.open("w", encoding="utf-8")  # noqa: SIM115 (faulthandler writes to it later)
+    faulthandler.dump_traceback_later(max(1.0, left + GRACE / 2), repeat=False, file=fh)
+    return PILE
+
+
+def _pause(ctx: Contexte) -> bool:
+    """The reading by a model paused (rules/collecte_seuils.yaml `references.pause`): no
+    request to the API, neither following the batches nor sending."""
+    import yaml
+
+    conf = yaml.safe_load((ctx.rules_dir / "collecte_seuils.yaml").read_text("utf-8"))
+    return bool((conf.get("references") or {}).get("pause"))
 
 
 def tourner(
@@ -103,14 +131,26 @@ def tourner(
     jobs = [n for n in ("dila", "arretes") if only in (None, n)]
     if weekly:
         jobs = [n for n in jobs if n == "dila"]  # the day's flow only
-    threads = [threading.Thread(target=_guarded, args=(n, ctx, summary)) for n in jobs]
-    for t in threads:
+    threads = {
+        n: threading.Thread(target=_guarded, args=(n, ctx, summary), daemon=True) for n in jobs
+    }
+    for t in threads.values():
         t.start()
-    for t in threads:
-        t.join()
+    pile = _pile_a_l_echeance(ctx)
+    for n, t in threads.items():
+        # a source past its deadline (a reading that never ends) does not hold the run: the
+        # others' results and the report are written, the unit ends before systemd kills it
+        t.join(timeout=max(0.0, ctx.deadline - ctx.clock()) + GRACE)
+        if t.is_alive():
+            summary[n] = {"statut": "depasse", "raison": f"pas fini à l'échéance (pile : {pile})"}
+    if pile:
+        import faulthandler
+
+        faulthandler.cancel_dump_traceback_later()  # written already when a source overran
     # the reading by the model (the API's key in the unit's environment): the batches sent by
-    # the last run fetched, the acts not yet read sent; without the API, the rules alone
-    if only in (None, "arretes") and os.environ.get("LACARTE_ANTHROPIC_KEY"):
+    # the last run fetched, the acts not yet read sent; without the API, the rules alone.
+    # Paused (`references.pause`): no request to the API at all
+    if only in (None, "arretes") and os.environ.get("LACARTE_ANTHROPIC_KEY") and not _pause(ctx):
         from lacarte_collecte import modele
 
         try:

@@ -29,10 +29,13 @@ types:
 # `budget_dollars`: what the API may cost in all, reading and references (Ju, 2026-11-03: 110);
 # reached, no new reading is sent until Ju raises it. `envoi_automatique`: whether a run sends
 # the acts not yet read at its end (Ju, 2026-11-04: off until the R4.2 instruction is
-# calibrated; the lots are then sent by hand, `modele lire`).
+# calibrated; the lots are then sent by hand, `modele lire`). `pause`: no call to the API at
+# all, a run neither follows the batches in flight nor sends any (Ju, 2026-11-07: the reading
+# by a model is paused; the batches' results stay at the API until it resumes).
 references:
   budget_dollars: 110
   envoi_automatique: false
+  pause: true
   prix:
     remise_lot: 0.5
     claude-haiku-5-5: {entree: 0.10, sortie: 0.50}

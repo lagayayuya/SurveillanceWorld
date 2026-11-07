@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from lacarte_collecte.etat import Etat, Store
 
 
@@ -60,3 +62,43 @@ def test_the_environment_file_is_read_as_systemd_reads_it(tmp_path, monkeypatch)
 
     assert os.environ["LACARTE_ROBOT_CONTACT"] == "robot@example.org"
     assert os.environ["LACARTE_ANTHROPIC_KEY"] == "k"
+
+
+def test_a_source_past_its_deadline_does_not_hold_the_run_nor_calls_a_paused_model(
+    tmp_path, monkeypatch
+):
+    import shutil
+    import sys
+    import threading
+    import time
+    import types
+
+    from lacarte_collecte import cli
+    from lacarte_collecte.contexte import Contexte
+
+    rules = tmp_path / "rules"
+    shutil.copytree(Path(__file__).parent.parent / "rules", rules)  # the pause is the repo's
+    (tmp_path / "communes.json").write_text("{}", "utf-8")  # fresh: no request
+    stop = threading.Event()
+    stuck = types.ModuleType("stuck")
+    stuck.collect = lambda ctx: stop.wait(30)  # a reading that never ends (until the test's end)
+    monkeypatch.setitem(sys.modules, "stuck", stuck)
+    monkeypatch.setitem(cli.SOURCES, "arretes", "stuck")
+    monkeypatch.setattr(cli, "GRACE", 0.3)
+    monkeypatch.setenv("LACARTE_ANTHROPIC_KEY", "x")
+    called = []
+    modele = types.ModuleType("lacarte_collecte.modele")
+    modele.suivre = lambda ctx: called.append(1)
+    monkeypatch.setitem(sys.modules, "lacarte_collecte.modele", modele)
+    ctx = Contexte(
+        root=tmp_path, sortie=tmp_path / "sortie", rules_dir=rules, deadline=time.monotonic() + 0.2
+    )
+    t0 = time.monotonic()
+    try:
+        cli.tourner(ctx, only="arretes")
+    finally:
+        stop.set()
+    assert time.monotonic() - t0 < 5
+    rep = (tmp_path / "sortie" / "rapport.json").read_text("utf-8")
+    assert "depasse" in rep and "pile.txt" in rep
+    assert not called  # paused: no request to the API, not even to follow the batches
