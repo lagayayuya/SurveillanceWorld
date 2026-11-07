@@ -276,10 +276,17 @@ def aretes(ctx: fermetures.Context) -> dict[str, Any]:
             o = edges.setdefault((b, s), [0.0, 0])
             o[0] += (e.get("montant") or 0) if e.get("compte") else 0
             o[1] += 1
+    # every buyer of an edge named (the lists name only some: a commune buying is not in
+    # them), its fiche when it has one; the companies are the lists' (dico.entreprises)
+    noms = {}
+    for b in sorted({b for b, _ in edges}):
+        a = ctx.acheteur(b)
+        noms[b] = {k: a[k] for k in ("nom_court", "nom", "nom_inconnu", "ref") if a.get(k)}
     return {
         "v": 1,
         "maj": ctx.couverture["maj"],
         "aretes": [[b, s, round(m), n] for (b, s), (m, n) in sorted(edges.items())],
+        "acheteurs": noms,
     }
 
 

@@ -328,6 +328,10 @@ def test_the_national_graph_s_edges_are_legal_persons_counted_once(built):
         assert s != "EI" and not (ents.get(s) or {}).get("entrepreneur_individuel"), s
     assert len({(b, s) for b, s, _, _ in edges}) == len(edges)
     assert all(b != s for b, s, _, _ in edges)
+    # every buyer named, or said unnamed
+    noms = read(built, "graphe/aretes.json")["acheteurs"]
+    assert set(noms) == {b for b, _, _, _ in edges}
+    assert all(x.get("nom") or x.get("nom_court") or x.get("nom_inconnu") for x in noms.values())
     # a company's contracts in its edges, as many as its row in the lists
     rows = listes["lignes"]["entreprises"]
     s = max(rows, key=lambda k: rows[k]["n"])
