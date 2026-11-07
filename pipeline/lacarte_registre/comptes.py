@@ -20,7 +20,8 @@ def _counts(events: Iterable[Event]) -> dict[str, int]:
     o = {"docs": 0, "con": 0, "cam": 0, "dr": 0, "arr": 0}
     for e in events:
         o["docs"] += 1
-        o["con"] += e["t"] == "attribution"
+        # a contract once: a copy is its second publication (as the lists count it)
+        o["con"] += e["t"] == "attribution" and not e.get("copie")
         o["cam"] += is_camera_act(e)
         o["dr"] += is_drone_act(e)
         o["arr"] += is_act(e)

@@ -18,14 +18,15 @@
 
 from __future__ import annotations
 
+import datetime as dt
 import gzip
 import json
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from lacarte_registre import comptes, fermetures
+from lacarte_registre import chiffres, comptes, fermetures
 from lacarte_registre.regles import EI, Event, disp, sort_key, typ, year_group
 from lacarte_registre.selection import plain
 
@@ -116,6 +117,11 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
     coms: dict[str, dict[str, Any]] = {}
     deps: dict[str, dict[str, Any]] = {}
     kinds: Counter[str] = Counter()
+    # the days a drone may film, over the twelve months that end on the build's update (its
+    # acts' days, Paris's calendar days): the one count of « jours de vol » (R5.2 §3)
+    fin = ctx.couverture["maj"][:10]
+    debut = (dt.date.fromisoformat(fin) - dt.timedelta(days=365)).isoformat()
+    vols: defaultdict[str, set[str]] = defaultdict(set)
     for e in reg.evenements:
         kinds[typ(e)] += 1
         if e.get("dep"):
@@ -130,8 +136,12 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             if not k or k not in reg.communes:
                 continue
             c = coms.setdefault(k, {"docs": 0, "con": 0, "cam": 0, "dr": 0})
+            if e["t"] == "arrete_drone":
+                # the collection's acts list their days; the pilot's give a period
+                days = e.get("jours") or chiffres.jours([e.get("periode") or ""])
+                vols[k].update(d for d in days if debut < d <= fin)
             c["docs"] += 1
-            c["con"] += e["t"] == "attribution"
+            c["con"] += e["t"] == "attribution" and not e.get("copie")
             c["cam"] += e["t"] == "arrete"
             c["dr"] += e["t"] == "arrete_drone"
         if e["t"] != "attribution":
@@ -170,6 +180,7 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
         c["carte"] = st.get("carte")
         # its own counted contracts (comptes.commune, as departement/<d>.json stats.communes)
         c["amt"] = round(st.get("montant") or 0, 2)
+        c["jv"] = len(vols.get(k, ()))
     # a département's map counts every commune of it, a document or not; its acts as its
     # page counts them (comptes.departement)
     carte_dep: Counter[str] = Counter()

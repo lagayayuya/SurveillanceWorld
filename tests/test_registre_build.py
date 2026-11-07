@@ -218,10 +218,13 @@ def test_the_cli_builds(monkeypatch, tmp_path, capsys):
 
 def test_the_commune_maps_layers_are_served_as_imported(built):
     """Mions' tilted map (cameras, filmed streets, fields of view, outline) is served beside the
-    register's files, byte for byte as the export gave it."""
-    assert (built / "carte" / "69283.json").read_bytes() == (
-        FIXTURE / "prototype-v10" / "carte" / "69283.json"
-    ).read_bytes()
+    register's files as the export gave it, but its count: the register's, the layer's own
+    kept as `n_couche` (one source per figure, R5.2 §3)."""
+    served = read(built, "carte/69283.json")
+    imported = json.loads((FIXTURE / "prototype-v10" / "carte" / "69283.json").read_text("utf-8"))
+    assert served.pop("n_couche") == imported["n"]
+    assert served.pop("n") == read(built, "commune/69283.json")["carte"]["n"]
+    assert served == {k: v for k, v in imported.items() if k != "n"}
 
 
 def test_the_home_names_its_rows_buyers_and_the_lists_the_map_counts(built):
@@ -336,3 +339,34 @@ def test_the_national_graph_s_edges_are_legal_persons_counted_once(built):
     rows = listes["lignes"]["entreprises"]
     s = max(rows, key=lambda k: rows[k]["n"])
     assert sum(n for _, x, _, n in edges if x == s) >= rows[s]["n"]
+
+
+def test_one_source_per_figure_cameras_flight_days_contracts(built):
+    """R5.2 §3: a commune's cameras are the register's count in its map's file too (the
+    layer's own points as `n_couche`); its flight days over twelve months are the lists'
+    `jv`, from the acts' days; a département's contracts are the lists' (each once)."""
+    listes = read(built, "listes.json")
+    coms, deps = listes["lignes"]["communes"], listes["lignes"]["departements"]
+    mions_map = read(built, f"carte/{MIONS}.json")
+    assert (
+        mions_map["n"] == read(built, f"commune/{MIONS}.json")["carte"]["n"] == coms[MIONS]["carte"]
+    )
+    assert mions_map["n_couche"] == len(mions_map["cams"])
+    assert deps["69"]["con"] == read(built, "departement/69.json")["stats"]["depStats"]["con"]
+    # jv recounted from each commune's own file: its drone acts' days (the collection's) or
+    # period (the pilot's), within the twelve months ending on the update
+    import datetime as dt
+
+    from lacarte_registre import chiffres
+
+    fin = read(built, "couverture.json")["maj"][:10]
+    debut = (dt.date.fromisoformat(fin) - dt.timedelta(days=365)).isoformat()
+    for k, c in coms.items():
+        evs = read(built, f"commune/{k}.json")["evenements"]
+        days = set()
+        for e in evs:
+            if e["t"] == "arrete_drone" and e.get("insee") == k:
+                ds = e.get("jours") or chiffres.jours([e.get("periode") or ""])
+                days |= {d for d in ds if debut < d <= fin}
+        assert c["jv"] >= len(days), k  # a shared act counts in each of its communes
+        assert 0 <= c["jv"] <= 366, k

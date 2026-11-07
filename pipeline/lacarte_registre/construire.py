@@ -24,7 +24,6 @@ from __future__ import annotations
 import datetime as dt
 import hashlib
 import json
-import shutil
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +34,7 @@ from lacarte import lock
 from lacarte_registre import (
     apercu,
     collecte,
+    comptes,
     couverture,
     exporter,
     fermetures,
@@ -101,10 +101,14 @@ def run(
         # the records' preview images, drawn again only when what they show changed
         summary["apercus"] = apercu.write(ctx.apercus, tmp, root / "apercu-cache")
         # the tilted commune maps' layers, as imported (OpenStreetMap, ODbL)
-        if maps:
-            (tmp / "carte").mkdir()
-            for path in maps:
-                shutil.copyfile(path, tmp / "carte" / path.name)
+        # its count said as the register says it (comptes.carte, the map's), one source per
+        # figure; `n_couche` the points the layer draws (its own outline: Lyon 2 117 / 2 113)
+        for path in maps:
+            layer = json.loads(path.read_text("utf-8"))
+            n = comptes.carte(reg, path.stem)
+            if n is not None and layer.get("n") is not None:
+                layer["n_couche"], layer["n"] = layer["n"], n
+            put(f"carte/{path.name}", layer)
         summary["fichiers"]["carte"] = len(maps)
         # France's and its départements' outlines for the home's map (IGN, data/src): written
         # when the layers are on this machine

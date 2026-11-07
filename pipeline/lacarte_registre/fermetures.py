@@ -349,6 +349,8 @@ def per_year(events: Iterable[Event]) -> dict[str, dict[str, int]]:
         if not y.isdigit():
             continue
         k = "cam" if is_camera_act(e) else "dr" if is_drone_act(e) else typ(e)
+        if k == "con" and e.get("copie"):
+            continue  # a contract once, as the département's figures count it
         if k in YEAR_KINDS:
             row = out.setdefault(y, dict.fromkeys(YEAR_KINDS, 0))
             row[k] += 1

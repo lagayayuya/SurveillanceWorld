@@ -53,7 +53,8 @@ def test_the_file_holds_figures_not_documents(built):
 
 def test_the_rhone_238_contracts_194_counted_for_108_7_million(built):
     s = read(built, "departement/69.json")["stats"]
-    assert s["depStats"]["con"] == 238
+    # each contract once (its 6 copies out), as the lists count it (one source per figure)
+    assert s["depStats"]["con"] == 232
     assert round(s["depStats"]["montant"]) == 108_674_707
     contracts = rhone_contracts(built)
     assert (len(contracts), sum(e["compte"] for e in contracts)) == (238, 194)
@@ -90,7 +91,7 @@ def test_the_intercommunalities_count_each_document_once(built):
     lyon = s["epcis"][METROPOLE_LYON]
     assert lyon["nom"] == "Métropole de Lyon"
     assert len(lyon["communes"]) == 34
-    assert lyon["uniq"] == {"docs": 219, "con": 196, "cam": 10, "dr": 3, "arr": 13}
+    assert lyon["uniq"] == {"docs": 219, "con": 191, "cam": 10, "dr": 3, "arr": 13}
     assert lyon["acheteur"] is True
     assert sum(len(x["communes"]) for x in s["epcis"].values()) == len(s["communes"])
     # a shared decree is in several communes, once in its intercommunality
@@ -101,8 +102,12 @@ def test_the_documents_per_year(built):
     s = read(built, "departement/69.json")["stats"]
     years = s["annees"]
     total = {k: sum(y[k] for y in years.values()) for k in ("con", "cam", "dr")}
-    assert total == {"con": 238, "cam": s["depStats"]["cam"], "dr": s["depStats"]["dr"]}
-    assert (years["2018"]["con"], years["2025"]["con"], years["2026"]["con"]) == (3, 33, 29)
+    assert total == {
+        "con": s["depStats"]["con"],
+        "cam": s["depStats"]["cam"],
+        "dr": s["depStats"]["dr"],
+    }
+    assert (years["2018"]["con"], years["2025"]["con"], years["2026"]["con"]) == (3, 31, 28)
     # the camera authorisations only, never a drone act among them
     assert (years["2026"]["cam"], years["2026"]["dr"]) == (8, 3)
     assert years["2017"]["ao"] == 1
