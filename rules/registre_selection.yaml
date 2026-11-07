@@ -141,9 +141,14 @@ mixte:
   rationale: >-
     A contract whose objet covers more than video: building security (`surete`) or other
     services (`autres`, which wins when both match); out of the totals by default (answer 1
-    of the 5th pass). Matched on the objet without accents.
-  surete: 'controle d.?acces|intrusion|alarme|interphon|courants? faibles|\bgtb\b'
-  autres: 'securite humaine|surveillance humaine|gardiennage|agents? de (?:securite|surete)|incendie|\bssi\b|eclairage|signalisation lumineuse|feux tricolores|multi ?techni|telephon'
+    of the 5th pass). Matched on the objet without accents. Added 2026-11-07, to validate
+    (R5.2 §3): urban works whose video is one part, « équipements urbains », « flexibilité
+    électrique », « réseaux secs » (the Morbihan's energy syndicate's lot 8, 60 M€, six
+    rows; a street's renewal), and « sous-systèmes concourant à la sûreté »; « réseau de
+    communication » alone is not one (« extension du système de vidéo protection et de son
+    réseau de communication » is video only).
+  surete: 'controle d.?acces|intrusion|alarme|interphon|courants? faibles|\bgtb\b|sous.?systemes concourant a la surete'
+  autres: 'securite humaine|surveillance humaine|gardiennage|agents? de (?:securite|surete)|incendie|\bssi\b|eclairage|signalisation lumineuse|feux tricolores|multi ?techni|telephon|equipements? urbains?|flexibilite electrique|reseaux secs'
 national:
   id: rule:registre_selection@1:national
   rationale: >-

@@ -427,3 +427,30 @@ def test_an_increase_over_five_hundred_percent_is_a_probable_typing_error(tmp_pa
     assert all(e["hors_totaux"] in ("a_verifier", "centrale") for e in evs)
     assert "hausse de 2 161 %" in nat["affaires"][base["uid"]]["montant_a_verifier"]
     assert not any(e.get("a_verifier") for e in nat["evenements"] if e["affaire"] == other["uid"])
+
+
+@pytest.mark.parametrize(
+    ("objet", "famille"),
+    [
+        ("Lot 8 - Travaux de réseaux de communication, d’équipements urbains, de vidéoprotection "
+         "et de solutions de flexibilité électrique - Morbihan", "autres"),
+        ("Modernisation des réseaux secs et vidéoprotection", "autres"),
+        ("RESEAUX DE COMMUNICATION ET SOUS-SYSTEMES CONCOURANT A LA SURETE", "surete"),
+        ("Extension du système de vidéo protection et de son réseau de communication", ""),
+    ],
+)  # fmt: skip
+def test_a_mixed_contract_s_objet(objet, famille):
+    """Urban works whose video is one part leave the totals; a video network alone does not."""
+    import re
+
+    from lacarte_registre import selection
+
+    mix, ob = selection.rules()["mixte"], selection.plain(objet)
+    got = (
+        "autres"
+        if re.search(mix["autres"], ob)
+        else "surete"
+        if re.search(mix["surete"], ob)
+        else ""
+    )
+    assert got == famille
