@@ -39,6 +39,7 @@ from lacarte_registre import (
     exporter,
     fermetures,
     fusion,
+    geo,
     national,
     recherche,
     regles,
@@ -105,6 +106,12 @@ def run(
             for path in maps:
                 shutil.copyfile(path, tmp / "carte" / path.name)
         summary["fichiers"]["carte"] = len(maps)
+        # France's and its départements' outlines for the home's map (IGN, data/src): written
+        # when the layers are on this machine
+        outlines = geo.build(root, rules)
+        if outlines:
+            put("geo/departements.json", outlines)
+        summary["fichiers"]["geo"] = int(outlines is not None)
 
     sortie.replace_dir(root / "site", write)
     # the search's rows, for the database (migration 027), beside the site: not served

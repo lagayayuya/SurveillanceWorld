@@ -1,0 +1,30 @@
+# The outlines the register's pages draw (pipeline/lacarte_registre/geo.py): France and its
+# départements for the home's map, an SVG of about 660×640 CSS pixels. IGN ADMIN EXPRESS COG
+# CARTO (édition du 1er janvier 2026, Licence Ouverte 2.0: README « Licences et crédits »),
+# the layers the map's build already reads; nothing is asked of a server.
+version: 1
+
+departements:
+  id: rule:registre_geo@1:departements
+  rationale: >-
+    Metropolitan France in Lambert-93 (EPSG:2154, the map's metric projection), fitted in
+    the drawing with a margin, north up; the départements simplified as one coverage
+    (shapely.coverage_simplify, Visvalingam-Whyatt), so two neighbours keep one shared
+    border and no gap opens between them; France's outline is their union. A tolerance of
+    about a pixel removes what the drawing cannot show. The overseas départements are listed
+    by code and name, not drawn: at this scale they would be dots, and the home lists them.
+  # the folder of the layers, from the register's data folder's parent (data/)
+  source: src/admin-express-2026
+  largeur: 660
+  hauteur: 640
+  marge: 8
+  # in pixels of the drawing: roughly the side of the smallest triangle kept; 2 px with the
+  # islets out gives 59 kB (20 kB gzipped) on the 2026 layers; 0.8 px with them 221 kB
+  tolerance_px: 2.0
+  # an islet smaller than this (pixels², 1 px ≈ 1.8 km) and touching no other département is
+  # left out: 938 of the 1 054 parts of the 2026 layers, none of them visible at 660 px
+  ilot_min_px2: 1.0
+  # decimals of the paths' coordinates (a tenth of a pixel)
+  decimales: 1
+  attribution: "IGN – Admin Express COG Carto, 2026"
+  licence: "Licence Ouverte 2.0"
