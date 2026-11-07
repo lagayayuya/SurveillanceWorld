@@ -83,18 +83,21 @@ GRACE = 600.0
 PILE = "pile.txt"
 
 
+PILE_TOUTES = 1800.0  # seconds between two stacks
+
+
 def _pile_a_l_echeance(ctx: Contexte) -> str:
-    """Every thread's stack written to SORTIE/pile.txt once the run's deadline and half the
-    grace have passed, so a source that never ends says where, without root on the server."""
+    """Every thread's stack appended to SORTIE/pile.txt every half hour while the sources run
+    (stopped once they end), so a source that never ends says where, without root on the
+    server; the file is started again by each run."""
     import faulthandler
 
-    left = ctx.deadline - ctx.clock()
-    if left == float("inf"):
+    if ctx.deadline == float("inf"):
         return ""
     path = Path(ctx.sortie) / PILE
     path.parent.mkdir(parents=True, exist_ok=True)
     fh = path.open("w", encoding="utf-8")  # noqa: SIM115 (faulthandler writes to it later)
-    faulthandler.dump_traceback_later(max(1.0, left + GRACE / 2), repeat=False, file=fh)
+    faulthandler.dump_traceback_later(PILE_TOUTES, repeat=True, file=fh)
     return PILE
 
 
@@ -146,7 +149,7 @@ def tourner(
     if pile:
         import faulthandler
 
-        faulthandler.cancel_dump_traceback_later()  # written already when a source overran
+        faulthandler.cancel_dump_traceback_later()
     # the reading by the model (the API's key in the unit's environment): the batches sent by
     # the last run fetched, the acts not yet read sent; without the API, the rules alone.
     # Paused (`references.pause`): no request to the API at all
