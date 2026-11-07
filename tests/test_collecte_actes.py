@@ -35,6 +35,9 @@ def test_the_rhone_s_national_ids_and_its_counts():
     drone = acts["69-2026-07-02-00001"]
     assert drone.type == "drone" and drone.champs["dates"] == ["2026-07-02"]
     assert drone.champs["horaires"] == ["11h00-15h00"]
+    # its article 1 as written (who flies, why, where), up to article 2
+    assert drone.champs["article_1"].startswith("Article 1")
+    assert "Article 2" not in drone.champs["article_1"]
     # a model named without a number: no number (an absent number is better than a wrong one)
     assert drone.champs["n_cameras_drone"] is None
 
@@ -131,3 +134,20 @@ def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
     ref = {"dispositif": "videoprotection", "commune": "Lyon 3ème", "n_total": "4"}
     assert seuil.juger(read, ref)["juste"]
     assert not seuil.juger(read, {**ref, "commune": "Villeurbanne"})["juste"]
+
+
+def test_an_acts_article_1_as_written_from_arrete_to_article_2():
+    t = (
+        "Vu le code ; Considérant que la manifestation… ARRÊTE\nArticle  1er – La captation "
+        "est autorisée au profit de la direction  de la police nationale,\nau titre du 2° de "
+        "l'article L. 242-5.\nArticle 2 – Le nombre maximal de caméras est fixé à deux."
+    )
+    a = parse_raa.article_1(t)
+    assert a == (
+        "Article 1er – La captation est autorisée au profit de la direction de la police "
+        "nationale, au titre du 2° de l'article L. 242-5."
+    )
+    assert parse_raa.article_1("Vu le code. Article premier : X. Art. 2 : Y.") == (
+        "Article premier : X."
+    )
+    assert parse_raa.article_1("Aucun article ici.") == ""

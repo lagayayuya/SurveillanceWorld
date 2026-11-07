@@ -358,7 +358,8 @@ def a_lire(ctx: Any, admin: str | None = None, actes: set[str] | None = None) ->
         if admin and a["administration"] != admin or actes and a["id"] not in actes:
             continue
         r = done.get(a["id"])
-        if r and r.get("empreinte") == fp and r.get("lecteur") == a.get("lecteur"):
+        same = parse_raa.MEME_TEXTE.get(a.get("lecteur"), {a.get("lecteur")})
+        if r and r.get("empreinte") == fp and r.get("lecteur") in same:
             continue
         out.append(a)
     return out

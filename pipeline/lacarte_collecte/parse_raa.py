@@ -39,8 +39,12 @@ import yaml
 # version is read again (its text asked again: no text is kept), so the threshold is always
 # measured on what the current reader gives. Raise it with any change to what lire() returns.
 # 2: headings without « n° » (13, 06), the act's day never from a visa; 3: the signature
-# bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total
-VERSION = 3
+# bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total;
+# 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed
+VERSION = 4
+# The readers whose acts a model's reading still fits (the text it read is the same): a
+# version that only adds a field keeps the readings made on the one before.
+MEME_TEXTE = {4: {3, 4}}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -351,6 +355,33 @@ def drone_dates(d: str, when: dt.date) -> list[str]:
     return sorted(days)
 
 
+ART1 = re.compile(r"\bart(?:icle|\.)\s*(?:1\s*er|1|premier)\b", re.I)
+ART2 = re.compile(r"\bart(?:icle|\.)\s*2\b", re.I)
+ARRETE = re.compile(r"\bARR[ÊEÉ]T[EÉ]\s*:?", re.I)
+ARTICLE_1_MAX = 2000
+
+
+def article_1(texte: str) -> str:
+    """An act's article 1 as written (accents, case), one space, the persons masked: from its
+    « Article 1er » after « ARRÊTE » (else the first after the visas) to « Article 2 »; at
+    most ARTICLE_1_MAX characters. Where a drone act says who flies, why and where."""
+    start = None
+    for m in ARRETE.finditer(texte):
+        a = ART1.search(texte, m.end(), m.end() + 40)
+        if a:
+            start = a.start()
+            break
+    if start is None:
+        visas = [v.end() for v in re.finditer(r"\b(?:Vu|Considérant|CONSIDÉRANT|VU)\b", texte)]
+        a = ART1.search(texte, visas[-1] if visas else 0)
+        if not a:
+            return ""
+        start = a.start()
+    end = ART2.search(texte, start + 10)
+    body = texte[start : end.start() if end else start + ARTICLE_1_MAX]
+    return mask(re.sub(r"\s+", " ", body).strip())[:ARTICLE_1_MAX]
+
+
 def drone_fields(n: str, title_n: str, when: dt.date) -> dict[str, Any]:
     d = re.sub(r"\bminuit\b", "00h00", dispositif(n))
     hours = {
@@ -450,7 +481,7 @@ def lire(text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date
         if kind == "videoprotection":
             a.champs = cams_vp(n, sub)
         elif kind == "drone":
-            a.champs = drone_fields(n, strip(m.titre), when)
+            a.champs = {**drone_fields(n, strip(m.titre), when), "article_1": article_1(m.texte)}
         elif kind == "cameras_pietons":
             c = re.search(NUMW + r" cameras?", art1(n))
             a.champs = {"n_total": num(c.group(1)) if c else None}
