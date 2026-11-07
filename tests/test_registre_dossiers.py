@@ -101,3 +101,25 @@ def test_what_does_not_tie_is_listed():
         "contrat_sans_avis": ["u1"],
         "avis_sans_attribution": ["u2"],
     }
+
+
+def test_a_lot_without_its_notice_takes_its_sibling_lots():
+    # Lyon 2022: the two lots of one tender, notified the same day; only lot 2 carries the
+    # call for tenders in the DECP.
+    titre = "Maintenance et extension du système de vidéoprotection urbaine"
+    notice = {"id": "21-132950", "date": "2021-10-20", "nature": "avis", "objet": titre}
+    lot1 = _aff("lyon-lot1", date="2022-03-10", montant=4e6, titre=titre, lots="G1")
+    lot2 = _aff("lyon-lot2", date="2022-03-10", montant=6e6, titre=titre, lots="G1", avis=[notice])
+    other = _aff("u3", date="2022-03-10", titre=titre)
+    res = dossiers.assembler([lot1, lot2, other], [], [], {}, {}, CONF)
+    links = [
+        lk
+        for d in res["dossiers"]
+        for lk in d["liens"]
+        if lk["type"] == "avis" and lk["vers"] == "lyon-lot1"
+    ]
+    assert len(links) == 1 and links[0]["de"] == "21-132950"
+    assert links[0]["regle"] == CONF["lots"]["id"]
+    assert links[0]["raison"].startswith("lot de la même consultation que lyon-lot2")
+    # a contract outside the group does not borrow it
+    assert res["sans_lien"]["contrat_sans_avis"] == ["u3"]

@@ -74,6 +74,29 @@ def lien_avis(avis: dict[str, Any], aff: dict[str, Any], conf: dict[str, Any]) -
     return _lien(avis["id"], aff["id"], "avis", bool(sure), r["id"], why)
 
 
+def lien_lots(
+    aff: dict[str, Any], freres: list[dict[str, Any]], conf: dict[str, Any]
+) -> list[dict[str, Any]]:
+    """A lot without a notice of its own, tied to its siblings' calls for tenders: the
+    sibling's link, said as a lot's (its level kept, its reason first)."""
+    out, seen = [], set()
+    for b in freres:
+        if b["id"] == aff["id"]:
+            continue
+        for v in b.get("avis") or []:
+            if v["nature"] != "avis" or v["id"] in seen or not aff.get("contrat"):
+                continue
+            seen.add(v["id"])
+            lk = lien_avis(v, {**aff, "titre": b.get("titre") or aff.get("titre")}, conf)
+            lk["raison"] = (
+                f"lot de la même consultation que {b['id']} (même acheteur, même jour de "
+                f"notification) ; " + lk["raison"]
+            )
+            lk["regle"] = conf["lots"]["id"]
+            out.append(lk)
+    return out
+
+
 # --- a grant and the contract it paid ---------------------------------------------------------
 def _grant_window(g: dict[str, Any], r: dict[str, Any]) -> tuple[dt.date, dt.date]:
     if g.get("annee"):
@@ -210,6 +233,12 @@ def assembler(
             liens[link["vers"]].append(link)
         else:
             sans_contrat.append(g["id"])
+    # the lots of one tender (same buyer, same day of notification, ids one digit apart:
+    # national._lots): a lot published without its notice shares its siblings'
+    freres: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for a in affaires:
+        if a.get("lots"):
+            freres[a["lots"]].append(a)
     dossiers = []
     sans_avis, sans_attribution = [], []
     for a in affaires:
@@ -217,6 +246,10 @@ def assembler(
         if a.get("contrat"):
             ls += [lien_avis(v, a, conf) for v in a.get("avis") or [] if v["nature"] == "avis"]
             if not any(v["nature"] in ("avis", "resultat") for v in a.get("avis") or []):
+                ls += lien_lots(a, freres.get(a.get("lots") or "", []), conf)
+            if not any(lk["type"] == "avis" for lk in ls) and not any(
+                v["nature"] in ("avis", "resultat") for v in a.get("avis") or []
+            ):
                 sans_avis.append(a["id"])
         elif any(v["nature"] == "avis" for v in a.get("avis") or []) and not any(
             v["nature"] == "resultat" for v in a.get("avis") or []

@@ -70,3 +70,14 @@ cameras:
     version was saved within two years after the authorisation: a lower bound, a camera
     edited since has lost its first date. Mapping, never the ground truth.
   apres_jours: 730
+
+
+# A lot published without its notice of its own.
+lots:
+  id: rule:registre_dossiers@1:lots
+  rationale: >-
+    The lots of one tender are notified on the same day by the same buyer, their ids one
+    digit apart or their holders the same (national._lots); the call for tenders is one
+    notice for all of them, often attached to one lot only in the DECP. That notice is the
+    other lots' too, at the level its link has. Lyon 2022: lot 1 (2022N3608A, 4 M EUR) had
+    no notice, lot 2 (2022N3609A) has 21-132950.

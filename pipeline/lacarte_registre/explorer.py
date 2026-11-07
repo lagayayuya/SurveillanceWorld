@@ -44,6 +44,8 @@ class Donnees:
     sirene: dict[str, dict[str, Any]]
     communes: dict[str, dict[str, Any]]
     couverture: dict[str, Any] | None
+    # {affaire: its group of lots of one tender} (national._lots, doubles left out)
+    lots: dict[str, str] | None = None
 
 
 def _jsonl(path: Path) -> list[dict[str, Any]]:
@@ -76,6 +78,11 @@ def charger(root: Path, rules: Path) -> Donnees:
         sirene=json.loads((root / "national" / "sirene.json").read_text("utf-8"))["unites"],
         communes=com,
         couverture=json.loads(cov.read_text("utf-8")) if cov.is_file() else None,
+        lots={
+            a: g
+            for a, g in (pilote.get("LOTS", {}) or {}).items()
+            if "lots" in str(((pilote.get("LOTS_GROUPES", {}) or {}).get(g) or {}).get("nature"))
+        },
     )
 
 
@@ -145,6 +152,7 @@ def entrees_dossiers(
             cams += [int(x) for x in national.CAM_IN_OBJET.findall(con.get("objet") or "")]
         affaires.append({
             "id": a["id"],
+            "lots": (d.lots or {}).get(a["id"]),
             "acheteur_siren": a.get("acheteur_siren"),
             "insee": a.get("insee"),
             "communal": bool(a.get("acheteur_communal")) or any(e.get("communal") for e in evs),
