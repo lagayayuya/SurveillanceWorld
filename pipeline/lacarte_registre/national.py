@@ -386,6 +386,20 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
         }
         if lieu:
             e["lieu_insee"] = lieu
+        # what an eForms notice says (boamp.eforms): the tenders received (one lot's result,
+        # else each lot's), the procedure's code, the longest lot's duration in months
+        ef = n.get("eforms") or {}
+        if n["nature"] == "resultat" and ef.get("offres") is not None:
+            e["offres"] = int(ef["offres"])
+        elif n["nature"] == "resultat" and len(ef.get("resultats") or []) > 1:
+            # several lots: each its own (« LOT-0001 », awarded or not, its tenders)
+            e["resultats_lots"] = [
+                {"lot": r["lot"], "issue": r["issue"], "offres": r["offres"]}
+                for r in ef["resultats"]
+            ]
+        for k in ("procedure", "duree_mois"):
+            if ef.get(k) is not None:
+                e[k] = ef[k]
         if n.get("mention"):
             e["mention"] = n["mention"]  # the DILA's: its address, the file's name and date
         ev.append(e)

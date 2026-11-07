@@ -376,3 +376,30 @@ def test_no_contact_no_collection(tmp_path, monkeypatch):
     with pytest.raises(fetch.NoContact):
         collecter.run(tmp_path, sources=("communes",))
     assert not (tmp_path / "national" / "communes.json").exists()
+
+
+def test_an_eforms_result_serves_its_tenders_procedure_and_duration(tmp_path):
+    """26-5489's 2 tenders were read and not served (R5.2 §3): a result says the tenders it
+    received, its lots' when it has several, its procedure and its duration."""
+    import copy
+
+    from test_collecte_dila import LOTS
+
+    from lacarte_collecte import dila
+
+    two = dila.notice(LOTS, {})
+    one = copy.deepcopy(two)
+    one["idweb"], one["eforms"]["offres"] = "26-0001", 2
+    (tmp_path / "national").mkdir()
+    decp.write(tmp_path / "national" / "decp.jsonl.gz", decp.contracts(rows()))
+    (tmp_path / "national" / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    boamp.write(tmp_path / "national" / "boamp.jsonl.gz", [one, two])
+    evs = {e["id"]: e for e in national.assembler(tmp_path)["evenements"]}
+    a, b = evs["26-0001"], evs[two["idweb"]]
+    assert a["t"] == "resultat" and a["offres"] == 2 and "resultats_lots" not in a
+    assert a["procedure"] == "open" and a["duree_mois"] == 24.0
+    assert "offres" not in b
+    assert [(r["lot"], r["offres"]) for r in b["resultats_lots"]] == [
+        ("LOT-0001", 2),
+        ("LOT-0002", 1),
+    ]
