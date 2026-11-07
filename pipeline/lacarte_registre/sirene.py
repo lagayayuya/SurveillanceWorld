@@ -3,7 +3,8 @@
 Only the SIRENs the registre meets are kept (the DECP's holders and buyers, the BOAMP's
 holders and buyers; a buyer the DECP leave unnamed is named from here, national.py): their
 legal category (`nature`, catégorie juridique), their size (`categorie`: PME, ETI, GE), their
-activity (NAF), whether they are active, and a name for a legal person only. A sole trader
+activity (NAF), whether they are active, and for a legal person only its name, its creation
+day, its headcount band and its head office's département (`PROFIL`). A sole trader
 (nature 1000, a natural person) is never named: `ei` true, no name, and the build masks its
 SIREN everywhere (regles.masquer_ei).
 
@@ -13,7 +14,7 @@ it; else the API Recherche d'entreprises, one request per SIREN not yet known: i
 are kept (brut/sirene/unites.jsonl) and the next collections ask only for the new SIRENs.
 
 Out: <root>/national/sirene.json {"version": …, "unites": {siren: {nature, categorie, naf,
-actif, ei, nom?}}}.
+actif, ei, nom?, creation?, effectif?, effectif_annee?, siege_departement?}}}.
 """
 
 from __future__ import annotations
@@ -33,11 +34,20 @@ COLUMNS = (
     "denominationUniteLegale",
     "activitePrincipaleUniteLegale",
     "etatAdministratifUniteLegale",
+    "dateCreationUniteLegale",
+    "trancheEffectifsUniteLegale",
+    "anneeEffectifsUniteLegale",
 )
 
 
 def unite(
-    nature: Any, categorie: Any, naf: Any, actif: bool, nom: Any, ei_dit: bool = False
+    nature: Any,
+    categorie: Any,
+    naf: Any,
+    actif: bool,
+    nom: Any,
+    ei_dit: bool = False,
+    profil: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """A unit as the registre keeps it. Named only when its legal category says a legal person:
     a category 1xxx (1000: entrepreneur individuel, a natural person), one the source says is a
@@ -51,7 +61,22 @@ def unite(
         out["nature_inconnue"] = True
     if not ei and nom:
         out["nom"] = str(nom)
+    if not ei and profil is not None:
+        # a legal person's creation day, headcount band (INSEE's code and its year) and
+        # head office's département; never a sole trader's (a person's own life)
+        out.update({k: profil.get(k) for k in PROFIL})
     return out
+
+
+# What the registre says of a legal person besides its name (the API's answer): read, kept
+# with the unit; a unit kept before without them is asked again (`a_relire`).
+PROFIL = ("creation", "effectif", "effectif_annee", "siege_departement")
+
+
+def a_relire(u: dict[str, Any]) -> bool:
+    """A unit kept before the profile was read: asked again (never a sole trader's, never a
+    unit the API did not know)."""
+    return not u.get("introuvable") and not u.get("ei") and "creation" not in u
 
 
 def from_stock(path: Path, sirens: set[str]) -> Iterator[tuple[str, dict[str, Any]]]:
@@ -71,6 +96,12 @@ def from_stock(path: Path, sirens: set[str]) -> Iterator[tuple[str, dict[str, An
                         r.get("activitePrincipaleUniteLegale"),
                         r.get("etatAdministratifUniteLegale") == "A",
                         r.get("denominationUniteLegale"),
+                        profil={
+                            "creation": r.get("dateCreationUniteLegale"),
+                            "effectif": r.get("trancheEffectifsUniteLegale"),
+                            "effectif_annee": r.get("anneeEffectifsUniteLegale"),
+                            "siege_departement": None,  # the stock of legal units has none
+                        },
                     ),
                 )
 
@@ -86,6 +117,12 @@ def from_api(answer: dict[str, Any], siren: str) -> dict[str, Any] | None:
                 x.get("etat_administratif") == "A",
                 x.get("nom_raison_sociale") or x.get("nom_complet"),
                 bool((x.get("complements") or {}).get("est_entrepreneur_individuel")),
+                {
+                    "creation": x.get("date_creation"),
+                    "effectif": x.get("tranche_effectif_salarie"),
+                    "effectif_annee": x.get("annee_tranche_effectif_salarie"),
+                    "siege_departement": (x.get("siege") or {}).get("departement"),
+                },
             )
     return {"introuvable": True}
 
@@ -124,7 +161,7 @@ def collect(f: fetch.Fetcher, out_dir: Path, sirens: Iterable[str]) -> dict[str,
         if res:
             f.save_state(note_stock=f"{res['url']} : {f.allowed(res['url'])[1]}")
         api = f.conf["sources"][SOURCE]["api"]
-        todo = sorted(wanted - set(kept))
+        todo = sorted(s for s in wanted if s not in kept or a_relire(kept[s]))
         with (f.dir / "unites.jsonl").open("a", encoding="utf-8") as out:
             for i, s in enumerate(todo):
                 u = from_api(f.get_json(api, {"q": s}, cache=False), s)

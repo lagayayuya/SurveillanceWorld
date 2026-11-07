@@ -16,8 +16,9 @@ holder's name (`titulaire_nom` is not asked for, nor read): a holder is its SIRE
 Out: <root>/national/decp.jsonl.gz, one contract per line (`contrat`), and decp.json (the
 file's version, the counts): {uid, chemin, acheteur_id, acheteur_nom, acheteur_categorie,
 acheteur_commune_code, acheteur_departement_code, codeCPV, objet, techniques,
-idAccordCadre, sourceDataset, offres, lignes: [{modification_id, dateNotification, montant,
-dureeMois, titulaires: [SIREN or SIRET], sourceFile}]}.
+idAccordCadre, sourceDataset, offres, procedure, lieu_execution: {code, type},
+lignes: [{modification_id, dateNotification, montant, dureeMois, titulaires: [SIREN or SIRET],
+sourceFile}]}.
 """
 
 from __future__ import annotations
@@ -54,6 +55,12 @@ COLUMNS = (
     "modification_id",
     "sourceDataset",
     "sourceFile",
+    # the procedure (« Appel d'offres ouvert », « Procédure négociée sans publicité »…) and
+    # where the contract is performed: a commune's code or a postal code, its type saying
+    # which (`lieuExecution_typeCode`), normalised by the reading rules (champs.py)
+    "procedure",
+    "lieuExecution_code",
+    "lieuExecution_typeCode",
 )
 # The objet's substrings that may start a path (selection.row_path), as the tabular API
 # matches them (ILIKE: case-insensitive, accent-sensitive; the upper-case accented forms in
@@ -135,6 +142,15 @@ def _contract(uid: str, rows: list[dict[str, Any]], path: str) -> dict[str, Any]
         },  # fmt: skip
         "objet": objet,
         "offres": offres,
+        "procedure": next((r.get("procedure") for r in rows if r.get("procedure")), None),
+        "lieu_execution": next(
+            (
+                {"code": str(r["lieuExecution_code"]), "type": r.get("lieuExecution_typeCode")}
+                for r in rows
+                if r.get("lieuExecution_code")
+            ),
+            None,
+        ),
         "lignes": [mods[n] for n in sorted(mods)],
     }
 

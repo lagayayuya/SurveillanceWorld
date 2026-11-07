@@ -58,7 +58,8 @@ def test_sirene_names_a_legal_person_never_a_sole_trader():
                                        "categorie_entreprise": "PME", "etat_administratif": "A",
                                        "activite_principale": "42.22Z"}]}, SERFIM)  # fmt: skip
     assert pm == {"nature": "5710", "categorie": "PME", "naf": "42.22Z", "actif": True,
-                  "ei": False, "nom": "SERFIM T.I.C."}  # fmt: skip
+                  "ei": False, "nom": "SERFIM T.I.C.", "creation": None, "effectif": None,
+                  "effectif_annee": None, "siege_departement": None}  # fmt: skip
     ei = sirene.from_api({"results": [{"siren": "123456782", "nature_juridique": "1000",
                                        "nom_complet": "JEANNE EXEMPLE"}]}, "123456782")  # fmt: skip
     assert ei["ei"] is True and "nom" not in ei
@@ -75,6 +76,36 @@ def test_sirene_names_a_legal_person_never_a_sole_trader():
                           "123456782")  # fmt: skip
     assert dit["ei"] is True and "nom" not in dit
     assert sirene.from_api({"results": []}, "123456782") == {"introuvable": True}
+
+
+def test_sirene_keeps_a_legal_person_s_profile_never_a_sole_trader_s():
+    answer = {"siren": SERFIM, "nature_juridique": "5710", "nom_complet": "SERFIM T.I.C.",
+              "date_creation": "2013-06-01", "tranche_effectif_salarie": "11",
+              "annee_tranche_effectif_salarie": "2024", "siege": {"departement": "69"}}  # fmt: skip
+    pm = sirene.from_api({"results": [answer]}, SERFIM)
+    assert (pm["creation"], pm["effectif"], pm["effectif_annee"], pm["siege_departement"]) == (
+        "2013-06-01", "11", "2024", "69",
+    )  # fmt: skip
+    ei = sirene.from_api({"results": [{**answer, "siren": "123456782",
+                                       "nature_juridique": "1000"}]}, "123456782")  # fmt: skip
+    assert not set(sirene.PROFIL) & set(ei)
+    # a unit kept before the profile was read is asked again; a sole trader, an unknown never
+    assert sirene.a_relire({"nature": "5710", "ei": False, "nom": "X"})
+    assert not sirene.a_relire(pm)
+    assert not sirene.a_relire(ei) and not sirene.a_relire({"introuvable": True})
+
+
+def test_a_decp_contract_keeps_its_procedure_and_where_it_is_performed():
+    from lacarte_registre import decp
+
+    row = {"uid": "u1", "modification_id": 0, "dateNotification": "2026-01-06", "montant": 1,
+           "procedure": "Appel d'offres ouvert", "lieuExecution_code": "69123",
+           "lieuExecution_typeCode": "Code commune"}  # fmt: skip
+    c = decp._contract("u1", [row, {**row, "modification_id": 1, "procedure": None}], "coeur")
+    assert c["procedure"] == "Appel d'offres ouvert"
+    assert c["lieu_execution"] == {"code": "69123", "type": "Code commune"}
+    assert decp._contract("u2", [{"uid": "u2"}], "coeur")["lieu_execution"] is None
+    assert {"procedure", "lieuExecution_code", "lieuExecution_typeCode"} <= set(decp.COLUMNS)
 
 
 def test_the_selection_rules_on_rows_of_their_own():
