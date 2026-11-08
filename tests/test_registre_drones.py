@@ -274,3 +274,20 @@ def test_a_pilot_drone_act_takes_the_day_of_the_recueil_the_collection_read_it_i
     out = collecte.publies_pilote(pilot, acts)
     assert [e.get("publie") for e in out] == ["2025-11-10", None, None]
     assert "publie" not in pilot[0]  # the pilot's events are not changed
+
+
+def test_a_drone_act_sorts_by_its_publication_not_its_first_flight():
+    from lacarte_registre.regles import sort_key
+
+    drone = {"t": "arrete_drone", "date": "2026-12-01", "publie": "2026-11-02"}
+    contrat = {"t": "contrat", "date": "2026-11-05"}
+    assert sort_key(drone) == "2026-11-02"
+    assert sorted([drone, contrat], key=sort_key, reverse=True)[0] is contrat
+    assert sort_key({"t": "arrete_drone", "date": "2026-12-01"}) == "2026-12-01"  # not read
+
+
+def test_the_recents_sort_drone_acts_by_publication(built):
+    from lacarte_registre.regles import sort_key
+
+    recents = read(built, "index.json")["recents"]
+    assert [sort_key(e) for e in recents] == sorted(map(sort_key, recents), reverse=True)

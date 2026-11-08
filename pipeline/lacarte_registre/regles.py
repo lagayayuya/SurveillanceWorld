@@ -101,7 +101,11 @@ def year_group(d: str | None) -> str:
 
 
 def sort_key(e: Event) -> str:
-    """A subsidy dated by its year only sorts at the start of its year."""
+    """A subsidy dated by its year only sorts at the start of its year. A drone act sorts by
+    its publication (`publie`, the recueil's date), not its first flight day, which can be
+    weeks ahead: « Tous » and the recents list documents as they appeared."""
+    if e["t"] == "arrete_drone" and e.get("publie"):
+        return e["publie"]
     return f"{(e.get('date') or '')[:4]}-00-00" if e.get("date_annee") else (e.get("date") or "")
 
 
