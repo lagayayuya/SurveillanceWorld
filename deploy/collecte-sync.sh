@@ -2,7 +2,8 @@
 # The registre's collection on the server, from the Mac, as the deploy user (no root):
 #
 #   deploy/collecte-sync.sh envoyer     # the code to DIR/code/<stamp>, its venv, then current
-#   deploy/collecte-sync.sh rapatrier   # DIR/sortie (the derived files) to data/registre/collecte
+#   deploy/collecte-sync.sh rapatrier   # DIR/sortie (the derived files) to the main
+#                                       # checkout's data/registre/collecte
 #   deploy/collecte-sync.sh lancer      # start the unit now (it also runs every night)
 #   deploy/collecte-sync.sh etat        # the unit's status and the collection's report
 #
@@ -16,7 +17,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 : "${DEPLOY_TARGET:?DEPLOY_TARGET is not set (the deploy environment)}"
 DIR="${COLLECTE_DIR:-/srv/lacarte-collecte}"
-LOCAL="data/registre/collecte"
+# the main checkout's data folder, wherever the script runs from: a worktree's own data/ is
+# read by no build (2026-11-08: run from a worktree, the files landed there)
+MAIN="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd)"
+LOCAL="$MAIN/data/registre/collecte"
 
 case "${1:-}" in
   envoyer)
@@ -51,7 +55,7 @@ case "${1:-}" in
       cat '$DIR/sortie/rapport.txt' 2>/dev/null || echo '(no report yet)'"
     ;;
   *)
-    sed -n '2,13p' "$0" >&2
+    sed -n '2,14p' "$0" >&2
     exit 2
     ;;
 esac
