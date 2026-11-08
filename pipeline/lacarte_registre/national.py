@@ -23,6 +23,8 @@ from itertools import combinations
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 import lacarte_registre as registre
 from lacarte_registre import boamp, collecte, decp, selection
 
@@ -200,6 +202,21 @@ def sans_doublons(contrats: Any) -> list[dict[str, Any]]:
     return sorted(out, key=lambda c: c["uid"])
 
 
+def profil(u: dict[str, Any], bands: dict[str, str]) -> dict[str, Any]:
+    """What a legal person's page says of it from SIRENE (sirene.PROFIL): its size category
+    (PME, ETI, GE), its creation year, its headcount band said in words with its year, its
+    head office's département. A sole trader's never (the caller asks for a legal person)."""
+    year = (u.get("creation") or "")[:4]
+    out = {
+        "categorie": u.get("categorie"),
+        "creation": int(year) if year.isdigit() else None,
+        "effectif": bands.get(u.get("effectif") or ""),
+        "effectif_annee": u.get("effectif_annee"),
+        "siege_departement": u.get("siege_departement"),
+    }
+    return {k: v for k, v in out.items() if v is not None}
+
+
 def assembler(root: Path, today: str | None = None, rules: Path | None = None) -> dict[str, Any]:
     """The national registre from <root>/national/: {evenements, affaires, entreprises,
     communes, ACHETEURS, EPCIS, DEP, LOTS, LOTS_GROUPES, sources}."""
@@ -211,6 +228,8 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
         else {}
     )
     unites: dict[str, dict[str, Any]] = sir.get("unites", {})
+    src = yaml.safe_load(((rules or registre.RULES) / "registre_sources.yaml").read_text("utf-8"))
+    bands = {str(k): v for k, v in src["sources"]["sirene"]["tranches_effectifs"].items()}
     contrats = sans_doublons(decp.load(nat / "decp.jsonl.gz"))
     notices = list(boamp.load(nat / "boamp.jsonl.gz")) if (nat / "boamp.jsonl.gz").is_file() else []
     # the DILA's archive over the API's notices, the erased ones out of both (collecte.py)
@@ -434,6 +453,8 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
             entreprises[s] = {"siren": s, "nom": None if u["ei"] else u.get("nom"),
                               "entrepreneur_individuel": bool(u["ei"]), "naf": u.get("naf"),
                               "verifie_sirene": True}  # fmt: skip
+            if not u["ei"]:
+                entreprises[s].update(profil(u, bands))
     buyers = {a["acheteur_siren"] for a in affaires.values() if a.get("acheteur_siren")}
     buyers |= {e["acheteur_siren"] for e in ev if e.get("acheteur_siren")}
     acheteurs = {}
