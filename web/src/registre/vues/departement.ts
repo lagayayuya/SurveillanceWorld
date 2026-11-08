@@ -35,7 +35,7 @@ import { etapeListe, type Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
-import { coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { type Coupe, coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { couverture, sources } from "../sources.ts";
 import { capital } from "../texte.ts";
 import { ICONE_DRONES, type TypeCle } from "../types.ts";
@@ -500,18 +500,28 @@ class DepartementA extends Vue<PropsA, StateA> {
       lead.push(".");
     } else lead.push(t("departement_a.lead_rien", { dans: N.dans }));
     const fc = pComm ? fraction(pComm.montant / Math.max(1, st.montant)) : null;
-    if (fc) {
-      lead.push(" ", t("departement_a.lead_communes", { f: t(`departement_a.frac.${fc}`) }));
+    if (fc && pComm) {
       const top = acheteurs[0];
       const a = top ? f.acheteurs[top.siren] : undefined;
       const f2 = top ? fraction(top.montant / Math.max(1, st.montant)) : null;
-      if (a?.categorie === "commune" && a.insee_siege && f.communes[a.insee_siege] && f2)
+      const com = a?.categorie === "commune" && a.insee_siege && f.communes[a.insee_siege];
+      // one commune paying nearly all the communes' share (Paris): it is named alone
+      if (com && a?.insee_siege && top.montant >= 0.9 * pComm.montant)
         lead.push(
-          " ; ",
+          " ",
           { strong: [lienCom(a.insee_siege)] },
-          t("departement_a.lead_seule", { f: t(`departement_a.frac.${f2}`) }),
+          t("departement_a.lead_paie", { f: t(`departement_a.frac.${fc}`) }),
         );
-      lead.push(".");
+      else {
+        lead.push(" ", t("departement_a.lead_communes", { f: t(`departement_a.frac.${fc}`) }));
+        if (com && a?.insee_siege && f2)
+          lead.push(
+            " ; ",
+            { strong: [lienCom(a.insee_siege)] },
+            t("departement_a.lead_seule", { f: t(`departement_a.frac.${f2}`) }),
+          );
+        lead.push(".");
+      }
     }
 
     // --- the sections, numbered in turn ------------------------------------------------------------
@@ -934,6 +944,9 @@ class DepartementA extends Vue<PropsA, StateA> {
             Math.min(8, parCam.length),
             this.basculer,
           ),
+          // a département whose decrees name no commune (Paris's prefecture, the Creuse): no list
+          ouVide: !parCam.length,
+          row: parCam.length ? "row2" : "row2 seul",
           ou: parCam.slice(0, 8).map((c) => ({
             nom: [lienCom(c.insee)] as RichItem[],
             s: t("departement_a.aut_dr_n", { n: c.dr }),
@@ -966,14 +979,20 @@ class DepartementA extends Vue<PropsA, StateA> {
               n: MES[k].u.length,
             }),
           }));
-        // the sentence: the measures where it is in the first three, then the others' rank
-        const ks = (["amt", "con", "cam", "carte", "dr"] as const).filter((k) => rangs[k]);
+        // the sentence: the measures where it is in the first three, then the others' rank (a
+        // measure where it has nothing is no rank)
+        const ks = (["amt", "con", "cam", "carte", "dr"] as const).filter(
+          (k) => rangs[k] && (vals(k)[dep] ?? 0) > 0,
+        );
         const trio = ks.filter((k) => (rangs[k]?.r ?? 99) <= 3);
         const loin = ks.filter((k) => (rangs[k]?.r ?? 0) > 3);
         const ansC: RichItem[] = [];
         if (trio.length)
           ansC.push(
-            t("departement_a.cmp_ans_a", { art: capital(N.art) }),
+            t("departement_a.cmp_ans_a", {
+              art: capital(N.art),
+              v: t(/^les /i.test(N.art) ? "departement_a.sont" : "departement_a.est"),
+            }),
             { strong: t("departement_a.cmp_trio") },
             t("departement_a.cmp_ans_pour"),
             ...enumerer(
@@ -983,18 +1002,37 @@ class DepartementA extends Vue<PropsA, StateA> {
             ),
             ".",
           );
-        for (const k of loin) {
-          const r = rangs[k] as Rang;
+        if (loin.length === 1 && trio.length) {
+          const r = rangs[loin[0]] as Rang;
           ansC.push(
-            ansC.length ? " " : "",
-            t("departement_a.cmp_ans_loin", {
-              m: capital(t(`departement_a.cmp_mes.${k}`)),
+            " ",
+            t("departement_a.cmp_ans_un", {
+              m: t(`departement_a.cmp_mes.${loin[0]}`),
               r: ordinalTxt(r.r),
               n: r.n,
               d: artDep(r.tete),
             }),
           );
-        }
+        } else if (loin.length)
+          ansC.push(
+            trio.length
+              ? t("departement_a.cmp_ailleurs")
+              : t("departement_a.cmp_est", {
+                  art: capital(N.art),
+                  v: t(/^les /i.test(N.art) ? "departement_a.sont" : "departement_a.est"),
+                }),
+            ...enumerer(
+              loin.map((k) =>
+                t("departement_a.cmp_rang_pour", {
+                  r: ordinalTxt((rangs[k] as Rang).r),
+                  m: t(`departement_a.cmp_mes.${k}`),
+                }),
+              ),
+              t("departement_a.et"),
+              ", ",
+            ),
+            ".",
+          );
         cmp = { n: cN, ans: ansC.length ? ansC : null, cartes, attente: "" };
       }
     }
@@ -1158,7 +1196,16 @@ class DepartementA extends Vue<PropsA, StateA> {
       ...this.base("departement-a"),
       nom,
       code: dep,
-      letters: coupe(nom),
+      // the name cut out word by word: a long one (« Alpes-de-Haute-Provence ») wraps after a
+      // hyphen or a space, never inside a word
+      mots: coupe(nom).reduce<Coupe[][]>(
+        (ws, x, i, all) => {
+          ws[ws.length - 1].push(x);
+          if ((x.ch === "-" || x.cls === "sp") && i < all.length - 1) ws.push([]);
+          return ws;
+        },
+        [[]],
+      ),
       meta: [
         t("departement_a.meta_communes", { n: coms.length }),
         ...(f.couverture.dernier_recueil

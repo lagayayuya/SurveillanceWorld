@@ -128,7 +128,7 @@ test("who pays: the buyers' amounts by the board's classes, « autres » last, s
   assert.equal(fraction(0.1), null);
 });
 
-test("the best equipped communes: 10 000 inhabitants or more, all of them when fewer than five", () => {
+test("the best equipped communes: 10 000 inhabitants or more, else 1 000, else all of them", () => {
   const big = [
     { pop: 42982, cams: 314 },
     { pop: 11208, cams: 65 },
@@ -142,6 +142,16 @@ test("the best equipped communes: 10 000 inhabitants or more, all of them when f
     r.rows.map((x) => x.cams),
     [314, 65, 230, 2113, 30],
   );
+  const mid = plusEquipees([
+    { pop: 87, cams: 5 },
+    { pop: 1200, cams: 2 },
+    { pop: 1610, cams: 6 },
+    { pop: 5222, cams: 32 },
+    { pop: 7850, cams: 28 },
+    { pop: 4360, cams: 15 },
+  ]);
+  assert.equal(mid.seuil, 1000);
+  assert.equal(mid.rows.length, 5);
   const small = plusEquipees([{ pop: 900, cams: 4 }, { pop: 3000, cams: 3 }, { pop: 500, cams: 0 }]);
   assert.equal(small.seuil, 0);
   assert.deepEqual(

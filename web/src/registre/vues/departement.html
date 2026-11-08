@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-d" aria-hidden="true"></i>{{t.departement_a.kind}}</span>
-      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{mots}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="meta"><span class="chip t">{{code}}</span><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for></p>
       <p class="lead">{{{lead}}}</p>
     </div>
@@ -96,10 +96,12 @@
     <section class="sec" id="autorise"><h2><span class="num" aria-hidden="true">{{aut.n}}</span>{{t.departement_a.s_aut}}</h2>
       <p class="ans">{{{aut.ans}}}</p>
       <sc-if value="{{aut.lu}}">
-      <div class="row2">
+      <div class="{{aut.row}}">
         <div class="card"><h3 class="k">{{t.departement_a.aut_annees_k}}</h3>
           <sc-for list="{{aut.hb}}" as="x"><div class="{{x.cls}}"><span>{{x.l}}</span><i style="{{x.st}}"></i><b>{{x.v}}</b></div></sc-for>
-          <p class="note">{{aut.note}}</p></div>
+          <p class="note">{{aut.note}}</p>
+          <sc-if value="{{aut.ouVide}}"><sc-if value="{{aut.drones}}"><a class="go" href="{{aut.drones}}">{{aut.dronesL}}</a></sc-if></sc-if></div>
+        <sc-if value="{{aut.ou.length}}">
         <div class="{{aut.r.cls}}">
           <button type="button" class="fh" aria-expanded="{{aut.r.exp}}" aria-controls="{{aut.r.id}}" onClick="{{aut.r.basculer}}"><span>{{aut.r.titre}}<small>{{aut.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{aut.r.id}}">
@@ -108,6 +110,7 @@
             <sc-if value="{{aut.drones}}"><a class="go" href="{{aut.drones}}">{{aut.dronesL}}</a></sc-if>
           </div>
         </div>
+        </sc-if>
       </div>
       </sc-if>
     </section>

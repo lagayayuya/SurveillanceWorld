@@ -240,19 +240,20 @@ export function fraction(x: number): string | null {
 
 // --- the communes ---------------------------------------------------------------------------------
 
-/** « Les plus équipées »: the communes of 10 000 inhabitants or more (all of them when fewer than
- * five reach it) by cameras on the map for 1 000 inhabitants, the most first. */
-export const SEUIL_EQUIPEES = 10000;
+/** « Les plus équipées »: the communes of 10 000 inhabitants or more by cameras on the map for
+ * 1 000 inhabitants, the most first; of 1 000 or more when fewer than five reach 10 000 (a village
+ * of 90 with five cameras says nothing), all of them when fewer than five reach that. */
+export const SEUILS_EQUIPEES = [10000, 1000] as const;
 export function plusEquipees<T extends { pop: number; cams: number | null }>(
   rows: T[],
   n = 8,
 ): { rows: (T & { v: number })[]; seuil: number } {
   const avec = rows.filter((c) => c.pop > 0 && c.cams != null && c.cams > 0);
-  const grandes = avec.filter((c) => c.pop >= SEUIL_EQUIPEES);
-  const seuil = grandes.length >= RANG_MIN ? SEUIL_EQUIPEES : 0;
+  const seuil = SEUILS_EQUIPEES.find((s) => avec.filter((c) => c.pop >= s).length >= RANG_MIN) ?? 0;
   return {
     seuil,
-    rows: (seuil ? grandes : avec)
+    rows: avec
+      .filter((c) => c.pop >= seuil)
       .map((c) => ({ ...c, v: (1000 * (c.cams ?? 0)) / c.pop }))
       .sort((a, b) => b.v - a.v || b.pop - a.pop)
       .slice(0, n),

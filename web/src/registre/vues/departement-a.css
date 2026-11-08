@@ -25,6 +25,10 @@
   max-width: 880px;
   font-size: 19px;
 }
+.rg .va.dep .name .mot {
+  display: inline-flex;
+  gap: 2px;
+}
 .rg .va.dep .rnk {
   font:
     900 18px Archivo,
@@ -494,4 +498,8 @@
 .rg .va.dep .num.doc {
   background: var(--type-document);
   color: var(--on-accent);
+}
+/* a row of one card (no commune named by the decrees): the board's left card at full width */
+.rg .va.dep .row2.seul {
+  grid-template-columns: 1fr;
 }
