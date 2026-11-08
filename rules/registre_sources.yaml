@@ -249,6 +249,16 @@ sources:
       "51": 2 000 à 4 999 salariés
       "52": 5 000 à 9 999 salariés
       "53": 10 000 salariés et plus
+  naf:
+    id: rule:registre_sources@1:source_naf
+    url: https://www.insee.fr/fr/statistiques/fichier/2120875/naf2008_liste_n5.dbf
+    encodage: cp850
+    rationale: >-
+      The labels of INSEE's NAF rév. 2 sous-classes (page « Nomenclature d'activités
+      française – NAF rév. 2 », https://www.insee.fr/fr/information/2120875): the dBase copy,
+      the only one robots may fetch (www.insee.fr's robots.txt forbids *.xls, read on
+      2026-11-08). One request. SIRENE gives the code only, and the API Recherche
+      d'entreprises no label (its openapi.json, read on 2026-11-08).
   communes:
     id: rule:registre_sources@1:source_communes
     communes: https://geo.api.gouv.fr/communes?fields=code,nom,population,codeDepartement,codeEpci,siren,bbox,mairie&format=json

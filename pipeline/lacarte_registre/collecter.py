@@ -1,7 +1,8 @@
 """`lacarte-registre collecter [--source S] [--resume] [--departement D …]`: the national
 public procurement, from its sources, under the machine's lock (lacarte.lock).
 
-The sources, in this order: `communes` (the communes of France, three requests), `decp`
+The sources, in this order: `communes` (the communes of France, three requests), `naf`
+(the activity labels, one request), `decp`
 (the contracts), `sirene` (the companies and buyers the contracts and the notices name: after
 the contracts). Each asks through fetch.py only and keeps its raw files under
 data/registre/brut/<source>/ (not versioned). The BOAMP's notices are no longer read here: the
@@ -28,11 +29,12 @@ from typing import Any
 
 import lacarte_registre as registre
 from lacarte import lock
-from lacarte_registre import boamp, communes, decp, fetch, sirene
+from lacarte_registre import boamp, communes, decp, fetch, naf, sirene
 
-SOURCES = ("communes", "decp", "sirene")
+SOURCES = ("communes", "naf", "decp", "sirene")
 OUTPUTS = {
     "communes": ("communes.json",),
+    "naf": ("naf.json",),
     "decp": ("decp.jsonl.gz", "decp.json"),
     "sirene": ("sirene.json",),
 }
@@ -82,6 +84,8 @@ def run(
         try:
             if name == "communes":
                 s = communes.collect(f, nxt)
+            elif name == "naf":
+                s = naf.collect(f, nxt)
             elif name == "decp":
                 s = decp.collect(f, nxt, departements, resume)
             else:

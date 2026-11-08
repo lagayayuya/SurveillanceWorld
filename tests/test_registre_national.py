@@ -230,6 +230,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
             body = {"data": [{"format": "parquet", "title": title,
                               "url": f"{srv.base}/resources/stock.parquet",
                               "last_modified": "2026-10-01"}]}  # fmt: skip
+        elif url.path == "/naf.dbf":
+            from test_registre_naf import _dbf
+
+            raw = _dbf([("43.21A", "Travaux d'installation électrique dans tous locaux")])
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Length", str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+            return
         elif url.path == "/search":
             s = q["q"]
             nj = "1000" if s == "999999998" else "5710"
@@ -262,6 +272,7 @@ def server(monkeypatch) -> Iterator[Fake]:
     src = conf["sources"]
     src["decp"].update(dataset=f"{b}/decp-dataset", tabular=f"{b}/tabular/{{resource}}/data/")
     src["sirene"].update(dataset=f"{b}/sirene-dataset", api=f"{b}/search")
+    src["naf"].update(url=f"{b}/naf.dbf")
     src["communes"].update(communes=f"{b}/communes", epcis=f"{b}/epcis",
                            departements=f"{b}/departements")  # fmt: skip
     monkeypatch.setattr(fetch, "rules", lambda path=None: conf)
@@ -297,7 +308,8 @@ def test_the_collection_then_construire_on_the_pilot(server, tmp_path):
     assert summary["communes"]["communes"] == 276
     assert sorted(p.name for p in nat.iterdir()) == [
         "boamp.json", "boamp.jsonl.gz", "communes.json", "decp.json", "decp.jsonl.gz",
-        "sirene.json"]  # fmt: skip
+        "naf.json", "sirene.json"]  # fmt: skip
+    assert summary["naf"]["libelles"] == 1
     # the Parquet's path is forbidden by robots.txt: never asked, the reason kept
     assert "/resources/decp.parquet" not in server.asked
     assert "robots.txt interdit" in fetch.Fetcher("decp", tmp_path).state()["note_parquet"]
@@ -484,7 +496,10 @@ def test_a_legal_persons_sirene_profile_is_served_never_a_sole_traders(tmp_path)
     }
     (nat / "sirene.json").write_text(json.dumps({"version": None, "mode": "api",
                                                  "unites": units}), "utf-8")  # fmt: skip
+    (nat / "naf.json").write_text(json.dumps({"libelles": {
+        "43.21A": "Travaux d'installation électrique dans tous locaux"}}), "utf-8")  # fmt: skip
     ents = national.assembler(tmp_path)["entreprises"]
+    assert ents[firm]["naf_libelle"] == "Travaux d'installation électrique dans tous locaux"
     assert {k: ents[firm][k] for k in ("categorie", "creation", "effectif", "effectif_annee",
                                        "siege_departement")} == {
         "categorie": "GE", "creation": 1958, "effectif": "250 à 499 salariés",

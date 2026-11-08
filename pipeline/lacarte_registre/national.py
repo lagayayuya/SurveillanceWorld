@@ -230,6 +230,12 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
     unites: dict[str, dict[str, Any]] = sir.get("unites", {})
     src = yaml.safe_load(((rules or registre.RULES) / "registre_sources.yaml").read_text("utf-8"))
     bands = {str(k): v for k, v in src["sources"]["sirene"]["tranches_effectifs"].items()}
+    # the NAF codes' labels (naf.py, INSEE), when collected
+    naf_labels: dict[str, str] = (
+        json.loads((nat / "naf.json").read_text("utf-8"))["libelles"]
+        if (nat / "naf.json").is_file()
+        else {}
+    )
     contrats = sans_doublons(decp.load(nat / "decp.jsonl.gz"))
     notices = list(boamp.load(nat / "boamp.jsonl.gz")) if (nat / "boamp.jsonl.gz").is_file() else []
     # the DILA's archive over the API's notices, the erased ones out of both (collecte.py)
@@ -463,6 +469,8 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
                               "verifie_sirene": True}  # fmt: skip
             if not u["ei"]:
                 entreprises[s].update(profil(u, bands))
+            if label := naf_labels.get(u.get("naf") or ""):
+                entreprises[s]["naf_libelle"] = label
     buyers = {a["acheteur_siren"] for a in affaires.values() if a.get("acheteur_siren")}
     buyers |= {e["acheteur_siren"] for e in ev if e.get("acheteur_siren")}
     acheteurs = {}
