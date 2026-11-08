@@ -1,0 +1,76 @@
+# The motive of a drone act read by rules from its title and its article 1 (lot R5.2, Ju
+# 2026-11-08: no model), pipeline/lacarte_registre/motifs.py. The categories are those of
+# rules/collecte_champs.yaml `motifs`, which the model reads and the interface names.
+version: 1
+id: rule:registre_motifs@1
+rationale: >-
+  Article 1 of a drone act mostly lists the purposes of article L. 242-5 of the code de la
+  sécurité intérieure word for word, the same in most acts; the event it is for (a match, a
+  demonstration, an anti-drug operation) is in the title or after « à l'occasion de », « dans
+  le cadre de ». So the purposes and a few closing phrases are removed first (`retirer`), then
+  the first class whose words match gives the motive, the most specific first. A class is
+  served only when 50 of its acts drawn at random and read by hand give at least 48 right
+  (96 %, Ju: 95 % or more); the others stay « non lu ». Measured on 2026-11-08 on the 8 348
+  drone acts of reader 6: a first draw per class set the words, a second draw with another
+  seed measured them (`mesure`); 6 208 acts (74 %) match no class.
+# folded text (lower case, no accent, apostrophes as any character), removed before the classes
+retirer:
+  - id: l242_5_1
+    raison: 'the purpose 1° of article L. 242-5 as the acts quote it (« des risques d''agression, de vol ou de trafic d''armes, d''êtres humains ou de stupéfiants »): a purpose, not a motive'
+    motifs: ['risques? d.agressions?,? de vols? ou (?:de )?(?:trafics? d.armes,? d.etres humains ou de )?stupefiants?']
+  - id: fin_de_la_manifestation
+    raison: 'a closing article''s « à l''issue de la manifestation »: the word for any event'
+    motifs: ['(?:a l.issue|a la fin|jusqu.a la fin|pour la duree|la duree) (?:de la|des|du rassemblement/de la|du rassemblement / de la) manifestations?']
+  - id: carnavalesque
+    raison: '« manifestations carnavalesques »: a carnival, not a demonstration'
+    motifs: ['manifestations? carnavalesques?']
+  - id: fetes_religieuses
+    raison: '« sécurisation des fêtes juives »: places of worship protected, not a festivity'
+    motifs: ['fetes? (?:juives?|religieuses?)']
+  - id: police_aux_frontieres
+    raison: 'the service that flies, not the motive'
+    motifs: ['police aux frontieres']
+  - id: finalites
+    raison: 'the purposes of L. 242-5 cited in bulk by most articles 1 (« sécurité des rassemblements », « régulation des flux de transport »…): purposes, read apart'
+    motifs:
+      - 'securi(?:te|sation) des rassemblements de personnes'
+      - 'securi(?:te|sation) des rassemblements'
+      - 'surveillance des frontieres(?:[^.;]{0,80}franchissement irregulier)?'
+      - 'regulation des flux de transport'
+      - 'secours (?:aux|a) personnes?'
+      - 'prevention des atteintes a la securite des personnes et des biens'
+      - 'prevention (?:d.actes de |du )terrorisme'
+      - 'en vue de lutter contre leur franchissement irregulier'
+# in this order, first match wins; `publie` only past the measure
+classes:
+  - id: stupefiants
+    mots: 'stupefiant|trafics? de drogue|points? de deal|deal de'
+    mesure: '50/50 (graine 13)'
+    publie: true
+  - id: violences_urbaines
+    mots: 'violences urbaines|emeutes?|troubles? graves? a l.ordre public dans (?:les|des) quartiers'
+    mesure: '8 arrêtés seulement : pas de tirage de 50'
+    publie: false
+  - id: frontiere
+    mots: 'franchissements? irreguliers?|immigration irreguliere|passages? clandestins?|migrants?|traversees? (?:de la manche|maritimes?)|small boats?'
+    mesure: '11 arrêtés seulement : pas de tirage de 50'
+    publie: false
+  - id: manifestation
+    mots: '\bmanifestations?\b(?= (?:a |au |aux (?!titres?)|en |le |les |du \d|des \d|de voie publique|sur la voie publique|declarees?|sociales?|revendicatives?|lyceennes?|de lyceens|d.etudiants|de personnes|prevues?|intersyndicales?|syndicales?|d.agriculteurs|des agriculteurs|non declarees?|contre |pour (?:la|le|les) |en soutien|de soutien|interdites?))|\bcorteges?\b|mouvements? sociaux|mouvement social|mouvement lyceen|revendicati|\bgreves?\b|appels? a (?:manifester|la mobilisation|mobilisation)|\bmobilisations?\b(?! (?:des|de) (?:forces|moyens|effectifs|services))'
+    mesure: '49/50 (graine 7)'
+    publie: true
+  - id: sport
+    mots: '(?<!supermarche )\bmatch(?:es|s)?\b|epreuves? olympiques?|rencontres? (?:de|du) (?:football|rugby|ligue)|marathon|courses? cyclistes?|tour de france|grand prix|\brallyes?\b|championnats?|jeux olympiques|ligue 1|ligue des champions|coupe (?:de france|du monde|d.europe)|triathlon|manifestations? sportives?|\btrail\b|\bbolid|24 heures du mans|competitions? sportives?'
+    mesure: '50/50 (graine 11)'
+    publie: true
+  - id: commemoration
+    mots: 'commemorati|\bceremonies?\b|\bhommage\b|anniversaire de la (?:liberation|victoire)|armistice|defile (?:militaire|du 14 juillet)'
+    mesure: '49/50 (graine 17)'
+    publie: true
+  - id: concert_fete
+    mots: '\bconcerts?\b|\bfestivals?\b|\bfetes?\b|feux? d.artifices?|\bcarnavals?\b|\bbraderies?\b|\bferias?\b|nouvel an|saint.sylvestre|reveillons?|festivites|marches? de noel|spectacles? pyrotechniques?'
+    mesure: '49/50 (graine 17)'
+    publie: true
+# a fête within this many characters after an unqualified « manifestation » is a mixed motive
+# (« la manifestation suivie du concert »): not read
+melange_fete_apres_manifestation: 40

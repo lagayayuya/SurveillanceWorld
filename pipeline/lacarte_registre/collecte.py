@@ -30,8 +30,9 @@ from typing import Any
 
 import yaml
 
+import lacarte_registre as registre
 from lacarte_collecte import arretes
-from lacarte_registre import partage, regles, selection
+from lacarte_registre import motifs, partage, regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -197,6 +198,7 @@ def act_event(
     final: dict[str, Any] | None,
     mention: str | None,
     deps: list[str] | None = None,
+    rules_dir: Path | None = None,
 ) -> regles.Event:
     """The act as an event: the fields of the groups published in its département and kind,
     from the checked reading (rules, model, both, arbitration) else the rules'; the others
@@ -285,7 +287,11 @@ def act_event(
     if "horaires" not in published and read.get("horaires"):
         e["horaires_lus"] = True
     if "motif" in nv or "motif_libelle" in nv:
-        e["motif"] = {"categorie": nv.get("motif"), "libelle": nv.get("motif_libelle")}
+        e["motif"] = {"categorie": nv.get("motif"), "libelle": nv.get("motif_libelle"),
+                      "origine": "modele"}  # fmt: skip
+    elif a["type"] == "drone" and (m := motifs.motif(a, rules_dir or registre.RULES)):
+        # its title and article 1 by the measured rules (rules/registre_motifs.yaml)
+        e["motif"] = m
     for k in ("service", "finalites", "lieux", "n_perimetres", "etablissement", "adresse",
               "conservation_jours", "echeance", "nature"):  # fmt: skip
         if k in nv:
@@ -388,7 +394,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         }
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
-        new.append(act_event(a, admin, published, finals.get(a["id"]), mention, deps))
+        new.append(act_event(a, admin, published, finals.get(a["id"]), mention, deps, rules))
     affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
     for e in new:
         kind = "subvention" if e["t"].startswith("subvention") else "acte"
