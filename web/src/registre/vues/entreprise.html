@@ -1,122 +1,167 @@
-<div class="{{th}}">
-  <dc-include src="tete-fiche"></dc-include>
-  <dc-include src="bandeau"></dc-include>
-
-  <div class="{{lay.inner}}" style="padding-top: 0">
-    <div class="grid2">
-      <div style="min-width: 0">
-
-        <section id="essentiel" class="sec" style="padding-top: 26px">
-          <h2 class="h2"><span class="num">{{secs.essentiel.n}}</span>{{secs.essentiel.l}}</h2>
-          <p class="lead" style="margin: 0">{{{lead}}}</p>
-          <div class="{{lay.tickets}}" style="margin-top: 4px">
-            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}</div><div class="l"><span class="{{k.ac}}" tabindex="{{k.ti}}" data-aide="{{k.aide}}">{{k.l}}</span></div></div></sc-for>
-          </div>
-          <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
-          <sc-if value="{{depLine.length}}"><p class="sober" style="margin: 4px 0 0; line-height: 2.1">{{t.entreprise.clientes_dans}}
-            <sc-for list="{{depLine}}" as="d"><span style="margin-right: 10px; white-space: nowrap">{{{d.lien}}}&nbsp;<span style="font-weight: 400; color: var(--muted)">({{d.n}})</span></span></sc-for></p></sc-if>
-        </section>
-
-        <sc-if value="{{secs.temps}}">
-        <section id="temps" class="sec">
-          <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
-          <h3 class="h3">{{t.entreprise.temps_titre}}</h3>
-          <p class="sober" style="margin: 0; color: var(--muted)">{{t.entreprise.temps_aide}}</p>
-          <div class="yb" role="group" aria-label="{{yearAlt}}" onPointerLeave="{{quitter}}"><sc-for list="{{years}}" as="y"><button type="button" aria-pressed="{{y.on}}" onMouseEnter="{{y.hover}}" onFocus="{{y.hover}}" onClick="{{y.pick}}" aria-label="{{y.label}}"><span class="n">{{y.v}}</span><span class="b" style="{{y.bar}}"></span></button></sc-for></div>
-          <div class="yl" aria-hidden="true"><sc-for list="{{years}}" as="y"><span>{{y.y}}<em>{{y.n}}</em></span></sc-for></div>
-          <p class="money" style="margin: 0">{{t.argent.enveloppe}}</p>
-
-          <div class="{{lay.deux}}">
-            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
-              <div style="display: flex; align-items: center; justify-content: space-between">
-                <h3 class="h3">{{f.entreprise.en_cours_aujourd_hui}}</h3>
-                <button class="ibtn" type="button" onClick="{{tgl.mt}}" aria-expanded="{{open.mt}}" aria-label="{{t.entreprise.comment_est_calculee_la_fin}}"><span aria-hidden="true">i</span></button>
-              </div>
-              <sc-if value="{{show.mt}}"><p class="note tw">{{f.entreprise.fin_prevue_date_de_signature}}</p></sc-if>
-              <p class="sober" style="margin: 0; color: var(--muted)">{{t.entreprise.les_contrats_dont_la_fin}}</p>
-              <sc-if value="{{sansFin}}"><p class="sober" style="margin: 0; color: var(--muted)">{{sansFin}}</p></sc-if>
-              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
-                <sc-for list="{{act}}" as="a">
-                  <div class="{{a.cls}}" aria-current="{{a.sel}}" style="{{a.c}}" onMouseEnter="{{a.hover}}" onFocus="{{a.hover}}" onClick="{{a.pick}}">
-                    <span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{{a.nom}}}</span>
-                    <span style="display: flex; flex-direction: column; gap: 3px"><span class="tw" style="font-size: 13px; color: var(--muted)">{{a.span}}</span><span class="prog" role="img" aria-label="{{a.progLabel}}"><span style="{{a.prog}}"></span></span></span>
-                    <strong style="text-align: right">{{a.amt}}</strong>
-                  </div>
-                </sc-for>
-              </div>
-              <sc-if value="{{actMore}}"><button class="more" type="button" onClick="{{toggleAct}}">{{actLabel}}</button></sc-if>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0">
-              <h3 class="h3" style="min-height: 40px; display: flex; align-items: center">{{t.entreprise.ses_plus_gros_contrats}}</h3>
-              <p class="sober" style="margin: 0; color: var(--muted)">{{bigPhrase}}</p>
-              <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}">
-                <sc-for list="{{big}}" as="b">
-                  <div class="{{b.cls}}" aria-current="{{b.sel}}" style="{{b.c}}" onMouseEnter="{{b.hover}}" onFocus="{{b.hover}}" onClick="{{b.pick}}">
-                    <span style="display: flex; flex-direction: column; line-height: 1.25; min-width: 0"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{{b.nom}}}</span><span class="tw" style="font-size: 13px; color: var(--muted)">{{b.y}}<sc-if value="{{b.rep}}"><sup role="img" aria-label="{{t.repere.date}}" title="{{t.repere.date}}" style="margin-left: 2px; font-size: 12px">*</sup></sc-if></span></span>
-                    <span style="display: flex; align-items: center; gap: 8px"><span style="{{b.bar}}"></span><strong style="white-space: nowrap">{{b.amt}}</strong></span>
-                  </div>
-                </sc-for>
-              </div>
-            </div>
-          </div>
-        </section>
-        </sc-if>
-
-        <sc-if value="{{secs.avecqui}}">
-        <section id="avecqui" class="sec">
-          <h2 class="h2"><span class="num">{{secs.avecqui.n}}</span>{{secs.avecqui.l}}</h2>
-          <div style="display: flex; align-items: baseline; justify-content: space-between">
-            <h3 class="h3">{{f.entreprise.ses_clientes}}</h3>
-            <span class="tw" style="color: var(--muted); font-size: 14px">{{t.entreprise.touchez_une_ligne_le_detail}}</span>
-          </div>
-          <table class="t" onFocusOut="{{sortie}}">
-            <caption class="sr">{{f.entreprise.clientes_de_triables_par_colonne}}</caption>
-            <thead><tr>
-              <sc-for list="{{cols}}" as="c">
-                <th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}" style="{{c.w}}"><button type="button" class="{{c.ac}}" data-aide="{{c.aide}}" onClick="{{c.pick}}">{{c.l}} <span aria-hidden="true">{{c.arrow}}</span></button></th>
-              </sc-for>
-            </tr></thead>
-            <tbody onPointerLeave="{{quitter}}">
-              <sc-for list="{{clients}}" as="c">
-                <tr class="{{c.cls}}" aria-current="{{c.sel}}" style="{{c.c}}" onMouseEnter="{{c.hover}}" onFocus="{{c.hover}}" onClick="{{c.pick}}">
-                  <td>{{{c.nom}}}<div style="font-size: 13px; color: var(--muted)">{{c.cat}}</div></td>
-                  <td>{{{c.dep}}}</td>
-                  <td class="num">{{c.n}}</td>
-                  <td class="num"><div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px"><span style="{{c.bar}}"></span><strong>{{c.amt}}</strong></div></td>
-                  <td class="num tw" style="color: var(--muted)">{{c.last}}</td>
-                </tr>
-              </sc-for>
-            </tbody>
-          </table>
-          <sc-if value="{{showMore}}"><button class="more" type="button" onClick="{{more}}">{{moreLabel}}</button></sc-if>
-
-          <sc-if value="{{partners.length}}">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 14px">
-            <h3 class="h3">{{f.entreprise.a_plusieurs_titre}}</h3>
-            <button class="ibtn" type="button" onClick="{{tgl.par}}" aria-expanded="{{open.par}}" aria-label="{{t.entreprise.ce_que_veut_dire_signer}}"><span aria-hidden="true">i</span></button>
-          </div>
-          <sc-if value="{{show.par}}"><p class="note tw">{{t.entreprise.un_contrat_peut_etre_attribue}}</p></sc-if>
-          <p class="sober" style="margin: 0; color: var(--muted)">{{parPhrase}}</p>
-          <div style="display: flex; flex-wrap: wrap; gap: 10px 22px"><sc-for list="{{partners}}" as="p"><span>{{{p.lien}}} <span style="color: var(--muted); font-size: 13.5px">{{p.n}}</span></span></sc-for></div>
-          </sc-if>
-        </section>
-        </sc-if>
-
-        <sc-if value="{{secs.documents}}">
-        <section id="documents" class="sec">
-          <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
-          <p class="sober" style="margin: 0; color: var(--muted)">{{docsPhrase}}</p>
-          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" aria-current="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.d}}</span><span style="min-width: 0">{{{d.qui}}}</span><span class="a">{{{d.amt}}}</span><span class="m">{{d.dur}}</span></div></sc-for></div>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
-            <sc-if value="{{docsMore}}"><button class="more" type="button" onClick="{{togDocs}}">{{docsLabel}}</button></sc-if>
-            <a href="{{parcourir}}">{{t.entreprise.parcourir_tout}}</a>
-          </div>
-        </section>
-        </sc-if>
-
-        <dc-include src="sources"></dc-include>
-      </div>
-      <dc-include src="panneau"></dc-include>
+<div class="{{th}} va ent">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-e" aria-hidden="true"></i>{{t.entreprise_a.kind}}</span>
+      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <p class="meta"><sc-if value="{{naf}}"><a class="chip t" href="{{naf.href}}" data-bh="{{naf.l}}" data-bl="{{naf.bl}}" data-bc="{{naf.bc}}">{{naf.l}}</a></sc-if><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for><sc-if value="{{todo}}"><span class="todo" tabindex="0" data-bl="{{todo.bl}}">{{todo.l}}</span></sc-if><sc-if value="{{collecte}}"><span>{{collecte}}</span></sc-if></p>
+      <p class="lead">{{{lead}}}</p>
     </div>
+    <div class="{{act.cls}}">
+      <button type="button" class="btn" onClick="{{partager}}" aria-haspopup="dialog">{{t.entreprise_a.partager}}</button><button type="button" class="btn" onClick="{{citer}}" aria-live="polite">{{citerL}}</button><button type="button" class="btn" onClick="{{exporter}}">{{t.entreprise_a.exporter}}</button><a class="btn pri" href="{{comparer}}">{{t.entreprise_a.comparer}}</a><button type="button" class="btn more" aria-expanded="{{act.exp}}" aria-label="{{t.entreprise_a.plus_actions}}" onClick="{{act.basculer}}">⋯</button>
+    </div>
+  </section>
+
+  <div class="figs">
+    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" onClick="{{f.go}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><sc-if value="{{f.share}}"><span class="rk-share" aria-hidden="true"><i style="{{f.share}}"></i></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.tip}}</span></a></sc-for>
   </div>
+
+  <nav class="toc" aria-label="{{t.entreprise_a.sommaire}}"><sc-for list="{{toc}}" as="s"><a href="{{s.href}}" onClick="{{s.go}}">{{s.l}}</a></sc-for></nav>
+
+  <div class="body"><main>
+    <sc-if value="{{s1}}">
+    <section class="sec" id="qui"><h2><span class="num" aria-hidden="true">{{s1.n}}</span>{{t.entreprise_a.s_qui}}</h2>
+      <p class="ans">{{{s1.ans}}}</p>
+      <div class="{{s1.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{s1.r.exp}}" aria-controls="{{s1.r.id}}" onClick="{{s1.r.basculer}}"><span>{{s1.r.titre}}<small>{{s1.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{s1.r.id}}">
+          <div class="ch-h"><h3 class="k">{{t.entreprise_a.clients_k}}</h3><span class="deps"><b>{{s1.depsN}}</b><sc-for list="{{s1.deps}}" as="d"><a class="chip t" href="{{d.href}}">{{d.l}}</a></sc-for><sc-if value="{{s1.depsPlus}}"><span>{{s1.depsPlus}}</span></sc-if></span></div>
+          <div class="cl2" data-bg=""><sc-for list="{{s1.rows}}" as="x"><div class="sup" data-bh="{{x.bh}}" data-bl="{{x.bl}}" data-bc="{{x.bc}}" data-go="{{x.go}}">
+            <div class="sup-n">{{{x.nom}}}<span class="role"><sc-if value="{{x.cat}}">{{x.cat}} · </sc-if><sc-if value="{{x.dep}}"><a href="{{x.depHref}}" data-bh="{{x.dep}}" data-bc="{{x.depBc}}">{{x.dep}}</a></sc-if></span></div>
+            <div class="sup-bar"><span class="{{x.cls}}" style="{{x.st}}"></span></div>
+            <div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div>
+          </div></sc-for></div>
+          <sc-if value="{{s1.plus}}"><p class="note">{{s1.plus.l}} <a class="go" href="{{s1.plus.href}}">{{t.entreprise_a.voir_graphe}}</a></p></sc-if>
+          <sc-if value="{{s1.note}}"><p class="note">{{s1.note}}</p></sc-if>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{s2}}">
+    <section class="sec" id="combien"><h2><span class="num" aria-hidden="true">{{s2.n}}</span>{{t.entreprise_a.s_combien}}</h2>
+      <p class="ans">{{{s2.ans}}}</p>
+      <div class="card">
+        <div class="ch-h"><h3 class="k">{{t.entreprise_a.annees_k}}</h3><div class="seg-ctl" role="group" aria-label="{{t.entreprise_a.annees_k}}"><sc-for list="{{s2.vues}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
+        <div class="zw">
+          <svg class="chart" viewBox="0 0 1240 270" width="1240" height="270" role="group" aria-label="{{s2.titre}}" data-bg="">
+            <sc-for list="{{s2.grille}}" as="g"><line class="grid" x1="44" x2="1240" y1="{{g.y}}" y2="{{g.y}}"></line><text class="ax" x="38" y="{{g.ty}}" text-anchor="end">{{g.l}}</text></sc-for>
+            <text class="ax" x="38" y="16" text-anchor="end">{{s2.unite}}</text>
+            <sc-for list="{{s2.cols}}" as="c"><g class="col" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" onClick="{{c.pick}}"><rect class="hit" x="{{c.hx}}" y="6" width="{{c.hw}}" height="244"></rect><sc-for list="{{c.rects}}" as="r"><rect class="{{r.cls}}" x="{{c.x}}" y="{{r.y}}" width="{{c.w}}" height="{{r.h}}" rx="2"></rect></sc-for><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="248" text-anchor="middle">{{c.an}}</text></g></sc-for>
+            <line class="base" x1="44" x2="1240" y1="230" y2="230"></line>
+          </svg>
+          <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+        </div>
+        <div class="sleg"><sc-for list="{{s2.leg}}" as="l"><span class="{{l.cls}}"><i class="{{l.sw}}" aria-hidden="true"></i>{{{l.l}}} · <b>{{l.v}}</b></span></sc-for></div>
+        <p class="note">{{{s2.note}}}</p>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{s3}}">
+    <section class="sec" id="quoi"><h2><span class="num" aria-hidden="true">{{s3.n}}</span>{{t.entreprise_a.s_quoi}}</h2>
+      <p class="ans">{{{s3.ans}}}</p>
+      <div class="row2">
+        <div class="card"><h3 class="k">{{t.entreprise_a.natures_k}}</h3>
+          <p><span class="state">{{t.liste.non_lu}}</span></p>
+          <p class="note">{{t.entreprise_a.natures_non_lu}}</p></div>
+        <div class="{{s3.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s3.r.exp}}" aria-controls="{{s3.r.id}}" onClick="{{s3.r.basculer}}"><span>{{s3.r.titre}}<small>{{s3.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s3.r.id}}"><h3 class="k">{{t.entreprise_a.metier_k}}</h3>
+            <sc-if value="{{s3.rows}}"><ol class="top"><sc-for list="{{s3.rows}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{x.n}}</span><b></b></li></sc-for></ol></sc-if>
+            <sc-if value="{{s3.vide}}"><p class="note" role="status">{{s3.vide}}</p></sc-if>
+            <p class="note">{{{s3.note}}}</p></div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{s4}}">
+    <section class="sec" id="avec"><h2><span class="num" aria-hidden="true">{{s4.n}}</span>{{t.entreprise_a.s_avec}}</h2>
+      <p class="ans">{{{s4.ans}}}</p>
+      <div class="{{s4.cls}}">
+        <sc-if value="{{s4.grp}}">
+        <div class="{{s4.grp.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s4.grp.r.exp}}" aria-controls="{{s4.grp.r.id}}" onClick="{{s4.grp.r.basculer}}"><span>{{s4.grp.r.titre}}<small>{{s4.grp.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s4.grp.r.id}}"><h3 class="k">{{t.entreprise_a.grp_k}}</h3>
+            <ol class="top"><sc-for list="{{s4.grp.rows}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{{x.ou}}}</span><b>{{x.m}}</b></li></sc-for></ol>
+            <sc-if value="{{s4.grp.note}}"><p class="note">{{{s4.grp.note}}}</p></sc-if></div>
+        </div>
+        </sc-if>
+        <div class="{{s4.off.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s4.off.r.exp}}" aria-controls="{{s4.off.r.id}}" onClick="{{s4.off.r.basculer}}"><span>{{s4.off.r.titre}}<small>{{s4.off.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s4.off.r.id}}"><h3 class="k">{{t.entreprise_a.off_k}}</h3>
+            <sc-if value="{{s4.off.rows}}"><table class="docs offt"><caption class="sr">{{t.entreprise_a.off_k}}</caption><thead><tr><th scope="col">{{t.entreprise_a.col_ao}}</th><th scope="col" class="n">{{t.entreprise_a.col_reponses}}</th><th scope="col">{{t.entreprise_a.col_retenue}}</th></tr></thead><tbody>
+              <sc-for list="{{s4.off.rows}}" as="x"><tr><td data-label=""><b>{{{x.ou}}}</b> · {{x.an}} · <span class="obj">{{x.obj}}</span></td><td class="n" data-label="{{t.entreprise_a.col_reponses}}"><b>{{x.n}}</b></td><td data-label="{{t.entreprise_a.col_retenue}}">{{x.ret}}</td></tr></sc-for>
+            </tbody></table></sc-if>
+            <sc-if value="{{s4.off.nonPub}}"><p><span class="state">{{t.entreprise_a.non_publie}}</span></p></sc-if>
+            <p class="note">{{s4.off.note}}</p></div>
+        </div>
+      </div>
+      <div class="row2 wide">
+        <div class="card tool"><span class="tag">{{t.entreprise_a.graphe_tag}}</span><h3>{{t.entreprise_a.graphe_h}}</h3>
+          <div class="zw">
+            <svg class="g2" viewBox="0 0 600 400" width="600" height="400" role="group" aria-label="{{s4.g.titre}}" data-bg="">
+              <sc-for list="{{s4.g.nodes}}" as="x"><line class="l" x1="300" y1="204" x2="{{x.x}}" y2="{{x.y}}"></line><sc-if value="{{x.mo}}"><line class="l more" x1="{{x.x}}" y1="{{x.y}}" x2="{{x.mx}}" y2="{{x.my}}"></line><rect class="mo e" x="{{x.mrx}}" y="{{x.mry}}" width="{{x.mw}}" height="28" rx="2"></rect><text class="gmo" x="{{x.mx}}" y="{{x.my}}" text-anchor="middle" dominant-baseline="central">{{x.mo}}</text></sc-if></sc-for>
+              <sc-for list="{{s4.g.nodes}}" as="x"><a href="{{x.href}}" class="{{x.ci}}" data-bh="{{x.bh}}" data-bl="{{x.bl}}" data-bc="{{x.bc}}"><g class="nd"><circle class="a" cx="{{x.x}}" cy="{{x.y}}" r="{{x.r}}"></circle><text class="t0" x="{{x.x}}" y="{{x.ty}}" text-anchor="middle">{{x.l}}</text></g></a></sc-for>
+              <rect class="c0" x="{{s4.g.cx}}" y="186" width="{{s4.g.cw}}" height="36" rx="2"></rect><text class="tc" x="300" y="209" text-anchor="middle">{{s4.g.cl}}</text>
+            </svg>
+            <button type="button" class="zoom top" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+          </div>
+          <p class="note">{{t.entreprise_a.graphe_note}}<sc-if value="{{s4.g.plus}}"> <a class="go" href="{{s4.g.href}}">{{s4.g.plus}}</a></sc-if></p>
+          <a class="btn" href="{{s4.g.href}}">{{t.entreprise_a.graphe_ouvrir}}</a></div>
+        <div class="{{s4.aut.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s4.aut.r.exp}}" aria-controls="{{s4.aut.r.id}}" onClick="{{s4.aut.r.basculer}}"><span>{{s4.aut.r.titre}}<small>{{s4.aut.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s4.aut.r.id}}"><h3 class="k">{{t.entreprise_a.autres_k}}</h3>
+            <sc-if value="{{s4.aut.rows}}"><ol class="top"><sc-for list="{{s4.aut.rows}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{{x.ou}}}</span><b>{{x.n}}</b></li></sc-for></ol></sc-if>
+            <sc-if value="{{s4.aut.vide}}"><p class="note" role="status">{{s4.aut.vide}}</p></sc-if>
+            <p class="note">{{t.entreprise_a.autres_note}}</p></div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{s5}}">
+    <section class="sec" id="temps"><h2><span class="num" aria-hidden="true">{{s5.n}}</span>{{t.entreprise_a.s_temps}}</h2>
+      <p class="ans">{{{s5.ans}}}</p>
+      <div class="card tool"><span class="tag">{{t.entreprise_a.frise_tag}}</span><h3>{{t.entreprise_a.frise_h}}</h3>
+        <div class="zw">
+          <svg class="gantt" viewBox="{{s5.vb}}" width="1240" height="{{s5.h}}" role="group" aria-label="{{s5.titre}}" data-bg="">
+            <sc-for list="{{s5.axe}}" as="a"><line class="grid" x1="{{a.x}}" x2="{{a.x}}" y1="22" y2="{{s5.yb}}"></line><text class="ax" x="{{a.tx}}" y="16">{{a.l}}</text></sc-for>
+            <sc-for list="{{s5.rows}}" as="r"><g class="gr" tabindex="0" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}" data-go="{{r.go}}"><rect class="hit" x="0" y="{{r.y}}" width="1240" height="26"></rect><text class="go2" x="168" y="{{r.ty}}">{{r.obj}}</text><sc-if value="{{r.bar}}"><rect class="{{r.cls}}" x="{{r.x}}" y="{{r.by}}" width="{{r.w}}" height="13" rx="2"></rect></sc-if><sc-if value="{{r.pt}}"><rect class="{{r.cls}}" x="{{r.x}}" y="{{r.by}}" width="4" height="13"></rect><text class="go2" x="{{r.px}}" y="{{r.ty}}">{{t.entreprise_a.duree_inconnue}}</text></sc-if><sc-if value="{{r.mc}}"><text class="mc" x="{{r.mx}}" y="{{r.my}}" text-anchor="{{r.ma}}">{{r.mc}}</text></sc-if></g></sc-for>
+            <sc-for list="{{s5.seps}}" as="s"><line class="gsep" x1="0" x2="1240" y1="{{s.y}}" y2="{{s.y}}"></line></sc-for>
+            <sc-for list="{{s5.labels}}" as="l"><sc-if value="{{l.href}}"><a href="{{l.href}}"><text class="gc" x="0" y="{{l.y}}">{{l.l}}</text></a></sc-if><sc-if value="{{l.sans}}"><text class="gc" x="0" y="{{l.y}}">{{l.l}}</text></sc-if></sc-for>
+            <line class="now" x1="{{s5.nx}}" x2="{{s5.nx}}" y1="22" y2="{{s5.yb}}"></line><text class="nowt" x="{{s5.ntx}}" y="{{s5.ny}}" text-anchor="{{s5.na}}">{{t.entreprise_a.aujourdhui}}</text>
+          </svg>
+          <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+        </div>
+        <div class="sleg"><sc-for list="{{s5.leg}}" as="l"><span class="lg"><i class="{{l.sw}}" aria-hidden="true"></i>{{{l.l}}}</span></sc-for><span class="lg"><i class="sw live" aria-hidden="true"></i>{{t.entreprise_a.en_cours}}</span><span class="lg"><i class="sw done" aria-hidden="true"></i>{{t.entreprise_a.termine}}</span><span class="lg ord">{{t.entreprise_a.modif_survol}}</span><span class="lg tel">{{t.entreprise_a.modif_toucher}}</span></div>
+        <p class="note">{{t.entreprise_a.frise_note}}<sc-if value="{{s5.caches}}"> {{s5.caches}}</sc-if></p></div>
+    </section>
+    </sc-if>
+
+    <section class="sec" id="documents"><h2><span class="num doc" aria-hidden="true">≡</span>{{t.entreprise_a.s_documents}}</h2>
+      <div class="{{docs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{docs.r.exp}}" aria-controls="{{docs.r.id}}" onClick="{{docs.r.basculer}}"><span>{{docs.r.titre}}<small>{{docs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{docs.r.id}}">
+          <div class="filters" role="group" aria-label="{{t.entreprise_a.s_documents}}"><sc-for list="{{docs.onglets}}" as="o"><button type="button" class="chip f" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}} · {{o.n}}</button></sc-for><span class="sp"></span><sc-for list="{{docs.menus}}" as="m"><div class="{{m.cls}}"><button type="button" class="{{m.chip}}" aria-haspopup="listbox" aria-expanded="{{m.ouvert}}" onClick="{{m.basculer}}">{{m.l}} ▾</button><sc-if value="{{m.menu}}"><ul class="dmenu tmenu" role="listbox" aria-label="{{m.lab}}" onKeyDown="{{m.clavier}}"><sc-for list="{{m.opts}}" as="o"><li class="drow" role="option" aria-selected="{{o.on}}" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span></li></sc-for></ul></sc-if></div></sc-for><button type="button" class="btn" onClick="{{docs.exporter}}">{{t.entreprise_a.exporter_csv}}</button></div>
+          <sc-if value="{{docs.actifs}}"><div class="filters actifs"><sc-for list="{{docs.actifs}}" as="a"><button type="button" class="chip f on" onClick="{{a.lever}}">{{a.l}} ✕</button></sc-for></div></sc-if>
+          <table class="docs"><caption class="sr">{{t.entreprise_a.s_documents}}</caption><thead><tr><th scope="col" aria-sort="{{docs.triDate}}"><button type="button" class="tri" onClick="{{docs.parDate}}">{{t.entreprise_a.col_date}}</button></th><th scope="col">{{t.entreprise_a.col_acheteur}}</th><th scope="col">{{t.entreprise_a.col_objet}}</th><th scope="col" class="n">{{t.entreprise_a.col_offres}}</th><th scope="col" class="n" aria-sort="{{docs.triM}}"><button type="button" class="tri" onClick="{{docs.parM}}">{{t.entreprise_a.col_montant}}</button></th><th scope="col">{{t.entreprise_a.col_fin}}</th></tr></thead><tbody onClick="{{docs.ligne}}">
+            <sc-for list="{{docs.rows}}" as="r"><tr><td data-label="{{t.entreprise_a.col_date}}">{{r.d}}</td><td data-label="{{t.entreprise_a.col_acheteur}}">{{{r.qui}}}</td><td data-label="">{{{r.obj}}}</td><td class="n" data-label="{{t.entreprise_a.col_offres}}">{{r.o}}</td><td class="n" data-label="{{t.entreprise_a.col_montant}}">{{r.m}}</td><td data-label="{{t.entreprise_a.col_fin}}">{{r.fin}}</td></tr></sc-for>
+          </tbody></table>
+          <sc-if value="{{docs.vide}}"><p class="note">{{t.entreprise_a.documents_vide}}</p></sc-if>
+          <sc-if value="{{docs.plus}}"><p class="note"><button type="button" class="btn sm" onClick="{{docs.basculerTout}}">{{docs.plus}}</button></p></sc-if>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="sources"><h2><span class="num doc" aria-hidden="true">i</span>{{t.entreprise_a.s_sources}}</h2>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b> · {{s.d}}<sc-if value="{{s.href}}"> · <a class="go" href="{{s.href}}">{{s.lien}}</a></sc-if></li></sc-for></ul>
+          <p class="note">{{t.entreprise_a.sources_note}} <a class="go" href="{{srcs.signaler}}">{{t.entreprise_a.signaler}}</a> · <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
+        </div>
+      </div>
+    </section>
+  </main></div>
 </div>

@@ -1,18 +1,13 @@
-// A company's page (src/registre/vues/entreprise-outils.ts) on a SYNTHETIC file shaped as the build
-// writes entreprise/<siren>.json: made-up companies, buyers and contracts, no source's data. A total
-// adds the contracts flagged `compte` only; the running list is the build's; a sole trader is never
-// named; one is singular.
+// A company's file as the fiche reads it (src/registre/vues/entreprise-outils.ts) on a SYNTHETIC file
+// shaped as the build writes entreprise/<siren>.json: made-up companies, buyers and contracts, no
+// source's data. A total adds the contracts flagged `compte` only; a sole trader is never named.
+// The theme A fiche's computations: registre-entreprise-a.test.ts.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { type Rich, richText } from "../src/registre/dc.ts";
+import { entName } from "../src/registre/corpus.ts";
 import { setMessages } from "../src/registre/i18n.ts";
-import {
-  Entreprise,
-  type FichierEntreprise,
-  lead,
-  prepare,
-} from "../src/registre/vues/entreprise-outils.ts";
+import { type FichierEntreprise, placeOf, prepare } from "../src/registre/vues/entreprise-outils.ts";
 import { setWords } from "../src/registre/vue.ts";
 
 const catalogue: Record<string, string> = JSON.parse(readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"));
@@ -92,94 +87,15 @@ test("the contracts: the build's list (no copy), oldest first; a total adds `com
   assert.equal(CL.find((c) => c.s === "200000003")?.centrale, true);
 });
 
-test("the page's values: figures, running contracts, unknown ends, singulars", () => {
-  const v = new Entreprise({ siren: "100000001", F: fichier() }).renderVals() as Record<string, unknown>;
-  assert.equal(v.nom, "Acme Video");
-  assert.equal((v.tete as { ligne: string }).ligne, "SIREN 100 000 001");
-  const kpis = v.kpis as { v: string; l: string; aide?: string }[];
+test("a contract is named by its commune; a sole trader by no name", () => {
+  const F = fichier();
+  const { CT } = prepare(F);
   assert.deepEqual(
-    kpis.map((k) => k.v),
-    ["3", "3", `600${N}000 €`, "1"],
+    CT.map((c) => placeOf(F, c)),
+    ["Une", "Deux", "Centrale"],
   );
-  assert.equal(kpis[0].l, "contrats signés");
-  // « 1 contrat sur 1 n'a reçu qu'une offre », its help saying which contracts count (B7)
-  assert.equal(kpis[3].l, "contrat sur 1 n'a reçu qu'une offre");
-  assert.equal(kpis[3].aide, "Le contrat compté est le seul dont le nombre d'offres reçues est publié.");
-  assert.equal(v.nAct, "1 contrat");
-  assert.equal(v.sansFin, "1 contrat n'a pas de durée publiée : sa fin n'est pas connue.");
-  assert.equal(richText((v.act as { nom: Rich }[])[0].nom), "Deux");
-  // the largest: the counted ones only, never the ceiling for other buyers
-  assert.deepEqual(
-    (v.big as { amt: string }[]).map((b) => b.amt),
-    [`300${N}000 €`, `300${N}000 €`],
-  );
-  assert.equal(v.parPhrase, "1 des 3 contrats a été signé avec d'autres entreprises.");
-  // a co-contractor who is a sole trader has no page and is listed by no name (DECISIONS 2026-10-29)
-  assert.deepEqual(v.partners, []);
-  assert.equal(v.docsPhrase, "4 documents : 3 contrats et 1 modification, avec la cliente, le montant et la source.");
-  assert.equal(v.doublonNote, " Un contrat publié deux fois compte une fois : 3 contrats ici, 4 lignes publiées dans les données de la commande publique.");
-  // a commune buyer opens its commune's page, its link the territories' (design/registre/v2)
-  const client = (v.clients as { nom: Rich }[]).map((c) => JSON.stringify(c.nom)).find((c) => c.includes("69001"));
-  assert.match(client ?? "", /"href":"\/registre\/commune\/69001"/);
-  assert.match(client ?? "", /"c":"var\(--type-territoire\)"/);
-});
-
-test("the lead says what the build found, nothing more", () => {
-  const F = fichier();
-  assert.equal(richText(lead(F, 3, 3)), "3 collectivités lui ont signé 3 contrats depuis 2024, surtout dans le Rhône.");
-  assert.equal(richText(lead(F, 1, 1)), "1 collectivité lui a signé 1 contrat depuis 2024, surtout dans le Rhône.");
-});
-
-test("no « Ce qui ressort »: no amounts or dates set side by side to suggest (v2.1 B5)", () => {
-  const v = new Entreprise({ siren: "100000001", F: fichier() }).renderVals() as Record<string, unknown>;
-  assert.equal("faits" in v, false);
-  assert.doesNotMatch(JSON.stringify(v), /mêmes montants|d'intervalle/);
-});
-
-test("a sole trader is never named, nor its number shown", () => {
-  const v = new Entreprise({
-    siren: "100000001",
-    F: fichier({ nom: null, entrepreneur_individuel: true }),
-  }).renderVals() as Record<string, unknown>;
-  assert.equal(v.nom, "entreprise individuelle, nom non publié");
-  assert.equal((v.tete as { nom: string }).nom, "entreprise individuelle, nom non publié");
-  assert.equal((v.tete as { ligne: string }).ligne, "Entreprise individuelle");
-  assert.equal(v.parcourir, "/registre/");
-});
-
-test("the single-offer ticket: plural, its help, and none published", () => {
-  const F = fichier();
-  F.page = { ...F.page, faits: { offres: { une_offre: 2, renseignes: 27 } } };
-  let k = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string; aide?: string }[] }).kpis[3];
-  assert.equal(`${k.v} ${k.l}`, "2 contrats sur 27 n'ont reçu qu'une offre");
-  assert.equal(k.aide, "Les 27 sont les contrats dont le nombre d'offres reçues est publié ; pour les autres, il ne l'est pas.");
-  F.page = { ...F.page, faits: { offres: null } };
-  // none published: no ticket (a ticket carries a figure or a date, never a dash, v2.3)
-  const ks = (new Entreprise({ siren: "100000001", F }).renderVals() as { kpis: { v: string; l: string }[] }).kpis;
-  assert.ok(ks.every((x) => x.v !== "—" && x.l !== "nombre d'offres reçues non publié"));
-});
-
-test("one buyer, every contract shared, no modification, no known end: said as such", () => {
-  const F = fichier();
-  // SYNTHETIC: keep a and b only, both signed with another company, no duration published
-  F.stats = { ...(F.stats as NonNullable<FichierEntreprise["stats"]>), contrats: ["a~0", "b~0"] };
-  for (const e of F.evenements) e.entreprises = ["100000001", "100000002"];
-  F.page = {
-    ...F.page,
-    fins: {
-      "a~0": { debut: "2024-03-01", duree: null, fin: null },
-      "b~0": { debut: "2025-05-01", duree: null, fin: null },
-    },
-    en_cours: [],
-    sans_fin: 2,
-    modifications: 0,
-  };
-  const v = new Entreprise({ siren: "100000001", F }).renderVals() as Record<string, unknown>;
-  // no end known: not « 0 contrat »
-  assert.equal(v.nAct, "non connu");
-  assert.equal(v.bigPhrase, "Ses 2 contrats, par montant.");
-  assert.equal(v.parPhrase, "Ses 2 contrats ont été signés avec d'autres entreprises.");
-  assert.equal(v.docsPhrase, "2 contrats, avec la cliente, le montant et la source.");
+  assert.equal(entName(F, "100000002"), "entreprise individuelle, nom non publié");
+  assert.equal(entName(F, "100000001"), "Acme Video");
 });
 
 test("a legal person's Sources lead to its official record; a sole trader's never", async () => {
@@ -191,4 +107,11 @@ test("a legal person's Sources lead to its official record; a sole trader's neve
   );
   // a sole trader: neither its name nor its number, no SIRENE row at all
   assert.deepEqual(sources(undefined, [], false), []);
+});
+
+test("a planned end past its month's last day is that last day", async () => {
+  const { jourValide } = await import("../src/registre/vues/entreprise-outils.ts");
+  assert.equal(jourValide("2023-11-31"), "2023-11-30");
+  assert.equal(jourValide("2024-02-30"), "2024-02-29");
+  assert.equal(jourValide("2025-12-10"), "2025-12-10");
 });

@@ -1,36 +1,12 @@
-// View 8 · Entreprise (/registre/entreprise/<siren>; mockup Entreprise-grand, the prototype's
-// vues/entreprise.js), its logic apart from its template so that the tests read it. Without the
-// scatter of amounts: in its place, the contracts running today and the largest ones. What a rule
-// decides comes from the build (entreprise/<siren>.json): its contracts (a copy never), each one's
-// planned end, the contracts running on the build's date, the lead's activity and regions; a total adds the `montant` of the contracts flagged `compte`, nothing else.
+// A company's file (/registre/entreprise/<siren>, the build's entreprise/<siren>.json) as the fiche
+// reads it: its contracts (the build's list, a copy never) with their start and planned end, and its
+// buyers. What a rule decides comes from the build: the contracts running on the build's date, the
+// activity and regions; a total adds the `montant` of the contracts flagged `compte`, nothing else.
 // A sole trader is never named (corpus.ts entName: « entreprise individuelle, nom non publié »).
 
-import { depArt } from "../commun.ts";
-import { buyerHref, buyerNom, depNom, docHref, entName, type Lexique } from "../corpus.ts";
-import type { Handler, Rich, RichItem } from "../dc.ts";
-import type { Acheteur, Affaire, Couverture, Evenement, PartageFichier } from "../donnees.ts";
-import { EI } from "../donnees.ts";
-import { count, fr, money, shortDate, shortMonth } from "../format.ts";
+import { buyerNom, type Lexique } from "../corpus.ts";
+import type { Acheteur, Affaire, Evenement, PartageFichier } from "../donnees.ts";
 import { has, t } from "../i18n.ts";
-import {
-  lienAcheteur,
-  lienCommune,
-  lienDepartement,
-  lienDocument,
-  lienEntreprise,
-} from "../liens.ts";
-import { annuaire, sources } from "../sources.ts";
-import { icone } from "../types.ts";
-import {
-  type BaseState,
-  type Col,
-  large,
-  type Partage,
-  partageDe,
-  sansTiret,
-  Vue,
-} from "../vue.ts";
-import { aides } from "./departement-outils.ts";
 
 export type Fin = { debut: string; duree: number | null; fin: string | null };
 /** The build's facts: the page reads how many contracts had one offer among those whose number of
@@ -55,6 +31,7 @@ export type FichierEntreprise = Lexique & {
     siren?: string;
     nom?: string | null;
     entrepreneur_individuel?: boolean;
+    naf?: string | null;
     naf_libelle?: string | null;
   };
   evenements: Evenement[];
@@ -67,8 +44,11 @@ export type FichierEntreprise = Lexique & {
     montant: number;
     y0: string | null;
     contrats: string[];
+    deps?: Record<string, number>;
   } | null;
   page: Page;
+  /** the build's groups of contracts (lots of one tender, the same contract published twice) */
+  lots?: Record<string, { insee?: string; nature?: string; entreprises?: string[] }>;
 };
 
 /** A contract of the company: its document, its start and end (the build's), its buyer, the
@@ -85,25 +65,13 @@ export type Ct = {
 };
 export type Cl = { s: string; n: number; amt: number; last: string; centrale: boolean };
 
-const strong = (s: Rich): RichItem => ({ strong: s });
-const ym = (s: string) => +s.slice(0, 4) * 12 + +s.slice(5, 7);
-const numDate = (d: string) => d.split("-").reverse().join("/");
-
-/** A catalogue message whose placeholders may be rich (bold, a link), put back in place. */
-type Param = string | number | Exclude<RichItem, string>;
-export function rt(key: string, params: Record<string, Param> = {}): RichItem[] {
-  const holes: RichItem[] = [];
-  const flat: Record<string, string | number> = {};
-  for (const [k, v] of Object.entries(params)) {
-    if (typeof v === "object") {
-      flat[k] = `${holes.length}`;
-      holes.push(v);
-    } else flat[k] = v;
-  }
-  return t(key, flat)
-    .split(/(\d+)/)
-    .map((x, i) => (i % 2 ? holes[Number(x)] : x))
-    .filter((x) => x !== "");
+/** A date as a calendar has it: the build's planned end adds months to the start and keeps its
+ * day (« 2023-11-31 »); past the month's last day, that last day. */
+export function jourValide(d: string): string {
+  const [y, m, j] = d.split("-").map(Number);
+  if (!y || !m || !j) return d;
+  const der = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return j > der ? `${d.slice(0, 8)}${String(der).padStart(2, "0")}` : d;
 }
 
 /** The company's contracts (the build's list: a copy never), oldest first, and its buyers. */
@@ -118,7 +86,7 @@ export function prepare(F: FichierEntreprise): { CT: Ct[]; CL: Cl[] } {
         e,
         i: 0,
         d: f?.debut ?? e.date_lue ?? e.date ?? "",
-        fin: f?.fin ?? null,
+        fin: f?.fin ? jourValide(f.fin) : null,
         duree: f?.duree ?? null,
         b: e.acheteur_siren ?? F.affaires[e.affaire]?.acheteur_siren ?? null,
         amt: e.compte ? (e.montant ?? 0) : 0,
@@ -145,62 +113,6 @@ export function prepare(F: FichierEntreprise): { CT: Ct[]; CL: Cl[] } {
   return { CT, CL: [...cl.values()] };
 }
 
-/** « dans le Rhône », « en Île-de-France », « à Paris »: a département (or Paris) a link to its fiche,
- * a region words only (it has none). */
-const dans = (F: FichierEntreprise, r: string): RichItem => {
-  if (r === "idf") return t("entreprise.dans_idf");
-  if (r === "75")
-    return {
-      span: rt("entreprise.dans_paris", {
-        paris: F.communes["75056"]
-          ? lienCommune(F, "75056", t("entreprise.paris"))
-          : lienDepartement("75", t("entreprise.paris")),
-      }),
-      cls: "",
-    };
-  const nom = depNom(r);
-  const art = depArt(r, nom);
-  // the article stays words (« le », « la »), the name is the link; an elided one (« l'Isère ») the
-  // link whole, no gap after its apostrophe
-  const dep: RichItem =
-    art.endsWith(nom) && !/['’]$/.test(art.slice(0, art.length - nom.length))
-      ? { span: [art.slice(0, art.length - nom.length), lienDepartement(r, nom)], cls: "" }
-      : lienDepartement(r, art);
-  return { span: rt("entreprise.dans", { dep }), cls: "" };
-};
-
-/** The lead: what its contracts are (when the export says), where its buyers are, how many. */
-export function lead(F: FichierEntreprise, nCt: number, nCl: number): RichItem[] {
-  const { surtout, regions } = F.page.lieux;
-  const [r0, r1] = regions;
-  let ou: RichItem[] = [];
-  const fort = (r: string) => strong(rt("entreprise.surtout", { dans: dans(F, r) }));
-  if (surtout && r0)
-    ou = r1
-      ? rt("entreprise.ou_surtout_deux", { surtout: fort(r0), dans2: dans(F, r1) })
-      : rt("entreprise.ou_surtout", { surtout: fort(r0) });
-  else if (r0 && r1) ou = rt("entreprise.ou_deux", { dans1: dans(F, r0), dans2: dans(F, r1) });
-  else if (r0) ou = rt("entreprise.ou_un", { dans1: dans(F, r0) });
-  // its buyers in more than two départements (the national data): how many, and where most are,
-  // never two places said as if they were all (v2.3: « en Île-de-France et dans les Bouches-du-Rhône »)
-  const deps = new Set(F.evenements.flatMap((e) => (e.dep ? [e.dep] : [])));
-  if (deps.size > 2)
-    ou =
-      surtout && r0 && r0 !== "idf"
-        ? rt("entreprise.ou_n_surtout", { n: deps.size, dans1: dans(F, r0) })
-        : rt("entreprise.ou_n", { n: deps.size });
-  const params = {
-    clientes: strong(t("entreprise.n_collectivites", { n: nCl })),
-    contrats: strong(count(nCt, "contrat")),
-    nCl,
-    y0: F.stats?.y0 ?? "—",
-  };
-  const act = F.page.activite;
-  if (act)
-    return [t(`entreprise.activite_${act}`), ...ou, ". ", ...rt("entreprise.lead_combien", params)];
-  return rt("entreprise.lead_sans_activite", { ...params, ou: { span: ou, cls: "" } });
-}
-
 /** A contract is named by its place (its commune), as the mockup's lists do; else by its buyer. */
 export function placeOf(F: FichierEntreprise, c: Ct): string {
   const k = c.e.insee;
@@ -212,15 +124,6 @@ export function placeOf(F: FichierEntreprise, c: Ct): string {
     : buyerNom(F, c.b);
 }
 
-/** A contract's place as a link to its fiche: its commune's when the build knows it, else its
- * buyer's (a commune buyer's is its commune's); no buyer published, its words only. */
-export function placeLien(F: FichierEntreprise, c: Ct, liste = false): RichItem {
-  const k = c.e.insee;
-  if (k && F.communes[k]) return lienCommune(F, k, undefined, liste);
-  if (!c.b) return t("entreprise.acheteur_non_publie");
-  return lienAcheteur(F, c.b, placeOf(F, c), liste);
-}
-
 /** The buyer's kind, in the words of the rankings (« commune », « centrale d'achat »). */
 export function buyerCat(F: FichierEntreprise, c: Cl): string {
   if (c.centrale) return t("chiffres.cat_centrale");
@@ -228,430 +131,4 @@ export function buyerCat(F: FichierEntreprise, c: Cl): string {
   return k && has(`registre.chiffres.cat_${k}`)
     ? t(`chiffres.cat_${k}`)
     : t("chiffres.cat_acheteur");
-}
-
-/** An amount in millions, one decimal, as the mockup's bars write them (« 5,2 M€ »); below
- * 100 000 € in euros (never « 0,0 M€ »); none: « — ». */
-const meur = (n: number): string =>
-  !n
-    ? money(0)
-    : n < 1e5
-      ? money(n)
-      : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
-
-export type Props = { siren: string; F: FichierEntreprise; couverture?: Couverture };
-export type State = BaseState & {
-  sort: string;
-  dir: number;
-  all: boolean;
-  allAct: boolean;
-  allDocs: boolean;
-};
-type Det = {
-  kicker: string;
-  title: string;
-  rows: [string, string][];
-  link?: string;
-  href?: string;
-  foot?: string;
-};
-
-// one colour for the measure, the fiche's type's; the mark chosen in ink (v2.1: yellow is the
-// territories' colour, never the selection's)
-const COLOURS = {
-  on: "var(--fg)",
-  bar: "var(--type-entreprise)",
-  prog: "var(--type-entreprise)",
-};
-
-export class Entreprise extends Vue<Props, State> {
-  private memo: { CT: Ct[]; CL: Cl[] } | null = null;
-  protected init(): Partial<State> {
-    return { sort: "amt", dir: -1, all: false, allAct: false, allDocs: false };
-  }
-  titre(): string {
-    return entName(this.props.F, this.props.siren);
-  }
-  type() {
-    return "entreprise" as const;
-  }
-  partage(): Partage | null {
-    // a sole trader is never shared by its name: its page is not one either
-    return this.props.F.entreprise.entrepreneur_individuel
-      ? null
-      : partageDe(this.titre(), this.props.F.partage);
-  }
-  private data() {
-    this.memo ??= prepare(this.props.F);
-    return this.memo;
-  }
-  renderVals() {
-    const S = this.state;
-    const { siren, F } = this.props;
-    const { CT, CL } = this.data();
-    const P = F.page;
-    const x = F.entreprise;
-    const nom = entName(F, siren);
-    const ei = !!x.entrepreneur_individuel;
-    const DET: Record<string, Det> = {};
-    const total = CT.reduce((s, c) => s + c.amt, 0);
-    const of = P.faits.offres;
-
-    const kpis = [
-      { v: fr(CT.length), l: t("entreprise.kpi_contrats", { n: CT.length }) },
-      { v: fr(CL.length), l: t("entreprise.kpi_clientes", { n: CL.length }) },
-      { v: total ? money(total) : "—", l: t("entreprise.kpi_montant") },
-      // « 2 contrats sur 27 n'ont reçu qu'une offre », the 27 said in its help: those whose number
-      // of offers is published (B7)
-      of?.renseignes
-        ? {
-            v: fr(of.une_offre),
-            l: t("entreprise.kpi_offre", { a: of.une_offre, b: fr(of.renseignes) }),
-            // the ticket's label carries its sentence (cadre.css .aide)
-            ac: "aide",
-            ti: "0",
-            aide: t("entreprise.kpi_offre_aide", { b: of.renseignes }),
-          }
-        : { v: "—", l: t("entreprise.kpi_offre_inconnu") },
-    ];
-
-    // the years, from its first contract to the build's year
-    const last = Number(P.maj.slice(0, 4));
-    const first = Math.min(
-      last,
-      Number(F.stats?.y0 ?? last),
-      ...CT.map((c) => Number(c.d.slice(0, 4)) || last),
-    );
-    const yrs = Array.from({ length: last - first + 1 }, (_, i) => String(first + i));
-    const ya = yrs.map((y) => CT.filter((c) => c.d.startsWith(y)));
-    const sums = ya.map((l) => l.reduce((s, c) => s + c.amt, 0));
-    const mxs = Math.max(1, ...sums);
-    const qNom = ei ? "" : nom;
-    const years = yrs.map((y, i) => {
-      const k = `y${y}`;
-      DET[k] = {
-        kicker: t("entreprise.det_annee"),
-        title: y,
-        rows: [
-          [t("entreprise.det_contrats_signes"), fr(ya[i].length)],
-          [t("entreprise.det_montant"), sums[i] ? money(sums[i]) : "—"],
-          [
-            t("entreprise.det_plus_gros"),
-            ya[i].some((c) => c.amt) ? money(Math.max(...ya[i].map((c) => c.amt))) : "—",
-          ],
-          [t("entreprise.det_clientes"), fr(new Set(ya[i].map((c) => c.b)).size)],
-        ],
-        link: t("entreprise.det_voir_annee", { y }),
-        href: `/registre/?${new URLSearchParams({ ...(qNom ? { q: qNom } : {}), t: "con", y })}`,
-      };
-      return {
-        y,
-        v: meur(sums[i]),
-        n: count(ya[i].length, "contrat"),
-        label: t("entreprise.annee_label", { y, v: meur(sums[i]), n: ya[i].length }),
-        on: String(this.on(k)),
-        bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}`,
-        hover: this.survol(k),
-        pick: this.choisir(k),
-      };
-    });
-
-    // a contract in the panel
-    const cDet = (c: Ct, k: string) => {
-      const late = !!c.e.date_lue && c.e.date_lue !== c.e.date;
-      DET[k] = {
-        kicker: t("entreprise.det_contrat", { date: shortDate(c.d) }),
-        title: placeOf(F, c),
-        rows: [
-          [t("entreprise.det_montant"), money(c.raw)],
-          [
-            t("entreprise.det_duree"),
-            c.duree
-              ? c.fin
-                ? t("entreprise.duree_fin", { n: fr(c.duree), fin: shortMonth(c.fin) })
-                : t("entreprise.duree_mois", { n: fr(c.duree) })
-              : t("entreprise.non_publiee"),
-          ],
-          [
-            t("entreprise.det_offres"),
-            typeof c.e.offres === "number" ? fr(c.e.offres) : t("format.non_publie"),
-          ],
-          [
-            t("entreprise.det_entreprises"),
-            (c.e.entreprises ?? []).length > 1
-              ? t("entreprise.a_plusieurs")
-              : t("entreprise.seule"),
-          ],
-        ],
-        link: t("entreprise.det_historique"),
-        href: docHref(F, c.e),
-        foot: late
-          ? t("entreprise.note_date", {
-              publiee: shortDate(c.e.date),
-              lue: shortDate(c.e.date_lue),
-            })
-          : "",
-      };
-    };
-
-    // running on the build's date (its list, the nearest end first), with how much has run
-    const now = ym(P.maj);
-    const byId = new Map(CT.map((c) => [c.e.id, c]));
-    const actAll = P.en_cours.map((id) => byId.get(id)).filter((c): c is Ct => !!c && !!c.fin);
-    const act = (S.allAct ? actAll : actAll.slice(0, 8)).map((c) => {
-      const k = `c${c.i}`;
-      const on = this.on(k);
-      cDet(c, k);
-      const end = c.fin as string;
-      const pct = Math.max(
-        2,
-        Math.min(100, Math.round(((now - ym(c.d)) / Math.max(1, ym(end) - ym(c.d))) * 100)),
-      );
-      return {
-        nom: placeLien(F, c, true),
-        span: `${c.d.slice(0, 4)} → ${shortMonth(end)}`,
-        amt: money(c.raw),
-        prog: `position: absolute; left: 0; top: 0; bottom: 0; width: ${pct}%; background: ${on ? COLOURS.on : COLOURS.prog}`,
-        progLabel: t("entreprise.ecoule", { pct }),
-        ...this.ligne(k, "con", "bar2 rg2 r"),
-      };
-    });
-
-    // the largest, among the contracts a total adds
-    const counted = CT.filter((c) => c.amt > 0);
-    const bigL = counted
-      .slice()
-      .sort((a, b) => b.amt - a.amt)
-      .slice(0, 8);
-    const bmx = bigL[0]?.amt || 1;
-    const big = bigL.map((c) => {
-      const k = `c${c.i}`;
-      const on = this.on(k);
-      cDet(c, k);
-      return {
-        nom: placeLien(F, c, true),
-        y: shortDate(c.d),
-        rep: !!c.e.date_lue && c.e.date_lue !== c.e.date,
-        amt: money(c.amt),
-        bar: `display: inline-block; height: 14px; width: ${Math.max(4, Math.round((c.amt / bmx) * 150))}px; background: ${on ? COLOURS.on : COLOURS.bar}; border: 1.5px solid #111`,
-        ...this.ligne(k, "con", "bar2 rg2b r"),
-      };
-    });
-
-    // the clients: a bar by département, a sortable table
-    const depOf = (s: string) => F.acheteurs[s]?.dep ?? "";
-    const dc = new Map<string, number>();
-    for (const c of CL) dc.set(depOf(c.s), (dc.get(depOf(c.s)) ?? 0) + 1);
-    const dl = [...dc.entries()].sort((a, b) => b[1] - a[1]);
-    const depLabel = (d: string) => (d ? depNom(d) : t("entreprise.dep_inconnu"));
-    // where its clients are, each département a link to its fiche (in place of R1's stacked strip)
-    const depLine = dl.map(([d, n]) => ({
-      lien: d ? lienDepartement(d, depLabel(d)) : depLabel(d),
-      n: t("entreprise.n_clientes", { n }),
-    }));
-    const key: Record<string, (c: Cl) => string | number> = {
-      nom: (c) => buyerNom(F, c.s),
-      dep: (c) => depNom(depOf(c.s)),
-      n: (c) => c.n,
-      amt: (c) => c.amt,
-      last: (c) => c.last,
-    };
-    const get = key[S.sort] ?? key.amt;
-    const sorted = CL.slice().sort((a, b) => {
-      const va = get(a);
-      const vb = get(b);
-      const d = typeof va === "string" ? va.localeCompare(String(vb), "fr") : va - (vb as number);
-      return d * S.dir || buyerNom(F, a.s).localeCompare(buyerNom(F, b.s), "fr");
-    });
-    const mxa = Math.max(1, ...CL.map((c) => c.amt));
-    const clients = (S.all ? sorted : sorted.slice(0, 15)).map((c) => {
-      const k = `k${c.s}`;
-      const commune = F.acheteurs[c.s]?.categorie === "commune";
-      DET[k] = {
-        kicker: t("entreprise.det_cliente", { cat: buyerCat(F, c) }),
-        title: buyerNom(F, c.s),
-        rows: [
-          [t("entreprise.det_departement"), depNom(depOf(c.s)) || "—"],
-          [t("entreprise.det_contrats"), fr(c.n)],
-          [t("entreprise.det_montant"), c.amt ? money(c.amt) : "—"],
-          [t("entreprise.det_dernier"), c.last ? numDate(c.last) : "—"],
-        ],
-        // no fiche, no link (lot R3: a buyer's reference)
-        link: !buyerHref(F, c.s)
-          ? undefined
-          : commune
-            ? t("entreprise.voir_commune")
-            : t("entreprise.voir_acheteur"),
-        href: buyerHref(F, c.s) ?? undefined,
-      };
-      return {
-        nom: lienAcheteur(F, c.s, undefined, true),
-        cat: buyerCat(F, c),
-        dep: depOf(c.s) ? lienDepartement(depOf(c.s)) : "—",
-        n: fr(c.n),
-        amt: c.amt ? money(c.amt) : "—",
-        last: c.last.slice(0, 4),
-        href: buyerHref(F, c.s) ?? "",
-        ...this.ligne(k, commune ? "commune" : "acheteur"),
-        bar: `display: inline-block; height: 10px; width: ${Math.max(2, Math.round((c.amt / mxa) * 120))}px; background: ${this.on(k) ? COLOURS.on : COLOURS.bar}; border: 1px solid #111`,
-      };
-    });
-    const cols = aides(
-      this.cols(
-        [
-          ["nom", t("entreprise.col_cliente"), "", "width: 44%"],
-          ["dep", t("entreprise.col_departement"), "", ""],
-          ["n", t("entreprise.col_contrats"), "num", ""],
-          ["amt", t("entreprise.col_montant"), "num", ""],
-          ["last", t("entreprise.col_dernier"), "num", ""],
-        ] as Col[],
-        "sort",
-        "dir",
-        (k) => (k === "nom" || k === "dep" ? 1 : -1),
-      ),
-      [undefined, undefined, undefined, t("entreprise.aide_montant"), t("entreprise.aide_dernier")],
-    );
-
-    // signed together with other companies
-    const par = new Map<string, number>();
-    for (const c of CT)
-      for (const s of c.e.entreprises ?? []) if (s !== siren) par.set(s, (par.get(s) ?? 0) + 1);
-    const nPar = CT.filter((c) => (c.e.entreprises ?? []).length > 1).length;
-    const partners = [...par.entries()]
-      // a sole trader: no page, listed by no name (the build's token, or a flagged company)
-      .filter(([s]) => s !== EI && !F.entreprises[s]?.entrepreneur_individuel)
-      .sort((a, b) => b[1] - a[1] || entName(F, a[0]).localeCompare(entName(F, b[0]), "fr"))
-      .map(([s, n]) => ({
-        lien: lienEntreprise(F, s),
-        n: count(n, "contrat"),
-      }));
-
-    const nDocs = CT.length + P.modifications;
-    // its documents, the most recent first (V2-Entreprise): each its record
-    const recent = CT.slice().sort((a, b) => b.d.localeCompare(a.d));
-    const docs = (S.allDocs ? recent : recent.slice(0, 8)).map((c) => {
-      const k = `c${c.i}`;
-      cDet(c, k);
-      return {
-        ...this.ligne(k, "con", "drow r"),
-        i: icone("con"),
-        d: shortDate(c.d),
-        qui: placeLien(F, c),
-        amt: lienDocument(F, c.e, money(c.raw), true),
-        dur: c.duree ? t("entreprise.duree_mois", { n: fr(c.duree) }) : "",
-      };
-    });
-    // the panel: the row hovered or focused, else the one chosen (A3)
-    const vu = this.affiche();
-    const d0 = vu ? DET[vu] : undefined;
-    const det = d0
-      ? {
-          kicker: d0.kicker,
-          title: d0.title,
-          rows: d0.rows.map(([k, v]) => ({ k, v })),
-          links: d0.link ? [{ l: d0.link, href: d0.href }] : [],
-          foot: d0.foot ?? "",
-        }
-      : {
-          // at rest: what to hover or choose, never the figures beside it (B3)
-          kicker: t("entreprise.det_detail"),
-          title: t("entreprise.det_survolez"),
-          rows: [],
-          links: [],
-          foot: "",
-        };
-    const sirenTxt = siren.replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
-    const naf = x.naf_libelle ? x.naf_libelle.charAt(0).toLowerCase() + x.naf_libelle.slice(1) : "";
-    const copies = F.stats?.copies ?? 0;
-
-    // a sole trader: neither its name nor its number (the number names the person in SIRENE)
-    const sous = ei
-      ? t("entreprise.sous_ei")
-      : naf
-        ? t("entreprise.sous_naf", { siren: sirenTxt, naf })
-        : t("entreprise.sous", { siren: sirenTxt });
-    const secs = this.sections({
-      essentiel: true,
-      temps: yrs.length > 0 && CT.length > 0,
-      avecqui: CL.length > 0 || partners.length > 0,
-      documents: CT.length > 0,
-      sources: true,
-    });
-    const wide = large();
-    return {
-      ...this.base("entreprise"),
-      ...this.info("mt", "par"),
-      tete: this.tete("entreprise", nom, sous),
-      band: this.bandeau("entreprise", nom, secs),
-      secs,
-      lay: {
-        inner: wide ? "inner" : "tin",
-        tickets: wide ? "tickets" : "tickets t2",
-        deux: wide ? "deux" : "deux un",
-      },
-      // a legal person's official record (the Annuaire des entreprises), never a sole trader's
-      sources: sources(
-        this.props.couverture,
-        ["contrats", "avis"],
-        !ei,
-        ei ? undefined : annuaire(siren),
-      ),
-      nom,
-      lead: lead(F, CT.length, CL.length),
-      kpis: sansTiret(kpis),
-      years,
-      yearsCols: `repeat(${yrs.length}, minmax(0, 1fr))`,
-      yearAlt: t("entreprise.annees_alt", { de: yrs[0], a: yrs[yrs.length - 1] }),
-      act,
-      big,
-      bigPhrase:
-        big.length === counted.length
-          ? t("entreprise.big_tous", { n: big.length })
-          : t("entreprise.les_premiers_des_par_montant", {
-              nBig: big.length,
-              nCon: fr(counted.length),
-            }),
-      // none running while some ends are unknown: not a zero
-      nAct:
-        !actAll.length && P.sans_fin ? t("entreprise.n_inconnu") : count(actAll.length, "contrat"),
-      actMore: actAll.length > 8,
-      actLabel: S.allAct
-        ? t("entreprise.reduire")
-        : t("entreprise.les_contrats_en_cours", { n: actAll.length }),
-      toggleAct: (() => this.setState({ allAct: !S.allAct })) as Handler,
-      sansFin: P.sans_fin ? t("entreprise.sans_fin", { n: P.sans_fin }) : "",
-      nCli: CL.length,
-      depLine,
-      cols,
-      clients,
-      more: (() => this.setState({ all: !S.all })) as Handler,
-      moreLabel: S.all ? t("entreprise.reduire") : t("entreprise.les_clientes", { n: CL.length }),
-      showMore: CL.length > 15,
-      doublonNote: copies
-        ? ` ${t("entreprise.doublon_note", { contrats: count(CT.length, "contrat"), lignes: CT.length + copies })}`
-        : "",
-      parPhrase: !nPar
-        ? t("entreprise.par_aucun")
-        : nPar === CT.length
-          ? t("entreprise.par_tous", { n: nPar })
-          : t("entreprise.par_phrase", { n: nPar, total: fr(CT.length) }),
-      partners,
-      docs,
-      docsMore: recent.length > 8,
-      docsLabel: S.allDocs
-        ? t("entreprise.reduire")
-        : t("entreprise.les_contrats", { n: recent.length }),
-      togDocs: (() => this.setState({ allDocs: !S.allDocs })) as Handler,
-      docsPhrase: P.modifications
-        ? t("entreprise.docs_phrase", {
-            docs: count(nDocs, "document"),
-            contrats: count(CT.length, "contrat"),
-            mods: t("entreprise.n_modifications", { n: P.modifications }),
-          })
-        : t("entreprise.docs_sans_modification", { contrats: count(CT.length, "contrat") }),
-      parcourir: qNom ? `/registre/?${new URLSearchParams({ q: qNom })}` : "/registre/",
-      det,
-      quitter: this.quitter(),
-    };
-  }
 }
