@@ -152,7 +152,7 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             if s == EI:
                 continue
             o = ents.setdefault(s, {"n": 0, "clientes": set(), "amt": 0.0, "deps": Counter(),
-                                    "y0": "9999"})  # fmt: skip
+                                    "cdeps": defaultdict(set), "y0": "9999"})  # fmt: skip
             if e["copie"]:
                 continue
             o["n"] += 1
@@ -162,6 +162,8 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
                 o["amt"] += e.get("montant") or 0
             if e.get("dep"):
                 o["deps"][e["dep"]] += 1
+                if b:
+                    o["cdeps"][e["dep"]].add(b)
             if e.get("date") and e["date"][:4] < o["y0"]:
                 o["y0"] = e["date"][:4]
         if not b:
@@ -194,7 +196,9 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
     dico_ent = {s: ctx.entreprise(s) for s in sorted(ents)}
     ent_rows = {
         s: {"n": o["n"], "clientes": len(o["clientes"]), "amt": round(o["amt"], 2),
-            "y0": o["y0"], "deps": dict(o["deps"])}
+            "y0": o["y0"], "deps": dict(o["deps"]),
+            # its distinct buyers per département of their contracts (the comparison's cells)
+            "clients_deps": {d: len(v) for d, v in sorted(o["cdeps"].items())}}
         for s, o in sorted(ents.items())
         if o["n"] > 0 and not dico_ent[s].get("entrepreneur_individuel")
     }  # fmt: skip

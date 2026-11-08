@@ -370,3 +370,11 @@ def test_one_source_per_figure_cameras_flight_days_contracts(built):
                 days |= {d for d in ds if debut < d <= fin}
         assert c["jv"] >= len(days), k  # a shared act counts in each of its communes
         assert 0 <= c["jv"] <= 366, k
+
+
+def test_a_company_row_counts_its_buyers_per_departement(built):
+    rows = read(built, "listes.json")["lignes"]["entreprises"]
+    assert rows
+    for r in rows.values():
+        assert set(r["clients_deps"]) <= set(r["deps"])
+        assert all(1 <= n <= r["deps"][d] for d, n in r["clients_deps"].items())
