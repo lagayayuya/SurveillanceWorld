@@ -1,0 +1,324 @@
+/* « Chemin entre deux » in theme A (board Chemin-entre-deux, lot 4, its phone and dark variants):
+   the board's own rules (.ico-g, .pair2, .fld, .swap, .card.ch, .chain, .nd, .lk, .sh, .lgd, .m0),
+   on theme A's components (socle-a.css) and the site's tokens: the board's ink #111 is --line
+   (borders, shadows, the links' lines) or --fg (text), its white --bg-2, its pink --type-registre,
+   its lavender --type-entreprise, its blue --type-document. Scoped to the view (.chm). */
+
+.rg .va.chm .ico-g {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  border: 2px solid #111111;
+  background: linear-gradient(
+    90deg,
+    #111111 0 2px,
+    transparent 2px 7px,
+    #111111 7px 9px,
+    transparent 9px
+  );
+}
+.rg .va.chm .num.doc {
+  background: var(--type-document);
+  color: var(--on-accent);
+}
+.rg .va.chm .sec {
+  display: block;
+  padding-top: 0;
+  scroll-margin-top: 70px;
+}
+.rg .va.chm .ans {
+  margin: 0 0 14px;
+  max-width: 880px;
+  font-size: 19px;
+}
+
+/* --- the two fields, ⇄, « Trouver » ------------------------------------------------------------ */
+.rg .va.chm .pair2 {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+.rg .va.chm .pair2 .dancre {
+  display: flex;
+}
+.rg .va.chm .fld {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-width: 250px;
+  max-width: 420px;
+  padding: 8px 14px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 3px solid var(--line);
+  box-shadow: 5px 5px 0 var(--line);
+  text-align: left;
+  cursor: pointer;
+}
+.rg .va.chm .fld span {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.chm .fld b {
+  max-width: 100%;
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.15;
+  font-stretch: 72%;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+  /* a long name on two lines: the field keeps its height, its words are whole to screen readers */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .va.chm .fld i {
+  font:
+    400 12px "Special Elite",
+    monospace;
+  font-style: normal;
+}
+.rg .va.chm .fld[aria-expanded="true"] {
+  background: var(--warn-bg);
+}
+.rg .va.chm .swap {
+  width: 48px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+  font:
+    900 20px Archivo,
+    sans-serif;
+  box-shadow: 3px 3px 0 var(--line);
+  cursor: pointer;
+}
+.rg .va.chm .btn.big {
+  padding: 12px 18px;
+  font-size: 16px;
+}
+.rg .va.chm .dmenu {
+  width: 400px;
+}
+.rg .va.chm .drow {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.rg .va.chm .dnom {
+  font-weight: 700;
+}
+
+/* --- « Ce qu'un chemin ne dit pas » ------------------------------------------------------------- */
+.rg .va.chm .cov {
+  flex-direction: column;
+}
+.rg .va.chm .srcs .cov {
+  font-size: 14px;
+}
+.rg .va.chm .cov li {
+  display: block;
+}
+.rg .va.chm .cov li i {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+
+/* --- the paths ---------------------------------------------------------------------------------- */
+.rg .va.chm .card.ch {
+  margin-top: 14px;
+}
+.rg .va.chm .card.ch.first {
+  border-color: var(--type-registre);
+  box-shadow: 5px 5px 0 var(--type-registre);
+}
+.rg .va.chm .chain {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin: 16px 0 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.rg .th.va.chm .chain .nd {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 150px;
+  max-width: 220px;
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+.rg .va.chm .chain .nd b {
+  font-family: Archivo, sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.15;
+  font-stretch: 72%;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  /* a name of ten words held on four lines, whole in its bubble and to screen readers */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .th.va.chm .chain a.nd:is(:hover, :focus-visible) b {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+.rg .va.chm .chain .nd span {
+  font:
+    400 12px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.chm .sh {
+  display: inline-block;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border: 2.5px solid var(--line);
+}
+.rg .va.chm :is(.nd.a .sh, .sh.a) {
+  border-radius: 50%;
+  background: var(--type-registre);
+}
+.rg .va.chm :is(.nd.e .sh, .sh.e) {
+  background: var(--type-entreprise);
+}
+/* the link's line at the shapes' height (the board's -26 px on a centred row, as a top margin on
+   a row aligned at the top, so that a name on two lines does not move it) */
+.rg .va.chm .chain .lk {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12.5px;
+}
+.rg .va.chm .chain .lk i {
+  display: block;
+  width: 100%;
+  height: 3px;
+  background: var(--line);
+}
+.rg .va.chm .chain .lk em {
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-style: normal;
+  white-space: nowrap;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+  padding: 1px 7px;
+}
+.rg .va.chm .chain :is(.nd, .lk):focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+/* five or six steps: narrower, so that the path holds in the card */
+.rg .va.chm .chain.long .nd {
+  min-width: 104px;
+  max-width: 150px;
+}
+.rg .va.chm .chain.long .lk {
+  min-width: 72px;
+}
+.rg .va.chm .lgd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.chm .lgd .sh {
+  width: 16px;
+  height: 16px;
+  vertical-align: -3px;
+  margin-right: 6px;
+  border-width: 2px;
+}
+.rg .va.chm .lgd .lk1 {
+  display: inline-block;
+  width: 26px;
+  height: 3px;
+  background: var(--line);
+  vertical-align: 4px;
+  margin-right: 6px;
+}
+.rg .va.chm .m0 {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.5;
+}
+.rg .th.va.chm a.ent.re {
+  font-weight: 400;
+}
+
+/* --- the phone: the board's « mob » rules ------------------------------------------------------- */
+@media (max-width: 959px) {
+  .rg .va.chm .ans {
+    font-size: 16px;
+  }
+  .rg .va.chm .pair2 {
+    flex-direction: column;
+  }
+  .rg .va.chm .fld {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+  }
+  .rg .va.chm .swap {
+    align-self: center;
+    height: 44px;
+    width: 60px;
+  }
+  .rg .va.chm .dmenu {
+    width: 100%;
+  }
+  .rg .va.chm .chain {
+    flex-direction: column;
+    align-items: stretch;
+    overflow: visible;
+  }
+  .rg .th.va.chm .chain .nd,
+  .rg .th.va.chm .chain.long .nd {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    max-width: none;
+    text-align: left;
+  }
+  .rg .va.chm .chain .lk,
+  .rg .va.chm .chain.long .lk {
+    flex: none;
+    flex-direction: row;
+    margin: 0 0 0 15px;
+    min-width: 0;
+    height: 44px;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .rg .va.chm .chain .lk i {
+    width: 3px;
+    height: 40px;
+    flex: none;
+  }
+}

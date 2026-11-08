@@ -1,0 +1,53 @@
+<div class="{{th}} va chm">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-g" aria-hidden="true"></i>{{t.chemin_a.graphe}}</span>
+      <h1 class="sr">{{t.chemin_a.nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <p class="lead">{{t.chemin_a.lead}}</p>
+      <div class="pair2">
+        <sc-for list="{{champs}}" as="f">
+          <div class="{{f.cls}}">
+            <button type="button" class="fld" aria-haspopup="listbox" aria-expanded="{{f.ouvert}}" onClick="{{f.basculer}}"><span>{{f.l}}</span><b>{{f.nom}}</b><i>{{f.kind}}</i></button>
+            <sc-if value="{{f.menu}}">
+              <div class="dmenu" onKeyDown="{{f.clavier}}">
+                <label class="dq"><span class="sr">{{f.lab}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.chemin_a.chercher}}" autocomplete="off" spellcheck="false"></label>
+                <sc-if value="{{f.opts}}"><ul class="dliste" role="listbox" aria-label="{{f.lab}}"><sc-for list="{{f.opts}}" as="o"><li class="drow" role="option" aria-selected="false" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.nom}}</span><span class="dn">{{o.kind}}</span></li></sc-for></ul></sc-if>
+                <sc-if value="{{f.vide}}"><p class="note" role="status">{{f.vide}}</p></sc-if>
+              </div>
+            </sc-if>
+          </div>
+          <sc-if value="{{f.swap}}"><button type="button" class="swap" aria-label="{{t.chemin_a.inverser}}" title="{{t.chemin_a.inverser}}" onClick="{{inverser}}">⇄</button></sc-if>
+        </sc-for>
+        <button type="button" class="btn pri big" disabled="{{incomplet}}" onClick="{{trouver}}">{{t.chemin_a.trouver}}</button>
+      </div>
+    </div>
+    <div class="actions"><button type="button" class="btn" onClick="{{partager}}" aria-haspopup="dialog">{{t.chemin_a.partager}}</button><a class="btn" href="{{grapheHref}}">{{t.chemin_a.le_graphe}}</a></div>
+  </section>
+
+  <div class="body"><main>
+    <sc-if value="{{r}}">
+    <section class="sec" id="chemins" aria-live="polite"><h2><span class="num" aria-hidden="true">1</span>{{r.h}}</h2>
+      <sc-if value="{{r.ans}}"><p class="ans">{{{r.ans}}}</p></sc-if>
+      <sc-if value="{{r.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span></p><p class="note">{{t.chemin_a.non_lu}}</p></sc-if>
+      <sc-for list="{{r.chemins}}" as="c">
+        <div class="{{c.cls}}"><div class="ch-h"><h3 class="k">{{c.k}}</h3><a class="go" href="{{c.go}}">{{t.chemin_a.voir_graphe}}</a></div>
+          <div class="{{c.chaine}}" role="group" aria-label="{{c.lab}}" data-bg=""><sc-for list="{{c.items}}" as="x"><sc-if value="{{x.href}}"><a class="{{x.cls}}" href="{{x.href}}" data-bh="{{x.nom}}" data-bl="{{x.bl}}" data-bc="{{x.bc}}"><i class="sh" aria-hidden="true"></i><b>{{x.nom}}</b><span>{{x.kind}}</span></a></sc-if><sc-if value="{{x.sans}}"><span class="{{x.cls}}" tabindex="0" data-bh="{{x.nom}}" data-bl="{{x.bl}}"><i class="sh" aria-hidden="true"></i><b>{{x.nom}}</b><span>{{x.kind}}</span></span></sc-if><sc-if value="{{x.lk}}"><span class="lk" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><i aria-hidden="true"></i><em>{{x.m}}</em></span></sc-if></sc-for></div>
+          <p class="m0">{{{c.phrase}}}</p>
+        </div>
+      </sc-for>
+      <sc-if value="{{r.plus}}"><p class="note">{{r.plus}}</p></sc-if>
+      <sc-if value="{{r.lgd}}"><div class="lgd"><span class="lg"><i class="sh a" aria-hidden="true"></i>{{t.chemin_a.lgd_a}}</span><span class="lg"><i class="sh e" aria-hidden="true"></i>{{t.chemin_a.lgd_e}}</span><span class="lg"><i class="lk1" aria-hidden="true"></i>{{t.chemin_a.lgd_l}}</span></div></sc-if>
+    </section>
+    </sc-if>
+
+    <section class="sec" id="sources"><h2><span class="num doc" aria-hidden="true">i</span>{{t.chemin_a.s_dit_pas}}</h2>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i>{{{s.l}}}</li></sc-for></ul>
+          <p class="note">{{srcs.note}} <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
+        </div>
+      </div>
+    </section>
+  </main></div>
+</div>

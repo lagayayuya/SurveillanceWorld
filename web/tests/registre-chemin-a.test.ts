@@ -179,6 +179,7 @@ test("a buyer named after its commune finds it, its article given back; a homony
   assert.equal(communeDuNom("Commune d’Annecy", idx), "22222");
   assert.equal(communeDuNom("Commune de Pierre Bénite", idx), "33333");
   assert.equal(communeDuNom("Commune de La Rochelle", idx), "66666");
+  assert.equal(communeDuNom("Ville du Havre", idx), "11111");
   assert.equal(communeDuNom("Commune de Saint-Denis", idx), null);
   assert.equal(communeDuNom("Métropole du Havre", idx), null);
 });

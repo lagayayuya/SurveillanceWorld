@@ -186,7 +186,7 @@ export function indexCommunes(communes: Record<string, { nom: string }>): Map<st
   return idx;
 }
 
-/** « Commune de X », « Commune du Havre », « Commune d'Annecy »: the buyer named after its commune
+/** « Commune de X », « Commune du Havre », « Ville de Paris »: the buyer named after its commune
  * in graphe/aretes.json, its commune when one only bears that name (the article given back: du →
  * Le, des → Les, de la → La, de l' → L'); null otherwise (a homonym, another buyer). */
 const ARTICLES: [string, string][] = [
@@ -198,7 +198,7 @@ const ARTICLES: [string, string][] = [
   ["d'", ""],
 ];
 export function communeDuNom(nom: string, idx: Map<string, string[]>): string | null {
-  const m = /^commune (.+)$/.exec(norm(nom));
+  const m = /^(?:commune|ville|mairie) (.+)$/.exec(norm(nom));
   if (!m) return null;
   for (const [p, q] of ARTICLES)
     if (m[1].startsWith(p)) {
@@ -207,8 +207,8 @@ export function communeDuNom(nom: string, idx: Map<string, string[]>): string | 
     }
   return null;
 }
-/** The buyer's name is a commune's (« Commune … »), whether or not its commune is known. */
-export const estCommune = (nom: string): boolean => /^commune /.test(norm(nom));
+/** The buyer's name is a commune's (« Commune … », « Ville … », « Mairie … »), whether or not its commune is known. */
+export const estCommune = (nom: string): boolean => /^(commune|ville|mairie) /.test(norm(nom));
 
 // --- the fields' search -----------------------------------------------------------------------
 
