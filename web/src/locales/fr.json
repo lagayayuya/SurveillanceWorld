@@ -4465,6 +4465,7 @@
   "registre.liste.csv.rang": "rang",
   "registre.liste.csv.id": "identifiant",
   "registre.liste.csv.departement": "département",
+  "registre.liste.csv.habitants": "habitants",
   "registre.liste.csv.documents": "documents",
   "registre.liste.csv.contrats": "contrats",
   "registre.liste.csv.autorisations": "autorisations de caméras",
