@@ -52,3 +52,24 @@ def test_a_part_on_a_neighbour_s_border_stays_however_small():
     assert len(kept[1].geoms) == 2
     alone = shapely.MultiPolygon([shapely.box(20, 0, 30, 10), shapely.box(50, 50, 50.1, 50.1)])
     assert kept[0] == a and geo.sans_ilots([a, alone], 1.0)[1].geom_type == "Polygon"
+
+
+def test_a_departements_communes_drawn_in_its_own_map_with_its_outline():
+    import yaml
+
+    conf = yaml.safe_load((registre.RULES / "registre_geo.yaml").read_text("utf-8"))["communes"]
+    gdf = gpd.GeoDataFrame(
+        {"code_insee": ["69123", "69259", "69266"],
+         "nom_officiel": ["Lyon", "Vénissieux", "Villeurbanne"]},
+        geometry=[shapely.box(4.80, 45.70, 4.90, 45.80), shapely.box(4.80, 45.65, 4.90, 45.70),
+                  shapely.box(4.90, 45.70, 4.95, 45.80)], crs="OGC:CRS84",
+    )  # fmt: skip
+    out = geo.communes(gdf, "69", "Rhône", conf)
+    assert set(out["communes"]) == {"69123", "69259", "69266"}
+    assert out["communes"]["69123"]["nom"] == "Lyon"
+    assert out["departement"]["code"] == "69" and out["departement"]["d"].count("M") == 1
+    nums = [float(x) for c in out["communes"].values() for x in re.findall(r"-?\d+\.\d", c["d"])]
+    assert min(nums) >= 0 and max(nums) <= 660
+    # fitted: the département fills its drawing (one side within the margin)
+    xs = nums[0::2]
+    assert max(xs) - min(xs) > 300

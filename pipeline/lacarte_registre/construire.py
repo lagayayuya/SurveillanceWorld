@@ -133,6 +133,12 @@ def run(
         if outlines:
             put("geo/departements.json", outlines)
         summary["fichiers"]["geo"] = int(outlines is not None)
+        # each département's communes (the département's page, a commune's neighbours)
+        n = 0
+        for dep, f in geo.communes_par_departement(root, rules):
+            put(f"geo/communes-{dep}.json", f)
+            n += 1
+        summary["fichiers"]["geo_communes"] = n
 
     sortie.replace_dir(root / "site", write)
     # the search's rows, for the database (migration 027), beside the site: not served
