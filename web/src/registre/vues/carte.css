@@ -419,3 +419,217 @@
 .rg .v-carte .band nav {
   flex: none;
 }
+
+/* --- lot 5 (board Vue3D-Paris-fiche): the panel's head in theme A and its tabs Fiche, Drones ---- */
+.rg .v-carte .v3p .dp-head {
+  padding: 14px 18px 10px;
+  border-bottom: 3px solid var(--line);
+  background: var(--bg);
+}
+.rg .v-carte .v3p .dp-name {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.rg .v-carte .v3p .name {
+  margin: 0;
+}
+.rg .v-carte .v3p .name .cut {
+  font-size: 36px;
+}
+.rg .v-carte .v3p .tabs {
+  display: flex;
+  gap: 6px;
+}
+.rg .v-carte .v3p .tabs button {
+  min-height: 36px;
+  padding: 6px 12px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--line);
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rg .v-carte .v3p .tabs button.on {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .v-carte .v3p .dp-lead {
+  margin: 10px 0 0;
+  font-size: 15.5px;
+  line-height: 1.4;
+}
+.rg .v-carte .v3p .dp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 18px;
+}
+.rg .v-carte .v3p .dfigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.rg .v-carte .v3p .dfigs .fig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+}
+.rg .v-carte .v3p .dfigs .fig.nl {
+  border-style: dashed;
+  box-shadow: none;
+}
+.rg .v-carte .v3p .fk {
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.rg .v-carte .v3p .fv {
+  font-family: Archivo, sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  font-stretch: 72%;
+  line-height: 1.05;
+}
+.rg .v-carte .v3p .fv small {
+  font-size: 15px;
+  font-weight: 800;
+}
+.rg .v-carte .v3p .fl {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .v-carte .v3p .fl .go {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rg .v-carte .v3p .dp-h {
+  margin: 4px 0 -4px;
+  font-family: Archivo, sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .v-carte .v3p .card {
+  padding: 12px 14px;
+}
+.rg .v-carte .v3p .card.nl2 {
+  border-style: dashed;
+  box-shadow: none;
+}
+.rg .v-carte .v3p .m0 {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+/* the map's filmed streets, in the map's own pinks (its layer's three classes) */
+.rg .v-carte .v3p .sw.rz1 {
+  background: #ffd1e6;
+}
+.rg .v-carte .v3p .sw.rz2 {
+  background: #ff7fbf;
+}
+.rg .v-carte .v3p .sw.rz3 {
+  background: #e0006f;
+}
+.rg .v-carte .v3p .dp-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.rg .v-carte .v3p .avenir {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rg .v-carte .v3p .avenir li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 6px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .v-carte .v3p .avenir li span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .v-carte .v3p .avenir .go {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  min-height: 36px;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rg .v-carte .v3p .vrow {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.rg .v-carte .v3p .vn {
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+@media (max-width: 959px) {
+  .rg .v-carte .v3p .kind {
+    display: none;
+  }
+
+  .rg .v-carte .v3p .dp-head {
+    padding: 6px 16px 10px;
+    background: var(--bg-2);
+    border-bottom-width: 2px;
+  }
+  .rg .v-carte .v3p .name .cut {
+    font-size: 26px;
+    padding: 2px 5px;
+  }
+  .rg .v-carte .v3p .tabs button {
+    min-height: 44px;
+  }
+  .rg .v-carte .v3p .dp-lead {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .rg .v-carte .v3p .dp-body {
+    padding: 12px 16px;
+  }
+  /* the socle cuts a figure's line on a phone; the panel's figures keep theirs whole (their rank,
+     the door to the other tab) */
+  .rg .v-carte .v3p .dfigs .fig .fl {
+    display: block;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
+}

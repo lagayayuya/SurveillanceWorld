@@ -12,6 +12,7 @@ import type { Map as MlMap } from "maplibre-gl";
 import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Handler, Rich } from "../dc.ts";
+import { load } from "../donnees.ts";
 import {
   type BBox,
   bboxOf,
@@ -31,12 +32,16 @@ import {
 import { count, fr } from "../format.ts";
 import { carteDuSite, laisser, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
+import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
+import { coupe, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
+import { avantVol, type Publication } from "./accueil-outils.ts";
 import template from "./carte.html?raw";
+import { fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
 import "./carte.css";
 import {
@@ -140,7 +145,15 @@ type State = BaseState & {
   frise: boolean;
   /** the zones are on the map: a place of the act chosen can be framed (« Voir sur la carte ») */
   calque: boolean;
+  /** the panel's tab (lot 5, board Vue3D-Paris-fiche): the commune's figures, or its drones */
+  onglet: "fiche" | "drones";
+  /** listes.json (the ranks) and index.json's France-wide « publiés avant le vol », once asked */
+  X: Listes | null;
+  pubFrance: Publication | null;
 };
+
+const ongletDe = (q: URLSearchParams): "fiche" | "drones" =>
+  q.get("onglet") === "fiche" ? "fiche" : "drones";
 
 const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
 /** The ticket « Quitter la vue drones » on the map, once the register is closed over the drone
@@ -285,6 +298,9 @@ class CarteDrones extends Vue<Props, State> {
       leg: false,
       frise: false,
       calque: false,
+      onglet: ongletDe(q),
+      X: null,
+      pubFrance: null,
     };
   }
   panneau(): boolean {
@@ -300,7 +316,7 @@ class CarteDrones extends Vue<Props, State> {
     return filCommune(this.props.d);
   }
   etape(): string {
-    return t("commune.carte_et_drones");
+    return t("carte_a.etape");
   }
   private get T(): Creneau[] {
     return drones(this.props.d).creneaux;
@@ -381,6 +397,7 @@ class CarteDrones extends Vue<Props, State> {
     }
   }
   componentDidMount(): void {
+    this.demanderFiche();
     addEventListener("themechange", this.onTheme);
     addEventListener("resize", this.suivreMarge);
     this.observerFrise();
@@ -402,6 +419,24 @@ class CarteDrones extends Vue<Props, State> {
       });
     void this.poser(map);
   }
+  /** The tab « Fiche »'s ranks and the France-wide share, asked once the panel is drawn. */
+  private demanderFiche(): void {
+    if (this.fiche) return;
+    this.fiche = true;
+    load<Listes>("listes.json").then(
+      (X) => {
+        if (!this.dead) this.setState({ X });
+      },
+      () => {},
+    );
+    load<{ drones?: { publication?: Publication } }>("index.json").then(
+      (I) => {
+        if (!this.dead) this.setState({ pubFrance: I.drones?.publication ?? null });
+      },
+      () => {},
+    );
+  }
+  private fiche = false;
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
    * is there, then the flight to the commune if its box did not frame it already. */
   private async poser(map: MlMap): Promise<void> {
@@ -682,6 +717,8 @@ class CarteDrones extends Vue<Props, State> {
       else q.set("mois", a.slice(0, 7));
     }
     if (S.k) q.set("genre", S.k);
+    // the tab: « Fiche » said in the address, « Drones » the default
+    if (S.onglet === "fiche") q.set("onglet", "fiche");
     if (S.sz) q.set("zone", "non-lue");
     if (sel) {
       const x = versAdresse(sel);
@@ -1341,8 +1378,220 @@ class CarteDrones extends Vue<Props, State> {
       de: String(new Date(g.A).getUTCFullYear()),
       a: String(new Date(finCal).getUTCFullYear()),
     });
+    // --- lot 5 (board Vue3D-Paris-fiche): the panel's head and its two tabs ----------------------
+    const F = fichePanneau(d, S.X);
+    const ordinal = (n: number) => (n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }));
+    const rangL = (x: { r: number; n: number } | null) =>
+      x ? t("carte_a.rang", { r: ordinal(x.r), n: fr(x.n) }) : "";
+    const avec = (...xs: string[]) => xs.filter(Boolean).join(" · ");
+    const estFiche = S.onglet === "fiche";
+    const versOnglet = (o: "fiche" | "drones") => (() => this.setState({ onglet: o })) as Handler;
+    const strateL = t(`commune_a.strate.${F.strate}`);
+    const lead: Rich = estFiche
+      ? [
+          ...(F.cameras != null
+            ? [
+                { strong: t("carte_a.lead_cam", { n: fr(F.cameras) }) },
+                F.rCameras
+                  ? t("carte_a.lead_cam_r", {
+                      r: ordinal(F.rCameras.r),
+                      n: fr(F.rCameras.n),
+                      strate: strateL,
+                    })
+                  : ".",
+              ]
+            : []),
+          ...(F.eur > 0
+            ? [
+                " ",
+                t("carte_a.lead_eur_a"),
+                { strong: montantA(F.eur) },
+                t("carte_a.lead_eur_b", { y: F.depuis }),
+              ]
+            : []),
+        ]
+      : [];
+    const pubC = (d.f as { drones?: { publication?: Publication } }).drones?.publication;
+    const vC = avantVol(pubC);
+    const vF = avantVol(S.pubFrance);
+    const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
+    const barre = (l: string, v: ReturnType<typeof avantVol>) => ({
+      l,
+      lu: !v.nonLu,
+      nonLu: v.nonLu,
+      parts: v.parts.map((x) => ({
+        cls: `seg ${clsV[x.k]}${x.pct < 10 ? " pt" : ""}`,
+        st: `flex: ${Math.max(1, x.pct)}`,
+        l: x.pct >= 8 ? t("accueil.pct", { n: x.pct }) : "",
+        bh: `${l} · ${t(`accueil.vol_${x.k}`)}`,
+        bl: `${fr(x.n)} · ${x.pct} %`,
+      })),
+    });
+    // « À venir »: the next days an act authorises flights, from today, five at most
+    const parisJour = (ms: number) =>
+      new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(ms));
+    const venir = new Map<string, Set<string>>();
+    const aujIso = parisJour(now);
+    for (const c of droneT)
+      for (const iso of [parisJour(c.t0)])
+        if (iso >= aujIso) {
+          const as = venir.get(iso) ?? new Set<string>();
+          for (const a of c.actes ?? []) as.add(a);
+          venir.set(iso, as);
+        }
+    for (const a of droneND)
+      for (const iso of joursDe(a))
+        if (iso >= aujIso) venir.set(iso, (venir.get(iso) ?? new Set()).add(a.acte));
+    const avenir = [...venir]
+      .sort((p, q) => p[0].localeCompare(q[0]))
+      .slice(0, 5)
+      .map(([iso, as]) => ({
+        d: jourLong(jourMs(iso)),
+        n: t("carte_a.avenir_n", { n: as.size }),
+        pick: (() => choisirJour(jourMs(iso))) as Handler,
+      }));
+    const ficheV = {
+      figs: [
+        {
+          cls: F.cameras == null ? "fig nl" : "fig",
+          k: t("carte_a.f_cameras"),
+          v: F.cameras == null ? t("liste.non_lu") : fr(F.cameras),
+          u: "",
+          l: avec(t("carte_a.sur_carte"), rangL(F.rCameras)),
+          bl: t("commune_a.fig.cameras_tip", { nom }),
+          versDrones: null,
+        },
+        {
+          cls: F.eph == null ? "fig nl" : "fig",
+          k: t("carte_a.f_argent"),
+          v: F.eph == null ? t("commune_a.fig.argent_aucun") : fr(Math.round(F.eph)),
+          u: F.eph == null ? "" : t("commune_a.fig.argent_u"),
+          l: avec(
+            F.eur > 0 ? t("carte_a.eur_n", { m: montantA(F.eur), n: F.contrats }) : "",
+            rangL(F.rEph),
+          ),
+          bl: t("commune_a.fig.argent_tip"),
+          versDrones: null,
+        },
+        {
+          cls: "fig",
+          k: t("carte_a.f_drones"),
+          v: fr(F.jours),
+          u: t("carte_a.jours_u", { n: F.jours }),
+          l: avec(t("carte_a.sur_12"), rangL(F.rJours)),
+          bl: t("commune_a.fig.drones_tip", { nom }),
+          versDrones: versOnglet("drones"),
+        },
+        {
+          cls: F.offresPubliees ? "fig" : "fig nl",
+          k: t("carte_a.f_offre"),
+          v: F.offresPubliees ? fr(F.uneOffre) : t("commune_a.fig.non_publiee"),
+          u: F.offresPubliees ? t("carte_a.sur_n", { n: fr(F.offresPubliees) }) : "",
+          l: F.offresPubliees ? t("carte_a.offre_l") : "",
+          bl: t("commune_a.fig.concurrence_tip"),
+          versDrones: null,
+        },
+      ],
+      autCls: F.arretesLus ? "card" : "card nl2",
+      aut: (F.arretesLus
+        ? [
+            t("carte_a.aut_lus_a"),
+            { strong: t("carte_a.aut_lus_n", { n: fr(F.autorisees) }) },
+            t("carte_a.aut_lus_b", { nom }),
+          ]
+        : [
+            t("carte_a.aut_nl_a", { nom }),
+            { strong: t("carte_a.aut_nl_b") },
+            t("carte_a.aut_nl_c"),
+          ]) as Rich,
+      href: communeHref(insee),
+      comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
+      comparerL: t("carte_a.comparer", { nom }),
+      note: t("carte_a.note", { d: dateTxt(jourMs(d.f.couverture.maj)) }),
+    };
+    const drV = {
+      figs: [
+        {
+          cls: "fig",
+          k: t("carte_a.d_arretes"),
+          v: fr(tk.actes),
+          u: "",
+          l: t("carte_a.d_horaires", { n: fr(tk.horairesLus) }),
+          bl: t("carte_a.d_arretes_b"),
+        },
+        {
+          cls: "fig",
+          k: t("carte_a.f_drones"),
+          v: fr(F.jours),
+          u: t("carte_a.jours_u", { n: F.jours }),
+          l: t("carte_a.sur_12"),
+          bl: t("commune_a.fig.drones_tip", { nom }),
+        },
+        {
+          cls: vC.nonLu ? "fig nl" : "fig",
+          k: t("carte_a.d_avant"),
+          v: vC.nonLu ? t("liste.non_lu") : `${vC.parts[0].pct}`,
+          u: vC.nonLu ? "" : "%",
+          l: vF.nonLu ? "" : t("carte_a.d_france", { p: vF.parts[0].pct }),
+          bl: t("carte_a.d_avant_b"),
+        },
+        {
+          cls: "fig",
+          k: t("carte_a.d_zones"),
+          v: fr(tk.tracees),
+          u: "",
+          l: tk.tracees ? "" : t("carte_a.d_zones_0"),
+          bl: t("carte_a.d_zones_b"),
+        },
+      ],
+      avenir: avenir.length ? avenir : null,
+      vol: [barre(nom, vC), barre(t("carte_a.france"), vF)],
+      volNote: vC.nonLu
+        ? t("carte_a.vol_note_nl")
+        : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total) }),
+    };
+
     return {
       ...this.base("carte"),
+      nom,
+      letters: coupe(nom),
+      lead: estFiche
+        ? lead
+        : ([
+            { strong: t("carte_a.lead_dr_n", { n: fr(tk.actes) }) },
+            t("carte_a.lead_dr_b", { nom }),
+            ...(avenir[0]
+              ? [
+                  " ",
+                  t("carte_a.lead_dr_prochain"),
+                  " ",
+                  { strong: avenir[0].d.replace(/^./, (x) => x.toLocaleLowerCase("fr")) },
+                  ".",
+                ]
+              : []),
+          ] as Rich),
+      onglets: (["fiche", "drones"] as const).map((o) => ({
+        id: `v3p-t-${o}`,
+        panel: o === "fiche" ? "v3p-fiche" : "v3p-drones",
+        l: t(`carte.onglet_${o}`),
+        cls: S.onglet === o ? "on" : "",
+        on: S.onglet === o ? "true" : "false",
+        tab: S.onglet === o ? "0" : "-1",
+        pick: versOnglet(o),
+      })),
+      // the tabs' keys (the ARIA tabs pattern): the arrows move to the other tab and focus it
+      ongletsClavier: ((ev) => {
+        const k = ev.nativeEvent as KeyboardEvent;
+        if (k.key !== "ArrowLeft" && k.key !== "ArrowRight") return;
+        k.preventDefault();
+        const o = estFiche ? "drones" : "fiche";
+        this.setState({ onglet: o });
+        requestAnimationFrame(() => document.getElementById(`v3p-t-${o}`)?.focus());
+      }) as Handler,
+      estFiche,
+      estDrones: !estFiche,
+      fiche: ficheV,
+      dr: drV,
       band: {
         r: repereType("commune"),
         nom,

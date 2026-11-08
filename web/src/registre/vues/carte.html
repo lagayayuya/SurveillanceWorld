@@ -17,16 +17,35 @@
     <sc-if value="{{legTicket}}"><button class="sq legt" type="button" aria-expanded="{{legPressed}}" aria-controls="cd-legende" onClick="{{togLeg}}">{{t.carte.legende}}</button></sc-if>
   </div>
 
-  <sc-if value="{{band.large}}">
-    <div class="band" style="{{band.r.c}}"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><span class="bname">{{band.nom}}</span><nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.carte.onglet_drones}}</a></nav></div>
-  </sc-if>
-  <sc-if value="{{band.tel}}">
-    <div class="tband" style="{{band.r.c}}">
-      <div class="t1"><span class="bico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{band.r.i}}"></path></svg>{{band.r.l}}</span><b>{{band.nom}}</b></div>
-      <nav aria-label="{{t.socle.vues_de_la_commune}}"><a href="{{band.fiche}}" aria-current="false">{{t.carte.onglet_fiche}}</a><a href="{{band.ici}}" aria-current="true">{{t.carte.onglet_drones}}</a></nav>
+  <div class="va v3p">
+    <div class="dp-head">
+      <span class="kind"><i class="ico-t" aria-hidden="true"></i>{{t.carte_a.kind}}</span>
+      <div class="dp-name"><h2 class="name" aria-label="{{nom}}"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" aria-hidden="true">{{x.ch}}</span></sc-for></h2>
+        <div class="tabs" role="tablist" aria-label="{{t.carte_a.onglets}}" onKeyDown="{{ongletsClavier}}"><sc-for list="{{onglets}}" as="o"><button type="button" role="tab" id="{{o.id}}" class="{{o.cls}}" aria-selected="{{o.on}}" tabindex="{{o.tab}}" aria-controls="{{o.panel}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
+      <p class="dp-lead">{{{lead}}}</p>
     </div>
-  </sc-if>
+    <sc-if value="{{estFiche}}"><div class="dp-body" id="v3p-fiche" role="tabpanel" aria-labelledby="v3p-t-fiche">
+      <div class="dfigs"><sc-for list="{{fiche.figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.bl}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}<sc-if value="{{f.versDrones}}"> · <button type="button" class="go" onClick="{{f.versDrones}}">{{t.carte_a.onglet_drones_l}}</button></sc-if></span></div></sc-for></div>
+      <h3 class="dp-h">{{t.carte_a.ici_h}}</h3>
+      <div class="card"><p class="m0">{{t.carte_a.ici_a}}<b>{{t.carte_a.ici_b}}</b>{{t.carte_a.ici_c}}</p>
+        <div class="sleg"><span class="lg"><i class="sw rz1" aria-hidden="true"></i>{{t.carte_a.rz1}}</span><span class="lg"><i class="sw rz2" aria-hidden="true"></i>{{t.carte_a.rz2}}</span><span class="lg"><i class="sw rz3" aria-hidden="true"></i>{{t.carte_a.rz3}}</span></div></div>
+      <h3 class="dp-h">{{t.carte_a.aut_h}}</h3>
+      <div class="{{fiche.autCls}}"><p class="m0">{{{fiche.aut}}}</p></div>
+      <div class="dp-liens"><a class="btn pri" href="{{fiche.href}}">{{t.carte_a.fiche_complete}}</a><a class="btn" href="{{fiche.comparer}}">{{fiche.comparerL}}</a></div>
+      <p class="note">{{fiche.note}}</p>
+    </div></sc-if>
+    <sc-if value="{{estDrones}}"><div class="dp-body dp-dr" id="v3p-drones" role="tabpanel" aria-labelledby="v3p-t-drones">
+      <div class="dfigs"><sc-for list="{{dr.figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.bl}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span></div></sc-for></div>
+      <sc-if value="{{dr.avenir}}"><h3 class="dp-h">{{t.carte_a.avenir_h}}</h3>
+        <div class="card"><ul class="avenir"><sc-for list="{{dr.avenir}}" as="a"><li><b>{{a.d}}</b><span>{{a.n}}</span><button type="button" class="go" onClick="{{a.pick}}">{{t.carte_a.afficher_jour}}</button></li></sc-for></ul><p class="note">{{t.carte_a.avenir_note}}</p></div></sc-if>
+      <h3 class="dp-h">{{t.carte_a.vol_h}}</h3>
+      <div class="card"><sc-for list="{{dr.vol}}" as="v"><div class="vrow"><span class="vn">{{v.l}}</span><sc-if value="{{v.lu}}"><div class="sbar petite" style="height: 20px" data-bg=""><sc-for list="{{v.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><b>{{x.l}}</b></span></sc-for></div></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{t.liste.non_lu}}</span></sc-if></div></sc-for>
+        <div class="sleg"><span class="lg"><i class="sw p-ok" aria-hidden="true"></i>{{t.accueil.vol_avant}}</span><span class="lg"><i class="sw p-mid" aria-hidden="true"></i>{{t.accueil.vol_jour_meme}}</span><span class="lg"><i class="sw p-late" aria-hidden="true"></i>{{t.accueil.vol_apres}}</span></div>
+        <p class="note">{{dr.volNote}}</p></div>
+    </div></sc-if>
+  </div>
 
+  <sc-if value="{{estDrones}}">
   <div class="cd-in">
     <h2 class="h3 cd-titre">{{titreLong}}</h2>
     <sc-if value="{{hasGenres}}"><div class="cd-genres" role="group" aria-label="{{t.carte.f_aria}}"><sc-for list="{{genres}}" as="g"><button type="button" class="key s" aria-pressed="{{g.on}}" aria-disabled="{{g.off}}" onClick="{{g.pick}}">{{g.l}} <span class="n">· {{g.n}}</span></button></sc-for></div></sc-if>
@@ -84,4 +103,5 @@
     </div>
     <sc-if value="{{vide}}"><p class="sober" style="margin: 0; color: var(--muted)">{{{vide}}}</p></sc-if>
   </div>
+  </sc-if>
 </div>
