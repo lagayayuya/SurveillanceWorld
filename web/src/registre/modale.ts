@@ -72,6 +72,9 @@ const VUES: Partial<Record<Route["view"], () => Promise<{ default: VueModule }>>
   acheteur: () => import("./vues/acheteur.ts"),
   contrat: () => import("./vues/contrat.ts"),
   introuvable: () => import("./vues/introuvable.ts"),
+  graphe: () => import("./vues/graphe.ts"),
+  comparer: () => import("./vues/comparer.ts"),
+  chemin: () => import("./vues/chemin.ts"),
 };
 
 /** A fiche's type from its path, until its view says better (a document's record). */
