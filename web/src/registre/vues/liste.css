@@ -51,8 +51,7 @@
 .rg .va .lt td {
   vertical-align: top;
 }
-.rg .va .lt .sub,
-.rg .va .lt .sub a {
+.rg .va .lt .sub {
   display: block;
   margin-top: 3px;
   font:

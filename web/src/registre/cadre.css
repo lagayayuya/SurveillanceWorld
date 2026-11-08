@@ -967,15 +967,17 @@
 }
 .rg .th .ttop a.crumb {
   color: var(--fg);
+  min-height: 44px;
 }
 /* The top bar's squares keep their paper in light, their shadow the theme's blue (v2.4, Ju): the
    ink shadow was lost on the black bar. The documents' blue, the dark theme's shadow. */
 .rg .mtop .sq {
   box-shadow: 3px 3px 0 var(--type-document);
 }
+/* 44 px: the redesign v3's touch targets (Ju's criterion), the boards' 34 px squares grown */
 .rg .ttop .sq {
-  width: 38px;
-  height: 38px;
+  width: 44px;
+  height: 44px;
   background: var(--bg-2);
   color: var(--fg) !important;
   border: 2px solid var(--line);
