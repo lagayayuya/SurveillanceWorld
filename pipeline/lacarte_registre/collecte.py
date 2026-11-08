@@ -354,6 +354,18 @@ def courants(acts: list[dict[str, Any]], recueils: list[dict[str, Any]]) -> list
     return [a for a in acts if kept(a)]
 
 
+def publies_pilote(events: list[regles.Event], acts: list[dict[str, Any]]) -> list[regles.Event]:
+    """The pilot's drone acts with their recueil's day (`publie`), taken from the act the
+    collection read under the same id (« publiés avant le vol », drones.publication)."""
+    days = {a["id"]: a["recueil_date"] for a in acts if a.get("recueil_date")}
+    return [
+        {**e, "publie": days[e["id"]]}
+        if e["t"] == "arrete_drone" and e["id"] in days and not e.get("publie")
+        else e
+        for e in events
+    ]
+
+
 def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote, dict[str, int]]:
     reg = p.reg
     cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
@@ -382,7 +394,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     def replaced(e: regles.Event) -> bool:
         return e["t"] == "subvention_etat" and bool(subs) and int(e["date"][:4]) <= last
 
-    kept = [e for e in reg["evenements"] if not replaced(e)]
+    kept = publies_pilote([e for e in reg["evenements"] if not replaced(e)], acts)
     dropped = {e["affaire"] for e in reg["evenements"] if replaced(e)}
     new: list[regles.Event] = list(subs)
     n_pub = 0
@@ -422,8 +434,11 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
             "entreprises": [],
             "titre": title,
         }
+    # an act's authority → its département (« publiés avant le vol » says whose acts it counts)
+    autorites = {k: a["code"] for k, a in admins.items() if a["genre"] in DEPARTEMENTAL}
     out = regles.Pilote(
-        reg={**reg, "evenements": [*kept, *new], "affaires": affaires}, globals=p.globals
+        reg={**reg, "evenements": [*kept, *new], "affaires": affaires},
+        globals={**p.globals, "AUTORITES_DEP": autorites},
     )
     return out, {
         "subventions_dgcl": len(subs),

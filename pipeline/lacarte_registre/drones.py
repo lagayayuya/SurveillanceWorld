@@ -170,24 +170,34 @@ def creneaux(
     return rows
 
 
-def publication(events: Iterable[Event]) -> dict[str, int]:
+def publication(events: Iterable[Event], autorites: dict[str, str] | None = None) -> dict[str, Any]:
     """« Publiés avant le vol ? » (rule:registre_drones@1:publication): the drone acts whose
     recueil was published before their first day of flight, the same day, after; `total` the
-    three; `non_lus` the acts without a published day of flight or a recueil's day (the
-    pilot's, an act whose days are not published), counted in none. Each act once (an act of
-    several communes is in each one's list)."""
-    out = {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0, "non_lus": 0}
+    three; `non_lus` the acts without a published day of flight or a recueil's day, counted
+    in none; `deps` the départements of the authorities whose acts are counted (`autorites`:
+    an authority → its département; the pilot's acts, without one, their own). A day of
+    flight is the act's first published day, else its pilot's reviewed period. Each act once
+    (an act of several communes is in each one's list)."""
+    from lacarte_registre.chiffres import jours
+
+    out: dict[str, Any] = {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0, "non_lus": 0}
     seen: set[str] = set()
+    deps: set[str] = set()
     for e in events:
         if not is_drone_act(e) or e["id"] in seen:
             continue
         seen.add(e["id"])
-        first, pub = min(e.get("jours") or [""]), e.get("publie")
+        first = min(e.get("jours") or jours([e.get("periode") or ""]) or [""])
+        pub = e.get("publie")
         if not first or not pub:
             out["non_lus"] += 1
             continue
         out["avant" if pub < first else "jour_meme" if pub == first else "apres"] += 1
         out["total"] += 1
+        a = e.get("autorite")
+        if d := ((autorites or {}).get(a) if a else e.get("dep")):
+            deps.add(d)
+    out["deps"] = sorted(deps)
     return out
 
 
@@ -200,7 +210,7 @@ def commune(p: Pilote, events: list[Event], by_id: dict[str, Event], insee: str)
             p.get("AUTORISATIONS", []), p.get("ZONES", []), p.get("SITES", []), by_id, insee
         ),
         "non_deduits": rows,
-        "publication": publication(events),
+        "publication": publication(events, p.get("AUTORITES_DEP", {})),
     }
     if any(r.get("lieux") for r in rows):
         # the cited places, placed from local data when found without ambiguity (lieux.py)

@@ -543,7 +543,7 @@ def index_file(ctx: Context) -> dict[str, Any]:
         "gros": gros,
         "non_lus": len(ctx.reg.non_lus),
         # « Publiés avant le vol ? »: every drone act of France (drones.publication)
-        "drones": {"publication": drones.publication(evs)},
+        "drones": {"publication": drones.publication(evs, ctx.reg.pilote.get("AUTORITES_DEP", {}))},
         "dico": _dico(ctx, recents + gros),
     }
 

@@ -45,7 +45,7 @@ def test_mions_two_shared_drone_acts_deduced_but_no_slot_read(built):
     assert f["drones"]["creneaux"] == [] and f["drones"]["non_deduits"] == []
     # the pilot's acts have no recueil: in none of the three
     assert f["drones"]["publication"] == {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0,
-                                          "non_lus": 2}  # fmt: skip
+                                          "non_lus": 2, "deps": []}  # fmt: skip
 
 
 def test_every_commune_file_has_its_drones(built):
@@ -226,7 +226,19 @@ def test_an_act_is_published_before_the_same_day_or_after_its_first_flight():
     ]
     shared = {**events[0], "insee": "69259", "partage": ["69123"]}  # its other commune's copy
     assert drones.publication([*events, shared]) == {
-        "avant": 1, "jour_meme": 1, "apres": 1, "total": 3, "non_lus": 2}  # fmt: skip
+        "avant": 1, "jour_meme": 1, "apres": 1, "total": 3, "non_lus": 2, "deps": []}  # fmt: skip
+
+
+def test_a_pilot_act_counts_by_its_period_and_the_authorities_are_named():
+    pilot = {"id": "69-p", "t": "arrete_drone", "dep": "69", "periode": "2025-11-14 au 2025-11-17",
+             "publie": "2025-11-14"}  # fmt: skip
+    paris = {**_vol("pp", "2026-10-01", ["2026-10-03"]), "autorite": "ppparis", "dep": "93"}
+    marseille = {**_vol("13", "2026-10-04", ["2026-10-03"]), "autorite": "pref13", "dep": "13"}
+    unread = {**_vol("33", "2026-10-04", None), "autorite": "pref33", "dep": "33"}
+    out = drones.publication([pilot, paris, marseille, unread],
+                             {"ppparis": "75", "pref13": "13", "pref33": "33"})  # fmt: skip
+    assert out == {"avant": 1, "jour_meme": 1, "apres": 1, "total": 3, "non_lus": 1,
+                   "deps": ["13", "69", "75"]}  # fmt: skip
 
 
 def test_a_collected_drone_act_carries_its_recueils_day():
@@ -247,5 +259,18 @@ def test_a_collected_drone_act_carries_its_recueils_day():
 
 def test_the_home_counts_every_drone_act_of_france(built):
     pub = read(built, "index.json")["drones"]["publication"]
-    assert set(pub) == {"avant", "jour_meme", "apres", "total", "non_lus"}
+    assert set(pub) == {"avant", "jour_meme", "apres", "total", "non_lus", "deps"}
     assert pub["total"] == pub["avant"] + pub["jour_meme"] + pub["apres"]
+
+
+def test_a_pilot_drone_act_takes_the_day_of_the_recueil_the_collection_read_it_in():
+    from lacarte_registre import collecte
+
+    pilot = [{"id": "69-2025-11-07-00001", "t": "arrete_drone", "periode": "2025-11-11"},
+             {"id": "69-2025-11-07-00002", "t": "arrete_drone", "periode": "2025-11-12"},
+             {"id": "69-2025-11-07-00003", "t": "arrete", "periode": ""}]  # fmt: skip
+    acts = [{"id": "69-2025-11-07-00001", "recueil_date": "2025-11-10"},
+            {"id": "69-2025-11-07-00003", "recueil_date": "2025-11-10"}]  # fmt: skip
+    out = collecte.publies_pilote(pilot, acts)
+    assert [e.get("publie") for e in out] == ["2025-11-10", None, None]
+    assert "publie" not in pilot[0]  # the pilot's events are not changed

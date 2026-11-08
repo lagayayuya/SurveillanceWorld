@@ -22,10 +22,14 @@ publication:
     « Publiés avant le vol ? »: a drone act's recueil is published before its first day of
     flight (« avant »), that day (« jour_meme ») or after (« apres »), counted in acts. The
     publication's day is the recueil's own (the prefecture's RAA), not the day Attrap first
-    saw it: the recueil's day is what the public could read, and Attrap's is ours. The first
-    day of flight is the act's first published day (`jours`); an act without one, or without
-    a recueil (the pilot's acts), is in none of the three, counted in `non_lus`. Every act,
-    without a window: the share says how the prefectures publish, not this year's flights.
+    saw it: the recueil's day is what the public could read, and Attrap's is ours (a pilot's
+    act takes the day of the recueil the collection read it in, under its id). The first day
+    of flight is the act's first published day (`jours`), else its pilot's reviewed period;
+    an act without one, or without a recueil, is in none of the three, counted in `non_lus`.
+    `deps` the départements of the authorities whose acts are counted (the Préfecture de
+    police's are the 75's wherever its acts are), so a page says whose acts these are, not
+    « France ». Every act, without a window: the share says how the prefectures publish,
+    not this year's flights.
 
 fin:
   id: rule:registre_drones@1:fin
@@ -43,8 +47,8 @@ fin:
     family: ppparis, pref75, pref92, pref93, pref94), the number compared by its digits, a
     single act only: a withdrawal (`retrait`) takes all its days, an abrogation those from
     its own day on (code des relations entre le public et l'administration, L. 240-1: the
-    withdrawal ends an act for the past, the abrogation for the future; read from memory,
-    not re-read on Légifrance). Without a number read, or with a number found in no act or
+    abrogation ends an act for the future, the withdrawal for the past and the future;
+    re-read on 2026-11-08 by the project's author). Without a number read, or with a number found in no act or
     in two, the days stay and the abrogation is marked « non rattachée », counted in the
     build's summary.
   interdiction: "interdi|derogation"
