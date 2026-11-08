@@ -789,6 +789,139 @@
   color: var(--muted);
 }
 
+/* the menus (lot 1's lists, the fiches' « Tous les documents »): a chip that opens its values */
+.rg .va .dancre {
+  position: relative;
+}
+.rg .va .dmenu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 400px;
+  max-height: min(560px, 70vh);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  box-shadow: 6px 6px 0 var(--line);
+}
+.rg .va .dq {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 2px solid var(--line);
+}
+.rg .va .dq input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    400 15px Archivo,
+    sans-serif;
+}
+.rg .va .dliste {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1.5px dashed var(--rule);
+}
+.rg .va .drow {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 6px;
+  border-bottom: 1.5px dashed var(--rule);
+  cursor: pointer;
+}
+.rg .va .drow:is(:hover, :focus-visible) {
+  background: var(--warn-bg);
+  outline: 2px solid var(--fg);
+  outline-offset: -2px;
+}
+.rg .va .dbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va .drow.on .dbox {
+  background: var(--fg);
+  box-shadow: inset 0 0 0 3px var(--bg-2);
+}
+.rg .va .dn {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .dpied {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 8px;
+}
+.rg .va .tmenu {
+  width: 280px;
+  list-style: none;
+}
+.rg .va .tmenu .drow {
+  grid-template-columns: minmax(0, 1fr);
+}
+.rg .va .tmenu .drow[aria-selected="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+/* the bubble of bulle.ts: one for the frame, beside the view, placed in the screen by script */
+.rg .bulle-hote {
+  position: relative;
+  height: 0;
+}
+.rg .va .tip.bulle {
+  position: absolute;
+  transform: none;
+  z-index: 60;
+  max-width: min(300px, calc(100vw - 16px));
+}
+.rg .va .tip .sw {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+.rg .va .tip.bulle[hidden] {
+  display: none;
+}
+.rg .va .tip.bulle.tact {
+  pointer-events: auto;
+}
+.rg .va .tip.bulle .btn {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: 6px;
+}
+/* a read element stands out, the others of its group pale (Lyon-A-comportements) */
+.rg .va [data-bg].pale :is([data-bh], [data-bl]):not(.hl) {
+  opacity: 0.35;
+}
+.rg .va :is(rect, circle, path, g, ellipse)[tabindex]:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+
 /* --- a card folded on a phone, a visual opened full screen (socle-a.ts) -------------------------- */
 .rg .va .fh,
 .rg .va .zoom {
@@ -997,7 +1130,7 @@
     color: var(--muted);
   }
   /* a hovered bubble does not exist on a phone: the figure's words are in the page */
-  .rg .va .tip,
+  .rg .va .tip:not(.bulle),
   .rg .va [data-tip]:hover::after,
   .rg .va [data-tip]:focus-visible::after {
     display: none;
@@ -1118,5 +1251,14 @@
     text-transform: uppercase;
     box-shadow: 3px 3px 0 var(--type-registre);
     cursor: pointer;
+  }
+  /* the button under the visual, not over its last column or its last days */
+  .rg .va .zw:has(> .zoom:not(.top)) {
+    padding-bottom: 54px;
+  }
+  /* the board's `.zoom.top`: over a graph, at the top right, off the nodes below */
+  .rg .va .zoom.top {
+    top: 8px;
+    bottom: auto;
   }
 }

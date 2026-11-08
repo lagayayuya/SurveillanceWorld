@@ -15,6 +15,7 @@ import { suivreAdresse } from "./adresse.ts";
 import "./registre.css";
 import "./cadre.css";
 import "./socle-a.css";
+import { bulles } from "./bulle.ts";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
 import { Absent, load } from "./donnees.ts";
 import { fermer, OUVERTURE, pas, retenir, retour, retourPossible } from "./hote.ts";
@@ -166,7 +167,10 @@ const cadre = el("section", { class: "modal", role: "dialog", "aria-modal": "tru
 const haut = el("div", { class: "mtop" });
 const scroll = el("div", { class: "scroll" });
 const root = el("div", { id: "vue", tabindex: "-1" });
-scroll.append(root);
+// theme A's bubbles (bulle.ts): beside the view, where the template engine never patches
+const hoteBulle = el("div", { class: "va bulle-hote" });
+scroll.append(root, hoteBulle);
+bulles(root, hoteBulle);
 cadre.append(haut, scroll);
 th.append(cadre);
 rg.append(th);
