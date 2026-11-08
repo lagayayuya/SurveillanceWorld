@@ -11,8 +11,9 @@
 // anything is drawn (listes.ts redirection).
 
 import { communeHref } from "../commun.ts";
-import { entName, type Index, titre as titreDoc } from "../corpus.ts";
+import { entName, type Index, type Lexique, titre as titreDoc } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
+import type { Evenement } from "../donnees.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
@@ -25,6 +26,7 @@ import {
   chercherNoms,
   comptesIndex,
   corpus,
+  demander,
   type Groupe,
   grouper,
   type Listes,
@@ -39,6 +41,14 @@ import { coupe, montantA, pleinEcran, plusProche, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
+import {
+  casseNormale,
+  nomAcheteur,
+  ONGLETS,
+  type Onglet,
+  QUESTION,
+  recentes,
+} from "./accueil-outils.ts";
 import "./sommaire.css";
 import template from "./sommaire.html?raw";
 
@@ -105,16 +115,6 @@ export function court(nom: string): string {
   return s.length <= 12 ? s : `${s.slice(0, 10)}.`;
 }
 
-/** « Cette semaine »'s tabs: every kind, the contracts and notices, the decrees, the drones. */
-const ONGLETS = ["tous", "contrats", "arretes", "drones"] as const;
-type Onglet = (typeof ONGLETS)[number];
-const dansOnglet = (o: Onglet, tt: string): boolean =>
-  o === "tous" ||
-  (o === "drones"
-    ? tt === "arrete_drone"
-    : o === "arretes"
-      ? tt.startsWith("arrete") && tt !== "arrete_drone"
-      : /^(attribution|modification|avis|resultat|rectificatif)$/.test(tt));
 const TOUT: Record<Onglet, string> = {
   tous: "/registre/contrats",
   contrats: "/registre/contrats",
@@ -154,6 +154,8 @@ type State = BaseState & {
   cherche: boolean;
   indispo: boolean;
   onglet: Onglet;
+  /** a tab's latest documents as the search API gave them, and the names they need */
+  recents: Partial<Record<Onglet, { evts: Evenement[]; L: Lexique }>>;
   mesure: Mesure;
   X: Listes | null;
   geo: Geo | null;
@@ -177,6 +179,7 @@ class Sommaire extends Vue<Props, State> {
       cherche: false,
       indispo: false,
       onglet: "tous",
+      recents: {},
       mesure: "argent",
       X: null,
       geo: null,
@@ -208,8 +211,31 @@ class Sommaire extends Vue<Props, State> {
     return this.demande;
   }
 
+  /** A tab's latest documents, asked of the search API once (sorted by date, the latest first);
+   * not answering, the build's `recents` stand in. */
+  private demandeRecents(o: Onglet): void {
+    if (this.state.recents[o]) return;
+    const p = new URLSearchParams({ ...QUESTION[o], page: "1", n: "20" });
+    demander(p).then(
+      (P) => {
+        if (!this.fini)
+          this.setState({
+            recents: { ...this.state.recents, [o]: { evts: P.evenements, L: P.dico } },
+          });
+      },
+      () => {},
+    );
+  }
+  private choisirOnglet(o: Onglet): Handler {
+    return () => {
+      this.setState({ onglet: o });
+      this.demandeRecents(o);
+    };
+  }
+
   componentDidMount(): void {
     if (this.state.q) void this.chercher(this.state.q);
+    this.demandeRecents("tous");
     // the map once the page is drawn: its outlines and its measures
     Promise.all([load<Geo>("geo/departements.json"), this.listes()]).then(
       ([geo]) => {
@@ -497,43 +523,43 @@ class Sommaire extends Vue<Props, State> {
       d: t(`accueil.entree.${e.k}_d`),
       go: t(`accueil.entree.${e.k}_go`),
     }));
-    // « Cette semaine »: the latest documents of the tab, six
-    const recRows = I.recents
-      .filter((e) => dansOnglet(S.onglet, e.t))
-      .slice(0, 6)
-      .map((e) => {
-        const c = e.insee ? L.communes[e.insee] : undefined;
-        const lieu: RichItem = c
-          ? c.ref
-            ? { a: { href: communeHref(e.insee as string), text: c.nom, cls: "ent com" } }
-            : c.nom
-          : e.dep
-            ? {
-                a: {
-                  href: departementHref(e.dep),
-                  text: nomDep(this.props, e.dep),
-                  cls: "ent com",
-                },
-              }
-            : "";
-        const ref =
-          e.t === "arrete_drone" && e.numero
-            ? t("accueil.ref_arrete", { n: String(e.numero) })
-            : String(e.ref ?? "").length > 40
-              ? ""
-              : String(e.ref ?? "");
-        return {
-          date: jourMois(e.date ?? I.maj),
-          dk: t(`accueil.dk.${dk(e.t)}`),
-          lieu: [lieu] as RichItem[],
-          ref,
-          objet: minuscule(titreDoc(e)),
-        };
-      });
+    // « Cette semaine »: the latest documents of the tab, six, none dated after the build's day
+    const api = S.recents[S.onglet];
+    const LR: Lexique = api ? { ...L, communes: { ...L.communes, ...api.L.communes } } : L;
+    const recRows = recentes(api?.evts ?? I.recents, I.maj, S.onglet).map((e) => {
+      const c = e.insee ? LR.communes[e.insee] : undefined;
+      const lieu: RichItem = c
+        ? c.ref
+          ? { a: { href: communeHref(e.insee as string), text: c.nom, cls: "ent com" } }
+          : c.nom
+        : e.dep
+          ? {
+              a: {
+                href: departementHref(e.dep),
+                text: nomDep(this.props, e.dep),
+                cls: "ent com",
+              },
+            }
+          : "";
+      const ref =
+        e.t === "arrete_drone" && e.numero
+          ? t("accueil.ref_arrete", { n: String(e.numero) })
+          : String(e.ref ?? "").length > 40
+            ? ""
+            : String(e.ref ?? "");
+      return {
+        date: jourMois(e.date ?? I.maj),
+        dk: t(`accueil.dk.${dk(e.t)}`),
+        lieu: [lieu] as RichItem[],
+        ref,
+        objet: minuscule(titreDoc(e)),
+      };
+    });
     const gros = I.gros.slice(0, 6).map((e) => {
       const s = (e.acheteur_ref ?? "").replace(/^acheteur\//, "");
       const a = L.acheteurs[s];
-      const nom = a?.nom_court || a?.nom || s;
+      // a name that says where (« CCAS de Nice »): its seat's commune or département added
+      const nom = nomAcheteur(a, L, (d) => nomDep(this.props, d), s);
       // each company a link to its fiche (a sole trader is never named: entName)
       const ents: RichItem[] = (e.entreprises ?? []).flatMap((x, i) => {
         const nomE = entName(L, x);
@@ -542,7 +568,7 @@ class Sommaire extends Vue<Props, State> {
           : nomE;
         return i ? [", ", lienE] : [lienE];
       });
-      const obj = minuscule(String(e.objet ?? ""));
+      const obj = casseNormale(e.objet).replace(/^./, (x) => x.toLocaleLowerCase("fr"));
       return {
         qui: [
           e.acheteur_ref
@@ -610,7 +636,7 @@ class Sommaire extends Vue<Props, State> {
         onglets: ONGLETS.map((o) => ({
           l: t(`accueil.onglet.${o}`),
           on: S.onglet === o ? "true" : "false",
-          pick: (() => this.setState({ onglet: o })) as Handler,
+          pick: this.choisirOnglet(o),
         })),
         rows: recRows,
         vide: recRows.length === 0,

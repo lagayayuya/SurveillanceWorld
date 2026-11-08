@@ -643,6 +643,28 @@
   fill: var(--map-area-5);
   background: var(--map-area-5);
 }
+/* in dark, a ramp whose every class stands from the card (#26232a): 3,1 / 4,0 / 5,0 / 7,0 / 11,4:1,
+   the more, the lighter (Ju, lot 1: the map's dark ramp left the first two classes in the ground) */
+[data-mode="dark"] .rg .va .q0 {
+  fill: #7c6a77;
+  background: #7c6a77;
+}
+[data-mode="dark"] .rg .va .q1 {
+  fill: #a86f92;
+  background: #a86f92;
+}
+[data-mode="dark"] .rg .va .q2 {
+  fill: #d870ab;
+  background: #d870ab;
+}
+[data-mode="dark"] .rg .va .q3 {
+  fill: #ff86c4;
+  background: #ff86c4;
+}
+[data-mode="dark"] .rg .va .q4 {
+  fill: #ffd1e6;
+  background: #ffd1e6;
+}
 .rg .va .fr path {
   stroke: var(--line);
   stroke-width: 0.8;
