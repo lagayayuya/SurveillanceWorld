@@ -47,7 +47,10 @@ export type FichierCommune = {
   commune: Commune & { insee: string };
   evenements: Evenement[];
   affaires: Record<string, Affaire>;
-  entreprises: Record<string, { nom?: string | null; entrepreneur_individuel?: boolean }>;
+  entreprises: Record<
+    string,
+    { nom?: string | null; entrepreneur_individuel?: boolean; ref?: string }
+  >;
   acheteurs: Record<string, Acheteur>;
   communes: Record<string, Commune>;
   lots: Record<string, Groupe>;

@@ -1,0 +1,138 @@
+// A commune's fiche in theme A (board Lyon-A-theme-actuel, redesign v3 lot 2): what it computes from
+// the commune's file, pure, for the tests. Every figure is the build's (one source per figure, Ju
+// 07/11): the cameras the decrees authorise by kind of beneficiary, the largest systems, the money
+// by year and by buyer, the suppliers, the days of flight, a rank among the communes of its size.
+
+import type { Evenement } from "../donnees.ts";
+
+/** The decrees a commune's latest dossiers give (commun.ts `lastArretes`), camera ones only. */
+type Arrete = Pick<
+  Evenement,
+  | "t"
+  | "cameras"
+  | "communal"
+  | "type_beneficiaire"
+  | "beneficiaire"
+  | "beneficiaire_siren"
+  | "nom_publie"
+  | "copie"
+>;
+
+/** « Combien de caméras ? »: the cameras the camera decrees authorise, the mairie's (its own
+ * dossiers), the shops' and banks', the others' (transports, State, health…). */
+export type Parts = { mairie: number; commerces: number; autres: number; total: number };
+export function camerasAutorisees(arr: Arrete[]): Parts {
+  const p: Parts = { mairie: 0, commerces: 0, autres: 0, total: 0 };
+  for (const e of arr) {
+    if (e.t !== "arrete" || e.copie || typeof e.cameras !== "number") continue;
+    const k = e.communal
+      ? "mairie"
+      : /^(commerce|banque)$/.test(String(e.type_beneficiaire ?? ""))
+        ? "commerces"
+        : "autres";
+    p[k] += e.cameras;
+    p.total += e.cameras;
+  }
+  return p;
+}
+
+/** « Les plus grands systèmes autorisés, hors mairie »: the beneficiaries published by their name
+ * (never a private person nor a name not checked: `nom_publie`, « [non retenu] »), by the cameras
+ * their decrees authorise, the most first. */
+export type Systeme = { nom: string; siren: string | null; arretes: number; cameras: number };
+export function grandsSystemes(arr: Arrete[], n = 4): Systeme[] {
+  const by = new Map<string, Systeme>();
+  for (const e of arr) {
+    if (e.t !== "arrete" || e.copie || e.communal || typeof e.cameras !== "number") continue;
+    const nom = String(e.beneficiaire ?? "").trim();
+    if (!nom || nom.startsWith("[") || e.nom_publie === false) continue;
+    const k = e.beneficiaire_siren || nom.toLowerCase();
+    const s = by.get(k) ?? { nom, siren: e.beneficiaire_siren ?? null, arretes: 0, cameras: 0 };
+    s.arretes++;
+    s.cameras += e.cameras;
+    by.set(k, s);
+  }
+  return [...by.values()]
+    .sort((a, b) => b.cameras - a.cameras || a.nom.localeCompare(b.nom, "fr"))
+    .slice(0, n);
+}
+
+/** A contract's buyer as the money's series say it: the commune itself, the transports, the
+ * others (its intercommunality, the State, the département…). */
+export type Serie = "ville" | "transports" | "autres";
+export type Annee = { an: string; ville: number; transports: number; autres: number };
+export function argentParAnnee(
+  contrats: { date?: string | null; montant?: number | null }[],
+  serie: (e: never) => Serie,
+  depuis = 2018,
+): { annees: Annee[]; totaux: Record<Serie, number> } {
+  const by = new Map<string, Annee>();
+  const totaux: Record<Serie, number> = { ville: 0, transports: 0, autres: 0 };
+  let fin = depuis;
+  for (const e of contrats) {
+    const an = Number((e.date ?? "").slice(0, 4));
+    if (!an || an < depuis || !e.montant) continue;
+    fin = Math.max(fin, an);
+    const k = serie(e as never);
+    const a = by.get(String(an)) ?? { an: String(an), ville: 0, transports: 0, autres: 0 };
+    a[k] += e.montant;
+    totaux[k] += e.montant;
+    by.set(String(an), a);
+  }
+  const annees: Annee[] = [];
+  for (let y = depuis; y <= fin; y++)
+    annees.push(by.get(String(y)) ?? { an: String(y), ville: 0, transports: 0, autres: 0 });
+  return { annees, totaux };
+}
+
+/** « Qui équipe la ville ? »: the companies of the commune's own contracts, by amount. */
+export type Fournisseur = { siren: string; montant: number; contrats: number; annees: string[] };
+export function fournisseurs(
+  contrats: { entreprises?: string[]; montant?: number | null; date?: string | null }[],
+): Fournisseur[] {
+  const by = new Map<string, Fournisseur>();
+  for (const e of contrats)
+    for (const s of e.entreprises ?? []) {
+      const f = by.get(s) ?? { siren: s, montant: 0, contrats: 0, annees: [] };
+      f.montant += e.montant ?? 0;
+      f.contrats++;
+      const an = (e.date ?? "").slice(0, 4);
+      if (an && !f.annees.includes(an)) f.annees.push(an);
+      by.set(s, f);
+    }
+  return [...by.values()]
+    .map((f) => ({ ...f, annees: f.annees.sort() }))
+    .sort((a, b) => b.montant - a.montant || b.contrats - a.contrats);
+}
+
+/** The days a drone decree authorises flights (its `jours`), in a window ending on `fin`
+ * (YYYY-MM-DD) and starting `mois` months before, each day once; and the decrees of a day. */
+export function joursDeVol(
+  actes: { t: string; jours?: string[] | null }[],
+  fin: string,
+  mois = 12,
+): Map<string, number> {
+  const d = new Date(`${fin}T12:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() - mois);
+  const debut = d.toISOString().slice(0, 10);
+  const out = new Map<string, number>();
+  for (const e of actes) {
+    if (e.t !== "arrete_drone") continue;
+    for (const j of new Set(e.jours ?? []))
+      if (j > debut && j <= fin) out.set(j, (out.get(j) ?? 0) + 1);
+  }
+  return out;
+}
+
+/** A commune's size class for its ranks (« les 11 villes de 200 000 habitants ou plus »). */
+export const STRATES = [200000, 100000, 20000, 5000, 0] as const;
+export function strate(pop: number): number {
+  return STRATES.find((s) => pop >= s) ?? 0;
+}
+
+/** A value's rank among others (1 the largest), and how many: none when the value is unknown. */
+export function rang(v: number | null, autres: number[]): { r: number; n: number } | null {
+  if (v == null || v < 0) return null;
+  const vs = autres.filter((x) => x >= 0);
+  return { r: vs.filter((x) => x > v).length + 1, n: vs.length };
+}

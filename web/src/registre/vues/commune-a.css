@@ -1,0 +1,575 @@
+/* A commune's fiche in theme A (board Lyon-A-theme-actuel, its phone and dark variants): the
+   board's own rules (.meta, .v3, .toc, .dots, .sup, .tl, .hb, .cal, .rank, .chart, the graph),
+   on theme A's components (socle-a.css) and the site's tokens. */
+.rg .va .ico-t {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  border: 2px solid #111111;
+  border-top: none;
+}
+.rg .va .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 10px 0 0;
+  font-family: "Special Elite", monospace;
+  font-size: 15px;
+}
+.rg .va .ans {
+  margin: 0 0 14px;
+  max-width: 880px;
+  font-size: 19px;
+}
+.rg .va .dots {
+  display: flex;
+  gap: 4px;
+}
+.rg .va .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va .dot.me {
+  background: var(--type-registre);
+}
+
+/* « Vue 3D »: the live map's door, black (cream in dark: the ink) with a pink shadow */
+.rg .va .v3 {
+  margin: 22px 40px 0;
+  padding: 18px 28px;
+  background: var(--fg);
+  color: var(--bg);
+  border: 3px solid var(--line);
+  box-shadow: 8px 8px 0 var(--type-registre);
+}
+.rg .va .v3 .tag {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+}
+.rg .va .v3-t h2 {
+  margin: 10px 0 6px;
+  font-family: Archivo, sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .v3-t p {
+  margin: 0;
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.rg .va .v3-l {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.rg .va .v3-l li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 2px solid var(--bg);
+}
+.rg .va .v3-l b {
+  font-family: Archivo, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .v3-l span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va .v3-cta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+}
+.rg .th.va .v3 .go {
+  color: var(--bg);
+}
+.rg .va .v3 .btn.pri {
+  border-color: var(--bg);
+  box-shadow: 4px 4px 0 var(--bg);
+}
+.rg .va .btn.big {
+  padding: 12px 18px;
+  font-size: 16px;
+}
+.rg .va .btn.sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* the yellow table of contents, stuck at the top of the frame's scroll */
+.rg .va .toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 40px;
+  background: var(--type-territoire);
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+}
+.rg .th.va .toc a {
+  padding: 7px 12px;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.rg .th.va .toc a.t3d {
+  margin-left: auto;
+  background: #111111;
+  color: #ffffff;
+}
+.rg .va .sec {
+  scroll-margin-top: 70px;
+}
+
+/* 1 · cameras */
+.rg .va .c-ville {
+  background: var(--type-registre);
+  fill: var(--type-registre);
+}
+.rg .va .c-comm {
+  background: var(--type-entreprise);
+  fill: var(--type-entreprise);
+}
+.rg .va .c-autres {
+  background: #cfcac0;
+  fill: #cfcac0;
+}
+.rg .va .c-osm {
+  background: var(--type-document);
+}
+.rg .va .c-transp {
+  background: var(--type-territoire);
+  fill: var(--type-territoire);
+}
+.rg .va .c-sub {
+  background: repeating-linear-gradient(45deg, #111111 0 2px, #ffffff 2px 5px);
+}
+.rg .th.va a.sbar.osm {
+  text-decoration: none;
+}
+.rg .va .card.sys {
+  margin-top: 16px;
+}
+.rg .va .top li span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+
+/* 2 · money: the chart */
+.rg .va .chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rg .va .chart .grid {
+  stroke: var(--rule);
+  stroke-dasharray: 2 3;
+}
+.rg .va .chart .base {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va svg .ax {
+  font:
+    400 12px "Special Elite",
+    monospace;
+  fill: var(--muted);
+  pointer-events: none;
+}
+.rg .va svg .val {
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.rg .va .chart rect:not(.hit) {
+  stroke: #111111;
+  stroke-width: 1.5;
+}
+.rg .va .chart .hit {
+  fill: transparent;
+}
+.rg .va .chart .col {
+  cursor: pointer;
+}
+.rg .va .chart:has(.col:hover) .col:not(:hover) {
+  opacity: 0.35;
+}
+
+/* 3 · companies */
+.rg .va .sup {
+  display: grid;
+  grid-template-columns: 200px 1fr 170px;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va .sup-n {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rg .va .sup-bar {
+  height: 10px;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+}
+.rg .va .sup-bar span {
+  display: block;
+  height: 100%;
+  background: var(--type-entreprise);
+}
+.rg .va .sup-m {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+.rg .va .sup-m span,
+.rg .va .sup-o {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .sup-o {
+  grid-column: 1 / -1;
+}
+.rg .va .g2 {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rg .va svg .l {
+  stroke: #8f897e;
+  stroke-width: 1.6;
+}
+.rg .va svg .l.more {
+  stroke-dasharray: 2 3;
+}
+.rg .va svg .a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va svg .e2 {
+  fill: var(--type-entreprise);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va svg .mo {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.rg .va svg .mo.a {
+  fill: #ffd1e6;
+}
+.rg .va svg .mt {
+  font:
+    800 12.5px Archivo,
+    sans-serif;
+  fill: #111111;
+  pointer-events: none;
+}
+.rg .va svg .c0.a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 3;
+}
+.rg .va svg .tc {
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  font-stretch: 78%;
+  text-transform: uppercase;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.rg .va svg .t0 {
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-stretch: 85%;
+  fill: var(--fg);
+  paint-order: stroke;
+  stroke: var(--bg-2);
+  stroke-width: 4px;
+  pointer-events: none;
+}
+
+/* 4 · dossiers */
+.rg .va .dos {
+  margin-top: 14px;
+}
+.rg .va .dh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.rg .va .dh h3 {
+  margin: 0;
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 70%;
+  text-transform: uppercase;
+}
+.rg .th.va .dh h3 a {
+  text-decoration: none;
+}
+.rg .va .amt {
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-stretch: 70%;
+}
+.rg .va .tl {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 14px;
+}
+.rg .va .st {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+}
+.rg .va .sk {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border: 2px solid var(--line);
+  background: var(--type-document);
+  color: var(--on-accent);
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  font-stretch: 85%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.rg .va .st.contrat .sk {
+  background: var(--type-registre);
+}
+.rg .va .st.arrete .sk {
+  background: var(--type-territoire);
+}
+.rg .va .sd,
+.rg .va .ss {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+
+/* 5 · drones: the calendar, the motives */
+.rg .va .dr {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.rg .va .cal {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.rg .va .cal .c0 {
+  fill: var(--bg-2);
+  stroke: var(--rule);
+}
+.rg .va .cal .c1 {
+  fill: #7aa7c7;
+}
+.rg .va .cal .c2 {
+  fill: var(--fg);
+}
+.rg .va .cal rect {
+  cursor: pointer;
+}
+.rg .va .cal .today {
+  stroke: var(--type-registre);
+  stroke-width: 2.5;
+}
+.rg .va .sw.c0 {
+  background: var(--bg-2);
+}
+.rg .va .sw.c1 {
+  background: #7aa7c7;
+}
+.rg .va .sw.c2 {
+  background: var(--fg);
+}
+.rg .va .sw.today {
+  border: 2.5px solid var(--type-registre);
+}
+.rg .va .today-l {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va .today-l li {
+  padding: 4px 0;
+}
+.rg .va .hb {
+  display: grid;
+  grid-template-columns: 110px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+.rg .va .hb span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va .hb i {
+  display: block;
+  height: 12px;
+  background: var(--type-document);
+  border: 1.5px solid var(--line);
+}
+.rg .va .hb.q i {
+  background: repeating-linear-gradient(45deg, #111111 0 1.5px, #ffffff 1.5px 5px);
+}
+.rg .va .hb b {
+  text-align: right;
+}
+
+/* 6 · neighbours */
+.rg .va .rank {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rg .va .rank li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  padding: 7px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va .rank li.me {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  font-weight: 800;
+}
+
+/* documents */
+.rg .va .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.rg .va .filters .sp {
+  flex: 1;
+}
+.rg .va .chip.f[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .va .cov .non {
+  background: var(--rule);
+}
+
+@media (max-width: 959px) {
+  .rg .va .v3 {
+    margin: 16px 16px 0;
+    padding: 12px;
+  }
+  .rg .va .v3-t h2 {
+    font-size: 28px;
+  }
+  .rg .va .v3-l {
+    grid-template-columns: 1fr;
+  }
+  .rg .va .v3-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rg .va .toc {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 16px;
+    white-space: nowrap;
+    margin-top: 12px;
+  }
+  .rg .th.va .toc a {
+    flex: none;
+    padding: 6px 9px;
+    font-size: 13px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .rg .va .ans {
+    font-size: 16px;
+  }
+  .rg .va .sup {
+    grid-template-columns: 1fr auto;
+  }
+  .rg .va .sup-bar {
+    grid-column: 1 / -1;
+  }
+  .rg .va .tl {
+    grid-auto-flow: row;
+  }
+  .rg .va .dr {
+    grid-template-columns: 1fr;
+  }
+  .rg .va .hb {
+    grid-template-columns: 96px 1fr 28px;
+  }
+  .rg .va .filters .sp {
+    display: none;
+  }
+}

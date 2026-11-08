@@ -389,7 +389,8 @@ try {
     const back = page.locator("#registre .mback");
     const first = (await back.textContent())?.trim();
     // a section of the commune (its tabs), then another fiche (its département, in the head)
-    const tab = page.locator("#registre .band nav a[href*='#']").nth(2);
+    // theme A's table of contents (board Lyon-A-theme-actuel), its third section
+    const tab = page.locator("#registre .toc a[href^='#']").nth(2);
     const section = new URL(await tab.evaluate((a) => a.href)).hash;
     await tab.click();
     await page.waitForTimeout(800);
@@ -596,14 +597,14 @@ try {
       sous.length === 4 && sous[1] === "Communes" && sous[2] === nomCommune,
       JSON.stringify({ nomCommune, sous }),
     );
-    // Drones et algorithmes is a door, not a section; the summary and a département open the
-    // decrees on their drones
+    // theme A (lot 2): « Drones » a section of the fiche, « Vue 3D ↗ » its door to the live map;
+    // the summary and a département open the decrees on their drones
     await go("/registre/commune/69290");
     const band = await page.evaluate(() => ({
-      secs: [...document.querySelectorAll("#registre .band nav a")].map((a) =>
+      secs: [...document.querySelectorAll("#registre .toc a[href^='#']")].map((a) =>
         a.textContent.trim(),
       ),
-      door: document.querySelector('#registre .band a.bporte[href$="/carte"]')?.textContent.trim(),
+      door: document.querySelector('#registre .toc a.t3d[href$="/carte"]')?.textContent.trim(),
     }));
     await go("/registre/");
     const sommaire = await page.evaluate(
@@ -614,9 +615,9 @@ try {
       () => document.querySelector("#registre .band a.bporte")?.getAttribute("href") ?? null,
     );
     check(
-      "tree: « Drones et algorithmes » a door of the band, not a section; the summary's and the Rhône's open the drone decrees",
-      !band.secs.some((x) => /drones/i.test(x)) &&
-        /drones/i.test(band.door ?? "") &&
+      "tree: the commune's table of contents and its « Vue 3D ↗ » door to the live map; the summary's and the Rhône's open the drone decrees",
+      band.secs.length > 2 &&
+        /3D/.test(band.door ?? "") &&
         sommaire &&
         dep === "/registre/arretes?dep=69&disp=dr",
       JSON.stringify({ band, sommaire, dep }),
@@ -694,9 +695,10 @@ try {
   }
 
   // --- the band follows the right section (v2.2 point 4): clicked, marked at once and after its
-  // scroll; scrolled, the one whose title has passed under the stuck band ---
+  // scroll; scrolled, the one whose title has passed under the stuck band (a v2 fiche: the
+  // département's until lot 3; the commune has theme A's table of contents since lot 2) ---
   {
-    const { context, page } = await visit(`/registre/commune/${INSEE}`);
+    const { context, page } = await visit("/registre/departement/69");
     await drawn(page);
     await page.waitForTimeout(800);
     const secs = await page.evaluate(() =>
@@ -964,8 +966,10 @@ try {
           document.querySelector("#registre #vue").append(a);
         }, insee);
         await page.click("#smoke-aller");
-        await page.waitForSelector('#registre a.bporte[href$="/carte"]', { timeout: 20000 });
-        await page.click('#registre a.bporte[href$="/carte"]');
+        await page.waitForSelector('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]', {
+          timeout: 20000,
+        });
+        await page.click('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]');
         await framed(insee, "site");
       }
       await context.close();
@@ -1000,7 +1004,7 @@ try {
     await page.waitForTimeout(1500);
     const moves = [];
     for (const go of [
-      () => page.locator('#registre a.bporte[href$="/carte"]').first().tap(),
+      () => page.locator('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]').first().tap(),
       () => page.goBack(),
     ]) {
       await page.evaluate(() => {
