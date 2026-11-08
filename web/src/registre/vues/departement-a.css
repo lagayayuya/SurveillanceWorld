@@ -1,0 +1,497 @@
+/* A département's fiche in theme A (board Departement-Rhone-A, its phone and dark variants): the
+   board's own rules (.ico-d, .meta, .toc, .rnk, .dmap, .cl2v, .hb, .cmp4, .rank, the chart), on
+   theme A's components (socle-a.css) and the site's tokens. Every selector starts with
+   `.rg .va.dep`: the commune fiche's rules (commune-a.css, under `.rg .va`, loaded once its page
+   was opened) share some names, these win over them on this page and reach no other. */
+.rg .va.dep .ico-d {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  border: 2px solid #111111;
+  background: var(--type-document);
+  clip-path: polygon(0 30%, 40% 0, 100% 20%, 85% 100%, 15% 90%);
+}
+.rg .va.dep .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 10px 0 0;
+  font-family: "Special Elite", monospace;
+  font-size: 15px;
+}
+.rg .va.dep .ans {
+  margin: 0 0 14px;
+  max-width: 880px;
+  font-size: 19px;
+}
+.rg .va.dep .rnk {
+  font:
+    900 18px Archivo,
+    sans-serif;
+  color: var(--fg);
+}
+
+/* the yellow table of contents, stuck at the top of the frame's scroll */
+.rg .va.dep .toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 40px;
+  background: var(--type-territoire);
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+}
+.rg .th.va.dep .toc a {
+  padding: 7px 12px;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+/* a section as the board lays it: v2's `.rg .sec` (cadre.css: 46 px above, a 14 px flex gap)
+   does not hold here */
+.rg .va.dep .sec {
+  display: block;
+  padding-top: 0;
+  scroll-margin-top: 70px;
+}
+/* the code's chip at the line's height (the site's `.chip` is a 44 px target; this one is a word) */
+.rg .va.dep .meta .chip.t {
+  min-height: 0;
+}
+
+/* the board's colours of « Qui paie » */
+.rg .va.dep .c-ville {
+  background: var(--type-registre);
+  fill: var(--type-registre);
+}
+.rg .va.dep .c-comm {
+  background: var(--type-entreprise);
+  fill: var(--type-entreprise);
+}
+.rg .va.dep .c-autres {
+  background: #cfcac0;
+  fill: #cfcac0;
+}
+.rg .va.dep .c-osm {
+  background: var(--type-document);
+}
+.rg .va.dep .c-transp {
+  background: var(--type-territoire);
+  fill: var(--type-territoire);
+}
+.rg .va.dep .c-autres2 {
+  background: #e8e4da;
+}
+.rg .va.dep .sbar .seg[tabindex] {
+  cursor: default;
+}
+
+/* the ranked lists: a name, a line of figures, a value */
+.rg .va.dep .top li {
+  align-items: baseline;
+}
+.rg .va.dep .top li > span:not(.tn) {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  text-align: right;
+}
+.rg .va.dep .top li b {
+  white-space: nowrap;
+}
+.rg .va.dep .note.sous {
+  margin: 0 0 6px;
+}
+
+/* 1 · the communes on the département's outline */
+.rg .va.dep .mapwrap > .zw {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.rg .va.dep .dmap {
+  display: block;
+  width: 100%;
+  max-width: 520px;
+  height: auto;
+}
+.rg .va.dep .dmap .depf {
+  fill: var(--bg);
+  stroke: var(--line);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.rg .va.dep .dmap .pt circle {
+  stroke: var(--line);
+  stroke-width: 1.2;
+}
+.rg .va.dep .dmap .pt.nd circle {
+  fill: var(--bg-2);
+  stroke-dasharray: 2 2;
+}
+.rg .va.dep .dmap .pt.metro circle {
+  stroke-width: 2.4;
+  stroke-dasharray: 3 1.6;
+}
+.rg .va.dep .dmap .pt {
+  cursor: pointer;
+}
+.rg .va.dep .dmap .pt.hl circle,
+.rg .va.dep .dmap .pt:hover circle {
+  stroke: var(--type-registre);
+  stroke-width: 3;
+  stroke-dasharray: none;
+}
+.rg .va.dep .dmap .pt:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .va.dep .dmap .ml {
+  font-family: Archivo, sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  font-stretch: 80%;
+  fill: var(--fg);
+  paint-order: stroke;
+  stroke: var(--bg-2);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.rg .va.dep .mleg {
+  flex: none;
+  width: 180px;
+}
+/* the hint of a pointer, of a finger (the boards' « Survol : … » and « Toucher : … ») */
+.rg .va.dep .mleg .h-tel {
+  display: none;
+}
+.rg .va.dep .sw.metro {
+  background: var(--bg-2);
+  border: 2px dashed var(--line);
+}
+
+/* 2 · the contracts by year */
+.rg .va.dep .chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+}
+.rg .va.dep .chart .grid {
+  stroke: var(--rule);
+  stroke-dasharray: 2 3;
+}
+.rg .va.dep .chart .base {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.dep svg .ax {
+  font:
+    400 12px "Special Elite",
+    monospace;
+  fill: var(--muted);
+  pointer-events: none;
+}
+.rg .va.dep svg .val {
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.rg .va.dep .chart rect:not(.hit) {
+  stroke: #111111;
+  stroke-width: 1.5;
+}
+.rg .va.dep .chart .hit {
+  fill: transparent;
+}
+.rg .va.dep .chart .col[tabindex="0"] {
+  cursor: pointer;
+}
+
+/* 3 · the companies, in two columns */
+.rg .va.dep .cl2v {
+  columns: 2;
+  column-gap: 36px;
+}
+.rg .va.dep .sup {
+  display: grid;
+  grid-template-columns: 200px 1fr 110px;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed var(--rule);
+  break-inside: avoid;
+}
+.rg .va.dep .sup-n {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.rg .va.dep .sup-bar {
+  height: 10px;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+}
+.rg .va.dep .sup-bar span {
+  display: block;
+  height: 100%;
+  background: var(--type-entreprise);
+}
+.rg .va.dep .sup-m {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+.rg .va.dep .sup-m span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+
+/* 4 · the decrees by year: cameras blue, drones lavender */
+.rg .va.dep .hb {
+  display: grid;
+  grid-template-columns: 110px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+.rg .va.dep .hb span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.dep .hb i {
+  display: block;
+  height: 12px;
+  background: var(--type-document);
+  border: 1.5px solid var(--line);
+}
+.rg .va.dep .hb.dr i {
+  background: var(--type-entreprise);
+}
+.rg .va.dep .hb b {
+  text-align: right;
+}
+
+/* 5 · compared: four cards of ranks */
+.rg .va.dep .cmp4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-top: 16px;
+}
+.rg .va.dep .rank {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rg .va.dep .rank li {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: 0 6px;
+  padding: 7px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va.dep .rank li i {
+  font-style: normal;
+}
+.rg .va.dep .rank li b {
+  text-align: right;
+  white-space: nowrap;
+}
+.rg .va.dep .rank li.me {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  font-weight: 800;
+}
+.rg .va.dep .rank li.gap {
+  color: var(--muted);
+}
+
+/* « Toutes les communes » */
+.rg .va.dep .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.rg .va.dep .filters .sp {
+  flex: 1;
+}
+.rg .va.dep .chip.f[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .va.dep .filters .dancre .dmenu {
+  left: auto;
+  right: 0;
+  width: 320px;
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+.rg .va.dep .docs .tri {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.rg .va.dep .docs th[aria-sort="descending"] .tri::after {
+  content: " ▾";
+}
+.rg .va.dep .docs th[aria-sort="ascending"] .tri::after {
+  content: " ▴";
+}
+.rg .va.dep .docs tbody tr:hover {
+  background: var(--warn-bg);
+  cursor: pointer;
+}
+.rg .va.dep .docs td.n,
+.rg .va.dep .docs th.n {
+  text-align: right;
+  white-space: nowrap;
+}
+.rg .va.dep .cov .non {
+  background: var(--rule);
+}
+
+@media (max-width: 959px) {
+  .rg .va.dep .meta {
+    font-size: 13px;
+    gap: 6px 10px;
+  }
+  .rg .va.dep .toc {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 16px;
+    white-space: nowrap;
+    margin-top: 12px;
+  }
+  .rg .th.va.dep .toc a {
+    flex: none;
+    padding: 6px 9px;
+    font-size: 13px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .rg .va.dep .ans {
+    font-size: 16px;
+  }
+  .rg .va.dep .mleg {
+    width: auto;
+  }
+  .rg .va.dep .mleg .hint {
+    max-width: none;
+  }
+  .rg .va.dep .mleg .h-large {
+    display: none;
+  }
+  .rg .va.dep .mleg .h-tel {
+    display: block;
+  }
+  /* the map's measures on one row, never a hole */
+  .rg .va.dep .ch-h .seg-ctl {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .rg .va.dep .ch-h .seg-ctl button {
+    flex: 1 1 auto;
+  }
+  .rg .va.dep .sbar .seg.pt b {
+    display: none;
+  }
+  .rg .va.dep .cl2v {
+    columns: 1;
+  }
+  .rg .va.dep .sup {
+    grid-template-columns: 1fr auto;
+  }
+  .rg .va.dep .sup-bar {
+    grid-column: 1 / -1;
+  }
+  .rg .va.dep .hb {
+    grid-template-columns: 96px 1fr 44px;
+  }
+  .rg .va.dep .cmp4 {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rg .va.dep .cmp4 .card {
+    padding: 12px 9px;
+  }
+  .rg .va.dep .cmp4 .rank li {
+    gap: 0 4px;
+  }
+  .rg .va.dep .cmp4 .rank li b {
+    font-size: 13.5px;
+  }
+  .rg .va.dep .cmp4 .k {
+    font-size: 15px;
+  }
+  .rg .va.dep .rank li {
+    grid-template-columns: 22px 1fr auto;
+    align-items: center;
+    padding: 0;
+    font-size: 14px;
+  }
+  /* a ranked département's link is the row's height */
+  .rg .th.va.dep .rank li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .rg .va.dep .rank li.gap,
+  .rg .va.dep .rank li.me {
+    min-height: 36px;
+  }
+  .rg .va.dep .filters .sp {
+    display: none;
+  }
+  /* a ranked commune's link in « Les plus équipées » and « Où » is the row's height */
+  .rg .th.va.dep .top li .tn a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .rg .va.dep .top li {
+    padding: 0;
+    align-items: center;
+  }
+  .rg .va.dep .top li > span:not(.tn) {
+    font-size: 12px;
+  }
+  .rg .va.dep .docs td.n {
+    text-align: left;
+  }
+  .rg .th.va.dep table.docs td:first-child a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}
+/* « Toutes les communes » and « D'où viennent ces chiffres »: the board's blue squares */
+.rg .va.dep .num.doc {
+  background: var(--type-document);
+  color: var(--on-accent);
+}
