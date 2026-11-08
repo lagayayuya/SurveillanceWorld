@@ -562,8 +562,13 @@ class Graphe extends Vue<Props, State> {
         : null,
       lire: [
         gras(t("graphe_a.lire_1", { nom: sansEtoile(centre), premiers: pm.txt })),
-        gras(t(`graphe_a.lire_2_${e ? (pm.k === "communes" ? "e" : "ec") : "a"}`)),
-        gras(t(`graphe_a.lire_3_${e ? (pm.k === "communes" ? "e" : "ec") : "a"}`)),
+        // the edge and the shared ones, when the drawing has some
+        ...(d.noeuds.some((n) => n.sorte === "s" || n.sorte === "g2")
+          ? [gras(t(`graphe_a.lire_2_${e ? (pm.k === "communes" ? "e" : "ec") : "a"}`))]
+          : []),
+        ...(d.noeuds.some((n) => n.sorte === "b")
+          ? [gras(t(`graphe_a.lire_3_${e ? (pm.k === "communes" ? "e" : "ec") : "a"}`))]
+          : []),
         gras(t(tel ? "graphe_a.lire_4_tel" : "graphe_a.lire_4")),
         ...(groupes ? [gras(t("graphe_a.lire_plus"))] : []),
       ],

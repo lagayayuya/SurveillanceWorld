@@ -353,6 +353,11 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
   }
   const ang1 = new Map<string, number>();
   for (const [c, xs] of span) ang1.set(c, (Math.min(...xs) + Math.max(...xs)) / 2);
+  // a lone first-circle node stands at the top, its own ones around it
+  if (colonnes.length === 1 && !caches.length) {
+    const d = -Math.PI / 2 - (ang1.get(colonnes[0]) ?? 0);
+    for (const m of [ang1, ang2]) for (const [k, a] of m) m.set(k, a + d);
+  }
   const p1 = (c: string) => {
     const a = ang1.get(c) ?? 0;
     return { x: CX + R1X * Math.cos(a), y: CY + R1Y * Math.sin(a), a };

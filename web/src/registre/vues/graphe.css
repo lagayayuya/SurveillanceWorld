@@ -295,14 +295,21 @@
   padding: 6px 8px;
 }
 .rg .va.v-graphe .mx tbody th {
+  min-width: 160px;
   text-align: left;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
   font-weight: 400;
+  font-stretch: 100%;
+  text-transform: none;
   border-bottom: 1.5px dashed var(--rule);
 }
 .rg .va.v-graphe .mx th.mc,
 .rg .va.v-graphe .mx td.mc {
-  width: 88px;
-  min-width: 72px;
+  width: 76px;
+  min-width: 60px;
+  padding-left: 4px;
+  padding-right: 4px;
   text-align: center;
   vertical-align: middle;
   font-size: 12.5px;
