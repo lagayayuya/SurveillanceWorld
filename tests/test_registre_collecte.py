@@ -284,6 +284,24 @@ def test_an_act_keyed_by_an_older_reader_with_a_slash_is_served_once():
     assert collecte.derniers([a, b, c]) == [b, c]
 
 
+def test_an_act_a_newer_reader_no_longer_gives_is_not_served():
+    """The store only adds: reader 6 read pref75's recueil again and gave no drone show; the
+    show reader 4 had cut from it stayed served (Paris at 205 flight days, not 203)."""
+    from lacarte_registre import collecte
+
+    show = {"id": "75-2025-07-23-00003", "recueil": "r1", "lecteur": 4}
+    kept = {"id": "75-2025-07-23-00004", "recueil": "r1", "lecteur": 6}
+    slow = {"id": "75-2025-07-23-00005", "recueil": "r2", "lecteur": 4}
+    alone = {"id": "75-2025-07-23-00006", "recueil": "r3", "lecteur": 1}
+    recueils = [
+        {"id": "r1", "statut": "lu", "lecteur": 4},
+        {"id": "r1", "statut": "lu", "lecteur": 6},  # the last record wins
+        {"id": "r2", "statut": "trop_long", "lecteur": 6},  # its former acts stay
+    ]
+    acts = [show, kept, slow, alone]
+    assert collecte.courants(acts, recueils) == [kept, slow, alone]
+
+
 def test_an_acts_title_and_a_notices_buyer_carry_no_agent_and_no_contact():
     """pref28's letterhead, « Affaire suivie par : <prénom NOM> », glued to the motto, was
     served in the titles of 2024-2026; a notice's buyer carried a switchboard. The names

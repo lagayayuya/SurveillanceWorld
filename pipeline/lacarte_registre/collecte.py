@@ -329,6 +329,22 @@ def derniers(acts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(best.values())
 
 
+def courants(acts: list[dict[str, Any]], recueils: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """The acts of each recueil's last reading: an act an older reader cut from a recueil the
+    current one read again, and gave no more, is left out (the store only adds: 2026-11-08,
+    314 such acts were served, 312 of them the flight bans, jamming and drone shows reader 6
+    stopped counting). A recueil too long for its reading keeps its former acts (arretes)."""
+    last = {r["id"]: r for r in recueils}
+
+    def kept(a: dict[str, Any]) -> bool:
+        r = last.get(a.get("recueil"))
+        if not r or r.get("statut") != "lu":
+            return True
+        return (a.get("lecteur") or 0) >= (r.get("lecteur") or 0)
+
+    return [a for a in acts if kept(a)]
+
+
 def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote, dict[str, int]]:
     reg = p.reg
     cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
@@ -341,7 +357,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         for x in _load(root / DIR / "subventions_etat.jsonl.gz")
     ]
     acts = _load(root / DIR / "arretes.jsonl.gz")
-    acts = derniers(acts)
+    acts = courants(derniers(acts), _load(root / DIR / "recueils.jsonl.gz"))
     finals = {r["id"]: r for r in _load(root / DIR / "champs.jsonl.gz")}
     admins = _admins(rules)
     measured = mesures(root, rules)
