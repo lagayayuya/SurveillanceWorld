@@ -47,6 +47,7 @@ def test_the_second_contract_follows_the_first(built):
         "date_a_verifier": True,
         "entreprises": [SERFIM],
         "montant": 200_000,
+        "lots": [],
     }
     assert f["entreprises"][SERFIM]["nom"] == "SERFIM T.I.C."
     # its next call for tenders: Mions' notice of July 2026, still without a contract
@@ -175,6 +176,7 @@ def test_synthetic_end_next_call_window_copies_and_lots():
     # the last modification's duration: 2022-01-10 + 48 months
     assert p["fin_prevue"] == {"date": "2026-01-10", "signature": "2022-01-10", "mois": 48}
     assert p["precedent"]["affaire"] == "c1"
+    assert p["precedent"]["lots"] == []  # c1bis is its copy, not a lot
     # the window opens 24 months before the end (2024-01-10): the 2023 call is not the next one
     assert p["suivant"] == {"affaire": "ao2", "date": "2025-06-01"}
     assert p["entreprises"] == {"111111111": {"contrats": 3, "collectivites": 1}}
@@ -198,3 +200,22 @@ def test_synthetic_probable_contract_is_in_the_record():
     assert "c1" in f["affaires"]
     assert e1["id"] in {e["id"] for e in f["evenements"]}
     assert f["entreprises"]["111111111"]["nom"] == "ENTREPRISE A"
+
+
+def test_synthetic_the_previous_tenders_two_lots_are_both_served():
+    a1, e1 = _contract("l1", "2019-05-01", dispositif="videoprotection")
+    a2, e2 = _contract("l2", "2019-05-01", dispositif="videoprotection")
+    e2.update(entreprises=["222222222"], montant=6_000_000)
+    a3, e3 = _contract("c3", "2024-01-10", dispositif="videoprotection")
+    for a, e in ((a1, e1), (a2, e2), (a3, e3)):
+        a["events"] = [e["id"]]
+    ctx = _context(
+        {x["id"]: x for x in (a1, a2, a3)}, [e1, e2, e3],
+        lots={"l1": "g", "l2": "g"},
+        groupes={"g": {"nature": "lots", "membres": [{"affaire": "l1"}, {"affaire": "l2"}]}},
+    )  # fmt: skip
+    f = fermetures.document_file(ctx, "c3")
+    prev = f["parcours"]["precedent"]
+    assert prev["affaire"] == "l2"
+    assert [(x["affaire"], x["montant"]) for x in prev["lots"]] == [("l1", 10), ("l2", 6_000_000)]
+    assert {"111111111", "222222222"} <= set(f["entreprises"])

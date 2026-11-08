@@ -6,7 +6,8 @@ page only reads them:
 - `fin_prevue`: a contract's planned end, computed (signature + the duration published, the
   last modification's when it gives one): a date the register calculates, never published;
 - `precedent`: the same buyer's previous contract for the same device (signed before this one;
-  a copy, or a lot of the same tender, never), the latest of them;
+  a copy, or a lot of the same tender, never), the latest of them, and `lots`: every lot of
+  that previous tender (itself one) when it had several;
 - `suivant`: the same buyer's next call for tenders, published after the signature and, when
   the end is known, not before the two years that precede it (a notice whose contract is for
   another device does not count), the first of them;
@@ -77,8 +78,11 @@ class Parcours:
         lots: dict[str, str],
         ent_stats: dict[str, dict[str, Any]],
         maj: str,
+        groupes: dict[str, dict[str, Any]] | None = None,
     ):
         self.reg = reg
+        # the groups that are lots of one tender (not one contract published twice)
+        self.tenders = {g for g, x in (groupes or {}).items() if x.get("nature") != "doublon"}
         self.ent_stats = ent_stats
         self.maj = maj
         self.affaires: dict[str, _Affaire] = {}
@@ -144,12 +148,30 @@ class Parcours:
             return None
         _, aid, sig = max(found, key=lambda f: f[:2])
         best = self.affaires[aid]
+        # the previous tender's lots (itself one of them), each with its holders and amount
+        lots = sorted(
+            (x for x in self.by_buyer.get(a.buyer or "", [])
+             if x.group == best.group and x.signature and not x.signature["copie"]),
+            key=lambda x: x.id,
+        ) if best.group in self.tenders else []  # fmt: skip
         return {
             "affaire": best.id,
             "date": date_lue(sig),
             "date_a_verifier": bool(sig.get("date_lue")) and sig.get("date_lue") != sig.get("date"),
             "entreprises": sig.get("entreprises") or [],
             "montant": sig.get("montant"),
+            "lots": [
+                {
+                    "affaire": x.id,
+                    "date": date_lue(x.signature),
+                    "entreprises": x.signature.get("entreprises") or [],
+                    "montant": x.signature.get("montant"),
+                }
+                for x in lots
+                if x.signature
+            ]
+            if len(lots) > 1
+            else [],  # fmt: skip
         }
 
     def suivant(self, a: _Affaire, fin: dict[str, Any] | None) -> dict[str, Any] | None:

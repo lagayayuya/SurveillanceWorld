@@ -516,7 +516,9 @@ _PARCOURS: WeakKeyDictionary[Context, Parcours] = WeakKeyDictionary()
 def _parcours(ctx: Context) -> Parcours:
     """The corpus indexed by buyer, once per build (every document file reads it)."""
     if ctx not in _PARCOURS:
-        _PARCOURS[ctx] = Parcours(ctx.reg, ctx.lots, ctx.ent_stats, ctx.couverture["maj"])
+        _PARCOURS[ctx] = Parcours(
+            ctx.reg, ctx.lots, ctx.ent_stats, ctx.couverture["maj"], ctx.groupes
+        )
     return _PARCOURS[ctx]
 
 
@@ -529,7 +531,9 @@ def document_file(ctx: Context, affaire: str) -> dict[str, Any]:
     linked = [*(a.get("avis_probables") or []), a.get("contrat_probable")]
     body = Closure(ctx).close([affaire, *(x for x in linked if x)])
     par = _parcours(ctx)(affaire)
-    for s in (par["precedent"] or {}).get("entreprises") or []:
+    prev = par["precedent"] or {}
+    for s in [*(prev.get("entreprises") or []),
+              *(x for lot in prev.get("lots") or [] for x in lot["entreprises"])]:  # fmt: skip
         body["entreprises"].setdefault(s, ctx.entreprise(s))
     return {"v": 1, "affaire": a, **body, "parcours": par}
 
