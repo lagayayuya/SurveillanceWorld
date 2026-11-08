@@ -539,7 +539,7 @@ const COLS = [
   "url",
 ] as const;
 
-function exportRows(d: Donnees, es: Evenement[], fmt: "csv" | "json", name: string): void {
+export function exportRows(d: Donnees, es: Evenement[], fmt: "csv" | "json", name: string): void {
   const flat = es.map((e): Record<(typeof COLS)[number], string | number> => {
     const isA = isArr(e);
     const b = !isA ? d.buyer(e) : null;

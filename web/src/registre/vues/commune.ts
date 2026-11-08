@@ -10,6 +10,7 @@
 // 07/11): absent. Every figure is the build's: the commune's file, and listes.json (asked once the
 // page is drawn) for the ranks and the neighbours.
 
+import { allerA } from "../bulle.ts";
 import {
   byDateDesc,
   commune as chargerCommune,
@@ -33,11 +34,12 @@ import { signalerHref } from "../signaler.ts";
 import { coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { tidy, titleCase } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
-import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
+import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
 import { avantVol, casseNormale, type Publication } from "./accueil-outils.ts";
 import {
   argentParAnnee,
   camerasAutorisees,
+  classeMotif,
   fournisseurs,
   grandsSystemes,
   joursDeVol,
@@ -45,6 +47,7 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
+import { exportRows } from "./documents.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
 
@@ -52,9 +55,27 @@ type Props = Extract<Route, { view: "commune" }> & { d: Donnees };
 type VueArgent = "tous" | "ville" | "hab";
 type Mesure = "cameras" | "eph" | "drones";
 type Onglet = "con" | "ao" | "aut" | "sub";
+/** « Tous les documents »'s menus (the board's Année ▾, Entreprise ▾, Montant ▾) and the filter a
+ * shape's click puts there (a part of the cameras' bar, Lyon-A-comportements): read on the chips,
+ * lifted in one click. */
+type Part = "mairie" | "commerces" | "autres";
+type Tranche = "" | "m1" | "m2" | "m3";
 type State = BaseState & {
   X: Listes | null;
   argent: VueArgent;
+  masque: Serie[];
+  annee: string;
+  entF: string;
+  tranche: Tranche;
+  part: Part | "";
+  tri: "date" | "montant";
+  motifF: string;
+  volF: "" | "avant" | "jour_meme" | "apres";
+  /** a year's column clicked with every buyer shown: the contracts of the whole territory */
+  territoire: boolean;
+  menu: string;
+  /** the calendar on the next 30 days' authorised flights (« À venir ») */
+  avenir: boolean;
   col: string | null;
   jour: string | null;
   mesure: Mesure;
@@ -82,7 +103,7 @@ const clsSerie = (s: Serie): string =>
   s === "ville" ? "c-ville" : s === "transports" ? "c-transp" : "c-autres";
 
 /** The days an act of the commune's zones covers (its periods, in Paris days), as a drone act's. */
-function joursZones(d: Donnees): { t: string; jours: string[] }[] {
+function joursZones(d: Donnees): { id: string; t: string; jours: string[] }[] {
   const jour = (ms: number) =>
     new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(ms));
   return d.f.zones.autorisations
@@ -93,17 +114,61 @@ function joursZones(d: Donnees): { t: string; jours: string[] }[] {
         for (let ms = p.t0; ms <= p.t1 && js.size < 400; ms += 86400000) js.add(jour(ms));
         js.add(jour(p.t1));
       }
-      return { t: "arrete_drone", jours: [...js] };
+      return { id: String((a as { acte?: string }).acte ?? ""), t: "arrete_drone", jours: [...js] };
     });
 }
 
-/** Follows a register link from a handler (the frame's router takes it, hote.ts). */
-function aller(href: string): void {
-  const a = document.createElement("a");
-  a.href = href;
-  document.getElementById("registre")?.append(a);
-  a.click();
-  a.remove();
+/** Each drone act's days of flight: its own `jours`, else its zones' periods (the pilot's acts). */
+function joursParActe(d: Donnees): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  for (const z of joursZones(d)) if (z.id) m.set(z.id, [...(m.get(z.id) ?? []), ...z.jours]);
+  for (const e of d.all)
+    if (e.t === "arrete_drone" && ((e.jours as string[] | undefined) ?? []).length)
+      m.set(e.id, e.jours as string[]);
+  return m;
+}
+
+/** « Publiés quand ? »'s bar clicked: the commune's drone acts of that part (their recueil's day,
+ * `publie`, against their first day of flight), the latest published first. */
+function volListe(
+  all: Evenement[],
+  k: "avant" | "jour_meme" | "apres",
+  insee: string,
+  jpa: Map<string, string[]>,
+): { d: string; l: RichItem[]; e: string }[] {
+  const jour = 864e5;
+  return all
+    .filter((e) => e.t === "arrete_drone" && !(e as { fin?: string }).fin)
+    .map((e) => {
+      const pub = String((e as { publie?: string }).publie ?? "");
+      const j0 = [...(jpa.get(e.id) ?? [])].sort()[0] ?? "";
+      const ecart = pub && j0 ? Math.round((Date.parse(pub) - Date.parse(j0)) / jour) : null;
+      return { e, pub, ecart };
+    })
+    .filter(
+      (x) =>
+        x.ecart != null &&
+        (k === "avant" ? x.ecart < 0 : k === "jour_meme" ? x.ecart === 0 : x.ecart > 0),
+    )
+    .sort((a, b) => (b.ecart ?? 0) - (a.ecart ?? 0))
+    .slice(0, 12)
+    .map((x) => ({
+      d: jourCourt(x.pub),
+      l: [
+        {
+          a: {
+            href: `${communeHref(insee, "autorisations")}/${encodeURIComponent(x.e.id)}`,
+            text: casseNormale(String(x.e.titre ?? titreDoc(x.e))).slice(0, 90),
+          },
+        },
+      ] as RichItem[],
+      e:
+        x.ecart === 0
+          ? t("commune_a.b.ecart0")
+          : x.ecart != null && x.ecart > 0
+            ? t("commune_a.b.ecart_apres", { n: x.ecart })
+            : t("commune_a.b.ecart_avant", { n: -(x.ecart ?? 0) }),
+    }));
 }
 
 export class Commune extends Vue<Props, State> {
@@ -118,7 +183,93 @@ export class Commune extends Vue<Props, State> {
       mesure: "cameras",
       onglet: "con",
       cite: false,
+      masque: [],
+      annee: "",
+      entF: "",
+      tranche: "",
+      part: "",
+      tri: "date",
+      motifF: "",
+      volF: "",
+      territoire: false,
+      menu: "",
+      avenir: false,
     };
+  }
+
+  /** A menu of « Tous les documents » (the board's Année ▾…): a chip, its values as a listbox;
+   * arrows move, Enter or a click chooses, Escape closes, the focus back on the chip. */
+  private menuDocs(
+    k: string,
+    l: string,
+    cur: string,
+    opts: { v: string; l: string }[],
+    choisir: (v: string) => Partial<State>,
+  ) {
+    const open = this.state.menu === k;
+    const focus = (sel: string) =>
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(sel)?.focus());
+    const fermer = () => {
+      this.setState({ menu: "" });
+      focus(`.v-commune-a .dancre.m-${k} > button`);
+    };
+    return {
+      cls: `dancre m-${k}`,
+      chip: cur ? "chip f on" : "chip f",
+      l: cur ? (opts.find((o) => o.v === cur)?.l ?? cur) : l,
+      lab: l,
+      ouvert: open ? "true" : "false",
+      menu: open,
+      basculer: (() => {
+        this.setState({ menu: open ? "" : k });
+        if (!open) focus(`.v-commune-a .dancre.m-${k} [role=option]`);
+      }) as Handler,
+      opts: [{ v: "", l: t("commune_a.m_tous") }, ...opts].map((o) => ({
+        l: o.l,
+        on: o.v === cur ? "true" : "false",
+        choisir: (() => {
+          this.setState({ ...choisir(o.v), menu: "" });
+          focus(`.v-commune-a .dancre.m-${k} > button`);
+        }) as Handler,
+      })),
+      clavier: ((ev) => {
+        const os = [
+          ...document.querySelectorAll<HTMLElement>(`.v-commune-a .dancre.m-${k} [role=option]`),
+        ];
+        const i = os.indexOf(document.activeElement as HTMLElement);
+        if (ev.key === "Escape") fermer();
+        else if (ev.key === "ArrowDown") os[Math.min(os.length - 1, i + 1)]?.focus();
+        else if (ev.key === "ArrowUp") (i > 0 ? os[i - 1] : os[0])?.focus();
+        else if ((ev.key === " " || ev.key === "Enter") && i >= 0) os[i].click();
+        else return;
+        ev.nativeEvent.preventDefault();
+        ev.stopPropagation();
+      }) as Handler,
+    };
+  }
+  /** A pointer down outside the open menu closes it. */
+  private dehors = (ev: Event): void => {
+    if (this.state.menu && !(ev.target as Element).closest?.(".v-commune-a .dancre"))
+      this.setState({ menu: "" });
+  };
+
+  /** A shape's click: « Tous les documents » filtered, then reached. */
+  private versDocs(patch: Partial<State>): void {
+    this.setState({
+      annee: "",
+      entF: "",
+      tranche: "",
+      part: "",
+      territoire: false,
+      menu: "",
+      ...patch,
+      open: { ...this.state.open, docs: true },
+    });
+    requestAnimationFrame(() => {
+      const el = document.getElementById("documents");
+      const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el?.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
+    });
   }
   titre(): string {
     return this.props.d.f.commune.nom;
@@ -131,6 +282,7 @@ export class Commune extends Vue<Props, State> {
   }
 
   componentDidMount(): void {
+    document.addEventListener("pointerdown", this.dehors, true);
     // the ranks and the neighbours: listes.json once the page is drawn
     load<Listes>("listes.json").then(
       (X) => {
@@ -141,6 +293,7 @@ export class Commune extends Vue<Props, State> {
   }
   componentWillUnmount(): void {
     this.fini = true;
+    document.removeEventListener("pointerdown", this.dehors, true);
   }
 
   private basculer = (k: string): void =>
@@ -237,9 +390,25 @@ export class Commune extends Vue<Props, State> {
             pairs.map(([, v]) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1)),
           )
         : null;
-    const dots = (r: { r: number; n: number } | null) =>
+    // the rank's dots: each city of the size class, its name and value in its bubble, its fiche on
+    // a click (Lyon-A-comportements, « Points de rang »)
+    const dots = (
+      r: { r: number; n: number } | null,
+      val: (k: string, v: (typeof pairs)[number][1]) => number,
+      fmt: (v: number) => string,
+    ) =>
       r && r.n <= 15
-        ? Array.from({ length: r.n }, (_, i) => (i + 1 === r.r ? "dot me" : "dot"))
+        ? pairs
+            .map(([k, v]) => ({ k, v: val(k, v) }))
+            .filter((x) => x.v >= 0)
+            .sort((a, b) => b.v - a.v)
+            .map((x, i) => ({
+              cls: x.k === insee ? "dot me" : "dot",
+              bh: X?.dico.communes[x.k]?.nom ?? x.k,
+              bl: `${fmt(x.v)} · ${ordinal(i + 1)}`,
+              go: x.k === insee ? "" : communeHref(x.k),
+              bc: x.k === insee ? "" : t("commune_a.b.fiche"),
+            }))
         : null;
     const rk = (r: { r: number; n: number } | null, extra = "") =>
       r
@@ -253,7 +422,11 @@ export class Commune extends Vue<Props, State> {
         v: carteN == null ? t("liste.non_lu") : fr(carteN),
         u: "",
         l: t("commune_a.fig.cameras_l"),
-        dots: dots(rCarte),
+        dots: dots(
+          rCarte,
+          (_k, v) => v.carte ?? -1,
+          (v) => t("commune_a.b.cameras", { n: fr(v) }),
+        ),
         r: rk(rCarte),
         tip: t("commune_a.fig.cameras_tip", { nom }),
         href: "#cameras",
@@ -267,7 +440,11 @@ export class Commune extends Vue<Props, State> {
           eph == null
             ? t("commune_a.fig.argent_l0")
             : t("commune_a.fig.argent_l", { m: montantA(eur), y: an0 }),
-        dots: dots(rEph),
+        dots: dots(
+          rEph,
+          (k, v) => ((v.amt ?? 0) > 0 && pairPop(k) > 0 ? (v.amt ?? 0) / pairPop(k) : -1),
+          (v) => t("commune_a.b.eph", { n: fr(Math.round(v)) }),
+        ),
         r: rk(rEph),
         tip: t("commune_a.fig.argent_tip"),
         href: "#argent",
@@ -278,7 +455,11 @@ export class Commune extends Vue<Props, State> {
         v: !lus && !nj ? t("liste.non_lu") : fr(nj),
         u: !lus && !nj ? "" : t("commune_a.fig.jours"),
         l: t("commune_a.fig.drones_l"),
-        dots: dots(rJv),
+        dots: dots(
+          rJv,
+          (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
+          (v) => t("commune_a.b.jours", { n: v }),
+        ),
         r: rk(rJv, nAuj ? ` · ${t("commune_a.fig.auj", { n: nAuj })}` : ""),
         tip: t("commune_a.fig.drones_tip", { nom }),
         href: "#drones",
@@ -371,18 +552,21 @@ export class Commune extends Vue<Props, State> {
             )
               .filter(([, , v]) => v > 0)
               .map(([k, cls, v]) => ({
-                cls: `seg ${cls}`,
+                // a narrow part's number lives in the legend on a phone (pt: under a tenth)
+                cls: `seg ${cls}${pct(v) < 10 ? " pt" : ""}`,
                 sw: `sw ${cls}`,
                 st: `flex: ${v}`,
                 v: fr(v),
                 l: t(`commune_a.part.${k}`),
-                tip: `${t(`commune_a.part.${k}`)} : ${fr(v)} · ${pct(v)} %`,
+                bl: `${fr(v)} · ${pct(v)} %`,
+                pick: (() => this.versDocs({ onglet: "aut", part: k })) as Handler,
               }))
           : null,
       nonLu: lus ? (parts.total ? "" : t("commune_a.cam_aucun")) : t("commune_a.cam_non_lu"),
       osm: carteN ? fr(carteN) : "",
       osmNon: carteN === 0,
-      carteHref: `/?insee=${encodeURIComponent(insee)}`,
+      carteHref: communeHref(insee, "carte"),
+      osmB: t("commune_a.b.osm_clic", { nom }),
       note: t("commune_a.cam_note", { y: depuis }),
       systemes: systemes.length
         ? systemes.map((x) => ({
@@ -403,8 +587,11 @@ export class Commune extends Vue<Props, State> {
       return b && f.acheteurs[b]?.categorie === "transports" ? "transports" : "autres";
     };
     const vue = S.argent;
-    const pris = vue === "tous" ? territoire : territoire.filter((e) => e.communal);
-    const { annees, totaux } = argentParAnnee(pris, serie as never);
+    const tousPris = vue === "tous" ? territoire : territoire.filter((e) => e.communal);
+    // a series hidden from its legend leaves the bars (Lyon-A-comportements, « Légende »)
+    const pris = tousPris.filter((e) => !S.masque.includes(serie(e)));
+    const { annees } = argentParAnnee(pris, serie as never);
+    const { totaux } = argentParAnnee(tousPris, serie as never);
     const subs = s.subs.length;
     let arg = null;
     if (territoire.length) {
@@ -435,7 +622,22 @@ export class Commune extends Vue<Props, State> {
             return { cls: clsSerie(s2), y: base.toFixed(1), h: h.toFixed(1) };
           });
         const tv = tot(a);
+        const parSerie = (["ville", "transports", "autres"] as const).filter((s2) => a[s2] > 0);
+        const nb = (s2: Serie) =>
+          pris.filter((e) => (e.date ?? "").startsWith(a.an) && serie(e) === s2).length;
         return {
+          bh: `${a.an} · ${vue === "hab" ? t("commune_a.tip_hab", { n: fr(tv) }) : montantA(a.ville + a.transports + a.autres)}`,
+          bl: parSerie
+            .map(
+              (s2) =>
+                `§${clsSerie(s2)}§${t(`commune_a.serie.${s2}`, { nom })} · ${montantA(a[s2])} · ${t("commune_a.b.contrats", { n: nb(s2) })}`,
+            )
+            .join("\n"),
+          bc: tv > 0 ? t("commune_a.b.col_clic") : "",
+          tab: tv > 0 ? "0" : "-1",
+          pick: (() => {
+            if (tv > 0) this.versDocs({ onglet: "con", annee: a.an, territoire: vue === "tous" });
+          }) as Handler,
           an: a.an,
           x: x.toFixed(1),
           w: w.toFixed(1),
@@ -445,11 +647,8 @@ export class Commune extends Vue<Props, State> {
           vy: (y(tv) - 6).toFixed(1),
           v: tv > 0 ? v1(tv) : "",
           rects,
-          survol: (() => this.setState({ col: a.an })) as Handler,
         };
       });
-      const col = annees.find((a) => a.an === S.col);
-      const ci = col ? annees.indexOf(col) : -1;
       arg = {
         n: argN,
         ans: [
@@ -484,29 +683,22 @@ export class Commune extends Vue<Props, State> {
           { y: "-20", ty: "20", l: t(vue === "hab" ? "commune_a.unite_hab" : "commune_a.unite_m") },
         ],
         cols,
-        quitter: (() => this.setState({ col: null })) as Handler,
-        tip:
-          col && large()
-            ? {
-                an: col.an,
-                total:
-                  vue === "hab"
-                    ? t("commune_a.tip_hab", { n: fr(tot(col)) })
-                    : montantA(col.ville + col.transports + col.autres),
-                rows: (["ville", "transports", "autres"] as const)
-                  .filter((s2) => col[s2] > 0)
-                  .map((s2) => `${t(`commune_a.serie.${s2}`, { nom })} : ${montantA(col[s2])}`),
-                st: `left: ${(((70 + ci * slot + slot / 2) / 1000) * 100).toFixed(1)}%; top: ${((Math.max(40, y(tot(col))) / 270) * 100).toFixed(1)}%`,
-              }
-            : null,
-        leg: [
-          ...(["ville", "transports", "autres"] as const)
-            .filter((s2) => totaux[s2] > 0 || s2 === "ville")
-            .map((s2) => ({
-              sw: `sw ${clsSerie(s2)}`,
-              l: t(`commune_a.serie.${s2}`, { nom }),
-              v: totaux[s2] > 0 ? montantA(totaux[s2]) : t("commune_a.aucun"),
-            })),
+        leg: (["ville", "transports", "autres"] as const)
+          .filter((s2) => totaux[s2] > 0 || s2 === "ville")
+          .map((s2) => ({
+            sw: `sw ${clsSerie(s2)}`,
+            s: s2,
+            l: t(`commune_a.serie.${s2}`, { nom }),
+            v: totaux[s2] > 0 ? montantA(totaux[s2]) : t("commune_a.aucun"),
+            on: S.masque.includes(s2) ? "false" : "true",
+            pick: (() =>
+              this.setState({
+                masque: S.masque.includes(s2)
+                  ? S.masque.filter((x) => x !== s2)
+                  : [...S.masque, s2],
+              })) as Handler,
+          })),
+        legSub: [
           {
             sw: "sw c-sub",
             l: t("commune_a.serie.sub"),
@@ -539,9 +731,10 @@ export class Commune extends Vue<Props, State> {
             : []),
         ] as RichItem[],
         r: repli(S.open, "fourn", t("accueil.voir_detail"), top.length, this.basculer),
-        rows: top.map((x) => {
+        rows: top.map((x, i) => {
           const o = autres(x.siren);
           return {
+            cls: `sup i${i}`,
             nom: [lienEnt(x.siren)] as RichItem[],
             st: `width: ${((100 * x.montant) / max).toFixed(1)}%`,
             m: montantA(x.montant),
@@ -560,7 +753,18 @@ export class Commune extends Vue<Props, State> {
             const o = autres(x.siren);
             const mx = 300 + (r + 62) * Math.cos(a);
             const my = 204 + (r + 62) * Math.sin(a) * 0.9;
+            const aFiche = !!f.entreprises[x.siren]?.ref;
             return {
+              cls: `nd i${i}`,
+              ci: `i${i}`,
+              bh: nomEnt(x.siren),
+              bl: [
+                t("commune_a.b.avec", { nom, m: montantA(x.montant) }),
+                o == null ? "" : t("commune_a.ent_o_b", { n: o }),
+              ]
+                .filter(Boolean)
+                .join("\n"),
+              bc: aFiche ? t("commune_a.b.fiche") : "",
               x: nx.toFixed(0),
               y: ny.toFixed(0),
               rx: (nx - sz / 2).toFixed(1),
@@ -570,10 +774,11 @@ export class Commune extends Vue<Props, State> {
               l: nomEnt(x.siren),
               href: f.entreprises[x.siren]?.ref ? `/registre/entreprise/${x.siren}` : "",
               sans: !f.entreprises[x.siren]?.ref,
-              mo: o ? `+${o}` : "",
+              mo: o ? `+${fr(o)}` : "",
+              // the circle holds its text: about 8 px a character at 12.5 px, 6 px of margin
+              mr: o ? Math.max(15, 4 * `+${fr(o)}`.length + 6) : 15,
               mx: mx.toFixed(0),
               my: my.toFixed(0),
-              mty: (my + 4).toFixed(0),
             };
           }),
         },
@@ -641,7 +846,14 @@ export class Commune extends Vue<Props, State> {
               };
             });
           return {
-            r: repli(S.open, `dos${i}`, titre, steps.length, this.basculer, "card dos"),
+            r: repli(
+              S.open,
+              `dos${i}`,
+              titre,
+              steps.length,
+              this.basculer,
+              S.annee && ans.includes(S.annee) ? "card dos mark" : "card dos",
+            ),
             titre,
             href: documentHref(x.id),
             m: x.montant ? montantA(x.montant) : "",
@@ -656,12 +868,50 @@ export class Commune extends Vue<Props, State> {
     if (nj || nAuj) {
       const drN = num();
       entree("drones", `${drN} · ${t("commune_a.toc.drones")}`);
-      // the calendar: twelve months of weeks ending on the update's day, Monday first
+      // the calendar: twelve months of weeks ending on the update's day, Monday first; « À venir »:
+      // the 30 days after it
       const fin = new Date(`${maj}T12:00:00Z`);
       const debut = new Date(fin);
-      debut.setUTCMonth(debut.getUTCMonth() - 12);
+      if (S.avenir) {
+        debut.setUTCDate(debut.getUTCDate() + 1);
+        fin.setUTCDate(fin.getUTCDate() + 30);
+      } else debut.setUTCMonth(debut.getUTCMonth() - 12);
       debut.setUTCDate(debut.getUTCDate() - ((debut.getUTCDay() + 6) % 7));
-      const cases: { cls: string; x: string; y: string; survol: Handler; pick: Handler }[] = [];
+      const finIso = fin.toISOString().slice(0, 10);
+      // a motive's bar chosen: the calendar on that motive's acts only
+      const jpa = joursParActe(d);
+      const joursCal =
+        S.motifF || S.avenir
+          ? joursDeVol(
+              d.all
+                .filter(
+                  (e) =>
+                    e.t === "arrete_drone" &&
+                    (!S.motifF || classeMotif((e as { motif?: unknown }).motif) === S.motifF),
+                )
+                .map((e) => ({ t: e.t, jours: jpa.get(e.id) ?? [] })),
+              S.avenir ? finIso : maj,
+              S.avenir ? 1 : 12,
+            )
+          : jours;
+      const jourLong = (iso: string) =>
+        new Intl.DateTimeFormat("fr-FR", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        }).format(new Date(`${iso}T12:00:00Z`));
+      const cases: {
+        cls: string;
+        x: string;
+        y: string;
+        bh: string;
+        bl: string;
+        bc: string;
+        tab: string;
+        pick: Handler;
+      }[] = [];
       const mois: { x: string; l: string }[] = [];
       let col = 0;
       let dernier = -1;
@@ -673,27 +923,29 @@ export class Commune extends Vue<Props, State> {
           dernier = dt.getUTCMonth();
           mois.push({ x: String(24 + col * 15), l: moisCourt(iso) });
         }
-        const nb = jours.get(iso) ?? 0;
+        const nb = joursCal.get(iso) ?? 0;
         cases.push({
-          cls: `${nb >= 2 ? "c2" : nb === 1 ? "c1" : "c0"}${iso === maj ? " today" : ""}`,
+          cls: `${nb >= 2 ? "c2" : nb === 1 ? "c1" : "c0"}${iso === maj ? " today" : ""}${S.avenir && iso <= maj ? " passe" : ""}`,
           x: String(24 + col * 15),
           y: String(16 + wd * 15),
-          survol: (() => {
-            if (large()) this.setState({ jour: iso });
-          }) as Handler,
+          bh: jourLong(iso),
+          bl: t("commune_a.b.arretes_dr", { n: nb }),
+          bc: nb ? t("commune_a.b.jour_clic") : "",
+          tab: nb ? "0" : "-1",
           pick: (() => {
-            if (nb) aller(`${communeHref(insee, "carte")}?jour=${iso}`);
+            if (nb) allerA(`${communeHref(insee, "carte")}?jour=${iso}`);
           }) as Handler,
         });
       }
       const W = 24 + (col + 1) * 15;
-      const jt = S.jour;
+      // a month's label needs about 24 units: the last one, cut at the edge, is left out
+      while (mois.length && Number(mois[mois.length - 1].x) + 24 > W) mois.pop();
       const motifs = new Map<string, number>();
       let sansMotif = 0;
       for (const e of d.all)
         if (e.t === "arrete_drone") {
-          const m = (e as { motif?: { categorie?: string } }).motif?.categorie;
-          const kk = ((e.jours as string[] | undefined) ?? []).filter((j) => jours.has(j)).length;
+          const m = classeMotif((e as { motif?: unknown }).motif);
+          const kk = new Set((jpa.get(e.id) ?? []).filter((j) => jours.has(j))).size;
           if (m) motifs.set(m, (motifs.get(m) ?? 0) + kk);
           else sansMotif += kk;
         }
@@ -726,15 +978,17 @@ export class Commune extends Vue<Props, State> {
           { y: "117", l: "D" },
         ],
         cases,
-        quitter: (() => this.setState({ jour: null })) as Handler,
-        tip:
-          jt && large()
-            ? {
-                d: jourCourt(jt),
-                n: t("commune_a.cal_tip", { n: jours.get(jt) ?? 0 }),
-                st: `left: ${(((24 + 15 * Math.floor((Date.parse(`${jt}T12:00:00Z`) - debut.getTime()) / 6048e5)) / W) * 100).toFixed(1)}%; top: 10%`,
-              }
-            : null,
+        fenetres: [false, true].map((v) => ({
+          l: t(v ? "commune_a.cal_avenir" : "commune_a.cal_12"),
+          on: S.avenir === v ? "true" : "false",
+          pick: (() => this.setState({ avenir: v })) as Handler,
+        })),
+        motifF: S.motifF
+          ? {
+              l: t("commune_a.b.motif_chip", { m: t(`commune_a.motif.${S.motifF}`) }),
+              lever: (() => this.setState({ motifF: "" })) as Handler,
+            }
+          : null,
         auj: nAuj
           ? auj.map((e) => ({
               d: jourCourt(maj),
@@ -755,10 +1009,15 @@ export class Commune extends Vue<Props, State> {
               ...[...motifs]
                 .sort((a, b) => b[1] - a[1])
                 .map(([m, v]) => ({
-                  cls: "hb",
+                  cls: S.motifF === m ? "hb on" : "hb",
+                  q: false,
                   l: t(`commune_a.motif.${m}`),
                   st: `width: ${((100 * v) / mx).toFixed(0)}%`,
                   n: fr(v),
+                  bl: t("commune_a.b.jours_vol", { n: v }),
+                  bc: t("commune_a.b.motif_clic"),
+                  on: S.motifF === m ? "true" : "false",
+                  pick: (() => this.setState({ motifF: S.motifF === m ? "" : m })) as Handler,
                 })),
               ...(sansMotif
                 ? [
@@ -767,6 +1026,11 @@ export class Commune extends Vue<Props, State> {
                       l: t("commune_a.motif_non_lu"),
                       st: `width: ${((100 * sansMotif) / mx).toFixed(0)}%`,
                       n: fr(sansMotif),
+                      bl: t("commune_a.b.jours_vol", { n: sansMotif }),
+                      bc: "",
+                      on: "",
+                      pick: null,
+                      q: true,
                     },
                   ]
                 : []),
@@ -774,17 +1038,22 @@ export class Commune extends Vue<Props, State> {
           : null,
         motifsNonLu: !motifs.size,
         vol: vol.nonLu
-          ? { lu: false, nonLu: true, parts: [], note: "" }
+          ? { lu: false, nonLu: true, parts: [], note: "", liste: null }
           : {
               lu: true,
               nonLu: false,
               parts: vol.parts.map((x) => ({
-                cls: `seg ${clsV[x.k]}`,
+                cls: `seg ${clsV[x.k]}${S.volF === x.k ? " on" : ""}`,
                 st: `flex: ${Math.max(1, x.pct)}`,
                 l: x.pct >= 8 ? fr(x.n) : "",
                 sw: `sw ${clsV[x.k]}`,
                 leg: `${t(`accueil.vol_${x.k}`)} · ${fr(x.n)}`,
+                bh: t(`accueil.vol_${x.k}`),
+                bl: `${fr(x.n)} · ${x.pct} %`,
+                bc: t("commune_a.b.vol_clic"),
+                pick: (() => this.setState({ volF: S.volF === x.k ? "" : x.k })) as Handler,
               })),
+              liste: S.volF ? volListe(d.all, S.volF, insee, jpa) : null,
               note: t("commune_a.publies_note", { n: fr(vol.total), p: vol.parts[2]?.pct ?? 0 }),
             },
       };
@@ -821,13 +1090,16 @@ export class Commune extends Vue<Props, State> {
           .map((k) => ({ k, v: val(k) }))
           .filter((x): x is { k: string; v: number } => x.v != null)
           .sort((a, b) => b.v - a.v);
-      const autour = (rows: { k: string; v: number }[], nb: number) => {
+      const autour = (rows: { k: string; v: number }[], nb: number, ou: string) => {
         const i = rows.findIndex((x) => x.k === insee);
         const lo = Math.max(0, Math.min(i - 2, rows.length - nb));
         return (i < 0 ? rows.slice(0, nb) : rows.slice(lo, lo + nb)).map((x) => ({
           cls: x.k === insee ? "me" : "",
           nom: lien(x.k, X?.dico.communes[x.k]?.nom ?? x.k),
           v: fmt(x.v),
+          bh: X?.dico.communes[x.k]?.nom ?? x.k,
+          bl: `${fmt(x.v)}\n${t("commune_a.b.rang_ou", { r: ordinal(rows.indexOf(x) + 1), n: rows.length, ou })}`,
+          bc: x.k === insee ? "" : t("commune_a.b.fiche"),
         }));
       };
       const ep = classe(membres);
@@ -860,7 +1132,7 @@ export class Commune extends Vue<Props, State> {
             ep.length > 1
               ? {
                   titre: t("commune_a.vois_epci", { epci: nomEpci, m: ml }),
-                  rows: autour(ep, 8),
+                  rows: autour(ep, 8, nomEpci),
                   note: t("commune_a.vois_epci_note", { n: membres.length, k: ep.length }),
                 }
               : null,
@@ -868,7 +1140,7 @@ export class Commune extends Vue<Props, State> {
             sr.length > 1
               ? {
                   titre: t("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
-                  rows: autour(sr, 5),
+                  rows: autour(sr, 5, nomStrate(st)),
                 }
               : null,
           attente: "",
@@ -888,14 +1160,79 @@ export class Commune extends Vue<Props, State> {
     // documents: the four kinds, ten rows of the one chosen, the full list one page away
     const tabs: { k: Onglet; f: (e: Evenement) => boolean }[] = [
       // the commune's own contracts (board: « Contrats · 8 » for Lyon), as its own notices
-      { k: "con", f: (e) => e.t === "attribution" && !e.copie && !!e.communal },
+      {
+        k: "con",
+        f: S.territoire
+          ? (e) => e.t === "attribution" && !e.copie && !!e.compte
+          : (e) => e.t === "attribution" && !e.copie && !!e.communal,
+      },
       { k: "ao", f: (e) => /^(avis|resultat|rectificatif)$/.test(e.t) },
       { k: "aut", f: (e) => e.t.startsWith("arrete") },
       { k: "sub", f: (e) => e.t.startsWith("subvention") },
     ];
     const ong = tabs.find((x) => x.k === S.onglet) ?? tabs[0];
-    const docRows = d.all.filter(ong.f).sort(byDateDesc);
     const aut = ong.k === "aut";
+    const argentDoc = ong.k === "con" || ong.k === "ao" || ong.k === "sub";
+    const ongRows = d.all.filter(ong.f);
+    // the menus' values: those the kind's documents have
+    const anneesDoc = [...new Set(ongRows.map((e) => (e.date ?? "").slice(0, 4)).filter(Boolean))]
+      .sort()
+      .reverse();
+    const parEnt = new Map<string, number>();
+    for (const e of ongRows)
+      for (const sr of e.entreprises ?? []) parEnt.set(sr, (parEnt.get(sr) ?? 0) + 1);
+    const entsDoc = [...parEnt]
+      .sort((p, q) => q[1] - p[1] || nomEnt(p[0]).localeCompare(nomEnt(q[0]), "fr"))
+      .slice(0, 40);
+    const TRANCHES: Record<Exclude<Tranche, "">, [number, number]> = {
+      m1: [0, 1e5],
+      m2: [1e5, 1e6],
+      m3: [1e6, Number.POSITIVE_INFINITY],
+    };
+    const partDe = (e: Evenement): Part =>
+      e.communal
+        ? "mairie"
+        : /^(commerce|banque)$/.test(String(e.type_beneficiaire ?? ""))
+          ? "commerces"
+          : "autres";
+    const docRows = ongRows
+      .filter(
+        (e) =>
+          (!S.annee || (e.date ?? "").startsWith(S.annee)) &&
+          (!S.entF || (e.entreprises ?? []).includes(S.entF)) &&
+          (!S.tranche ||
+            (e.montant != null &&
+              e.montant >= TRANCHES[S.tranche][0] &&
+              e.montant < TRANCHES[S.tranche][1])) &&
+          (!S.part || (aut && e.t === "arrete" && !e.copie && partDe(e) === S.part)),
+      )
+      .sort(
+        S.tri === "montant"
+          ? (p, q) =>
+              (aut
+                ? (q.cameras ?? -1) - (p.cameras ?? -1)
+                : (q.montant ?? -1) - (p.montant ?? -1)) || byDateDesc(p, q)
+          : byDateDesc,
+      );
+    // the filters a shape's click put, each lifted from its chip
+    const actifs = [
+      ...(S.part
+        ? [
+            {
+              l: t(`commune_a.part.${S.part}`),
+              lever: (() => this.setState({ part: "" })) as Handler,
+            },
+          ]
+        : []),
+      ...(S.territoire
+        ? [
+            {
+              l: t("commune_a.argent_vue.tous"),
+              lever: (() => this.setState({ territoire: false })) as Handler,
+            },
+          ]
+        : []),
+    ];
     const docs = {
       r: repli(
         S.open,
@@ -908,10 +1245,58 @@ export class Commune extends Vue<Props, State> {
         l: t(`commune_a.onglet.${x.k}`),
         n: fr(d.all.filter(x.f).length),
         on: x.k === S.onglet ? "true" : "false",
-        pick: (() => this.setState({ onglet: x.k })) as Handler,
+        pick: (() =>
+          this.setState({
+            onglet: x.k,
+            annee: "",
+            entF: "",
+            tranche: "",
+            part: "",
+            territoire: false,
+            menu: "",
+          })) as Handler,
       })),
+      menus: [
+        this.menuDocs(
+          "annee",
+          t("commune_a.m_annee"),
+          S.annee,
+          anneesDoc.map((v) => ({ v, l: v })),
+          (v) => ({ annee: v }),
+        ),
+        ...(argentDoc && entsDoc.length
+          ? [
+              this.menuDocs(
+                "ent",
+                t("commune_a.m_ent"),
+                S.entF,
+                entsDoc.map(([v, n2]) => ({ v, l: `${nomEnt(v)} · ${fr(n2)}` })),
+                (v) => ({ entF: v }),
+              ),
+            ]
+          : []),
+        ...(argentDoc
+          ? [
+              this.menuDocs(
+                "montant",
+                t("commune_a.m_montant"),
+                S.tranche,
+                (["m1", "m2", "m3"] as const).map((v) => ({ v, l: t(`commune_a.tranche.${v}`) })),
+                (v) => ({ tranche: v as Tranche }),
+              ),
+            ]
+          : []),
+      ],
+      actifs,
+      exporter: (() =>
+        exportRows(d, docRows, "csv", `${insee}-${t(`commune_a.onglet.${ong.k}`)}`)) as Handler,
       col3: t(aut ? "commune_a.col_beneficiaire" : "commune_a.col_entreprise"),
       col4: t(aut ? "commune_a.col_cameras" : "commune_a.col_montant"),
+      // the columns' sort (Lyon-A-comportements, « En-tête de colonne »): the date, the amount
+      triDate: S.tri === "date" ? "descending" : "none",
+      triM: S.tri === "montant" ? "descending" : "none",
+      parDate: (() => this.setState({ tri: "date" })) as Handler,
+      parM: (() => this.setState({ tri: "montant" })) as Handler,
       rows: docRows.slice(0, 10).map((e) => ({
         d: e.date ? jourCourt(e.date) : "",
         doc: [
@@ -943,6 +1328,12 @@ export class Commune extends Vue<Props, State> {
               ] as RichItem[])
             : (["—"] as RichItem[]),
       })),
+      // a row's click opens its document, as its link does (« Ligne · Ouvre le document »)
+      ligne: ((ev) => {
+        const tgt = ev.nativeEvent.target as Element;
+        if (tgt.closest("a, button")) return;
+        tgt.closest("tr")?.querySelector<HTMLAnchorElement>("td a")?.click();
+      }) as Handler,
       vide: !docRows.length,
       plus: docRows.length > 10 ? t("commune_a.documents_plus", { n: fr(docRows.length) }) : "",
       tout: communeHref(insee, "documents"),
@@ -971,6 +1362,12 @@ export class Commune extends Vue<Props, State> {
       cls: "t3d",
       go: (() => {}) as Handler,
     });
+    // a head figure's click goes to its section, by the number the section has here
+    const nSec = new Map(toc.map((x) => [x.href, x.l.split(" · ")[0]]));
+    const figsB = figs.map((x) => ({
+      ...x,
+      bc: nSec.has(x.href) ? t("commune_a.b.section", { n: nSec.get(x.href) ?? "" }) : "",
+    }));
 
     return {
       ...this.base("commune-a"),
@@ -991,7 +1388,7 @@ export class Commune extends Vue<Props, State> {
       partager: ((ev) => partager(this, ev.currentTarget)) as Handler,
       citer: this.citer,
       citerL: t(S.cite ? "commune_a.cite" : "commune_a.citer"),
-      figs,
+      figs: figsB,
       v3: {
         titre: t("commune_a.v3_titre", { nom }),
         items: [

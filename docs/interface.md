@@ -1174,6 +1174,22 @@ rules, still read by the documents and authorisations pages, do not reach it).
 - **On a phone**: the figures lighter, the suppliers, the dossiers, the documents and the
   sources folded, the chart, the graph and the calendar with « ⤢ Plein écran », the table of
   contents a strip scrolled sideways.
+- **Behaviours** (board Lyon-A-comportements; `registre/bulle.ts`, one bubble for the frame,
+  beside the view, kept inside the screen): a shape carries its bubble in `data-bh` (heading),
+  `data-bl` (lines, a swatch as `§class§`), `data-bc` (« Clic : … ») and `data-go`; its group
+  (`data-bg`) pales the others while one is read. Hover reads; a keyboard focus reads (Tab),
+  Enter clicks, Escape closes the bubble and only it; on a phone the first tap reads, « Ouvrir »
+  in the bubble (or a second tap) clicks. Wired: the head figures (definition, « Clic : section
+  N » by the number the section has) and their rank dots (each city, its value, its fiche); a
+  part of the cameras' bar (number, share; click: those decrees in « Tous les documents ») and
+  the map's bar (the live map on the commune); a year's column (total, each buyer's amount and
+  contracts, the others pale; click: that year's contracts there, its dossiers outlined); the
+  legend (hover: its series stands out; click: hidden or shown); a supplier's row (its node
+  stands out); a node (amount with the commune, its other buyers, the rest pales); a calendar
+  day (weekday and date, its acts; click: the drone view that day); a motive's bar (its days;
+  click: the calendar on that motive, a chip lifts it); a part of « Publiés quand ? » (number,
+  share; click: those acts, the latest published first); a neighbour (value, rank, fiche); the
+  documents' Date and Montant headers (sort), a row (its document).
 
 ## 2. State catalogue
 
@@ -2732,6 +2748,10 @@ rows above hold for the content of the fiches.
 | Lyon-A: three series « Ville / Transports / Métropole, État, Département » | the city, the transports, the other buyers by their served category | the board's third figure differs from the build (A's reading) |
 | Lyon-A: the suppliers' roles (« installe et entretient ») | absent | not served |
 | Lyon-A: a dossier's « lien à vérifier » decree and « Sur la carte » step | absent | not served (besoins-donnees) |
-| Lyon-A: « 12 derniers mois / À venir » | twelve months only | the next days' calendar is the drone view's |
 | Lyon-A: the intercommunality's map | its communes ranked, around the commune | the communes' outlines are not served (besoins-donnees) |
-| Lyon-A: « Année ▾ », « Entreprise ▾ », « Montant ▾ », « Exporter CSV » over the documents | the four kinds, ten rows, « Tous les documents → » | the documents page has the filters and the export |
+| Lyon-A: « Année ▾ », « Entreprise ▾ », « Montant ▾ », « Exporter CSV » over the documents | the same (the amount in three bands: under 100 000 €, to 1 M€, over), Entreprise and Montant on the contracts, the notices and the grants only, a shape's filter as a chip « … ✕ »; ten rows, « Tous les documents » after them when there are more | a decree has no company nor amount; the full list stays one page away |
+| Lyon-A: a dossier's title in capitals (« Vidéoprotection 2021-2025 ») | the published object in ordinary case, on one line | the real objects are long sentences in capitals (Ju 2026-11-08: like the home's largest contracts) |
+| Lyon-A: « 3e sur 3 » style ranks everywhere | no rank under five communes ranked | a rank among three says nothing (Ju 2026-11-08) |
+| Lyon-A: five motives (manifestation, événement, frontière, circulation, autre) | the served ones: manifestation, événement (sport, concerts, commemorations), stupéfiants on its own row, the rest « Motif non lu » | frontière and circulation are L. 242-5 purposes not read yet; stupéfiants is served and in no board class (A, 20cf0e6) |
+| Lyon-A-comportements: a step's bubble quoting its document, « lien suggéré »'s reason | none | no quote nor suggested link is served |
+| Lyon-A-comportements: a graph node's click recentres the graph; « N autres acheteurs » opens it | the company's fiche; the words plain | the centred graph is lot 4 |

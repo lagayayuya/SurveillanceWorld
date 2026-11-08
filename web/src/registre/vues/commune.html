@@ -10,7 +10,7 @@
   </section>
 
   <div class="figs">
-    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" data-tip="{{f.tip}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" aria-hidden="true"><sc-for list="{{f.dots}}" as="d"><i class="{{d}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.tip}}</span></a></sc-for>
+    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" aria-hidden="true"><sc-for list="{{f.dots}}" as="d"><i class="{{d.cls}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.tip}}</span></a></sc-for>
   </div>
 
   <section class="v3" aria-label="{{v3.titre}}">
@@ -32,12 +32,12 @@
       <div class="card">
         <h3 class="k">{{cam.kAut}}</h3>
         <sc-if value="{{cam.parts}}">
-          <div class="sbar" style="height: 22px"><sc-for list="{{cam.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" title="{{x.tip}}"><b>{{x.v}}</b></span></sc-for></div>
+          <div class="sbar" style="height: 22px" data-bg=""><sc-for list="{{cam.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.l}}" data-bl="{{x.bl}}" data-bc="{{t.commune_a.b.part_clic}}" onClick="{{x.pick}}"><b>{{x.v}}</b></span></sc-for></div>
           <div class="sleg"><sc-for list="{{cam.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i>{{x.l}} · <b>{{x.v}}</b></span></sc-for></div>
         </sc-if>
         <sc-if value="{{cam.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span> {{cam.nonLu}}</p></sc-if>
         <h3 class="k" style="margin-top: 18px">{{t.commune_a.releves}}</h3>
-        <sc-if value="{{cam.osm}}"><div class="sbar" style="height: 22px"><span class="seg c-osm" style="flex: 1"><b>{{cam.osm}}</b></span></div><div class="sleg"><span class="lg"><i class="sw c-osm" aria-hidden="true"></i>{{t.commune_a.releves_osm}} · <b>{{cam.osm}}</b></span><a class="go" href="{{cam.carteHref}}">{{t.commune_a.voir_carte}}</a></div></sc-if>
+        <sc-if value="{{cam.osm}}"><div class="sbar" style="height: 22px"><span class="seg c-osm" style="flex: 1" tabindex="0" data-bh="{{t.commune_a.releves_osm}}" data-bl="{{cam.osm}}" data-bc="{{cam.osmB}}" data-go="{{cam.carteHref}}"><b>{{cam.osm}}</b></span></div><div class="sleg"><span class="lg"><i class="sw c-osm" aria-hidden="true"></i>{{t.commune_a.releves_osm}} · <b>{{cam.osm}}</b></span><a class="go" href="{{cam.carteHref}}">{{t.commune_a.voir_carte}}</a></div></sc-if>
         <sc-if value="{{cam.osmNon}}"><p class="note">{{t.commune_a.releves_aucune}}</p></sc-if>
         <p class="note">{{cam.note}}</p>
       </div>
@@ -54,16 +54,15 @@
       <p class="ans">{{{arg.ans}}}</p>
       <div class="card">
         <div class="ch-h"><h3 class="k">{{t.commune_a.argent_k}}</h3><div class="seg-ctl" role="group" aria-label="{{t.commune_a.argent_k}}"><sc-for list="{{arg.vues}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
-        <div class="tipwrap zw" onPointerLeave="{{arg.quitter}}">
-          <svg class="chart" viewBox="0 0 1000 270" width="1000" height="270" role="img" aria-label="{{arg.titre}}">
+        <div class="zw">
+          <svg class="chart" viewBox="0 0 1000 270" width="1000" height="270" role="group" aria-label="{{arg.titre}}" data-bg="">
             <sc-for list="{{arg.grille}}" as="g"><line class="grid" x1="56" x2="990" y1="{{g.y}}" y2="{{g.y}}"></line><text class="ax" x="48" y="{{g.ty}}" text-anchor="end">{{g.l}}</text></sc-for>
             <line class="base" x1="56" x2="990" y1="226" y2="226"></line>
-            <sc-for list="{{arg.cols}}" as="c"><g class="col" onMouseEnter="{{c.survol}}"><rect class="hit" x="{{c.hx}}" y="10" width="{{c.hw}}" height="240"></rect><sc-for list="{{c.rects}}" as="r"><rect class="{{r.cls}}" x="{{c.x}}" y="{{r.y}}" width="{{c.w}}" height="{{r.h}}"></rect></sc-for><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="246" text-anchor="middle">{{c.an}}</text></g></sc-for>
+            <sc-for list="{{arg.cols}}" as="c"><g class="col" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" onClick="{{c.pick}}"><rect class="hit" x="{{c.hx}}" y="10" width="{{c.hw}}" height="240"></rect><sc-for list="{{c.rects}}" as="r"><rect class="{{r.cls}}" x="{{c.x}}" y="{{r.y}}" width="{{c.w}}" height="{{r.h}}"></rect></sc-for><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="246" text-anchor="middle">{{c.an}}</text></g></sc-for>
           </svg>
           <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
-          <sc-if value="{{arg.tip}}"><div class="tip" style="{{arg.tip.st}}"><b class="tt-h">{{arg.tip.an}}</b><span><b>{{arg.tip.total}}</b></span><sc-for list="{{arg.tip.rows}}" as="r"><span>{{r}}</span></sc-for></div></sc-if>
         </div>
-        <div class="sleg"><sc-for list="{{arg.leg}}" as="l"><span class="lg"><i class="{{l.sw}}" aria-hidden="true"></i>{{l.l}} · <b>{{l.v}}</b></span></sc-for></div>
+        <div class="sleg"><sc-for list="{{arg.leg}}" as="l"><button type="button" class="lg lgb" aria-pressed="{{l.on}}" onClick="{{l.pick}}" title="{{t.commune_a.b.leg_clic}}"><i class="{{l.sw}}" aria-hidden="true"></i>{{l.l}} · <b>{{l.v}}</b></button></sc-for><sc-for list="{{arg.legSub}}" as="l"><span class="lg"><i class="{{l.sw}}" aria-hidden="true"></i>{{l.l}} · <b>{{l.v}}</b></span></sc-for></div>
         <p class="note">{{t.commune_a.argent_note}}</p>
       </div>
     </section>
@@ -76,15 +75,15 @@
         <div class="{{ent.r.cls}}">
           <button type="button" class="fh" aria-expanded="{{ent.r.exp}}" aria-controls="{{ent.r.id}}" onClick="{{ent.r.basculer}}"><span>{{ent.r.titre}}<small>{{ent.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{ent.r.id}}">
-            <sc-for list="{{ent.rows}}" as="x"><div class="sup"><div class="sup-n">{{{x.nom}}}</div><div class="sup-bar"><span style="{{x.st}}"></span></div><div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div><sc-if value="{{x.o}}"><div class="sup-o">{{x.o}}</div></sc-if></div></sc-for>
+            <sc-for list="{{ent.rows}}" as="x"><div class="{{x.cls}}"><div class="sup-n">{{{x.nom}}}</div><div class="sup-bar"><span style="{{x.st}}"></span></div><div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div><sc-if value="{{x.o}}"><div class="sup-o">{{x.o}}</div></sc-if></div></sc-for>
             <p class="note">{{t.commune_a.entreprises_note}}</p>
           </div>
         </div>
         <div class="card tool"><span class="tag">{{t.commune_a.graphe_tag}}</span><h3>{{t.commune_a.graphe_h}}</h3>
           <div class="zw">
-            <svg class="g2" viewBox="0 0 600 400" width="600" height="400" role="img" aria-label="{{ent.g.titre}}">
-              <sc-for list="{{ent.g.nodes}}" as="x"><line class="l" x1="300" y1="204" x2="{{x.x}}" y2="{{x.y}}"></line><sc-if value="{{x.mo}}"><line class="l more" x1="{{x.x}}" y1="{{x.y}}" x2="{{x.mx}}" y2="{{x.my}}"></line><circle class="mo a" cx="{{x.mx}}" cy="{{x.my}}" r="15"></circle><text class="mt" x="{{x.mx}}" y="{{x.mty}}" text-anchor="middle">{{x.mo}}</text></sc-if></sc-for>
-              <sc-for list="{{ent.g.nodes}}" as="x"><sc-if value="{{x.href}}"><a href="{{x.href}}"><g class="nd"><rect class="e2" x="{{x.rx}}" y="{{x.ry}}" width="{{x.s}}" height="{{x.s}}" rx="2"></rect><text class="t0" x="{{x.x}}" y="{{x.ty}}" text-anchor="middle">{{x.l}}</text></g></a></sc-if><sc-if value="{{x.sans}}"><g class="nd"><rect class="e2" x="{{x.rx}}" y="{{x.ry}}" width="{{x.s}}" height="{{x.s}}" rx="2"></rect><text class="t0" x="{{x.x}}" y="{{x.ty}}" text-anchor="middle">{{x.l}}</text></g></sc-if></sc-for>
+            <svg class="g2" viewBox="0 0 600 400" width="600" height="400" role="group" aria-label="{{ent.g.titre}}" data-bg="">
+              <sc-for list="{{ent.g.nodes}}" as="x"><line class="l" x1="300" y1="204" x2="{{x.x}}" y2="{{x.y}}"></line><sc-if value="{{x.mo}}"><line class="l more" x1="{{x.x}}" y1="{{x.y}}" x2="{{x.mx}}" y2="{{x.my}}"></line><circle class="mo a" cx="{{x.mx}}" cy="{{x.my}}" r="{{x.mr}}"></circle><text class="gmo" x="{{x.mx}}" y="{{x.my}}" text-anchor="middle" dominant-baseline="central">{{x.mo}}</text></sc-if></sc-for>
+              <sc-for list="{{ent.g.nodes}}" as="x"><sc-if value="{{x.href}}"><a href="{{x.href}}" class="{{x.ci}}" data-bh="{{x.bh}}" data-bl="{{x.bl}}" data-bc="{{x.bc}}"><g class="nd"><rect class="e2" x="{{x.rx}}" y="{{x.ry}}" width="{{x.s}}" height="{{x.s}}" rx="2"></rect><text class="t0" x="{{x.x}}" y="{{x.ty}}" text-anchor="middle">{{x.l}}</text></g></a></sc-if><sc-if value="{{x.sans}}"><g class="{{x.cls}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><rect class="e2" x="{{x.rx}}" y="{{x.ry}}" width="{{x.s}}" height="{{x.s}}" rx="2"></rect><text class="t0" x="{{x.x}}" y="{{x.ty}}" text-anchor="middle">{{x.l}}</text></g></sc-if></sc-for>
               <ellipse class="c0 a" cx="300" cy="204" rx="24" ry="21"></ellipse><text class="tc" x="300" y="246" text-anchor="middle">{{nom}}</text>
             </svg>
             <button type="button" class="zoom top" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
@@ -99,9 +98,9 @@
       <p class="ans">{{t.commune_a.dossiers_ans}}</p>
       <sc-for list="{{dos.rows}}" as="d">
         <div class="{{d.r.cls}}">
-          <button type="button" class="fh" aria-expanded="{{d.r.exp}}" aria-controls="{{d.r.id}}" onClick="{{d.r.basculer}}"><span>{{d.r.titre}}<small>{{d.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <button type="button" class="fh" aria-expanded="{{d.r.exp}}" aria-controls="{{d.r.id}}" onClick="{{d.r.basculer}}"><span><span class="t1">{{d.r.titre}}</span><small>{{d.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{d.r.id}}">
-            <div class="dh"><h3><a href="{{d.href}}">{{d.titre}}</a></h3><span class="amt">{{d.m}}</span></div>
+            <div class="dh"><h3 title="{{d.titre}}"><a href="{{d.href}}">{{d.titre}}</a></h3><span class="amt">{{d.m}}</span></div>
             <ol class="tl"><sc-for list="{{d.steps}}" as="s"><li class="{{s.cls}}"><span class="sk">{{s.k}}</span><span class="sd">{{s.d}}</span><b>{{{s.b}}}</b><sc-if value="{{s.s}}"><span class="ss">{{s.s}}</span></sc-if></li></sc-for></ol>
           </div>
         </div>
@@ -112,16 +111,16 @@
     <sc-if value="{{dr}}">
     <section class="sec" id="drones"><h2><span class="num" aria-hidden="true">{{dr.n}}</span>{{t.commune_a.s_drones}}</h2>
       <p class="ans">{{{dr.ans}}}</p>
-      <div class="card"><div class="ch-h"><h3 class="k">{{t.commune_a.drones_k}}</h3></div>
+      <div class="card"><div class="ch-h"><h3 class="k">{{t.commune_a.drones_k}}</h3><div class="seg-ctl" role="group" aria-label="{{t.commune_a.drones_k}}"><sc-for list="{{dr.fenetres}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
         <div class="dr"><div>
-          <div class="tipwrap zw" onPointerLeave="{{dr.quitter}}">
-            <svg class="cal" viewBox="{{dr.vb}}" width="{{dr.w}}" height="{{dr.h}}" role="img" aria-label="{{dr.titre}}">
+          <sc-if value="{{dr.motifF}}"><div class="filters actifs"><button type="button" class="chip f on" onClick="{{dr.motifF.lever}}">{{dr.motifF.l}} ✕</button></div></sc-if>
+          <div class="zw">
+            <svg class="cal" viewBox="{{dr.vb}}" width="{{dr.w}}" height="{{dr.h}}" role="group" aria-label="{{dr.titre}}">
               <sc-for list="{{dr.mois}}" as="m"><text class="ax" x="{{m.x}}" y="10">{{m.l}}</text></sc-for>
               <sc-for list="{{dr.jl}}" as="j"><text class="ax" x="0" y="{{j.y}}">{{j.l}}</text></sc-for>
-              <sc-for list="{{dr.cases}}" as="c"><rect class="{{c.cls}}" x="{{c.x}}" y="{{c.y}}" width="13" height="13" onMouseEnter="{{c.survol}}" onClick="{{c.pick}}"></rect></sc-for>
+              <sc-for list="{{dr.cases}}" as="c"><rect class="{{c.cls}}" x="{{c.x}}" y="{{c.y}}" width="13" height="13" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" onClick="{{c.pick}}"></rect></sc-for>
             </svg>
             <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
-            <sc-if value="{{dr.tip}}"><div class="tip" style="{{dr.tip.st}}"><b class="tt-h">{{dr.tip.d}}</b><span>{{dr.tip.n}}</span><em>{{t.commune_a.drones_clic}}</em></div></sc-if>
           </div>
           <div class="sleg"><span class="lg"><i class="sw c0" aria-hidden="true"></i>{{t.commune_a.cal_aucun}}</span><span class="lg"><i class="sw c1" aria-hidden="true"></i>{{t.commune_a.cal_un}}</span><span class="lg"><i class="sw c2" aria-hidden="true"></i>{{t.commune_a.cal_plus}}</span><span class="lg"><i class="sw today" aria-hidden="true"></i>{{t.commune_a.cal_auj}}</span></div>
         </div>
@@ -132,11 +131,11 @@
         </div></div>
       <div class="row2">
         <div class="card"><h3 class="k">{{t.commune_a.motifs_k}}</h3>
-          <sc-if value="{{dr.motifs}}"><sc-for list="{{dr.motifs}}" as="m"><div class="{{m.cls}}"><span>{{m.l}}</span><i style="{{m.st}}"></i><b>{{m.n}}</b></div></sc-for></sc-if>
+          <sc-if value="{{dr.motifs}}"><sc-for list="{{dr.motifs}}" as="m"><sc-if value="{{m.pick}}"><button type="button" class="{{m.cls}}" aria-pressed="{{m.on}}" data-bh="{{m.l}}" data-bl="{{m.bl}}" data-bc="{{m.bc}}" onClick="{{m.pick}}"><span>{{m.l}}</span><i style="{{m.st}}"></i><b>{{m.n}}</b></button></sc-if><sc-if value="{{m.q}}"><div class="{{m.cls}}" data-bh="{{m.l}}" data-bl="{{m.bl}}"><span>{{m.l}}</span><i style="{{m.st}}"></i><b>{{m.n}}</b></div></sc-if></sc-for></sc-if>
           <sc-if value="{{dr.motifsNonLu}}"><p><span class="state">{{t.liste.non_lu}}</span></p><p class="note">{{t.commune_a.motifs_non_lu}}</p></sc-if>
         </div>
         <div class="card"><h3 class="k">{{t.commune_a.publies_k}}</h3>
-          <sc-if value="{{dr.vol.lu}}"><div class="sbar" style="height: 18px"><sc-for list="{{dr.vol.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}"><b>{{x.l}}</b></span></sc-for></div><div class="sleg"><sc-for list="{{dr.vol.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i>{{x.leg}}</span></sc-for></div><p class="note">{{dr.vol.note}}</p></sc-if>
+          <sc-if value="{{dr.vol.lu}}"><div class="sbar petite" style="height: 18px" data-bg=""><sc-for list="{{dr.vol.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}" data-bc="{{x.bc}}" onClick="{{x.pick}}"><b>{{x.l}}</b></span></sc-for></div><div class="sleg"><sc-for list="{{dr.vol.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i>{{x.leg}}</span></sc-for></div><p class="note">{{dr.vol.note}}</p><sc-if value="{{dr.vol.liste}}"><ul class="today-l vol-l"><sc-for list="{{dr.vol.liste}}" as="a"><li><b>{{a.d}}</b> · {{{a.l}}} <span class="note">{{a.e}}</span></li></sc-for></ul></sc-if></sc-if>
           <sc-if value="{{dr.vol.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span></p><p class="note">{{t.commune_a.publies_non_lu}}</p></sc-if>
         </div>
       </div>
@@ -149,12 +148,12 @@
       <div class="row2 wide">
         <sc-if value="{{vois.epci}}">
         <div class="card"><div class="ch-h"><h3 class="k">{{vois.epci.titre}}</h3><div class="seg-ctl" role="group" aria-label="{{vois.epci.titre}}"><sc-for list="{{vois.mesures}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
-          <ol class="rank"><sc-for list="{{vois.epci.rows}}" as="r"><li class="{{r.cls}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
+          <ol class="rank"><sc-for list="{{vois.epci.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
           <p class="note">{{vois.epci.note}}</p></div>
         </sc-if>
         <sc-if value="{{vois.strate}}">
         <div class="card"><h3 class="k">{{vois.strate.titre}}</h3>
-          <ol class="rank"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
+          <ol class="rank"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
           <p class="note">{{t.commune_a.strate_note}}</p></div>
         </sc-if>
         <sc-if value="{{vois.attente}}"><p class="note" role="status">{{vois.attente}}</p></sc-if>
@@ -166,12 +165,13 @@
       <div class="{{docs.r.cls}}">
         <button type="button" class="fh" aria-expanded="{{docs.r.exp}}" aria-controls="{{docs.r.id}}" onClick="{{docs.r.basculer}}"><span>{{docs.r.titre}}<small>{{docs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
         <div class="fb" id="{{docs.r.id}}">
-          <div class="filters" role="group" aria-label="{{t.commune_a.s_documents}}"><sc-for list="{{docs.onglets}}" as="o"><button type="button" class="chip f" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}} · {{o.n}}</button></sc-for><span class="sp"></span><a class="btn" href="{{docs.tout}}">{{t.commune_a.documents_tous}}</a></div>
-          <table class="docs"><caption class="sr">{{t.commune_a.s_documents}}</caption><thead><tr><th scope="col">{{t.commune_a.col_date}}</th><th scope="col">{{t.commune_a.col_document}}</th><th scope="col">{{docs.col3}}</th><th scope="col" class="n">{{docs.col4}}</th><th scope="col">{{t.commune_a.col_dossier}}</th></tr></thead><tbody>
+          <div class="filters" role="group" aria-label="{{t.commune_a.s_documents}}"><sc-for list="{{docs.onglets}}" as="o"><button type="button" class="chip f" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}} · {{o.n}}</button></sc-for><span class="sp"></span><sc-for list="{{docs.menus}}" as="m"><div class="{{m.cls}}"><button type="button" class="{{m.chip}}" aria-haspopup="listbox" aria-expanded="{{m.ouvert}}" onClick="{{m.basculer}}">{{m.l}} ▾</button><sc-if value="{{m.menu}}"><ul class="dmenu tmenu" role="listbox" aria-label="{{m.lab}}" onKeyDown="{{m.clavier}}"><sc-for list="{{m.opts}}" as="o"><li class="drow" role="option" aria-selected="{{o.on}}" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span></li></sc-for></ul></sc-if></div></sc-for><button type="button" class="btn" onClick="{{docs.exporter}}">{{t.commune_a.exporter}}</button></div>
+          <sc-if value="{{docs.actifs}}"><div class="filters actifs"><sc-for list="{{docs.actifs}}" as="a"><button type="button" class="chip f on" onClick="{{a.lever}}">{{a.l}} ✕</button></sc-for></div></sc-if>
+          <table class="docs"><caption class="sr">{{t.commune_a.s_documents}}</caption><thead><tr><th scope="col" aria-sort="{{docs.triDate}}"><button type="button" class="tri" onClick="{{docs.parDate}}">{{t.commune_a.col_date}}</button></th><th scope="col">{{t.commune_a.col_document}}</th><th scope="col">{{docs.col3}}</th><th scope="col" class="n" aria-sort="{{docs.triM}}"><button type="button" class="tri" onClick="{{docs.parM}}">{{docs.col4}}</button></th><th scope="col">{{t.commune_a.col_dossier}}</th></tr></thead><tbody onClick="{{docs.ligne}}">
             <sc-for list="{{docs.rows}}" as="r"><tr><td data-label="{{t.commune_a.col_date}}">{{r.d}}</td><td data-label="">{{{r.doc}}}</td><td data-label="{{docs.col3}}">{{{r.qui}}}</td><td class="n" data-label="{{docs.col4}}">{{r.m}}</td><td data-label="{{t.commune_a.col_dossier}}">{{{r.dos}}}</td></tr></sc-for>
           </tbody></table>
           <sc-if value="{{docs.vide}}"><p class="note">{{t.commune_a.documents_vide}}</p></sc-if>
-          <sc-if value="{{docs.plus}}"><p class="note">{{docs.plus}}</p></sc-if>
+          <sc-if value="{{docs.plus}}"><p class="note">{{docs.plus}} <a class="go" href="{{docs.tout}}">{{t.commune_a.documents_tous}}</a></p></sc-if>
         </div>
       </div>
     </section>

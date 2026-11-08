@@ -130,9 +130,32 @@ export function strate(pop: number): number {
   return STRATES.find((s) => pop >= s) ?? 0;
 }
 
-/** A value's rank among others (1 the largest), and how many: none when the value is unknown. */
+/** Under this many communes ranked, a rank says nothing (« 3e sur 3 », Ju 08/11): none is shown. */
+export const RANG_MIN = 5;
+/** A value's rank among others (1 the largest), and how many: none when the value is unknown or
+ * fewer than RANG_MIN are ranked. */
 export function rang(v: number | null, autres: number[]): { r: number; n: number } | null {
   if (v == null || v < 0) return null;
   const vs = autres.filter((x) => x >= 0);
+  if (vs.length < RANG_MIN) return null;
   return { r: vs.filter((x) => x > v).length + 1, n: vs.length };
+}
+
+/** A drone act's served motive (`motif.categorie`, A 20cf0e6) in the board's classes: sport,
+ * concerts and commemorations are « événement »; « stupéfiants » keeps its own row (served, not
+ * in the board); « frontière » and « circulation » are purposes of L. 242-5 not read yet, so no
+ * served category gives them. None when the act has no motive read. */
+export type ClasseMotif = "manifestation" | "evenement" | "stupefiants" | "autre";
+export function classeMotif(motif: unknown): ClasseMotif | null {
+  const c =
+    motif && typeof motif === "object"
+      ? (motif as { categorie?: unknown }).categorie
+      : typeof motif === "string"
+        ? motif
+        : null;
+  if (typeof c !== "string" || !c) return null;
+  if (c === "manifestation") return "manifestation";
+  if (/^(sport|concert_fete|commemoration|evenement)$/.test(c)) return "evenement";
+  if (c === "stupefiants") return "stupefiants";
+  return "autre";
 }

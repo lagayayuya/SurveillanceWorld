@@ -301,11 +301,14 @@
 .rg .va svg .mo.a {
   fill: #ffd1e6;
 }
-.rg .va svg .mt {
+/* « +87 »: not `.mt`, which v2's cadre.css unsets (`all: unset` drops text-anchor) */
+.rg .va svg .gmo {
   font:
     800 12.5px Archivo,
     sans-serif;
   fill: #111111;
+  text-anchor: middle;
+  dominant-baseline: central;
   pointer-events: none;
 }
 .rg .va svg .c0.a {
@@ -345,14 +348,30 @@
   gap: 12px;
 }
 .rg .va .dh h3 {
+  min-width: 0;
   margin: 0;
   font-family: Archivo, sans-serif;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 900;
   font-style: normal;
   line-height: normal;
-  font-stretch: 70%;
-  text-transform: uppercase;
+  font-stretch: 72%;
+  /* a published object, in ordinary case and on one line like the home's largest contracts (Ju,
+     08/11): the board's short uppercase titles do not fit the real ones */
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .va .dos .fh > span {
+  min-width: 0;
+  text-transform: none;
+}
+.rg .va .dos .fh .t1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .rg .th.va .dh h3 a {
   text-decoration: none;
@@ -578,11 +597,7 @@
   .rg .va .filters .sp {
     display: none;
   }
-  /* the graph's names are in the suppliers' list above: on a phone the drawing takes no touch;
-     a ranked row's link is the row's height */
-  .rg .va .g2 a {
-    pointer-events: none;
-  }
+  /* a ranked row's link is the row's height */
   .rg .th.va .rank li a {
     display: inline-flex;
     align-items: center;
@@ -592,4 +607,132 @@
     padding: 0;
     align-items: center;
   }
+}
+
+/* --- behaviours (board Lyon-A-comportements): what a hover reads, what a click filters --------- */
+/* a legend's series hides on a click (its button pressed when shown) and stands out on a hover */
+.rg .va .lgb {
+  min-height: 32px;
+  padding: 2px 6px;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.rg .va .lgb[aria-pressed="false"] {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.rg .va .card:has(.lgb:hover > .c-ville) .chart rect:is(.c-transp, .c-autres),
+.rg .va .card:has(.lgb:hover > .c-transp) .chart rect:is(.c-ville, .c-autres),
+.rg .va .card:has(.lgb:hover > .c-autres) .chart rect:is(.c-ville, .c-transp) {
+  opacity: 0.3;
+}
+.rg .va .chart .col[tabindex="0"] {
+  cursor: pointer;
+}
+/* a supplier's row hovered: its node in the graph stands out */
+.rg .va .row2:has(.sup.i0:hover) .g2 :is(a, g):is(.i1, .i2, .i3, .i4),
+.rg .va .row2:has(.sup.i1:hover) .g2 :is(a, g):is(.i0, .i2, .i3, .i4),
+.rg .va .row2:has(.sup.i2:hover) .g2 :is(a, g):is(.i0, .i1, .i3, .i4),
+.rg .va .row2:has(.sup.i3:hover) .g2 :is(a, g):is(.i0, .i1, .i2, .i4),
+.rg .va .row2:has(.sup.i4:hover) .g2 :is(a, g):is(.i0, .i1, .i2, .i3) {
+  opacity: 0.3;
+}
+/* the dossiers of the year chosen in the money's chart */
+.rg .va .dos.mark {
+  outline: 4px solid var(--type-registre);
+  outline-offset: 2px;
+}
+/* a motive's bar: a button that filters the calendar */
+.rg .va button.hb {
+  width: 100%;
+  min-height: 36px;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rg .va button.hb.on span {
+  text-decoration: underline 2px;
+}
+.rg .va .sbar .seg[tabindex] {
+  cursor: pointer;
+}
+.rg .va .sbar .seg.on {
+  outline: 3px solid var(--fg);
+  outline-offset: -3px;
+}
+.rg .va .filters.actifs {
+  margin: 8px 0 0;
+}
+.rg .va .vol-l {
+  margin-top: 10px;
+}
+/* « Tous les documents »: the columns' sort, the row a pointer is on */
+.rg .va .docs th .tri {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.rg .va .docs th[aria-sort="descending"] .tri::after {
+  content: " ↓";
+}
+.rg .va .docs tbody tr:hover {
+  background: var(--warn-bg);
+  cursor: pointer;
+}
+.rg .va .filters .dancre .dmenu {
+  left: auto;
+  right: 0;
+  width: 300px;
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+
+/* the graph's lines take no pointer: a tap or a hover reaches the node under them. A node smaller
+   than 44 px takes a tap for its bubble (Lyon-A-comportements, « Au doigt »): the suppliers' list
+   above holds the same links at full size (WCAG 2.5.8, its « equivalent » exception) */
+.rg .va .g2 line {
+  pointer-events: none;
+}
+
+/* a legend's buttons read as its spans: left-aligned, the words flowing after the swatch */
+.rg .va .lgb {
+  display: inline-block;
+  text-align: left;
+}
+@media (max-width: 959px) {
+  .rg .va .sbar .seg.pt b {
+    display: none;
+  }
+  /* the money's three views on one row or two full ones, never a hole */
+  .rg .va .ch-h .seg-ctl {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .rg .va .ch-h .seg-ctl button {
+    flex: 1 1 auto;
+  }
+}
+.rg .va .lgb .sw {
+  margin-right: 6px;
+}
+@media (max-width: 959px) {
+  /* an 18 px bar holds its numbers at 13 px */
+  .rg .va .sbar.petite .seg b {
+    font-size: 13px;
+    line-height: 16px;
+  }
+}
+/* « À venir »: the days of the week before the first one, out of the window */
+.rg .va .cal rect.passe {
+  opacity: 0.25;
 }

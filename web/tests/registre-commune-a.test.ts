@@ -9,6 +9,7 @@ import {
   grandsSystemes,
   joursDeVol,
   rang,
+  classeMotif,
   strate,
 } from "../src/registre/vues/commune-a.ts";
 
@@ -81,6 +82,17 @@ test("the suppliers by amount, the days of flight in twelve months, a rank among
   assert.equal(strate(519127), 200000);
   assert.equal(strate(42982), 20000);
   assert.equal(strate(45), 0);
-  assert.deepEqual(rang(61, [117, 61, 23, -1, 10]), { r: 2, n: 4 });
+  assert.deepEqual(rang(61, [117, 61, 23, -1, 10, 4]), { r: 2, n: 5 });
   assert.equal(rang(null, [1, 2]), null);
+  // « 3e sur 3 » says nothing: under five communes ranked, no rank
+  assert.equal(rang(61, [117, 61, 23, -1, 10]), null);
+});
+
+test("a drone act's motive in the board's classes", () => {
+  assert.equal(classeMotif({ categorie: "manifestation", libelle: null, origine: "regles" }), "manifestation");
+  for (const c of ["sport", "concert_fete", "commemoration"])
+    assert.equal(classeMotif({ categorie: c }), "evenement");
+  assert.equal(classeMotif({ categorie: "stupefiants" }), "stupefiants");
+  assert.equal(classeMotif(undefined), null);
+  assert.equal(classeMotif({ categorie: null }), null);
 });
