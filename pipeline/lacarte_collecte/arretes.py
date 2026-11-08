@@ -282,9 +282,13 @@ def collect_admin(
         upto[kind] = ctx.today.isoformat()
         st.save(admin, jusqu_au=upto)
     # the recueils read before by an older reader, searched no more (a search starts a month
-    # back): their text asked one last time, or taken from the cache, read, and cached
+    # back): their text asked one last time, or taken from the cache, read, and cached; one
+    # read with no act only when its title announces an act the map shows (`relecture`)
+    again = re.compile(rules(raw.name, raw.parent)["relecture"]["titre"], re.I)
     for rid, old in list(known.items()):
-        if is_read(old) or old.get("statut") != "lu" or not old.get("actes"):
+        if is_read(old) or old.get("statut") != "lu":
+            continue
+        if not old.get("actes") and not again.search(old.get("name") or ""):
             continue
         if ctx.out_of_time():
             return st.save(admin, statut="en_cours", jusqu_au=upto)

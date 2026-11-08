@@ -23,6 +23,21 @@ lecture:
     goes on.
   limite_s: 120
 
+# which recueils an older reader read with no act are read again by the current one
+relecture:
+  id: rule:collecte_actes@1:relecture
+  rationale: >-
+    A recueil an older reader cut into acts is read again by each new reader; one it read
+    with no act was never asked again, and its text is not in the server's cache (only a
+    recueil with acts is kept). On 2026-11-08, 2 764 such recueils were left by readers 1 to
+    4: about 7 h 40 of requests to Attrap at one per 10 s, beyond a run's 5 h, for recueils
+    that most likely hold no act. Ju (2026-11-08): only those whose title announces an act
+    the map shows (a capture, an aircraft, a drone, video protection, a camera), 130 of
+    them, among which the Préfecture de police's single acts (« Arrêté n° 2026-01165
+    autorisant la captation… », no act by reader 2). The rest wait for the count of acts
+    found: past 5 % of these, two night runs for the others.
+  titre: "captation|a[ée]ronef|drone|vid[ée]o[ -]?protection|vid[ée]o[ -]?surveillance|cam[ée]ra"
+
 types:
   drone:
     priorite: 1

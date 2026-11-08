@@ -181,3 +181,41 @@ def test_a_surveillance_recueil_s_text_is_kept_on_the_server_and_read_again_with
     assert Cache(tmp_path).purger(dt2.date.today() + dt2.timedelta(days=366)) == 1
     Cache(tmp_path).put(rec, d["content"])
     assert Cache(tmp_path).effacer(d["id"]) and Cache(tmp_path).get(d["id"]) is None
+
+
+def test_a_recueil_an_older_reader_read_with_no_act_is_asked_again_only_by_its_title(
+    collecte_server, tmp_path
+):
+    """2 764 recueils left with no act by readers 1 to 4 (2026-11-08): only those whose title
+    announces an act the map shows are asked again (rules/collecte_actes.yaml `relecture`)."""
+    rules_dir = tmp_path / "rules"
+    rules_dir.mkdir()
+    for name in ("collecte_actes.yaml", "registre_effacements.yaml", "registre_sources.yaml"):
+        (rules_dir / name).write_text((registre.RULES / name).read_text("utf-8"), "utf-8")
+    pref69 = {"nom": "Rhône", "code": "69", "genre": "departement", "attrap": "pref69",
+              "index": None, "defi": False, "parcours": False, "vague": 1,
+              "actes_12_mois": 9}  # fmt: skip
+    (rules_dir / "collecte_administrations.yaml").write_text(
+        json.dumps({"administrations": {"pref69": pref69}}), "utf-8"
+    )
+    base = collecte_server.base
+    # before the searches' period: found by no search, only by the store
+    ATTRAP["pref69"] = {**raa("pref69"), "url": f"{base}/pdf/RAA_69.pdf", "date": "2026-05-01"}
+    ATTRAP["pref69"]["id"] = arretes.recueil_id(ATTRAP["pref69"]["url"])
+    target = {"id": ATTRAP["pref69"]["id"], "administration": "pref69", "date": "2026-05-01",
+              "name": "Arrêté n° 2026-00550 autorisant la captation d'images au moyen de caméras",
+              "url": ATTRAP["pref69"]["url"], "familles": ["drone"], "statut": "lu",
+              "actes": 0, "lecteur": 2}  # fmt: skip
+    other = {**target, "id": "0" * 64, "name": "Recueil spécial n° 3 du 1er mai 2026"}
+    Store(tmp_path, "recueils").add([target, other])
+    try:
+        ctx = ctx_for(collecte_server, tmp_path, dt.date(2026, 10, 31), rules_dir)
+        out = arretes.collect(ctx)
+    finally:
+        ATTRAP.update(pref69=raa("pref69"))
+    assert out["administrations"] == {"pref69": "termine"}
+    recs = {r["id"]: r for r in Store(tmp_path, "recueils").records()}
+    assert recs[target["id"]]["lecteur"] == parse_raa.VERSION and recs[target["id"]]["actes"]
+    assert recs[other["id"]]["lecteur"] == 2  # its title announces nothing: never asked
+    assert not any(other["id"] in p for p in collecte_server.asked)
+    assert any(target["id"] in p for p in collecte_server.asked)
