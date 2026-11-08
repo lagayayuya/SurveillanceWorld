@@ -1,0 +1,32 @@
+<div class="{{th}} va cmp">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-c" aria-hidden="true"></i>{{t.comparer_a.kind}}</span>
+      <h1 class="sr">{{t.comparer_a.titre}}</h1><div class="name cutname" aria-hidden="true"><sc-for list="{{lettres}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <div class="picks" role="group" aria-label="{{choixL}}"><sc-for list="{{cols}}" as="c"><button type="button" class="chip f on" aria-label="{{c.retirerL}}" onClick="{{c.retirer}}">{{c.nom}} ✕</button></sc-for><sc-if value="{{ap}}"><div class="{{ap.cls}}"><button type="button" class="chip f add" aria-haspopup="listbox" aria-expanded="{{ap.ouvert}}" onClick="{{ap.basculer}}">{{ap.l}}</button><sc-if value="{{ap.menu}}"><div class="dmenu amenu" onKeyDown="{{ap.clavier}}"><label class="dq"><span class="sr">{{ap.chercher}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{ap.chercher}}" autocomplete="off"></label><ul class="dliste" role="listbox" aria-label="{{ap.chercher}}"><sc-for list="{{ap.res}}" as="o"><li class="drow" role="option" aria-selected="false" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span><span class="dn">{{o.d}}</span></li></sc-for></ul><sc-if value="{{ap.vide}}"><p class="note" role="status">{{ap.vide}}</p></sc-if></div></sc-if></div></sc-if></div>
+      <p class="lead">{{{lead}}}</p>
+    </div>
+    <div class="{{actions.cls}}"><button type="button" class="btn" onClick="{{partager}}" aria-haspopup="dialog">{{t.comparer_a.partager}}</button><button type="button" class="btn" onClick="{{exporter}}" disabled="{{actions.sansExport}}">{{t.comparer_a.exporter}}</button><sc-if value="{{actions.chemin}}"><a class="btn pri" href="{{actions.chemin}}">{{t.comparer_a.chemin}}</a></sc-if><sc-if value="{{actions.plus}}"><button type="button" class="btn more" aria-label="{{t.comparer_a.plus}}" aria-expanded="{{actions.plusOuvert}}" onClick="{{actions.basculer}}">⋯</button></sc-if></div>
+  </section>
+
+  <div class="body"><main>
+    <sc-if value="{{table}}">
+    <section class="sec">
+      <div class="card keep"><table class="cmpt"><caption class="sr">{{table.caption}}</caption><thead><tr><th class="m" scope="col"><span class="sr">{{t.comparer_a.indicateur}}</span></th><sc-for list="{{cols}}" as="c"><th scope="col"><sc-if value="{{c.href}}"><a class="{{c.cls}}" href="{{c.href}}">{{c.nom}}</a></sc-if><sc-if value="{{c.sansFiche}}"><span class="ent nolink">{{c.nom}}</span></sc-if><span class="sub">{{{c.sub}}}</span><button type="button" class="x" aria-label="{{c.retirerL}}" onClick="{{c.retirer}}">✕</button></th></sc-for><sc-if value="{{at}}"><th class="add"><div class="{{at.cls}}"><button type="button" class="btn sm" aria-haspopup="listbox" aria-expanded="{{at.ouvert}}" onClick="{{at.basculer}}">{{t.comparer_a.ajouter}}</button><sc-if value="{{at.menu}}"><div class="dmenu amenu" onKeyDown="{{at.clavier}}"><label class="dq"><span class="sr">{{at.chercher}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{at.chercher}}" autocomplete="off"></label><ul class="dliste" role="listbox" aria-label="{{at.chercher}}"><sc-for list="{{at.res}}" as="o"><li class="drow" role="option" aria-selected="false" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span><span class="dn">{{o.d}}</span></li></sc-for></ul><sc-if value="{{at.vide}}"><p class="note" role="status">{{at.vide}}</p></sc-if></div></sc-if></div><span class="sub">{{table.max}}</span></th></sc-if></tr></thead><tbody><sc-for list="{{table.groupes}}" as="g"><tr class="grp"><td colspan="{{table.span}}" data-label="" data-t="1">{{g.l}}</td></tr><sc-for list="{{g.lignes}}" as="r"><tr><td class="m" data-label="" data-t="1"><b>{{r.l}}</b><span class="sub">{{r.s}}</span></td><sc-for list="{{r.vals}}" as="v"><td class="{{v.cls}}" colspan="{{v.span}}" data-label="{{v.nom}}" tabindex="{{v.tab}}" data-bh="{{v.bh}}" data-bl="{{v.bl}}" data-bc="{{v.bc}}" data-go="{{v.go}}"><sc-if value="{{v.txt}}"><b>{{v.txt}}</b></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{t.liste.non_lu}}</span></sc-if><sc-if value="{{v.bar}}"><i class="bar" aria-hidden="true"><i style="{{v.bar}}"></i></i></sc-if><sc-if value="{{v.sub}}"><span class="sub">{{v.sub}}</span></sc-if><sc-if value="{{v.liste}}"><span class="sep"> : </span><span class="deps"><sc-for list="{{v.liste}}" as="d"><a href="{{d.href}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}">{{d.l}}</a><sc-if value="{{d.sep}}"><span class="sep">{{d.sep}}</span></sc-if><sc-if value="{{d.fin}}"><span class="etc">{{d.fin}}</span></sc-if></sc-for></span></sc-if></td></sc-for><sc-if value="{{at}}"><td class="add" data-label=""></td></sc-if></tr></sc-for></sc-for></tbody></table>
+        <p class="note">{{table.note}}</p></div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{srcs}}">
+    <section class="sec" id="sources"><h2><span class="num doc" aria-hidden="true">i</span>{{t.comparer_a.s_sources}}</h2>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.b}}</b>{{{s.d}}}</li></sc-for></ul>
+          <p class="note">{{srcs.note}} <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+  </main></div>
+</div>

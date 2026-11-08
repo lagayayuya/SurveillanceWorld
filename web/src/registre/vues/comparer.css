@@ -1,0 +1,314 @@
+/* Comparer in theme A (boards Comparer-communes and Comparer-entreprises, their phone and dark
+   variants): the boards' own rules (.ico-c, .picks, .cmpt, the phone's table in rows) on theme A's
+   components (socle-a.css) and the site's tokens: their ink #111 --line, their white --bg-2, their
+   dashed #bbb --rule, their pale yellow --warn-bg, their pink --type-registre. */
+.rg .va .ico-c {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  border: 2px solid var(--on-accent);
+  background: linear-gradient(
+    90deg,
+    var(--on-accent) 0 2px,
+    transparent 2px 7px,
+    var(--on-accent) 7px 9px,
+    transparent 9px
+  );
+}
+.rg .va.cmp .name .cut {
+  font-size: 50px;
+}
+/* the board's sections: no frame's top padding (cadre.css `.rg .sec`), its h2 then its card */
+.rg .va.cmp .sec {
+  display: block;
+  padding-top: 0;
+}
+
+/* the columns compared, as chips: ✕ removes one, « + Ajouter » opens the search */
+.rg .va .picks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.rg .va .picks .chip.add {
+  background: var(--bg-2);
+  color: var(--fg);
+  border-style: dashed;
+}
+.rg .va .amenu {
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  font-family: Archivo, sans-serif;
+  text-transform: none;
+}
+.rg .va .amenu .drow {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.rg .va .amenu .dnom {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+.rg .va .amenu .note {
+  margin: 0;
+}
+.rg .va th.add .amenu {
+  right: 0;
+  left: auto;
+}
+
+/* the table: a column per commune or company, a row per figure */
+.rg .va .cmpt {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rg .va .cmpt th {
+  position: relative;
+  min-width: 200px;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 3px solid var(--line);
+  font-weight: 400;
+}
+.rg .va .cmpt th .ent {
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+/* a long name wraps before the ✕, its line under it runs the column's width (the board's) */
+.rg .va .cmpt th:not(.add):not(.m) .ent {
+  display: inline-block;
+  max-width: calc(100% - 34px);
+}
+.rg .va .cmpt th .sub {
+  display: block;
+  margin-top: 2px;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .cmpt th .x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  font-weight: 900;
+  cursor: pointer;
+}
+.rg .va .cmpt th.add {
+  min-width: 150px;
+  border-bottom-style: dashed;
+}
+.rg .va .cmpt th.m {
+  min-width: 240px;
+}
+.rg .va .cmpt td {
+  padding: 10px 12px;
+  border-bottom: 1.5px dashed var(--rule);
+  vertical-align: top;
+}
+.rg .va .cmpt tr.grp td {
+  padding: 14px 12px 6px;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 2px solid var(--line);
+}
+.rg .va .cmpt td.m b {
+  display: block;
+  font:
+    800 15.5px Archivo,
+    sans-serif;
+}
+.rg .va .cmpt td .sub {
+  display: block;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .cmpt th.add .sub,
+.rg .va .cmpt td.m .sub {
+  white-space: nowrap;
+}
+.rg .va .cmpt td.v b {
+  display: block;
+  font-family: Archivo, sans-serif;
+  font-size: 24px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+}
+.rg .va .cmpt td.v.top {
+  background: var(--warn-bg);
+}
+.rg .va .cmpt td.v[data-go] {
+  cursor: pointer;
+}
+.rg .va .cmpt td.v[tabindex]:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: -3px;
+}
+.rg .va .cmpt .bar {
+  display: block;
+  max-width: 180px;
+  height: 8px;
+  margin-top: 4px;
+  border: 1.5px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va .cmpt .bar i {
+  display: block;
+  height: 100%;
+  background: var(--type-registre);
+}
+.rg .va .cmpt td.span {
+  font-size: 15px;
+}
+.rg .va .cmpt td.span b {
+  display: inline;
+  font-size: 22px;
+}
+.rg .va .cmpt td.add {
+  border-bottom-style: none;
+}
+.rg .va .cmpt .state {
+  margin-top: 4px;
+}
+.rg .va.cmp .cov {
+  flex-direction: column;
+}
+.rg .va.cmp .cov li {
+  display: block;
+}
+.rg .va.cmp .cov li i {
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: 1px;
+}
+.rg .va .actions .more {
+  display: none;
+}
+
+/* the phone: the board's table in rows (variants.py « tableaux en fiches »): the figure's name
+   across, then a value per column, its name over it; the head's ✕ and « + Ajouter » are the chips' */
+@media (max-width: 959px) {
+  .rg .va.cmp .name .cut {
+    font-size: 34px;
+  }
+  .rg .va .cmpt,
+  .rg .va .cmpt tbody {
+    display: block;
+    max-width: 100%;
+  }
+  .rg .va .cmpt thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .rg .va .cmpt tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px 0;
+    padding: 10px 0;
+    border-bottom: 1.5px dashed var(--rule);
+  }
+  .rg .va .cmpt tr.grp {
+    display: block;
+    border: 0;
+  }
+  .rg .va .cmpt td {
+    display: block;
+    flex: 0 0 50%;
+    border: 0;
+    padding: 0 8px 0 0;
+    text-align: left;
+    white-space: normal;
+    font-size: 14px;
+  }
+  .rg .va .cmpt tr.grp td {
+    display: block;
+    padding: 4px 0 6px;
+  }
+  .rg .va .cmpt td.m {
+    flex: 0 0 100%;
+  }
+  .rg .va .cmpt td.m .sub {
+    white-space: normal;
+  }
+  .rg .va .cmpt td.add {
+    display: none;
+  }
+  .rg .va .cmpt td.v {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .rg .va .cmpt td.span {
+    flex: 0 0 100%;
+  }
+  .rg .va .cmpt td.v b {
+    font-size: 20px;
+  }
+  .rg .va .cmpt td.v:not(.span)::before {
+    content: attr(data-label);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font:
+      400 12px "Special Elite",
+      monospace;
+    color: var(--muted);
+  }
+  /* the départements in common, touched: a 44 px square each, their commas left out */
+  .rg .va .cmpt td.span .deps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+  }
+  .rg .va .cmpt td.span .deps a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    border: 1.5px dashed var(--rule);
+  }
+  .rg .va .cmpt td.span .sep {
+    display: none;
+  }
+  .rg .va .cmpt td.span .etc {
+    align-self: center;
+  }
+  /* the head's actions: two buttons and « ⋯ » (the board's), the others behind it */
+  .rg .va.cmp .actions:not(.plus) > .btn:nth-child(n + 3):not(.more) {
+    display: none;
+  }
+  .rg .va .actions .more {
+    display: inline-block;
+    min-width: 44px;
+  }
+}
