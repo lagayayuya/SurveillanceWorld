@@ -1491,7 +1491,7 @@ body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .ma
 .rg .th :is(.mtop, .ttop) .crumbs a.rl {
   gap: 6px;
   padding: 0 4px;
-  min-height: 40px;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
 }

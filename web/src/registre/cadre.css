@@ -967,6 +967,8 @@
 }
 .rg .th .ttop a.crumb {
   color: var(--fg);
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
 }
 /* The top bar's squares keep their paper in light, their shadow the theme's blue (v2.4, Ju): the
