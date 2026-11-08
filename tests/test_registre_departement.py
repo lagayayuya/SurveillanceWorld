@@ -227,3 +227,14 @@ def test_every_departement_has_its_name_its_article_and_in_it(built):
         assert json.loads(p.read_text(encoding="utf-8"))["departement"]["nom"], p.stem
     for code, row in read(built, "couverture.json")["departements"].items():
         assert row["nom"] == cat[f"registre.departement.nom_{code}"], code
+
+
+def test_every_contract_and_notice_says_what_it_buys(built):
+    import lacarte_registre as registre
+    from lacarte_registre import natures
+
+    rn = natures.load(registre.RULES / "registre_natures.yaml")
+    keys = {n.key for n in rn} | {natures.AUTRE}
+    docs = [e for e in documents(built) if e["t"] in natures.TYPES]
+    assert docs and all(e["natures"] and set(e["natures"]) <= keys for e in docs)
+    # the extract's documents have no objet nor title: `autre`, never empty

@@ -491,3 +491,13 @@ def test_a_legal_persons_sirene_profile_is_served_never_a_sole_traders(tmp_path)
         "effectif_annee": "2024", "siege_departement": "80"}  # fmt: skip
     assert ents[person]["nom"] is None
     assert not {"categorie", "creation", "effectif", "siege_departement"} & set(ents[person])
+
+
+def test_a_contract_carries_its_cpv_code(tmp_path):
+    nat = tmp_path / "national"
+    nat.mkdir()
+    decp.write(nat / "decp.jsonl.gz", decp.contracts(rows()))
+    (nat / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
+    firsts = [e for e in national.assembler(tmp_path)["evenements"] if e["t"] == "attribution"]
+    assert firsts and all(len(c) == 8 and c.isdigit() for e in firsts for c in e.get("cpv", []))
+    assert sum("cpv" in e for e in firsts) > len(firsts) / 2

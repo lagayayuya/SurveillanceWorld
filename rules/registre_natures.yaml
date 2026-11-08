@@ -3,7 +3,9 @@
 # one or more natures; none found, it is `autre`. Each nature has an id, a rationale, the
 # words of the objet (regular expressions on the folded text: lower case, no accents, « ° »
 # read as « on ») and the CPV prefixes that give it when the objet says nothing of that kind.
-# Not served: measured on 100 contracts read by hand (natures.md) before any page uses it.
+# Served since 2026-11-08 on every contract, modification and notice (`natures`, built by
+# construire), after a measure on 100 contracts read by hand: 85 % right, 95 % right or
+# partly right, on a sample the rules were not written from.
 version: 1
 
 # The objet first, then the CPV: a nature of the « action » kind (supply, maintenance, works,

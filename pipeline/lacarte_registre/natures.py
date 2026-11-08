@@ -28,6 +28,10 @@ import yaml
 AUTRE = "autre"
 
 
+# the documents a nature is read for: the contracts, their modifications and the notices
+TYPES = frozenset({"attribution", "modification", "avis", "resultat", "rectificatif"})
+
+
 def fold(s: str | None) -> str:
     """Lower case, no accents, « ° » (an abbreviation's « -on ») read as « on », « œ » as
     « oe », any run of spaces as one."""

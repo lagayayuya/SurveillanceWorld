@@ -317,6 +317,8 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
                 "estimation": False,
                 "origine": "decp",
             }
+            if c.get("codeCPV"):
+                e["cpv"] = [str(c["codeCPV"])]  # what is bought (natures.py, the page's codes)
             o = c.get("offres")
             if n == 0 and o is not None and 0 < o < 100:
                 e["offres"] = int(o)
@@ -419,6 +421,12 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
         for k in ("procedure", "duree_mois"):
             if ef.get(k) is not None:
                 e[k] = ef[k]
+        if n.get("cpv"):
+            e["cpv"] = n["cpv"]
+        # each lot as the notice describes it: its title, duration, renewals, criteria and
+        # the price's weight (boamp.eforms)
+        if ef.get("lots"):
+            e["lots"] = ef["lots"]
         if n.get("mention"):
             e["mention"] = n["mention"]  # the DILA's: its address, the file's name and date
         ev.append(e)

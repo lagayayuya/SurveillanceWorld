@@ -41,6 +41,7 @@ from lacarte_registre import (
     fusion,
     geo,
     national,
+    natures,
     recherche,
     regles,
     sortie,
@@ -84,6 +85,14 @@ def run(
         "documents": textes.appliquer(pilote.reg["evenements"], fix),
         "affaires": textes.appliquer(list(pilote.reg["affaires"].values()), fix),
     }
+    # what each contract and notice buys (rules/registre_natures.yaml): its objet (the
+    # pilot's documents have none: their affaire's title), then its CPV codes
+    rn = natures.load(rules / "registre_natures.yaml")
+    titles = {k: a.get("titre") for k, a in pilote.reg["affaires"].items()}
+    for e in pilote.reg["evenements"]:
+        if e["t"] in natures.TYPES:
+            text = e.get("objet") or titles.get(e.get("affaire") or "")
+            e["natures"] = natures.classer(text, e.get("cpv") or [], rn)["natures"]
     reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
