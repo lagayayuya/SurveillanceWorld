@@ -109,6 +109,9 @@ const jourCourt = (d: string): string =>
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${d.slice(0, 10)}T12:00:00Z`));
+/** A figure as written: a tenth per 1 000 inhabitants, whole euros per inhabitant or contract. */
+const comme = (k: string, v: number): number =>
+  k === "p1000" ? Math.round(v * 10) / 10 : k === "eph" || k === "moy" ? Math.round(v) : v;
 const enPhrase = (parts: RichItem[]): RichItem => ({ span: parts, cls: "" });
 
 /** « A, B et C »: the catalogue's comma and « et ». */
@@ -351,35 +354,31 @@ export class Comparer extends Vue<Props, State> {
    * whom; who spends the most per inhabitant, against whom (« aussi » when the same). */
   private leadCommunes(cols: Col[], fs: FiguresCommune[]): RichItem[] {
     const out: RichItem[] = [];
-    const p = fs.map((f) => f.p1000);
+    const p = fs.map((f) => (f.p1000 === null ? null : comme("p1000", f.p1000)));
     const o = classement(p);
     let premier = -1;
     if (o.length >= 2 && (p[o[0]] ?? 0) > 0) {
-      const vTop = un(p[o[0]] ?? 0);
-      if (o.every((i) => un(p[i] ?? 0) === vTop)) {
-        out.push(
-          ...phrase("comparer_a.lead_cam_egal", {
-            autres: enPhrase(enumerer(o.map((i) => this.nomLien(cols[i])))),
-            v: vTop,
-          }),
-        );
+      const vTop = p[o[0]] ?? 0;
+      const tete = o.filter((i) => p[i] === vTop);
+      const reste = o.filter((i) => p[i] !== vTop);
+      const noms = (l: number[]) => enPhrase(enumerer(l.map((i) => this.nomLien(cols[i], true))));
+      if (!reste.length) {
+        out.push(...phrase("comparer_a.lead_cam_egal", { autres: noms(tete), v: un(vTop) }));
       } else {
-        premier = o[0];
-        const devant = o
-          .slice(1)
-          .map((i) =>
-            enPhrase(phrase("comparer_a.devant", { nom: this.nomLien(cols[i]), v: un(p[i] ?? 0) })),
-          );
+        if (tete.length === 1) premier = tete[0];
+        const devant = reste.map((i) =>
+          enPhrase(phrase("comparer_a.devant", { nom: this.nomLien(cols[i]), v: un(p[i] ?? 0) })),
+        );
         out.push(
-          ...phrase("comparer_a.lead_cam", {
-            a: this.nomLien(cols[o[0]], true),
-            v: vTop,
+          ...phrase(tete.length === 1 ? "comparer_a.lead_cam" : "comparer_a.lead_cam_ex", {
+            a: tete.length === 1 ? this.nomLien(cols[tete[0]], true) : noms(tete),
+            v: un(vTop),
             autres: enPhrase(enumerer(devant)),
           }),
         );
       }
     }
-    const e = fs.map((f) => f.eph);
+    const e = fs.map((f) => (f.eph === null ? null : comme("eph", f.eph)));
     const oe = classement(e);
     if (oe.length) {
       const top = oe[0];
@@ -436,7 +435,8 @@ export class Comparer extends Vue<Props, State> {
     txt: (v: number) => string,
     extra: (i: number) => { bl?: string; sub?: string; nonLu?: boolean; ancre?: string },
   ): Cell[] {
-    const top = hauts(vals);
+    // the yellow on the figures as written (Lélex's 4,15 and Lyon's 4,07 are both « 4,1 »)
+    const top = hauts(vals.map((v) => (v === null ? null : comme(k, v))));
     const bars = barres(vals);
     return this.colonnes().map((c, i) => {
       const v = vals[i];
@@ -444,7 +444,7 @@ export class Comparer extends Vue<Props, State> {
       const href = c.href ? `${c.href}${x.ancre ?? ""}` : "";
       const vu = x.nonLu ? t("liste.non_lu") : v === null ? "—" : txt(v);
       const lignes = [
-        `${label} : ${vu}`,
+        `${label}\u00a0: ${vu}`,
         ...(x.bl ? [x.bl] : []),
         ...(top[i] ? [t("comparer_a.b_haut")] : []),
       ];
@@ -572,8 +572,10 @@ export class Comparer extends Vue<Props, State> {
                     sep: i < montres.length - 1 ? ", " : "",
                     fin: i === montres.length - 1 && communs.length > montres.length ? "…" : "",
                     bh: nom(d),
-                    bl: t("comparer_a.b_commun", { nom: nom(d) }),
-                    bc: t("comparer_a.b_clic", { nom: nom(d) }),
+                    bl: t("comparer_a.b_commun"),
+                    bc: has(`registre.departement.du_${d}`)
+                      ? t("comparer_a.b_clic_dep", { du: t(`departement.du_${d}`) })
+                      : t("comparer_a.b_clic", { nom: nom(d) }),
                   }))
                 : null,
             },

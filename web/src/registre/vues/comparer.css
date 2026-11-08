@@ -145,8 +145,7 @@
     monospace;
   color: var(--muted);
 }
-.rg .va .cmpt th.add .sub,
-.rg .va .cmpt td.m .sub {
+.rg .va .cmpt th.add .sub {
   white-space: nowrap;
 }
 .rg .va .cmpt td.v b {
@@ -255,9 +254,6 @@
   .rg .va .cmpt td.m {
     flex: 0 0 100%;
   }
-  .rg .va .cmpt td.m .sub {
-    white-space: normal;
-  }
   .rg .va .cmpt td.add {
     display: none;
   }
@@ -283,13 +279,13 @@
     color: var(--muted);
   }
   /* the départements in common, touched: a 44 px square each, their commas left out */
-  .rg .va .cmpt td.span .deps {
+  .rg .va .cmpt td.span .cdeps {
     display: flex;
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 6px;
   }
-  .rg .va .cmpt td.span .deps a {
+  .rg .va .cmpt td.span .cdeps a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -297,10 +293,10 @@
     min-height: 44px;
     border: 1.5px dashed var(--rule);
   }
-  .rg .va .cmpt td.span .sep {
+  .rg .va .cmpt td.span .csep {
     display: none;
   }
-  .rg .va .cmpt td.span .etc {
+  .rg .va .cmpt td.span .cetc {
     align-self: center;
   }
   /* the head's actions: two buttons and « ⋯ » (the board's), the others behind it */
