@@ -75,7 +75,7 @@
         <div class="{{ent.r.cls}}">
           <button type="button" class="fh" aria-expanded="{{ent.r.exp}}" aria-controls="{{ent.r.id}}" onClick="{{ent.r.basculer}}"><span>{{ent.r.titre}}<small>{{ent.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{ent.r.id}}">
-            <sc-for list="{{ent.rows}}" as="x"><div class="{{x.cls}}"><div class="sup-n">{{{x.nom}}}</div><div class="sup-bar"><span style="{{x.st}}"></span></div><div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div><sc-if value="{{x.o}}"><div class="sup-o">{{x.o}}</div></sc-if></div></sc-for>
+            <sc-for list="{{ent.rows}}" as="x"><div class="{{x.cls}}"><div class="sup-n">{{{x.nom}}}</div><div class="sup-bar"><span style="{{x.st}}"></span></div><div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div><sc-if value="{{x.og}}"><div class="sup-o"><a class="go" href="{{x.og}}">{{x.o}}</a></div></sc-if><sc-if value="{{x.oSeul}}"><div class="sup-o">{{x.o}}</div></sc-if></div></sc-for>
             <p class="note">{{t.commune_a.entreprises_note}}</p>
           </div>
         </div>
@@ -154,7 +154,7 @@
         <sc-if value="{{vois.strate}}">
         <div class="card"><h3 class="k">{{vois.strate.titre}}</h3>
           <ol class="rank"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
-          <p class="note">{{t.commune_a.strate_note}}</p></div>
+          <p class="note">{{t.commune_a.strate_note}}</p><a class="btn pri" href="{{vois.comparer}}">{{vois.comparerL}}</a></div>
         </sc-if>
         <sc-if value="{{vois.attente}}"><p class="note" role="status">{{vois.attente}}</p></sc-if>
       </div>

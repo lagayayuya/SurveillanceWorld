@@ -4180,6 +4180,8 @@
   "registre.commune_a.motif.stupefiants": "Stupéfiants",
   "registre.commune_a.b.section": "Clic : section {n}",
   "registre.commune_a.b.fiche": "Clic : sa fiche",
+  "registre.commune_a.b.graphe": "Clic : le graphe, centré sur {nom}",
+  "registre.commune_a.comparer": "Comparer {nom} avec…",
   "registre.commune_a.b.cameras": "{n} caméras sur la carte",
   "registre.commune_a.b.eph": "{n} € par habitant",
   "registre.commune_a.b.jours": "{n, plural, one {# jour de vol} other {# jours de vol}}",

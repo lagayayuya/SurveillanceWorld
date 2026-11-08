@@ -743,6 +743,10 @@ export class Commune extends Vue<Props, State> {
             m: montantA(x.montant),
             c: `${t("commune_a.ent_c", { n: x.contrats })} · ${x.annees.join(", ")}`,
             o: o == null ? "" : o ? t("commune_a.ent_o", { n: o }) : t("commune_a.ent_o0"),
+            // « N autres acheteurs »: the graph centred on the company (Lyon-A-comportements, lot 4)
+            og: o && f.entreprises[x.siren]?.ref ? `/registre/graphe/${x.siren}` : "",
+            // the words without their link: no other buyer, or no fiche to centre on
+            oSeul: o != null && !(o && f.entreprises[x.siren]?.ref),
           };
         }),
         g: {
@@ -767,7 +771,7 @@ export class Commune extends Vue<Props, State> {
               ]
                 .filter(Boolean)
                 .join("\n"),
-              bc: aFiche ? t("commune_a.b.fiche") : "",
+              bc: aFiche ? t("commune_a.b.graphe", { nom: nomEnt(x.siren) }) : "",
               x: nx.toFixed(0),
               y: ny.toFixed(0),
               rx: (nx - sz / 2).toFixed(1),
@@ -775,7 +779,8 @@ export class Commune extends Vue<Props, State> {
               s: sz.toFixed(1),
               ty: (ny + (Math.sin(a) > 0.2 ? -sz / 2 - 8 : sz / 2 + 18)).toFixed(0),
               l: nomEnt(x.siren),
-              href: f.entreprises[x.siren]?.ref ? `/registre/entreprise/${x.siren}` : "",
+              // a node's click recentres the graph on it (Lyon-A-comportements): the centred graph
+              href: f.entreprises[x.siren]?.ref ? `/registre/graphe/${x.siren}` : "",
               sans: !f.entreprises[x.siren]?.ref,
               mo: o ? `+${fr(o)}` : "",
               // the circle holds its text: about 8 px a character at 12.5 px, 6 px of margin
@@ -1149,6 +1154,8 @@ export class Commune extends Vue<Props, State> {
                 }
               : null,
           attente: "",
+          comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
+          comparerL: t("commune_a.comparer", { nom }),
         };
       } else if (!X) {
         vois = {
