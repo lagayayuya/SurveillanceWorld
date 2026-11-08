@@ -1191,6 +1191,73 @@ rules, still read by the documents and authorisations pages, do not reach it).
   share; click: those acts, the latest published first); a neighbour (value, rank, fiche); the
   documents' Date and Montant headers (sort), a row (its document).
 
+### 1.16 The register's redesign v3, lot 3 (2026-11-08): a département's fiche
+
+`/registre/departement/<code>` is board Departement-Rhone-A (`vues/departement.*`, its computations
+`vues/departement-a.ts`, its rules `vues/departement-a.css` under `.rg .va.dep`). The head: the name
+cut out word by word, its code, its communes with documents, its prefecture's last recueil read, a
+sentence of its figures; « Partager », « Citer ». Four figures (public money, cameras on the map,
+camera decrees, drone decrees), each ranked among the départements and collectivities of
+`couverture.json` (the decrees among the 100 read). Sections, each left out when empty: 1 · its
+communes with a document as points at their town hall on the IGN outline (Lambert-93), by cameras
+for 1 000 inhabitants, € per inhabitant, camera or drone decrees, a métropole's members ringed, the
+best equipped; 2 · who pays (by class of buyer), the largest buyers, the contracts by year (a column
+opens that year's contracts list); 3 · the companies; 4 · the decrees by year and the communes with
+the most, or why they are not read; 5 · the four rankings. Then « Toutes les communes » (métropole
+or not, the intercommunality's menu, sort, twelve rows, CSV) and the sources. Behaviours on
+`bulle.ts`: the figures, a commune's point, a part of who pays, a year's column. An
+intercommunality's fiche (`?ic=`) stays v2's, in the same module, until it has a board.
+
+### 1.17 The register's redesign v3, lot 3 (2026-11-08): a company's fiche
+
+`/registre/entreprise/<siren>` is board Entreprise-Electriox-A (`vues/entreprise.*`,
+`vues/entreprise-a.ts`, `vues/entreprise-a.css` under `.va.ent`). The head: the name cut out word by
+word, its NAF activity (a link to that code's companies), its SIREN (never a sole trader's), the
+contracts' collection day, a sentence; « Partager », « Citer », « Exporter » (its documents as CSV),
+« Comparer avec… ». Four figures: public money (its largest client's share), clients by
+département, running contracts, offers received. Sections: 1 · its clients by amount, coloured by
+a rule (its largest client, that client's département, elsewhere); 2 · its contracts by year
+(amounts or counts; a column: that year in « Tous les documents »); 3 · the nature of its contracts
+(« non lu ») and the companies of the same NAF code in its départements; 4 · joint contracts, offers,
+the graph centred on it (a node opens `/registre/graphe/<buyer>`), the companies that worked for its
+clients; 5 · the frieze of its contracts, the running ones outlined. Then « Tous les documents »
+(Année ▾, Acheteur ▾, sort, CSV) and the sources. A duration over 240 months is not drawn.
+
+### 1.18 The register's redesign v3, lot 3 (2026-11-08): a document's record
+
+`/registre/<contrat|avis|subvention|arrete>/<affaire>` is board Contrat-Lyon-2026-A (`vues/contrat.*`,
+`vues/contrat-a.ts`, `vues/contrat-a.css` under `.va.ctr`). The head: the type's sticker, the object
+whole (smaller beyond 70 and 110 characters), the buyer's and holders' chips (a communal buyer
+« Ville de <commune> »), « accord-cadre · signé le … », the DECP reference, a sentence (« a confié à »);
+« Partager », « Citer », « Voir les documents d'origine ». Four figures: ceiling or amount (mixed,
+rise « à vérifier », the amount at signature), duration and planned end (eForms `duree_mois`),
+competition (offers from the DECP, else the award notice, else « non lu »; the procedure), the
+modifications. Sections: 1 · who buys what; 2 · the parcours (documents at equal intervals, the real
+gap written, the planned end computed, today's point); 3 · before and after. Then « Les documents »
+(a row opens its source) and the sources. A call for tenders, a grant or a decree take the same
+grammar.
+
+### 1.19 The register's redesign v3, lot 4 (2026-11-08): the centred graph, Comparer, Chemin entre deux
+
+- **The centred graph** (`/registre/graphe/<siren>`, boards Graphe-plein, Graphe-grammaire;
+  `vues/graphe*`): a company or a buyer in the middle (`?role=` for a SIREN that is both), its
+  partners around it (size: the edge's amount, never a sum of edges), at the edge their other
+  partners, between two those they share; at most 12 / 40 / 8 drawn, the rest as « +N ». Hover or
+  focus keeps a node's lines; a click, Enter or a second tap opens its detail in the side card
+  (« Recentrer » to `/registre/graphe/<it>`, its fiche); double click recentres; « Vue tableau »
+  (`?vue=tableau`) gives the same links as rows; « Exporter » the neighbourhood's edges. Phone: a
+  window panned and pinched over the drawing, « Plein écran ». Without a centre: a chooser. The
+  neighbourhood is computed in the browser from `graphe/aretes.json`.
+- **Comparer** (`/registre/comparer?communes=…` or `?entreprises=…`, up to four; `vues/comparer*`):
+  chips with ✕, « + Ajouter » (a search in the lists' names, never a sole trader), a sentence of
+  the figures, « Partager », « Exporter (CSV) », « Chemin entre les deux » for two companies; a row
+  per figure, every figure `listes.json`'s, the highest in yellow on the figures as written (ties
+  included); each value a bubble and its fiche at its section; the address follows the columns.
+- **Chemin entre deux** (`/registre/chemin?de=&a=`, a SIREN or an INSEE code; `vues/chemin*`): two
+  fields searching the graph's names, ⇄, « Trouver »; the shortest paths (breadth first from both
+  ends, at most 6 steps, all counted, the 5 largest drawn), each a chain of linked nodes and amounts,
+  its sentence, « Voir dans le graphe → »; states for no path, beyond 6 steps, the graph not served.
+
 ### 1.15 The register's redesign v3, lot 5 (2026-11-08): the live map's panel, « Fiche » and « Drones »
 
 `/registre/commune/<insee>/carte` keeps the live map and its drone layers (`vues/carte.*`,
@@ -2189,6 +2256,33 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 | A list with every row shown | no button; the note says the count |
 | A list reopened from a fiche (`?ligne=`) whose row a default filter leaves out | the default lifted, the row marked and in view |
 
+
+### The register v3, lots 3 and 4 (2026-11-08): département, company, record, graph, Comparer, Chemin
+
+| Mockup | Site | Reason |
+|---|---|---|
+| Departement-Rhone-A: the region's chip, the population, « 141 des 266 communes » | « 141 communes avec documents » | region, population and number of communes not served |
+| Departement-Rhone-A: a choropleth of the communes, the métropole's dotted outline | a point per commune at its town hall on the IGN outline, the métropole's members ringed | the communes' outlines are not served |
+| Departement-Rhone-A: a year's click « ces contrats dans Toutes les communes » | the contracts list of that département and year | contracts by commune and year not served |
+| Departement-Rhone-A: missions, the graph's line, « Signaler » | absent | missions later; the file has no document to report on |
+| Departement-Rhone-A: an intercommunality | its fiche (`?ic=`) stays v2 | no board |
+| Entreprise-Electriox-A: « PME », siège, création, effectif | « à venir » | SIRENE fields not served |
+| Entreprise-Electriox-A: « Ses contrats, par nature » | « non lu » | the nature is computed by the build, not served |
+| Entreprise-Electriox-A: « Le même métier » by nature | by NAF code in its départements | the nature is not served; NAF is |
+| Entreprise-Electriox-A: every client, contract, document | 12 clients then the graph, 18 rows of frieze, 15 documents then « Voir les N » | real companies reach 251 buyers and 393 contracts |
+| Entreprise-Electriox-A: the legend hides a series on a click | hover only | its names are links to their fiches |
+| Contrat-Lyon-2026-A: signals, « lien à vérifier » | absent | not served |
+| Contrat-Lyon-2026-A: the short title, the estimate, the deadline, the CPV codes, Commandes, Conditions | the whole object; the procedure and « dans les totaux » instead | not served |
+| Contrat-Lyon-2026-A: « Concurrence : à lire » | the offers from the DECP or the award notice | eForms offers served since 2026-11-08 |
+| Graphe-plein: a shared node's size the sum of its edges | its largest edge | edges must not be summed (a joint contract carries its whole amount on each) |
+| Graphe-plein: every node drawn | at most 12 / 40 / 8, the rest « +N »; the table and the CSV whole | real neighbourhoods reach 250 clients |
+| Graphe-plein: no selection card in V2 | the v1 board's side card | the behaviour is written, not drawn |
+| Graphe-plein: the nodes' names as plain words | the node a control (`data-mention="non"`), its detail holding the fiche's link | a click selects, it does not leave |
+| Comparer: the boards' figures (Bron 5,0 M€, 117 €/hab) | the build's (7,9 M€, 184 €) | one source per figure |
+| Comparer: « la Métropole » | « son intercommunalité » | not every commune is in a métropole |
+| Chemin-entre-deux: 2 paths on an extract | 3 paths on the national graph, 5 at most drawn by amount | the national graph |
+| Chemin-entre-deux: a hand-written sentence | a generic one (one intermediary named, several counted) | the paths take any shape |
+| All lot 3 and 4 views: notes in Special Elite | Archivo where cadre.css v2.3's `p.note` holds | the frame's rule for every fiche |
 
 ### The register v3, lot 5 (2026-11-08): the live map's panel
 
