@@ -1191,7 +1191,7 @@ rules, still read by the documents and authorisations pages, do not reach it).
   share; click: those acts, the latest published first); a neighbour (value, rank, fiche); the
   documents' Date and Montant headers (sort), a row (its document).
 
-### 1.16 The register's redesign v3, lot 3 (2026-11-08): a département's fiche
+### 1.15 The register's redesign v3, lot 3 (2026-11-08): a département's fiche
 
 `/registre/departement/<code>` is board Departement-Rhone-A (`vues/departement.*`, its computations
 `vues/departement-a.ts`, its rules `vues/departement-a.css` under `.rg .va.dep`). The head: the name
@@ -1208,7 +1208,7 @@ or not, the intercommunality's menu, sort, twelve rows, CSV) and the sources. Be
 `bulle.ts`: the figures, a commune's point, a part of who pays, a year's column. An
 intercommunality's fiche (`?ic=`) stays v2's, in the same module, until it has a board.
 
-### 1.17 The register's redesign v3, lot 3 (2026-11-08): a company's fiche
+### 1.16 The register's redesign v3, lot 3 (2026-11-08): a company's fiche
 
 `/registre/entreprise/<siren>` is board Entreprise-Electriox-A (`vues/entreprise.*`,
 `vues/entreprise-a.ts`, `vues/entreprise-a.css` under `.va.ent`). The head: the name cut out word by
@@ -1223,7 +1223,7 @@ the graph centred on it (a node opens `/registre/graphe/<buyer>`), the companies
 clients; 5 · the frieze of its contracts, the running ones outlined. Then « Tous les documents »
 (Année ▾, Acheteur ▾, sort, CSV) and the sources. A duration over 240 months is not drawn.
 
-### 1.18 The register's redesign v3, lot 3 (2026-11-08): a document's record
+### 1.17 The register's redesign v3, lot 3 (2026-11-08): a document's record
 
 `/registre/<contrat|avis|subvention|arrete>/<affaire>` is board Contrat-Lyon-2026-A (`vues/contrat.*`,
 `vues/contrat-a.ts`, `vues/contrat-a.css` under `.va.ctr`). The head: the type's sticker, the object
@@ -1237,7 +1237,7 @@ gap written, the planned end computed, today's point); 3 · before and after. Th
 (a row opens its source) and the sources. A call for tenders, a grant or a decree take the same
 grammar.
 
-### 1.19 The register's redesign v3, lot 4 (2026-11-08): the centred graph, Comparer, Chemin entre deux
+### 1.18 The register's redesign v3, lot 4 (2026-11-08): the centred graph, Comparer, Chemin entre deux
 
 - **The centred graph** (`/registre/graphe/<siren>`, boards Graphe-plein, Graphe-grammaire;
   `vues/graphe*`): a company or a buyer in the middle (`?role=` for a SIREN that is both), its
@@ -1258,7 +1258,7 @@ grammar.
   ends, at most 6 steps, all counted, the 5 largest drawn), each a chain of linked nodes and amounts,
   its sentence, « Voir dans le graphe → »; states for no path, beyond 6 steps, the graph not served.
 
-### 1.15 The register's redesign v3, lot 5 (2026-11-08): the live map's panel, « Fiche » and « Drones »
+### 1.19 The register's redesign v3, lot 5 (2026-11-08): the live map's panel, « Fiche » and « Drones »
 
 `/registre/commune/<insee>/carte` keeps the live map and its drone layers (`vues/carte.*`,
 `drones.ts`); its panel opens in theme A (board Vue3D-Paris-fiche): « Commune · vue 3D », the
