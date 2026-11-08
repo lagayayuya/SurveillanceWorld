@@ -22,9 +22,11 @@
 }
 .rg .va.lst .lk {
   min-width: 90px;
-  font:
-    900 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 85%;
   text-transform: uppercase;
 }
@@ -256,9 +258,11 @@
   align-items: center;
 }
 .rg .va .fs-h b {
-  font:
-    900 26px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
 }
@@ -268,9 +272,11 @@
   gap: 6px;
 }
 .rg .va .fs-k {
-  font:
-    900 15px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
 }

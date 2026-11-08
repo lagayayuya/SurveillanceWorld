@@ -87,9 +87,11 @@
   align-items: center;
   gap: 12px;
   margin: 0 0 6px;
-  font:
-    900 34px / 1 Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
   font-stretch: 68%;
   text-transform: uppercase;
 }
@@ -122,9 +124,11 @@
   color: var(--on-accent);
   border: 2px solid var(--line);
   padding: 6px 12px;
-  font:
-    900 17px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
   box-shadow: 4px 4px 0 var(--line);
@@ -153,9 +157,11 @@
 }
 .rg .va .cut {
   display: inline-block;
-  font:
-    900 50px / 1 Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 50px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
   font-stretch: 80%;
   padding: 4px 7px;
   border: 2px solid var(--line);
@@ -193,9 +199,11 @@
   color: var(--fg);
   border: 2px solid var(--line);
   padding: 8px 14px;
-  font:
-    800 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 75%;
   text-transform: uppercase;
   text-decoration: none;
@@ -230,9 +238,11 @@
   background: var(--bg-2);
   color: var(--fg);
   padding: 5px 11px;
-  font:
-    800 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 85%;
   text-transform: uppercase;
   cursor: pointer;
@@ -254,9 +264,11 @@
   border: 0;
   border-right: 2px solid var(--line);
   padding: 6px 12px;
-  font:
-    800 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 82%;
   text-transform: uppercase;
   text-decoration: none;
@@ -366,9 +378,11 @@
   color: var(--muted);
 }
 .rg .va .fv {
-  font:
-    900 46px / 1 Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 46px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
   font-stretch: 70%;
   text-shadow: 3px 3px 0 var(--type-registre);
 }
@@ -407,9 +421,11 @@
   gap: 10px;
   flex-wrap: wrap;
   margin: 0 0 10px;
-  font:
-    900 17px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
 }
@@ -429,18 +445,22 @@
   padding: 4px 10px;
   background: var(--fg);
   color: var(--bg);
-  font:
-    800 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 85%;
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .rg .va .tool h3 {
   margin: 6px 0 8px;
-  font:
-    900 22px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 70%;
   text-transform: uppercase;
 }
@@ -449,9 +469,11 @@
   padding: 3px 9px;
   background: var(--bg-2);
   border: 2px dashed var(--line);
-  font:
-    800 13.5px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 85%;
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -492,9 +514,11 @@
   vertical-align: top;
 }
 .rg .va .docs th {
-  font:
-    900 14px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
   border-bottom: 2px solid var(--line);
@@ -624,9 +648,11 @@
   stroke-width: 0.8;
 }
 .rg .va .ml {
-  font:
-    800 15px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 80%;
   fill: var(--fg);
   paint-order: stroke;
@@ -715,9 +741,11 @@
 }
 .rg .va .tip .tt-h {
   margin-bottom: 2px;
-  font:
-    900 16px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 80%;
   text-transform: uppercase;
 }
@@ -756,9 +784,11 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  font:
-    900 20px Archivo,
-    sans-serif;
+  font-family: Archivo, sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
   font-stretch: 72%;
   text-transform: uppercase;
 }
@@ -1000,9 +1030,11 @@
     background: none;
     border: 0;
     text-align: left;
-    font:
-      900 17px Archivo,
-      sans-serif;
+    font-family: Archivo, sans-serif;
+    font-size: 17px;
+    font-weight: 900;
+    font-style: normal;
+    line-height: normal;
     font-stretch: 72%;
     text-transform: uppercase;
     color: inherit;
@@ -1011,9 +1043,11 @@
   .rg .va .fh small {
     display: block;
     margin-top: 2px;
-    font:
-      400 12.5px "Special Elite",
-      monospace;
+    font-family: "Special Elite", monospace;
+    font-size: 12.5px;
+    font-weight: 400;
+    font-style: normal;
+    line-height: normal;
     font-stretch: 100%;
     text-transform: none;
     color: var(--muted);

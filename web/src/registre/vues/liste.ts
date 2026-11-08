@@ -273,6 +273,7 @@ export class ListeVue extends Vue<Props, State> {
     this.n++;
     this.fini = true;
     document.removeEventListener("pointerdown", this.dehors, true);
+    document.removeEventListener("keydown", this.echap, true);
   }
   titre(): string {
     return nomListe(this.props.liste, this.state.e.f.cat);
@@ -288,6 +289,7 @@ export class ListeVue extends Vue<Props, State> {
     void this.pages(this.state.e);
     this.viser();
     document.addEventListener("pointerdown", this.dehors, true);
+    document.addEventListener("keydown", this.echap, true);
   }
   componentDidUpdate(): void {
     this.viser();
@@ -336,8 +338,17 @@ export class ListeVue extends Vue<Props, State> {
       const cur = choisis(this.state.e.f[f]);
       const next = cur.includes(v) ? cur.filter((x) => x !== v) : [...cur, v];
       this.set({ f: { ...this.state.e.f, [f]: next.join(",") || undefined } });
+      // the row drawn again: the focus back on it, in the menu (its keys, Escape)
+      if (this.state.menu === f) this.focusDans(`.v-liste .dmenu [data-v="${CSS.escape(v)}"]`);
     };
   }
+  /** Escape closes the open menu wherever the focus is (a row redrawn under the pointer leaves
+   * it on the page), before the frame's own Escape closes the register. */
+  private echap = (ev: KeyboardEvent): void => {
+    if (ev.key !== "Escape" || !this.state.menu || ev.defaultPrevented) return;
+    ev.preventDefault();
+    this.fermerMenu();
+  };
   /** A menu's first control, the one shown (a menu is drawn in the row of filters and in the
    * phone's panel, one of them hidden). */
   private focusDans(sel: string): void {

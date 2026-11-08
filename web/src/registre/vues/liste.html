@@ -34,7 +34,7 @@
                   <div class="dmenu" role="dialog" aria-label="{{m.l}}" onKeyDown="{{m.clavier}}">
                     <sc-if value="{{m.cherche}}"><label class="dq"><span class="sr">{{m.chercher}}</span><input type="search" value="{{m.q}}" onInput="{{m.onQ}}" placeholder="{{m.chercher}}"></label></sc-if>
                     <ul class="dliste" role="listbox" aria-multiselectable="true" aria-label="{{m.l}}">
-                      <sc-for list="{{m.tous}}" as="d"><li class="{{d.cls}}" role="option" aria-selected="{{d.on}}" tabindex="-1" onClick="{{d.pick}}"><span class="dbox" aria-hidden="true"></span><span class="dnom">{{d.nom}}</span><span class="dn">{{d.n}}</span></li></sc-for>
+                      <sc-for list="{{m.tous}}" as="d"><li class="{{d.cls}}" role="option" aria-selected="{{d.on}}" tabindex="-1" data-v="{{d.v}}" onClick="{{d.pick}}"><span class="dbox" aria-hidden="true"></span><span class="dnom">{{d.nom}}</span><span class="dn">{{d.n}}</span></li></sc-for>
                     </ul>
                     <sc-if value="{{m.vide}}"><p class="note">{{t.liste.dep.aucun}}</p></sc-if>
                     <div class="dpied"><button type="button" class="btn" onClick="{{m.effacer}}">{{t.liste.tout_effacer}}</button><button type="button" class="btn pri" onClick="{{m.fermer}}">{{m.voir}}</button></div>
@@ -92,7 +92,7 @@
                   <div class="dmenu" role="dialog" aria-label="{{m.l}}" onKeyDown="{{m.clavier}}">
                     <sc-if value="{{m.cherche}}"><label class="dq"><span class="sr">{{m.chercher}}</span><input type="search" value="{{m.q}}" onInput="{{m.onQ}}" placeholder="{{m.chercher}}"></label></sc-if>
                     <ul class="dliste" role="listbox" aria-multiselectable="true" aria-label="{{m.l}}">
-                      <sc-for list="{{m.tous}}" as="d"><li class="{{d.cls}}" role="option" aria-selected="{{d.on}}" tabindex="-1" onClick="{{d.pick}}"><span class="dbox" aria-hidden="true"></span><span class="dnom">{{d.nom}}</span><span class="dn">{{d.n}}</span></li></sc-for>
+                      <sc-for list="{{m.tous}}" as="d"><li class="{{d.cls}}" role="option" aria-selected="{{d.on}}" tabindex="-1" data-v="{{d.v}}" onClick="{{d.pick}}"><span class="dbox" aria-hidden="true"></span><span class="dnom">{{d.nom}}</span><span class="dn">{{d.n}}</span></li></sc-for>
                     </ul>
                     <sc-if value="{{m.vide}}"><p class="note">{{t.liste.dep.aucun}}</p></sc-if>
                     <div class="dpied"><button type="button" class="btn" onClick="{{m.effacer}}">{{t.liste.tout_effacer}}</button><button type="button" class="btn pri" onClick="{{m.fermer}}">{{m.voir}}</button></div>
