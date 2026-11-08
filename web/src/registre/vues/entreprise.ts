@@ -643,7 +643,8 @@ export class Entreprise extends Vue<Props, State> {
       entree("combien", `${n2} · ${t("entreprise_a.toc.combien")}`);
       const ya = Math.min(majY, ...CT.map((c) => Number(c.d.slice(0, 4)) || majY));
       const ans = parAnnee(CT, ser.de, ya, majY);
-      const nb = S.vue === "n";
+      // no amount counted (a mixed contract, a ceiling for others): its contracts counted only
+      const nb = S.vue === "n" || !(total > 0);
       const maxM = Math.max(0, ...ans.map((a) => a.total));
       const kilo = !nb && maxM < 1e6;
       const k = nb ? 1 : kilo ? 1e-3 : 1e-6;
@@ -653,7 +654,9 @@ export class Entreprise extends Vue<Props, State> {
       const H = 194;
       const y = (v: number) => 230 - (H * v) / (sc.haut || 1);
       const w = Math.min(96, (1180 / ans.length) * 0.53);
-      const slot = ans.length > 1 ? (1180 - w) / (ans.length - 1) : 0;
+      // the last column's value (« 32,4 ») stays inside the chart, however narrow its bar
+      const fin = 1240 - Math.max(w / 2, 24);
+      const slot = ans.length > 1 ? (fin - 60 - w / 2) / (ans.length - 1) : 0;
       const cx0 = ans.length > 1 ? 60 + w / 2 : 650;
       const v1 = (v: number) =>
         nb || kilo ? fr(v) : (v >= 1 ? v.toFixed(1) : v.toFixed(2)).replace(".", ",");
@@ -733,9 +736,9 @@ export class Entreprise extends Vue<Props, State> {
         n: n2,
         ans: ansS2,
         titre: t("entreprise_a.annees_titre", { nom }),
-        vues: (["m", "n"] as const).map((o) => ({
+        vues: (total > 0 ? (["m", "n"] as const) : (["n"] as const)).map((o) => ({
           l: t(`entreprise_a.vue_${o}`),
-          on: S.vue === o ? "true" : "false",
+          on: (nb ? "n" : "m") === o ? "true" : "false",
           pick: (() => this.setState({ vue: o })) as Handler,
         })),
         unite: nb
@@ -743,6 +746,9 @@ export class Entreprise extends Vue<Props, State> {
           : kilo
             ? t("entreprise_a.unite_k")
             : t("entreprise_a.unite_m"),
+        // the unit over the axis's numbers; a word (« contrats ») from the chart's left edge
+        ux: nb ? "0" : "38",
+        ua: nb ? "start" : "end",
         grille: Array.from({ length: sc.lignes }, (_, i) => (i + 1) * sc.pas).map((v) => ({
           y: y(v).toFixed(1),
           ty: (y(v) + 4).toFixed(1),
@@ -760,11 +766,20 @@ export class Entreprise extends Vue<Props, State> {
           ...(dbl.length
             ? [
                 t("entreprise_a.doublon_a"),
-                ...liste(
-                  dbl.map((i) =>
-                    lienA(F.communes[i]?.ref ? communeHref(i) : null, F.communes[i].nom, "ent com"),
-                  ),
-                ),
+                ...liste([
+                  ...dbl
+                    .slice(0, 3)
+                    .map((i) =>
+                      lienA(
+                        F.communes[i]?.ref ? communeHref(i) : null,
+                        F.communes[i].nom,
+                        "ent com",
+                      ),
+                    ),
+                  ...(dbl.length > 3
+                    ? [t("entreprise_a.doublon_autres", { n: dbl.length - 3 })]
+                    : []),
+                ]),
                 t(dbl.length > 1 ? "entreprise_a.doublon_b_n" : "entreprise_a.doublon_b"),
               ]
             : []),
@@ -819,10 +834,12 @@ export class Entreprise extends Vue<Props, State> {
               : t("entreprise_a.metier_aucune"),
         note: naf
           ? ([
-              t("entreprise_a.metier_note_a", {
-                naf,
-                l: casseNormale(F.entreprise.naf_libelle ?? "").toLowerCase(),
-              }),
+              F.entreprise.naf_libelle
+                ? t("entreprise_a.metier_note_a", {
+                    naf,
+                    l: casseNormale(F.entreprise.naf_libelle).toLowerCase(),
+                  })
+                : t("entreprise_a.metier_note_a0", { naf }),
               ...(depsK.length > 3
                 ? [t("entreprise_a.metier_note_n", { n: depsK.length })]
                 : [
@@ -1053,10 +1070,12 @@ export class Entreprise extends Vue<Props, State> {
       const n5 = num();
       entree("temps", `${n5} · ${t("entreprise_a.toc.temps")}`);
       const { groupes, caches } = friseLignes(CT, (c) => enCours.has(c.e.id));
-      const ya = Math.min(...CT.map((c) => Number(c.d.slice(0, 4)) || majY));
+      // the axis of the contracts drawn, not of those left to « Tous les documents »
+      const vus = groupes.flatMap((g) => g.rows);
+      const ya = Math.min(...vus.map((c) => Number(c.d.slice(0, 4)) || majY));
       const yz = Math.min(
         majY + 10,
-        Math.max(majY, ...CT.map((c) => Number((c.fin ?? "").slice(0, 4)) || 0)),
+        Math.max(majY, ...vus.map((c) => Number((c.fin ?? "").slice(0, 4)) || 0)),
       );
       const X0 = 365;
       const X1 = 1188;
@@ -1073,13 +1092,14 @@ export class Entreprise extends Vue<Props, State> {
           yy += 10;
         }
         const href = g.b ? buyerHref(F, g.b) : null;
-        labels.push({ y: String(yy + 17), l: coupeTexte(nomClient(g.b), 21), href, sans: !href });
+        labels.push({ y: String(yy + 17), l: coupeTexte(nomClient(g.b), 19), href, sans: !href });
         for (const c of g.rows) {
           const live = enCours.has(c.e.id);
           const x = xOf(c.d);
           const mods = modsDe.get(c.e.affaire) ?? [];
           const w = c.fin ? Math.max(4, xOf(c.fin) - x) : 0;
-          const end = x + w;
+          // no end: its count of modifications after « durée non publiée »
+          const end = c.fin ? x + w : x + 140;
           const droite = end + 8 + 64 <= 1240;
           const o = objet(c.e);
           rows.push({
@@ -1325,7 +1345,15 @@ export class Entreprise extends Vue<Props, State> {
     return {
       ...this.base("entreprise-a"),
       nom,
-      letters: coupe(nom),
+      // the name cut out, word by word: a line breaks between words, never inside one
+      mots: coupe(nom).reduce<{ ch: string; cls: string }[][]>(
+        (ws, x) => {
+          if (x.cls === "sp") ws.push([]);
+          else ws[ws.length - 1].push(x);
+          return ws;
+        },
+        [[]],
+      ),
       naf:
         F.entreprise.naf && F.entreprise.naf_libelle
           ? {

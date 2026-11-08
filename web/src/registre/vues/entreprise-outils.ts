@@ -65,6 +65,11 @@ export type Ct = {
 };
 export type Cl = { s: string; n: number; amt: number; last: string; centrale: boolean };
 
+/** A published duration longer than this (in months) is a typing error to check (« 1 540 mois »,
+ * an end in 2150): its end is not drawn nor said, as if no duration were published. Twenty
+ * years, well past the longest public contracts (a concession's). */
+export const DUREE_MAX = 240;
+
 /** A date as a calendar has it: the build's planned end adds months to the start and keeps its
  * day (« 2023-11-31 »); past the month's last day, that last day. */
 export function jourValide(d: string): string {
@@ -86,7 +91,7 @@ export function prepare(F: FichierEntreprise): { CT: Ct[]; CL: Cl[] } {
         e,
         i: 0,
         d: f?.debut ?? e.date_lue ?? e.date ?? "",
-        fin: f?.fin ? jourValide(f.fin) : null,
+        fin: f?.fin && (f.duree ?? 0) <= DUREE_MAX ? jourValide(f.fin) : null,
         duree: f?.duree ?? null,
         b: e.acheteur_siren ?? F.affaires[e.affaire]?.acheteur_siren ?? null,
         amt: e.compte ? (e.montant ?? 0) : 0,

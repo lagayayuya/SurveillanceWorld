@@ -165,8 +165,8 @@ export function axe(y0: number, y1: number, x0: number, x1: number): (d: string)
 }
 
 /** The frieze's rows: its contracts grouped by client (the client with the most money first), in
- * a group the oldest first; more than `max`: the running ones and the largest, the others left
- * to « Tous les documents ». */
+ * a group the oldest first; more than `max`: the running ones (the largest first) and the
+ * largest of the others, the rest left to « Tous les documents ». */
 export function friseLignes<C extends ContratA>(
   contrats: C[],
   enCours: (c: C) => boolean,
@@ -174,7 +174,7 @@ export function friseLignes<C extends ContratA>(
 ): { groupes: { b: string | null; rows: C[] }[]; caches: number } {
   let pris = contrats;
   if (contrats.length > max) {
-    const run = contrats.filter(enCours);
+    const run = contrats.filter(enCours).sort((a, b) => b.amt - a.amt);
     const autres = contrats
       .filter((c) => !enCours(c))
       .sort((a, b) => b.amt - a.amt)

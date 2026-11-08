@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-e" aria-hidden="true"></i>{{t.entreprise_a.kind}}</span>
-      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{mots}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="meta"><sc-if value="{{naf}}"><a class="chip t" href="{{naf.href}}" data-bh="{{naf.l}}" data-bl="{{naf.bl}}" data-bc="{{naf.bc}}">{{naf.l}}</a></sc-if><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for><sc-if value="{{todo}}"><span class="todo" tabindex="0" data-bl="{{todo.bl}}">{{todo.l}}</span></sc-if><sc-if value="{{collecte}}"><span>{{collecte}}</span></sc-if></p>
       <p class="lead">{{{lead}}}</p>
     </div>
@@ -45,7 +45,7 @@
         <div class="zw">
           <svg class="chart" viewBox="0 0 1240 270" width="1240" height="270" role="group" aria-label="{{s2.titre}}" data-bg="">
             <sc-for list="{{s2.grille}}" as="g"><line class="grid" x1="44" x2="1240" y1="{{g.y}}" y2="{{g.y}}"></line><text class="ax" x="38" y="{{g.ty}}" text-anchor="end">{{g.l}}</text></sc-for>
-            <text class="ax" x="38" y="16" text-anchor="end">{{s2.unite}}</text>
+            <text class="ax" x="{{s2.ux}}" y="16" text-anchor="{{s2.ua}}">{{s2.unite}}</text>
             <sc-for list="{{s2.cols}}" as="c"><g class="col" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" onClick="{{c.pick}}"><rect class="hit" x="{{c.hx}}" y="6" width="{{c.hw}}" height="244"></rect><sc-for list="{{c.rects}}" as="r"><rect class="{{r.cls}}" x="{{c.x}}" y="{{r.y}}" width="{{c.w}}" height="{{r.h}}" rx="2"></rect></sc-for><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="248" text-anchor="middle">{{c.an}}</text></g></sc-for>
             <line class="base" x1="44" x2="1240" y1="230" y2="230"></line>
           </svg>
