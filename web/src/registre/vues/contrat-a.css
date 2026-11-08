@@ -393,7 +393,7 @@
   gap: 12px;
   align-items: stretch;
 }
-.rg .va.ctr .chain:not(:has(> .card:nth-of-type(3))) {
+.rg .va.ctr .chain:not(:has(> :nth-child(4))) {
   grid-template-columns: 1fr auto 1fr;
 }
 .rg .va.ctr .card.lk {
@@ -481,7 +481,7 @@
     gap: 6px 10px;
   }
   .rg .va.ctr .chip.t {
-    min-height: 36px;
+    min-height: 44px;
   }
   .rg .va.ctr .ans {
     font-size: 16px;
@@ -514,7 +514,7 @@
   }
   .rg .va.ctr .pair,
   .rg .va.ctr .chain,
-  .rg .va.ctr .chain:not(:has(> .card:nth-of-type(3))) {
+  .rg .va.ctr .chain:not(:has(> :nth-child(4))) {
     grid-template-columns: 1fr;
   }
   .rg .va.ctr .arrow {

@@ -433,7 +433,7 @@ class Contrat extends Vue<Props, State> {
                 ].join(" · ")
               : "",
             note:
-              avantC && memeTit && s2Possible(f)
+              avantC && memeTit
                 ? rt("contrat_a.note_avant", {
                     ent: {
                       span: entLiens(sirens.filter((s) => avantC.entreprises.includes(s))),
@@ -1044,8 +1044,6 @@ class Contrat extends Vue<Props, State> {
   }
 }
 
-/** The parcours has more than one step (section 2 is drawn). */
-const s2Possible = (f: Fichier): boolean => etapes(f).length > 1;
 const capital1 = (s: string): string => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 export default {
