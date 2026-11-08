@@ -207,15 +207,16 @@ class Graphe extends Vue<Props, State> {
       }
     }
     if (!el || large()) return;
-    const k = `${this.props.centre}|${this.state.tab}`;
-    if (this.centrePour === k) return;
-    this.centrePour = k;
-    // the centre in the middle of the window (the board: the svg at 820 px, offset)
+    const cle = `${this.props.centre}|${this.state.tab}`;
+    if (this.centrePour === cle) return;
+    this.centrePour = cle;
+    // the board's window: the svg at 820 px, 230 px to the left and 140 px up (the centre a little
+    // below the middle, the first circle's top in view)
     const svg = el.querySelector("svg");
     if (!svg) return;
-    const w = svg.getBoundingClientRect().width;
-    el.scrollLeft = (w * 500) / 1000 - el.clientWidth / 2;
-    el.scrollTop = (w * 450) / 1000 - el.clientHeight / 2;
+    const k = svg.getBoundingClientRect().width / 820;
+    el.scrollLeft = 230 * k - (el.clientWidth - 358) / 2;
+    el.scrollTop = 140 * k;
   }
   private depart: { d: number; w: number; cx: number; cy: number } | null = null;
   private pince0 = (ev: TouchEvent): void => {
