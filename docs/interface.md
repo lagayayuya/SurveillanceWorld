@@ -1191,6 +1191,26 @@ rules, still read by the documents and authorisations pages, do not reach it).
   share; click: those acts, the latest published first); a neighbour (value, rank, fiche); the
   documents' Date and Montant headers (sort), a row (its document).
 
+### 1.15 The register's redesign v3, lot 5 (2026-11-08): the live map's panel, « Fiche » and « Drones »
+
+`/registre/commune/<insee>/carte` keeps the live map and its drone layers (`vues/carte.*`,
+`drones.ts`); its panel opens in theme A (board Vue3D-Paris-fiche): « Commune · vue 3D », the
+name cut out, two tabs (the ARIA tabs pattern: the arrows move between them).
+
+- **« Fiche »** (`?onglet=fiche`): a sentence of its figures; four figures with their rank
+  (`vues/carte-fiche.ts`, on `commune-a.ts`'s rules, so the panel and the fiche agree: cameras on
+  the map, money per inhabitant, days of flight with a door to the other tab, contracts on one
+  offer); « Sur la carte, ici » (the map's pink streets, three classes); « Caméras autorisées »
+  (what the read decrees authorise, or that they are not read); « La fiche complète ↗ »,
+  « Comparer … avec… »; the collection's date.
+- **« Drones »** (the default, so that every door keeps its address): four figures (acts and those
+  with hours, days of flight, the share published before the flight against France's, drawn
+  zones); « À venir » (the next five days an act flies, each « Afficher ce jour »); « Publiés avant
+  le vol ? » for the commune and for France (`drones.publication`, « non lu » when nothing is
+  counted); then the period's calendar, the chosen slot's detail (its motive « non lu » when not
+  served) and the slots, as before.
+- **On a phone** the panel is the sheet; the sticker is dropped, the figures keep their whole line.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
@@ -2170,6 +2190,17 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 | A list reopened from a fiche (`?ligne=`) whose row a default filter leaves out | the default lifted, the row marked and in view |
 
 
+### The register v3, lot 5 (2026-11-08): the live map's panel
+
+| Mockup | Site | Reason |
+|---|---|---|
+| Vue3D-Paris-fiche: « À vérifier sur ce territoire », signals | absent | signals later (Ju 2026-11-07) |
+| Vue3D-Paris-fiche: « Caméras autorisées » with the dossiers waiting (« 218 dossiers attendent ») | the read decrees' cameras, or « pas encore lus » without a count | the dossiers waiting are not served |
+| Vue3D-Paris-drones: « Jour affiché » with its secteur, service, finalités, cameras | the existing slot detail (motive, service, purposes, cameras when read) | the secteur is not served (A: not displayable as is) |
+| Vue3D-Paris-drones: « Les derniers arrêtés » as a table (day, hours, motive) | the existing list of slots under the calendar | the list already carries the day, the hours and the service; the motive « non lu » stays in the detail |
+| Vue3D-Paris-fiche: the tab « Fiche » first | « Drones » by default, « Fiche » by `?onglet=fiche` | the commune's door and the bench's drone checks keep `/carte` |
+| Vue3D-Paris: « Suivre (RSS) » | absent | no feed |
+
 ### The register v3, lot 2 (2026-11-08): a commune's fiche
 
 | State | What shows |
@@ -2754,4 +2785,3 @@ rows above hold for the content of the fiches.
 | Lyon-A: « 3e sur 3 » style ranks everywhere | no rank under five communes ranked | a rank among three says nothing (Ju 2026-11-08) |
 | Lyon-A: five motives (manifestation, événement, frontière, circulation, autre) | the served ones: manifestation, événement (sport, concerts, commemorations), stupéfiants on its own row, the rest « Motif non lu » | frontière and circulation are L. 242-5 purposes not read yet; stupéfiants is served and in no board class (A, 20cf0e6) |
 | Lyon-A-comportements: a step's bubble quoting its document, « lien suggéré »'s reason | none | no quote nor suggested link is served |
-| Lyon-A-comportements: a graph node's click recentres the graph; « N autres acheteurs » opens it | the company's fiche; the words plain | the centred graph is lot 4 |
