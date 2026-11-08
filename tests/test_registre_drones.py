@@ -42,13 +42,16 @@ def test_mions_two_shared_drone_acts_deduced_but_no_slot_read(built):
     assert acts == {DRONES_6, DRONES_3}
     # both have a zone drawn (indicatif, relu): not listed as non-deduced; the extract keeps no
     # period, so there is no slot to place on the frieze
-    assert f["drones"] == {"creneaux": [], "non_deduits": []}
+    assert f["drones"]["creneaux"] == [] and f["drones"]["non_deduits"] == []
+    # the pilot's acts have no recueil: in none of the three
+    assert f["drones"]["publication"] == {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0,
+                                          "non_lus": 2}  # fmt: skip
 
 
 def test_every_commune_file_has_its_drones(built):
     for path in (built / "commune").glob("*.json"):
         d = read(built, f"commune/{path.name}")["drones"]
-        assert set(d) == {"creneaux", "non_deduits"}
+        assert set(d) == {"creneaux", "non_deduits", "publication"}
         assert d["creneaux"] == []  # no period in the extract
         assert NO_ZONE not in {r["acte"] for r in d["non_deduits"]}
 
@@ -202,3 +205,47 @@ def test_every_site_and_zone_says_whether_it_is_the_whole_commune(built):
         z = read(built, f"commune/{path.name}")["zones"]
         assert all(isinstance(s["commune_entiere"], bool) for s in z["sites"])
         assert all(isinstance(x["commune_entiere"], bool) for x in z["zones"])
+
+
+# --- « Publiés avant le vol ? » (rule:registre_drones@1:publication) --------------------------
+
+
+def _vol(i: str, publie: str | None, jours: list[str] | None) -> dict:
+    e = {"id": i, "t": "arrete_drone", "publie": publie, "jours": jours}
+    return {k: v for k, v in e.items() if v is not None}
+
+
+def test_an_act_is_published_before_the_same_day_or_after_its_first_flight():
+    events = [
+        _vol("a", "2026-10-01", ["2026-10-03", "2026-10-02"]),  # before its first day, 02
+        _vol("b", "2026-10-02", ["2026-10-02"]),
+        _vol("c", "2026-10-05", ["2026-10-04", "2026-10-06"]),  # during: after its first day
+        _vol("d", "2026-10-05", None),  # days not published
+        _vol("e", None, ["2026-10-01"]),  # the pilot's: no recueil
+        {"id": "f", "t": "arrete", "publie": "2026-10-01", "jours": ["2026-10-09"]},
+    ]
+    shared = {**events[0], "insee": "69259", "partage": ["69123"]}  # its other commune's copy
+    assert drones.publication([*events, shared]) == {
+        "avant": 1, "jour_meme": 1, "apres": 1, "total": 3, "non_lus": 2}  # fmt: skip
+
+
+def test_a_collected_drone_act_carries_its_recueils_day():
+    from lacarte_registre import collecte
+
+    act = {"id": "pref57:0123456789ab:12", "type": "drone", "sous_type": None, "titre": "Arrêté",
+           "acte": "12", "champs": {"dates": ["2026-10-04"]}, "administration": "pref57",
+           "recueil": "r", "recueil_nom": "Recueil spécial", "recueil_date": "2026-10-02",
+           "url": "u", "gabarit": "numero", "commune": None, "insee": None}  # fmt: skip
+    admin = {"code": "57", "genre": "departement", "nom": "Moselle"}
+    e = collecte.act_event(act, admin, {"dates"}, None, None)
+    assert e["publie"] == "2026-10-02" and e["jours"] == ["2026-10-04"]
+    assert drones.publication([e])["avant"] == 1
+    # its days not published in its département: counted in none
+    e = collecte.act_event(act, admin, set(), None, None)
+    assert "jours" not in e and drones.publication([e])["non_lus"] == 1
+
+
+def test_the_home_counts_every_drone_act_of_france(built):
+    pub = read(built, "index.json")["drones"]["publication"]
+    assert set(pub) == {"avant", "jour_meme", "apres", "total", "non_lus"}
+    assert pub["total"] == pub["avant"] + pub["jour_meme"] + pub["apres"]

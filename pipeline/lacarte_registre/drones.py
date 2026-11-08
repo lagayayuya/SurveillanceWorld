@@ -11,7 +11,9 @@ by commune (`parts`). The page reads:
   `sites` the commune's sites drawn from its zones (a zone under review is not drawn);
   `statut` « relu » when every zone drawn for it was reviewed, else « indicatif »;
 - `non_deduits`: the acts whose zone was not deduced (the build's `non_lu`, regles.py), listed
-  with their source, never drawn.
+  with their source, never drawn;
+- `publication`: when its acts were published against their first flight (`publication`,
+  also the home's `drones.publication` for France).
 What the pilot lacks (no periods, no sites) gives no slot or no site, not an error.
 """
 
@@ -19,6 +21,7 @@ from __future__ import annotations
 
 import math
 import re
+from collections.abc import Iterable
 from typing import Any
 
 from lacarte_registre.regles import Event, Pilote
@@ -167,14 +170,37 @@ def creneaux(
     return rows
 
 
+def publication(events: Iterable[Event]) -> dict[str, int]:
+    """« Publiés avant le vol ? » (rule:registre_drones@1:publication): the drone acts whose
+    recueil was published before their first day of flight, the same day, after; `total` the
+    three; `non_lus` the acts without a published day of flight or a recueil's day (the
+    pilot's, an act whose days are not published), counted in none. Each act once (an act of
+    several communes is in each one's list)."""
+    out = {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0, "non_lus": 0}
+    seen: set[str] = set()
+    for e in events:
+        if e["t"] != "arrete_drone" or e["id"] in seen:
+            continue
+        seen.add(e["id"])
+        first, pub = min(e.get("jours") or [""]), e.get("publie")
+        if not first or not pub:
+            out["non_lus"] += 1
+            continue
+        out["avant" if pub < first else "jour_meme" if pub == first else "apres"] += 1
+        out["total"] += 1
+    return out
+
+
 def commune(p: Pilote, events: list[Event], by_id: dict[str, Event], insee: str) -> dict[str, Any]:
-    """The commune file's `drones` key: its slots and its acts whose zone was not deduced."""
+    """The commune file's `drones` key: its slots, its acts whose zone was not deduced, when
+    its acts were published against their flights."""
     rows = non_deduits(events)
     out = {
         "creneaux": creneaux(
             p.get("AUTORISATIONS", []), p.get("ZONES", []), p.get("SITES", []), by_id, insee
         ),
         "non_deduits": rows,
+        "publication": publication(events),
     }
     if any(r.get("lieux") for r in rows):
         # the cited places, placed from local data when found without ambiguity (lieux.py)

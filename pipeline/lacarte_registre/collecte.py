@@ -281,6 +281,9 @@ def act_event(
     # author; the hours read but not published said as such, never their value
     if days:
         e["jours"] = days
+    if a["type"] == "drone":
+        # its recueil's day: « publié avant le vol ? » (rule:registre_drones@1:publication)
+        e["publie"] = a["recueil_date"]
     if n := numero(a, tel_quel=True):
         e["numero"] = n
     e["autorite"] = a.get("autorite") or a.get("administration")

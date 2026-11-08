@@ -15,3 +15,14 @@ commune_entiere:
     formula on an equirectangular projection at each ring's mean latitude, outer rings only;
     the commune's outline is its map's (carte/<insee>.json `contour`): without one, no zone
     is the whole commune.
+
+publication:
+  id: rule:registre_drones@1:publication
+  rationale: >-
+    « Publiés avant le vol ? »: a drone act's recueil is published before its first day of
+    flight (« avant »), that day (« jour_meme ») or after (« apres »), counted in acts. The
+    publication's day is the recueil's own (the prefecture's RAA), not the day Attrap first
+    saw it: the recueil's day is what the public could read, and Attrap's is ours. The first
+    day of flight is the act's first published day (`jours`); an act without one, or without
+    a recueil (the pilot's acts), is in none of the three, counted in `non_lus`. Every act,
+    without a window: the share says how the prefectures publish, not this year's flights.
