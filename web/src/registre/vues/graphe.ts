@@ -445,7 +445,8 @@ class Graphe extends Vue<Props, State> {
       return {
         k: n.k,
         cls: `nd s-${n.sorte}${S.sel === n.k ? " on" : ""}${S.vu === n.k ? " vu" : ""}`,
-        on: S.sel === n.k ? "true" : "false",
+        // a button says whether it is chosen; the first circle's « +N » is an image
+        pressed: n.sorte === "g1" ? null : S.sel === n.k ? "true" : "false",
         role: n.sorte === "g1" ? "img" : "button",
         aria: groupe
           ? `${b.bh}, ${b.bl.split("\n")[0]}`
