@@ -254,7 +254,9 @@
   .rg .va .cmpt td.m {
     flex: 0 0 100%;
   }
-  .rg .va .cmpt td.add {
+  .rg .va .cmpt td.add,
+  .rg .va .cmpt th .x,
+  .rg .va .cmpt th.add {
     display: none;
   }
   .rg .va .cmpt td.v {
