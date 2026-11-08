@@ -61,3 +61,67 @@ fin:
     - "(?:abrogation|retrait)\\s+(?:de\\s+)?(?:[li]'|l )?(?:arrete|ap)\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)"
     - "(?:abrogeant|retirant|abroge|retire)\\s+(?:[li]'|l )?(?:arrete|ap)\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)"
     - "[li]'arrete\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)[^.]{0,250}?(?:est|sont)\\s+(?:abroge|retire)"
+
+# What a drone act's article 1 says, read by rules where no model read it
+# (pipeline/lacarte_registre/lecture_drones.py): the service that flies, the purposes of
+# L. 242-5 it retains, the sector in its own words. Measured on the acts of the police
+# prefecture and of Paris, Hauts-de-Seine, Seine-Saint-Denis, Val-de-Marne (1 967 acts,
+# 2026-11-08), whose article 1 reads « la captation … par <service> sont autorisés <où et
+# quand> aux titres de : <purposes> ». Their text layer splits words (« transmissio n »,
+# « directionde ») and loses pieces: every pattern is matched on the folded text with its
+# spaces removed, and a piece lost is « non lu », never guessed.
+texte:
+  id: rule:registre_drones@1:texte
+  rationale: >-
+    A service is served only when its name matches one of the list below (a name cut by the
+    text layer is not completed); the purposes are the ids of collecte_champs.yaml
+    `finalites`, the model's own; the sector is the act's words between « sont autorisés »
+    and « au(x) titre(s) de », a hyphen's lost space mended, when that span is found and
+    under 300 characters. Read for that family only: elsewhere the span is often a period
+    (« du samedi 24 octobre … au dimanche … »), not measured. On the family's 1 543
+    authorisations: a service 1 279 (83 %), purposes 1 505 (97 %), a sector 1 322 (86 %).
+  services:
+    - id: dopc
+      libelle: Direction de l'ordre public et de la circulation (préfecture de police)
+      motif: "(directiondel'?|del'?)?ordrepublicetdelacirculation"
+    - id: dspap
+      libelle: Direction de la sécurité de proximité de l'agglomération parisienne
+      motif: "directionde(la)?securitede(la)?proximitedel'?agglomerationparisienne"
+    - id: dtsp93
+      libelle: Direction territoriale de la sécurité de proximité de Seine-Saint-Denis
+      motif: "directionterritorialedelasecuritedeproximitede(la)?seine-?saint-?denis"
+    - id: dtsp92
+      libelle: Direction territoriale de la sécurité de proximité des Hauts-de-Seine
+      motif: "directionterritorialedelasecuritedeproximitedeshauts-?de-?seine"
+    - id: dtsp94
+      libelle: Direction territoriale de la sécurité de proximité du Val-de-Marne
+      motif: "directionterritorialedelasecuritedeproximiteduval-?de-?marne"
+    - id: dtsp75
+      libelle: Direction territoriale de la sécurité de proximité de Paris
+      motif: "directionterritorialedelasecuritedeproximitedeparis"
+    - id: emzds
+      libelle: État-major de la zone de défense et de sécurité de Paris
+      motif: "etat-?majordelazonededefenseetdesecuritedeparis"
+    - id: srpt
+      libelle: Sous-direction de la police régionale des transports
+      motif: "sous-?directiondelapoliceregionaledestransports"
+    - id: sdrcsr
+      libelle: Sous-direction régionale de la circulation et de la sécurité routières
+      motif: "sous-?directionregionaledelacirculationetdelasecuriteroutiere"
+    - id: dipn78
+      libelle: Direction interdépartementale de la police nationale des Yvelines
+      motif: "directioninterdepartementaledelapolicenationaledesyvelines"
+    - id: ggd78
+      libelle: Groupement de gendarmerie départementale des Yvelines
+      motif: "groupementdegendarmeriedepartementaledesyvelines"
+    - id: gendarmerie
+      libelle: Gendarmerie nationale
+      motif: "gendarmerienationale"
+  finalites:
+    atteintes_personnes_biens: "atteintesalasecuritedespersonnesetdesbiens"
+    rassemblements: "securitedesrassemblements"
+    terrorisme: "actesdeterroris"
+    flux_transport: "fluxdetransports?"
+    frontieres: "surveillancedesfrontieres"
+    secours: "secoursauxpersonnes"
+    infractions: "constatationdesinfractions"

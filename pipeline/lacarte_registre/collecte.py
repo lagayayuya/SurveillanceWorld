@@ -32,7 +32,7 @@ import yaml
 
 import lacarte_registre as registre
 from lacarte_collecte import arretes
-from lacarte_registre import fins, motifs, partage, regles, selection
+from lacarte_registre import fins, lecture_drones, motifs, partage, regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -299,6 +299,10 @@ def act_event(
               "conservation_jours", "echeance", "nature"):  # fmt: skip
         if k in nv:
             e[k] = nv[k]
+    if a["type"] == "drone":
+        # what the article 1 says where no model read it (rules/registre_drones.yaml `texte`)
+        for k, v in lecture_drones.champs(a, rules_dir or registre.RULES).items():
+            e.setdefault(k, v)
     if e.get("adresse"):
         # an address served only when its street is found in the act's commune (lieux.py)
         from lacarte_registre import lieux
