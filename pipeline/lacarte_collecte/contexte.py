@@ -41,6 +41,13 @@ class Contexte:
             )
         return self._fetchers[source]
 
+    def lecteur(self) -> Any:
+        """The bounded reader (borne.py), its limit from rules/collecte_actes.yaml `lecture`."""
+        from lacarte_collecte import borne
+
+        conf = rules("collecte_actes.yaml", self.rules_dir)["lecture"]
+        return borne.lecteur(float(conf["limite_s"]))
+
     def out_of_time(self) -> bool:
         return self.clock() >= self.deadline
 

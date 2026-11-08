@@ -84,6 +84,41 @@ PILE = "pile.txt"
 
 
 PILE_TOUTES = 1800.0  # seconds between two stacks
+VIE_TOUTES = 600.0  # seconds between two signs of life (en_cours.json)
+PASSAGE = "passage.json"  # {debut} at a run's start, {debut, fin} once its report is written
+
+
+def _battre(ctx: Contexte, stop: threading.Event) -> None:
+    """The sign of life every 10 min while the sources run: the reading is in a child
+    process now (borne.py), so this thread gets the GIL even when a pattern is slow."""
+    from lacarte_collecte import arretes
+
+    while not stop.wait(VIE_TOUTES):
+        arretes.signe_de_vie(ctx)
+
+
+def _precedent(ctx: Contexte, started: str) -> dict[str, Any] | None:
+    """The run before, when it never wrote its report (killed: systemd at 6 h, a stop, the
+    machine): when it started and its last sign of life, for the top of this report. This
+    run's start is written in its place."""
+    import json
+
+    path = Path(ctx.sortie) / PASSAGE
+    try:
+        before = json.loads(path.read_text("utf-8")) if path.is_file() else {}
+    except ValueError:
+        before = {}
+    out = None
+    if before.get("debut") and not before.get("fin"):
+        vie = Path(ctx.sortie) / "en_cours.json"
+        try:
+            last = json.loads(vie.read_text("utf-8")) if vie.is_file() else None
+        except ValueError:
+            last = None
+        out = {"debut": before["debut"], "dernier_signe": last}
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"debut": started}), encoding="utf-8")
+    return out
 
 
 def _pile_a_l_echeance(ctx: Contexte) -> str:
@@ -125,6 +160,10 @@ def tourner(
         and st.get("derniere_complete")
         and (ctx.today - dt.date.fromisoformat(st["derniere_complete"])).days < 7
     )
+    if ctx.sortie:
+        before = _precedent(ctx, started)
+        if before:
+            summary["precedent"] = before
     _communes(ctx)
     from lacarte_collecte.cache import Cache
 
@@ -140,12 +179,16 @@ def tourner(
     for t in threads.values():
         t.start()
     pile = _pile_a_l_echeance(ctx)
+    stop = threading.Event()
+    if ctx.sortie:
+        threading.Thread(target=_battre, args=(ctx, stop), daemon=True).start()
     for n, t in threads.items():
         # a source past its deadline (a reading that never ends) does not hold the run: the
         # others' results and the report are written, the unit ends before systemd kills it
         t.join(timeout=max(0.0, ctx.deadline - ctx.clock()) + GRACE)
         if t.is_alive():
             summary[n] = {"statut": "depasse", "raison": f"pas fini à l'échéance (pile : {pile})"}
+    stop.set()
     if pile:
         import faulthandler
 
@@ -166,6 +209,10 @@ def tourner(
         except Exception as e:  # noqa: BLE001 (the API down: the run goes on, said in the report)
             summary["modele"] = {"erreur": f"{type(e).__name__}: {e}"[:300]}
     rep = sortie.ecrire(ctx, started, summary)
+    if ctx.sortie:
+        (Path(ctx.sortie) / PASSAGE).write_text(
+            json.dumps({"debut": started, "fin": rep["fin"]}), encoding="utf-8"
+        )
     if only is None and not weekly:
         d = summary.get("dila") or {}
         left = d.get("jours_restants", 1) or d.get("annees_restantes")
@@ -230,6 +277,9 @@ def main(argv: list[str] | None = None) -> None:
     rl = sub.add_parser("relire", help="the cached texts read again by the code sent, no request")
     rl.add_argument("--admin")
     rl.add_argument("--actes", help="act ids, comma-separated")
+    rl.add_argument(
+        "--comparer", action="store_true", help="acts cut before and after LEADERS, nothing written"
+    )
     mo = sub.add_parser("montrer", help="an act's text, from the cache (the server, to diagnose)")
     mo.add_argument("acte")
     er = sub.add_parser("effacer-recueil", help="a recueil's text, acts and record, erased")
@@ -301,6 +351,9 @@ def main(argv: list[str] | None = None) -> None:
         from lacarte_collecte import arretes
 
         ctx = contexte(1.0)
+        if a.comparer:
+            print(json.dumps(arretes.comparer(ctx, a.admin), ensure_ascii=False, indent=1))
+            return
         out = arretes.relire(ctx, a.admin, set(a.actes.split(",")) if a.actes else None)
         sortie.ecrire(ctx, dt.datetime.now(dt.UTC).isoformat(timespec="seconds"), {"relire": out})
         print(json.dumps(out, ensure_ascii=False))

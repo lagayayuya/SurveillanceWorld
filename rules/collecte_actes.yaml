@@ -11,6 +11,18 @@ rationale: >-
   The rules of the pilot's reader (rhone_raa/extract.py classify), measured on the Rhône
   (17 acts right out of 20) and the Moselle; the search words are those of the national
   framing's deep pass (2026-10-31).
+# the time one recueil's reading may take (pipeline/lacarte_collecte/borne.py)
+lecture:
+  id: rule:collecte_actes@1:lecture
+  rationale: >-
+    Ju (2026-11-08): a slow pattern must never cost a whole run again. A recueil's reading
+    takes well under a second (a summary of 300 acts, a few seconds); the one that held the
+    runs from 11-05 to 11-08 would have taken hours. 120 s keeps every real recueil and
+    stops such a one: its child process is killed, the recueil is noted « trop long » with
+    its name in the run's report, read again only by the next reader version, and the run
+    goes on.
+  limite_s: 120
+
 types:
   drone:
     priorite: 1

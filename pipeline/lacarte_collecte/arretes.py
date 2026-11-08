@@ -32,7 +32,7 @@ import urllib.parse
 from pathlib import Path
 from typing import Any
 
-from lacarte_collecte import parcours, parse_raa, pdf
+from lacarte_collecte import borne, parcours, parse_raa, pdf
 from lacarte_collecte.cache import Cache
 from lacarte_collecte.contexte import Contexte, rules
 from lacarte_collecte.etat import Etat, Store
@@ -87,7 +87,9 @@ def search(f: fetch.Fetcher, base: str, aid: str, words: str, a: dt.date, b: dt.
 
 def is_read(rec: dict[str, Any] | None) -> bool:
     """Read already, by the current reader (an older one's reading is done again)."""
-    return bool(rec) and rec.get("statut") == "lu" and rec.get("lecteur") == parse_raa.VERSION
+    # a reading past the limit (« trop long ») is tried again by the next reader only
+    ok = ("lu", "trop_long")
+    return bool(rec) and rec.get("statut") in ok and rec.get("lecteur") == parse_raa.VERSION
 
 
 def safe_id(key: str) -> str:
@@ -102,24 +104,36 @@ def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
 
 
 EN_COURS = "en_cours.json"
+# the run's sign of life (cli.tourner writes it every 10 min, and each recueil when it
+# starts): the recueil being read, since when, and how many this process has read
+VIE: dict[str, Any] = {"lus": 0, "recueil": None, "depuis": None}
 
 
-def _en_cours(ctx: Contexte, admin: str, rec: dict[str, Any]) -> None:
-    """The recueil being read, in SORTIE/en_cours.json (readable from the Mac: no root): a
-    run that never ends says which text holds it. Its id, administration, day and address
-    only, which the derived files say anyway."""
+def signe_de_vie(ctx: Contexte) -> None:
+    """SORTIE/en_cours.json (readable from the Mac: no root): the hour it was written, the
+    recueil being read and since when, the recueils read; a recueil that does not change for
+    30 min says which text holds the run. Its id, administration, day and address only,
+    which the derived files say anyway."""
     import json
 
     from lacarte_collecte.etat import _write
 
     if not ctx.sortie:
         return
-    since = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
-    keep = {k: rec.get(k) for k in ("id", "date", "url")}
+    now = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     _write(
         Path(ctx.sortie) / EN_COURS,
-        json.dumps({**keep, "administration": admin, "depuis": since}, ensure_ascii=False),
+        json.dumps(
+            {**(VIE["recueil"] or {}), "depuis": VIE["depuis"], "heure": now, "lus": VIE["lus"]},
+            ensure_ascii=False,
+        ),  # fmt: skip
     )
+
+
+def _en_cours(ctx: Contexte, admin: str, rec: dict[str, Any]) -> None:
+    VIE["recueil"] = {**{k: rec.get(k) for k in ("id", "date", "url")}, "administration": admin}
+    VIE["depuis"] = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
+    signe_de_vie(ctx)
 
 
 def read_recueil(
@@ -146,7 +160,17 @@ def read_recueil(
         origin = "pdf"
         if not text or not pdf.readable(text):
             return {**rec, "statut": "non_lu", "raison": "PDF illisible"}
-    acts = parse_raa.lire(text, communes, kinds, dt.date.fromisoformat(rec["date"]))
+    try:
+        dicts = ctx.lecteur()(
+            parse_raa.lire_dicts, text, communes, kinds, dt.date.fromisoformat(rec["date"])
+        )
+    except borne.TropLong as e:
+        # its former reading's acts stay; the report names it
+        return {**rec, "statut": "trop_long", "raison": f"lecture : {e}", "texte": origin,
+                "lecteur": parse_raa.VERSION}  # fmt: skip
+    finally:
+        VIE["lus"] += 1
+    acts = [parse_raa.Acte(**d) for d in dicts]
     rid = rec["id"]
     Store(ctx.root, "actes").add(
         {
@@ -349,6 +373,39 @@ def collect(ctx: Contexte, vagues: set[int] | None = None) -> dict[str, Any]:
         summary["administrations"][admin] = s.get("statut")
     summary["requetes"] = ctx.requetes()
     return summary
+
+
+def comparer(ctx: Contexte, admin: str | None = None) -> dict[str, Any]:
+    """The cached recueils cut into acts before LEADERS (`cut` False) and after, each under
+    the time limit: how many give the same numbers, titles and templates, how many differ
+    (named), how many are too long for one or the other. Nothing is written."""
+    lire = ctx.lecteur()
+    same, differ, slow_old, slow_new = 0, [], [], []
+    for d in Cache(ctx.root).all():
+        if admin and d["administration"] != admin:
+            continue
+        name = {k: d.get(k) for k in ("id", "administration", "date", "name")}
+        out = {}
+        for cut in (False, True):
+            try:
+                out[cut] = lire(parse_raa.morceaux, d["content"], cut)
+            except borne.TropLong:
+                out[cut] = None
+        if out[True] is None:
+            slow_new.append(name)
+        if out[False] is None:
+            slow_old.append(name)
+        if out[True] is None or out[False] is None:
+            continue
+        if out[True] == out[False]:
+            same += 1
+            continue
+        old, new = set(map(tuple, out[False])), set(map(tuple, out[True]))
+        differ.append(
+            {**name, "avant_seul": sorted(old - new)[:5], "apres_seul": sorted(new - old)[:5]}
+        )
+    return {"identiques": same, "differents": len(differ), "trop_longs_avant": slow_old,
+            "trop_longs_apres": slow_new, "differences": differ[:50]}  # fmt: skip
 
 
 def relire(

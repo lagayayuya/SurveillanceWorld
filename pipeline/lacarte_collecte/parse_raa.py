@@ -94,11 +94,13 @@ NUMBER = re.compile(r"^\W*(?:[\w/.'-]+\W+){0,4}?(?:n\s?°|no\b)\s*(\d+(?:\s*[-/.
 LEADERS = re.compile(r"[/.'-]{3,}")
 
 
-def heads(txt: str) -> list[tuple[int, str | None]]:
-    """The headings' places and their numbers (None when the heading gives none)."""
+def heads(txt: str, cut: bool = True) -> list[tuple[int, str | None]]:
+    """The headings' places and their numbers (None when the heading gives none); `cut`
+    False reads as before LEADERS (`relire --comparer`)."""
     out = []
     for m in HEAD.finditer(txt):
-        nxt = LEADERS.sub(lambda r: r.group()[0], strip(txt[m.end() : m.end() + 250]))
+        nxt = strip(txt[m.end() : m.end() + 250])
+        nxt = LEADERS.sub(lambda r: r.group()[0], nxt) if cut else nxt
         if re.match(r"\W*:?\W*article\b", nxt) or not TITLE_NEXT.match(nxt):
             continue
         num = NUMBER.match(nxt)
@@ -173,7 +175,7 @@ class Morceau:
     gabarit: str  # "identifiants" | "en-tete" | "entier"
 
 
-def split_acts(txt: str) -> list[Morceau]:
+def split_acts(txt: str, cut: bool = True) -> list[Morceau]:
     titles: dict[str, str] = {}
     # a summary's line: the act's id, its title, its pages; the title bounded (a recueil
     # without a summary repeats each id in its page feet: unbounded, each would scan the rest
@@ -200,7 +202,7 @@ def split_acts(txt: str) -> list[Morceau]:
             )
             for i, a in enumerate(ids)
         ]
-    found = heads(txt)
+    found = heads(txt, cut)
     out = []
     seen: dict[str, int] = {}
     for i, (start, number) in enumerate(found):
@@ -508,3 +510,15 @@ def lire(text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date
             a.champs = {"n_total": num(c.group(1)) if c else None}
         out.append(a)
     return out
+
+
+def lire_dicts(
+    text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date
+) -> list[dict[str, Any]]:
+    """lire's acts as dicts: what the bounded reading's child sends back (borne.py)."""
+    return [a.as_dict() for a in lire(text, communes, kinds, recueil_date)]
+
+
+def morceaux(text: str, cut: bool = True) -> list[tuple[str, str, str]]:
+    """Each piece's number, title and template (`relire --comparer`)."""
+    return [(m.acte, m.titre, m.gabarit) for m in split_acts(text, cut)]

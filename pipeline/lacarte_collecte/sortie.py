@@ -170,6 +170,11 @@ def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, An
     cov = couverture(ctx)
     _write_json(out / "couverture.json", cov)
     stale = sorted(a for a, v in cov["administrations"].items() if v["perime"])
+    # the recueils whose reading passed the limit (borne.py), by this reader: named
+    long_ = sorted(
+        (r for r in Store(ctx.root, "recueils").records() if r.get("statut") == "trop_long"),
+        key=lambda r: (r.get("administration") or "", r.get("date") or ""),
+    )
     rep = {
         "debut": started,
         "fin": dt.datetime.now(dt.UTC).isoformat(timespec="seconds"),
@@ -177,9 +182,25 @@ def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, An
         "sources": summary,
         "journal": journal(ctx.root, started),
         "perimes": stale,
+        "trop_longs": [
+            {k: r.get(k) for k in ("id", "administration", "date", "name", "url")} for r in long_
+        ],
     }
     _write_json(out / "rapport.json", rep)
-    lines = [f"Collecte du {started} au {rep['fin']}"]
+    lines = []
+    before = summary.get("precedent")
+    if before:  # first: a run killed before its report is never a line in a journal only
+        last = before.get("dernier_signe") or {}
+        lines.append(
+            f"PASSAGE PRÉCÉDENT INTERROMPU : commencé le {before['debut']}, sans rapport ; "
+            f"dernier signe {last.get('heure') or '?'} : {last.get('administration') or '?'} "
+            f"{last.get('date') or ''} {last.get('url') or ''}, depuis {last.get('depuis') or '?'}"
+        )
+    for r in rep["trop_longs"]:
+        lines.append(
+            f"TROP LONG (lecture > limite) : {r['administration']} {r['date']} {r['name']}"
+        )
+    lines.append(f"Collecte du {started} au {rep['fin']}")
     lines += [f"  {k} : {v} lignes" for k, v in n.items()]
     for s, c in sorted(rep["journal"]["sources"].items()):
         lines.append(
