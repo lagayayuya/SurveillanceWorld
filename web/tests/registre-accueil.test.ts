@@ -10,16 +10,19 @@ import {
   avantVol,
   casseNormale,
   dansOnglet,
+  jourDoc,
   nomAcheteur,
   QUESTION,
   recentes,
 } from "../src/registre/vues/accueil-outils.ts";
 
-const ev = (id: string, t: string, date: string) => ({ id, t, date }) as unknown as Evenement;
+const ev = (id: string, t: string, date: string, publie?: string) =>
+  ({ id, t, date, ...(publie ? { publie } : {}) }) as unknown as Evenement;
 const MAJ = "2026-11-08";
 const DOCS = [
-  ev("d1", "arrete_drone", "2026-11-18"),
-  ev("d2", "arrete_drone", "2026-11-10"),
+  // a drone decree flies on `date`, was published on `publie` (A, b272a68)
+  ev("d1", "arrete_drone", "2026-11-18", "2026-11-07"),
+  ev("d2", "arrete_drone", "2026-11-10", "2026-11-03"),
   ev("d3", "arrete_drone", "2026-11-07"),
   ev("c1", "attribution", "2026-11-05"),
   ev("a1", "avis", "2026-11-06"),
@@ -27,27 +30,30 @@ const DOCS = [
   ev("m1", "modification", "2026-11-12"),
 ];
 
-test("« Cette semaine »: no date after the build's, the latest first, in every tab", () => {
+test("« Cette semaine »: no date after the build's, the latest published first, in every tab", () => {
   for (const o of ["tous", "contrats", "arretes", "drones"] as const) {
     const got = recentes(DOCS, MAJ, o);
-    assert.ok(got.every((e) => (e.date ?? "") <= MAJ), o);
-    const dates = got.map((e) => e.date);
-    assert.deepEqual(dates, [...dates].sort().reverse(), o);
+    const jours = got.map((e) => jourDoc(e, o) ?? "");
+    assert.ok(jours.every((j) => j && j <= MAJ), o);
+    assert.deepEqual(jours, [...jours].sort().reverse(), o);
   }
-  // « Tous »: the contracts and the notices, not the drones (their date is a flight's)
+  // « Tous »: a drone decree by its publication (d1 flies on the 18th, published on the 7th); one
+  // without `publie` stays out
   assert.deepEqual(
     recentes(DOCS, MAJ, "tous").map((e) => e.id),
-    ["a1", "c1", "r1"],
+    ["d1", "a1", "c1", "r1", "d2"],
   );
+  // the drones' tab: by `publie`, by a past `date` without it
   assert.deepEqual(
     recentes(DOCS, MAJ, "drones").map((e) => e.id),
-    ["d3"],
+    ["d1", "d3", "d2"],
   );
   assert.equal(recentes(DOCS, MAJ, "tous", 2).length, 2);
-  assert.ok(!dansOnglet("tous", "arrete_drone") && dansOnglet("tous", "attribution"));
-  // the API is asked for the same tabs: « Tous » without the drones' device
-  assert.ok(!QUESTION.tous.p.split(",").includes("dr"));
-  assert.equal(QUESTION.drones.p, "dr");
+  assert.ok(dansOnglet("tous", "arrete_drone") && dansOnglet("tous", "attribution"));
+  // the API: « Tous » asks its drones apart, the drones' tab its device
+  assert.ok(!QUESTION.tous[0].p.split(",").includes("dr"));
+  assert.equal(QUESTION.tous[1].p, "dr");
+  assert.equal(QUESTION.drones[0].p, "dr");
 });
 
 test("a buyer's name says where it is", () => {

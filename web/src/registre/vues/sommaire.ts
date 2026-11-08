@@ -44,6 +44,7 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import {
   avantVol,
   casseNormale,
+  jourDoc,
   nomAcheteur,
   ONGLETS,
   type Onglet,
@@ -244,12 +245,19 @@ class Sommaire extends Vue<Props, State> {
    * not answering, the build's `recents` stand in. */
   private demandeRecents(o: Onglet): void {
     if (this.state.recents[o]) return;
-    const p = new URLSearchParams({ ...QUESTION[o], page: "1", n: "20" });
-    demander(p).then(
-      (P) => {
+    Promise.all(
+      QUESTION[o].map((q) => demander(new URLSearchParams({ page: "1", n: "20", ...q }))),
+    ).then(
+      (Ps) => {
         if (!this.fini)
           this.setState({
-            recents: { ...this.state.recents, [o]: { evts: P.evenements, L: P.dico } },
+            recents: {
+              ...this.state.recents,
+              [o]: {
+                evts: Ps.flatMap((P) => P.evenements),
+                L: { communes: Object.assign({}, ...Ps.map((P) => P.dico.communes)) },
+              },
+            },
           });
       },
       () => {},
@@ -577,7 +585,7 @@ class Sommaire extends Vue<Props, State> {
             ? ""
             : String(e.ref ?? "");
       return {
-        date: jourMois(e.date ?? I.maj),
+        date: jourMois(jourDoc(e, S.onglet) ?? I.maj),
         dk: t(`accueil.dk.${dk(e.t)}`),
         lieu: [lieu] as RichItem[],
         ref,

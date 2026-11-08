@@ -10,14 +10,16 @@ import { tidy } from "../texte.ts";
 export const ONGLETS = ["tous", "contrats", "arretes", "drones"] as const;
 export type Onglet = (typeof ONGLETS)[number];
 
-/** A tab's documents asked of the search API, the latest first (its `date`). A drone decree's
- * date is its first day of flight, not its publication (not served yet): « Tous » leaves the
- * drones out, so that the contracts and the notices come back, and their tab keeps them. */
-export const QUESTION: Record<Onglet, Record<string, string>> = {
-  tous: { p: "vp,csu,pi,vsa,vv,lapi,na" },
-  contrats: { t: "con,mod,ao" },
-  arretes: { t: "aut", p: "vp,csu,pi,vsa,vv,lapi" },
-  drones: { t: "aut", p: "dr" },
+/** A tab's documents asked of the search API, the latest first (its `date`): one question or two.
+ * A drone decree's `date` is its first day of flight; its publication is `publie` (A, b272a68),
+ * which the API does not sort on. Its drones are asked apart, more of them, and sorted here on
+ * `publie` (jourDoc), so that « Tous » holds the contracts, the notices and the decrees published
+ * last, whatever day they fly. */
+export const QUESTION: Record<Onglet, Record<string, string>[]> = {
+  tous: [{ p: "vp,csu,pi,vsa,vv,lapi,na" }, { t: "aut", p: "dr", n: "60" }],
+  contrats: [{ t: "con,mod,ao" }],
+  arretes: [{ t: "aut", p: "vp,csu,pi,vsa,vv,lapi" }],
+  drones: [{ t: "aut", p: "dr", n: "60" }],
 };
 
 /** A document in a tab (the build's `recents`, when the API does not answer). */
@@ -25,16 +27,30 @@ export function dansOnglet(o: Onglet, t: string): boolean {
   if (o === "drones") return t === "arrete_drone";
   if (o === "arretes") return t.startsWith("arrete") && t !== "arrete_drone";
   if (o === "contrats") return /^(attribution|modification|avis|resultat|rectificatif)$/.test(t);
-  return t !== "arrete_drone";
+  return true;
 }
 
-/** The latest documents of a tab: none dated after the build (`maj`, YYYY-MM-DD), the latest first,
- * `n` at most. */
+/** The day a document is dated and sorted by on the home: its publication. A drone decree's is
+ * `publie`, never its `date` (a flight's day); without `publie` (a build before b272a68) its tab
+ * still dates it by `date` when that day is past, and « Tous » leaves it out. */
+export function jourDoc(e: Evenement, o: Onglet): string | null {
+  if (e.t !== "arrete_drone") return e.date ? e.date.slice(0, 10) : null;
+  const pub = (e as { publie?: string | null }).publie;
+  if (pub) return pub.slice(0, 10);
+  return o === "drones" && e.date ? e.date.slice(0, 10) : null;
+}
+
+/** The latest documents of a tab: none dated after the build (`maj`, YYYY-MM-DD), the latest
+ * published first, `n` at most. */
 export function recentes(evts: Evenement[], maj: string, o: Onglet, n = 6): Evenement[] {
+  const vus = new Set<string>();
   return evts
-    .filter((e) => dansOnglet(o, e.t) && !!e.date && e.date.slice(0, 10) <= maj)
-    .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
-    .slice(0, n);
+    .map((e) => ({ e, j: dansOnglet(o, e.t) ? jourDoc(e, o) : null }))
+    .filter((x): x is { e: Evenement; j: string } => !!x.j && x.j <= maj)
+    .filter((x) => !vus.has(x.e.id) && !!vus.add(x.e.id))
+    .sort((a, b) => b.j.localeCompare(a.j))
+    .slice(0, n)
+    .map((x) => x.e);
 }
 
 /** A buyer's name whose words do not say where it is (« Centre Communal d'Action Sociale »,
