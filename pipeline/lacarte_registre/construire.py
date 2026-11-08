@@ -44,6 +44,7 @@ from lacarte_registre import (
     recherche,
     regles,
     sortie,
+    textes,
 )
 
 MARK = "construction.json"
@@ -76,6 +77,13 @@ def run(
     export = root / exporter.FILE
     corr = regles.corrections(rules / "registre_corrections.yaml",
                               *([export] if accepted and export.is_file() else []))  # fmt: skip
+    # the titles and objets their publishers garbled (rules/registre_textes.yaml), mended
+    # before the corrections, which may set them again
+    fix = textes.regles(rules)
+    repaired = {
+        "documents": textes.appliquer(pilote.reg["evenements"], fix),
+        "affaires": textes.appliquer(list(pilote.reg["affaires"].values()), fix),
+    }
     reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
@@ -131,6 +139,7 @@ def run(
         summary["fusion"] = merged
     if col_summary:
         summary["collecte"] = col_summary
+    summary["textes_repares"] = repaired
     summary["non_lus"] = cov["non_lus"]
     summary["maj"] = cov["maj"]
     return summary

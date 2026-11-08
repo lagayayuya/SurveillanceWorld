@@ -1,0 +1,22 @@
+# The texts' repairs at the build (pipeline/lacarte_registre/textes.py): a title or an
+# objet as its publisher garbled it, mended before any page shows it.
+version: 1
+
+apostrophes:
+  id: rule:registre_textes@1:apostrophes
+  rationale: >-
+    Some publishers' software turns the typographic apostrophe (U+2019) and the « œ » into
+    « ? » before the text reaches DECP, BOAMP or a recueil's index (« Plaques
+    d?Immatriculation », « mise en ?uvre »): 93 documents and 26 affaires mended on the
+    data of 2026-11-08, the raw source already so; 9 « ? » left between letters, 7 in act
+    numbers read by an OCR, 2 in shops' names. A « ? » right after an elided
+    word (d, l, j, n, s, t, c, m, qu and its compounds) and before a vowel or an h is an
+    apostrophe; « ?uvre » is « œuvre ». Any other « ? » is kept: an OCR's noise in an act's
+    number is not guessed. The apostrophe put back is the plain one, the one most titles use.
+  remplacements:
+    - motif: "(?i)\\b(jusqu|lorsqu|puisqu|presqu|quoiqu|qu|[dljnstcm])\\?(?=[aeiouyhàâäéèêëîïôöùûüœ])"
+      par: "\\1'"
+    - motif: "\\?uvre"
+      par: "œuvre"
+    - motif: "\\?UVRE"
+      par: "ŒUVRE"
