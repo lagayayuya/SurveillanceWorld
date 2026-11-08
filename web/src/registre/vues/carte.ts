@@ -1236,7 +1236,8 @@ class CarteDrones extends Vue<Props, State> {
         creneaux: [],
         hasCreneaux: false,
         rows: [
-          ...ligne("carte.motif_k", motifTxt(a)),
+          // the motive: « non lu » for a drone act whose motive is not served (A: 76 % of them)
+          ...ligne("carte.motif_k", motifTxt(a) || (a.kind === "drone" ? t("liste.non_lu") : "")),
           ...ligne("carte.service", a.service),
           ...ligne("carte.finalites_k", finalitesTxt(a).join(" ; ")),
           ...ligne("carte.cameras_drone_k", camerasTxt(a)),
