@@ -61,6 +61,17 @@ def pages(site: Path) -> list[str]:
     # a document at its type's address (contrat/, avis/, subvention/, arrete/: its affaire's ref)
     for f in sorted((site / "document").glob("*.json")):
         out.append(f"/registre/{json.loads(f.read_text(encoding='utf-8'))['affaire']['ref']}")
+    # redesign v3, lot 4: Comparer, the centred graph and Chemin entre deux, on the first ones
+    coms = [f.stem for f in sorted((site / "commune").glob("*.json"))][:2]
+    ents = [f.stem for f in sorted((site / "entreprise").glob("*.json"))][:2]
+    if coms:
+        out.append(f"/registre/comparer?communes={','.join(coms)}")
+    if ents:
+        out.append(f"/registre/comparer?entreprises={','.join(ents)}")
+        out.append(f"/registre/graphe/{ents[0]}")
+        out.append("/registre/graphe")
+    if len(ents) == 2:
+        out.append(f"/registre/chemin?de={ents[0]}&a={ents[1]}")
     return out
 
 

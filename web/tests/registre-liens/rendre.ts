@@ -134,6 +134,13 @@ function siens(r: { view: string } & Record<string, unknown>): string[] {
     if (a?.nom_court) out.push(a.nom_court.trim());
   };
   if (r.view === "acheteur") add(L.acheteurs[String(r.siren)]);
+  // the centred graph's centre is its page's subject, as a fiche's name is (redesign v3, lot 4)
+  if (r.view === "graphe" && r.centre) {
+    const a = L.acheteurs[String(r.centre)];
+    add(a);
+    add(L.entreprises?.[String(r.centre)] as { nom?: string } | undefined);
+    if (a?.categorie === "commune" && a.insee_siege) add({ nom: L.communes[a.insee_siege]?.nom });
+  }
   // a commune's pages (Documents, Autorisations, Carte et drones) are its fiche's
   if ("insee" in r) add({ nom: L.communes[String(r.insee)]?.nom });
   for (const a of Object.values(L.acheteurs)) {
