@@ -1162,6 +1162,9 @@
   }
   .rg .va .fig .fl {
     font-size: 12px;
+    /* one line exactly: the clamp alone let the next line's top show under it */
+    line-height: 1.35;
+    max-height: 1.35em;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
