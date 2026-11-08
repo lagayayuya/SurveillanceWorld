@@ -887,7 +887,8 @@ export class Commune extends Vue<Props, State> {
 
     // documents: the four kinds, ten rows of the one chosen, the full list one page away
     const tabs: { k: Onglet; f: (e: Evenement) => boolean }[] = [
-      { k: "con", f: (e) => e.t === "attribution" && !e.copie },
+      // the commune's own contracts (board: « Contrats · 8 » for Lyon), as its own notices
+      { k: "con", f: (e) => e.t === "attribution" && !e.copie && !!e.communal },
       { k: "ao", f: (e) => /^(avis|resultat|rectificatif)$/.test(e.t) },
       { k: "aut", f: (e) => e.t.startsWith("arrete") },
       { k: "sub", f: (e) => e.t.startsWith("subvention") },

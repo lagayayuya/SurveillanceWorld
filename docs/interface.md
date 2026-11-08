@@ -1135,6 +1135,46 @@ The other views keep v2's kit until their lot.
   in a sheet) and « Filtres · N » (the Filters panel: the sizes as radios, the place, « Voir les N
   communes »), the active filters as chips, a row its rank, its name and the order's column.
 
+
+### 1.14 The register's redesign v3, lot 2 (2026-11-08): a commune's fiche
+
+`/registre/commune/<insee>` is board Lyon-A-theme-actuel (`vues/commune.*`, its computations
+`vues/commune-a.ts`, its rules `vues/commune-a.css`; root `v-commune-a`, so v2's `.v-commune`
+rules, still read by the documents and authorisations pages, do not reach it).
+
+- **The head.** « Commune » and the name cut out; the département's and the intercommunality's
+  chips (links); its inhabitants, its INSEE code, its prefecture's last recueil read; a sentence
+  of its figures (money since its first contract, per inhabitant and its rank, cameras on the
+  map, days of flight); « Partager » (the existing share), « Citer » (the fiche's citation
+  copied).
+- **The four figures**: cameras on the map (`carte.n`), money per inhabitant (its own counted
+  contracts over its population), days of flight over twelve months (`listes.json` `jv`, the
+  calendar's own count until it is in), competition (its contracts on one offer among those
+  that publish their offers; « non publiée » when none does). Each its rank among the communes
+  of its size (200 000 and more, 100 000 to 200 000, 20 000 to 100 000, 5 000 to 20 000, fewer),
+  dots when they are 15 or fewer.
+- **« Vue 3D »**: the door to the live map on the commune, its drone view (`/registre/commune/
+  <insee>/carte`, `?jour=` today's flights when there are some); lot 5 adds its tabs.
+- **The table of contents**, yellow, stuck at the top of the frame's scroll: the numbered
+  sections present, « Documents », « Sources », « Vue 3D ↗ ».
+- **The sections**, each left out when empty, numbered in turn: 1 · the cameras the camera
+  decrees authorise (the latest of each dossier) by kind of beneficiary (mairie, shops and
+  banks, others), those on the map, the largest systems (named only when published, never the
+  mairie); 2 · the counted contracts on its territory by year, stacked by buyer (the city, the
+  transports, the others), all buyers, the city alone or per inhabitant, a bubble per year;
+  3 · the suppliers of its own contracts (amount, contracts, years, their other buyers from
+  `listes.json`) and their graph (squares by amount, « +N » their other buyers); 4 · its own
+  affairs with more than one document, the largest three, their steps; 5 · the calendar of
+  days of flight (twelve months, a click opens the drone view on that day), today's acts, the
+  days by motive (« non lu » until the motive is served), « Publiés quand ? » (`drones.
+  publication`, « non lu » when nothing is counted: Lyon); 6 · its rank in its
+  intercommunality and in its size, by cameras for 1 000 inhabitants, money per inhabitant or
+  days of flight. Then « Tous les documents » (its contracts, the notices, the decrees, the
+  grants, ten of each, the full list on its documents page) and « D'où viennent ces chiffres ».
+- **On a phone**: the figures lighter, the suppliers, the dossiers, the documents and the
+  sources folded, the chart, the graph and the calendar with « ⤢ Plein écran », the table of
+  contents a strip scrolled sideways.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
@@ -2113,6 +2153,20 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 | A list with every row shown | no button; the note says the count |
 | A list reopened from a fiche (`?ligne=`) whose row a default filter leaves out | the default lifted, the row marked and in view |
 
+
+### The register v3, lot 2 (2026-11-08): a commune's fiche
+
+| State | What shows |
+|---|---|
+| A section with nothing (no contract on the territory, no supplier, no affair with two documents, no day of flight) | left out, the others numbered in turn, the table of contents without it |
+| The ranks and the neighbours not yet in (`listes.json`) | the figures without their rank; « Les communes voisines se chargent… » in section 6 |
+| A département whose recueils are not read | the cameras' figure from the map only, « non lu » for the authorised cameras and in the sources |
+| No contract of the commune itself | « aucun contrat » in the money figure, « aucun contrat de la commune elle-même », the chart of the other buyers |
+| A year of the chart hovered (wide) | the others pale, its bubble: the total and each buyer |
+| A day of the calendar hovered / clicked | its bubble (the number of acts) / the drone view on that day |
+| No motive served / nothing counted for « Publiés quand ? » | « non lu » and the sentence why |
+| A folded card (phone) | its title, « N lignes », the arrow; open, its body |
+
 ## 3. Deviations from the mockup (« Écarts à la maquette »)
 
 The punk interface ports the mockup (`Carte punk.dc.html`, export of 2026-10-06, the product
@@ -2664,3 +2718,20 @@ rows above hold for the content of the fiches.
 | Liste-Communes: no « Avec arrêtés drones » | absent from the communes, kept on the départements | the board's controls; the « Drones » order covers it |
 | Lists not drawn by a board (intercommunalités, départements, acheteurs, documents) | the boards' skeleton, their own columns, their names typed links with their pictogram | no board yet; kept v2's columns |
 | Liste-Communes-A-tel: the table's heads gone | the heads kept for screen readers, out of sight | accessibility (a table read with its heads) |
+
+### The register v3, lot 2 (2026-11-08): a commune's fiche
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Lyon-A: « Suivre (RSS) », « Exporter », « Comparer avec… » | « Partager » and « Citer » | no feed; the export is the documents page's; « Comparer » is lot 4 |
+| Lyon-A: the Vue 3D block's tilted drawing of the arrondissements | no picture | the board's drawing is an example; the commune's map file is 3 MB, no light outline is served |
+| Lyon-A: « Les missions » in the Vue 3D block, the « Missions de relevé » card | absent | missions later (Ju 2026-11-07) |
+| Lyon-A: « À vérifier sur ce territoire » | absent | signals later (Ju 2026-11-07) |
+| Lyon-A: the largest systems beside the missions | full width | the missions' card is gone |
+| Lyon-A: figures from the extracts (2 114 cameras, 52 days) | the build's (2 113, 65 days `jv`) | one source per figure (Ju 2026-11-07) |
+| Lyon-A: three series « Ville / Transports / Métropole, État, Département » | the city, the transports, the other buyers by their served category | the board's third figure differs from the build (A's reading) |
+| Lyon-A: the suppliers' roles (« installe et entretient ») | absent | not served |
+| Lyon-A: a dossier's « lien à vérifier » decree and « Sur la carte » step | absent | not served (besoins-donnees) |
+| Lyon-A: « 12 derniers mois / À venir » | twelve months only | the next days' calendar is the drone view's |
+| Lyon-A: the intercommunality's map | its communes ranked, around the commune | the communes' outlines are not served (besoins-donnees) |
+| Lyon-A: « Année ▾ », « Entreprise ▾ », « Montant ▾ », « Exporter CSV » over the documents | the four kinds, ten rows, « Tous les documents → » | the documents page has the filters and the export |

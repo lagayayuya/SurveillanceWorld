@@ -517,6 +517,12 @@
   background: var(--fg);
   color: var(--bg);
 }
+.rg .va .docs td:nth-child(2) a {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .rg .va .cov .non {
   background: var(--rule);
 }
