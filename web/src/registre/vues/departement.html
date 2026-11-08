@@ -19,7 +19,8 @@
     <sc-if value="{{ou}}">
     <section class="sec" id="ou"><h2><span class="num" aria-hidden="true">{{ou.n}}</span>{{t.departement_a.s_ou}}</h2>
       <p class="ans">{{{ou.ans}}}</p>
-      <div class="row2 wide">
+      <div class="{{ou.row}}">
+        <sc-if value="{{ou.mapCard}}">
         <div class="card"><div class="ch-h"><h3 class="k">{{ou.titre}}</h3><div class="seg-ctl" role="group" aria-label="{{t.departement_a.carte_mesure}}"><sc-for list="{{ou.mesures}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
           <sc-if value="{{ou.carte}}">
           <div class="mapwrap">
@@ -37,6 +38,8 @@
           </sc-if>
           <sc-if value="{{ou.attente}}"><p class="note" role="status">{{ou.attente}}</p></sc-if>
         </div>
+        </sc-if>
+        <sc-if value="{{ou.eqCard}}">
         <div class="{{ou.r.cls}}">
           <button type="button" class="fh" aria-expanded="{{ou.r.exp}}" aria-controls="{{ou.r.id}}" onClick="{{ou.r.basculer}}"><span>{{ou.r.titre}}<small>{{ou.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{ou.r.id}}">
@@ -45,6 +48,7 @@
             <p class="note">{{t.departement_a.equipees_note}}</p>
           </div>
         </div>
+        </sc-if>
       </div>
     </section>
     </sc-if>

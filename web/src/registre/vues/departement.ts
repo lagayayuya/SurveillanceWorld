@@ -533,7 +533,10 @@ class DepartementA extends Vue<PropsA, StateA> {
 
     // 1 · where: the communes on the map (two at least: Paris's département is one commune)
     let ou = null;
-    if (coms.length > 1) {
+    // the map needs the IGN outline (metropolitan départements only); the best equipped, cameras
+    const eq = plusEquipees(coms);
+    const mapCard = !dep.startsWith("97") && !S.geoNon;
+    if (coms.length > 1 && (mapCard || eq.rows.length)) {
       const ouN = num();
       entree("ou", `${ouN} · ${t("departement_a.toc.ou")}`);
       const parEpci = new Map<string, number>();
@@ -668,7 +671,6 @@ class DepartementA extends Vue<PropsA, StateA> {
             note: t("departement_a.carte_note", { n: pts.length, attr: S.G.attribution }),
           };
       }
-      const eq = plusEquipees(coms);
       ou = {
         n: ouN,
         ans,
@@ -678,6 +680,9 @@ class DepartementA extends Vue<PropsA, StateA> {
           on: m === o ? "true" : "false",
           pick: (() => this.setState({ mesure: o })) as Handler,
         })),
+        mapCard,
+        eqCard: eq.rows.length > 0,
+        row: mapCard && eq.rows.length ? "row2 wide" : "row2 seul",
         carte,
         attente: carte
           ? ""
@@ -707,14 +712,15 @@ class DepartementA extends Vue<PropsA, StateA> {
     if (st.montant > 0) {
       const pN = num();
       entree("combien", `${pN} · ${t("departement_a.toc.paie")}`);
-      const [p1, p2] = parts;
+      // the sentence names the two largest classes, « autres » among them
+      const [p1, p2] = [...parts].sort((a, b) => b.montant - a.montant);
       const ansP: RichItem[] = [
         { strong: montantA(st.montant) },
         t("departement_a.paie_ans_a", { y: an0 }),
         t(`departement_a.paie_art.${p1.k}`),
         { strong: t(`departement_a.paie_nom.${p1.k}`) },
         t("departement_a.paie_ans_p", { p: p1.pct }),
-        ...(p2
+        ...(p2 && p2.pct > 0
           ? [
               t("departement_a.paie_ans_p2", {
                 art: t(`departement_a.paie_art.${p2.k}`).toLowerCase(),
@@ -753,6 +759,9 @@ class DepartementA extends Vue<PropsA, StateA> {
       const slot = 64.5;
       const W = Math.ceil(49.8 + ans9.length * slot + 4);
       const jusqu = cv?.sources.find((s) => s.id === "contrats")?.jusqu_au ?? f.maj;
+      const avant = Object.keys(f.stats.annees)
+        .filter((y) => y < ans9[0])
+        .reduce((x, y) => x + (f.stats.annees[y]?.con ?? 0), 0);
       paie = {
         n: pN,
         ans: ansP,
@@ -823,7 +832,14 @@ class DepartementA extends Vue<PropsA, StateA> {
               go: a.con ? `/registre/contrats?dep=${encodeURIComponent(dep)}&annee=${y}` : "",
             };
           }),
-          note: t("departement_a.annees_note", { y: ans9[ans9.length - 1], d: jourMois(jusqu) }),
+          // the contracts before the chart's first year (an older notice): counted in the total,
+          // said under the chart rather than hidden
+          note: [
+            t("departement_a.annees_note", { y: ans9[ans9.length - 1], d: jourMois(jusqu) }),
+            avant > 0 ? t("departement_a.annees_avant", { n: avant }) : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
         },
       };
     }
