@@ -628,7 +628,9 @@ function etiqueter(
     const c = Math.cos(a);
     const out: Etiquette["anc"] = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
     const cs: Choix[] = [];
-    for (const max of [24, 14]) {
+    // shortened in three steps before the fewest-collisions fallback (Paris: « Levallois-Perret »
+    // met a circle at 14 characters)
+    for (const max of [24, 14, 9]) {
       const full = tenir(nom(n.k), W - 2 * BORD, "t2", max);
       const up = horiz(n.x, n.y - n.z - 14, "middle", full, "t2");
       const down = horiz(n.x, n.y + n.z + 20, "middle", full, "t2");
