@@ -32,7 +32,7 @@ import yaml
 
 import lacarte_registre as registre
 from lacarte_collecte import arretes
-from lacarte_registre import motifs, partage, regles, selection
+from lacarte_registre import fins, motifs, partage, regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -386,8 +386,14 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     dropped = {e["affaire"] for e in reg["evenements"] if replaced(e)}
     new: list[regles.Event] = list(subs)
     n_pub = 0
-    for a in uniques(acts):
+    once = uniques(acts)
+    # the bans leave, the abrogations and withdrawals end the act they cite (fins.py)
+    fin = fins.lire(once, rules)
+    served: dict[str, regles.Event] = {}
+    for a in once:
         if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
+            continue
+        if a["id"] in fin.interdictions:
             continue
         admin = admins[a["administration"]]
         dep = admin["code"] if admin["genre"] in DEPARTEMENTAL else ""
@@ -397,7 +403,10 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         }
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
-        new.append(act_event(a, admin, published, finals.get(a["id"]), mention, deps, rules))
+        e = act_event(a, admin, published, finals.get(a["id"]), mention, deps, rules)
+        served[a["id"]] = e
+        new.append(e)
+    rattachees = _finir(fin, served)
     affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
     for e in new:
         kind = "subvention" if e["t"].startswith("subvention") else "acte"
@@ -421,7 +430,44 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         "subventions_pilote_remplacees": len(reg["evenements"]) - len(kept),
         "arretes": len(new) - len(subs),
         "arretes_publies": n_pub,
+        "drones_interdictions_sorties": len(fin.interdictions),
+        "abrogations": len(fin.fins),
+        "abrogations_rattachees": rattachees,
+        "abrogations_non_rattachees": len(fin.fins) - rattachees,
     }
+
+
+def _finir(fin: fins.Fins, served: dict[str, regles.Event]) -> int:
+    """An abrogation or a withdrawal served without days, with the act it ends (`abroge`)
+    or marked « non rattachée »; the act it ends keeps its days before it (`abroge_par`).
+    Returns how many enders found their act."""
+    n = 0
+    for rid, kind in fin.fins.items():
+        if (e := served.get(rid)) is None:
+            continue
+        # its days were the act's it ends: dated by its recueil
+        e["fin"] = kind
+        e.pop("jours", None)
+        e["periode"], e["date"] = "", e.get("publie") or e["date"]
+        targets = [served[x]["id"] for x in fin.cible.get(rid, []) if x in served]
+        if not targets:
+            e["abrogation_non_rattachee"] = True
+            continue
+        n += 1
+        e["abroge"] = targets
+    for rid, (ender, kind, jour) in fin.par.items():
+        if (t := served.get(rid)) is None or served.get(ender) is None:
+            continue
+        t["abroge_par"] = served[ender]["id"]
+        left = fins.jours_restants(t.get("jours") or [], kind, jour)
+        if t.get("jours") and left != t["jours"]:
+            if left:
+                t["jours"] = left
+                t["periode"] = " au ".join(dict.fromkeys([left[0], left[-1]]))
+            else:
+                t.pop("jours")
+                t["periode"] = ""
+    return n
 
 
 def couverture(root: Path, rules: Path) -> dict[str, Any] | None:

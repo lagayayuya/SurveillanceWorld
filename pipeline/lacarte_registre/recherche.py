@@ -27,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 from lacarte_registre import chiffres, comptes, fermetures
-from lacarte_registre.regles import EI, Event, disp, sort_key, typ, year_group
+from lacarte_registre.regles import EI, Event, disp, is_drone_act, sort_key, typ, year_group
 from lacarte_registre.selection import plain
 
 COLUMNS = ("id", "t", "d", "p", "y", "date", "rang", "mots", "doc", "dico")
@@ -136,14 +136,14 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             if not k or k not in reg.communes:
                 continue
             c = coms.setdefault(k, {"docs": 0, "con": 0, "cam": 0, "dr": 0})
-            if e["t"] == "arrete_drone":
+            if is_drone_act(e):
                 # the collection's acts list their days; the pilot's give a period
                 days = e.get("jours") or chiffres.jours([e.get("periode") or ""])
                 vols[k].update(d for d in days if debut < d <= fin)
             c["docs"] += 1
             c["con"] += e["t"] == "attribution" and not e.get("copie")
             c["cam"] += e["t"] == "arrete"
-            c["dr"] += e["t"] == "arrete_drone"
+            c["dr"] += is_drone_act(e)
         if e["t"] != "attribution":
             continue
         # a contract published twice still names its company and its buyer, and counts once

@@ -24,7 +24,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from lacarte_registre.regles import Event, Pilote
+from lacarte_registre.regles import Event, Pilote, is_drone_act
 
 KINDS = {"arrete_drone": "drone", "arrete_vsa": "vsa"}
 M_PER_DEG = 111320
@@ -179,7 +179,7 @@ def publication(events: Iterable[Event]) -> dict[str, int]:
     out = {"avant": 0, "jour_meme": 0, "apres": 0, "total": 0, "non_lus": 0}
     seen: set[str] = set()
     for e in events:
-        if e["t"] != "arrete_drone" or e["id"] in seen:
+        if not is_drone_act(e) or e["id"] in seen:
             continue
         seen.add(e["id"])
         first, pub = min(e.get("jours") or [""]), e.get("publie")

@@ -26,3 +26,34 @@ publication:
     day of flight is the act's first published day (`jours`); an act without one, or without
     a recueil (the pilot's acts), is in none of the three, counted in `non_lus`. Every act,
     without a window: the share says how the prefectures publish, not this year's flights.
+
+fin:
+  id: rule:registre_drones@1:fin
+  rationale: >-
+    An act read as a drone act is not a flight when it bans flights or ends an authorisation.
+    A ban (« interdiction de survol », and a company's dispensation to fly at night: the SNCF,
+    a drone show) names `interdiction` in its title and authorises no `captation` in its
+    article 1: it is not a camera act, it leaves the register (reader 6 already leaves out the
+    bans its title names). An abrogation or a withdrawal is the reader's « abrogation »
+    (its title) or an article 1 that says so (`fin_article_1`, before its article 2: a title
+    is often another act's, cut with it); one that « abroge et remplace » is a new
+    authorisation (`remplace`). It stays a drone document, without days and out of the
+    flights (`dr`, `jv`, « publiés avant le vol »). It ends the act whose number it cites
+    (`cite`), looked up among the acts of its administration (the Préfecture de police's
+    family: ppparis, pref75, pref92, pref93, pref94), the number compared by its digits, a
+    single act only: a withdrawal (`retrait`) takes all its days, an abrogation those from
+    its own day on (code des relations entre le public et l'administration, L. 240-1: the
+    withdrawal ends an act for the past, the abrogation for the future; read from memory,
+    not re-read on Légifrance). Without a number read, or with a number found in no act or
+    in two, the days stay and the abrogation is marked « non rattachée », counted in the
+    build's summary.
+  interdiction: "interdi|derogation"
+  captation: "captation.{0,250}autoris|autoris.{0,250}captation"
+  remplace: "(?:abroge|abrogeant|annulant|annule)\\w* et rempla"
+  fin_article_1: "le present arrete abroge|(?:est|sont) (?:abroge|retire)s?\\b"
+  retrait: "retrai|retir"
+  famille_pp: [ppparis, pref75, pref92, pref93, pref94]
+  cite:
+    - "(?:abrogation|retrait)\\s+(?:de\\s+)?(?:[li]'|l )?(?:arrete|ap)\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)"
+    - "(?:abrogeant|retirant|abroge|retire)\\s+(?:[li]'|l )?(?:arrete|ap)\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)"
+    - "[li]'arrete\\s+(?:prefectoral\\s+)?(?:n[o°]?\\s*)?((?:[a-z]+[/-])*[a-z]*\\d[a-z0-9/_.-]*\\d)[^.]{0,250}?(?:est|sont)\\s+(?:abroge|retire)"

@@ -114,7 +114,9 @@ def is_camera_act(e: Event) -> bool:
 
 
 def is_drone_act(e: Event) -> bool:
-    return e["t"] == "arrete_drone"
+    """A drone flight's act: an abrogation or a withdrawal (`fin`, fins.py) is a drone
+    document but no flight."""
+    return e["t"] == "arrete_drone" and not e.get("fin")
 
 
 @dataclass
