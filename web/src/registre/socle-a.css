@@ -283,6 +283,65 @@
   font-style: normal;
 }
 
+/* --- the big search and « Essayer » (home, lists) ---------------------------------------------- */
+.rg .va .bigsearch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  max-width: 900px;
+  background: var(--bg-2);
+  border: 3px solid var(--line);
+  box-shadow: 6px 6px 0 var(--line);
+  padding: 8px 8px 8px 18px;
+}
+.rg .va .bigsearch .ph {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font:
+    400 20px Archivo,
+    sans-serif;
+  outline-offset: 4px;
+}
+.rg .va .bigsearch .ph::placeholder {
+  color: var(--muted);
+}
+.rg .va .bigsearch .btn {
+  font-size: 16px;
+  padding: 12px 22px;
+}
+.rg .va .bigsearch .ico-s {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--line);
+  border-radius: 50%;
+}
+.rg .va .tries {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+  margin: 16px 0 0;
+  font:
+    400 14px "Special Elite",
+    monospace;
+}
+.rg .va .near {
+  margin-left: 6px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font:
+    800 15px Archivo,
+    sans-serif;
+  text-decoration: underline;
+  cursor: pointer;
+}
 /* --- figures (the head's four), cards, tags --------------------------------------------------- */
 .rg .va .fig {
   display: flex;
@@ -806,6 +865,12 @@
   .rg .va .sub,
   .rg .va .fl {
     font-size: 13px;
+  }
+  .rg .va .bigsearch {
+    flex-wrap: wrap;
+  }
+  .rg .va .bigsearch .ph {
+    font-size: 18px;
   }
   .rg .va .cov {
     flex-direction: column;

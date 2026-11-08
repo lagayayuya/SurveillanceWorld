@@ -1,205 +1,130 @@
-/* A list of the register (V2-Liste): the rail beside the list, both in the frame's one scroll (the
-   frame draws .scroll, the board's rail sits beside it): the rail stays at the top as the list
-   scrolls, as tall as the frame's inside (the modal: 24 px top and bottom, its 2 px borders, its
-   54 px bar). On a phone the rail is a strip of the same items under the sheet's top. */
-.rg .v-liste .lay {
-  display: flex;
-  align-items: flex-start;
-  min-height: 100%;
+/* A list of the register (boards Liste-Communes-A, Liste-Entreprises-A, their phone and dark
+   variants): the board's own rules (.lst, .lvl, .ctl2, .lt, .rowa), on theme A's components
+   (socle-a.css) and the site's tokens. On a phone (the boards' « listes : un seul rang de
+   commandes »): the levels' tabs full width, « Classer par ▾ » and « Filtres · N », the active
+   filters as chips, the Filters panel; a row shows its rank, its name and the order's column. */
+.rg .va.lst .name .sp {
+  width: 14px;
 }
-.rg .v-liste .rail {
-  position: sticky;
-  top: 0;
-  height: calc(100vh - 106px);
+.rg .va.lst .bigsearch {
+  max-width: 760px;
+  margin-top: 20px;
+  padding: 12px 16px;
 }
-.rg .v-liste .lay > .inner {
-  flex: 1;
-  min-width: 0;
-  max-width: none;
-  padding: 20px 30px 60px;
+.rg .va.lst .bigsearch .ph {
+  font-size: 19px;
 }
-.rg .v-liste .tete {
+.rg .va .lvl {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  margin-bottom: 14px;
 }
-.rg .v-liste .pied {
+.rg .va.lst .lk {
+  min-width: 90px;
+  font:
+    900 14px Archivo,
+    sans-serif;
+  font-stretch: 85%;
+  text-transform: uppercase;
+}
+.rg .va .ctl2 {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-top: 16px;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-bottom: 12px;
 }
-/* a head may take two lines beside the detail panel (v2.1 B4), its words whole */
-.rg .v-liste table.t th button,
-.rg .v-liste table.t th .th-fixe {
-  white-space: normal;
-  overflow-wrap: normal;
-  hyphens: none;
+.rg .va .ctl2 .sp {
+  flex: 1;
 }
-.rg .v-liste table.t th.num button {
-  text-align: right;
-  justify-content: flex-end;
+.rg .va .mctl2,
+.rg .va .achips:not(.large) {
+  display: none;
 }
-/* a head that sorts nothing: the buttons' box, without the button */
-.rg .v-liste table.t th .th-fixe {
+.rg .va .achips {
   display: flex;
-  align-items: center;
-  min-height: 40px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
 }
-.rg .v-liste table.t th.num .th-fixe {
-  justify-content: flex-end;
+.rg .va .lt td {
+  vertical-align: top;
 }
-/* « télécharger la liste (CSV) », « Effacer les filtres »: actions written as the board's words */
-.rg .v-liste .lienbtn {
-  all: unset;
-  cursor: pointer;
-  color: var(--blue);
-  text-decoration: underline wavy var(--reg-link-line) 1.5px;
-  text-underline-offset: 4px;
-}
-.rg .v-liste .lienbtn:focus-visible,
-.rg .v-liste .key:focus-visible {
-  outline: 3px solid var(--fg);
-  outline-offset: 2px;
-}
-.rg .v-liste table.t td a.rl {
-  display: inline-flex;
-  align-items: center;
-}
-@media (max-width: 959px) {
-  .rg .v-liste .lay {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .rg .v-liste .rail.tel {
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    width: auto;
-    height: auto;
-    flex-direction: row;
-    gap: 6px;
-    overflow-x: auto;
-    border-right: 0;
-    border-bottom: 2px solid var(--line);
-    padding: 8px 12px;
-    scrollbar-width: none;
-  }
-  .rg .v-liste .rail.tel .rf {
-    display: none;
-  }
-  .rg .v-liste .rail.tel .ri {
-    flex: none;
-    gap: 2px;
-    min-height: 40px;
-  }
-  .rg .v-liste .rail.tel .ri em {
-    margin-left: 8px;
-  }
-  .rg .v-liste .tools {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding-bottom: 4px;
-  }
-  .rg .v-liste .tools .key,
-  .rg .v-liste .tools .lbl {
-    flex: none;
-  }
-  .rg .v-liste .filt {
-    width: 100%;
-    flex: none;
-  }
-  .rg .v-liste .tools.t0 {
-    flex-wrap: wrap;
-  }
-  .rg .v-liste .rkt {
-    font-size: 12px;
-    color: var(--muted);
-    margin-right: 6px;
-  }
-  /* the name cut out takes the width under its sticker */
-  .rg .v-liste .tete {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-}
-/* v2.1 B4: the lists have the fiches' detail panel, at the right of the table (kit-grand-ecran.md
-   § 6); a document's links (its source, « Signaler une erreur ») are there, not on each row. The
-   rail and the panel stay in view as the list scrolls. */
-.rg .v-liste .grid2.avec-panneau {
-  grid-template-columns: minmax(0, 1fr) 320px;
-  margin-top: 6px;
-}
-.rg .v-liste .panel {
-  top: 16px;
-  min-height: 0;
-}
-/* a row's other links (its commune, its buyer, its companies, the names under it) stay links of
-   their own, above the row's main link that covers it (cadre.css « rows ») */
-.rg .v-liste .r :is(td + td, .naf) a.rl {
-  position: relative;
-  z-index: 1;
-}
-.rg .v-liste .r :is(td + td, .naf) a.rl::after {
-  content: none;
-}
-@media (max-width: 959px) {
-  .rg .v-liste .grid2.avec-panneau {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-.rg .v-liste .r:is(:hover, :focus-within) :is(td + td, .naf) a.rl:not(:hover, :focus-visible) {
-  text-decoration: none;
-}
-
-/* v2.3: the départements' menu (mockups liste-communes-filtree and -menu-departements): one button
-   for the 101, its menu (a search, the four with the most rows, all by number with a box and a
-   count, « Tout effacer », « Voir N … »), the chosen ones as chips under the bar; on a phone the
-   menu rises as a sheet from the bottom */
-.rg .v-liste .dancre {
-  position: relative;
-}
-.rg .v-liste .dbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 14px;
-  background: var(--bg-2);
-  color: var(--fg);
-  border: 2px solid var(--line);
-  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
-  cursor: pointer;
-}
-.rg .v-liste .dbtn .tw {
-  font-size: 13px;
+.rg .va .lt .sub,
+.rg .va .lt .sub a {
+  display: block;
+  margin-top: 3px;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
   color: var(--muted);
 }
-.rg .v-liste .dbtn b {
-  font-family: Archivo, sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  font-stretch: 75%;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.rg .va .lt .rk2 {
+  width: 34px;
+  font:
+    900 16px Archivo,
+    sans-serif;
+  color: var(--muted);
 }
-.rg .v-liste .dbtn[aria-expanded="true"],
-.rg .v-liste .dtog[aria-pressed="true"] {
-  box-shadow: none;
-  translate: 2px 2px;
+.rg .va .lt th .thb {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  text-align: inherit;
+  cursor: pointer;
 }
-/* « Avec arrêtés drones » held: the ink, as a chosen key */
-.rg .v-liste .dtog[aria-pressed="true"] {
-  background: var(--fg);
-  color: var(--bg);
+.rg .va .lt th.srt {
+  background: var(--type-territoire);
+  color: var(--on-accent);
 }
-.rg .v-liste .dtog[aria-pressed="true"] .tw {
-  color: var(--bg);
+.rg .va .lt td.srt {
+  background: var(--warn-bg);
 }
-.rg .v-liste .dmenu {
+.rg .va .lt td.srt .v {
+  font:
+    900 18px Archivo,
+    sans-serif;
+}
+.rg .va .lt tr.me td {
+  background: var(--warn-bg);
+}
+.rg .va .lt tbody tr {
+  cursor: pointer;
+}
+.rg .va .rowa {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-top: 14px;
+}
+.rg .va .rowa .note {
+  flex: 1;
+  margin: 0;
+}
+.rg .va .rowa .btn {
+  white-space: nowrap;
+}
+.rg .va .nonlu {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px dashed var(--fg);
+  font:
+    400 12px "Special Elite",
+    monospace;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* the menus: « Classer par » (phone) and a filter's values */
+.rg .va .dancre {
+  position: relative;
+}
+.rg .va .dmenu {
   position: absolute;
   z-index: 20;
   top: calc(100% + 8px);
@@ -210,240 +135,347 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px;
+  margin: 0;
   background: var(--bg-2);
   color: var(--fg);
   border: 2px solid var(--line);
-  box-shadow: 6px 6px 0 var(--type-territoire);
+  box-shadow: 6px 6px 0 var(--line);
 }
-.rg .v-liste .dq {
+.rg .va .ctl2 > .dancre:last-of-type .dmenu {
+  left: auto;
+  right: 0;
+}
+.rg .va .dq {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 10px;
   border: 2px solid var(--line);
 }
-.rg .v-liste .dq input {
+.rg .va .dq input {
   flex: 1;
   min-width: 0;
   border: 0;
   background: transparent;
   color: var(--fg);
-  font: inherit;
-  font-size: 14px;
+  font:
+    400 15px Archivo,
+    sans-serif;
 }
-.rg .v-liste .dlbl {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-.rg .v-liste .dtop {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.rg .v-liste .dliste {
+.rg .va .dliste {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px dashed var(--line);
+  border-top: 1.5px dashed var(--rule);
 }
-.rg .v-liste .drow {
+.rg .va .drow {
   display: grid;
-  grid-template-columns: 22px 36px minmax(0, 1fr) auto;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
-  min-height: 36px;
-  padding: 0 4px;
-  border-bottom: 1px solid var(--rule);
+  min-height: 44px;
+  padding: 0 6px;
+  border-bottom: 1.5px dashed var(--rule);
   cursor: pointer;
 }
-.rg .v-liste .drow:is(:hover, :focus-visible) {
-  background: var(--bg);
+.rg .va .drow:is(:hover, :focus-visible) {
+  background: var(--warn-bg);
   outline: 2px solid var(--fg);
   outline-offset: -2px;
 }
-.rg .v-liste .dbox {
+.rg .va .dbox {
   width: 18px;
   height: 18px;
   border: 2px solid var(--line);
+  background: var(--bg-2);
 }
-.rg .v-liste .drow.on .dbox {
+.rg .va .drow.on .dbox {
   background: var(--fg);
   box-shadow: inset 0 0 0 3px var(--bg-2);
 }
-.rg .v-liste .dnum,
-.rg .v-liste .dn {
-  font-size: 13px;
+.rg .va .dn {
+  font:
+    400 13px "Special Elite",
+    monospace;
   color: var(--muted);
 }
-.rg .v-liste .dpied {
+.rg .va .dpied {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding-top: 8px;
-  border-top: 1px dashed var(--line);
 }
-.rg .v-liste .dvoir {
-  min-height: 40px;
-  padding: 0 12px;
-  background: #ff48b0;
-  color: #111;
-  border: 2px solid #111;
-  font-family: Archivo, sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  font-stretch: 75%;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  cursor: pointer;
-}
-.rg .v-liste .dchips {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-}
-.rg .v-liste .dchip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 10px;
-  background: #ff48b0;
-  color: #111;
-  border: 2px solid #111;
-  font-family: Archivo, sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  font-stretch: 75%;
-  text-transform: uppercase;
-  cursor: pointer;
-}
-@media (max-width: 959px) {
-  .rg .v-liste .dmenu {
-    position: fixed;
-    inset: auto 0 0;
-    width: auto;
-    max-height: 80vh;
-    border-width: 2px 0 0;
-    box-shadow: 0 -5px 0 var(--type-territoire);
-  }
-}
-/* « Classer par »: the same menu, a list of the orders, the current one in ink */
-.rg .v-liste .tmenu {
-  width: 260px;
-  margin: 0;
+.rg .va .tmenu {
+  width: 280px;
   list-style: none;
 }
-.rg .v-liste .tmenu .drow {
+.rg .va .tmenu .drow {
   grid-template-columns: minmax(0, 1fr);
 }
-.rg .v-liste .tmenu .drow[aria-selected="true"] {
+.rg .va .tmenu .drow[aria-selected="true"] {
   background: var(--fg);
-  color: var(--bg-2);
+  color: var(--bg);
 }
-/* « non lu » (v2.3): a figure the register does not read yet, a dashed mark; its line over the table */
-.rg .v-liste .nonlu {
-  display: inline-block;
-  padding: 1px 5px;
-  border: 1px dashed var(--fg);
-  font-family: "Special Elite", "Courier New", monospace;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--muted);
-  white-space: nowrap;
+
+/* the phone's Filters panel (the board Liste-Communes-A-tel-filtres) */
+.rg .va .shade {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: rgba(17, 17, 17, 0.55);
 }
-.rg .v-liste .nonlu-note {
-  margin: 12px 0 0;
-  font-size: 13px;
-  color: var(--muted);
-}
-/* v2.3: the table's head stays at the top as the list scrolls */
-.rg .v-liste table.t thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: var(--bg);
-}
-/* the panel of a list of names (mockups liste-communes-*): its figures as tiles, « Ouvrir la fiche »
-   in pink, its drones' door, the keys' line */
-.rg .v-liste .ptiles {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-}
-.rg .v-liste .ptile {
+.rg .va .fsheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 41;
+  max-height: 88vh;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 10px;
-  border: 2px solid var(--line);
+  gap: 12px;
+  padding: 8px 16px 20px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border-top: 3px solid var(--line);
 }
-.rg .v-liste .ptile b {
-  font-family: Archivo, sans-serif;
-  font-size: 26px;
-  font-weight: 900;
-  font-stretch: 62%;
-  line-height: 1;
+.rg .va .fsheet .grip {
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--fg);
+  align-self: center;
 }
-.rg .v-liste .ptile .tw {
-  font-size: 12.5px;
-  color: var(--muted);
+.rg .va .fs-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
-.rg .v-liste :is(.pouvrir, .pdrones) {
+.rg .va .fs-h b {
+  font:
+    900 26px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .fs-g {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rg .va .fs-k {
+  font:
+    900 15px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .rd {
   display: flex;
   align-items: center;
+  gap: 10px;
   min-height: 44px;
-  margin-top: 6px;
-  padding: 6px 12px;
+  padding: 0 10px;
   border: 2px solid var(--line);
-  font-family: Archivo, sans-serif;
-  font-size: 15px;
-  font-weight: 900;
-  font-stretch: 75%;
-  line-height: 1.05;
-  text-transform: uppercase;
-  text-decoration: none;
+  background: var(--bg-2);
   color: var(--fg);
-  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
+  font:
+    700 15px Archivo,
+    sans-serif;
+  text-align: left;
+  cursor: pointer;
 }
-.rg .th .v-liste .pouvrir,
-.rg .v-liste .pouvrir {
-  background: #ff48b0;
-  color: #111;
-  border-color: #111;
+.rg .va .rd i {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--line);
+  border-radius: 50%;
 }
-.rg .v-liste .pclavier {
-  margin-top: 6px;
-  font-size: 12.5px;
-  color: var(--muted);
+.rg .va .rd.on {
+  background: var(--warn-bg);
 }
-/* a panel needs room: below 1280 px the list takes the width and the panel goes (a row's link
-   opens its fiche) */
-@media (max-width: 1279px) {
-  .rg .v-liste .grid2.avec-panneau {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .rg .v-liste .grid2.avec-panneau > .panel {
-    display: none;
-  }
+.rg .va .rd.on i {
+  background: radial-gradient(var(--fg) 45%, var(--bg-2) 50%);
 }
-/* on a phone each figure says its name under the row's name (« 93 documents · 7 contrats »), the
-   first two; the table's columns of figures go */
-.rg .v-liste .tnums {
+.rg .va .sel2 {
+  width: 100%;
+  min-height: 48px;
+  padding: 6px 10px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  text-align: left;
+  font:
+    400 12px "Special Elite",
+    monospace;
+  cursor: pointer;
+}
+.rg .va .sel2 b {
   display: block;
-  margin-top: 4px;
-  font-size: 13px;
-  color: var(--muted);
+  font:
+    800 15px Archivo,
+    sans-serif;
+  text-transform: uppercase;
 }
+.rg .va .fsheet .dmenu {
+  position: static;
+  width: auto;
+  max-height: 50vh;
+  margin-top: 6px;
+  box-shadow: none;
+}
+.rg .va .wide2 {
+  width: 100%;
+  min-height: 50px;
+  font-size: 16px;
+}
+
 @media (max-width: 959px) {
-  .rg .v-liste table.t :is(td, th).num {
+  .rg .va.lst .lead {
+    margin-top: 12px;
+  }
+  /* one row of commands */
+  .rg .va .ctl2,
+  .rg .va .achips.large {
     display: none;
+  }
+  .rg .va .lvl {
+    display: block;
+  }
+  .rg .va .lvl .lk {
+    display: none;
+  }
+  .rg .va .lvl .seg-ctl {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .rg .va .lvl .seg-ctl a {
+    flex: 1;
+    justify-content: center;
+    padding: 6px 4px;
+    font-size: 12px;
+    text-align: center;
+  }
+  .rg .va .mctl2 {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .rg .va .mctl2 button {
+    width: 100%;
+    min-height: 44px;
+    padding: 6px 10px;
+    background: var(--bg-2);
+    color: var(--fg);
+    border: 2px solid var(--line);
+    box-shadow: 3px 3px 0 var(--line);
+    text-align: left;
+    font:
+      400 12px "Special Elite",
+      monospace;
+    cursor: pointer;
+  }
+  .rg .va .mctl2 b {
+    display: block;
+    font:
+      800 14px Archivo,
+      sans-serif;
+    text-transform: uppercase;
+  }
+  .rg .va .mctl2 .flt {
+    text-align: center;
+    background: var(--fg);
+    color: var(--bg);
+    font:
+      800 14px Archivo,
+      sans-serif;
+    text-transform: uppercase;
+  }
+  .rg .va .achips:not(.large) {
+    display: flex;
+  }
+  .rg .va .achips .chip {
+    min-height: 44px;
+  }
+  .rg .va .mctl2 .dmenu {
+    position: fixed;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 80vh;
+    z-index: 45;
+    border-width: 3px 0 0;
+    box-shadow: none;
+  }
+  /* the table as rows: rank, name (its line on one line), the order's column */
+  .rg .va .lt,
+  .rg .va .lt tbody {
+    display: block;
+  }
+  .rg .va .lt thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .rg .va .lt tr {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 5px 0;
+    padding: 10px 6px;
+    border-bottom: 1.5px dashed var(--rule);
+  }
+  .rg .va .lt td {
+    display: block;
+    border: 0;
+    padding: 0 8px 0 0;
+    background: none;
+    font-size: 14px;
+  }
+  .rg .va .lt td.rk2 {
+    flex: 0 0 auto;
+    width: auto;
+    margin-right: 8px;
+  }
+  .rg .va .lt td[data-t] {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 15px;
+  }
+  .rg .va .lt td[data-t] .sub {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rg .va .lt td:not([data-t], .srt, .rk2) {
+    display: none;
+  }
+  .rg .va .lt td.srt {
+    background: none;
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding-left: 8px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .rg .va .lt tr.me {
+    background: var(--warn-bg);
+  }
+  .rg .va .rowa {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

@@ -26,6 +26,28 @@ export function montantA(n: number): string {
   return t("socle_a.e", { n: fr(n) });
 }
 
+/** The nearest commune of a point (the device's position, never sent): the communes' points
+ * (listes.json `dico.communes[].ll`), by the distance on the sphere. */
+export function plusProche(
+  ll: [number, number],
+  communes: Record<string, { ll?: [number, number] }>,
+): string | null {
+  const rad = Math.PI / 180;
+  let best: string | null = null;
+  let dmin = Infinity;
+  for (const [k, c] of Object.entries(communes)) {
+    if (!c.ll) continue;
+    const dl = (c.ll[1] - ll[1]) * rad;
+    const dg = (c.ll[0] - ll[0]) * rad * Math.cos(((c.ll[1] + ll[1]) / 2) * rad);
+    const d = dl * dl + dg * dg;
+    if (d < dmin) {
+      dmin = d;
+      best = k;
+    }
+  }
+  return best;
+}
+
 /** A card folded on a phone (the boards' « repliés » : its title, « N lignes », a 52 px target);
  * open or not is the view's state (`open[k]`), the wide screen shows its body always. */
 export type Repli = {

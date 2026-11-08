@@ -35,7 +35,7 @@ import {
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { coupe, montantA, pleinEcran, plusProche, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
@@ -103,28 +103,6 @@ export function court(nom: string): string {
     .replace(/-Maritimes$/, "-Mar.")
     .replace(/-Saint-/, "-St-");
   return s.length <= 12 ? s : `${s.slice(0, 10)}.`;
-}
-
-/** The nearest commune of a point (the device's position, never sent): the communes' points
- * (listes.json `dico.communes[].ll`), by the distance on the sphere. */
-export function plusProche(
-  ll: [number, number],
-  communes: Record<string, { ll?: [number, number] }>,
-): string | null {
-  const rad = Math.PI / 180;
-  let best: string | null = null;
-  let dmin = Infinity;
-  for (const [k, c] of Object.entries(communes)) {
-    if (!c.ll) continue;
-    const dl = (c.ll[1] - ll[1]) * rad;
-    const dg = (c.ll[0] - ll[0]) * rad * Math.cos(((c.ll[1] + ll[1]) / 2) * rad);
-    const d = dl * dl + dg * dg;
-    if (d < dmin) {
-      dmin = d;
-      best = k;
-    }
-  }
-  return best;
 }
 
 /** « Cette semaine »'s tabs: every kind, the contracts and notices, the decrees, the drones. */

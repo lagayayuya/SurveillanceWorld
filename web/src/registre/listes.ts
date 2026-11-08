@@ -29,6 +29,7 @@ import { count, fr, money } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import {
   departementDans,
+  departementHref,
   lien,
   lienAcheteur,
   lienCommune,
@@ -40,6 +41,7 @@ import {
 import type { Miette } from "./modale.ts";
 import { LISTES, type Liste, type Route } from "./routes.ts";
 import { signaler } from "./signaler.ts";
+import { montantA } from "./socle-a.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
 import { pluriel, type TypeCle } from "./types.ts";
 import { appareils } from "./vues/commune-outils.ts";
@@ -74,7 +76,8 @@ export function listeHref(k: TypeCle): string {
 /** A list's name, the rail's, for its title and for its step of the breadcrumb (v2.3: one name per
  * type): « Titulaires » for the companies, a buyers' category for its buyers. */
 export function nomListe(liste: Liste, cat?: string | null): string {
-  if (liste === "entreprises") return t("liste.rail_titulaires");
+  // theme A (boards Accueil and Liste-Entreprises): « Entreprises », the title and the breadcrumb
+  if (liste === "entreprises") return t("liste.a.titre.entreprises");
   if (liste === "acheteurs" && cat && (CATS as readonly string[]).includes(cat))
     return t(cat === "autres" ? "liste.rail_autres" : `liste.cat.${cat}`);
   return pluriel(TYPE_DE[liste]);
@@ -146,14 +149,35 @@ export type Listes = {
   lignes: {
     communes: Record<
       string,
-      { docs: number; con: number; cam: number; dr: number; carte?: number | null }
+      {
+        docs: number;
+        con: number;
+        cam: number;
+        dr: number;
+        carte?: number | null;
+        /** the contracts the commune signed itself, € (A, 07/11); 0: none in its name */
+        amt?: number;
+        /** its drone days over the 12 months to the update */
+        jv?: number;
+      }
     >;
     acheteurs: Record<string, { n: number; amt: number; ents: number; centrale: boolean }>;
     entreprises: Record<
       string,
       { n: number; clientes: number; amt: number; y0: string; deps: Record<string, number> }
     >;
-    departements: Record<string, { n: number; con: number; aut: number; amt: number }>;
+    departements: Record<
+      string,
+      {
+        n: number;
+        con: number;
+        aut: number;
+        amt: number;
+        carte?: number;
+        cam?: number;
+        dr?: number;
+      }
+    >;
   };
   comptes: Comptes;
   dico: Lexique;
@@ -174,8 +198,32 @@ export const nomDep = (C: Pick<Corpus, "couverture">, code: string): string =>
 
 // --- a list's rows ----------------------------------------------------------------------------
 
-export type Filtre = "dep" | "cat" | "annee" | "disp" | "etat" | "drones";
-export const FILTRES: Filtre[] = ["cat", "etat", "dep", "annee", "disp", "drones"];
+export type Filtre =
+  | "dep"
+  | "cat"
+  | "annee"
+  | "disp"
+  | "etat"
+  | "drones"
+  | "taille"
+  | "epci"
+  | "naf"
+  | "depuis";
+export const FILTRES: Filtre[] = [
+  "cat",
+  "etat",
+  "taille",
+  "dep",
+  "epci",
+  "naf",
+  "depuis",
+  "annee",
+  "disp",
+  "drones",
+];
+/** The filters whose values are several at once (« 69,13 ») and chosen in a menu (theme A's
+ * « Département ▾ », « Intercommunalité ▾ », « Métier ▾ », « Depuis ▾ »). */
+export const MENUS: Filtre[] = ["dep", "epci", "naf", "depuis"];
 
 /** A row: its name (a typed link, the pictogram alone), the line under it, its other cells, what
  * its filters, its sort keys and its CSV read. */
@@ -209,6 +257,9 @@ export type Colonne = {
   deps?: boolean;
   /** the head's sentence when it does not read alone (v2.1 A6) */
   aide?: string;
+  /** other sort keys the column stands for (theme A: « € par habitant » shows in « Argent
+   * public », « Caméras sur la carte » in « Caméras pour 1 000 hab. ») */
+  alt?: string[];
 };
 /** A « classer par » key: its words, its first direction (-1: the largest first). */
 export type Tri = { k: string; l: string; dir: 1 | -1 };
@@ -229,7 +280,16 @@ export type Def = {
   rangs?(C: Corpus): Rang[];
   /** a list of documents: its kind, its rows the search API's (pageDocuments) */
   kind?: Kind;
+  /** the list's own order when it is not its first sort key (theme A: the boards' order of
+   * « Classer par » kept, communes by cameras per 1 000 inhabitants, companies by amount) */
+  defaut?: string;
+  /** filters on when the address says none (board Liste-Communes-A: « 20 000 à 100 000 », a ratio
+   * of cameras ranks villages of a few dozen people first otherwise); « toutes » in the address
+   * lifts it */
+  filtresDefaut?: Partial<Record<Filtre, string>>;
 };
+/** The address's word for a default filter lifted (« ?taille=toutes »). */
+export const TOUTES = "toutes";
 
 const W = (k: string) => t(`liste.${k}`);
 const tri = (k: string, l: string, dir: 1 | -1 = -1): Tri => ({ k, l: W(`tri.${l}`), dir });
@@ -268,39 +328,91 @@ function collectes(C: Pick<Corpus, "couverture">): Set<string> {
   );
 }
 
+/** A commune's size (theme A's « Taille »), by its inhabitants. */
+export const TAILLES = ["100k", "20k", "5k", "0"] as const;
+export function taille(pop: number | undefined): string {
+  const p = pop ?? 0;
+  return p >= 100000 ? "100k" : p >= 20000 ? "20k" : p >= 5000 ? "5k" : "0";
+}
+
 function rangsCommunes(C: Corpus): Rang[] {
   const lus = collectes(C);
   return Object.entries(C.X.communes).map(([insee, c]) => {
     const x = C.L.communes[insee];
     const ok = lus.has(x.dep);
     const carte = c.carte ?? null;
+    const pop = x.pop ?? 0;
+    const p1000 = carte != null && pop > 0 ? (1000 * carte) / pop : -1;
+    const amt = c.amt ?? 0;
+    const eph = amt > 0 && pop > 0 ? amt / pop : -1;
+    const epci = x.epci ?? "";
+    const nomEpci = epci ? (C.L.epcis?.[epci]?.nom ?? C.L.acheteurs[epci]?.nom ?? "") : "";
+    const v = (n: string) => ({ span: n, cls: "v" });
+    const sub = (n: string) => ({ span: n, cls: "sub" });
     return {
       id: insee,
       nom: x.nom,
-      lien: lienCommune(C.L, insee, x.nom, true),
-      sous: [lienDepartement(x.dep, nomDep(C, x.dep), true)],
+      lien: { a: { href: x.ref ? `/registre/${x.ref}` : "", text: x.nom, cls: "ent com" } },
+      // every mention that has its fiche a link (the owner's rule): its département, its
+      // intercommunality when it buys
+      sous: [
+        { a: { href: departementHref(x.dep), text: nomDep(C, x.dep) } },
+        ` (${x.dep})`,
+        ...(nomEpci
+          ? [
+              " · ",
+              (C.L.epcis?.[epci]?.ref ?? C.L.acheteurs[epci]?.ref)
+                ? {
+                    a: {
+                      href: `/registre/${C.L.epcis?.[epci]?.ref ?? C.L.acheteurs[epci]?.ref}`,
+                      text: nomEpci,
+                    },
+                  }
+                : nomEpci,
+            ]
+          : []),
+      ] as RichItem[],
       cells: [
-        fr(c.docs),
+        pop ? fr(pop) : NA,
+        p1000 < 0
+          ? NA
+          : [
+              v(p1000.toFixed(1).replace(".", ",")),
+              sub(t("liste.a.cameras_n", { n: fr(carte ?? 0) })),
+            ],
+        amt > 0
+          ? [v(montantA(amt)), sub(t("liste.a.eph", { n: fr(eph) }))]
+          : [v(NA), sub(t("liste.a.aucun_contrat"))],
         fr(c.con),
         ok ? fr(c.cam) : nonLu(),
-        ok ? fr(c.dr) : nonLu(),
-        carte == null ? NA : fr(carte),
+        ok ? (c.dr ? fr(c.dr) : NA) : nonLu(),
       ],
-      mots: plain(`${x.nom} ${nomDep(C, x.dep)}`),
-      f: { dep: [x.dep], drones: ok && c.dr > 0 ? ["1"] : [] },
+      mots: plain(`${x.nom} ${nomDep(C, x.dep)} ${nomEpci}`),
+      f: {
+        dep: [x.dep],
+        drones: ok && c.dr > 0 ? ["1"] : [],
+        taille: [taille(pop)],
+        epci: epci ? [epci] : [],
+      },
       v: {
         docs: c.docs,
         con: c.con,
         aut: ok ? c.cam : -1,
         dr: ok ? c.dr : -1,
         carte: carte ?? -1,
+        pop,
+        p1000,
+        amt,
+        eph,
         nom: x.nom,
       },
       csv: {
         id: insee,
         departement: x.dep,
+        habitants: pop || "",
         documents: c.docs,
         contrats: c.con,
+        montant: amt || "",
         autorisations: ok ? c.cam : "",
         drones: ok ? c.dr : "",
         carte: carte ?? "",
@@ -448,22 +560,47 @@ function rangsAcheteurs(C: Corpus): Rang[] {
 function rangsEntreprises(C: Corpus): Rang[] {
   return Object.entries(C.X.entreprises).map(([siren, o]) => {
     const nom = entName(C.L, siren);
-    const naf =
-      (C.L.entreprises[siren] as { naf_libelle?: string | null } | undefined)?.naf_libelle ?? "";
+    const x = C.L.entreprises[siren] as { naf?: string; naf_libelle?: string | null } | undefined;
+    const naf = x?.naf_libelle ?? "";
     const deps = Object.entries(o.deps)
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
       .map(([k]) => k);
     const y0 = o.y0 === "9999" ? "" : o.y0;
+    const noms = deps.slice(0, 2);
+    const ref = (C.L.entreprises[siren] as { ref?: string } | undefined)?.ref;
     return {
       id: siren,
       nom,
-      lien: lienEntreprise(C.L, siren, nom, true),
+      lien: ref ? { a: { href: `/registre/${ref}`, text: nom, cls: "ent" } } : nom,
       sous: naf,
-      deps: deps.slice().sort((a, b) => a.localeCompare(b)),
-      cells: [fr(o.n), fr(o.clientes), o.amt ? money(o.amt) : NA, y0 || NA],
-      mots: plain(`${nom} ${naf}`),
-      f: { dep: deps },
-      v: { n: o.n, cl: o.clientes, amt: o.amt, y: y0 || "9999", nom },
+      cells: [
+        o.amt ? [{ span: montantA(o.amt), cls: "v" }] : NA,
+        fr(o.n),
+        fr(o.clientes),
+        [
+          { span: fr(deps.length), cls: "v" },
+          ...(noms.length
+            ? [
+                {
+                  span: [
+                    ...deps
+                      .slice(0, 2)
+                      .flatMap((d, i): RichItem[] => [
+                        ...(i ? [", "] : []),
+                        { a: { href: departementHref(d), text: nomDep(C, d) } },
+                      ]),
+                    ...(deps.length > 2 ? ["…"] : []),
+                  ],
+                  cls: "sub",
+                },
+              ]
+            : []),
+        ],
+        y0 || NA,
+      ],
+      mots: plain(`${nom} ${naf} ${siren}`),
+      f: { dep: deps, naf: x?.naf ? [x.naf] : [], depuis: y0 ? [y0] : [] },
+      v: { n: o.n, cl: o.clientes, amt: o.amt, nd: deps.length, y: y0 || "9999", nom },
       csv: {
         id: siren,
         activite: naf,
@@ -640,28 +777,41 @@ function defDocument(liste: Liste, k: Kind): Def {
 /** Every list: its columns, its sort keys (the first is the list's own order), its filters. */
 export const DEFS: Record<Liste, Def> = {
   get communes(): Def {
+    const A = (k: string) => t(`liste.a.${k}`);
     return {
       liste: "communes",
       k: "commune",
-      nom: W("col.commune"),
+      nom: A("col.commune"),
       cols: [
-        col("documents", { num: true, tri: "docs", aide: W("aide.documents") }),
-        col("contrats", { num: true, tri: "con", aide: W("aide.contrats") }),
-        col("autorisations", { num: true, tri: "aut", aide: W("aide.autorisations") }),
-        col("drones", { num: true, tri: "dr", aide: W("aide.drones") }),
-        col("carte", { num: true, tri: "carte", aide: W("aide.carte") }),
+        { l: A("col.habitants"), cle: "habitants", num: true, tri: "pop" },
+        { l: A("col.p1000"), cle: "p1000", num: true, tri: "p1000", alt: ["carte"] },
+        { l: A("col.argent"), cle: "argent", num: true, tri: "amt", alt: ["eph"] },
+        { l: A("col.contrats"), cle: "contrats", num: true, tri: "con", aide: W("aide.contrats") },
+        { l: A("col.arretes"), cle: "autorisations", num: true, tri: "aut" },
+        { l: A("col.drones"), cle: "drones", num: true, tri: "dr" },
       ],
       tris: [
-        tri("docs", "documents"),
-        tri("con", "contrats"),
-        tri("aut", "autorisations"),
-        tri("dr", "drones"),
-        tri("carte", "carte"),
-        tri("nom", "nom", 1),
+        { k: "carte", l: A("tri.carte"), dir: -1 },
+        { k: "p1000", l: A("tri.p1000"), dir: -1 },
+        { k: "amt", l: A("tri.amt"), dir: -1 },
+        { k: "eph", l: A("tri.eph"), dir: -1 },
+        { k: "aut", l: A("tri.aut"), dir: -1 },
+        { k: "dr", l: A("tri.dr"), dir: -1 },
       ],
-      filtres: ["dep", "drones"],
+      defaut: "p1000",
+      filtresDefaut: { taille: "20k" },
+      filtres: ["taille", "dep", "epci"],
       argent: false,
-      csv: ["departement", "documents", "contrats", "autorisations", "drones", "carte"].map(csvCol),
+      csv: [
+        "departement",
+        "habitants",
+        "documents",
+        "contrats",
+        "montant",
+        "autorisations",
+        "drones",
+        "carte",
+      ].map(csvCol),
       rangs: rangsCommunes,
     };
   },
@@ -735,26 +885,26 @@ export const DEFS: Record<Liste, Def> = {
     };
   },
   get entreprises(): Def {
+    const A = (k: string) => t(`liste.a.${k}`);
     return {
       liste: "entreprises",
       k: "entreprise",
-      nom: W("col.entreprise"),
+      nom: A("col.entreprise"),
       cols: [
-        col("departements", { deps: true, aide: W("aide.departements") }),
-        col("contrats", { num: true, tri: "n", aide: W("aide.contrats") }),
-        col("clientes", { num: true, tri: "cl", aide: W("aide.clientes") }),
-        col("montant", { num: true, tri: "amt", aide: W("aide.montant") }),
-        col("depuis", { num: true, tri: "y" }),
+        { l: A("col.montant"), cle: "montant", num: true, tri: "amt", aide: W("aide.montant") },
+        { l: A("col.contrats_e"), cle: "contrats", num: true, tri: "n", aide: W("aide.contrats") },
+        { l: A("col.clients"), cle: "clientes", num: true, tri: "cl", aide: W("aide.clientes") },
+        { l: A("col.departements"), cle: "departements", num: true, tri: "nd" },
+        { l: A("col.depuis"), cle: "depuis", num: true },
       ],
       tris: [
-        tri("n", "contrats"),
-        tri("cl", "clientes"),
-        tri("amt", "montant"),
-        tri("y", "anciennete", 1),
-        tri("nom", "nom", 1),
+        { k: "amt", l: A("tri.montant"), dir: -1 },
+        { k: "n", l: A("tri.contrats"), dir: -1 },
+        { k: "cl", l: A("tri.clients"), dir: -1 },
+        { k: "nd", l: A("tri.departements"), dir: -1 },
       ],
-      filtres: ["dep"],
-      argent: true,
+      filtres: ["dep", "naf", "depuis"],
+      argent: false,
       csv: ["activite", "departements", "contrats", "clientes", "montant", "depuis"].map(csvCol),
       rangs: rangsEntreprises,
     };
@@ -809,6 +959,7 @@ export const DEPARTEMENTS = [
 /** A filter's values, in the keys' order. */
 export function valeurs(f: Filtre): string[] {
   if (f === "dep") return DEPARTEMENTS;
+  if (f === "taille") return [...TAILLES];
   if (f === "cat") return [...CATS];
   if (f === "annee") return YEARS;
   if (f === "disp") return DISPS;
@@ -820,6 +971,7 @@ export function valeurs(f: Filtre): string[] {
 /** A filter value's words on its key (« 69 », « État », « 2025 »). */
 export function motValeur(f: Filtre, v: string): string {
   if (f === "dep") return v;
+  if (f === "taille") return t(`liste.a.taille.${v}`);
   if (f === "cat") return W(`cat.${v}`);
   if (f === "annee") return v === "<2018" ? t("registre.annee_avant_2018") : v;
   if (f === "disp") return t(`registre.disp_${v}`);
@@ -835,14 +987,31 @@ export type Etat = { tri: string; dir: 1 | -1; q: string; f: Partial<Record<Filt
 export const choisis = (v: string | undefined): string[] => (v ? v.split(",").filter(Boolean) : []);
 
 /** The state an address says (?tri=…&ordre=…&dep=…&q=…); a value it does not know is dropped. */
+/** A filter's value the address may hold: one of its values, or of its form for the filters whose
+ * values are the data's (an intercommunality's SIREN, a NAF code, a year). */
+const FORME: Partial<Record<Filtre, RegExp>> = {
+  epci: /^\d{9}$/,
+  naf: /^\d{2}\.\d{2}[A-Z]$/,
+  depuis: /^\d{4}$/,
+};
+const valide = (k: Filtre, v: string): boolean =>
+  FORME[k] ? (FORME[k] as RegExp).test(v) : valeurs(k).includes(v);
+/** A list's own order: its `defaut`, else its first sort key. */
+export const triDefaut = (def: Def): Tri => def.tris.find((x) => x.k === def.defaut) ?? def.tris[0];
+
 export function etatDe(def: Def, q: Record<string, string>): Etat {
-  const t0 = def.tris.find((x) => x.k === q.tri) ?? def.tris[0];
+  const t0 = def.tris.find((x) => x.k === q.tri) ?? triDefaut(def);
   const dir = q.ordre === "asc" ? 1 : q.ordre === "desc" ? -1 : t0.dir;
   const f: Partial<Record<Filtre, string>> = {};
   for (const k of def.filtres) {
+    const d = def.filtresDefaut?.[k];
+    if (d && q[k] === undefined) {
+      f[k] = d;
+      continue;
+    }
     // the départements, several at once (« 69,13 », v2.3); the other filters one value
-    const vs = k === "dep" ? choisis(q[k]) : q[k] ? [q[k]] : [];
-    const ok = vs.filter((v) => valeurs(k).includes(v));
+    const vs = MENUS.includes(k) ? choisis(q[k]) : q[k] ? [q[k]] : [];
+    const ok = vs.filter((v) => valide(k, v));
     if (ok.length) f[k] = ok.join(",");
   }
   return { tri: t0.k, dir, q: q.q ?? "", f };
@@ -851,10 +1020,16 @@ export function etatDe(def: Def, q: Record<string, string>): Etat {
 /** The address of a list in a state: only what differs from the list's own order. */
 export function adresse(def: Def, e: Etat): string {
   const p = new URLSearchParams();
-  const t0 = def.tris.find((x) => x.k === e.tri) ?? def.tris[0];
-  if (t0 !== def.tris[0]) p.set("tri", t0.k);
+  const t0 = def.tris.find((x) => x.k === e.tri) ?? triDefaut(def);
+  if (t0 !== triDefaut(def)) p.set("tri", t0.k);
   if (e.dir !== t0.dir) p.set("ordre", e.dir > 0 ? "asc" : "desc");
-  for (const k of def.filtres) if (e.f[k]) p.set(k, e.f[k] as string);
+  for (const k of def.filtres) {
+    const d = def.filtresDefaut?.[k];
+    if (d) {
+      if (!e.f[k]) p.set(k, TOUTES);
+      else if (e.f[k] !== d) p.set(k, e.f[k] as string);
+    } else if (e.f[k]) p.set(k, e.f[k] as string);
+  }
   if (e.q.trim()) p.set("q", e.q.trim());
   const s = p.toString();
   return `/registre/${def.liste}${s ? `?${s}` : ""}`;
