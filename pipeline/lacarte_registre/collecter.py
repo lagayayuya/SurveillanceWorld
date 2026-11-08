@@ -60,6 +60,10 @@ def _sirens(folder: Path, fallback: Path) -> set[str]:
         for n in boamp.load(p):
             out |= set(n["resultat"]["titulaires"])
             out |= {s[:9] for s in n.get("sirets") or []}
+    if p := pick("sirene.json"):
+        # every unit already known stays known: the notices read since by the collection
+        # (data/registre/collecte) name holders that neither file above holds
+        out |= set(json.loads(p.read_text("utf-8")).get("unites", {}))
     return {s for s in out if len(s) == 9 and s.isdigit()}
 
 

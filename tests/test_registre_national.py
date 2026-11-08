@@ -489,7 +489,7 @@ def test_a_legal_persons_sirene_profile_is_served_never_a_sole_traders(tmp_path)
     (nat / "communes.json").write_bytes((NATIONAL / "communes.json").read_bytes())
     firm, person = sorted(national.assembler(tmp_path)["entreprises"])[:2]
     prof = {"creation": "1958-01-01", "effectif": "32", "effectif_annee": "2024",
-            "siege_departement": "80"}  # fmt: skip
+            "siege_departement": "69", "siege_commune": "69383"}  # fmt: skip
     units = {
         firm: sirene.unite("5710", "GE", "43.21A", True, "ENTREPRISE", profil=prof),
         person: sirene.unite("1000", "PME", "43.21A", True, "DUPONT", profil=prof),
@@ -503,7 +503,11 @@ def test_a_legal_persons_sirene_profile_is_served_never_a_sole_traders(tmp_path)
     assert {k: ents[firm][k] for k in ("categorie", "creation", "effectif", "effectif_annee",
                                        "siege_departement")} == {
         "categorie": "GE", "creation": 1958, "effectif": "250 à 499 salariés",
-        "effectif_annee": "2024", "siege_departement": "80"}  # fmt: skip
+        "effectif_annee": "2024", "siege_departement": "69"}  # fmt: skip
+    # an arrondissement of Lyon is Lyon, named by France's reference
+    assert ents[firm]["siege_commune"] == "69123"
+    assert ents[firm]["siege_commune_nom"] == national.Reference.load(
+        nat / "communes.json").communes["69123"]["nom"]  # fmt: skip
     assert ents[person]["nom"] is None
     assert not {"categorie", "creation", "effectif", "siege_departement"} & set(ents[person])
 

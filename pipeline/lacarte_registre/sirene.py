@@ -4,7 +4,7 @@ Only the SIRENs the registre meets are kept (the DECP's holders and buyers, the 
 holders and buyers; a buyer the DECP leave unnamed is named from here, national.py): their
 legal category (`nature`, catégorie juridique), their size (`categorie`: PME, ETI, GE), their
 activity (NAF), whether they are active, and for a legal person only its name, its creation
-day, its headcount band and its head office's département (`PROFIL`). A sole trader
+day, its headcount band and its head office's département and commune (`PROFIL`). A sole trader
 (nature 1000, a natural person) is never named: `ei` true, no name, and the build masks its
 SIREN everywhere (regles.masquer_ei).
 
@@ -14,7 +14,8 @@ it; else the API Recherche d'entreprises, one request per SIREN not yet known: i
 are kept (brut/sirene/unites.jsonl) and the next collections ask only for the new SIRENs.
 
 Out: <root>/national/sirene.json {"version": …, "unites": {siren: {nature, categorie, naf,
-actif, ei, nom?, creation?, effectif?, effectif_annee?, siege_departement?}}}.
+actif, ei, nom?, creation?, effectif?, effectif_annee?, siege_departement?,
+siege_commune?}}}.
 """
 
 from __future__ import annotations
@@ -70,13 +71,13 @@ def unite(
 
 # What the registre says of a legal person besides its name (the API's answer): read, kept
 # with the unit; a unit kept before without them is asked again (`a_relire`).
-PROFIL = ("creation", "effectif", "effectif_annee", "siege_departement")
+PROFIL = ("creation", "effectif", "effectif_annee", "siege_departement", "siege_commune")
 
 
 def a_relire(u: dict[str, Any]) -> bool:
-    """A unit kept before the profile was read: asked again (never a sole trader's, never a
-    unit the API did not know)."""
-    return not u.get("introuvable") and not u.get("ei") and "creation" not in u
+    """A unit kept before the profile was read (its head office's commune since 2026-11-08):
+    asked again (never a sole trader's, never a unit the API did not know)."""
+    return not u.get("introuvable") and not u.get("ei") and "siege_commune" not in u
 
 
 def from_stock(path: Path, sirens: set[str]) -> Iterator[tuple[str, dict[str, Any]]]:
@@ -101,6 +102,7 @@ def from_stock(path: Path, sirens: set[str]) -> Iterator[tuple[str, dict[str, An
                             "effectif": r.get("trancheEffectifsUniteLegale"),
                             "effectif_annee": r.get("anneeEffectifsUniteLegale"),
                             "siege_departement": None,  # the stock of legal units has none
+                            "siege_commune": None,
                         },
                     ),
                 )
@@ -122,6 +124,7 @@ def from_api(answer: dict[str, Any], siren: str) -> dict[str, Any] | None:
                     "effectif": x.get("tranche_effectif_salarie"),
                     "effectif_annee": x.get("annee_tranche_effectif_salarie"),
                     "siege_departement": (x.get("siege") or {}).get("departement"),
+                    "siege_commune": (x.get("siege") or {}).get("commune"),
                 },
             )
     return {"introuvable": True}

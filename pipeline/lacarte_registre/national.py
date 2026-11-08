@@ -202,10 +202,26 @@ def sans_doublons(contrats: Any) -> list[dict[str, Any]]:
     return sorted(out, key=lambda c: c["uid"])
 
 
-def profil(u: dict[str, Any], bands: dict[str, str]) -> dict[str, Any]:
+def arrondissement_commune(code: str | None) -> str | None:
+    """SIRENE places a head office in Paris, Lyon or Marseille in its arrondissement (75108,
+    69383, 13206): the register's commune is the city (75056, 69123, 13055)."""
+    if not code:
+        return None
+    if code.startswith("751") and code != "75056":
+        return "75056"
+    if code.startswith("6938"):
+        return "69123"
+    if code.startswith("132") and code[3:].isdigit() and 1 <= int(code[3:]) <= 16:
+        return "13055"
+    return code
+
+
+def profil(
+    u: dict[str, Any], bands: dict[str, str], communes: dict[str, Any] | None = None
+) -> dict[str, Any]:
     """What a legal person's page says of it from SIRENE (sirene.PROFIL): its size category
     (PME, ETI, GE), its creation year, its headcount band said in words with its year, its
-    head office's département. A sole trader's never (the caller asks for a legal person)."""
+    head office's département and commune (INSEE code, named by France's reference). A sole trader's never (the caller asks for a legal person)."""
     year = (u.get("creation") or "")[:4]
     out = {
         "categorie": u.get("categorie"),
@@ -213,7 +229,9 @@ def profil(u: dict[str, Any], bands: dict[str, str]) -> dict[str, Any]:
         "effectif": bands.get(u.get("effectif") or ""),
         "effectif_annee": u.get("effectif_annee"),
         "siege_departement": u.get("siege_departement"),
+        "siege_commune": arrondissement_commune(u.get("siege_commune")),
     }
+    out["siege_commune_nom"] = ((communes or {}).get(out["siege_commune"] or "") or {}).get("nom")
     return {k: v for k, v in out.items() if v is not None}
 
 
@@ -468,7 +486,7 @@ def assembler(root: Path, today: str | None = None, rules: Path | None = None) -
                               "entrepreneur_individuel": bool(u["ei"]), "naf": u.get("naf"),
                               "verifie_sirene": True}  # fmt: skip
             if not u["ei"]:
-                entreprises[s].update(profil(u, bands))
+                entreprises[s].update(profil(u, bands, ref.communes))
             if label := naf_labels.get(u.get("naf") or ""):
                 entreprises[s]["naf_libelle"] = label
     buyers = {a["acheteur_siren"] for a in affaires.values() if a.get("acheteur_siren")}

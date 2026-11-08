@@ -59,7 +59,8 @@ def test_sirene_names_a_legal_person_never_a_sole_trader():
                                        "activite_principale": "42.22Z"}]}, SERFIM)  # fmt: skip
     assert pm == {"nature": "5710", "categorie": "PME", "naf": "42.22Z", "actif": True,
                   "ei": False, "nom": "SERFIM T.I.C.", "creation": None, "effectif": None,
-                  "effectif_annee": None, "siege_departement": None}  # fmt: skip
+                  "effectif_annee": None, "siege_departement": None,
+                  "siege_commune": None}  # fmt: skip
     ei = sirene.from_api({"results": [{"siren": "123456782", "nature_juridique": "1000",
                                        "nom_complet": "JEANNE EXEMPLE"}]}, "123456782")  # fmt: skip
     assert ei["ei"] is True and "nom" not in ei
@@ -81,7 +82,8 @@ def test_sirene_names_a_legal_person_never_a_sole_trader():
 def test_sirene_keeps_a_legal_person_s_profile_never_a_sole_trader_s():
     answer = {"siren": SERFIM, "nature_juridique": "5710", "nom_complet": "SERFIM T.I.C.",
               "date_creation": "2013-06-01", "tranche_effectif_salarie": "11",
-              "annee_tranche_effectif_salarie": "2024", "siege": {"departement": "69"}}  # fmt: skip
+              "annee_tranche_effectif_salarie": "2024",
+              "siege": {"departement": "69", "commune": "69283"}}  # fmt: skip
     pm = sirene.from_api({"results": [answer]}, SERFIM)
     assert (pm["creation"], pm["effectif"], pm["effectif_annee"], pm["siege_departement"]) == (
         "2013-06-01", "11", "2024", "69",
@@ -91,6 +93,9 @@ def test_sirene_keeps_a_legal_person_s_profile_never_a_sole_trader_s():
     assert not set(sirene.PROFIL) & set(ei)
     # a unit kept before the profile was read is asked again; a sole trader, an unknown never
     assert sirene.a_relire({"nature": "5710", "ei": False, "nom": "X"})
+    assert pm["siege_commune"] == "69283"
+    # kept before the head office's commune was read (2026-11-08): asked again
+    assert sirene.a_relire({k: v for k, v in pm.items() if k != "siege_commune"})
     assert not sirene.a_relire(pm)
     assert not sirene.a_relire(ei) and not sirene.a_relire({"introuvable": True})
 
