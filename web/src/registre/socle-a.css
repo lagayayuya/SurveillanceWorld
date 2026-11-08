@@ -878,6 +878,48 @@
   .rg .va .cov li {
     display: block;
   }
+  /* a table becomes cards: each row a block, each cell half its width, the column's name copied
+     over it (data-label); the boards' « tableaux en fiches » */
+  .rg .va table.docs:not(.lt),
+  .rg .va table.docs:not(.lt) tbody {
+    display: block;
+    max-width: 100%;
+  }
+  .rg .va table.docs:not(.lt) thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .rg .va table.docs:not(.lt) tr {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 5px 0;
+    padding: 10px 0;
+    border-bottom: 1.5px dashed var(--rule);
+  }
+  .rg .va table.docs:not(.lt) td {
+    display: block;
+    flex: 0 0 50%;
+    border: 0;
+    padding: 0 8px 0 0;
+    text-align: left;
+    white-space: normal;
+    font-size: 14px;
+  }
+  .rg .va table.docs:not(.lt) td:empty {
+    display: none;
+  }
+  .rg .va table.docs:not(.lt) td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    display: block;
+    font:
+      400 11.5px "Special Elite",
+      monospace;
+    color: var(--muted);
+  }
   /* a hovered bubble does not exist on a phone: the figure's words are in the page */
   .rg .va .tip,
   .rg .va [data-tip]:hover::after,
