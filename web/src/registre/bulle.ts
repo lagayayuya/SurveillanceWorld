@@ -200,8 +200,12 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
     ev.stopImmediatePropagation();
     cacher();
   };
+  // a scroll moves the bubble with its element when the keyboard's focus is on it (a Tab scrolls
+  // the frame to bring it in sight), hides it otherwise
   const defile = () => {
-    if (cur && !tip.classList.contains("tact")) cacher();
+    if (!cur || tip.classList.contains("tact")) return;
+    if (document.activeElement === cur) placer(cur);
+    else cacher();
   };
 
   root.addEventListener("pointerover", over);
