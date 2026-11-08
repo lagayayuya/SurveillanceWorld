@@ -31,7 +31,8 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
-from lacarte_registre import comptes, drones, entreprise, partage, refs
+import lacarte_registre as registre
+from lacarte_registre import chiffres, comptes, drones, entreprise, partage, refs
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     EI,
@@ -102,6 +103,9 @@ class Context:
             k[len(DEP_NOM) :]: v for k, v in partage._catalogue().items() if k.startswith(DEP_NOM)
         }
         self.ent_stats = comptes.entreprises(reg)
+        # each company's peers: the holders of counted contracts of the same nature in its
+        # départements (rules/registre_chiffres.yaml `entreprises`), never a sole trader
+        self.pairs = pairs(reg)
         self.buy_stats = comptes.acheteurs(reg)
         self.affaires_of: dict[str, list[str]] = {}
         for aid, a in reg.affaires.items():
@@ -411,15 +415,39 @@ def departement_file(ctx: Context, dep: str) -> dict[str, Any]:
     }
 
 
+def pairs(reg: Registre) -> dict[str, list[dict[str, Any]]]:
+    """{siren: [{siren, n}]}: the companies holding counted contracts of a nature it holds
+    (not `autre`) in a département where it holds one, `n` the (nature, département) pairs
+    they share, its partners of a group left out (chiffres.entreprises), sole traders too."""
+    conf = chiffres.rules(registre.RULES / "registre_chiffres.yaml")
+    rows = [
+        {"compte": True, "entreprises": [s for s in e.get("entreprises") or [] if s != EI],
+         "acheteur": reg.buyer(e), "dep": e.get("dep"), "natures": e.get("natures") or [],
+         "date": e.get("date"), "montant": e.get("montant")}
+        for e in reg.evenements if e["t"] == "attribution" and e.get("compte")
+    ]  # fmt: skip
+    return {
+        s: [{"siren": x, "n": n} for x, n in f["memes_natures_departements"].items()]
+        for s, f in chiffres.entreprises(rows, conf).items()
+    }
+
+
 def entreprise_file(ctx: Context, siren: str) -> dict[str, Any]:
     reg = ctx.reg
     evs = [e for e in reg.evenements if siren in (e.get("entreprises") or [])]
     stats = ctx.ent_stats.get(siren)
     deps = {s: (ctx.acheteurs.get(s) or {}).get("dep") for s in (stats or {}).get("clientes", [])}
+    peers = ctx.pairs.get(siren, [])
+    closed = Closure(ctx).add(evs).close()
+    closed["entreprises"] = {
+        **{p["siren"]: ctx.entreprise(p["siren"]) for p in peers},
+        **closed["entreprises"],
+    }
     return {
         "v": 1,
         "entreprise": reg.pilote.reg["entreprises"].get(siren) or {"siren": siren},
-        **Closure(ctx).add(evs).close(),
+        **closed,
+        "pairs": peers,
         "stats": stats,
         # what the page shows that a rule decides (entreprise.py): ends, running, facts, lead
         "page": entreprise.page(reg, stats, ctx.couverture["maj"], deps),

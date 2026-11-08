@@ -21,6 +21,7 @@ from collections import Counter
 from datetime import date
 from typing import Any
 
+from lacarte_registre import parcours
 from lacarte_registre.regles import Event, Registre
 
 IDF = frozenset({"75", "77", "78", "91", "92", "93", "94", "95"})
@@ -43,10 +44,9 @@ def months(v: Any) -> float | None:
 
 
 def add_months(d: str, n: float) -> str:
-    """A date plus n months (rounded half up), the day kept, as the view's addMonths."""
-    y, m = int(d[:4]), int(d[5:7])
-    total = y * 12 + (m - 1) + int(n + 0.5)
-    return f"{total // 12}-{total % 12 + 1:02d}{d[7:]}"
+    """A date plus n months (rounded half up), the day kept, the month's last day when the
+    month is shorter (2021-05-31 plus 30 months is 2023-11-30, never 2023-11-31)."""
+    return parcours.add_months(d, int(n + 0.5))
 
 
 def start(e: Event) -> str:

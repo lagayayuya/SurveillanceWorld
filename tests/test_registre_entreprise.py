@@ -137,3 +137,44 @@ def test_single_offer_and_where_its_buyers_are():
     # all in one: that one, not « surtout »
     deps = {"a": "77", "b": "93"}
     assert entreprise.lieux(list(deps), deps) == {"surtout": False, "regions": ["idf"]}
+
+
+def test_a_companys_peers_hold_the_same_nature_in_its_departements_never_a_sole_trader():
+    from lacarte_registre import fermetures
+    from lacarte_registre.regles import EI
+
+    class Reg:
+        def __init__(self, evs):
+            self.evenements = evs
+
+        def buyer(self, e):
+            return e.get("acheteur_siren")
+
+    def c(dep, nat, *holders, buyer="b1"):
+        return {"t": "attribution", "compte": True, "dep": dep, "natures": [nat],
+                "entreprises": list(holders), "acheteur_siren": buyer}  # fmt: skip
+
+    reg = Reg([
+        c("69", "maintenance", "A"), c("69", "maintenance", "B"), c("38", "maintenance", "A"),
+        c("38", "maintenance", "B"), c("69", "maintenance", EI), c("13", "maintenance", "C"),
+        c("69", "autre", "D"), c("69", "autre", "A"), c("69", "maintenance", "A", "E"),
+    ])  # fmt: skip
+    peers = fermetures.pairs(reg)
+    assert peers["A"] == [{"siren": "B", "n": 2}]  # 69 and 38; E is its partner, C elsewhere
+    assert all(p["siren"] != EI for ps in peers.values() for p in ps) and EI not in peers
+
+
+def test_the_company_file_serves_its_peers_named(built):
+    f = read(built, f"entreprise/{SERFIM}.json")
+    assert isinstance(f["pairs"], list)
+    assert all(p["siren"] in f["entreprises"] for p in f["pairs"])
+
+
+def test_an_end_date_is_always_a_valid_day():
+    from lacarte_registre import entreprise, parcours
+
+    assert entreprise.add_months("2021-05-31", 30) == "2023-11-30"  # Saint-Laurent-de-Mure
+    assert parcours.add_months("2024-01-31", 1) == "2024-02-29"
+    assert parcours.add_months("2023-01-31", 1) == "2023-02-28"
+    assert parcours.add_months("2023-03-15", 12) == "2024-03-15"
+    assert parcours.add_months("2023-03", 2) == "2023-05"

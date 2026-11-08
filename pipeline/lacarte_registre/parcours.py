@@ -22,6 +22,7 @@ counted back from the register's update date, never from the day the page is rea
 
 from __future__ import annotations
 
+import calendar
 from dataclasses import dataclass
 from typing import Any
 
@@ -32,10 +33,15 @@ RENEWAL_MONTHS = 24
 
 
 def add_months(d: str, n: int) -> str:
-    """A date plus n months, its day kept (the page's format.ts addMonths)."""
+    """A date plus n months, its day kept, the month's last day when the month is shorter
+    (a valid date: 2021-05-31 plus 30 months is 2023-11-30)."""
     y, m = int(d[:4]), int(d[5:7])
     total = y * 12 + (m - 1) + n
-    return f"{total // 12:04d}-{total % 12 + 1:02d}{d[7:]}"
+    y2, m2 = total // 12, total % 12 + 1
+    if len(d) < 10:
+        return f"{y2:04d}-{m2:02d}{d[7:]}"
+    day = min(int(d[8:10]), calendar.monthrange(y2, m2)[1])
+    return f"{y2:04d}-{m2:02d}-{day:02d}{d[10:]}"
 
 
 def date_lue(e: Event) -> str:
