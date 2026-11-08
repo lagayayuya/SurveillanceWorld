@@ -105,6 +105,27 @@ def test_the_draw_is_the_same_for_the_same_acts():
     assert len(seuil.tirer(acts[:12], "69", "drone", 30)) == 12
 
 
+def test_a_summary_s_leaders_do_not_hold_the_reader():
+    """An Orne recueil (2026-11-07): « Arrêté portant… » followed by a long run of dots held
+    the headings' regexes for hours (every split of the run tried), the GIL with them, and
+    every server run was killed at 6 h. The run is cut to one character: read at once, the
+    numbers unchanged."""
+    import time
+
+    # « … » is three dots once accents are stripped (NFKD): a summary's leaders
+    text = (
+        "Sommaire\nArrêté portant " + "…" * 260 + " 12\n"
+        "Arrêté " + "…" * 260 + " 14\n"
+        "Arrêté n° 2026-41 portant interdiction " + "-/" * 100 + "\n"
+        "Arrêté préfectoral n° 61-2026-03-27-002 du 27 mars 2026 portant autorisation\n"
+        "Article 1 : La captation est autorisée.\n"
+    )  # fmt: skip
+    t0 = time.perf_counter()
+    found = parse_raa.heads(text)
+    assert time.perf_counter() - t0 < 2.0
+    assert [n for _, n in found] == [None, "2026-41", "61-2026-03-27-002"]
+
+
 def test_headings_without_a_number_and_the_verb_that_is_not_one():
     """The Bouches-du-Rhône's and the Alpes-Maritimes' recueils (measured 2026-11-01): « Arrêté
     autorisant… » without « n° », a summary repeating it, « ARRETE » opening the dispositif."""

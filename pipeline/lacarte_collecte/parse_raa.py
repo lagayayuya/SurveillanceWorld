@@ -86,13 +86,19 @@ TITLE_NEXT = re.compile(
     r"|du \d)"
 )
 NUMBER = re.compile(r"^\W*(?:[\w/.'-]+\W+){0,4}?(?:n\s?°|no\b)\s*(\d+(?:\s*[-/.]\s*\d+)*)")
+# a run of the characters both a word and its separator may hold (a summary's leaders,
+# « Arrêté portant … ........ 12 »), cut to one before TITLE_NEXT and NUMBER: on such a run
+# their nested repeats try every split, about the 5.5th power of its length (1.8 s for 50
+# dots, hours for the 250 read), and `re` keeps the GIL meanwhile, so the run's deadline
+# never comes (an Orne recueil, 2026-11-07: every server run killed at 6 h since 11-05)
+LEADERS = re.compile(r"[/.'-]{3,}")
 
 
 def heads(txt: str) -> list[tuple[int, str | None]]:
     """The headings' places and their numbers (None when the heading gives none)."""
     out = []
     for m in HEAD.finditer(txt):
-        nxt = strip(txt[m.end() : m.end() + 250])
+        nxt = LEADERS.sub(lambda r: r.group()[0], strip(txt[m.end() : m.end() + 250]))
         if re.match(r"\W*:?\W*article\b", nxt) or not TITLE_NEXT.match(nxt):
             continue
         num = NUMBER.match(nxt)
