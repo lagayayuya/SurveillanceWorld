@@ -42,10 +42,12 @@ import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
 import {
+  avantVol,
   casseNormale,
   nomAcheteur,
   ONGLETS,
   type Onglet,
+  type Publication,
   QUESTION,
   recentes,
 } from "./accueil-outils.ts";
@@ -141,6 +143,33 @@ const jourMois = (d: string): string => {
   const x = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", timeZone: "UTC" });
   return x.format(new Date(`${d.slice(0, 10)}T12:00:00Z`));
 };
+
+/** « Publiés avant le vol ? » as the card draws it: the sentence saying on which acts, the bar. */
+function carteVol(p: Publication | null | undefined) {
+  const v = avantVol(p);
+  if (v.nonLu)
+    return { nonLu: true, lu: false, phrase: [] as RichItem[], parts: [], ailleurs: false };
+  const noms = v.deps.map((d) => t(`departement.du_${d}`));
+  const ou = noms.length ? new Intl.ListFormat("fr", { type: "conjunction" }).format(noms) : "";
+  const cls = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" };
+  return {
+    nonLu: false,
+    lu: true,
+    phrase: [
+      t("accueil.avant_vol_sur_a"),
+      { strong: t("accueil.avant_vol_sur_n", { n: fr(v.total) }) },
+      ou ? t("accueil.avant_vol_sur_deps", { deps: ou }) : t("accueil.avant_vol_sur_seuls"),
+    ] as RichItem[],
+    parts: v.parts.map((x) => ({
+      cls: `seg ${cls[x.k]}`,
+      st: `flex: ${Math.max(x.pct, 1)}`,
+      l: x.pct >= 6 ? t("accueil.pct", { n: x.pct }) : "",
+      sw: `sw ${cls[x.k]}`,
+      leg: t(`accueil.vol_${x.k}`),
+    })),
+    ailleurs: v.ailleurs,
+  };
+}
 
 type Props = {
   q: Record<string, string>;
@@ -643,6 +672,7 @@ class Sommaire extends Vue<Props, State> {
         tout: TOUT[S.onglet],
       },
       carte: this.carte(),
+      vol: carteVol((I as { drones?: { publication?: Publication } }).drones?.publication),
       pleinEcran,
       gros: {
         r: repli(S.open, "gros", t("accueil.gros"), gros.length, this.basculer),

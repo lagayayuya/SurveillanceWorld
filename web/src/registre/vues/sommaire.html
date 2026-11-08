@@ -58,8 +58,14 @@
           </div>
         </div>
         <div class="card tool"><span class="tag">{{t.accueil.drones_tag}}</span><h3>{{t.accueil.avant_vol}}</h3>
-          <p><span class="state">{{t.liste.non_lu}}</span></p>
-          <p class="note">{{t.accueil.avant_vol_non_lu}}</p>
+          <sc-if value="{{vol.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span></p><p class="note">{{t.accueil.avant_vol_non_lu}}</p></sc-if>
+          <sc-if value="{{vol.lu}}">
+            <p>{{{vol.phrase}}}</p>
+            <div class="sbar" style="height: 26px"><sc-for list="{{vol.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}"><b>{{x.l}}</b></span></sc-for></div>
+            <div class="sleg"><sc-for list="{{vol.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i>{{x.leg}}</span></sc-for></div>
+            <sc-if value="{{vol.ailleurs}}"><p class="note">{{t.accueil.avant_vol_ailleurs}}</p></sc-if>
+            <p class="note">{{t.accueil.avant_vol_note}}</p>
+          </sc-if>
           <a class="go" href="/registre/arretes?disp=dr">{{t.accueil.vols_venir}}</a></div>
       </div>
     </section>

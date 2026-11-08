@@ -80,3 +80,47 @@ export function casseNormale(s: string | null | undefined): string {
   const u = lettres.length && hautes / lettres.length > 0.5 ? t.toLowerCase() : t;
   return u ? u[0].toUpperCase() + u.slice(1) : u;
 }
+
+/** index.json `drones.publication` (A, 3b330c5): the drone acts whose recueil's day is before, on
+ * or after their first published day of flight; `non_lus` the acts without both days; `deps` (when
+ * served) the départements counted. */
+export type Publication = {
+  avant: number;
+  jour_meme: number;
+  apres: number;
+  total: number;
+  non_lus?: number;
+  deps?: string[];
+};
+export type AvantVol = {
+  /** nothing counted: « non lu », never « 0 % » */
+  nonLu: boolean;
+  total: number;
+  parts: { k: "avant" | "jour_meme" | "apres"; n: number; pct: number }[];
+  deps: string[];
+  /** more acts without days of flight than with: the card says the others do not publish them */
+  ailleurs: boolean;
+};
+/** « Publiés avant le vol ? »: the three shares in whole percents summing to 100 (the largest
+ * remainders rounded up), on the acts counted; « non lu » when none is. */
+export function avantVol(p: Publication | null | undefined): AvantVol {
+  const total = p?.total ?? 0;
+  if (!p || total <= 0) return { nonLu: true, total: 0, parts: [], deps: [], ailleurs: false };
+  const ks = ["avant", "jour_meme", "apres"] as const;
+  const brut = ks.map((k) => (100 * (p[k] ?? 0)) / total);
+  const pct = brut.map(Math.floor);
+  let reste = 100 - pct.reduce((a, b) => a + b, 0);
+  const ordre = brut.map((b, i) => [b - Math.floor(b), i] as const).sort((a, b) => b[0] - a[0]);
+  for (const [, i] of ordre) {
+    if (reste <= 0) break;
+    pct[i]++;
+    reste--;
+  }
+  return {
+    nonLu: false,
+    total,
+    parts: ks.map((k, i) => ({ k, n: p[k] ?? 0, pct: pct[i] })),
+    deps: p.deps ?? [],
+    ailleurs: (p.non_lus ?? 0) > total,
+  };
+}

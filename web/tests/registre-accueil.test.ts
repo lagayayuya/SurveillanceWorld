@@ -7,6 +7,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Evenement } from "../src/registre/donnees.ts";
 import {
+  avantVol,
   casseNormale,
   dansOnglet,
   nomAcheteur,
@@ -79,4 +80,24 @@ test("a published object in ordinary case", () => {
     "Fourniture, installation et maintenance",
   );
   assert.equal(casseNormale(""), "");
+});
+
+test("« Publiés avant le vol ? »: shares on the acts counted, « non lu » when none, the others said", () => {
+  // France on the local register after A's fe106f2: 746 / 323 / 181 of 1 250, 6 480 without days
+  const fr = avantVol({ avant: 746, jour_meme: 323, apres: 181, total: 1250, non_lus: 6480, deps: ["13", "75"] });
+  assert.equal(fr.nonLu, false);
+  assert.deepEqual(
+    fr.parts.map((x) => x.pct),
+    [60, 26, 14],
+  );
+  assert.equal(fr.parts.reduce((a, x) => a + x.pct, 0), 100);
+  assert.deepEqual(fr.deps, ["13", "75"]);
+  assert.equal(fr.ailleurs, true);
+  // Lyon: none counted, « non lu », never « 0 % »
+  const lyon = avantVol({ avant: 0, jour_meme: 0, apres: 0, total: 0, non_lus: 50 });
+  assert.equal(lyon.nonLu, true);
+  assert.deepEqual(lyon.parts, []);
+  assert.equal(avantVol(undefined).nonLu, true);
+  // more counted than not: no « ailleurs »
+  assert.equal(avantVol({ avant: 1, jour_meme: 1, apres: 1, total: 3, non_lus: 2 }).ailleurs, false);
 });
