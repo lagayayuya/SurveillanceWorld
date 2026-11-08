@@ -578,4 +578,18 @@
   .rg .va .filters .sp {
     display: none;
   }
+  /* the graph's names are in the suppliers' list above: on a phone the drawing takes no touch;
+     a ranked row's link is the row's height */
+  .rg .va .g2 a {
+    pointer-events: none;
+  }
+  .rg .th.va .rank li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .rg .va .rank li {
+    padding: 0;
+    align-items: center;
+  }
 }

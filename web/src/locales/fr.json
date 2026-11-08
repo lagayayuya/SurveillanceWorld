@@ -4047,6 +4047,7 @@
   "registre.commune_a.cam_non_lu": "les recueils de la préfecture ne sont pas lus.",
   "registre.commune_a.releves": "Relevées sur la carte",
   "registre.commune_a.releves_osm": "Caméras relevées dans OpenStreetMap",
+  "registre.commune_a.voir_carte": "Voir sur la carte →",
   "registre.commune_a.releves_aucune": "Aucune caméra relevée sur la carte.",
   "registre.commune_a.cam_note": "Les arrêtés lus commencent en {y} : un système autorisé avant et jamais modifié n’y figure pas. La carte est un relevé bénévole, pas un inventaire.",
   "registre.commune_a.systemes": "Les plus grands systèmes autorisés, hors mairie",
