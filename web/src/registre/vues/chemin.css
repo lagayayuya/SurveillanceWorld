@@ -292,6 +292,11 @@
   .rg .va.chm .dmenu {
     width: 100%;
   }
+  /* « Le graphe » is a link: its words centred in its 44 px, as the button's beside it */
+  .rg .va.chm .actions a.btn {
+    display: inline-flex;
+    align-items: center;
+  }
   .rg .va.chm .chain {
     flex-direction: column;
     align-items: stretch;
