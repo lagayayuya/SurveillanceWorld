@@ -1,0 +1,466 @@
+/* The centred graph and its table view (redesign v3 lot 4, boards Graphe-plein, Graphe-plein-tel,
+   their dark variants, and Graphe-grammaire): the boards' classes as they are (.gp-head, .gp-body,
+   .gp-g, .gp-leg, .gp-side, .sel, .howto, .mx, and the svg's .l .a .e1 .e2 .bdg .mo .c0 .tc .t0 .t1
+   .t2), their colours the site's tokens: the pink --type-registre, the lavender --type-entreprise,
+   the pale yellow --warn-bg, the ink --line or --fg, the card --bg-2. Every rule under
+   `.rg .va.v-graphe`: the commune's fiche defines some of the same svg classes for its miniature,
+   unscoped. The phone layer is the boards' variant (var/x/mob-Graphe-plein.css) under 960 px. */
+
+.rg .va.v-graphe {
+  padding-bottom: 40px;
+}
+.rg .va.v-graphe .gp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 30px;
+  padding: 26px 40px 6px;
+}
+.rg .va.v-graphe .ico-g {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  background:
+    radial-gradient(circle at 25% 50%, var(--on-accent) 3px, transparent 3.5px),
+    radial-gradient(circle at 80% 30%, var(--on-accent) 3px, transparent 3.5px),
+    radial-gradient(circle at 75% 85%, var(--on-accent) 3px, transparent 3.5px);
+}
+.rg .va.v-graphe .gp-t {
+  margin: 12px 0 0;
+  font-family: Archivo, sans-serif;
+  font-size: 46px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  font-stretch: 68%;
+  text-transform: uppercase;
+}
+.rg .va.v-graphe .gp-l {
+  margin: 10px 0 0;
+  max-width: 900px;
+  font-size: 19px;
+}
+.rg .va.v-graphe .gp-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  align-items: start;
+  gap: 20px;
+  padding: 24px 40px 0;
+}
+.rg .va.v-graphe .gp-g {
+  padding: 10px 14px 14px;
+}
+.rg .va.v-graphe .gp-leg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 4px;
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.v-graphe .gp-leg span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.rg .va.v-graphe .gp-leg svg {
+  flex: none;
+  overflow: visible;
+}
+.rg .va.v-graphe .gp-hint,
+.rg .va.v-graphe .tel-x {
+  display: none;
+}
+.rg .va.v-graphe .gp-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.rg .va.v-graphe .gv svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rg .va.v-graphe .top li span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.v-graphe .top li .tn {
+  font:
+    700 15px Archivo,
+    sans-serif;
+}
+.rg .va.v-graphe .top li {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  align-items: baseline;
+}
+.rg .va.v-graphe .top li > * {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.rg .va.v-graphe .howto {
+  margin: 0;
+  padding-left: 18px;
+}
+.rg .va.v-graphe .howto li {
+  margin: 5px 0;
+}
+.rg .va.v-graphe .sel h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 4px;
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.05;
+  font-stretch: 70%;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+}
+.rg .va.v-graphe .sel h3 svg {
+  flex: none;
+}
+.rg .va.v-graphe .sel p {
+  margin: 4px 0;
+}
+.rg .va.v-graphe .sel .top li {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+}
+.rg .va.v-graphe .sel .btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  text-align: center;
+}
+.rg .va.v-graphe .sel :is(.note, ol) + .btn {
+  margin-top: 14px;
+}
+.rg .va.v-graphe .gp-choix {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  grid-column: 1 / -1;
+}
+
+/* --- the drawing: four signs (Graphe-grammaire) ----------------------------------------------- */
+.rg .va.v-graphe svg .l {
+  stroke: #8f897e;
+  stroke-width: 1.6;
+  transition: opacity 0.12s;
+  pointer-events: none;
+}
+.rg .va.v-graphe svg .l.more {
+  stroke-dasharray: 2 3;
+}
+.rg .va.v-graphe svg .a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+/* a buyer at the edge, pale: the board's pale square in a round (a buyer-centred graph) */
+.rg .va.v-graphe svg .a1 {
+  fill: #ffd1e6;
+  stroke: #b07a96;
+  stroke-width: 1.4;
+}
+.rg .va.v-graphe svg .e1 {
+  fill: #e9e3fb;
+  stroke: #8c84a8;
+  stroke-width: 1.4;
+}
+.rg .va.v-graphe svg .e2 {
+  fill: var(--type-entreprise);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.v-graphe svg .bdg {
+  fill: var(--fg);
+}
+.rg .va.v-graphe svg .bdt {
+  font:
+    900 13px Archivo,
+    sans-serif;
+  fill: var(--bg);
+  pointer-events: none;
+}
+.rg .va.v-graphe svg .bdt-s {
+  font-size: 10px;
+}
+.rg .va.v-graphe svg .mo {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.rg .va.v-graphe svg .mo.a {
+  fill: #ffd1e6;
+}
+.rg .va.v-graphe svg .mo.e {
+  fill: #e9e3fb;
+}
+/* « +N »: not `.mt`, which v2's cadre.css unsets */
+.rg .va.v-graphe svg .gmt {
+  font:
+    800 12.5px Archivo,
+    sans-serif;
+  fill: #111111;
+  pointer-events: none;
+}
+.rg .va.v-graphe svg .c0 {
+  fill: var(--type-entreprise);
+  stroke: var(--line);
+  stroke-width: 3;
+}
+.rg .va.v-graphe svg .c0.a {
+  fill: var(--type-registre);
+}
+.rg .va.v-graphe svg .tc {
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  font-stretch: 78%;
+  text-transform: uppercase;
+  fill: var(--on-accent);
+  pointer-events: none;
+}
+.rg .va.v-graphe svg .t0,
+.rg .va.v-graphe svg .t2 {
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-stretch: 85%;
+  fill: var(--fg);
+  paint-order: stroke;
+  stroke: var(--bg-2);
+  stroke-width: 4px;
+  pointer-events: none;
+}
+.rg .va.v-graphe svg .t2 {
+  font-size: 15px;
+}
+.rg .va.v-graphe svg .t1 {
+  font:
+    400 12px Archivo,
+    sans-serif;
+  fill: var(--muted);
+  pointer-events: none;
+}
+.rg .va.v-graphe .g2 .nd {
+  cursor: pointer;
+  outline: none;
+}
+.rg .va.v-graphe .g2 .nd.s-g1 {
+  cursor: default;
+}
+/* hovered, focused or chosen: only its lines stay (the board's « seuls ses traits ») */
+.rg .va.v-graphe .g2.foc .l {
+  opacity: 0.18;
+}
+.rg .va.v-graphe .g2 .l.hi {
+  opacity: 1;
+  stroke: var(--fg);
+  stroke-width: 2.6px;
+}
+.rg .va.v-graphe .g2 .nd:is(:hover, .vu, .on, :focus-visible) :is(.a, .a1, .e1, .e2, .mo) {
+  stroke: var(--line);
+  stroke-width: 3;
+}
+.rg .va.v-graphe .g2 .nd:is(:hover, .vu, .on, :focus-visible) .t1 {
+  fill: var(--fg);
+  font-weight: 700;
+}
+/* the node chosen: its shape ringed, the panel says it */
+.rg .va.v-graphe .g2 .nd.on :is(.a, .a1, .e1, .e2) {
+  stroke-width: 4;
+  stroke-dasharray: none;
+}
+.rg .va.v-graphe .g2 .nd:focus-visible :is(.a, .a1, .e1, .e2, .mo) {
+  stroke: var(--focus);
+  stroke-width: 4;
+}
+
+/* --- the table view (Graphe-grammaire, « Vue tableau ») ----------------------------------------- */
+.rg .va.v-graphe .mxw {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+.rg .va.v-graphe .mx td,
+.rg .va.v-graphe .mx tbody th {
+  padding: 6px 8px;
+}
+.rg .va.v-graphe .mx tbody th {
+  text-align: left;
+  font-weight: 400;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va.v-graphe .mx th.mc,
+.rg .va.v-graphe .mx td.mc {
+  width: 88px;
+  min-width: 72px;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 12.5px;
+}
+.rg .va.v-graphe .mx td.mc i {
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--type-registre);
+  border: 1.5px solid var(--line);
+  vertical-align: middle;
+}
+.rg .va.v-graphe .mx tr.sh :is(td, th) {
+  background: var(--warn-bg);
+}
+.rg .va.v-graphe .mx .mcv {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- dark: the dark boards, but every text readable (4.5:1) and every « +N » too ----------------- */
+[data-mode="dark"] .rg .va.v-graphe svg .e1,
+[data-mode="dark"] .rg .va.v-graphe svg .mo.e,
+[data-mode="dark"] .rg .va.v-graphe svg .mo.a {
+  fill: var(--bg-2);
+}
+[data-mode="dark"] .rg .va.v-graphe svg .a1 {
+  fill: var(--bg-2);
+  stroke: #d47fae;
+}
+[data-mode="dark"] .rg .va.v-graphe svg .gmt {
+  fill: var(--fg);
+}
+
+/* --- the phone: the board's variant ----------------------------------------------------------- */
+@media (max-width: 959px) {
+  .rg .va.v-graphe .gp-head {
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 16px 4px;
+  }
+  /* the board's 34 px over registre.css's phone h1 (44 px, important) */
+  .rg .va.v-graphe .gp-t {
+    /* biome-ignore lint/complexity/noImportantStyles: registre.css sets every phone h1 important */
+    font-size: 34px !important;
+  }
+  .rg .va.v-graphe .gp-l {
+    font-size: 16px;
+  }
+  .rg .va.v-graphe .gp-head .actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: none;
+    justify-content: flex-start;
+  }
+  .rg .va.v-graphe .gp-head .actions .btn {
+    white-space: nowrap;
+    padding: 6px 10px;
+    font-size: 12.5px;
+  }
+  /* two actions in the head, as the board; Partager is in the sheet's top, Exporter in the table */
+  .rg .va.v-graphe .gp-head .actions .btn:nth-child(n + 3) {
+    display: none;
+  }
+  .rg .va.v-graphe .gp-body {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px 16px 0;
+  }
+  .rg .va.v-graphe .gp-g {
+    padding: 0;
+    overflow: hidden;
+  }
+  /* a window of 430 px on the drawing at 820 px, centred on the centre: panned with a finger,
+     pinched to zoom */
+  .rg .va.v-graphe .gv {
+    height: 430px;
+    overflow: auto;
+    touch-action: pan-x pan-y;
+    scrollbar-width: none;
+    overscroll-behavior: contain;
+  }
+  .rg .va.v-graphe .gv::-webkit-scrollbar {
+    display: none;
+  }
+  .rg .va.v-graphe .gv svg {
+    width: 820px;
+    max-width: none;
+  }
+  .rg .va.v-graphe .zoom.top {
+    top: 10px;
+    right: 10px;
+    z-index: 3;
+  }
+  .rg .va.v-graphe .gp-hint {
+    display: block;
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    margin: 0;
+    padding: 2px 6px;
+    background: var(--bg-2);
+    border: 1.5px dashed var(--line);
+    font:
+      400 12px "Special Elite",
+      monospace;
+    pointer-events: none;
+  }
+  .rg .va.v-graphe .gp-leg {
+    padding: 10px 13px 13px;
+    border-top: 2px solid var(--line);
+  }
+  .rg .va.v-graphe .gp-choix {
+    grid-template-columns: 1fr;
+  }
+  .rg .va.v-graphe .tel-x {
+    display: inline-block;
+    margin-top: 14px;
+  }
+  /* the table as cards (socle-a.css): the name over its row, each client's dot with its amount */
+  .rg .va.v-graphe table.mx tbody th {
+    display: block;
+    flex: 0 0 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font-size: 15px;
+  }
+  .rg .va.v-graphe table.mx tr.sh {
+    background: var(--warn-bg);
+  }
+  .rg .va.v-graphe table.mx tr.sh :is(td, th) {
+    background: none;
+  }
+  .rg .va.v-graphe table.mx tr {
+    padding: 10px 8px;
+  }
+  .rg .va.v-graphe table.mx td.mc {
+    width: auto;
+    min-width: 0;
+    text-align: left;
+    font-size: 14px;
+  }
+  .rg .va.v-graphe table.mx .mcv {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip: auto;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+}
+
+/* the boards' notes in the typewriter (cadre.css's `p.note` would give them Archivo) */
+.rg .va.v-graphe p.note {
+  font-family: "Special Elite", monospace;
+}

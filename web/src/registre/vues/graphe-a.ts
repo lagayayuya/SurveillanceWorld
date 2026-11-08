@@ -181,8 +181,6 @@ const R1X = 190;
 const R1Y = 160;
 const R2X = 385;
 const R2Y = 320;
-/** a character's width, by label class (Archivo at the board's sizes), for the room left */
-const CH = { t0: 7.2, t1: 6.1, t2: 7.8, tc: 8.6 };
 const BORD = 6;
 
 export type Opts = {
@@ -193,7 +191,7 @@ export type Opts = {
   /** shared nodes drawn between their partners; the others join their partners' « +N » */
   maxPonts: number;
 };
-export const OPTS: Opts = { max1: 12, budget: 40, maxPonts: 12 };
+export const OPTS: Opts = { max1: 12, budget: 40, maxPonts: 8 };
 
 /** `p` a first-circle node, `b` a shared second-circle one (between its partners), `s` one with a
  * single partner (at the edge), `g1` the first circle's « +N », `g2` a first-circle node's. */
@@ -264,10 +262,6 @@ function place(x: number, y: number, a: number): number {
   return Math.max(0, Math.min(...ts));
 }
 
-/** A label for the room it has: as many characters as fit, 22 at most (the board's cut). */
-const tenir = (nom: string, room: number, ch: number, max: number): string =>
-  couper(nom, Math.max(3, Math.min(max, Math.floor(room / ch))));
-
 /** The drawing of a neighbourhood: every node's place and size, its label placed and cut to the
  * room it has, every line. `nom` gives a node's words (the buyer's drawn name, the company's). */
 export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opts = OPTS): Dessin {
@@ -310,7 +304,8 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
     );
   // the budget at the edge, shared out; a node over its share keeps share − 1 and one « +N »
   const counts = colonnes.map((k) => (propres.get(k)?.length ?? 0) + (surplus.get(k)?.length ?? 0));
-  const q = quotas(counts, opts.budget);
+  // more first-circle nodes, fewer at the edge: their labels need the room
+  const q = quotas(counts, Math.max(16, opts.budget - 3 * Math.max(0, colonnes.length - 8)));
   const montres = new Map<string, Second[]>();
   const groupes = new Map<string, string[]>();
   colonnes.forEach((k, i) => {
@@ -332,9 +327,14 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
   const seq: Pas[] = [];
   for (const c of colonnes) {
     const xs = montres.get(c) ?? [];
+    const n = xs.length + (groupes.has(c) ? 1 : 0);
+    // a node with few or none at the edge still gets the room of its label (the board: 1.8)
+    const pad = n && colonnes.length > 8 ? Math.max(0, 2.2 - n) / 2 : 0;
+    if (pad) seq.push({ k: null, c, w: pad });
     for (const s of xs) seq.push({ k: s.id, c, w: 1 });
     if (groupes.has(c)) seq.push({ k: `+${c}`, c, w: 1 });
-    if (!xs.length && !groupes.has(c)) seq.push({ k: null, c, w: 1.8 });
+    if (!n) seq.push({ k: null, c, w: 1.8 });
+    if (pad) seq.push({ k: null, c, w: pad });
     seq.push({ k: null, c: null, w: 1.1 });
   }
   if (caches.length) {
@@ -372,6 +372,14 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
     );
   }
   ecarter(angB, 0.21);
+  // shared ones close to each other: one nearer the centre, the next farther, in turn
+  const loin = new Map<string, number>();
+  const parAngle = [...angB].sort((a, b) => a[1] - b[1]);
+  parAngle.forEach(([k, a], i) => {
+    const prev = parAngle[i - 1];
+    const serre = prev && a - prev[1] < 0.32;
+    loin.set(k, serre && loin.get(prev[0]) === 1.45 ? 1.68 : 1.45);
+  });
   const mx1 = Math.max(0, ...colonnes.map((k) => pm.get(k)?.m ?? 0));
   const drawn2 = [...ponts, ...[...montres.values()].flat()];
   const gk = new Set(colonnes);
@@ -381,14 +389,8 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
   const pos = new Map<string, { x: number; y: number }>();
   // the first circle
   for (const c of colonnes) {
-    const { x, y, a } = p1(c);
+    const { x, y } = p1(c);
     const p = pm.get(c) as Premier;
-    const r = r1(p.m, mx1);
-    const nm = nom(c);
-    const w0 = Math.min(nm.length, 22) * CH.t0;
-    const txt = tenir(nm, W - 2 * BORD, CH.t0, 22);
-    const lx = Math.min(Math.max(x, BORD + w0 / 2), W - BORD - w0 / 2);
-    const ly = Math.sin(a) < -0.2 ? y - r - 8 : y + r + 16;
     pos.set(c, { x, y });
     noeuds.push({
       k: c,
@@ -396,11 +398,11 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
       forme: f1,
       x: rd(x),
       y: rd(y),
-      z: rd(r),
+      z: rd(r1(p.m, mx1)),
       m: p.m,
       n: 1,
       vers: [c],
-      lab: { x: rd(lx), y: rd(ly), anc: "middle", rot: null, txt },
+      lab: null,
     });
     traits.push({ a: "c", b: c, x1: CX, y1: CY, x2: rd(x), y2: rd(y), more: false });
   }
@@ -426,39 +428,29 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
   // the shared ones
   for (const s of ponts) {
     const a = angB.get(s.id) ?? 0;
-    const x = CX + R1X * 1.45 * Math.cos(a);
-    const yy = CY + R1Y * 1.45 * Math.sin(a);
+    const f = loin.get(s.id) ?? 1.45;
+    const x = CX + R1X * f * Math.cos(a);
+    const y = CY + R1Y * f * Math.sin(a);
     const m = plusGros(s, gk);
-    const z = zB(m, mx2);
-    const c = Math.cos(a);
-    const anc = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
-    const dx = (z + 16) * (anc === "start" ? 1 : anc === "end" ? -1 : 0);
-    const dy = anc !== "middle" ? 5 : Math.sin(a) < 0 ? -(z + 10) : z + 20;
-    const lx = x + dx;
-    const room = anc === "start" ? W - BORD - lx : anc === "end" ? lx - BORD : W - 2 * BORD;
-    const txt = tenir(nom(s.id), room, CH.t2, 24);
-    const vers = partenaires(s);
-    pos.set(s.id, { x, y: yy });
+    pos.set(s.id, { x, y });
     noeuds.push({
       k: s.id,
       sorte: "b",
       forme: f2,
       x: rd(x),
-      y: rd(yy),
-      z: rd(z),
+      y: rd(y),
+      z: rd(zB(m, mx2)),
       m,
-      n: [...s.liens.keys()].length,
-      vers,
-      lab: { x: rd(lx), y: rd(yy + dy), anc, rot: null, txt },
+      n: s.liens.size,
+      vers: partenaires(s),
+      lab: null,
     });
   }
   // the single ones, at the edge, and the groups
   for (const c of colonnes) {
     for (const s of montres.get(c) ?? []) {
-      const a = ang2.get(s.id) ?? 0;
-      const { x, y } = p2(a);
+      const { x, y } = p2(ang2.get(s.id) ?? 0);
       const m = plusGros(s, gk);
-      const z = zS(m, mx2);
       pos.set(s.id, { x, y });
       noeuds.push({
         k: s.id,
@@ -466,17 +458,16 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
         forme: f2,
         x: rd(x),
         y: rd(y),
-        z: rd(z),
+        z: rd(zS(m, mx2)),
         m,
         n: s.liens.size,
         vers: [c],
-        lab: etiquetteBord(nom(s.id), x, y, z, a),
+        lab: null,
       });
     }
     const g = groupes.get(c);
     if (g) {
-      const a = ang2.get(`+${c}`) ?? 0;
-      const { x, y } = p2(a);
+      const { x, y } = p2(ang2.get(`+${c}`) ?? 0);
       const txt = `+${g.length}`;
       noeuds.push({
         k: `+${c}`,
@@ -510,37 +501,175 @@ export function disposer(v: Voisinage, nom: (siren: string) => string, opts: Opt
     }
   }
   const ct = couper(nom(v.centre), 28);
-  return {
-    noeuds,
-    traits,
-    colonnes,
-    caches,
-    groupes,
-    centre: { x: CX, y: CY, w: Math.max(148, Math.round(32 + ct.length * CH.tc)), txt: ct },
-  };
+  const cw = Math.max(148, Math.round(36 + largeur(ct, "tc")));
+  etiqueter(noeuds, nom, cw, (k) => ang1.get(k) ?? angB.get(k) ?? ang2.get(k) ?? 0);
+  return { noeuds, traits, colonnes, caches, groupes, centre: { x: CX, y: CY, w: cw, txt: ct } };
 }
 
-/** An edge node's label (the board's): horizontal on the sides, radial at the top and the bottom;
- * cut to the room left before the drawing's edge. */
-function etiquetteBord(nom: string, x: number, y: number, z: number, a: number): Etiquette {
-  const c = Math.cos(a);
-  if (Math.abs(c) < 0.55) {
-    const off = z + 5;
-    const tx = x + off * Math.cos(a);
-    const ty = y + off * Math.sin(a);
-    const rot = (a * 180) / Math.PI + (c >= 0 ? 0 : 180);
-    return {
-      x: rd(tx),
-      y: rd(ty),
-      anc: c >= 0 ? "start" : "end",
-      rot: rd(rot),
-      txt: tenir(nom, place(tx, ty, a), CH.t1, 22),
-    };
+// --- the labels: each where it meets neither a shape nor a label already placed ------------------
+
+const FS = { t0: 14 * 0.85 * 1.06, t1: 12.8, t2: 15 * 0.85 * 1.06, tc: 16 * 0.78 * 1.08 };
+type Cls = keyof typeof FS;
+/** A label's width in the drawing's units: Archivo's widths by kind of character, near enough to
+ * keep labels apart and inside the drawing. */
+export function largeur(txt: string, cls: Cls): number {
+  let em = 0;
+  for (const ch of cls === "tc" ? txt.toLocaleUpperCase("fr") : txt) {
+    if (ch === " ") em += 0.25;
+    else if (/[iIljtf.,;:'’!|()-]/.test(ch)) em += 0.28;
+    else if (/[mwMW]/.test(ch)) em += 0.82;
+    else if (/\d/.test(ch)) em += 0.56;
+    else if (ch !== ch.toLocaleLowerCase("fr")) em += 0.66;
+    else em += 0.52;
   }
-  const anc = c > 0 ? "start" : "end";
-  const lx = x + (z + 6) * (anc === "start" ? 1 : -1);
-  const room = anc === "start" ? W - BORD - lx : lx - BORD;
-  return { x: rd(lx), y: rd(y + 4), anc, rot: null, txt: tenir(nom, room, CH.t1, 22) };
+  return em * FS[cls];
+}
+/** As many characters as `room` holds, `max` at most (22: the board's cut). */
+export function tenir(nom: string, room: number, cls: Cls, max = 22): string {
+  let s = couper(nom, max);
+  while (s.length > 4 && largeur(s, cls) > room) s = couper(nom, s.length - 1);
+  return s;
+}
+
+type Boite = { x0: number; y0: number; x1: number; y1: number };
+const croise = (a: Boite, b: Boite): boolean =>
+  a.x0 < b.x1 && b.x0 < a.x1 && a.y0 < b.y1 && b.y0 < a.y1;
+const dedans = (b: Boite): boolean =>
+  b.x0 >= BORD - 1 && b.y0 >= 2 && b.x1 <= W - BORD + 1 && b.y1 <= H - 2;
+/** A horizontal label's box. */
+function boite(x: number, y: number, anc: Etiquette["anc"], w: number, fs: number): Boite {
+  const x0 = anc === "start" ? x : anc === "end" ? x - w : x - w / 2;
+  return { x0: x0 - 1, y0: y - 0.8 * fs, x1: x0 + w + 1, y1: y + 0.25 * fs };
+}
+/** A radial label's boxes: squares along its line, from its origin outward. */
+function boitesRadiales(tx: number, ty: number, a: number, w: number): Boite[] {
+  const out: Boite[] = [];
+  for (let s = 4; s < w + 4; s += 5) {
+    const x = tx + s * Math.cos(a);
+    const y = ty + s * Math.sin(a);
+    out.push({ x0: x - 4.5, y0: y - 4.5, x1: x + 4.5, y1: y + 4.5 });
+  }
+  return out;
+}
+
+function etiqueter(
+  noeuds: NoeudG[],
+  nom: (siren: string) => string,
+  cw: number,
+  angle: (k: string) => number,
+): void {
+  const obst: { b: Boite; k: string }[] = [
+    { b: { x0: CX - cw / 2 - 3, y0: CY - 24, x1: CX + cw / 2 + 3, y1: CY + 24 }, k: "c" },
+  ];
+  for (const n of noeuds) {
+    obst.push({
+      b: { x0: n.x - n.z - 2, y0: n.y - n.z - 2, x1: n.x + n.z + 2, y1: n.y + n.z + 2 },
+      k: n.k,
+    });
+    if (n.sorte === "b") {
+      const bx = n.x + n.z;
+      const by = n.y - n.z;
+      obst.push({ b: { x0: bx - 11, y0: by - 11, x1: bx + 11, y1: by + 11 }, k: n.k });
+    }
+  }
+  const libre = (bs: Boite[], k: string): boolean =>
+    bs.every((b) => dedans(b) && !obst.some((o) => o.k !== k && croise(o.b, b)));
+  const poser = (bs: Boite[]): void => {
+    for (const b of bs) obst.push({ b, k: "" });
+  };
+  type Choix = { lab: Etiquette; bs: Boite[] };
+  const heurts = (bs: Boite[], k: string): number =>
+    bs.reduce(
+      (t, b) => t + (dedans(b) ? 0 : 9) + obst.filter((o) => o.k !== k && croise(o.b, b)).length,
+      0,
+    );
+  /** The first free place; none: the one that meets the fewest. */
+  const choisir = (n: NoeudG, cs: Choix[]): void => {
+    let c = cs.find((x) => libre(x.bs, n.k));
+    if (!c) {
+      const hs = cs.map((x) => heurts(x.bs, n.k));
+      c = cs[hs.indexOf(Math.min(...hs))];
+    }
+    n.lab = c.lab;
+    poser(c.bs);
+  };
+  const horiz = (x: number, y: number, anc: Etiquette["anc"], txt: string, cls: Cls): Choix => {
+    const w = largeur(txt, cls);
+    // a centred label kept inside the drawing
+    const xx = anc === "middle" ? Math.min(Math.max(x, BORD + w / 2), W - BORD - w / 2) : x;
+    return {
+      lab: { x: rd(xx), y: rd(y), anc, rot: null, txt },
+      bs: [boite(xx, y, anc, w, cls === "t1" ? 12 : 15)],
+    };
+  };
+  const room = (x: number, anc: Etiquette["anc"]) =>
+    anc === "start" ? W - BORD - x : anc === "end" ? x - BORD : W - 2 * BORD;
+  // the first circle: above when it stands in the upper half, below otherwise, else the other
+  for (const n of noeuds) {
+    if (n.sorte !== "p") continue;
+    const a = angle(n.k);
+    const txt = tenir(nom(n.k), W - 2 * BORD, "t0");
+    const up = horiz(n.x, n.y - n.z - 8, "middle", txt, "t0");
+    const down = horiz(n.x, n.y + n.z + 16, "middle", txt, "t0");
+    const sa: Etiquette["anc"] = Math.cos(a) >= 0 ? "start" : "end";
+    const sx = n.x + (n.z + 6) * (sa === "start" ? 1 : -1);
+    const side = horiz(sx, n.y + 5, sa, tenir(nom(n.k), room(sx, sa), "t0"), "t0");
+    choisir(n, Math.sin(a) < -0.2 ? [up, down, side] : [down, up, side]);
+  }
+  // the shared ones: outward beside it (the board), else above, below, inward
+  for (const n of noeuds) {
+    if (n.sorte !== "b") continue;
+    const a = angle(n.k);
+    const c = Math.cos(a);
+    const out: Etiquette["anc"] = c > 0.2 ? "start" : c < -0.2 ? "end" : "middle";
+    const cs: Choix[] = [];
+    for (const max of [24, 14]) {
+      const full = tenir(nom(n.k), W - 2 * BORD, "t2", max);
+      const up = horiz(n.x, n.y - n.z - 14, "middle", full, "t2");
+      const down = horiz(n.x, n.y + n.z + 20, "middle", full, "t2");
+      const cote = (anc: "start" | "end") => {
+        const x = n.x + (n.z + 16) * (anc === "start" ? 1 : -1);
+        return horiz(x, n.y + 5, anc, tenir(nom(n.k), room(x, anc), "t2", max), "t2");
+      };
+      if (out === "middle") cs.push(Math.sin(a) < 0 ? up : down, Math.sin(a) < 0 ? down : up);
+      else cs.push(cote(out), up, down, cote(out === "start" ? "end" : "start"));
+    }
+    choisir(n, cs);
+  }
+  // the edge: horizontal on the sides, radial at the top and the bottom (the board); shortened
+  // until it is free
+  for (const n of noeuds) {
+    if (n.sorte !== "s") continue;
+    const a = angle(n.k);
+    const c = Math.cos(a);
+    const nm = nom(n.k);
+    const cs: Choix[] = [];
+    if (Math.abs(c) < 0.55) {
+      const off = n.z + 5;
+      const tx = n.x + off * Math.cos(a);
+      const ty = n.y + off * Math.sin(a);
+      const rot = rd((a * 180) / Math.PI + (c >= 0 ? 0 : 180));
+      let txt = tenir(nm, place(tx, ty, a) - 10, "t1");
+      for (;;) {
+        cs.push({
+          lab: { x: rd(tx), y: rd(ty), anc: c >= 0 ? "start" : "end", rot, txt },
+          bs: boitesRadiales(tx, ty, a, largeur(txt, "t1")),
+        });
+        if (txt.length <= 6) break;
+        txt = couper(nm, txt.length - 2);
+      }
+    } else {
+      const anc: Etiquette["anc"] = c > 0 ? "start" : "end";
+      const lx = n.x + (n.z + 6) * (anc === "start" ? 1 : -1);
+      let txt = tenir(nm, room(lx, anc), "t1");
+      for (;;) {
+        cs.push(horiz(lx, n.y + 4, anc, txt, "t1"));
+        if (txt.length <= 6) break;
+        txt = couper(nm, txt.length - 2);
+      }
+    }
+    choisir(n, cs);
+  }
 }
 
 /** Angles on a circle pushed apart until two neighbours are `d` apart at least. */

@@ -134,10 +134,11 @@ test("over the caps: a first circle's « +N », a node's « +N » at the edge, t
   assert.equal(g1?.n, 8);
   const g2 = d.noeuds.find((n) => n.sorte === "g2");
   assert.equal(g2?.k, "+B19");
-  // B19 holds 59 alone (F0 is shared with B18): 19 drawn, 40 grouped
-  assert.equal(d.noeuds.filter((n) => n.sorte === "s").length, 19);
-  assert.equal(g2?.n, 40);
-  assert.equal(d.groupes.get("B19")?.length, 40);
+  // B19 holds 59 alone (F0 is shared with B18); 12 first-circle nodes leave 16 places at the
+  // edge, not 20: 15 drawn, 44 grouped
+  assert.equal(d.noeuds.filter((n) => n.sorte === "s").length, 15);
+  assert.equal(g2?.n, 44);
+  assert.equal(d.groupes.get("B19")?.length, 44);
   assert.ok(d.traits.some((t) => t.b === "+B19" && t.more));
   assert.ok(d.traits.some((t) => t.b === "+" && t.more));
   // the table holds every second-circle node of the columns drawn, the shared one first
