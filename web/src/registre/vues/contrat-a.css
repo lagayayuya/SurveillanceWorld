@@ -1,0 +1,577 @@
+/* A document's record in theme A (board Contrat-Lyon-2026-A, its phone and dark variants): the
+   board's own rules (.ctr .ctitle, .chip.ach/.tit, .pair, .what, .kv, .stepper, .prog, .chain,
+   .dk), on theme A's components (socle-a.css) and the site's tokens: the board's pink is
+   --type-registre, its yellow --type-territoire, its blue --type-document, its lavender
+   --type-entreprise, its ink --line or --fg, its paper --bg-2, its dashed rules --rule. Every rule
+   under `.rg .va.ctr`, so a rule of the commune's page (commune-a.css, `.rg .va …`) loaded before
+   does not reach it. The page's table of contents, sentences and section anchors are written here
+   as on the commune's page (they live in commune-a.css, not in the socle). */
+
+.rg .va.ctr .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 10px 0 0;
+  font-family: "Special Elite", monospace;
+  font-size: 15px;
+}
+.rg .va.ctr .ans {
+  margin: 0 0 14px;
+  max-width: 880px;
+  font-size: 19px;
+}
+.rg .va.ctr .sec {
+  display: block;
+  padding-top: 0;
+  scroll-margin-top: 70px;
+}
+
+/* the head: the sticker's sheet, the objet in capitals, the two chips */
+.rg .va.ctr .ico-c {
+  display: inline-block;
+  width: 12px;
+  height: 15px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va.ctr .ctitle {
+  margin: 14px 0 0;
+  max-width: 900px;
+  font-family: Archivo, sans-serif;
+  font-size: 44px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.02;
+  font-stretch: 70%;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.rg .va.ctr .ctitle.moyen {
+  font-size: 38px;
+}
+.rg .va.ctr .ctitle.long {
+  font-size: 32px;
+  line-height: 1.05;
+}
+/* the board's typewritten notes (a rule of the v2 frame, `.rg … p`, would set them in Archivo) */
+.rg .va.ctr .note {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.ctr .chip.ach {
+  background: var(--type-registre);
+}
+.rg .va.ctr .chip.tit {
+  background: var(--type-entreprise);
+}
+.rg .va.ctr .chip.t span[aria-hidden] {
+  margin-right: 4px;
+}
+.rg .va.ctr .actions .more {
+  display: none;
+}
+
+/* the table of contents, yellow, stuck at the top of the frame's scroll */
+.rg .va.ctr .toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 10px 40px;
+  background: var(--type-territoire);
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+}
+.rg .th.va.ctr .toc a {
+  padding: 7px 12px;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.rg .th.va.ctr .toc a:first-child {
+  background: #111111;
+  color: #ffffff;
+}
+
+/* 1 · the two parties, what is bought, how it works */
+.rg .va.ctr .pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px;
+}
+.rg .va.ctr .party {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+}
+.rg .va.ctr .party svg {
+  flex: none;
+}
+.rg .va.ctr .party > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.rg .va.ctr .pk {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.ctr .ps {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--fg);
+}
+.rg .va.ctr .pn {
+  font-size: 18px;
+}
+.rg .va.ctr svg .a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.ctr svg .e2 {
+  fill: var(--type-entreprise);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.ctr .arrow {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  border: 2px solid var(--line);
+  padding: 4px 10px;
+  font-family: Archivo, sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 75%;
+  white-space: nowrap;
+}
+.rg .va.ctr .what {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rg .va.ctr .what li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va.ctr .what b {
+  min-width: 0;
+}
+.rg .va.ctr .what span {
+  flex: none;
+  max-width: 45%;
+  text-align: right;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.ctr .how {
+  margin-top: 16px;
+}
+.rg .va.ctr .kv {
+  font-size: 15px;
+  font-weight: 400;
+  font-stretch: 100%;
+  line-height: 1.45;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin: 4px 0 0;
+}
+.rg .va.ctr .kv dt {
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 80%;
+  text-transform: uppercase;
+}
+.rg .va.ctr .kv dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+}
+
+/* 2 · the parcours: the steps at equal intervals, the real gap between two, the execution */
+.rg .va.ctr .stepper {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0;
+}
+.rg .va.ctr .stepper.n1 {
+  grid-template-columns: 1fr;
+}
+.rg .va.ctr .stepper.n2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+.rg .va.ctr .stepper.n3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+.rg .va.ctr .stepper.n4 {
+  grid-template-columns: repeat(4, 1fr);
+}
+.rg .va.ctr .stepper.n5 {
+  grid-template-columns: repeat(5, 1fr);
+}
+.rg .va.ctr .stepper.n6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+.rg .va.ctr .stepper.n7 {
+  grid-template-columns: repeat(7, 1fr);
+}
+.rg .va.ctr .stepper.n8 {
+  grid-template-columns: repeat(8, 1fr);
+  row-gap: 24px;
+}
+.rg .va.ctr .sp-st {
+  position: relative;
+  min-width: 0;
+}
+.rg .va.ctr .sp-st::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 15px;
+  border-top: 3px solid var(--line);
+}
+.rg .va.ctr .sp-st:first-child::before {
+  left: 9px;
+}
+.rg .va.ctr .sp-st:last-child::before {
+  right: auto;
+  width: 9px;
+}
+.rg .va.ctr .sp-st.fin::before {
+  border-top-style: dashed;
+}
+.rg .th.va.ctr .sp-a {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 34px 12px 4px 0;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rg .va.ctr div.sp-a {
+  cursor: default;
+}
+.rg .va.ctr .sp-a:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: 2px;
+}
+.rg .va.ctr .sp-st .dot {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg-2);
+}
+.rg .va.ctr .sp-st.avis .dot,
+.rg .va.ctr .sp-st.attr .dot,
+.rg .va.ctr .sp-st.rect .dot {
+  background: var(--type-document);
+}
+.rg .va.ctr .sp-st.contrat .dot {
+  background: var(--type-registre);
+}
+.rg .va.ctr .sp-st.sub .dot,
+.rg .va.ctr .sp-st.aut .dot {
+  background: var(--type-acheteur);
+}
+.rg .va.ctr .sp-st.fin .dot,
+.rg .va.ctr .sp-st.prob .dot {
+  border-style: dashed;
+}
+.rg .va.ctr .sp-a:hover .dot,
+.rg .va.ctr .sp-a.hl .dot {
+  border-width: 4px;
+}
+.rg .va.ctr .sp-st .gap {
+  position: absolute;
+  left: calc(-50% + 10px);
+  top: -14px;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  background: var(--bg-2);
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  white-space: nowrap;
+}
+.rg .va.ctr .sp-st .sk2 {
+  font-family: Archivo, sans-serif;
+  font-size: 13.5px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 85%;
+  text-transform: uppercase;
+}
+.rg .va.ctr .sp-st .sd,
+.rg .va.ctr .sp-st .ss {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.rg .va.ctr .sp-st b {
+  font-size: 15px;
+  line-height: 1.25;
+}
+.rg .va.ctr .exec {
+  margin-top: 22px;
+  padding-bottom: 22px;
+}
+.rg .va.ctr .pbar {
+  position: relative;
+  height: 16px;
+  margin-top: 6px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va.ctr .pbar i {
+  display: block;
+  height: 100%;
+  background: var(--type-entreprise);
+}
+.rg .va.ctr .pbar b {
+  position: absolute;
+  top: 20px;
+  font:
+    800 13px Archivo,
+    sans-serif;
+  color: var(--fg);
+  text-decoration: underline;
+  text-decoration-color: var(--type-registre);
+  text-decoration-thickness: 3px;
+  white-space: nowrap;
+}
+.rg .va.ctr .note .n-t {
+  display: none;
+}
+
+/* 3 · before, after */
+.rg .va.ctr .chain {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+.rg .va.ctr .chain:not(:has(> .card:nth-of-type(3))) {
+  grid-template-columns: 1fr auto 1fr;
+}
+.rg .va.ctr .card.lk {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rg .va.ctr .card.lk b {
+  font-family: Archivo, sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1.1;
+  font-stretch: 80%;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+.rg .va.ctr .card.lk .ls {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--fg);
+}
+.rg .va.ctr .card.lk.me {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+}
+.rg .va.ctr .card.lk.me .pk,
+.rg .va.ctr .card.lk.me .ls {
+  color: var(--on-accent);
+}
+.rg .va.ctr .card.lk.none {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+.rg .va.ctr .ch-ar {
+  align-self: center;
+  font:
+    900 28px Archivo,
+    sans-serif;
+}
+
+/* the documents: their type as a sticker, a row a link to its source */
+.rg .va.ctr .dk {
+  display: inline-block;
+  padding: 2px 7px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 85%;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.rg .va.ctr .docs tbody tr {
+  cursor: pointer;
+}
+.rg .va.ctr .docs td:last-child {
+  white-space: nowrap;
+}
+.rg .va.ctr .docs + .btn.tous {
+  margin-top: 14px;
+}
+.rg .va.ctr .srcs .cov {
+  font-size: 14px;
+}
+
+/* --- the phone layer (the board's « mob » variant) --------------------------------------------- */
+@media (max-width: 959px) {
+  .rg .va.ctr .ctitle {
+    font-size: 30px;
+  }
+  .rg .va.ctr .ctitle.moyen {
+    font-size: 26px;
+  }
+  .rg .va.ctr .ctitle.long {
+    font-size: 22px;
+  }
+  .rg .va.ctr .meta {
+    font-size: 13px;
+    gap: 6px 10px;
+  }
+  .rg .va.ctr .chip.t {
+    min-height: 36px;
+  }
+  .rg .va.ctr .ans {
+    font-size: 16px;
+  }
+  .rg .va.ctr .actions:not(.ouvert) .btn:nth-child(n + 3):not(.more) {
+    display: none;
+  }
+  .rg .va.ctr .actions .more {
+    display: inline-block;
+    min-width: 44px;
+  }
+  .rg .va.ctr .toc {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 8px 16px;
+    margin-top: 12px;
+    white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .rg .th.va.ctr .toc a {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 6px 9px;
+    font-size: 13px;
+  }
+  .rg .va.ctr .pair,
+  .rg .va.ctr .chain,
+  .rg .va.ctr .chain:not(:has(> .card:nth-of-type(3))) {
+    grid-template-columns: 1fr;
+  }
+  .rg .va.ctr .arrow {
+    justify-self: start;
+  }
+  .rg .va.ctr .ch-ar {
+    justify-self: start;
+    transform: rotate(90deg);
+  }
+  .rg .va.ctr .kv {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .rg .va.ctr .stepper,
+  .rg .va.ctr .stepper[class*="n"] {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 22px;
+  }
+  /* two steps by row: the gap is written inside the step, above its dot's line */
+  .rg .va.ctr .sp-st .gap {
+    left: 26px;
+    top: 0;
+    transform: none;
+    padding: 0 3px;
+    font-size: 11.5px;
+  }
+  .rg .va.ctr .sp-st::before {
+    right: 0;
+  }
+  .rg .va.ctr .sp-st:nth-child(2n)::before {
+    right: 0;
+  }
+  .rg .va.ctr .sp-st:nth-child(2n + 1)::before {
+    left: 9px;
+  }
+  .rg .va.ctr .sp-st:last-child::before {
+    right: auto;
+    width: 9px;
+  }
+  .rg .va.ctr .sp-a {
+    padding-right: 8px;
+  }
+  .rg .va.ctr .note .n-l {
+    display: none;
+  }
+  .rg .va.ctr .note .n-t {
+    display: inline;
+  }
+  .rg .va.ctr .what li {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .rg .va.ctr .what span {
+    max-width: none;
+    text-align: left;
+  }
+  .rg .va.ctr .docs td:last-child {
+    white-space: normal;
+  }
+}

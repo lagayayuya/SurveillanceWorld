@@ -183,7 +183,10 @@ export function etapes(f: Fichier, grouper = true): Etape[] {
     });
   for (let i = 1; i < out.length; i++) {
     const prev = out[i - 1];
-    out[i].ecart = ecart(jours(prev.jusqu || prev.date, out[i].date));
+    // a step before the one drawn ahead of it (the planned end before the last modification):
+    // no gap written
+    const d = jours(prev.jusqu || prev.date, out[i].date);
+    out[i].ecart = d < 0 ? null : ecart(d);
   }
   return out;
 }
