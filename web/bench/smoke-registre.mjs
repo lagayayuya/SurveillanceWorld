@@ -612,7 +612,11 @@ try {
     );
     await go("/registre/departement/69");
     const dep = await page.evaluate(
-      () => document.querySelector("#registre .band a.bporte")?.getAttribute("href") ?? null,
+      // theme A (lot 3): the département's drone decrees, a link of its section 4
+      () =>
+        document
+          .querySelector('#registre a[href="/registre/arretes?dep=69&disp=dr"]')
+          ?.getAttribute("href") ?? null,
     );
     check(
       "tree: the commune's table of contents and its « Vue 3D ↗ » door to the live map; the summary's and the Rhône's open the drone decrees",
@@ -695,10 +699,10 @@ try {
   }
 
   // --- the band follows the right section (v2.2 point 4): clicked, marked at once and after its
-  // scroll; scrolled, the one whose title has passed under the stuck band (a v2 fiche: the
-  // département's until lot 3; the commune has theme A's table of contents since lot 2) ---
+  // scroll; scrolled, the one whose title has passed under the stuck band (a v2 fiche: an
+  // intercommunality's, the département's being theme A since lot 3) ---
   {
-    const { context, page } = await visit("/registre/departement/69");
+    const { context, page } = await visit("/registre/departement/69?ic=200046977");
     await drawn(page);
     await page.waitForTimeout(800);
     const secs = await page.evaluate(() =>
