@@ -74,6 +74,18 @@ test("the parcours: each document in its order, its real gap from the one before
   assert.equal(E[4].n, 48, "the planned end: signature + the published months");
 });
 
+test("a step drawn before one it follows in time (the planned end before the last modification): no gap", () => {
+  const evs = [
+    ev({ id: "C1~0", t: "attribution", date: "2022-08-01", montant: 1e6, duree: "12" }),
+    ...[1, 2, 3].map((n) => ev({ id: `C1~${n}`, t: "modification", date: `2023-0${n + 6}-01`, modif_n: n })),
+  ];
+  const f = fichier({ evenements: evs });
+  (f.parcours as { fin_prevue: unknown }).fin_prevue = { date: "2023-08-01", signature: "2022-08-01", mois: 12 };
+  const E = etapes(f);
+  assert.deepEqual(E.map((s) => s.k), ["contrat", "modif", "fin"]);
+  assert.equal(E[2].ecart, null, "the end comes before the last modification (2023-09-01)");
+});
+
 test("a gap under a year in days, then whole years or months", () => {
   assert.equal(jours("2025-06-27", "2026-01-06"), 193);
   assert.deepEqual(ecart(147), { n: 147, u: "jours" });
