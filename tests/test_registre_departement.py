@@ -39,7 +39,10 @@ def test_the_file_holds_figures_not_documents(built):
     f = read(built, "departement/69.json")
     assert f["v"] == 2
     assert not {"evenements", "affaires", "lots"} & set(f)
-    assert f["departement"] == {"code": "69", "nom": "Rhône"}
+    d = f["departement"]
+    assert {k: d[k] for k in ("code", "nom")} == {"code": "69", "nom": "Rhône"}
+    # its population and communes, France's reference: every commune, documents or not
+    assert d["n_communes"] >= len(f["stats"]["communes"]) and d["pop"] > 0
     assert f["maj"] == read(built, "couverture.json")["maj"]
     # every commune named: those with a document, and a commune buyer's seat
     s = f["stats"]

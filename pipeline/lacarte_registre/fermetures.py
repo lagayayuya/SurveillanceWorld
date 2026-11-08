@@ -91,6 +91,13 @@ class Context:
         self.acheteurs: dict[str, Any] = p.get("ACHETEURS", {})
         # every département's name, the catalogue's first (all of them), the data's otherwise
         self.dep_names = {k: v.get("nom") for k, v in p.get("DEP", {}).items()}
+        # each département's population and number of communes, France's reference (INSEE)
+        self.dep_pop: dict[str, dict[str, int]] = {}
+        for c in reg.communes.values():
+            if d := c.get("dep"):
+                row = self.dep_pop.setdefault(d, {"pop": 0, "n_communes": 0})
+                row["pop"] += c.get("pop") or 0
+                row["n_communes"] += 1
         self.dep_names |= {
             k[len(DEP_NOM) :]: v for k, v in partage._catalogue().items() if k.startswith(DEP_NOM)
         }
@@ -379,7 +386,7 @@ def departement_file(ctx: Context, dep: str) -> dict[str, Any]:
     return {
         "v": 2,
         "maj": ctx.couverture["maj"],
-        "departement": {"code": dep, "nom": ctx.dep_names.get(dep)},
+        "departement": {"code": dep, "nom": ctx.dep_names.get(dep), **ctx.dep_pop.get(dep, {})},
         "communes": {k: ctx.commune(k) for k in sorted({*ks, *seats})},
         "entreprises": {o["siren"]: ctx.entreprise(o["siren"]) for o in money["vendeurs"]},
         "acheteurs": {b: ctx.acheteur(b) for b in sorted({*buyers, *(g for g in groups if g)})},
