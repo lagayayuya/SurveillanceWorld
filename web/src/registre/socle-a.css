@@ -211,7 +211,8 @@
   cursor: default;
 }
 .rg .va .chip.t {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   background: var(--type-territoire);
   color: var(--on-accent);
   border: 2px solid var(--line);
