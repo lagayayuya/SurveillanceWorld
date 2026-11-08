@@ -14,6 +14,7 @@ import { mapAddress } from "../url.ts";
 import { suivreAdresse } from "./adresse.ts";
 import "./registre.css";
 import "./cadre.css";
+import "./socle-a.css";
 import { type Format, type Mounted, mount, parseParts, type View } from "./dc.ts";
 import { Absent, load } from "./donnees.ts";
 import { fermer, OUVERTURE, pas, retenir, retour, retourPossible } from "./hote.ts";

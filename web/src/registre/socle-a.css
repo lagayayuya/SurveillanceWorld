@@ -1,0 +1,934 @@
+/* Theme A of the register's redesign v3 (the design canvas « Registre », boards Accueil-Registre-A,
+   Liste-Communes-A, Liste-Entreprises-A and their phone and dark variants): the boards' classes as they
+   are (.hero, .fig, .card, .seg-ctl, .btn, .cut, .tip…), under `.rg .va`, a view drawn in theme A.
+   Their colours are the site's tokens (theme/punk/tokens.css, shared with the map; Ju, 07/11): the
+   boards' ink #111 is --line (borders, shadows) or --fg (text, black fills), their paper and white
+   --bg-2, their pale yellow --warn-bg, their dashed rules --rule, their pink, yellow, blue, lavender
+   and green the register's four families and its pink (--type-*). So the dark mode is the tokens'
+   own (cream ink on dark paper, as the dark boards), and a vivid background keeps black text
+   (--on-accent) in both. The phone layer is the same markup under 960 px (the site's one switch),
+   the boards' variants' rules (variants.py) written as CSS: no second HTML. */
+
+.rg .va {
+  color: var(--fg);
+  font:
+    400 15px / 1.45 Archivo,
+    sans-serif;
+}
+.rg .va *,
+.rg .va *::before,
+.rg .va *::after {
+  box-sizing: border-box;
+}
+.rg .th.va a {
+  color: inherit;
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: auto;
+  text-underline-offset: auto;
+}
+.rg .th.va :is(a.fig, a.entry, a.chip, a.btn) {
+  text-decoration: none;
+}
+.rg .va .sr,
+.rg .va .vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* --- the page's layout ------------------------------------------------------------------------ */
+.rg .va .hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 40px;
+  padding: 28px 40px 8px;
+}
+.rg .va .hero-l {
+  max-width: 900px;
+  min-width: 0;
+}
+.rg .va .lead {
+  margin: 16px 0 0;
+  max-width: 860px;
+  font-size: 20px;
+  line-height: 1.45;
+}
+.rg .va .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  max-width: 420px;
+  margin-top: 6px;
+}
+.rg .va .figs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px 40px 8px;
+}
+.rg .va .body {
+  padding: 20px 40px 60px;
+}
+.rg .va main {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+.rg .va .sec h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 6px;
+  font:
+    900 34px / 1 Archivo,
+    sans-serif;
+  font-stretch: 68%;
+  text-transform: uppercase;
+}
+.rg .va .num {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  background: var(--fg);
+  color: var(--bg);
+  font-size: 22px;
+}
+.rg .va .row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.rg .va .row2.wide {
+  grid-template-columns: 1.25fr 1fr;
+}
+
+/* --- the type's sticker and the name cut out -------------------------------------------------- */
+.rg .va .kind {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  border: 2px solid var(--line);
+  padding: 6px 12px;
+  font:
+    900 17px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+  box-shadow: 4px 4px 0 var(--line);
+  transform: rotate(-1.5deg);
+}
+.rg .va .ico-r {
+  display: inline-block;
+  width: 14px;
+  height: 16px;
+  border: 2px solid #111111;
+  background: #ffffff;
+  box-shadow: 3px 3px 0 var(--type-registre);
+}
+.rg .va .ico-l {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  background: repeating-linear-gradient(180deg, #111111 0 2.5px, transparent 2.5px 5.5px);
+}
+.rg .va .name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin: 14px 0 0;
+  font-size: inherit;
+}
+.rg .va .cut {
+  display: inline-block;
+  font:
+    900 50px / 1 Archivo,
+    sans-serif;
+  font-stretch: 80%;
+  padding: 4px 7px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.rg .va .cut.c0 {
+  background: var(--fg);
+  color: var(--bg);
+  transform: rotate(-3deg);
+}
+.rg .va .cut.c1 {
+  background: var(--type-registre);
+  color: var(--on-accent);
+  transform: rotate(2deg) translateY(4px);
+}
+.rg .va .cut.c2 {
+  background: var(--type-document);
+  color: var(--on-accent);
+  font-family: "Special Elite", monospace;
+  font-weight: 400;
+  transform: translateY(-6px);
+}
+.rg .va .cut.c3 {
+  transform: rotate(-2deg);
+}
+.rg .va .name .sp {
+  width: 14px;
+}
+
+/* --- buttons, chips, controls ------------------------------------------------------------------ */
+.rg .va .btn {
+  display: inline-block;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  padding: 8px 14px;
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+  box-shadow: 3px 3px 0 var(--line);
+  cursor: pointer;
+}
+.rg .va .btn.pri {
+  background: var(--type-registre);
+  color: var(--on-accent);
+}
+.rg .va .btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+.rg .va .chip.t {
+  display: inline-block;
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  border: 2px solid var(--line);
+  padding: 3px 10px;
+  text-decoration: none;
+  font:
+    800 15px Archivo,
+    sans-serif;
+}
+.rg .va .chip.f {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  color: var(--fg);
+  padding: 5px 11px;
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-stretch: 85%;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.rg .va .chip.f.on,
+.rg .va .chip.f[aria-expanded="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .va .seg-ctl {
+  display: inline-flex;
+  flex-wrap: wrap;
+  border: 2px solid var(--line);
+}
+.rg .va .seg-ctl button,
+.rg .va .seg-ctl a {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 0;
+  border-right: 2px solid var(--line);
+  padding: 6px 12px;
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-stretch: 82%;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rg .va .seg-ctl > :last-child {
+  border-right: 0;
+}
+.rg .va .seg-ctl .on,
+.rg .va .seg-ctl [aria-pressed="true"],
+.rg .va .seg-ctl [aria-current="page"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .va .seg-ctl.big button,
+.rg .va .seg-ctl.big a {
+  font-size: 15px;
+  padding: 9px 16px;
+}
+.rg .va .go {
+  display: inline-block;
+  margin-top: 10px;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* --- figures (the head's four), cards, tags --------------------------------------------------- */
+.rg .va .fig {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 5px 5px 0 var(--line);
+  text-decoration: none;
+  cursor: pointer;
+}
+.rg .va .fig:hover,
+.rg .va .fig:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--line);
+}
+.rg .va .fk {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .fv {
+  font:
+    900 46px / 1 Archivo,
+    sans-serif;
+  font-stretch: 70%;
+  text-shadow: 3px 3px 0 var(--type-registre);
+}
+.rg .va .fv small {
+  font-size: 22px;
+  text-shadow: none;
+}
+.rg .va .fig.nl .fv {
+  font-size: 30px;
+  color: var(--muted);
+  text-shadow: none;
+}
+.rg .va .fl,
+.rg .va .rk span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va .rk {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+.rg .va .card {
+  padding: 18px 20px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+  min-width: 0;
+}
+.rg .va .k {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  font:
+    900 17px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .ch-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.rg .va .ch-h .k {
+  margin: 0;
+}
+.rg .va .tag {
+  display: inline-block;
+  padding: 4px 10px;
+  background: var(--fg);
+  color: var(--bg);
+  font:
+    800 14px Archivo,
+    sans-serif;
+  font-stretch: 85%;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.rg .va .tool h3 {
+  margin: 6px 0 8px;
+  font:
+    900 22px Archivo,
+    sans-serif;
+  font-stretch: 70%;
+  text-transform: uppercase;
+}
+.rg .va .state {
+  display: inline-block;
+  padding: 3px 9px;
+  background: var(--bg-2);
+  border: 2px dashed var(--line);
+  font:
+    800 13.5px Archivo,
+    sans-serif;
+  font-stretch: 85%;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.rg .va .note,
+.rg .va .sleg {
+  margin: 12px 0 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .th.va a.ent {
+  font-weight: 700;
+  text-decoration-line: underline;
+  text-decoration-color: var(--type-entreprise);
+  text-decoration-thickness: 3px;
+}
+.rg .th.va a.ent.com {
+  text-decoration-color: var(--type-territoire);
+}
+.rg .th.va a.ent.ach {
+  text-decoration-color: var(--type-acheteur);
+}
+
+/* --- tables ------------------------------------------------------------------------------------- */
+.rg .va .docs {
+  width: 100%;
+  border-collapse: collapse;
+}
+.rg .va .docs th,
+.rg .va .docs td {
+  text-align: left;
+  padding: 9px 8px;
+  vertical-align: top;
+}
+.rg .va .docs th {
+  font:
+    900 14px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--line);
+}
+.rg .va .docs td {
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va .docs .n {
+  text-align: right;
+  white-space: nowrap;
+}
+.rg .va .docs tbody tr:hover td {
+  background: var(--warn-bg);
+}
+
+/* --- bars, swatches, ranked lists, maps ---------------------------------------------------------- */
+.rg .va .sbar {
+  display: flex;
+  width: 100%;
+  overflow: hidden;
+  border: 2px solid var(--line);
+}
+.rg .va .sbar .seg {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font:
+    800 15px Archivo,
+    sans-serif;
+  border-right: 2px solid var(--line);
+  color: var(--on-accent);
+}
+.rg .va .sbar .seg:last-child {
+  border-right: 0;
+}
+.rg .va .sleg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 8px;
+}
+.rg .va .lg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rg .va .sw {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--line);
+}
+.rg .va .p-ok {
+  background: var(--type-acheteur);
+}
+.rg .va .p-mid {
+  background: var(--type-territoire);
+}
+.rg .va .p-late {
+  background: var(--type-registre);
+}
+.rg .va .top {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.rg .va .top li {
+  display: grid;
+  grid-template-columns: 1fr auto 60px;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va .top li b {
+  text-align: right;
+}
+.rg .va .mapwrap {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.rg .va .mleg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+}
+.rg .va .mleg span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.rg .va .mleg .hint {
+  display: block;
+  max-width: 180px;
+  margin-top: 8px;
+}
+/* a map's classes: the boards' white then four pinks, the map's own ramp (--map-area-*) */
+.rg .va .q0 {
+  fill: var(--bg-2);
+  background: var(--bg-2);
+}
+.rg .va .q1 {
+  fill: var(--map-area-2);
+  background: var(--map-area-2);
+}
+.rg .va .q2 {
+  fill: var(--map-area-3);
+  background: var(--map-area-3);
+}
+.rg .va .q3 {
+  fill: var(--map-area-4);
+  background: var(--map-area-4);
+}
+.rg .va .q4 {
+  fill: var(--map-area-5);
+  background: var(--map-area-5);
+}
+.rg .va .fr path {
+  stroke: var(--line);
+  stroke-width: 0.8;
+}
+.rg .va .ml {
+  font:
+    800 15px Archivo,
+    sans-serif;
+  font-stretch: 80%;
+  fill: var(--fg);
+  paint-order: stroke;
+  stroke: var(--bg-2);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+.rg .va .cov {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 26px;
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va .cov li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.rg .va .cov i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.rg .va .cov .ok {
+  background: #2f9e6e;
+}
+.rg .va .cov .part {
+  background: #f0b400;
+}
+
+/* --- bubbles: a hovered figure's sentence, a hovered shape's figures (the boards' .tip) ---------- */
+.rg .va .tipwrap {
+  position: relative;
+}
+.rg .va .tip {
+  position: absolute;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 20;
+  width: max-content;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 12px;
+  pointer-events: none;
+}
+.rg .va .tip span,
+.rg .va .tip em {
+  display: block;
+}
+.rg .va [data-tip] {
+  position: relative;
+}
+.rg .va [data-tip]:hover::after,
+.rg .va [data-tip]:focus-visible::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  width: 280px;
+  z-index: 20;
+  padding: 9px 12px;
+  white-space: normal;
+  text-align: left;
+}
+.rg .va .tip,
+.rg .va [data-tip]:hover::after,
+.rg .va [data-tip]:focus-visible::after {
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+  font:
+    400 14px / 1.4 Archivo,
+    sans-serif;
+  text-transform: none;
+  text-shadow: none;
+  letter-spacing: 0;
+}
+.rg .va .tip .tt-h {
+  margin-bottom: 2px;
+  font:
+    900 16px Archivo,
+    sans-serif;
+  font-stretch: 80%;
+  text-transform: uppercase;
+}
+.rg .va .tip em {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1.5px dashed var(--rule);
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  font-style: normal;
+  color: var(--muted);
+}
+
+/* --- a card folded on a phone, a visual opened full screen (socle-a.ts) -------------------------- */
+.rg .va .fh,
+.rg .va .zoom {
+  display: none;
+}
+.rg .va .zw {
+  position: relative;
+}
+.rg .va .plein {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--bg);
+  overflow: auto;
+}
+.rg .va .plein .plein-h {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font:
+    900 20px Archivo,
+    sans-serif;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .plein .plein-b {
+  flex: 1;
+  overflow: auto;
+}
+.rg .va .plein svg {
+  width: 100%;
+  min-width: 640px;
+  height: auto;
+}
+
+/* --- the phone layer: the boards' variants (variants.py « mob ») as rules under 960 px ------------ */
+@media (max-width: 959px) {
+  .rg .va .hero {
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px 16px 4px;
+  }
+  .rg .va .hero-l {
+    max-width: 100%;
+  }
+  .rg .va .name .cut {
+    font-size: 34px;
+    padding: 3px 5px;
+  }
+  .rg .va .name {
+    row-gap: 6px;
+  }
+  .rg .va .kind {
+    font-size: 14px;
+    padding: 4px 9px;
+  }
+  .rg .va .lead {
+    font-size: 16.5px;
+    margin-top: 12px;
+  }
+  .rg .va .actions {
+    justify-content: flex-start;
+    max-width: none;
+    margin: 0;
+  }
+  .rg .va .actions .btn {
+    padding: 6px 9px;
+    font-size: 12.5px;
+  }
+  .rg .va .body {
+    padding: 16px 16px 40px;
+  }
+  .rg .va main {
+    gap: 30px;
+  }
+  .rg .va .sec h2 {
+    font-size: 26px;
+    gap: 9px;
+  }
+  .rg .va .num {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+  .rg .va .card {
+    padding: 14px 13px;
+  }
+  .rg .va .row2,
+  .rg .va .row2.wide {
+    grid-template-columns: 1fr;
+  }
+  .rg .va .mapwrap {
+    flex-direction: column;
+  }
+  .rg .va svg {
+    max-width: 100%;
+    height: auto;
+  }
+  .rg .va .ch-h {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rg .va .seg-ctl {
+    max-width: 100%;
+  }
+  .rg .va .seg-ctl button,
+  .rg .va .seg-ctl a {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  /* touch targets and small words */
+  .rg .va .seg-ctl button,
+  .rg .va .seg-ctl a,
+  .rg .va .chip.f,
+  .rg .va .btn {
+    min-height: 44px;
+  }
+  .rg .va .seg-ctl button,
+  .rg .va .seg-ctl a,
+  .rg .va .chip.f {
+    display: inline-flex;
+    align-items: center;
+  }
+  .rg .va .note,
+  .rg .va .sleg,
+  .rg .va .sub,
+  .rg .va .fl {
+    font-size: 13px;
+  }
+  .rg .va .cov {
+    flex-direction: column;
+  }
+  .rg .va .cov li {
+    display: block;
+  }
+  /* a hovered bubble does not exist on a phone: the figure's words are in the page */
+  .rg .va .tip,
+  .rg .va [data-tip]:hover::after,
+  .rg .va [data-tip]:focus-visible::after {
+    display: none;
+  }
+  /* the head's figures, lighter: the figure and one line */
+  .rg .va .figs {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 12px 16px 2px;
+  }
+  .rg .va .fig {
+    padding: 8px 10px;
+    gap: 1px;
+    box-shadow: 3px 3px 0 var(--line);
+  }
+  .rg .va .fig .rk,
+  .rg .va .fig .fl + .fl {
+    display: none;
+  }
+  .rg .va .fig .fk {
+    font-size: 12px;
+  }
+  .rg .va .fv {
+    font-size: 26px;
+    text-shadow: 2px 2px 0 var(--type-registre);
+  }
+  .rg .va .fv small {
+    font-size: 16px;
+  }
+  .rg .va .fig .fl {
+    font-size: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rg .va .fig.nl .fv {
+    font-size: 20px;
+  }
+  /* a folded card: its title alone, its arrow, a 52 px target */
+  .rg .va .card.repli {
+    padding: 0;
+  }
+  .rg .va .card.repli > .fb {
+    display: none;
+  }
+  .rg .va .card.repli.open > .fb {
+    display: block;
+    padding: 0 13px 13px;
+  }
+  .rg .va .fh {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 52px;
+    padding: 10px 13px;
+    background: none;
+    border: 0;
+    text-align: left;
+    font:
+      900 17px Archivo,
+      sans-serif;
+    font-stretch: 72%;
+    text-transform: uppercase;
+    color: inherit;
+    cursor: pointer;
+  }
+  .rg .va .fh small {
+    display: block;
+    margin-top: 2px;
+    font:
+      400 12.5px "Special Elite",
+      monospace;
+    font-stretch: 100%;
+    text-transform: none;
+    color: var(--muted);
+  }
+  .rg .va .fh i {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border: 2px solid var(--line);
+    font-size: 14px;
+    font-style: normal;
+  }
+  .rg .va .card.repli.open .fh i {
+    background: var(--fg);
+    color: var(--bg);
+  }
+  .rg .va .card.repli .fb > .k:first-child,
+  .rg .va .card.repli .fb > .ch-h > .k {
+    display: none;
+  }
+  /* a thin visual: « ⤢ Plein écran » */
+  .rg .va .zoom {
+    position: absolute;
+    right: 6px;
+    bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 6px 10px;
+    background: #111111;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    font:
+      800 13px Archivo,
+      sans-serif;
+    text-transform: uppercase;
+    box-shadow: 3px 3px 0 var(--type-registre);
+    cursor: pointer;
+  }
+}
