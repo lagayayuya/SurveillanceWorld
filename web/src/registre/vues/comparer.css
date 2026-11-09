@@ -86,6 +86,10 @@
 .rg .va .cmpt th:not(.add):not(.m) .ent {
   display: inline-block;
   max-width: calc(100% - 34px);
+  /* one long word (« Villeurbanne ») is cut by a hyphen at a syllable, never clipped under the ✕
+     (recette 05); a word the dictionary cannot cut still wraps rather than overflow */
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 .rg .va .cmpt th .sub {
   display: block;
@@ -322,5 +326,9 @@
   }
   .rg .va .cmpt th.add {
     min-width: 120px;
+  }
+  /* four columns in 908 px: the names a size smaller, so that « Villeurbanne » holds on one line */
+  .rg .va .cmpt th .ent {
+    font-size: 19px;
   }
 }
