@@ -302,6 +302,14 @@ export function ndDans(a: NonDeduit, r: Periode): boolean {
 }
 /** The calendar's first day: 1 January 2024, a Monday (the brief: « de 2024 à aujourd'hui »). */
 export const DEBUT_CAL = Date.UTC(2024, 0, 1);
+/** The calendar's first day shown (Ju, 09/11: 12 months by default, « Toute la période » for the
+ * three years): the first of the month eleven months before today's (twelve months, today's the
+ * last), or 1 January 2024. */
+export function debutCal(today: number, tout: boolean): number {
+  if (tout) return DEBUT_CAL;
+  const d = new Date(today);
+  return Math.max(DEBUT_CAL, Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 11, 1));
+}
 
 /** For each day of [A, B[, how many acts of the kind shown authorise a flight on it: the days an
  * act listed without a slot reads (joursDe), every day a slot meets; an act once a day, its hours
@@ -389,9 +397,13 @@ export function grilleMois(
   return { mois, cases };
 }
 /** The wide calendar's marks under its columns: each year at its first week (bold, its number) and
- * each quarter's month (« avr. », « juil. », « oct. »), at the column of the week that holds the
- * month's first day. */
-export function reperesCal(A: number, B: number): { col: number; l: string; an: boolean }[] {
+ * each quarter's month (« avr. », « juil. », « oct. »), or every month (`chaque` 1: twelve months
+ * shown), at the column of the week that holds the month's first day. */
+export function reperesCal(
+  A: number,
+  B: number,
+  chaque: 1 | 3 = 3,
+): { col: number; l: string; an: boolean }[] {
   const a = lundi(A);
   const out: { col: number; l: string; an: boolean }[] = [];
   const d = new Date(A);
@@ -399,7 +411,7 @@ export function reperesCal(A: number, B: number): { col: number; l: string; an: 
     const t0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 1);
     if (t0 >= B) break;
     const m = new Date(t0).getUTCMonth();
-    if (m % 3) continue;
+    if (m % chaque) continue;
     const an = m === 0;
     out.push({
       col: Math.floor((lundi(Math.max(t0, A)) - a) / WEEK),

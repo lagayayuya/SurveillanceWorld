@@ -66,7 +66,7 @@
       <div class="frise-h">
         <h2 id="cd-frise-t" class="h3" style="font-size: 16px">{{t.carte.cal_titre}}</h2>
         <span class="tw" style="font-size: 13px; color: var(--muted)">{{calSous}}</span>
-        <button class="key s" type="button" style="margin-left: auto; align-self: center" aria-pressed="{{allOn}}" onClick="{{allYear}}">{{t.carte.toute_la_periode}}</button>
+        <div class="va cal-et"><sc-if value="{{hasPeriode}}"><button class="key s" type="button" onClick="{{allYear}}">{{t.carte_a.tous_jours}}</button></sc-if><div class="seg-ctl" role="group" aria-label="{{t.carte_a.cal_etendue}}"><button type="button" aria-pressed="{{cal12}}" onClick="{{pick12}}">{{t.carte_a.cal_12}}</button><button type="button" aria-pressed="{{calTout}}" onClick="{{pickTout}}">{{t.carte.toute_la_periode}}</button></div></div>
       </div>
       <div class="frise-g {{calCls}}">
         <svg width="{{fw}}" height="{{calH}}" viewBox="{{vb}}" style="overflow: visible" tabindex="0" role="group" aria-roledescription="{{t.carte.cal_role}}" aria-label="{{calAlt}}" aria-describedby="cd-frise-aide" onKeyDown="{{calKey}}" onClick="{{calClick}}" onPointerMove="{{calMove}}" onPointerLeave="{{calLeave}}">
@@ -77,7 +77,7 @@
         <p id="cd-frise-aide" class="sr">{{calAide}}</p>
         <p class="sr" aria-live="polite">{{calLive}}</p>
       </div>
-      <p class="fl"><span><i class="cal0"></i>{{t.carte.cal_leg_aucun}}</span><span><i class="cal1"></i>{{t.carte.cal_leg_1}}</span><span><i class="cal3"></i>{{t.carte.cal_leg_3}}</span><span><i class="cal4"></i>{{t.carte.cal_leg_4}}</span><span><i class="calc"></i>{{t.carte.cal_leg_choisi}}</span></p>
+      <p class="fl"><span><i class="cal0"></i>{{t.carte.cal_leg_aucun}}</span><span><i class="cal1"></i>{{t.carte_a.cal_leg_1}}</span><span><i class="cal2"></i>{{t.carte_a.cal_leg_2}}</span><span><i class="cal3"></i>{{t.carte_a.cal_leg_3}}</span><span><i class="cal4"></i>{{t.carte.cal_leg_4}}</span><span><i class="calc"></i>{{t.carte.cal_leg_choisi}}</span></p>
       <sc-if value="{{hasSum}}"><p class="cal-sum"><b>{{sum.date}}</b> · {{sum.reste}}</p></sc-if>
       </sc-if>
     </section></sc-if>

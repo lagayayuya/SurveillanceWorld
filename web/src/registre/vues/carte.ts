@@ -50,9 +50,9 @@ import {
   camerasTxt,
   cles,
   communeDe,
-  DEBUT_CAL,
   dateTxt,
   deAdresse,
+  debutCal,
   deGenre,
   drones,
   enTete,
@@ -155,6 +155,8 @@ type State = BaseState & {
   frise: boolean;
   /** the zones are on the map: a place of the act chosen can be framed (« Voir sur la carte ») */
   calque: boolean;
+  /** the calendar's span: twelve months (false), or from 2024 (« Toute la période », Ju 09/11) */
+  calTout: boolean;
   /** the panel's tab (lot 5, board Vue3D-Paris-fiche): the commune's figures, or its drones */
   onglet: "fiche" | "drones";
   /** listes.json (the ranks) and index.json's France-wide « publiés avant le vol », once asked */
@@ -332,6 +334,8 @@ class CarteDrones extends Vue<Props, State> {
       frise: false,
       calque: false,
       onglet: ongletDe(q),
+      // a period opened by its address before the twelve months: the three years shown
+      calTout: r != null && r[0] < debutCal(today(), false),
       X: null,
       pubFrance: null,
     };
@@ -887,17 +891,25 @@ class CarteDrones extends Vue<Props, State> {
   }
 
   /** The calendar's geometry, the same for its drawing and its pointer (board B: 2.92 × 7.6 cells
-   * every 3.52 × 8.2 at 528 px; the phone: a row of 31 days per month). */
+   * every 3.52 × 8.2 at 528 px; the phone: a row of 31 days per month). Twelve months by default,
+   * the three years on « Toute la période » (Ju, 09/11): on a wide screen, fewer weeks give wider
+   * columns, and the rows grow with them (14 px at most), the cells near square. */
   private cal(W: number) {
-    const A = DEBUT_CAL;
+    const A = debutCal(today(), this.state.calTout);
     const B = lundi(today()) + 7 * DAY;
     if (large()) {
-      const cols = Math.max(1, Math.round((B - A) / (7 * DAY)));
+      const cols = Math.max(1, Math.round((B - lundi(A)) / (7 * DAY)));
       const step = (W - CAL_X) / (cols - 1 + CAL_W);
-      return { tel: false as const, A, B, cols, step, H: CAL_H };
+      const dy = Math.min(14, Math.max(CAL_DY, step));
+      const ch = (dy * CAL_CH) / CAL_DY;
+      // the marks under the grid, as board B sets them under its own (66.4 for 7 rows of 8.2)
+      const yM = CAL_Y0 + 7 * dy + 2.7;
+      return { tel: false as const, A, B, cols, step, dy, ch, yM, H: yM + (CAL_H - 66.4) };
     }
+    const a = new Date(A);
+    const z = new Date(B - DAY);
     const nMois =
-      (new Date(B - DAY).getUTCFullYear() - 2024) * 12 + new Date(B - DAY).getUTCMonth() + 1;
+      (z.getUTCFullYear() - a.getUTCFullYear()) * 12 + z.getUTCMonth() - a.getUTCMonth() + 1;
     const step = (W - TEL_LW) / 31;
     return { tel: true as const, A, B, cols: 31, step, H: nMois * TEL_RH, nMois };
   }
@@ -913,9 +925,9 @@ class CarteDrones extends Vue<Props, State> {
     let d: number;
     if (!g.tel) {
       const col = Math.floor((x - CAL_X + (g.step * (1 - CAL_W)) / 2) / g.step);
-      const row = Math.floor((y - CAL_Y0 + (CAL_DY - CAL_CH) / 2) / CAL_DY);
+      const row = Math.floor((y - CAL_Y0 + (g.dy - g.ch) / 2) / g.dy);
       if (col < 0 || col >= g.cols || row < 0 || row > 6) return null;
-      d = g.A + col * 7 * DAY + row * DAY;
+      d = lundi(g.A) + col * 7 * DAY + row * DAY;
     } else {
       const row = Math.floor(y / TEL_RH);
       const col = Math.floor((x - TEL_LW) / g.step);
@@ -982,34 +994,34 @@ class CarteDrones extends Vue<Props, State> {
       const xOf = (col: number) => CAL_X + col * g.step;
       cases = grid.cases.map((c) => ({
         x: f2(xOf(c.col)),
-        y: f2(CAL_Y0 + c.row * CAL_DY),
+        y: f2(CAL_Y0 + c.row * g.dy),
         w: f2(cw),
-        h: f2(CAL_CH),
+        h: f2(g.ch),
         st: style(c.n, c.t),
       }));
       calTxt.push(
         ...["cal_l", "cal_m", "cal_v", "cal_d"].map((k, i) => ({
           x: "-6",
-          y: f2(CAL_Y0 + i * 2 * CAL_DY + 6.7),
+          y: f2(CAL_Y0 + i * 2 * g.dy + g.ch * 0.88),
           a: "end",
           st: MUTED,
           t: t(`carte.${k}`),
         })),
       );
-      for (const m of reperesCal(g.A, g.B)) {
+      for (const m of reperesCal(g.A, g.B, S.calTout ? 3 : 1)) {
         const x = xOf(m.col) - 0.32;
         calLin.push({
           x1: f2(x),
           x2: f2(x),
-          y1: "66.4",
-          y2: m.an ? "70.4" : "69.4",
+          y1: f2(g.yM),
+          y2: f2(g.yM + (m.an ? 4 : 3)),
           st: m.an
             ? "stroke: var(--line); stroke-width: 1.5"
             : "stroke: var(--muted); stroke-width: 1",
         });
         calTxt.push({
           x: f2(x + 2),
-          y: m.an ? "81.4" : "80.4",
+          y: f2(g.yM + (m.an ? 15 : 14)),
           a: "start",
           st: m.an
             ? "font: 800 11px Archivo, sans-serif; fill: var(--fg)"
@@ -1352,10 +1364,12 @@ class CarteDrones extends Vue<Props, State> {
 
     const isLarge = large();
     const finCal = Math.min(g.B - DAY, now);
-    const sousCal = t("carte.cal_sous", {
-      de: String(new Date(g.A).getUTCFullYear()),
-      a: String(new Date(finCal).getUTCFullYear()),
-    });
+    const sousCal = S.calTout
+      ? t("carte.cal_sous", {
+          de: String(new Date(g.A).getUTCFullYear()),
+          a: String(new Date(finCal).getUTCFullYear()),
+        })
+      : t("carte_a.cal_sous_12");
     // --- lot 5 (board Vue3D-Paris-fiche): the panel's head and its two tabs ----------------------
     const F = fichePanneau(d, S.X);
     const ordinal = (n: number) => (n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }));
@@ -1609,8 +1623,18 @@ class CarteDrones extends Vue<Props, State> {
       nNL: fr(tk.nonLues),
       lNL: t("carte_a.t_lieu_nl", { n: tk.nonLues }),
       calSous: sousCal,
-      allOn: r || S.sz ? "false" : "true",
+      // the period chosen (a day, a month, a week by its address) let go: every date again
+      hasPeriode: !!r || S.sz,
       allYear: (() => this.setPeriode(null, { sz: false })) as Handler,
+      // the calendar's span: twelve months, or the three years (Ju, 09/11)
+      cal12: S.calTout ? "false" : "true",
+      calTout: S.calTout ? "true" : "false",
+      pick12: (() => {
+        if (S.calTout) this.setState({ calTout: false, jf: -1, jv: -1 });
+      }) as Handler,
+      pickTout: (() => {
+        if (!S.calTout) this.setState({ calTout: true, jf: -1, jv: -1 });
+      }) as Handler,
       // v2.3 (Ju): the legend a ticket beside the commands, the calendar a thin band, both folded
       // by default on a wide screen (DECISIONS 2026-10-31); folded, the chosen day stays in the band
       legOuverte: !isLarge || S.leg,

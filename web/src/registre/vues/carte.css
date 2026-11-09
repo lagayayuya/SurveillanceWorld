@@ -69,6 +69,21 @@
   gap: 10px;
   flex-wrap: wrap;
 }
+/* the calendar's span (Ju, 09/11: 12 months, « Toute la période »), the board's .seg-ctl; before
+   it, a period chosen let go */
+.rg .v-carte .frise-h .cal-et {
+  margin-left: auto;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.rg .v-carte .frise-h .seg-ctl button {
+  padding: 4px 10px;
+  font-size: 13px;
+}
 .rg .v-carte .frise-g {
   position: relative;
   min-width: 0;
@@ -156,6 +171,9 @@
 }
 .rg .v-carte .fl i.cal1 {
   background: color-mix(in srgb, var(--fg) 28%, transparent);
+}
+.rg .v-carte .fl i.cal2 {
+  background: color-mix(in srgb, var(--fg) 50%, transparent);
 }
 .rg .v-carte .fl i.cal3 {
   background: color-mix(in srgb, var(--fg) 72%, transparent);
@@ -379,6 +397,11 @@
   }
   .rg .v-carte .zrow {
     grid-template-columns: 86px minmax(0, 1fr) auto;
+  }
+  /* touched: 44 px */
+  .rg .v-carte .frise-h .seg-ctl button,
+  .rg .v-carte .frise-h .key.s {
+    min-height: 44px;
   }
 }
 

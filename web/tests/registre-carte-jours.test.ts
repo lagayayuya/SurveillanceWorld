@@ -14,6 +14,7 @@ import {
   type Creneau,
   DEBUT_CAL,
   dateActe,
+  debutCal,
   enTete,
   finalitesTxt,
   grilleMois,
@@ -153,6 +154,23 @@ test("the wide grid: a column per week from 1 January 2024, Monday on top; its y
     { col: 39, l: "oct.", an: false },
     { col: 52, l: "2025", an: true },
   ]);
+  // twelve months by default (Ju, 09/11): from the first of the month eleven months back, every
+  // month marked, the year at January
+  const A = debutCal(d("2026-11-09"), false);
+  assert.equal(A, d("2025-12-01"));
+  assert.equal(debutCal(d("2026-11-09"), true), DEBUT_CAL);
+  assert.equal(debutCal(d("2024-03-15"), false), DEBUT_CAL);
+  const g12 = grilleSemaines(new Map(), A, d("2026-11-16"));
+  assert.equal(g12.cols, 50);
+  assert.deepEqual(g12.cases[0], { t: A, n: 0, col: 0, row: 0 });
+  const m12 = reperesCal(A, d("2026-11-16"), 1);
+  assert.equal(m12.length, 12);
+  assert.deepEqual(m12.slice(0, 3), [
+    { col: 0, l: "déc.", an: false },
+    { col: 4, l: "2026", an: true },
+    { col: 8, l: "févr.", an: false },
+  ]);
+  assert.equal(grilleMois(new Map(), A, d("2026-11-16")).mois.length, 12);
 });
 
 test("the phone's grid: a row per month, the latest on top, a column per day of the month", () => {
