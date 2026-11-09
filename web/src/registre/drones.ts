@@ -75,6 +75,8 @@ export const COUCHES = {
   lab: `${P}-lab`,
   secteur: `${P}-secteur`,
   secteurBord: `${P}-secteur-bord`,
+  arrondissement: `${P}-arrondissement`,
+  arrondissementBord: `${P}-arrondissement-bord`,
   nonLue: `${P}-non-lue`,
   secteurLab: `${P}-secteur-lab`,
 } as const;
@@ -325,6 +327,7 @@ export type CarteMin = Pick<
   | "getLayer"
   | "removeLayer"
   | "setPaintProperty"
+  | "setFilter"
   | "setFeatureState"
   | "addImage"
   | "hasImage"
@@ -362,6 +365,9 @@ export type Calque = {
   secteurs(ids: string[], labels?: { id: string; mots: string }[]): void;
   /** The whole commune hatched (acts whose exact place is not read yet are shown), or not. */
   nonLue(on: boolean): void;
+  /** The municipal arrondissements an act shown names (A's sectors, 09/11), hatched alone as a
+   * cited sector is: their shapes are the site's own (admin tiles, layer `communes`, code `c`). */
+  arrondissements(codes: string[]): void;
   /** Removes every source, layer and listener it added. */
   retirer(): void;
 };
@@ -633,7 +639,7 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
  * cited sector hatched over a very light fill, its outline; the whole commune hatched the same way
  * when acts whose exact place is not read yet are shown (Ju, 09/11: « hachure toute la commune »;
  * the board's dotted edge read as a line of its own), within the commune's ink line. */
-function couchesSous(t: Teintes): LayerSpecification[] {
+function couchesSous(t: Teintes, admin: boolean): LayerSpecification[] {
   const bleu = bleuDe(t);
   return [
     {
@@ -655,8 +661,36 @@ function couchesSous(t: Teintes): LayerSpecification[] {
       source: SRC_NL,
       paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": 0.75 },
     },
+    // an arrondissement the act names: a cited sector's look, its shape the site's tiles'
+    ...(admin
+      ? ([
+          {
+            id: COUCHES.arrondissement,
+            type: "fill",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            paint: { "fill-pattern": HACHURE_SEC },
+          },
+          {
+            id: COUCHES.arrondissementBord,
+            type: "line",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            layout: { "line-join": "round" },
+            paint: { "line-color": bleu, "line-width": 2.5 },
+          },
+        ] as LayerSpecification[])
+      : []),
   ];
 }
+/** The site's areas whose code is one of `codes` (none for none). */
+export const arrondissementsFiltre = (codes: string[]): ExpressionSpecification => [
+  "in",
+  ["get", "c"],
+  ["literal", codes],
+];
 /** The cited sectors' labels (board B's « secteur cité · 14e »: white words on the blue), over all. */
 function couchesLab(t: Teintes): LayerSpecification[] {
   return [
@@ -793,6 +827,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   let secIds: string[] = [];
   let secLabs: { id: string; mots: string }[] = [];
   let nonLueOn = false;
+  let arrCodes: string[] = [];
   const formeDe = (id: string) => o.formes?.[id]?.geometry as Area | undefined;
   const secteursData = (): GeoJSON.FeatureCollection =>
     fc(
@@ -859,7 +894,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     map.getStyle?.()?.layers?.find((l) => !l.id.startsWith(P) && re.test(l.id))?.id ?? noms;
   const sousChamps = premiere(CAMERAS);
   const sousRues = premiere(RUES);
-  for (const l of couchesSous(tint))
+  for (const l of couchesSous(tint, !!map.getSource("admin")))
     if (!map.getLayer(l.id)) map.addLayer(l, l.type === "fill" ? sousChamps : sousRues);
   for (const l of couchesLab(tint)) if (!map.getLayer(l.id)) map.addLayer(l);
 
@@ -965,6 +1000,12 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       nonLueOn = on;
       set(SRC_NL, nonLueData());
     },
+    arrondissements(codes) {
+      if (codes.length === arrCodes.length && codes.every((c, i) => c === arrCodes[i])) return;
+      arrCodes = [...codes];
+      for (const id of [COUCHES.arrondissement, COUCHES.arrondissementBord])
+        if (map.getLayer(id)) map.setFilter(id, arrondissementsFiltre(arrCodes));
+    },
     contour(c) {
       outline = c;
       set(SRC_COM, communeData());
@@ -982,7 +1023,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       map.addImage(HACHURE_SEC, hachuresSecteur(bleuDe(t)), { pixelRatio: 2 });
       if (map.hasImage(PAVE_SEC)) map.removeImage(PAVE_SEC);
       map.addImage(PAVE_SEC, pave(bleuDe(t), 8), PAVE_ETIRE);
-      for (const l of [...couches(insee, t, true), ...couchesSous(t), ...couchesLab(t)]) {
+      for (const l of [...couches(insee, t, true), ...couchesSous(t, true), ...couchesLab(t)]) {
         if (!map.getLayer(l.id) || !("paint" in l) || !l.paint) continue;
         for (const [k, v] of Object.entries(l.paint))
           (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(l.id, k, v);

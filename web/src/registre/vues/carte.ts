@@ -82,7 +82,6 @@ import {
   phraseJour,
   plage,
   reperesCal,
-  sansLieu,
   secteurPanneau,
   semaineDe,
   sitesHours,
@@ -94,6 +93,7 @@ import {
   type ZoneLue,
   zonePanneau,
   zonesDe,
+  zonesHachurees,
 } from "./carte-outils.ts";
 
 /** « lundi 30 novembre »: the lead's next flight day, as the board writes it (no year). */
@@ -773,7 +773,7 @@ class CarteDrones extends Vue<Props, State> {
     L.choisir(cur >= 0 ? T[cur].sites : []);
     // board B: the cited sectors of the acts shown, all of them over the whole period, a chosen
     // day's only; their labels for a chosen day or act; the whole commune hatched while an act
-    // shown has no place read (Ju, 09/11)
+    // shown has no place read (Ju, 09/11), an arrondissement it names alone (A, 09/11)
     const formes = this.DR.formes;
     const r = this.periode();
     const choisi = S.sel && cur < 0 ? S.sel : null;
@@ -789,7 +789,9 @@ class CarteDrones extends Vue<Props, State> {
       }
     }
     L.secteurs(ids, labs);
-    L.nonLue(sansLieu(T, this.ND, r, S.k, formes));
+    const z = zonesHachurees(T, this.ND, r, S.k, this.props.d.insee, formes);
+    L.arrondissements(z.arrondissements);
+    L.nonLue(z.commune);
   }
 
   // --- the page --------------------------------------------------------------------------------
@@ -976,6 +978,8 @@ class CarteDrones extends Vue<Props, State> {
     // the tickets: the period's; a chosen day keeps the whole period's, as board B does (675
     // arrêtés on Wed. 4 Nov.), the day being said by the calendar's sentence and the edge's label
     const tk = tickets(T, ND, jour != null ? null : r, S.k);
+    // what the map hatches (syncMap's): the legend says each
+    const zH = zonesHachurees(T, ND, r, S.k, insee, formes);
 
     // « Jours de vol autorisés » (board B): one cell per day, darker by the acts of the day
     const W = Math.max(200, S.fw);
@@ -1681,7 +1685,8 @@ class CarteDrones extends Vue<Props, State> {
       hasDrone: S.k !== "vsa",
       // the legend says the hatchings the map shows: a cited sector's, the whole commune's
       hasSecteurs: Object.keys(formes).length > 0,
-      hachureCommune: sansLieu(T, ND, r, S.k, formes),
+      hachureCommune: zH.commune,
+      hachureArr: zH.arrondissements.length > 0,
       hasEnt: S.ent.length > 0 && S.k !== "vsa",
       hasFrise: droneT.length + droneND.length > 0,
       is3d: S.is3d ? "true" : "false",

@@ -21,6 +21,7 @@ import {
   grilleSemaines,
   horaireTxt,
   jourDe,
+  arrondissementsDe,
   jourLong,
   joursComptes,
   motsLigne,
@@ -29,10 +30,10 @@ import {
   niveau,
   phraseJour,
   reperesCal,
-  sansLieu,
   secteurPanneau,
   tickets,
   zonePanneau,
+  zonesHachurees,
 } from "../src/registre/vues/carte-outils.ts";
 
 const catalogue: Record<string, string> = JSON.parse(
@@ -250,7 +251,7 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   // the whole commune still hatched (no shape)
   const ditOu = { ...aujourdhui, secteur: "à Paris  le 30 juin 2026 " };
   assert.equal(secteurPanneau(ditOu), "Secteur cité : « à Paris le 30 juin 2026 »");
-  assert.equal(sansLieu([], [ditOu], null, null, {}), true);
+  assert.equal(zonesHachurees([], [ditOu], null, null, "75056", {}).commune, true);
   assert.equal(secteurPanneau({ ...complet, secteur: "ailleurs" }), secteurPanneau(complet));
   assert.equal(
     zonePanneau(complet),
@@ -268,22 +269,68 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   assert.deepEqual(finalitesTxt(aujourdhui), []);
 });
 
+test("the hatched zone: an arrondissement alone, the whole commune for any other sector (A, 09/11)", () => {
+  // the levels as A serves them on Paris's rows (081c013, a52f774), SYNTHETIC acts
+  const sec = (acte: string, niveau: string, insee: string[] | null, extra: Partial<NonDeduit> = {}) =>
+    ({ ...aujourdhui, acte, secteur_niveau: niveau, secteur_insee: insee, ...extra }) as NonDeduit;
+  const a19 = sec("a19", "arrondissement", ["75119"], { secteur: "à Paris 19ème" });
+  const a11 = sec("a11", "arrondissement", ["75111", "75119", "93001"]);
+  const parc = sec("parc", "lieu", null, { secteur_lieu: "au  parc des princes " });
+  const commune = sec("com", "commune", ["75056"]);
+  const dep = sec("dep", "departement", ["75056"]);
+  const nl = sec("nl", "non_lu", null);
+  const z = (ND: NonDeduit[], r: [number, number] | null = null, k: "drone" | "vsa" | null = null) =>
+    zonesHachurees([], ND, r, k, "75056", {});
+  // an arrondissement named: it alone, never the commune
+  assert.deepEqual(z([a19]), { arrondissements: ["75119"], commune: false });
+  // several, each once, sorted; a code of another commune (Aubervilliers) left out
+  assert.deepEqual(arrondissementsDe(a11, "75056"), ["75111", "75119"]);
+  assert.deepEqual(z([a19, a11]), { arrondissements: ["75111", "75119"], commune: false });
+  // a place without a shape, the commune, the département, a sector not read: the whole commune
+  for (const a of [parc, commune, dep, nl, aujourdhui])
+    assert.deepEqual(z([a]), { arrondissements: [], commune: true }, a.acte);
+  // both at once: the arrondissement over the hatched commune
+  assert.deepEqual(z([a19, parc]), { arrondissements: ["75119"], commune: true });
+  // the arrondissement level with another city's codes, or with none: the whole commune
+  assert.deepEqual(z([sec("lyon", "arrondissement", ["69381"])]), { arrondissements: [], commune: true });
+  assert.deepEqual(z([sec("vide", "arrondissement", [])]), { arrondissements: [], commune: true });
+  assert.deepEqual(z([sec("ville", "arrondissement", ["75056"])]), { arrondissements: [], commune: true });
+  // Lyon's and Marseille's own arrondissements
+  assert.deepEqual(
+    zonesHachurees([], [sec("l1", "arrondissement", ["69381"])], null, null, "69123", {}).arrondissements,
+    ["69381"],
+  );
+  assert.deepEqual(
+    zonesHachurees([], [sec("m16", "arrondissement", ["13216"])], null, null, "13055", {}).arrondissements,
+    ["13216"],
+  );
+  // a cited place drawn by the file's shapes wins: neither the arrondissement nor the commune
+  assert.deepEqual(
+    zonesHachurees([], [{ ...a19, lieux: complet.lieux }], null, null, "75056", { "75114": {} }),
+    { arrondissements: [], commune: false },
+  );
+  // only the acts shown: the period's, the kind's
+  assert.deepEqual(z([a19, parc], [d("2026-11-05"), d("2026-11-06")]), { arrondissements: [], commune: false });
+  assert.deepEqual(z([a19], [d("2026-11-04"), d("2026-11-05")]), { arrondissements: ["75119"], commune: false });
+  assert.deepEqual(z([a19], null, "vsa"), { arrondissements: [], commune: false });
+});
+
 test("the map's hatching: a sector's, the whole commune's, the map seen through it", () => {
   // the whole commune while an act shown has no place read (Ju, 09/11); a cited sector drawn by
   // the commune file's shapes is hatched alone
   const formes = { "75114": {} };
-  assert.equal(sansLieu([], [aujourdhui], null, null, formes), true);
-  assert.equal(sansLieu([], [complet], null, null, formes), false);
-  assert.equal(sansLieu([], [complet], null, null, {}), true);
+  assert.equal(zonesHachurees([], [aujourdhui], null, null, "75056", formes).commune, true);
+  assert.equal(zonesHachurees([], [complet], null, null, "75056", formes).commune, false);
+  assert.equal(zonesHachurees([], [complet], null, null, "75056", {}).commune, true);
   // a slot over a site has its place; one without a site has none; another day's act is not shown
-  assert.equal(sansLieu([slot({ t0: d("2026-11-04"), t1: d("2026-11-05") })], [], null, null, {}), false);
+  assert.equal(zonesHachurees([slot({ t0: d("2026-11-04"), t1: d("2026-11-05") })], [], null, null, "75056", {}).commune, false);
   assert.equal(
-    sansLieu([slot({ t0: d("2026-11-04"), t1: d("2026-11-05"), sites: [] })], [], null, null, {}),
+    zonesHachurees([slot({ t0: d("2026-11-04"), t1: d("2026-11-05"), sites: [] })], [], null, null, "75056", {}).commune,
     true,
   );
-  assert.equal(sansLieu([], [aujourdhui], [d("2026-11-05"), d("2026-11-06")], null, {}), false);
+  assert.equal(zonesHachurees([], [aujourdhui], [d("2026-11-05"), d("2026-11-06")], null, "75056", {}).commune, false);
   // the kind shown: a drone act is not hatched under « algorithmes »
-  assert.equal(sansLieu([], [aujourdhui], null, "vsa", {}), false);
+  assert.equal(zonesHachurees([], [aujourdhui], null, "vsa", "75056", {}).commune, false);
   const h = hachuresSecteur("#2c6f9e");
   assert.equal(h.width, 14);
   const alpha = [...h.data].filter((_, i) => i % 4 === 3);

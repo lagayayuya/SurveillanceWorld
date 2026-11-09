@@ -57,9 +57,18 @@ export type NonDeduit = {
   lieux?: Lieu[];
   /** The act's own words for where (A reads them for the Préfecture de police and the petite
    * couronne, 5d8e95a: « à Paris le 30 juin 2026 à l'occasion de l'événement susvisé »): a text,
-   * no shape; not yet copied into `non_deduits` (besoins-donnees, 09/11). Shown in the panel's
-   * « Où » when no place is cited; the sector is hatched alone only from a shape (`lieux[].forme`). */
+   * no shape. Shown in the panel's « Où » when no place is cited. */
   secteur?: string;
+  /** The level the build reads the sector at (A, 081c013): « arrondissement », « lieu »,
+   * « commune », « departement » or « non_lu »; one per act, the same for each of its days. */
+  secteur_niveau?: string;
+  /** The codes the sector names: a municipal arrondissement's (751xx, 6938x, 132xx) at the
+   * arrondissement level, else the communes named; null for a place. */
+  secteur_insee?: string[] | null;
+  /** The place the act cites at the « lieu » level, as written (« au parc des princes »). */
+  secteur_lieu?: string | null;
+  /** « drone », « helicoptere » or « non_lu » (A, cf3c5a7): a helicopter's act is never a drone's. */
+  aeronef?: string;
 };
 /** A cited place's shape, approximate: an arrondissement's outline, a widened street, a circle. */
 export type Forme = {
@@ -252,25 +261,37 @@ export function tickets(
   };
 }
 
-/** Whether an act shown over the period has no place read (Ju, 09/11: the whole commune hatched
- * then): a slot without a site, an act listed without a slot whose cited places draw no shape of
- * `formes` (a cited sector alone is hatched then, not the commune). */
-export function sansLieu(
+/** The arrondissements of `insee` (Paris, Lyon, Marseille) an act's sector names, when the build
+ * reads it at that level (A, 09/11); none otherwise, nor for another city's codes. */
+export function arrondissementsDe(a: NonDeduit, insee: string): string[] {
+  if (a.secteur_niveau !== "arrondissement") return [];
+  const ok = (c: string) => c !== insee && communeDe(c) === insee;
+  return [...new Set((a.secteur_insee ?? []).map(String).filter(ok))];
+}
+
+/** What the map hatches for the acts shown over the period (Ju, 09/11; A's sectors, 081c013):
+ * a cited place drawn by the commune file's shapes (`lieux[].forme`) alone; an arrondissement the
+ * act names (`secteur_niveau` « arrondissement ») alone, from the site's tiles; the whole commune
+ * for every other act (« commune », « departement », « non_lu », a « lieu » without a shape) and
+ * for a slot without a site. */
+export function zonesHachurees(
   T: Creneau[],
   ND: NonDeduit[],
   r: Periode,
   k: Genre,
+  insee: string,
   formes: Record<string, unknown>,
-): boolean {
-  return (
-    T.some((c) => deGenre(k, c.kind) && inPeriod(c, r) && !c.sites.length) ||
-    ND.some(
-      (a) =>
-        deGenre(k, a.kind) &&
-        ndDans(a, r) &&
-        !(a.lieux ?? []).some((l) => l.forme && formes[l.forme]),
-    )
-  );
+): { arrondissements: string[]; commune: boolean } {
+  const arr = new Set<string>();
+  let commune = T.some((c) => deGenre(k, c.kind) && inPeriod(c, r) && !c.sites.length);
+  for (const a of ND) {
+    if (!deGenre(k, a.kind) || !ndDans(a, r)) continue;
+    if ((a.lieux ?? []).some((l) => l.forme && formes[l.forme])) continue;
+    const xs = arrondissementsDe(a, insee);
+    if (xs.length) for (const x of xs) arr.add(x);
+    else commune = true;
+  }
+  return { arrondissements: [...arr].sort(), commune };
 }
 
 // --- « Jours de vol autorisés » (lot R4.2, board B) ---------------------------------------------
