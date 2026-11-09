@@ -1409,7 +1409,8 @@ class CarteDrones extends Vue<Props, State> {
     const parisJour = (ms: number) =>
       new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(ms));
     const venir = new Map<string, Set<string>>();
-    const aujIso = parisJour(now);
+    // today in Paris (the acts' days are Paris's)
+    const aujIso = parisJour(Date.now());
     for (const c of droneT)
       for (const iso of [parisJour(c.t0)])
         if (iso >= aujIso) {
@@ -1425,7 +1426,8 @@ class CarteDrones extends Vue<Props, State> {
       .slice(0, 5)
       .map(([iso, as]) => ({
         d: jourLong(jourMs(iso)),
-        lead: PROCHAIN.format(jourMs(iso)),
+        // « Prochain vol connu : aujourd'hui » on the day itself (Ju, 09/11)
+        lead: iso === aujIso ? t("carte_a.aujourdhui") : PROCHAIN.format(jourMs(iso)),
         n: t("carte_a.avenir_n", { n: as.size }),
         pick: (() => afficherJour(jourMs(iso))) as Handler,
       }));
