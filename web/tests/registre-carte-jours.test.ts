@@ -22,8 +22,10 @@ import {
   horaireTxt,
   jourDe,
   arrondissementsDe,
+  arrondissementTxt,
   jourLong,
   joursComptes,
+  lieuPanneau,
   motsLigne,
   type NonDeduit,
   ndDans,
@@ -313,6 +315,14 @@ test("the hatched zone: an arrondissement alone, the whole commune for any other
   assert.deepEqual(z([a19, parc], [d("2026-11-05"), d("2026-11-06")]), { arrondissements: [], commune: false });
   assert.deepEqual(z([a19], [d("2026-11-04"), d("2026-11-05")]), { arrondissements: ["75119"], commune: false });
   assert.deepEqual(z([a19], null, "vsa"), { arrondissements: [], commune: false });
+  // their words in « Où »
+  assert.equal(arrondissementTxt("75119"), "19e arrondissement");
+  assert.equal(arrondissementTxt("75101"), "1er arrondissement");
+  assert.equal(arrondissementTxt("13216"), "16e arrondissement");
+  assert.equal(lieuPanneau(parc), "Lieu cité\u00a0: «\u00a0au parc des princes\u00a0»");
+  assert.equal(lieuPanneau(a19), "");
+  assert.equal(lieuPanneau({ ...parc, secteur_lieu: null }), "");
+  assert.equal(secteurPanneau(a19), "Secteur cité\u00a0: «\u00a0à Paris 19ème\u00a0»");
 });
 
 test("the map's hatching: a sector's, the whole commune's, the map seen through it", () => {

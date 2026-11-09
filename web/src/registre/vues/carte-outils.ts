@@ -268,6 +268,13 @@ export function arrondissementsDe(a: NonDeduit, insee: string): string[] {
   const ok = (c: string) => c !== insee && communeDe(c) === insee;
   return [...new Set((a.secteur_insee ?? []).map(String).filter(ok))];
 }
+/** « 19e arrondissement », « 1er arrondissement » for a municipal arrondissement's code. */
+export function arrondissementTxt(code: string): string {
+  const n = +code.slice(-2);
+  return t("carte_a.arrondissement_n", {
+    n: n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }),
+  });
+}
 
 /** What the map hatches for the acts shown over the period (Ju, 09/11; A's sectors, 081c013):
  * a cited place drawn by the commune file's shapes (`lieux[].forme`) alone; an arrondissement the
@@ -552,6 +559,12 @@ export function secteurPanneau(a: NonDeduit): string {
   if (!ls.length) return dit ? t("carte.secteur_cite", { l: t("carte.cite", { x: dit }) }) : "";
   const mots = ls.map((l) => (l.genre === "autre" ? t("carte.cite", { x: l.texte }) : l.texte));
   return t("carte.secteur_cite", { l: mots.join(", ") });
+}
+/** The place the build reads at the « lieu » level (A, a52f774), as written: « Lieu cité : « au parc
+ * des princes » »; nothing for another level or when none is read. */
+export function lieuPanneau(a: NonDeduit): string {
+  const l = (a.secteur_lieu ?? "").replace(/\s+/g, " ").trim();
+  return a.secteur_niveau === "lieu" && l ? t("carte_a.lieu_cite", { l }) : "";
 }
 /** A slot's hours, « 7 h 00 – 11 h 00 » (its end's hour, whatever its day). */
 function heuresCreneau(c: Creneau): string {

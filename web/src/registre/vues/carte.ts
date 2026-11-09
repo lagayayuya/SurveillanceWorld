@@ -46,6 +46,8 @@ import { filCommune } from "./commune-outils.ts";
 import "./carte.css";
 import {
   appareils,
+  arrondissementsDe,
+  arrondissementTxt,
   type Creneau,
   camerasTxt,
   cles,
@@ -69,6 +71,7 @@ import {
   jourMs,
   joursComptes,
   joursDe,
+  lieuPanneau,
   lieux,
   lundi,
   mois,
@@ -821,6 +824,15 @@ class CarteDrones extends Vue<Props, State> {
       if (this.map && b) this.voler(this.map, b);
     };
   }
+  /** « Voir sur la carte » for an arrondissement an act names: its box (tiles/areas.json) framed. */
+  private voirAire(code: string): Handler {
+    return () => {
+      const map = this.map;
+      void boiteAire(code).then((b) => {
+        if (b && map && this.map === map && !this.dead) this.voler(map, b);
+      });
+    };
+  }
   /** « Voir sur la carte »: the zone framed, as the commune is at the opening. */
   private voir(site: string): Handler {
     return () => {
@@ -1216,6 +1228,10 @@ class CarteDrones extends Vue<Props, State> {
       const hs = a.horaires?.length ? horairesMots(a) : "";
       const secteur = secteurPanneau(a);
       const dessine = (a.lieux ?? []).find((l) => l.forme && formes[l.forme]);
+      // where the build reads it (A, 09/11): the arrondissements named, hatched alone; the place
+      // cited, the whole commune hatched (no shape for a place)
+      const arrs = dessine ? [] : arrondissementsDe(a, insee);
+      const lieu = lieuPanneau(a);
       det = {
         c: aut.c,
         i: icone("aut"),
@@ -1235,6 +1251,8 @@ class CarteDrones extends Vue<Props, State> {
                 },
               ]
             : []),
+          ...arrs.map((c) => ({ l: arrondissementTxt(c), voir: this.voirAire(c), has: S.calque })),
+          ...(lieu ? [{ l: lieu, voir: null, has: false }] : []),
           { l: zonePanneau(a), voir: null, has: false },
         ],
         hasLieux: true,
