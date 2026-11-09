@@ -624,6 +624,16 @@ export function sansFins(x: Drones, fin: (acte: string) => boolean): Drones {
   };
 }
 
+/** The commune of a code of the site's areas: a municipal arrondissement's (the map's tiles draw
+ * Paris, Lyon and Marseille by arrondissement: 75101–75120, 69381–69389, 13201–13216, INSEE's
+ * codes) is its city's; any other code is its own. */
+export function communeDe(code: string): string {
+  if (/^751(0[1-9]|1\d|20)$/.test(code)) return "75056";
+  if (/^6938[1-9]$/.test(code)) return "69123";
+  if (/^132(0[1-9]|1[0-6])$/.test(code)) return "13055";
+  return code;
+}
+
 /** The commune file's slots (an older file has none: no slot), without the acts that end an
  * authorisation (sansFins). */
 export function drones(d: Donnees): Drones {

@@ -8,7 +8,7 @@
 // an act whose zone was not deduced is only listed, never drawn. The map, the chart and the list
 // follow one state: a period (every date, ?mois=, a month or a week clicked), a chosen slot, a
 // hovered one. On leaving, the map loses all it was given and goes back where it was.
-import type { Map as MlMap } from "maplibre-gl";
+import type { MapMouseEvent, Map as MlMap } from "maplibre-gl";
 import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
 import type { Handler, Rich } from "../dc.ts";
@@ -17,6 +17,7 @@ import {
   type BBox,
   bboxOf,
   type Calque,
+  COUCHES,
   type Contour,
   calque,
   entieres,
@@ -29,7 +30,7 @@ import {
   zoomIncline,
 } from "../drones.ts";
 import { count, fr } from "../format.ts";
-import { carteDuSite, laisser, retour, retourPossible, seFerme } from "../hote.ts";
+import { carteDuSite, laisser, ouvrir, retour, retourPossible, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
 import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
@@ -48,6 +49,7 @@ import {
   type Creneau,
   camerasTxt,
   cles,
+  communeDe,
   DEBUT_CAL,
   dateTxt,
   deAdresse,
@@ -240,6 +242,29 @@ function libre(): { top: number; left: number; right: number; bottom: number } {
   pad.top = Math.min(pad.top, H / 3);
   return pad;
 }
+/** An area's box from the site's index of areas (tiles/areas.json, main.ts fitArea's: code →
+ * [name, département, box]), asked once, when an arrondissement is clicked. */
+let aires: Promise<Record<string, [string, string, BBox]>> | null = null;
+async function boiteAire(code: string): Promise<BBox | null> {
+  aires ??= fetch("/tiles/areas.json").then((r) => (r.ok ? r.json() : {}));
+  try {
+    return (await aires)[code]?.[2] ?? null;
+  } catch {
+    aires = null;
+    return null;
+  }
+}
+/** Whether the register holds a commune's file (hote.ts porteLieu's test). */
+async function registreA(insee: string): Promise<boolean> {
+  try {
+    const r = await fetch(`/data/registre/commune/${encodeURIComponent(insee)}.json`, {
+      method: "HEAD",
+    });
+    return r.ok && /json/.test(r.headers.get("content-type") ?? "");
+  } catch {
+    return false;
+  }
+}
 const today = (): number => {
   const d = new Date();
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
@@ -380,9 +405,46 @@ class CarteDrones extends Vue<Props, State> {
     this.ro.observe(g);
   }
   /** A click on the map folds the legend back (v2.3). */
-  private readonly onCarte = () => {
+  private readonly onCarte = (e: MapMouseEvent) => {
     if (this.state.leg) this.setState({ leg: false });
+    void this.cliquerCarte(e);
   };
+  /** A click on the map (Ju, 09/11; the site's map opens no sheet beside the panel, main.ts
+   * selectAt): on a zone, the zone's own choice (drones.ts); on an arrondissement of the commune
+   * shown (Paris, Lyon, Marseille), the map framed on it, the panel staying; on another commune
+   * the register holds, its 3D view in the panel, on the same tab; anywhere else, the map centred
+   * on the point in the part of the map the panel and the overlays leave free (libre). */
+  private async cliquerCarte(e: MapMouseEvent): Promise<void> {
+    const map = this.map;
+    if (!map || this.dead) return;
+    const { x, y } = e.point;
+    const zones = [COUCHES.vol, COUCHES.vsa].filter((l) => map.getLayer(l));
+    if (zones.length && map.queryRenderedFeatures([x, y], { layers: zones }).length) return;
+    // a hand on the map: the slow turn stops
+    this.arreterTour();
+    const aires = ["communes-count", "communes", "communes-none"].filter((l) => map.getLayer(l));
+    const f = aires.length ? map.queryRenderedFeatures([x, y], { layers: aires })[0] : undefined;
+    const code = String(f?.properties?.c ?? "");
+    const ici = this.props.d.insee;
+    const duration = reduced() ? 0 : MOVE_MS;
+    if (code && communeDe(code) === ici && code !== ici) {
+      const b = await boiteAire(code);
+      if (b && this.map === map && !this.dead) {
+        this.voler(map, b);
+        return;
+      }
+    } else if (code && communeDe(code) !== ici) {
+      const autre = communeDe(code);
+      if (await registreA(autre)) {
+        if (this.map !== map || this.dead) return;
+        const q = this.state.onglet === "fiche" ? "?onglet=fiche" : "";
+        ouvrir(`${communeHref(autre, "carte")}${q}`);
+        return;
+      }
+    }
+    if (this.map !== map || this.dead) return;
+    map.easeTo({ center: e.lngLat, padding: libre(), duration }, NOTRE);
+  }
   /** The map's padding follows the part of the map left free (v2.4 point 2): the panel or the
    * sheet, its band, « ← Le registre », the legend and the chart; measured again once they have
    * stopped changing (a sheet lowered or raised, a window resized, the chart unfolded), and set

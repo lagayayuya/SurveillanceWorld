@@ -23,6 +23,7 @@ import {
   appareils,
   type Creneau,
   cles,
+  communeDe,
   DEBUT,
   deAdresse,
   lieux,
@@ -361,4 +362,17 @@ test("the tallest volume stands to the same share of the commune on the screen, 
   assert.ok(Math.abs(plafondVolumes(lyon, 50) - 1131) < 5, String(plafondVolumes(lyon, 50)));
   // a small commune keeps a volume that can be seen
   assert.equal(plafondVolumes([4.8, 45.7, 4.801, 45.7005], 50), 60);
+});
+
+test("a click on an arrondissement of the map is its city's: Paris, Lyon, Marseille; any other code its own", () => {
+  assert.equal(communeDe("75114"), "75056");
+  assert.equal(communeDe("75101"), "75056");
+  assert.equal(communeDe("75120"), "75056");
+  assert.equal(communeDe("75121"), "75121");
+  assert.equal(communeDe("69381"), "69123");
+  assert.equal(communeDe("69389"), "69123");
+  assert.equal(communeDe("13216"), "13055");
+  assert.equal(communeDe("13217"), "13217");
+  assert.equal(communeDe("93066"), "93066");
+  assert.equal(communeDe("75056"), "75056");
 });
