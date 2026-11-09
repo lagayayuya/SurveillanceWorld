@@ -289,6 +289,38 @@
 .rg .va.v-graphe .mxw {
   margin-top: 10px;
   overflow-x: auto;
+  /* recette 22: should a column still not fit, its edge says the table scrolls (shadows that stay
+     at the scrolled edges, the background's own "local" layers covering them at either end) */
+  background:
+    linear-gradient(to right, var(--bg-2) 30%, transparent) left / 32px 100% no-repeat local,
+    linear-gradient(to left, var(--bg-2) 30%, transparent) right / 32px 100% no-repeat local,
+    linear-gradient(to right, var(--rule), transparent) left / 12px 100% no-repeat scroll,
+    linear-gradient(to left, var(--rule), transparent) right / 12px 100% no-repeat scroll;
+}
+/* recette 22: the table view takes the card's whole width, as Graphe-grammaire's « gram-list »
+   does; the side panel follows below it */
+.rg .va.v-graphe .gp-body:has(.gram-list) {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* the clients' names stand upright (recette 22: twelve columns where the board drew eight), two
+   lines at most, the whole name in the cell's title; every column then fits from 1024 px */
+.rg .va.v-graphe .mx thead th {
+  vertical-align: bottom;
+}
+.rg .va.v-graphe .mx thead th.mc {
+  padding-bottom: 8px;
+}
+.rg .va.v-graphe .mx .mch {
+  display: inline-block;
+  max-height: 150px;
+  overflow: hidden;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  text-align: left;
+  line-height: 1.15;
+  white-space: normal;
+  overflow-wrap: normal;
+  hyphens: none;
 }
 .rg .va.v-graphe .mx td,
 .rg .va.v-graphe .mx tbody th {
@@ -306,8 +338,8 @@
 }
 .rg .va.v-graphe .mx th.mc,
 .rg .va.v-graphe .mx td.mc {
-  width: 76px;
-  min-width: 60px;
+  width: 46px;
+  min-width: 40px;
   padding-left: 4px;
   padding-right: 4px;
   text-align: center;

@@ -28,7 +28,7 @@
       <sc-if value="{{tb.vide}}"><p class="note">{{t.graphe_a.tableau_vide}}</p></sc-if>
       <div class="mxw">
         <table class="docs mx"><caption class="sr">{{t.graphe_a.tableau_tag}}</caption>
-          <thead><tr><th scope="col">{{tb.h1}}</th><th scope="col" class="n">{{tb.h2}}</th><sc-for list="{{tb.cols}}" as="c"><th scope="col" class="mc">{{c.l}}</th></sc-for></tr></thead>
+          <thead><tr><th scope="col">{{tb.h1}}</th><th scope="col" class="n">{{tb.h2}}</th><sc-for list="{{tb.cols}}" as="c"><th scope="col" class="mc" title="{{c.l}}"><span class="mch">{{c.l}}</span></th></sc-for></tr></thead>
           <tbody><sc-for list="{{tb.rows}}" as="r"><tr class="{{r.cls}}"><th scope="row" class="mn"><sc-if value="{{r.nom.lien}}"><a class="{{r.nom.cls}}" href="{{r.nom.href}}">{{r.nom.l}}</a></sc-if><sc-if value="{{r.nom.texte}}">{{r.nom.l}}</sc-if></th><td class="n" data-label="{{tb.h2}}"><b>{{r.n}}</b></td><sc-for list="{{r.cells}}" as="x"><td class="mc" data-label="{{x.col}}"><sc-if value="{{x.on}}"><i style="{{x.on.st}}" data-bh="{{x.on.bh}}" data-bl="{{x.on.bl}}"></i><span class="mcv">{{x.on.m}}</span></sc-if></td></sc-for></tr></sc-for></tbody>
         </table>
       </div>
