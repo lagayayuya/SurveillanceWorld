@@ -172,7 +172,13 @@ def tourner(
         _guarded("dgcl", ctx, summary)
     jobs = [n for n in ("dila", "arretes") if only in (None, n)]
     if weekly:
-        jobs = [n for n in jobs if n == "dila"]  # the day's flow only
+        from lacarte_collecte import arretes
+
+        # the day's flow only, unless a re-reading waits (a reader or its rule changed)
+        attente = arretes.en_attente(ctx) if "arretes" in jobs else 0
+        jobs = [n for n in jobs if n == "dila" or (n == "arretes" and attente)]
+        if attente:
+            summary["relectures_en_attente"] = attente
     threads = {
         n: threading.Thread(target=_guarded, args=(n, ctx, summary), daemon=True) for n in jobs
     }

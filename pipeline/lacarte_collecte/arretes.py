@@ -92,6 +92,27 @@ def is_read(rec: dict[str, Any] | None) -> bool:
     return bool(rec) and rec.get("statut") in ok and rec.get("lecteur") == parse_raa.VERSION
 
 
+def relecture(ctx: Contexte) -> re.Pattern[str]:
+    """The titles of the recueils read with no act asked again (`relecture.titre`)."""
+    raw = ctx.rules_dir / "collecte_actes.yaml"
+    return re.compile(rules(raw.name, raw.parent)["relecture"]["titre"], re.I)
+
+
+def a_relire(old: dict[str, Any], again: re.Pattern[str]) -> bool:
+    """A recueil an older reader read, asked again: one with acts, or one with none whose
+    title announces an act the map shows."""
+    if is_read(old) or old.get("statut") != "lu":
+        return False
+    return bool(old.get("actes")) or bool(again.search(old.get("name") or ""))
+
+
+def en_attente(ctx: Contexte) -> int:
+    """How many recueils wait for their re-reading: a week's run reads the prefectures while
+    one waits (a reader or a `relecture` rule changed since the last complete run)."""
+    again = relecture(ctx)
+    return sum(a_relire(r, again) for r in Store(ctx.root, "recueils").records())
+
+
 def safe_id(key: str) -> str:
     """An act's id as the site can name a file and a route by it: a heading's number may hold
     a « / » (« 24-08/322 », the Eure-et-Loir's)."""
@@ -284,11 +305,9 @@ def collect_admin(
     # the recueils read before by an older reader, searched no more (a search starts a month
     # back): their text asked one last time, or taken from the cache, read, and cached; one
     # read with no act only when its title announces an act the map shows (`relecture`)
-    again = re.compile(rules(raw.name, raw.parent)["relecture"]["titre"], re.I)
+    again = relecture(ctx)
     for rid, old in list(known.items()):
-        if is_read(old) or old.get("statut") != "lu":
-            continue
-        if not old.get("actes") and not again.search(old.get("name") or ""):
+        if not a_relire(old, again):
             continue
         if ctx.out_of_time():
             return st.save(admin, statut="en_cours", jusqu_au=upto)

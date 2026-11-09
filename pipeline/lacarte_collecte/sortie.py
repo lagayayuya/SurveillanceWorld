@@ -202,6 +202,8 @@ def ecrire(ctx: Contexte, started: str, summary: dict[str, Any]) -> dict[str, An
         )
     lines.append(f"Collecte du {started} au {rep['fin']}")
     lines += [f"  {k} : {v} lignes" for k, v in n.items()]
+    if summary.get("relectures_en_attente"):  # a week's run that read the prefectures
+        lines.append(f"  recueils à relire au début : {summary['relectures_en_attente']}")
     for s, c in sorted(rep["journal"]["sources"].items()):
         lines.append(
             f"  {s} : {c['requetes']} requêtes, {c['ms'] / 1000:.0f} s, "

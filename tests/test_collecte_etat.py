@@ -35,6 +35,40 @@ def test_once_caught_up_only_the_night_s_run_works(tmp_path):
     assert not (tmp_path / "sortie").exists()
 
 
+def test_a_week_s_run_reads_the_prefectures_while_a_re_reading_waits(tmp_path, monkeypatch):
+    import datetime as dt
+    import time
+    from zoneinfo import ZoneInfo
+
+    import lacarte_registre as registre
+    from lacarte_collecte import arretes, cli, parse_raa
+    from lacarte_collecte.contexte import Contexte
+
+    ran = []
+    monkeypatch.setattr(cli, "_guarded", lambda n, ctx, summary: ran.append(n))
+    monkeypatch.setattr(cli, "_communes", lambda ctx: None)
+    monkeypatch.setattr(cli.sortie, "ecrire", lambda ctx, started, summary: {"fin": started})
+    Etat(tmp_path, "tourner").save(rattrapage_fini=True, derniere_complete="2026-11-08")
+    ctx = Contexte(
+        root=tmp_path, sortie=tmp_path / "sortie", rules_dir=registre.RULES,
+        today=dt.date(2026, 11, 9), deadline=time.monotonic() + 60,
+    )  # fmt: skip
+    night = dt.datetime(2026, 11, 9, 1, 15, tzinfo=ZoneInfo("Europe/Paris"))
+    old = {"administration": "pp75", "date": "2025-03-01", "statut": "lu", "lecteur": 2}
+    Store(tmp_path, "recueils").add([
+        {"id": "a", "name": "Recueil spécial du 1er mars 2025"} | old,  # no act, no camera
+        {"id": "b", "name": "RAA - n°2025-01165 - captation d'images par drone"} | old,
+        {"id": "c", "name": "Recueil n° 12", "statut": "lu", "lecteur": parse_raa.VERSION},
+    ])  # fmt: skip
+    assert arretes.en_attente(ctx) == 1  # « b » only
+    cli.tourner(ctx, now=night)
+    assert sorted(ran) == ["arretes", "dila"]
+    ran.clear()
+    Store(tmp_path, "recueils").add([{"id": "b", "statut": "lu", "lecteur": parse_raa.VERSION}])
+    cli.tourner(ctx, now=night)
+    assert ran == ["dila"]  # nothing waits: the day's flow only
+
+
 def test_the_smallest_gap_is_between_two_starts_not_two_ends(tmp_path):
     from lacarte_collecte import sortie
 
