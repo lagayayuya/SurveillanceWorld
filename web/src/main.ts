@@ -850,10 +850,10 @@ const selectAt = (point: { x: number; y: number }, how: string) => {
   // Beside the register's panel (its 3D view, registre/vues/carte.ts) a click on the map is the
   // view's: a zone chosen, the map centred on the point, another commune's view, an arrondissement
   // framed. The map opens no sheet then: the sheet is hidden under the register, and an area's
-  // framed itself for the sheet, not the panel (Ju, 09/11: the map shifted).
-  if (document.body.classList.contains("registre-panneau")) return;
-  // A tap on the map is a gesture: no position moves the map after it (locate.ts).
+  // framed itself for the sheet, not the panel (Ju, 09/11: the map shifted). A tap is a gesture
+  // there too: no position moves the map after it (locate.ts).
   locate.release();
+  if (document.body.classList.contains("registre-panneau")) return;
   // Tap targets (20 px) overlap where cameras are dense: the one nearest the finger wins,
   // not the first one found.
   const dist = (f: MapGeoJSONFeature) => {
