@@ -310,3 +310,17 @@
     min-width: 44px;
   }
 }
+
+/* the modal at a 960 to 1279 px window (908 px of content at 1024): the board's minimum widths
+   (240 + 3 × 200 + 150) ran past the card's right edge; narrower minimums, every column inside */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .rg .va .cmpt th {
+    min-width: 150px;
+  }
+  .rg .va .cmpt th.m {
+    min-width: 170px;
+  }
+  .rg .va .cmpt th.add {
+    min-width: 120px;
+  }
+}
