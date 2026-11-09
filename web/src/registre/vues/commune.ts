@@ -1216,7 +1216,7 @@ export class Commune extends Vue<Props, State> {
       };
       // the rank's column holds the window's largest rank (« 1 234 » in a size class of thousands)
       const largeurRang = (rows: { k: string }[], nb: number) =>
-        `--rn: ${String(Math.min(rows.length, Number(debut(rows, nb)) + nb - 1)).length}`;
+        `rank rn${Math.max(2, String(Math.min(rows.length, Number(debut(rows, nb)) + nb - 1)).length)}`;
       const ep = classe(membres);
       const sr = classe(pairs.map(([k]) => k));
       const iE = ep.findIndex((x) => x.k === insee);

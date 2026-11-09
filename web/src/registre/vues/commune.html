@@ -151,12 +151,12 @@
       <div class="row2 wide">
         <sc-if value="{{vois.epci}}">
         <div class="card"><div class="ch-h"><h3 class="k">{{vois.epci.titre}}</h3><div class="seg-ctl" role="group" aria-label="{{vois.epci.titre}}"><sc-for list="{{vois.mesures}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
-          <ol class="rank" start="{{vois.epci.start}}" style="{{vois.epci.rn}}"><sc-for list="{{vois.epci.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span class="rn" aria-hidden="true">{{r.rg}}</span><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
+          <ol class="{{vois.epci.rn}}" start="{{vois.epci.start}}"><sc-for list="{{vois.epci.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span class="rn" aria-hidden="true">{{r.rg}}</span><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
           <p class="note">{{vois.epci.note}}</p></div>
         </sc-if>
         <sc-if value="{{vois.strate}}">
         <div class="card"><h3 class="k">{{vois.strate.titre}}</h3>
-          <ol class="rank" start="{{vois.strate.start}}" style="{{vois.strate.rn}}"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span class="rn" aria-hidden="true">{{r.rg}}</span><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
+          <ol class="{{vois.strate.rn}}" start="{{vois.strate.start}}"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span class="rn" aria-hidden="true">{{r.rg}}</span><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
           <sc-if value="{{vois.strate.note}}"><p class="note">{{t.commune_a.strate_note}}</p></sc-if><a class="btn pri cmp" href="{{vois.comparer}}">{{vois.comparerL}}</a></div>
         </sc-if>
         <sc-if value="{{vois.attente}}"><p class="note" role="status">{{vois.attente}}</p></sc-if>
