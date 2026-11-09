@@ -129,8 +129,9 @@ const natTxt = (ns: Nature[]): string => {
 };
 /** The notices of a call for tenders. */
 const AO_T = /^(avis|resultat|rectificatif)$/;
-/** The CPV codes the « Ce qui est acheté » list shows one by one; beyond, one row says the rest. */
-const CPV_MAX = 6;
+/** The longest objet the lead sentences quote whole (recette 32: Lyon 2026's 137 characters were
+ * cut at 118 in the middle of « dispositifs… »); longer, it is cut after a word. */
+const OBJET_MAX = 240;
 /** What a notice's lots share, in sentences for a step's bubble: how many, the duration and the
  * renewals announced, the price's weight in the award. */
 const lotsTip = (L: LotsAvis | null, dureeDejaDite: boolean): string[] =>
@@ -392,7 +393,10 @@ class Contrat extends Vue<Props, State> {
     // the objet in a sentence: the build's short libellé, else the objet cut at a word near 120
     const objetCourt = casseNormale(
       String(f.libelles[f.affaire.id]?.court ?? F.main.objet ?? f.affaire.titre ?? ""),
-    ).replace(/^(.{118}).+$/s, (_m, d: string) => `${d.replace(/\s+\S*$/, "")}…`);
+    ).replace(
+      new RegExp(`^(.{${OBJET_MAX}}).+$`, "s"),
+      (_m, d: string) => `${d.replace(/\s+\S*$/, "")}…`,
+    );
     // the sentence's full stop, unless the objet ends cut (« … »)
     const point = objetCourt.endsWith("…") ? "" : ".";
     const n1 = entree("combien", t("contrat_a.toc.combien"));
@@ -509,21 +513,22 @@ class Contrat extends Vue<Props, State> {
                     },
                   ]
                 : []),
-              ...(cpv.length > CPV_MAX ? cpv.slice(0, CPV_MAX - 1) : cpv).map((c: Cpv) => ({
-                b: c.code as Rich,
-                s: t(c.contrat ? "contrat_a.quoi_cpv_contrat" : "contrat_a.quoi_cpv"),
-              })),
-              ...(cpv.length > CPV_MAX
-                ? [
-                    {
-                      b: t("contrat_a.quoi_cpv_plus", { n: cpv.length - CPV_MAX + 1 }) as Rich,
-                      s: cpv
-                        .slice(CPV_MAX - 1)
-                        .map((c) => c.code)
-                        .join(", "),
-                    },
-                  ]
-                : []),
+              // recette 32: the build serves the codes, not their labels — the contract's codes in
+              // one row and the notices' in another, « libellés non lus » said once each, not
+              // once per code (Lyon 2026: five rows « code CPV, libellé non lu »)
+              ...([true, false] as const).flatMap((duContrat) => {
+                const cs = cpv.filter((c: Cpv) => c.contrat === duContrat);
+                return cs.length
+                  ? [
+                      {
+                        b: cs.map((c) => c.code).join(", ") as Rich,
+                        s: t(duContrat ? "contrat_a.quoi_cpvs_contrat" : "contrat_a.quoi_cpvs", {
+                          n: cs.length,
+                        }),
+                      },
+                    ]
+                  : [];
+              }),
               ...(lieu
                 ? [
                     {
