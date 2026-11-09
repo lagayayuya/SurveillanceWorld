@@ -517,3 +517,12 @@
   align-items: baseline;
   text-align: left;
 }
+
+/* the intercommunality fiche's detail panel, filled by the row hovered: one height whatever the
+   row (Ju 09/11, § 1.4: nothing changes height on a hover; 250 to 437 px measured on the
+   Lyon and Marseille métropoles' rows) */
+@media (min-width: 960px) {
+  .rg .v-departement .panel {
+    min-height: 460px;
+  }
+}
