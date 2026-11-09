@@ -221,8 +221,8 @@ test("the words: dates, hours, the chart's tooltip, the tickets, the list's titl
   assert.equal(dateTxt(Date.UTC(2025, 10, 1)), `1er${N}nov.${N}2025`);
   assert.equal(heuresTxt(2.5), "2,5 h");
   assert.equal(heuresTxt(1367), `1${N}367 h`);
-  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");
-  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "0 h", n: 0 }), "Semaine du 20 oct. : 0 h");
+  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");
+  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "0 h", n: 0 }), "Semaine du 20 oct. : 0 h");
   assert.equal(t("carte.t_arretes", { n: 50 }), "arrêtés drones");
   assert.equal(t("carte.t_nd", { n: 1 }), "zone non déduite");
   assert.equal(t("carte.liste_t", { n: 0 }), "Aucun créneau sur la période");

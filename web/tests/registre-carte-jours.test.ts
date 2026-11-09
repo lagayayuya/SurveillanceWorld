@@ -113,7 +113,7 @@ test("the calendar's counts: each act once a day, its read days only, a slot eve
   assert.deepEqual([0, 1, 2, 3, 4, 9].map(niveau), [0, 1, 2, 3, 4, 4]);
 });
 
-test("the day's filter: ?jour=, an act on one of its read days, an undated old act everywhere", () => {
+test("the day's filter: ?jour=, an act on one of its read days, an undated old act everywhere", () => {
   assert.deepEqual(jourDe("2026-11-04"), [d("2026-11-04"), d("2026-11-04") + DAY]);
   assert.equal(jourDe("2026-02-30"), null);
   assert.equal(jourDe("4 nov."), null);
@@ -192,7 +192,7 @@ test("the phone's grid: a row per month, the latest on top, a column per day of 
 test("the sentence on the chosen day, as the board writes it, and with today's data", () => {
   const p = phraseJour(d("2026-11-04"), [], [complet], "drone");
   assert.equal(p.date, `Mer.${N}4${N}nov.${N}2026`);
-  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
+  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
   assert.equal(
     phraseJour(d("2026-11-04"), [], [aujourdhui], "drone").reste,
     "1 arrêté · horaires non publiés (justesse en cours de mesure) · lieu pas encore lu",
@@ -243,21 +243,21 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   assert.equal(dateActe("2A-2026-02-30-00001"), null);
   assert.equal(
     secteurPanneau(complet),
-    "Secteur cité : 14e arrondissement, « aux abords des lycées et des universités »",
+    "Secteur cité : 14e arrondissement, « aux abords des lycées et des universités »",
   );
   assert.equal(secteurPanneau(aujourdhui), "");
   // `secteur`, the act's own words (not served in `non_deduits` yet): said when no place is cited,
   // the whole commune still hatched (no shape)
   const ditOu = { ...aujourdhui, secteur: "à Paris  le 30 juin 2026 " };
-  assert.equal(secteurPanneau(ditOu), "Secteur cité : « à Paris le 30 juin 2026 »");
+  assert.equal(secteurPanneau(ditOu), "Secteur cité : « à Paris le 30 juin 2026 »");
   assert.equal(sansLieu([], [ditOu], null, null, {}), true);
   assert.equal(secteurPanneau({ ...complet, secteur: "ailleurs" }), secteurPanneau(complet));
   assert.equal(
     zonePanneau(complet),
-    "Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas",
+    "Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas",
   );
-  assert.equal(zonePanneau(aujourdhui), "Zone : sur un plan annexé à l'arrêté, que le registre ne lit pas");
-  assert.equal(zonePanneau({ ...aujourdhui, zone: "non_lue" }), "Zone : non lue, l'arrêté ne permet pas de la tracer");
+  assert.equal(zonePanneau(aujourdhui), "Zone : sur un plan annexé à l'arrêté, que le registre ne lit pas");
+  assert.equal(zonePanneau({ ...aujourdhui, zone: "non_lue" }), "Zone : non lue, l'arrêté ne permet pas de la tracer");
   assert.equal(camerasTxt(complet), "6, soit 2 par périmètre");
   assert.equal(camerasTxt({ ...complet, n_perimetres: 4 }), "6");
   assert.equal(camerasTxt({ ...complet, cameras: undefined }), "");

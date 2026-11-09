@@ -273,7 +273,7 @@ test("communes: by cameras per 1 000 inhabitants by default, a size, an intercom
   assert.equal(etatDe(DEFS.entreprises, {}).tri, "amt");
 });
 
-test("« Avec arrêtés drones » keeps the départements that have some (v2.4)", () => {
+test("« Avec arrêtés drones » keeps the départements that have some (v2.4)", () => {
   // a département has some when one of its communes has some
   const dep = DEFS.departements;
   const d = appliquer(dep, rangs(C, "departements"), etatDe(dep, { drones: "1" }));
@@ -420,7 +420,7 @@ test("the summary says what the register covers, family by family, each départe
       { familles: ["arretes"], zone: ["69"] },
     ],
   };
-  assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
+  assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
   assert.ok(JSON.stringify(couvertureLiee(cv)).includes("/registre/departement/69"));
   // the decrees outside the collected départements' own, and where they come from
   const hors = {
@@ -440,8 +440,8 @@ test("the summary says what the register covers, family by family, each départe
   };
   assert.equal(
     texte(hors),
-    "Contrats et avis : toute la France. Arrêtés : Rhône. S'y ajoutent 18 arrêtés d'autres " +
-      "départements (Bouches-du-Rhône, Isère, Paris) : d'une préfecture de zone, de la préfecture " +
+    "Contrats et avis : toute la France. Arrêtés : Rhône. S'y ajoutent 18 arrêtés d'autres " +
+      "départements (Bouches-du-Rhône, Isère, Paris) : d'une préfecture de zone, de la préfecture " +
       "d'un autre département ou relevés un à un, hors collecte.",
   );
   assert.ok(JSON.stringify(couvertureLiee(hors)).includes("/registre/departement/38"));
