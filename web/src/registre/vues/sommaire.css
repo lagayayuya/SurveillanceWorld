@@ -244,20 +244,6 @@
   overflow: hidden;
 }
 
-/* a legend's entries, the same box whether read or pressed (Ju 09/11, § 1.6): the swatch and the
-   words in a grid of two columns, the swatch on the words' first baseline, every entry starting at
-   the same left edge when the legend wraps */
-.rg .va.home .sleg {
-  align-items: baseline;
-}
-.rg .va.home .sleg > :has(> .sw) {
-  display: inline-grid;
-  grid-template-columns: 12px auto;
-  column-gap: 6px;
-  align-items: baseline;
-  text-align: left;
-}
-
 /* the map in dark: the board's ramp (Accueil-Registre-A-sombre), the light's order — nothing in
    the ground, then pale pink for little to deep magenta for much, as the 2026-10-06 rule wants
    (« the darker, the more filled ») — its labels light on a dark halo (recette 09: the lighter-
