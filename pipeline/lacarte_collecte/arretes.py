@@ -73,6 +73,7 @@ def search(f: fetch.Fetcher, base: str, aid: str, words: str, a: dt.date, b: dt.
             "page": page,
         }
         d = f.get_json(base + "search", params, cache=False)
+        VIE["pages"] += 1
         total = int(d.get("total") or 0)
         if total >= CAP and b > a:
             mid = a + (b - a) // 2
@@ -127,14 +128,15 @@ def _act_id(admin: str, rid: str, a: parse_raa.Acte) -> str:
 EN_COURS = "en_cours.json"
 # the run's sign of life (cli.tourner writes it every 10 min, and each recueil when it
 # starts): the recueil being read, since when, and how many this process has read
-VIE: dict[str, Any] = {"lus": 0, "recueil": None, "depuis": None}
+VIE: dict[str, Any] = {"lus": 0, "pages": 0, "recueil": None, "depuis": None}
 
 
 def signe_de_vie(ctx: Contexte) -> None:
     """SORTIE/en_cours.json (readable from the Mac: no root): the hour it was written, the
-    recueil being read and since when, the recueils read; a recueil that does not change for
-    30 min says which text holds the run. Its id, administration, day and address only,
-    which the derived files say anyway."""
+    recueil being read and since when, the recueils read, the run's requests (every source)
+    and the search pages read; a run is held only when none of the recueil, the requests and
+    the pages moves for 30 min (2026-11-09: a long search moves the last two only). Its id,
+    administration, day and address only, which the derived files say anyway."""
     import json
 
     from lacarte_collecte.etat import _write
@@ -145,7 +147,14 @@ def signe_de_vie(ctx: Contexte) -> None:
     _write(
         Path(ctx.sortie) / EN_COURS,
         json.dumps(
-            {**(VIE["recueil"] or {}), "depuis": VIE["depuis"], "heure": now, "lus": VIE["lus"]},
+            {
+                **(VIE["recueil"] or {}),
+                "depuis": VIE["depuis"],
+                "heure": now,
+                "lus": VIE["lus"],
+                "requetes": sum(ctx.requetes().values()),
+                "pages": VIE["pages"],
+            },
             ensure_ascii=False,
         ),  # fmt: skip
     )

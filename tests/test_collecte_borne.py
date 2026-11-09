@@ -74,6 +74,7 @@ def test_a_run_killed_before_its_report_heads_the_next_one(tmp_path):
     arretes.signe_de_vie(ctx)
     vie = json.loads((tmp_path / "sortie" / "en_cours.json").read_text("utf-8"))
     assert vie["administration"] == "pref61" and vie["heure"] and "lus" in vie
+    assert vie["requetes"] == 0 and vie["pages"] == arretes.VIE["pages"]  # what moves in a search
     # killed: no « fin »; the next run says it first
     before = cli._precedent(ctx, "2026-11-08T12:15:00+00:00")
     assert before["debut"] == "2026-11-08T06:25:00+00:00"
