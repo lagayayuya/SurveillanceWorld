@@ -134,14 +134,14 @@ class Context:
     def commune_stats(self, insee: str) -> dict[str, Any]:
         if insee not in self._commune_stats:
             st = comptes.commune(self.reg, insee)
-            st["couverture_actes"] = self.couverture_actes(insee, st)
+            dep = (self.reg.communes.get(insee) or {}).get("dep") or ""
+            st["couverture_actes"] = self.couverture_actes(dep, st)
             self._commune_stats[insee] = st
         return self._commune_stats[insee]
 
-    def couverture_actes(self, insee: str, st: dict[str, Any]) -> dict[str, str]:
-        """{cam, dr}: « lu », « partiel » or « non_lu »
-        (rule:registre_couverture@1:actes_commune)."""
-        dep = (self.reg.communes.get(insee) or {}).get("dep") or ""
+    def couverture_actes(self, dep: str, st: dict[str, Any]) -> dict[str, str]:
+        """{cam, dr}: « lu », « partiel » or « non_lu » for a commune of `dep` whose figures
+        are `st` ({} for one without a document) (rule:registre_couverture@1:actes_commune)."""
         if not hasattr(self, "_sans_commune"):
             self._sans_commune: dict[str, dict[str, int]] = {}
         if dep not in self._sans_commune:

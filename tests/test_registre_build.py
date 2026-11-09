@@ -391,3 +391,5 @@ def test_every_commune_says_whether_its_camera_and_drone_acts_are_read(built):
     assert f["stats"]["communes"][MIONS]["couverture_actes"] == rows[MIONS]["couverture_actes"]
     d = read(built, "departement/69.json")["stats"]["communes"]
     assert d[MIONS]["couverture_actes"] == rows[MIONS]["couverture_actes"]
+    deps = read(built, "listes.json")["lignes"]["departements"]
+    assert all(set(r["couverture_actes_communes"].values()) <= states for r in deps.values())
