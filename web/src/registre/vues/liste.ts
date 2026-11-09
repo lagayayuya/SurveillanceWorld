@@ -65,6 +65,7 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import "./autorisations.css";
 import "./liste.css";
 import template from "./liste.html?raw";
+import { vraiDepartement } from "./listes-outils.ts";
 
 /** The rows shown at first, then added by « Voir … de plus » (a list of names: by a hundred; a
  * list of documents: a page of the API at a time). */
@@ -152,6 +153,13 @@ function nomValeur(f: Filtre, v: string, C: Corpus | null, P: Pick<Props, "couve
   return motValeur(f, v);
 }
 
+/** A list of names' rows; the départements' the real ones only (listes-outils.ts): the build's
+ * other keys (« 1 », « 20A », « 97 »…) left out, as their count. */
+function lignes(C: Corpus, liste: Liste): Rang[] {
+  const r = rangs(C, liste);
+  return liste === "departements" ? r.filter((x) => vraiDepartement(x.id)) : r;
+}
+
 export class ListeVue extends Vue<Props, State> {
   private def: Def = DEFS[this.props.liste];
 
@@ -169,7 +177,7 @@ export class ListeVue extends Vue<Props, State> {
     // reopened on a row its default filters leave out (Lyon among the communes of 20 000 to
     // 100 000): the defaults lifted
     if (ligne && p.C && DEFS[p.liste].filtresDefaut) {
-      const vu = appliquer(DEFS[p.liste], rangs(p.C, p.liste), e).list.some((x) => x.id === ligne);
+      const vu = appliquer(DEFS[p.liste], lignes(p.C, p.liste), e).list.some((x) => x.id === ligne);
       if (!vu) {
         const f = { ...e.f };
         for (const k of Object.keys(DEFS[p.liste].filtresDefaut ?? {}) as Filtre[])
@@ -180,7 +188,7 @@ export class ListeVue extends Vue<Props, State> {
     // a list of names reopened on a row: as many rows as it takes to show it
     let lim = PAS;
     if (ligne && p.C) {
-      const i = appliquer(DEFS[p.liste], rangs(p.C, p.liste), e).list.findIndex(
+      const i = appliquer(DEFS[p.liste], lignes(p.C, p.liste), e).list.findIndex(
         (x) => x.id === ligne,
       );
       if (i >= PAS) lim = PAS + Math.ceil((i + 1 - PAS) / PAS_NOMS) * PAS_NOMS;
@@ -514,7 +522,7 @@ export class ListeVue extends Vue<Props, State> {
     const k = this.type();
     // a list of names: its rows here; a list of documents: the pages the API gave
     const docs = !!def.kind;
-    const all = C ? rangs(C, liste) : [];
+    const all = C ? lignes(C, liste) : [];
     const { list, comptes: cpt } = docs
       ? { list: S.docs?.rows ?? [], comptes: S.docs?.comptes ?? {} }
       : appliquer(def, all, e);
@@ -685,7 +693,8 @@ export class ListeVue extends Vue<Props, State> {
           ? ` ${t("liste.a.note.entreprises")}`
           : "";
     const titreA = t(`liste.a.titre.${liste.replace(/-/g, "_")}`);
-    const nl = n.listes[liste];
+    // the départements counted here, not the build's figure (it counts its keys that are none)
+    const nl = liste === "departements" ? all.length : n.listes[liste];
     const lead: Rich =
       liste === "communes" || liste === "entreprises"
         ? [{ strong: t(`liste.a.lead_n.${liste}`, { n: fr(nl) }) }, t(`liste.a.lead.${liste}`)]

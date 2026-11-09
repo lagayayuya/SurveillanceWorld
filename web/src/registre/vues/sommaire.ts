@@ -54,6 +54,7 @@ import {
   recentes,
 } from "./accueil-outils.ts";
 import "./sommaire.css";
+import { vraiDepartement } from "./listes-outils.ts";
 import template from "./sommaire.html?raw";
 
 /** geo/departements.json (the build's, IGN Admin Express COG Carto): the métropole drawn in pixels
@@ -677,6 +678,7 @@ class Sommaire extends Vue<Props, State> {
       aucun: pret && res.length === 0 ? t("sommaire.aucun_resultat", { q: S.q.trim() }) : "",
       indispo: S.indispo,
       depsIndispo: Object.keys(cv.departements)
+        .filter(vraiDepartement)
         .sort()
         .map((code) => lienDepartement(code, nomDep({ couverture: cv }, code), true)),
       figs,

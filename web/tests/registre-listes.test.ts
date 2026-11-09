@@ -481,3 +481,11 @@ test("a busy search (503) is asked once again after its Retry-After (v2.3)", asy
   assert.equal(n, 2);
   assert.equal(got.total, 0);
 });
+
+test("a list of départements holds the real ones only (recette 04)", async () => {
+  const { vraiDepartement } = await import("../src/registre/vues/listes-outils.ts");
+  for (const d of ["01", "13", "2A", "2B", "69", "75", "95", "971", "976", "978", "987", "988"])
+    assert.ok(vraiDepartement(d), d);
+  for (const d of ["1", "6", "9", "20", "20A", "20B", "96", "97", "98", "99", "979", "990", ""])
+    assert.ok(!vraiDepartement(d), d);
+});
