@@ -682,3 +682,4 @@ One line per decision: date — decision — reason.
 - 2026-11-09 — An act whose exact place is not read hatches the whole commune; the label on its edge and its dotted line go, the legend says it — Ju 2026-11-09.
 - 2026-11-09 — Beside the 3D panel a click on the map is the view's: it centres the commune in the part the panel leaves free, opens another commune's view, or frames an arrondissement of Paris, Lyon or Marseille; the site's map no longer opens a hidden fiche there.
 - 2026-11-09 — The 3D view's calendar shows twelve months, « Toute la période » the three years; its tab follows the door: « Ouvrir la vue 3D » and « Vue 3D ↗ » open Fiche, the day doors open Drones — Ju 2026-11-09.
+- 2026-11-09 — Chemin entre deux names the build's counts of companies and buyers (listes.json `comptes.listes`, the home's), the collectivities said apart — one figure per thing (recette 31).
