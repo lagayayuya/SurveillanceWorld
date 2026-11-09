@@ -11,6 +11,7 @@
 import type { MapMouseEvent, Map as MlMap } from "maplibre-gl";
 import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
+import { depNom } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
 import { load } from "../donnees.ts";
 import {
@@ -39,7 +40,7 @@ import { signaler } from "../signaler.ts";
 import { coupeMots, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
-import { avantVol, type Publication } from "./accueil-outils.ts";
+import { avantVol, ordreDeps, type Publication } from "./accueil-outils.ts";
 import template from "./carte.html?raw";
 import { etatDrones, fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
@@ -1447,6 +1448,11 @@ class CarteDrones extends Vue<Props, State> {
     const pubC = (d.f as { drones?: { publication?: Publication } }).drones?.publication;
     const vC = avantVol(pubC);
     const vF = avantVol(S.pubFrance);
+    // the départements France's share counts (index.json drones.publication.deps), named as the
+    // home names them, the most acts first (recette 11)
+    const depsLus = new Intl.ListFormat("fr", { type: "conjunction" }).format(
+      ordreDeps(vF.deps).map((x) => depNom(x)),
+    );
     // recette 12: a commune without any act says « aucun » where its decrees are read, « non lu »
     // where they are not — never « 0 arrêté », « dont 0 avec horaires » or « 0 zone tracée »
     const actesTous =
@@ -1602,10 +1608,12 @@ class CarteDrones extends Vue<Props, State> {
             : {
                 l: avec(
                   sansActe ? t("carte_a.d_avant_aucun") : "",
-                  t("carte_a.d_france", { p: vF.parts[0].pct }),
+                  t("carte_a.d_france", { n: vF.deps.length, p: vF.parts[0].pct }),
                 ),
               }),
-          bl: t("carte_a.d_avant_b"),
+          bl: vF.nonLu
+            ? t("carte_a.d_avant_b")
+            : `${t("carte_a.d_avant_b")}\n${t("carte_a.d_france_b", { deps: depsLus })}`,
         },
         {
           k: t("carte_a.d_zones"),
@@ -1625,12 +1633,12 @@ class CarteDrones extends Vue<Props, State> {
       // a helicopter's acts, apart (A, 09/11): never in the figures above, which count drones
       helico: helicopteres(d) ? t("carte_a.helico", { n: helicopteres(d) }) : "",
       avenir: avenir.length ? avenir : null,
-      vol: [barre(nom, vC, sansActe), barre(t("carte_a.france"), vF)],
+      vol: [barre(nom, vC, sansActe), barre(t("carte_a.france", { n: vF.deps.length }), vF)],
       volNote: sansActe
         ? t("carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
         : vC.nonLu
           ? t("carte_a.vol_note_nl")
-          : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total) }),
+          : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total), deps: depsLus }),
     };
 
     return {
