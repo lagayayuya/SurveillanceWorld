@@ -300,6 +300,8 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  /* the clamp's own ellipsis; a space hanging at a right-aligned line's end stays inside */
+  text-overflow: ellipsis;
 }
 .rg .va.ent .top li > span.tn {
   justify-self: start;
