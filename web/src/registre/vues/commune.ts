@@ -49,7 +49,7 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
-import { lecture } from "./comparer-a.ts";
+import { couvertureActes, lecture, type RowActes } from "./comparer-a.ts";
 import { exportRows } from "./documents.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
@@ -348,13 +348,21 @@ export class Commune extends Vue<Props, State> {
     const s = ess(d);
     const arr = lastArretes(d.all);
     const lus = d.arretes.collectes;
-    // which of its decrees are read (comparer-a.ts `lecture`, the 3D panel's rule): its
-    // département collected, the kind above its threshold, and for the cameras at least one
-    // decree saying its cameras; elsewhere « non lu », never 0 (Ju 09/11)
-    const lu = lecture(f.couverture.departement, {
-      cam: arr.filter((e) => e.t === "arrete" && !e.copie && typeof e.cameras === "number").length,
-    });
     const X = S.X;
+    // which of its decrees are read: the build's reading of each family (couverture_actes, rule
+    // registre_couverture@1:actes_commune), « non lu », never 0, where it is not (Ju 09/11,
+    // recette 01-02); the counts are the build's (its row, its file's stats), never its documents
+    const propre = f.stats.communes[insee] as (RowActes & { arr?: number }) | undefined;
+    const couv = couvertureActes({
+      insee,
+      dep: c.dep,
+      etat: f.couverture.departement.etat,
+      X,
+      propre,
+      depTotal: f.stats.dep?.depStats,
+    });
+    const lu = lecture(couv);
+    const nDr = X?.lignes.communes[insee]?.dr ?? propre?.dr ?? 0;
     const st = strate(pop);
     const pairs = X
       ? Object.entries(X.lignes.communes).filter(
@@ -996,12 +1004,21 @@ export class Commune extends Vue<Props, State> {
       const mx = Math.max(1, ...motifs.values(), sansMotif);
       const vol = avantVol((f as { drones?: { publication?: Publication } }).drones?.publication);
       const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
+      // the drone acts as every page counts them (listes.json `dr`: the flights' acts, an act that
+      // ends one left out; recette 01), the first year they were read
+      const anDr =
+        d.all
+          .filter((e) => e.t === "arrete_drone")
+          .map((e) => (e.date ?? "").slice(0, 4))
+          .filter(Boolean)
+          .sort()[0] ?? depuis;
       dr = {
         n: drN,
         ans: [
-          t("commune_a.dr_ans_a", { nom }),
-          { strong: t("commune_a.lead_dr", { n: nj }) },
-          t("commune_a.dr_ans_b"),
+          T("commune_a.dr_ans_a", { nom }),
+          { strong: T("commune_a.lead_dr", { n: nj }) },
+          T("commune_a.dr_ans_b"),
+          ...(lu.dr && nDr ? [" ", T("commune_a.dr_ans_actes", { n: nDr, y: anDr })] : []),
           ...(nAuj
             ? [
                 " ",
@@ -1098,7 +1115,15 @@ export class Commune extends Vue<Props, State> {
                 pick: (() => this.setState({ volF: S.volF === x.k ? "" : x.k })) as Handler,
               })),
               liste: S.volF ? volListe(d.all, S.volF, insee, jpa) : null,
-              note: t("commune_a.publies_note", { n: fr(vol.total), p: vol.parts[2]?.pct ?? 0 }),
+              // the acts whose day of flight and recueil are read, among the commune's drone acts
+              note:
+                lu.dr && nDr > vol.total
+                  ? T("commune_a.publies_note_sur", {
+                      n: fr(vol.total),
+                      t: fr(nDr),
+                      p: vol.parts[2]?.pct ?? 0,
+                    })
+                  : T("commune_a.publies_note", { n: fr(vol.total), p: vol.parts[2]?.pct ?? 0 }),
             },
       };
     }

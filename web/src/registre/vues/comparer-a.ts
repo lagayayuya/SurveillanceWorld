@@ -48,24 +48,85 @@ export function classement(vals: (number | null)[]): number[] {
     .map((x) => x.i);
 }
 
-/** Which of a commune's decrees are read (Ju 09/11: « non lu » wherever they are not, never 0),
- * from its département's coverage (couverture.json) and its row of listes.json. The drone decrees:
- * its département collected and the kind above its threshold (`sous_le_seuil` lists a kind whose
- * acts are listed without a field read). The camera decrees, as the 3D view's panel reads them
- * (carte-fiche.ts): the same, and at least one decree counted for the commune; a collected
- * département with none here (Paris: no video decree served) is « non lu », not « 0 ». */
-export type Lecture = { cam: boolean; dr: boolean };
-export function lecture(
-  dep: { etat?: string; sous_le_seuil?: string[] } | undefined,
-  row: { cam?: number } | undefined,
-): Lecture {
-  const col = dep?.etat === "collecte";
-  const seuil = dep?.sous_le_seuil ?? [];
+/** A commune's reading of the prefectoral acts, per family, the cameras' (`cam`) and the drones'
+ * (`dr`), as the build serves it (`couverture_actes`, rule:registre_couverture@1:actes_commune):
+ * « non_lu » when its département's acts are not collected, or when its département has acts of
+ * the family that name no commune and the commune has none (Paris: 222 camera acts of the 75, none
+ * placed in Paris); « partiel » when the commune has some and others are placed nowhere; « lu »
+ * otherwise, a 0 then meaning none. One rule for every page: « non lu », never 0 (Ju 09/11). */
+export type EtatActes = "lu" | "partiel" | "non_lu";
+export type CouvActes = { cam: EtatActes; dr: EtatActes };
+export function etatActes(collecte: boolean, sansCommune: number, n: number): EtatActes {
+  if (!collecte) return "non_lu";
+  if (sansCommune > 0) return n > 0 ? "partiel" : "non_lu";
+  return "lu";
+}
+
+/** A row of a commune's figures that may carry the build's reading (listes.json rows, a commune's
+ * or a département's `stats.communes`; served from 580f7cf on). */
+export type RowActes = { cam?: number; dr?: number; couverture_actes?: Partial<CouvActes> };
+type ListesActes = {
+  lignes: {
+    communes: Record<string, RowActes>;
+    departements: Record<
+      string,
+      { cam?: number; dr?: number; couverture_actes_communes?: Partial<CouvActes> }
+    >;
+  };
+  dico: { communes: Record<string, { dep?: string } | undefined> };
+};
+const servi = (c: Partial<CouvActes> | undefined): CouvActes | null =>
+  c?.cam && c.dr ? { cam: c.cam, dr: c.dr } : null;
+
+/** The acts of each family a département's file counts but places in no commune: its count less
+ * its acts placed in a commune, each once (the build's `depStats` and `uniq`). */
+export function horsCommune(
+  depStats: Record<string, number> | undefined,
+  uniq: Record<string, number> | undefined,
+): { cam: number; dr: number } | undefined {
+  if (!depStats || !uniq) return undefined;
   return {
-    cam: col && !seuil.includes("videoprotection") && (row?.cam ?? 0) > 0,
-    dr: col && !seuil.includes("drone"),
+    cam: Math.max(0, (depStats.cam ?? 0) - (uniq.cam ?? 0)),
+    dr: Math.max(0, (depStats.dr ?? 0) - (uniq.dr ?? 0)),
   };
 }
+
+/** A commune's reading: the build's when served (its row, else its own file's figures, else, for a
+ * commune without a row, its département's row). Until the build serves it, one rule every page
+ * can apply with what it has (the commune's count and its département's): a count above 0 is
+ * shown; a 0 is « lu » only when its collected département has no act of the family at all, since
+ * every département with acts has some placed in no commune (measured on the build of 09/11: 100
+ * of the 100 collected départements with camera acts, as with drone acts) and the 0 may hide them;
+ * « non lu » otherwise. */
+export function couvertureActes(o: {
+  insee: string;
+  dep: string;
+  etat: string | undefined;
+  X: ListesActes | null;
+  propre?: RowActes;
+  /** the département's own counts (its file's `depStats`), else its row of listes.json */
+  depTotal?: { cam?: number; dr?: number };
+}): CouvActes {
+  const row = o.X?.lignes.communes[o.insee];
+  const s =
+    servi(row?.couverture_actes) ??
+    servi(o.propre?.couverture_actes) ??
+    (o.X && !row ? servi(o.X.lignes.departements[o.dep]?.couverture_actes_communes) : null);
+  if (s) return s;
+  const n = row ?? o.propre ?? {};
+  const tot = o.depTotal ?? o.X?.lignes.departements[o.dep];
+  const col = o.etat === "collecte";
+  // without the département's count, its acts placed nowhere are unknown: a 0 is not read
+  const k = (f: "cam" | "dr") => etatActes(col, tot ? (tot[f] ?? 0) : 1, n[f] ?? 0);
+  return { cam: k("cam"), dr: k("dr") };
+}
+
+/** Which counts a page shows: the read ones (« lu », « partiel »); the others say « non lu ». */
+export type Lecture = { cam: boolean; dr: boolean };
+export const lecture = (c: CouvActes): Lecture => ({
+  cam: c.cam !== "non_lu",
+  dr: c.dr !== "non_lu",
+});
 
 /** A commune's figures, all from its row of listes.json: the cameras on the map and per 1 000
  * inhabitants, the camera decrees, the public money the commune engaged itself and per

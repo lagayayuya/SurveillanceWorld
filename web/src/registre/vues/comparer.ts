@@ -27,6 +27,7 @@ import { type BaseState, type Partage, Vue } from "../vue.ts";
 import {
   barres,
   classement,
+  couvertureActes,
   csvComparaison,
   depsCommuns,
   type FiguresCommune,
@@ -294,10 +295,14 @@ export class Comparer extends Vue<Props, State> {
 
   private onQ: Handler = (ev) => this.setState({ q: ev.value });
 
-  /** Which of its decrees are read (comparer-a.ts `lecture`): « non lu », never 0, elsewhere. */
+  /** Which of its decrees are read (comparer-a.ts `couvertureActes`, the build's rule): « non
+   * lu », never 0, elsewhere. */
   private lu(insee: string): Lecture {
-    const dep = this.props.X.dico.communes[insee]?.dep ?? "";
-    return lecture(this.props.couv.departements[dep], this.props.X.lignes.communes[insee]);
+    const X = this.props.X;
+    const dep = X.dico.communes[insee]?.dep ?? "";
+    return lecture(
+      couvertureActes({ insee, dep, etat: this.props.couv.departements[dep]?.etat, X }),
+    );
   }
   private figC(insee: string): FiguresCommune {
     const X = this.props.X;

@@ -62,7 +62,7 @@ import {
   total,
   vendeurs,
 } from "./acheteur-outils.ts";
-import { lecture } from "./comparer-a.ts";
+import { type EtatActes, etatActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
 import "./departement.css";
 import "./departement-a.css";
 import { documentHref } from "../routes.ts";
@@ -179,6 +179,23 @@ const CLS_PAYEUR: Record<Payeur, string> = {
   departement: "c-osm",
   autres: "c-autres2",
 };
+
+/** A commune's (or an intercommunality's) reading of the acts: the build's when served on its
+ * figures, else the rule every page applies until then (comparer-a.ts `couvertureActes`: a count
+ * above 0 shown, a 0 read only where the département has no act of the family). */
+function couvC(
+  f: FichierDepartement,
+  collecte: boolean,
+  c: { insee?: string; aut: number; dr?: number },
+): { cam: EtatActes; dr: EtatActes } {
+  const servi = (c.insee ? (f.stats.communes[c.insee] as RowActes | undefined) : undefined)
+    ?.couverture_actes;
+  const tot = f.stats.depStats;
+  return {
+    cam: servi?.cam ?? etatActes(collecte, tot.cam ?? 0, c.aut),
+    dr: servi?.dr ?? etatActes(collecte, tot.dr ?? 0, c.dr ?? 0),
+  };
+}
 
 class DepartementA extends Vue<PropsA, StateA> {
   private fini = false;
@@ -323,9 +340,12 @@ class DepartementA extends Vue<PropsA, StateA> {
     const coms = communes(f);
     const cv = this.props.couverture;
     const lu = f.couverture.etat === "collecte";
-    // a commune's decrees read (comparer-a.ts `lecture`): « non lu », never 0, where its kind is
-    // below its threshold or none is counted for it (Ju 09/11)
-    const luC = (c: { aut: number }) => lecture(f.couverture, { cam: c.aut });
+    // a commune's decrees read: the build's reading (couverture_actes, rule
+    // registre_couverture@1:actes_commune), else the same rule on this file's acts placed in no
+    // commune (depStats less uniq); « non lu », never 0 (Ju 09/11, recette 01)
+    const hors = horsCommune(st, f.stats.uniq) ?? { cam: 0, dr: 0 };
+    const luC = (c: { insee?: string; aut: number; dr?: number }) => lecture(couvC(f, lu, c));
+    const places = { cam: f.stats.uniq?.cam ?? 0, dr: f.stats.uniq?.dr ?? 0 };
     const an = (k: "con" | "cam") =>
       Object.keys(f.stats.annees)
         .filter((y) => (f.stats.annees[y]?.[k] ?? 0) > 0)
@@ -445,7 +465,14 @@ class DepartementA extends Vue<PropsA, StateA> {
         k: t("departement_a.fig.cam"),
         v: lu ? fr(st.cam) : t("liste.non_lu"),
         u: "",
-        l: lu && anA ? t("departement_a.fig.depuis", { y: anA }) : "",
+        // the acts the département counts and those placed in a commune: one truth on both pages
+        // (recette 01: Paris's 222 camera acts name no commune, the fiche of Paris says « non lu »)
+        l:
+          lu && anA
+            ? hors.cam
+              ? t("departement_a.fig.cam_places", { y: anA, p: places.cam })
+              : t("departement_a.fig.depuis", { y: anA })
+            : "",
         rk: rk("cam", true),
         tip: t("departement_a.fig.cam_tip", { y: anA }),
         href: "#autorise",
@@ -455,7 +482,11 @@ class DepartementA extends Vue<PropsA, StateA> {
         k: t("departement_a.fig.dr"),
         v: lu ? fr(st.dr) : t("liste.non_lu"),
         u: lu ? t("departement_a.fig.arretes", { n: st.dr }) : "",
-        l: lu ? t("departement_a.fig.dr_l", { n: drComs }) : "",
+        l: lu
+          ? hors.dr
+            ? t("departement_a.fig.dr_places", { p: places.dr, n: drComs })
+            : t("departement_a.fig.dr_l", { n: drComs })
+          : "",
         rk: rk("dr", false),
         tip: t("departement_a.fig.dr_tip", { y: anA }),
         href: "#autorise",
@@ -929,13 +960,17 @@ class DepartementA extends Vue<PropsA, StateA> {
         if (st.cam)
           ansA.push(
             { strong: t("departement_a.lead_cam", { n: st.cam }) },
-            t("departement_a.aut_ans_cam", { y: anA }),
+            hors.cam
+              ? t("departement_a.aut_ans_cam_places", { y: anA, p: places.cam })
+              : t("departement_a.aut_ans_cam", { y: anA }),
           );
         if (st.dr) {
           ansA.push(
             ...(st.cam ? [" "] : []),
             { strong: t("departement_a.lead_cam", { n: st.dr }) },
-            t("departement_a.aut_ans_dr", { n: drComs }),
+            hors.dr
+              ? t("departement_a.aut_ans_dr_places", { p: places.dr, n: drComs })
+              : t("departement_a.aut_ans_dr", { n: drComs }),
           );
           if (parDr[0] && drComs > 1)
             ansA.push(
@@ -1166,8 +1201,8 @@ class DepartementA extends Vue<PropsA, StateA> {
           pop: c.pop ? fr(c.pop) : "—",
           con: fr(c.con),
           montant: mt > 0 ? t("departement_a.euros", { n: fr(mt) }) : "—",
-          cam: luC(c).cam && c.aut ? fr(c.aut) : "—",
-          dr: luC(c).dr && c.dr ? fr(c.dr) : "—",
+          cam: !luC(c).cam ? t("liste.non_lu") : c.aut ? fr(c.aut) : "—",
+          dr: !luC(c).dr ? t("liste.non_lu") : c.dr ? fr(c.dr) : "—",
           carte: c.cams == null ? "—" : fr(c.cams),
         };
       }),
@@ -1387,8 +1422,10 @@ class Intercommunalite extends Vue<Props, State> {
     const DET: Record<string, Detail> = {};
     const v = (n: number) => (col ? fr(n) : "—");
     // a row's decrees as `lecture` reads them: its camera decrees, its drone decrees
-    const vA = (o: { aut: number }) => (lecture(couv, { cam: o.aut }).cam ? fr(o.aut) : "—");
-    const vD = (o: { dr: number }) => (lecture(couv, {}).dr ? fr(o.dr) : "—");
+    const vA = (o: { insee?: string; aut: number; dr: number }) =>
+      lecture(couvC(f, col, o)).cam ? fr(o.aut) : "—";
+    const vD = (o: { insee?: string; aut: number; dr: number }) =>
+      lecture(couvC(f, col, o)).dr ? fr(o.dr) : "—";
     const carte = (n: number | null) => (n == null ? "—" : fr(n));
     const wide = large();
     const nom = ep ? ep.nom : N.nom;
