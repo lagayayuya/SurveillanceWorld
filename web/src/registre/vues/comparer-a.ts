@@ -48,11 +48,30 @@ export function classement(vals: (number | null)[]): number[] {
     .map((x) => x.i);
 }
 
+/** Which of a commune's decrees are read (Ju 09/11: « non lu » wherever they are not, never 0),
+ * from its département's coverage (couverture.json) and its row of listes.json. The drone decrees:
+ * its département collected and the kind above its threshold (`sous_le_seuil` lists a kind whose
+ * acts are listed without a field read). The camera decrees, as the 3D view's panel reads them
+ * (carte-fiche.ts): the same, and at least one decree counted for the commune; a collected
+ * département with none here (Paris: no video decree served) is « non lu », not « 0 ». */
+export type Lecture = { cam: boolean; dr: boolean };
+export function lecture(
+  dep: { etat?: string; sous_le_seuil?: string[] } | undefined,
+  row: { cam?: number } | undefined,
+): Lecture {
+  const col = dep?.etat === "collecte";
+  const seuil = dep?.sous_le_seuil ?? [];
+  return {
+    cam: col && !seuil.includes("videoprotection") && (row?.cam ?? 0) > 0,
+    dr: col && !seuil.includes("drone"),
+  };
+}
+
 /** A commune's figures, all from its row of listes.json: the cameras on the map and per 1 000
  * inhabitants, the camera decrees, the public money the commune engaged itself and per
  * inhabitant, the contracts of every buyer, the drone decrees, the documents. The decrees are null
- * (« non lu ») where its département's decrees are not read; a figure divided by an unknown
- * population is null; no contract in its name gives 0 € and no amount per inhabitant. */
+ * (« non lu ») where they are not read (`lecture`); a figure divided by an unknown population is
+ * null; no contract in its name gives 0 € and no amount per inhabitant. */
 export type FiguresCommune = {
   carte: number | null;
   p1000: number | null;
@@ -67,7 +86,7 @@ export const LIGNES_COMMUNE = ["carte", "p1000", "cam", "amt", "eph", "con", "dr
 export function figuresCommune(
   row: Listes["lignes"]["communes"][string] | undefined,
   pop: number | undefined,
-  lu: boolean,
+  lu: Lecture,
 ): FiguresCommune {
   const carte = row?.carte ?? null;
   const p = pop ?? 0;
@@ -75,11 +94,11 @@ export function figuresCommune(
   return {
     carte,
     p1000: carte !== null && p > 0 ? (1000 * carte) / p : null,
-    cam: lu ? (row?.cam ?? 0) : null,
+    cam: lu.cam ? (row?.cam ?? 0) : null,
     amt,
     eph: amt > 0 && p > 0 ? amt / p : null,
     con: row?.con ?? 0,
-    dr: lu ? (row?.dr ?? 0) : null,
+    dr: lu.dr ? (row?.dr ?? 0) : null,
     docs: row?.docs ?? 0,
   };
 }

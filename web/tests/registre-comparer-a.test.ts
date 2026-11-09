@@ -8,6 +8,7 @@ import {
   csvComparaison,
   depsCommuns,
   figuresCommune,
+  lecture,
   figuresEntreprise,
   hauts,
   idsDe,
@@ -48,16 +49,35 @@ test("the lead's order: highest first, no figure left out, ties in the address's
 
 test("a commune's figures from its row: per 1 000 inhabitants, per inhabitant, unread decrees", () => {
   const row = { docs: 95, con: 7, cam: 57, dr: 14, carte: 651, amt: 812000, jv: 26 };
-  const f = figuresCommune(row, 163684, true);
+  const lus = { cam: true, dr: true };
+  const f = figuresCommune(row, 163684, lus);
   assert.equal(f.p1000?.toFixed(1), "4.0");
   assert.equal(Math.round(f.eph ?? 0), 5);
   assert.deepEqual([f.carte, f.cam, f.amt, f.con, f.dr, f.docs], [651, 57, 812000, 7, 14, 95]);
   // decrees not read in its département: « non lu », never 0
-  const g = figuresCommune(row, 163684, false);
+  const g = figuresCommune(row, 163684, { cam: false, dr: false });
   assert.deepEqual([g.cam, g.dr], [null, null]);
+  // one kind read, the other not: each its own
+  const p = figuresCommune(row, 163684, { cam: false, dr: true });
+  assert.deepEqual([p.cam, p.dr], [null, 14]);
   // no contract in its name: 0 €, no amount per inhabitant; no population: nothing per head
-  const h = figuresCommune({ ...row, amt: 0 }, 0, true);
+  const h = figuresCommune({ ...row, amt: 0 }, 0, lus);
   assert.deepEqual([h.amt, h.eph, h.p1000], [0, null, null]);
+});
+
+test("which decrees are read: « non lu » wherever the coverage is not, never 0 (Ju 09/11)", () => {
+  // Paris: collected, video above its threshold, but no camera decree served for the commune
+  const paris = { etat: "collecte", sous_le_seuil: ["cameras_pietons"] };
+  assert.deepEqual(lecture(paris, { cam: 0 }), { cam: false, dr: true });
+  // Lyon (the pilot's Rhône, no threshold listed): both read
+  assert.deepEqual(lecture({ etat: "collecte" }, { cam: 447 }), { cam: true, dr: true });
+  // Vichy, Saint-Martin-d'Hères: collected, video and drones below their threshold
+  const seuil = { etat: "collecte", sous_le_seuil: ["videoprotection", "drone", "cameras_pietons", "vsa"] };
+  assert.deepEqual(lecture(seuil, { cam: 0 }), { cam: false, dr: false });
+  assert.deepEqual(lecture(seuil, { cam: 3 }), { cam: false, dr: false });
+  // a département not collected, or unknown: nothing read
+  assert.deepEqual(lecture({ etat: "non_collecte" }, { cam: 5 }), { cam: false, dr: false });
+  assert.deepEqual(lecture(undefined, undefined), { cam: false, dr: false });
 });
 
 test("a company's figures from its row, the départements where they all have a client", () => {

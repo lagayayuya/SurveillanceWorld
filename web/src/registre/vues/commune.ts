@@ -47,6 +47,7 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
+import { lecture } from "./comparer-a.ts";
 import { exportRows } from "./documents.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
@@ -341,6 +342,12 @@ export class Commune extends Vue<Props, State> {
     const s = ess(d);
     const arr = lastArretes(d.all);
     const lus = d.arretes.collectes;
+    // which of its decrees are read (comparer-a.ts `lecture`, the 3D panel's rule): its
+    // département collected, the kind above its threshold, and for the cameras at least one
+    // decree saying its cameras; elsewhere « non lu », never 0 (Ju 09/11)
+    const lu = lecture(f.couverture.departement, {
+      cam: arr.filter((e) => e.t === "arrete" && !e.copie && typeof e.cameras === "number").length,
+    });
     const X = S.X;
     const st = strate(pop);
     const pairs = X
@@ -453,11 +460,11 @@ export class Commune extends Vue<Props, State> {
         href: "#argent",
       },
       {
-        cls: !lus && !nj ? "fig nl" : "fig",
+        cls: !lu.dr && !nj ? "fig nl" : "fig",
         k: t("commune_a.fig.drones"),
-        v: !lus && !nj ? t("liste.non_lu") : fr(nj),
-        u: !lus && !nj ? "" : t("commune_a.fig.jours"),
-        l: t("commune_a.fig.drones_l"),
+        v: !lu.dr && !nj ? t("liste.non_lu") : fr(nj),
+        u: !lu.dr && !nj ? "" : t("commune_a.fig.jours"),
+        l: !lu.dr && !nj ? t("commune_a.fig.drones_nl") : t("commune_a.fig.drones_l"),
         dots: dots(
           rJv,
           (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
@@ -534,7 +541,7 @@ export class Commune extends Vue<Props, State> {
     const cam = {
       n: camN,
       ans: [
-        ...(lus && parts.total
+        ...(lu.cam && parts.total
           ? [
               t("commune_a.cam_ans_a", { y: depuis }),
               { strong: t("commune_a.cam_ans_n", { n: fr(parts.total) }) },
@@ -545,7 +552,7 @@ export class Commune extends Vue<Props, State> {
       ] as RichItem[],
       kAut: t("commune_a.cam_k", { y: depuis }),
       parts:
-        lus && parts.total
+        lu.cam && parts.total
           ? (
               [
                 ["mairie", "c-ville", parts.mairie],
@@ -565,7 +572,8 @@ export class Commune extends Vue<Props, State> {
                 pick: (() => this.versDocs({ onglet: "aut", part: k })) as Handler,
               }))
           : null,
-      nonLu: lus ? (parts.total ? "" : t("commune_a.cam_aucun")) : t("commune_a.cam_non_lu"),
+      nonLu:
+        lu.cam && parts.total ? "" : lus ? t("commune_a.cam_non_lu_c") : t("commune_a.cam_non_lu"),
       osm: carteN ? fr(carteN) : "",
       osmNon: carteN === 0,
       carteHref: communeHref(insee, "carte"),
@@ -1354,9 +1362,9 @@ export class Commune extends Vue<Props, State> {
       { cls: "ok", l: t("accueil.src.contrats"), d: t("commune_a.src.contrats") },
       { cls: "ok", l: t("accueil.src.ao"), d: t("commune_a.src.ao") },
       {
-        cls: lus ? "part" : "non",
+        cls: lu.cam || lu.dr ? "part" : "non",
         l: t("commune_a.src.arretes"),
-        d: lus ? t("commune_a.src.arretes_d", { y: depuis }) : t("liste.non_lu"),
+        d: lu.cam || lu.dr ? t("commune_a.src.arretes_d", { y: depuis }) : t("liste.non_lu"),
       },
       { cls: "part", l: t("accueil.src.subventions"), d: t("commune_a.src.subventions") },
       { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },

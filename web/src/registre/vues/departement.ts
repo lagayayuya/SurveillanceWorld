@@ -62,6 +62,7 @@ import {
   total,
   vendeurs,
 } from "./acheteur-outils.ts";
+import { lecture } from "./comparer-a.ts";
 import "./departement.css";
 import "./departement-a.css";
 import { documentHref } from "../routes.ts";
@@ -322,6 +323,9 @@ class DepartementA extends Vue<PropsA, StateA> {
     const coms = communes(f);
     const cv = this.props.couverture;
     const lu = f.couverture.etat === "collecte";
+    // a commune's decrees read (comparer-a.ts `lecture`): « non lu », never 0, where its kind is
+    // below its threshold or none is counted for it (Ju 09/11)
+    const luC = (c: { aut: number }) => lecture(f.couverture, { cam: c.aut });
     const an = (k: "con" | "cam") =>
       Object.keys(f.stats.annees)
         .filter((y) => (f.stats.annees[y]?.[k] ?? 0) > 0)
@@ -606,10 +610,10 @@ class DepartementA extends Vue<PropsA, StateA> {
                       v: v == null ? "—" : fr(v),
                     })
                   : m === "aut"
-                    ? lu
+                    ? luC(c).cam
                       ? t("departement_a.b.aut", { n: c.aut })
                       : t("liste.non_lu")
-                    : lu
+                    : luC(c).dr
                       ? t("departement_a.b.dr", { n: c.dr })
                       : t("liste.non_lu"),
               t("departement_a.b.docs", { n: c.docs }),
@@ -1134,8 +1138,8 @@ class DepartementA extends Vue<PropsA, StateA> {
             c.pop || "",
             c.con,
             montantC(c.insee),
-            lu ? c.aut : "",
-            lu ? c.dr : "",
+            luC(c).cam ? c.aut : "",
+            luC(c).dr ? c.dr : "",
             c.cams ?? "",
           ]),
         );
@@ -1162,8 +1166,8 @@ class DepartementA extends Vue<PropsA, StateA> {
           pop: c.pop ? fr(c.pop) : "—",
           con: fr(c.con),
           montant: mt > 0 ? t("departement_a.euros", { n: fr(mt) }) : "—",
-          cam: lu && c.aut ? fr(c.aut) : "—",
-          dr: lu && c.dr ? fr(c.dr) : "—",
+          cam: luC(c).cam && c.aut ? fr(c.aut) : "—",
+          dr: luC(c).dr && c.dr ? fr(c.dr) : "—",
           carte: c.cams == null ? "—" : fr(c.cams),
         };
       }),
@@ -1382,6 +1386,9 @@ class Intercommunalite extends Vue<Props, State> {
     const etat = col ? "" : etatDepartement(dep, N.nom, couv);
     const DET: Record<string, Detail> = {};
     const v = (n: number) => (col ? fr(n) : "—");
+    // a row's decrees as `lecture` reads them: its camera decrees, its drone decrees
+    const vA = (o: { aut: number }) => (lecture(couv, { cam: o.aut }).cam ? fr(o.aut) : "—");
+    const vD = (o: { dr: number }) => (lecture(couv, {}).dr ? fr(o.dr) : "—");
     const carte = (n: number | null) => (n == null ? "—" : fr(n));
     const wide = large();
     const nom = ep ? ep.nom : N.nom;
@@ -1400,8 +1407,8 @@ class Intercommunalite extends Vue<Props, State> {
               [t("departement.p_communes"), fr(o.n)],
               [t("departement.p_documents"), fr(o.docs)],
               [t("departement.p_contrats"), fr(o.con)],
-              [t("departement.p_autorisations"), v(o.aut)],
-              [t("departement.p_drones"), v(o.dr)],
+              [t("departement.p_autorisations"), vA(o)],
+              [t("departement.p_drones"), vD(o)],
               [t("departement.p_carte"), carte(o.cams)],
             ],
             link: o.code
@@ -1413,8 +1420,8 @@ class Intercommunalite extends Vue<Props, State> {
             n: fr(o.n),
             docs: fr(o.docs),
             con: fr(o.con),
-            aut: v(o.aut),
-            dr: v(o.dr),
+            aut: vA(o),
+            dr: vD(o),
             cams: carte(o.cams),
             ...this.ligne(k, "epci"),
           };
@@ -1454,8 +1461,8 @@ class Intercommunalite extends Vue<Props, State> {
           [t("departement.p_habitants"), c.pop ? fr(c.pop) : "—"],
           [t("departement.p_documents"), fr(c.docs)],
           [t("departement.p_contrats"), fr(c.con)],
-          [t("departement.p_autorisations"), v(c.aut)],
-          [t("departement.p_drones"), v(c.dr)],
+          [t("departement.p_autorisations"), vA(c)],
+          [t("departement.p_drones"), vD(c)],
           [t("departement.p_carte"), carte(c.cams)],
         ],
         // its intercommunality, a link to its fiche (the panel's rich line)
@@ -1474,8 +1481,8 @@ class Intercommunalite extends Vue<Props, State> {
       ep: c.epci && !ic ? lienEpci(f, c.epci, c.ep, true) : "",
       docs: fr(c.docs),
       con: fr(c.con),
-      aut: v(c.aut),
-      dr: v(c.dr),
+      aut: vA(c),
+      dr: vD(c),
       cams: carte(c.cams),
       ...this.ligne(`c${c.insee}`, "commune"),
       // linear (R1's was a square root, a hidden scale: v2 § 8)
@@ -1880,8 +1887,8 @@ class Intercommunalite extends Vue<Props, State> {
     const kpis =
       ic && ep
         ? [
-            { v: v(ep.aut), l: t("departement.kpi_autorisations", { n: col ? ep.aut : 2 }) },
-            { v: v(ep.dr), l: t("departement.kpi_drones", { n: col ? ep.dr : 2 }) },
+            { v: vA(ep), l: t("departement.kpi_autorisations", { n: col ? ep.aut : 2 }) },
+            { v: vD(ep), l: t("departement.kpi_drones", { n: col ? ep.dr : 2 }) },
             { v: fr(ep.con), l: t("departement.kpi_contrats", { n: ep.con }) },
             ...(C.length
               ? [

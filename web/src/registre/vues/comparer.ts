@@ -35,8 +35,10 @@ import {
   figuresEntreprise,
   hauts,
   idsDe,
+  type Lecture,
   LIGNES_COMMUNE,
   LIGNES_ENTREPRISE,
+  lecture,
   MAX,
 } from "./comparer-a.ts";
 import "./comparer.css";
@@ -292,9 +294,10 @@ export class Comparer extends Vue<Props, State> {
 
   private onQ: Handler = (ev) => this.setState({ q: ev.value });
 
-  private lu(insee: string): boolean {
+  /** Which of its decrees are read (comparer-a.ts `lecture`): « non lu », never 0, elsewhere. */
+  private lu(insee: string): Lecture {
     const dep = this.props.X.dico.communes[insee]?.dep ?? "";
-    return this.props.couv.departements[dep]?.etat === "collecte";
+    return lecture(this.props.couv.departements[dep], this.props.X.lignes.communes[insee]);
   }
   private figC(insee: string): FiguresCommune {
     const X = this.props.X;
@@ -483,11 +486,15 @@ export class Comparer extends Vue<Props, State> {
       const f = fs[i];
       const nonLu = (k === "cam" || k === "dr") && f[k] === null;
       const dep = X.dico.communes[cols[i].id]?.dep ?? "";
+      // its département not collected, or this kind of its decrees not read yet
+      const recueils = this.props.couv.departements[dep]?.etat === "collecte";
       return {
         ancre: ANCRE[k],
         nonLu,
         bl: nonLu
-          ? t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
+          ? recueils
+            ? t(`comparer_a.b_non_lu_${k}`, { nom: cols[i].nom })
+            : t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
           : k === "p1000" && f.carte !== null && pops[i]
             ? t("comparer_a.b_p1000", { n: fr(f.carte), p: fr(pops[i]) })
             : k === "eph" && f.eph !== null
@@ -590,8 +597,17 @@ export class Comparer extends Vue<Props, State> {
   private sources(cols: Col[]) {
     const X = this.props.X;
     const ds = [...new Set(cols.map((c) => X.dico.communes[c.id]?.dep ?? "").filter(Boolean))];
-    const lus = ds.filter((d) => this.props.couv.departements[d]?.etat === "collecte");
-    const non = ds.filter((d) => !lus.includes(d));
+    const recueillis = ds.filter((d) => this.props.couv.departements[d]?.etat === "collecte");
+    const non = ds.filter((d) => !recueillis.includes(d));
+    // a collected département where a kind of decree is not read for a commune compared: that
+    // kind's own line (Paris's camera decrees, the Allier's below their threshold), never « lus »
+    const sans = (k: keyof Lecture) =>
+      recueillis.filter((d) =>
+        cols.some((c) => X.dico.communes[c.id]?.dep === d && !this.lu(c.id)[k]),
+      );
+    const camNl = sans("cam");
+    const drNl = sans("dr");
+    const lus = recueillis.filter((d) => !camNl.includes(d) && !drNl.includes(d));
     const dans = (l: string[]) => enPhrase(enumerer(l.map(dansDep)));
     const rows: { cls: string; b: string; d: RichItem[] }[] = [
       { cls: "part", b: t("comparer_a.src_carte_b"), d: [t("comparer_a.src_carte")] },
@@ -603,6 +619,16 @@ export class Comparer extends Vue<Props, State> {
         b: t("comparer_a.src_arretes_b"),
         d: phrase("comparer_a.src_lus", { dans: dans(lus) }),
       });
+    for (const [k, l] of [
+      ["cam", camNl],
+      ["dr", drNl],
+    ] as const)
+      if (l.length)
+        rows.push({
+          cls: "part",
+          b: t("comparer_a.src_arretes_b"),
+          d: phrase(`comparer_a.src_non_lus_${k}`, { dans: dans(l) }),
+        });
     if (non.length)
       rows.push({
         cls: "part",
