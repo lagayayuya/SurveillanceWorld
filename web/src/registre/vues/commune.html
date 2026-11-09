@@ -41,6 +41,7 @@
         <h3 class="k" style="margin-top: 18px">{{t.commune_a.releves}}</h3>
         <sc-if value="{{cam.osm}}"><div class="sbar" style="height: 22px"><span class="seg c-osm" style="flex: 1" tabindex="0" data-bh="{{t.commune_a.releves_osm}}" data-bl="{{cam.osm}}" data-bc="{{cam.osmB}}" data-go="{{cam.carteHref}}"><b>{{cam.osm}}</b></span></div><div class="sleg"><span class="lg"><i class="sw c-osm" aria-hidden="true"></i><span class="lt">{{t.commune_a.releves_osm}} · <b>{{cam.osm}}</b></span></span><a class="go" href="{{cam.carteHref}}">{{t.commune_a.voir_carte}}</a></div></sc-if>
         <sc-if value="{{cam.osmNon}}"><p class="note">{{t.commune_a.releves_aucune}}</p></sc-if>
+        <sc-if value="{{cam.osmHors}}"><p class="note">{{cam.osmHors}}</p></sc-if>
         <p class="note">{{cam.note}}</p>
       </div>
       <sc-if value="{{cam.systemes}}">

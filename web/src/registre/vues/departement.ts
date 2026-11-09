@@ -387,10 +387,17 @@ class DepartementA extends Vue<PropsA, StateA> {
           Number((v as Record<string, number | undefined>)[k] ?? 0),
         ]),
       );
+    // the map covers the départements where a commune has its count (overseas: none, every
+    // commune's `carte` null): a département outside it has no 0 and no rank (recette 10)
+    const couverts = new Set(
+      Object.entries(X?.lignes.communes ?? {})
+        .filter(([, v]) => v.carte != null)
+        .map(([k]) => X?.dico.communes[k]?.dep ?? ""),
+    );
     const MES = {
       amt: { u: U, fmt: (v: number) => montantA(v) },
       con: { u: U, fmt: (v: number) => fr(v) },
-      carte: { u: U, fmt: (v: number) => fr(v) },
+      carte: { u: U.filter((k) => couverts.has(k)), fmt: (v: number) => fr(v) },
       cam: { u: LUS, fmt: (v: number) => fr(v) },
       dr: { u: LUS, fmt: (v: number) => fr(v) },
     } as const;
@@ -436,7 +443,8 @@ class DepartementA extends Vue<PropsA, StateA> {
     };
 
     // --- the figures ------------------------------------------------------------------------------
-    const carteDep = X ? (X.lignes.departements[dep]?.carte ?? null) : undefined;
+    const horsCarte = coms.length > 0 && coms.every((c) => c.cams == null);
+    const carteDep = horsCarte ? null : X ? (X.lignes.departements[dep]?.carte ?? null) : undefined;
     const drComs = coms.filter((c) => c.dr > 0).length;
     const mf = montantFig(st.montant);
     const figs = [
@@ -453,10 +461,16 @@ class DepartementA extends Vue<PropsA, StateA> {
       {
         cls: carteDep == null ? "fig nl" : "fig",
         k: t("departement_a.fig.carte"),
-        v: carteDep === undefined ? "…" : carteDep == null ? t("liste.non_lu") : fr(carteDep),
+        v: horsCarte
+          ? t("departement_a.fig.hors_carte")
+          : carteDep === undefined
+            ? "…"
+            : carteDep == null
+              ? t("liste.non_lu")
+              : fr(carteDep),
         u: "",
-        l: t("departement_a.fig.carte_l"),
-        rk: rk("carte", false),
+        l: horsCarte ? t("departement_a.fig.hors_carte_l") : t("departement_a.fig.carte_l"),
+        rk: horsCarte ? null : rk("carte", false),
         tip: t("departement_a.fig.carte_tip"),
         href: "#ou",
       },
@@ -1203,7 +1217,8 @@ class DepartementA extends Vue<PropsA, StateA> {
           montant: mt > 0 ? t("departement_a.euros", { n: fr(mt) }) : "—",
           cam: !luC(c).cam ? t("liste.non_lu") : c.aut ? fr(c.aut) : "—",
           dr: !luC(c).dr ? t("liste.non_lu") : c.dr ? fr(c.dr) : "—",
-          carte: c.cams == null ? "—" : fr(c.cams),
+          // outside the map (overseas), never « — » read as none (recette 10)
+          carte: c.cams == null ? t("departement_a.fig.hors_carte") : fr(c.cams),
         };
       }),
       // a row's click opens its commune, as its link does

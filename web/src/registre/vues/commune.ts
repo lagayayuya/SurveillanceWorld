@@ -451,11 +451,12 @@ export class Commune extends Vue<Props, State> {
     const nomEpci = f.stats.epci?.nom ?? "";
     const figs = [
       {
+        // outside the map (overseas): « hors carte » and why, never « 0 » (recette 10)
         cls: carteN == null ? "fig nl" : "fig",
-        k: t("commune_a.fig.cameras"),
-        v: carteN == null ? t("liste.non_lu") : fr(carteN),
+        k: T("commune_a.fig.cameras"),
+        v: carteN == null ? T("commune_a.fig.hors_carte") : fr(carteN),
         u: "",
-        l: t("commune_a.fig.cameras_l"),
+        l: carteN == null ? T("commune_a.fig.hors_carte_l") : T("commune_a.fig.cameras_l"),
         dots: dots(
           rCarte,
           (_k, v) => v.carte ?? -1,
@@ -636,6 +637,7 @@ export class Commune extends Vue<Props, State> {
       voir: camCas === "nb" ? { l: T("commune_a.cam_voir", { n: nCam }), pick: voirArretes } : null,
       osm: carteN ? fr(carteN) : "",
       osmNon: carteN === 0,
+      osmHors: carteN == null ? T("commune_a.releves_hors", { nom }) : "",
       carteHref: communeHref(insee, "carte"),
       osmB: T("commune_a.b.osm_clic", { nom }),
       note: T("commune_a.cam_note", { y: depuis }),
@@ -1502,8 +1504,8 @@ export class Commune extends Vue<Props, State> {
             b: T("commune_a.v3_cameras"),
             s:
               carteN != null
-                ? t("commune_a.v3_cameras_s", { n: fr(carteN) })
-                : t("commune_a.v3_cameras_s0"),
+                ? T("commune_a.v3_cameras_s", { n: fr(carteN) })
+                : T("commune_a.v3_cameras_hors"),
           },
           {
             b: T("commune_a.v3_drones"),

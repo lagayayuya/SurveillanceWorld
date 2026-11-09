@@ -24,6 +24,7 @@ import { coupeMots, montantA, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, Vue } from "../vue.ts";
+import { contracte } from "./commune-a.ts";
 import {
   barres,
   classement,
@@ -71,6 +72,8 @@ type Cell = {
   go: string;
   txt: string;
   nonLu: boolean;
+  /** the state said in place of a figure: « non lu », « hors carte » */
+  etat: string;
   bar: string;
   sub: string;
   liste:
@@ -441,7 +444,13 @@ export class Comparer extends Vue<Props, State> {
     label: string,
     vals: (number | null)[],
     txt: (v: number) => string,
-    extra: (i: number) => { bl?: string; sub?: string; nonLu?: boolean; ancre?: string },
+    extra: (i: number) => {
+      bl?: string;
+      sub?: string;
+      nonLu?: boolean;
+      etat?: string;
+      ancre?: string;
+    },
   ): Cell[] {
     // the yellow on the figures as written (Lélex's 4,15 and Lyon's 4,07 are both « 4,1 »)
     const top = hauts(vals.map((v) => (v === null ? null : comme(k, v))));
@@ -450,7 +459,8 @@ export class Comparer extends Vue<Props, State> {
       const v = vals[i];
       const x = extra(i);
       const href = c.href ? `${c.href}${x.ancre ?? ""}` : "";
-      const vu = x.nonLu ? t("liste.non_lu") : v === null ? "—" : txt(v);
+      const etat = x.nonLu ? (x.etat ?? t("liste.non_lu")) : "";
+      const vu = etat || (v === null ? "—" : txt(v));
       const lignes = [
         `${label}\u00a0: ${vu}`,
         ...(x.bl ? [x.bl] : []),
@@ -467,6 +477,7 @@ export class Comparer extends Vue<Props, State> {
         go: href,
         txt: x.nonLu ? "" : vu,
         nonLu: !!x.nonLu,
+        etat,
         bar: bars[i] === null || x.nonLu ? "" : `width: ${bars[i]}%`,
         sub: x.sub ?? "",
         liste: null,
@@ -489,22 +500,27 @@ export class Comparer extends Vue<Props, State> {
     };
     const extra = (k: KC) => (i: number) => {
       const f = fs[i];
-      const nonLu = (k === "cam" || k === "dr") && f[k] === null;
+      // outside the map (overseas: no commune counted), « hors carte », never 0 (recette 10)
+      const horsCarte = (k === "carte" || k === "p1000") && f.carte === null;
+      const nonLu = ((k === "cam" || k === "dr") && f[k] === null) || horsCarte;
       const dep = X.dico.communes[cols[i].id]?.dep ?? "";
       // its département not collected, or this kind of its decrees not read yet
       const recueils = this.props.couv.departements[dep]?.etat === "collecte";
       return {
         ancre: ANCRE[k],
         nonLu,
-        bl: nonLu
-          ? recueils
-            ? t(`comparer_a.b_non_lu_${k}`, { nom: cols[i].nom })
-            : t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
-          : k === "p1000" && f.carte !== null && pops[i]
-            ? t("comparer_a.b_p1000", { n: fr(f.carte), p: fr(pops[i]) })
-            : k === "eph" && f.eph !== null
-              ? t("comparer_a.b_eph", { m: montantA(f.amt), p: fr(pops[i]) })
-              : undefined,
+        etat: horsCarte ? t("comparer_a.hors_carte") : undefined,
+        bl: horsCarte
+          ? contracte(t("comparer_a.b_hors_carte", { nom: cols[i].nom }), cols[i].nom)
+          : nonLu
+            ? recueils
+              ? contracte(t(`comparer_a.b_non_lu_${k}`, { nom: cols[i].nom }), cols[i].nom)
+              : t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
+            : k === "p1000" && f.carte !== null && pops[i]
+              ? t("comparer_a.b_p1000", { n: fr(f.carte), p: fr(pops[i]) })
+              : k === "eph" && f.eph !== null
+                ? t("comparer_a.b_eph", { m: montantA(f.amt), p: fr(pops[i]) })
+                : undefined,
         sub: (k === "amt" || k === "eph") && !f.amt ? t("comparer_a.sans_contrat") : undefined,
       };
     };
@@ -575,6 +591,7 @@ export class Comparer extends Vue<Props, State> {
               go: "",
               txt: fr(communs.length),
               nonLu: false,
+              etat: "",
               bar: "",
               sub: "",
               liste: montres.length
