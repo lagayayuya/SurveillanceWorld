@@ -170,6 +170,26 @@ def test_the_verb_before_a_page_foot_is_not_a_heading():
     assert a.titre.startswith("Arrêté n°2026-00550 autorisant la captation")
 
 
+def test_a_helicopter_s_captation_is_an_aerial_act_with_its_aircraft_s_words():
+    """2026-01165 (measured 2026-11-09): « caméras installées sur deux hélicoptères », no
+    « aéronef » in its title; collected with the drones' type, told apart at the build."""
+    text = (
+        "Arrêté n°2026-01165\nautorisant la captation, l'enregistrement et la transmission "
+        "d'images au moyen de caméras installées sur deux hélicoptères du 25 au 26 septembre "
+        "2026\nVu la demande visant à transmettre des images au moyen de deux caméras "
+        "installées chacune sur les deux hélicoptères mobilisés ;\nARRÊTE :\nArticle 1er – La "
+        "captation est autorisée à Paris du 25 au 26 septembre 2026.\nArticle 2 – Publié.\n"
+    )
+    [a] = parse_raa.lire(text, parse_raa.Communes({}, set()), KINDS, dt.date(2026, 9, 18))
+    assert a.type == "drone" and "helicopteres mobilises" in a.champs["aeronef_extrait"]
+    out = parse_raa.lire(
+        "Arrêté n° 12 autorisant le survol de Lyon par hélicoptère pour des travaux\nARRÊTE :\n"
+        "Article 1er – Le survol est autorisé.\n",
+        parse_raa.Communes({}, set()), KINDS, dt.date(2026, 9, 18),
+    )  # fmt: skip
+    assert out == []  # an overflight allowed films nothing
+
+
 def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
     read = {"type": "videoprotection", "insee": "69383", "commune": "Lyon",
             "champs": {"n_total": 4}}  # fmt: skip

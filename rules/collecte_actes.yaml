@@ -41,8 +41,11 @@ relecture:
 types:
   drone:
     priorite: 1
-    titre: 'aeronef|drone'
-    dispositif: 'captation.{0,60}cameras installees sur (?:un|des|deux|plusieurs)? ?aeronefs?'
+    # the helicopters' acts too (« caméras installées sur deux hélicoptères », same regime,
+    # L. 242-5): collected as aerial captures, told apart at the build (registre_drones.yaml
+    # `aeronef`), never counted as drones (Ju, 2026-11-09)
+    titre: 'aeronef|drone|(?:cameras?|captation).{0,120}helicopteres?'
+    dispositif: 'captation.{0,60}cameras installees sur (?:un|des|deux|plusieurs|\d+)? ?(?:aeronefs?|helicopteres?)'
     # and, unless the title authorises a captation, the acts on aircraft that film nothing for
     # the State: a flight ban (« interdiction de survol », « interdiction temporaire
     # d'exploitation et d'évolution », even « …de survol, de captation… »: a ban), jamming

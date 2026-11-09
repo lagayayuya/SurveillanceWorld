@@ -43,11 +43,12 @@ import yaml
 # 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed;
 # 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »); 6: an aerial act that is
 # no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act;
-# 7: « ARRÊTE : » with a page's foot before article 1 is no heading
-VERSION = 7
+# 7: « ARRÊTE : » with a page's foot before article 1 is no heading; 8: the helicopters'
+# captures are drone-type acts, and every aerial act keeps its aircraft's words
+VERSION = 8
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
-MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}, 7: {3, 4, 5, 6, 7}}
+MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}, 7: {3, 4, 5, 6, 7}, 8: {3, 4, 5, 6, 7, 8}}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -437,7 +438,18 @@ def drone_fields(n: str, title_n: str, when: dt.date) -> dict[str, Any]:
         )
     ]
     days = drone_dates(art1(n), when) or drone_dates(d, when)
+    # the act's own words for its aircraft, visas included (« quatre caméras installées sur des
+    # aéronefs télé-pilotés »): the build tells a drone from a helicopter by them
+    craft = [
+        re.sub(r"\s+", " ", m.group(0)).strip()
+        for m in re.finditer(
+            r"[^.;:]{0,80}\b(?:drones?|tele-?pilot\w*|helicopteres?|avions?|aeronefs? (?:habite|"
+            r"avec pilote|sans (?:equipage|personne))\w*|circulant sans personne)\b[^.;:]{0,80}",
+            n,
+        )
+    ]
     return {
+        "aeronef_extrait": " | ".join(dict.fromkeys(craft))[:600],
         "dates": days,
         "horaires": sorted(hours),
         "n_cameras_drone": num(m.group(1)) if m else None,
