@@ -155,6 +155,12 @@
   margin: 14px 0 0;
   font-size: inherit;
 }
+/* a segment of a cut-out name never wraps inside (recette 20) */
+.rg .va .name .mot {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 2px;
+}
 .rg .va .cut {
   display: inline-block;
   font-family: Archivo, sans-serif;

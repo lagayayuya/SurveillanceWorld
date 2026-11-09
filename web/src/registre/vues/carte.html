@@ -20,7 +20,7 @@
   <div class="va v3p">
     <div class="dp-head">
       <span class="kind"><i class="ico-t" aria-hidden="true"></i>{{t.carte_a.kind}}</span>
-      <div class="dp-name"><h2 class="name" aria-label="{{nom}}"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" aria-hidden="true">{{x.ch}}</span></sc-for></h2>
+      <div class="dp-name"><h2 class="name" aria-label="{{nom}}"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}" aria-hidden="true">{{x.ch}}</span></sc-for></span></sc-for></h2>
         <div class="tabs" role="tablist" aria-label="{{t.carte_a.onglets}}" onKeyDown="{{ongletsClavier}}"><sc-for list="{{onglets}}" as="o"><button type="button" role="tab" id="{{o.id}}" class="{{o.cls}}" aria-selected="{{o.on}}" tabindex="{{o.tab}}" aria-controls="{{o.panel}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
       <p class="dp-lead">{{{lead}}}</p>
     </div>

@@ -57,7 +57,7 @@ import {
 } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { coupe, plusProche } from "../socle-a.ts";
+import { coupeMots, plusProche } from "../socle-a.ts";
 import { couvertureLiee } from "../sources.ts";
 import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
@@ -698,7 +698,7 @@ export class ListeVue extends Vue<Props, State> {
       ...this.base("liste"),
       wide,
       title: liste === "acheteurs" && e.f.cat ? nomListe(liste, e.f.cat) : titreA,
-      letters: coupe(liste === "acheteurs" && e.f.cat ? nomListe(liste, e.f.cat) : titreA),
+      letters: coupeMots(liste === "acheteurs" && e.f.cat ? nomListe(liste, e.f.cat) : titreA),
       lead,
       q: e.q,
       onQ: ((ev) => this.set({ q: ev.value })) as Handler,

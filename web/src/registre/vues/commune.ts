@@ -31,7 +31,7 @@ import type { VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import { documentHref, type Route } from "../routes.ts";
 import { signalerHref } from "../signaler.ts";
-import { coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { coupeMots, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { tidy, titleCase } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
@@ -1414,7 +1414,7 @@ export class Commune extends Vue<Props, State> {
     return {
       ...this.base("commune-a"),
       nom,
-      letters: coupe(nom),
+      letters: coupeMots(nom),
       chips: [
         { l: `${depNom} (${c.dep})`, href: departementHref(c.dep) },
         ...(nomEpci && c.epci_ref ? [{ l: nomEpci, href: `/registre/${c.epci_ref}` }] : []),

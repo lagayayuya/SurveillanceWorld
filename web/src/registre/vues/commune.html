@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-t" aria-hidden="true"></i>{{t.commune_a.kind}}</span>
-      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="meta"><sc-for list="{{chips}}" as="c"><a class="chip t" href="{{c.href}}">{{c.l}}</a></sc-for><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for></p>
       <p class="lead">{{{lead}}}</p>
     </div>

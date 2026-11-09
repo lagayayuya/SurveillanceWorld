@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-g" aria-hidden="true"></i>{{t.chemin_a.graphe}}</span>
-      <h1 class="sr">{{t.chemin_a.nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{t.chemin_a.nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="lead">{{t.chemin_a.lead}}</p>
       <div class="pair2">
         <sc-for list="{{champs}}" as="f">

@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-l" aria-hidden="true"></i>{{t.liste.etiquette}}</span>
-      <h1 class="sr">{{title}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{title}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="lead">{{{lead}}}</p>
       <div class="bigsearch" role="search"><span class="ico-s" aria-hidden="true"></span><label class="sr" for="lst-q">{{t.liste.filtrer}}</label><input id="lst-q" class="ph" type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{exemple}}"><sc-if value="{{autour}}"><button type="button" class="near" onClick="{{autour}}">{{t.accueil.autour}}</button></sc-if></div>
       <sc-if value="{{autourEtat}}"><p class="note" role="status">{{autourEtat}}</p></sc-if>

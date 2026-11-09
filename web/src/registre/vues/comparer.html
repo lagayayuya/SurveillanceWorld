@@ -2,7 +2,7 @@
   <section class="hero">
     <div class="hero-l">
       <span class="kind"><i class="ico-c" aria-hidden="true"></i>{{t.comparer_a.kind}}</span>
-      <h1 class="sr">{{t.comparer_a.titre}}</h1><div class="name cutname" aria-hidden="true"><sc-for list="{{lettres}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></div>
+      <h1 class="sr">{{t.comparer_a.titre}}</h1><div class="name cutname" aria-hidden="true"><sc-for list="{{lettres}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <div class="picks" role="group" aria-label="{{choixL}}"><sc-for list="{{cols}}" as="c"><button type="button" class="chip f on" aria-label="{{c.retirerL}}" onClick="{{c.retirer}}">{{c.nom}} ✕</button></sc-for><sc-if value="{{ap}}"><div class="{{ap.cls}}"><button type="button" class="chip f add" aria-haspopup="listbox" aria-expanded="{{ap.ouvert}}" onClick="{{ap.basculer}}">{{ap.l}}</button><sc-if value="{{ap.menu}}"><div class="dmenu amenu" onKeyDown="{{ap.clavier}}"><label class="dq"><span class="sr">{{ap.chercher}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{ap.chercher}}" autocomplete="off"></label><ul class="dliste" role="listbox" aria-label="{{ap.chercher}}"><sc-for list="{{ap.res}}" as="o"><li class="drow" role="option" aria-selected="false" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span><span class="dn">{{o.d}}</span></li></sc-for></ul><sc-if value="{{ap.vide}}"><p class="note" role="status">{{ap.vide}}</p></sc-if></div></sc-if></div></sc-if></div>
       <p class="lead">{{{lead}}}</p>
     </div>

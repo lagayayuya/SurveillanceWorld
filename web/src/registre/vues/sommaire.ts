@@ -37,7 +37,7 @@ import {
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
-import { coupe, montantA, pleinEcran, plusProche, repli } from "../socle-a.ts";
+import { coupeMots, montantA, pleinEcran, plusProche, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
@@ -645,7 +645,7 @@ class Sommaire extends Vue<Props, State> {
     return {
       ...this.base("sommaire"),
       title: t("sommaire.titre"),
-      letters: coupe(t("accueil.titre")),
+      letters: coupeMots(t("accueil.titre")),
       lead: [
         t("accueil.lead_a"),
         { strong: t("accueil.lead_b") },

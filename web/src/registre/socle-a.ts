@@ -17,6 +17,19 @@ export function coupe(nom: string): Coupe[] {
   );
 }
 
+/** The cut-out name in segments: a long name (« Saint-Quentin-la-Motte-Croix-au-Bailly ») wraps
+ * after a hyphen or a space, never inside a segment (recette 20); each segment is a `.mot`. */
+export function coupeMots(nom: string): Coupe[][] {
+  return coupe(nom).reduce<Coupe[][]>(
+    (ws, x, i, all) => {
+      ws[ws.length - 1].push(x);
+      if ((x.ch === "-" || x.cls === "sp") && i < all.length - 1) ws.push([]);
+      return ws;
+    },
+    [[]],
+  );
+}
+
 /** An amount as the boards write it: one decimal in millions and billions (« 80,0 M€ », « 1,8 Md€ »),
  * whole euros below (« 220 000 € »); the unit after a no-break space. */
 export function montantA(n: number): string {

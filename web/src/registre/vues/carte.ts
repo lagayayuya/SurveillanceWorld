@@ -36,7 +36,7 @@ import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
-import { coupe, montantA } from "../socle-a.ts";
+import { coupeMots, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import { avantVol, type Publication } from "./accueil-outils.ts";
@@ -1569,7 +1569,7 @@ class CarteDrones extends Vue<Props, State> {
         retour();
       }) as Handler,
       nom,
-      letters: coupe(nom),
+      letters: coupeMots(nom),
       lead: estFiche
         ? lead
         : ([

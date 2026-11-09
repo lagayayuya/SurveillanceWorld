@@ -19,7 +19,7 @@ import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
-import { coupe, montantA, repli } from "../socle-a.ts";
+import { coupeMots, montantA, repli } from "../socle-a.ts";
 import { tidy } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, Vue } from "../vue.ts";
@@ -603,7 +603,7 @@ class Chemin extends Vue<Props, State> {
     const sde = S.calc?.de === S.de ? S.calc.sde : SIREN.test(S.de) ? S.de : null;
     return {
       ...this.base("chemin"),
-      letters: coupe(t("chemin_a.nom")),
+      letters: coupeMots(t("chemin_a.nom")),
       champs: [this.champ("de", f), this.champ("a", f)],
       q: S.q,
       onQ: this.onQ,

@@ -12,7 +12,7 @@
 }
 .rg .va.ent .name .mot {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 2px;
 }
 .rg .va.ent .ico-e {

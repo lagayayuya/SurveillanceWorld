@@ -20,7 +20,7 @@ import { type CouvertureX, etapeListe, type Listes, nomDep, TOUTES } from "../li
 import type { Miette, VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
-import { coupe, montantA, repli } from "../socle-a.ts";
+import { coupeMots, montantA, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, Vue } from "../vue.ts";
@@ -683,7 +683,7 @@ export class Comparer extends Vue<Props, State> {
     const chemin = !m && n === 2 ? `/registre/chemin?de=${S.ids[0]}&a=${S.ids[1]}` : "";
     return {
       ...this.base("comparer"),
-      lettres: coupe(t("comparer_a.titre")),
+      lettres: coupeMots(t("comparer_a.titre")),
       choixL: t(m ? "comparer_a.choix_c" : "comparer_a.choix_e"),
       cols: cols.map((c) => ({
         nom: c.nom,
