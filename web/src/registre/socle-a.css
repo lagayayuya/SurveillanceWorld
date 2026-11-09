@@ -592,10 +592,18 @@
   gap: 6px 18px;
   margin-top: 8px;
 }
+/* a legend's entry: its swatch on the text's baseline, the text wrapping under its own start (a
+   hanging indent), never split into flex items that wrap apart (Vichy's « Subventions reçues ») */
 .rg .va .lg {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-block;
+  max-width: 100%;
+  padding-left: 18px;
+  text-indent: -18px;
+}
+.rg .va .lg > .sw {
+  margin-right: 6px;
+  vertical-align: -1px;
+  text-indent: 0;
 }
 .rg .va .sw {
   display: inline-block;
