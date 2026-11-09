@@ -51,7 +51,7 @@
           <div class="fb" id="{{recents.r.id}}">
             <div class="ch-h"><h3 class="k">{{t.accueil.derniers}}</h3><div class="seg-ctl" role="group" aria-label="{{t.accueil.derniers}}"><sc-for list="{{recents.onglets}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
             <table class="docs"><caption class="sr">{{t.accueil.derniers}}</caption><tbody>
-              <sc-for list="{{recents.rows}}" as="r"><tr><td class="nw">{{r.date}}</td><td><span class="dk">{{r.dk}}</span></td><td>{{{r.lieu}}}<span class="rf">{{r.ref}}</span></td><td>{{r.objet}}</td></tr></sc-for>
+              <sc-for list="{{recents.rows}}" as="r"><tr><td class="nw">{{r.date}}</td><td><span class="dk">{{r.dk}}</span></td><td>{{{r.lieu}}}<span class="rf">{{r.ref}}</span></td><td><span class="ob">{{r.objet}}</span></td></tr></sc-for>
             </tbody></table>
             <sc-if value="{{recents.vide}}"><p class="note">{{t.accueil.derniers_vide}}</p></sc-if>
             <div class="rowa"><a class="go" href="{{recents.tout}}">{{t.accueil.derniers_tous}}</a></div>

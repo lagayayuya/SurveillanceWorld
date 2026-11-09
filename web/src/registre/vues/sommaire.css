@@ -219,3 +219,12 @@
     font-size: 14px;
   }
 }
+
+/* a recent document's objet, published whole, on two lines at most */
+.rg .va.home .wk .docs .ob {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
