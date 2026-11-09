@@ -408,6 +408,13 @@ class CarteDrones extends Vue<Props, State> {
     });
     this.ro.observe(g);
   }
+  /** Whether a bubble was open as the last finger or button came down (bulle.ts closes it on that
+   * click, before the map hears it). */
+  private bulleAuDoigt = false;
+  private readonly onAppui = () => {
+    const b = document.getElementById("bulle");
+    this.bulleAuDoigt = !!b && !b.hidden;
+  };
   /** A click on the map folds the legend back (v2.3). */
   private readonly onCarte = (e: MapMouseEvent) => {
     if (this.state.leg) this.setState({ leg: false });
@@ -421,6 +428,9 @@ class CarteDrones extends Vue<Props, State> {
   private async cliquerCarte(e: MapMouseEvent): Promise<void> {
     const map = this.map;
     if (!map || this.dead) return;
+    // a tap that closed a bubble (bulle.ts, a finger's first tap reads) does only that: the map
+    // stays, no other commune opens under the finger
+    if (this.bulleAuDoigt) return;
     const { x, y } = e.point;
     const zones = [COUCHES.vol, COUCHES.vsa].filter((l) => map.getLayer(l));
     if (zones.length && map.queryRenderedFeatures([x, y], { layers: zones }).length) return;
@@ -485,6 +495,7 @@ class CarteDrones extends Vue<Props, State> {
     this.demanderFiche();
     addEventListener("themechange", this.onTheme);
     addEventListener("resize", this.suivreMarge);
+    document.addEventListener("pointerdown", this.onAppui, true);
     this.observerFrise();
     this.observerMarge();
     const map = carteDuSite();
@@ -641,6 +652,7 @@ class CarteDrones extends Vue<Props, State> {
     this.abort.abort();
     removeEventListener("themechange", this.onTheme);
     removeEventListener("resize", this.suivreMarge);
+    document.removeEventListener("pointerdown", this.onAppui, true);
     clearTimeout(this.tMarge);
     // still turning by itself: nobody chose that bearing (v2.4 survey: the site's map was left
     // turned by 38°); turned by a hand, it stays
