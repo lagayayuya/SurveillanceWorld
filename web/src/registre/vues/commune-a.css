@@ -795,6 +795,10 @@
   display: inline-grid;
   grid-template-columns: 12px auto;
   column-gap: 6px;
+  /* the grid holds the swatch apart: socle-a.css's hanging indent (padding 18 px, indent −18 px)
+     would pull the words' first line back over it */
+  padding-left: 0;
+  text-indent: 0;
   align-items: baseline;
   align-content: center;
   text-align: left;
