@@ -1063,7 +1063,10 @@ class CarteDrones extends Vue<Props, State> {
       this.setState({ jf: Math.max(g.A, Math.min(now, x)) });
     };
     const choisirJour = (x: number) =>
-      this.setPeriode(x === jour ? null : [x, x + DAY], { jf: -1, jv: -1 });
+      this.setPeriode(x === jour ? null : [x, x + DAY], { jf: -1, jv: -1, onglet: "drones" });
+    // « Afficher ce jour » shows the day, on the tab « Drones » (Ju, 09/11, choice 5), never hides it
+    const afficherJour = (x: number) =>
+      this.setPeriode([x, x + DAY], { jf: -1, jv: -1, onglet: "drones" });
 
     // the detail (A8, B3): the slot chosen or the act chosen without a slot, all its act says;
     // by default the panel only says what to hover or choose. A hover fills it not (B3).
@@ -1424,7 +1427,7 @@ class CarteDrones extends Vue<Props, State> {
         d: jourLong(jourMs(iso)),
         lead: PROCHAIN.format(jourMs(iso)),
         n: t("carte_a.avenir_n", { n: as.size }),
-        pick: (() => choisirJour(jourMs(iso))) as Handler,
+        pick: (() => afficherJour(jourMs(iso))) as Handler,
       }));
     const ficheV = {
       figs: [
