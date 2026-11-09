@@ -19,6 +19,7 @@ import type { Handler, Rich, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
+import { lien } from "../liens.ts";
 import {
   adresse,
   appliquer,
@@ -64,11 +65,13 @@ import { pluriel, type TypeCle } from "../types.ts";
 import { type BaseState, large, Vue } from "../vue.ts";
 import "./autorisations.css";
 import "./liste.css";
+import { epciHref } from "./departement-outils.ts";
 import template from "./liste.html?raw";
 import {
   basculer,
   comparable,
   comparerHref,
+  depEpci,
   MAX_COMPARER,
   vraiDepartement,
 } from "./listes-outils.ts";
@@ -165,7 +168,37 @@ function nomValeur(f: Filtre, v: string, C: Corpus | null, P: Pick<Props, "couve
  * other keys (« 1 », « 20A », « 97 »…) left out, as their count. */
 function lignes(C: Corpus, liste: Liste): Rang[] {
   const r = rangs(C, liste);
-  return liste === "departements" ? r.filter((x) => vraiDepartement(x.id)) : r;
+  if (liste === "departements") return r.filter((x) => vraiDepartement(x.id));
+  if (liste === "intercommunalites") return r.map((x) => epciEnLigne(C, x));
+  return r;
+}
+
+/** An intercommunality's row: one destination, its name's and its row's, its v2 fiche (its
+ * département's page at `?ic=`; Ju 09/11, choice 3), whether it buys or not — its buyer's
+ * address led there too, by a redirection, and a row without a buyer opened its first commune
+ * (recette 19). « pas de fiche » is no longer true: it is left out. */
+const sansFiche = () => ` · ${t("liste.epci_sans_fiche")}`;
+let depsEpci: { C: Corpus; m: Map<string, string[]> } | null = null;
+function epciEnLigne(C: Corpus, x: Rang): Rang {
+  if (depsEpci?.C !== C) {
+    const m = new Map<string, string[]>();
+    for (const k of Object.keys(C.X.communes)) {
+      const c = C.L.communes[k];
+      if (c?.epci) m.set(c.epci, [...(m.get(c.epci) ?? []), c.dep]);
+    }
+    depsEpci = { C, m };
+  }
+  const dep = depEpci(
+    (C.L.acheteurs[x.id] as { dep?: string | null } | undefined)?.dep,
+    depsEpci.m.get(x.id) ?? [],
+  );
+  if (!dep) return x;
+  const sf = sansFiche();
+  return {
+    ...x,
+    lien: lien("epci", epciHref(dep, x.id), x.nom, true),
+    sous: Array.isArray(x.sous) ? x.sous.filter((s) => s !== sf) : x.sous,
+  };
 }
 
 export class ListeVue extends Vue<Props, State> {

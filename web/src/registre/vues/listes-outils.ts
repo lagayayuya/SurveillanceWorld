@@ -25,3 +25,15 @@ export function basculer(ids: string[], id: string, max = MAX_COMPARER): string[
 /** Comparer with the rows chosen: /registre/comparer?communes=69123,69029 (or ?entreprises=). */
 export const comparerHref = (liste: Comparable, ids: string[]): string =>
   `/registre/comparer?${liste}=${ids.map(encodeURIComponent).join(",")}`;
+
+/** The département whose page shows an intercommunality (its v2 fiche, `?ic=`): its buyer's when
+ * the build knows it, else the one most of its communes are in (the first met on a tie). Every
+ * one of the 1 012 is a row of that département's file (measured 09/11, recette 19). */
+export function depEpci(acheteurDep: string | null | undefined, depsCommunes: string[]): string {
+  if (acheteurDep) return acheteurDep;
+  const n = new Map<string, number>();
+  for (const d of depsCommunes) n.set(d, (n.get(d) ?? 0) + 1);
+  let best = "";
+  for (const [d, k] of n) if (k > (n.get(best) ?? 0)) best = d;
+  return best;
+}

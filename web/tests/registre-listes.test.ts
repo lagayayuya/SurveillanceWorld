@@ -502,3 +502,11 @@ test("a list's rows chosen for Comparer: four at most, the address Comparer read
   assert.equal(comparerHref("entreprises", ["794108878"]), "/registre/comparer?entreprises=794108878");
   assert.ok(comparable("communes") && comparable("entreprises") && !comparable("departements"));
 });
+
+test("an intercommunality's row leads to its département's page: its buyer's, else most communes' (recette 19)", async () => {
+  const { depEpci } = await import("../src/registre/vues/listes-outils.ts");
+  assert.equal(depEpci("13", ["84", "84"]), "13");
+  assert.equal(depEpci(null, ["84", "13", "13"]), "13");
+  assert.equal(depEpci(undefined, ["69", "01"]), "69");
+  assert.equal(depEpci(null, []), "");
+});
