@@ -252,17 +252,19 @@
   background: var(--fg);
   color: var(--bg);
 }
+/* each segment draws its own frame, the next one over its edge: a control that wraps leaves no
+   empty frame on its second line (Ju, 2026-11-09) */
 .rg .va .seg-ctl {
   display: inline-flex;
   flex-wrap: wrap;
-  border: 2px solid var(--line);
+  padding: 2px 0 0 2px;
 }
 .rg .va .seg-ctl button,
 .rg .va .seg-ctl a {
   background: var(--bg-2);
   color: var(--fg);
-  border: 0;
-  border-right: 2px solid var(--line);
+  border: 2px solid var(--line);
+  margin: -2px 0 0 -2px;
   padding: 6px 12px;
   font-family: Archivo, sans-serif;
   font-size: 14px;
@@ -273,9 +275,6 @@
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
-}
-.rg .va .seg-ctl > :last-child {
-  border-right: 0;
 }
 .rg .va .seg-ctl .on,
 .rg .va .seg-ctl [aria-pressed="true"],

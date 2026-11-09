@@ -632,11 +632,14 @@ export class ListeVue extends Vue<Props, State> {
     // the columns: the one of the order marked (its key, or one it stands for)
     const marque = (c: { tri?: string; alt?: string[] }) =>
       !!c.tri && (c.tri === e.tri || (c.alt ?? []).includes(e.tri));
+    // a column's priority: the first two always shown, the others (« p2 », « p3 ») hidden in a
+    // narrow frame unless they are the order's (liste.css)
+    const prio = (i: number) => (i >= 3 ? " p3" : i >= 2 ? " p2" : "");
     const cols = def.cols
       .filter((c) => !c.deps)
-      .map((c) => ({
+      .map((c, i) => ({
         l: c.l,
-        cls: `${c.num ? "n" : ""}${marque(c) ? " srt" : ""}`,
+        cls: `${c.num ? "n" : ""}${marque(c) ? " srt" : ""}${prio(i)}`,
         tri: !!c.tri,
         fixe: !c.tri,
         sort: marque(c) ? (e.dir < 0 ? "descending" : "ascending") : "none",
@@ -647,8 +650,13 @@ export class ListeVue extends Vue<Props, State> {
       let j = 0;
       const cells = def.cols.flatMap((c) => {
         if (c.deps) return [];
+        const k = j++;
         return [
-          { cls: `${c.num ? "n" : ""}${marque(c) ? " srt" : ""}`, lbl: c.l, v: r.cells[j++] },
+          {
+            cls: `${c.num ? "n" : ""}${marque(c) ? " srt" : ""}${prio(k)}`,
+            lbl: c.l,
+            v: r.cells[k],
+          },
         ];
       });
       return {

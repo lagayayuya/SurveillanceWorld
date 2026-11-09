@@ -53,6 +53,25 @@
 .rg .va .lt td {
   vertical-align: top;
 }
+/* the modal's middle widths (908 px of frame at a 1024 px window, 1164 at 1280): the name keeps
+   room, the rank column is narrow, the secondary columns go before the table would spill */
+.rg .va .card:has(> table.lt) {
+  container-type: inline-size;
+}
+.rg .va .lt td[data-t],
+.rg .va .lt thead th:nth-child(2) {
+  min-width: 11em;
+}
+@container (min-width: 600px) and (max-width: 1060px) {
+  .rg .va .lt :is(th, td).p3:not(.srt) {
+    display: none;
+  }
+}
+@container (min-width: 600px) and (max-width: 700px) {
+  .rg .va .lt :is(th, td).p2:not(.srt) {
+    display: none;
+  }
+}
 .rg .va .lt .sub {
   display: block;
   margin-top: 3px;
@@ -62,7 +81,7 @@
   color: var(--muted);
 }
 .rg .va .lt .rk2 {
-  width: 34px;
+  width: 28px;
   font:
     900 16px Archivo,
     sans-serif;
