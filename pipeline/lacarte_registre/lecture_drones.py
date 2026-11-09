@@ -89,6 +89,52 @@ def aeronef_acte(a: dict[str, Any], rules_dir: Path) -> str:
     return aeronef([first, ch.get("aeronef_extrait")], rules_dir)
 
 
+ARRONDISSEMENT = re.compile(
+    r"\b(\d{1,2})\s*(?:e|er|eme|ieme)\s+arrondissements?(?:\s+de\s+(paris|lyon|marseille))?"
+    r"|\b(paris|lyon|marseille)\s+(\d{1,2})\s*(?:e|er|eme)\b"
+)
+
+
+@cache
+def _secteur(rules_dir: Path) -> dict[str, Any]:
+    conf = yaml.safe_load((rules_dir / "registre_drones.yaml").read_text("utf-8"))["secteur"]
+    return {
+        **conf,
+        "lieu": re.compile(conf["lieu"]),
+        "departement": re.compile(conf["departement"]),
+    }
+
+
+def situer(
+    secteur: str | None, noms: dict[str, str], rules_dir: Path, ville: str | None = None
+) -> dict[str, Any]:
+    """{secteur_niveau, secteur_insee?, secteur_lieu?} (rule:registre_drones@1:secteur):
+    `noms` the folded names of the communes it may name → their code; `ville` the city an
+    arrondissement without its city belongs to (the act's own commune)."""
+    conf = _secteur(rules_dir)
+    t = plie(secteur)
+    if not t:
+        return {"secteur_niveau": "non_lu"}
+    arr = []
+    for m in ARRONDISSEMENT.finditer(t):
+        n, city = (m.group(1), m.group(2)) if m.group(1) else (m.group(4), m.group(3))
+        prefix = conf["villes_arrondissements"].get(city or ville or "")
+        if prefix and 1 <= int(n) <= 20:
+            arr.append(f"{prefix[1]}{int(n):02d}" if prefix[1] != "6938" else f"6938{int(n)}")
+    if arr:
+        return {"secteur_niveau": "arrondissement", "secteur_insee": sorted(set(arr))}
+    if m := conf["lieu"].search(t):
+        return {"secteur_niveau": "lieu", "secteur_lieu": m.group(0).strip()}
+    named = sorted(
+        {k for n, k in noms.items() if re.search(rf"(?<![a-z-]){re.escape(n)}(?![a-z-])", t)}
+    )
+    if named:
+        return {"secteur_niveau": "commune", "secteur_insee": named}
+    if conf["departement"].search(t):
+        return {"secteur_niveau": "departement"}
+    return {"secteur_niveau": "non_lu"}
+
+
 def champs(a: dict[str, Any], rules_dir: Path) -> dict[str, Any]:
     """The fields for a drone act of the family the rule was measured on (the police
     prefecture and the four départements of its agglomeration), nothing for another."""

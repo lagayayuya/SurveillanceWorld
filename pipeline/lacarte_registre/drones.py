@@ -84,7 +84,9 @@ def non_deduite(e: Event | None) -> bool:
 # (the calendar), the hours, the service, the purpose, the purposes, the places, the number of
 # cameras and of perimeters; the decree's number and author; the zone's state
 CHAMPS_LIGNE = ("jours", "horaires", "service", "motif", "finalites", "lieux", "cameras",
-                "n_perimetres", "numero", "autorite", "titre")  # fmt: skip
+                "n_perimetres", "numero", "autorite", "titre", "aeronef",
+                # where it flies (rule:registre_drones@1:secteur), the same for each of its days
+                "secteur", "secteur_niveau", "secteur_insee", "secteur_lieu")  # fmt: skip
 
 
 def etat_zone(e: Event) -> str:

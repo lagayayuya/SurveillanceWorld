@@ -99,6 +99,21 @@ def run(
         if e["t"] == "arrete_drone" and "aeronef" not in e:
             e["aeronef"] = lecture_drones.aeronef([e.get("titre")], rules)
     reg = regles.appliquer(pilote, corr)
+    # where a drone act flies, from its sector (rules/registre_drones.yaml `secteur`): the
+    # communes of its département and of the police prefecture's, by their folded names
+    noms: dict[str, dict[str, str]] = {}
+    for k, c in reg.communes.items():
+        noms.setdefault(c.get("dep") or "", {})[lecture_drones.plie(c.get("nom"))] = k
+    pp = {n: k for d in ("75", "92", "93", "94") for n, k in noms.get(d, {}).items()}
+    villes = {"75056": "paris", "69123": "lyon", "13055": "marseille"}
+    for e in reg.evenements:
+        if e["t"] == "arrete_drone" and e.get("secteur"):
+            here = (
+                pp if e.get("dep") in ("75", "92", "93", "94") else noms.get(e.get("dep") or "", {})
+            )
+            e.update(
+                lecture_drones.situer(e["secteur"], here, rules, villes.get(e.get("insee") or ""))
+            )
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
     couverture.provenances(reg, conf, col)

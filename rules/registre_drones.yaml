@@ -144,3 +144,23 @@ aeronef:
     whether they leave (regles.is_drone_act, one line).
   helicoptere: 'helicopteres?|\bavions?\b|aeronefs? (?:habites?|avec (?:pilote|equipage))'
   drone: 'drones?|tele-?pilot|sans (?:equipage|personne a bord)|circulant sans personne'
+
+# Where a drone act flies, from its sector (`texte`: the act's words between « sont autorisés »
+# and « au(x) titre(s) de »), for the drone layer. Measured 2026-11-09 on the police
+# prefecture family's acts: a commune named 1 052, a département 204, a place 44, an
+# arrondissement 2, none 363 (« à l'occasion de la rencontre de football susvisée »), no sector
+# read 303. Their perimeters are on annexed plans (384 of the 615 Paris acts say so), which the
+# register does not read.
+secteur:
+  id: rule:registre_drones@1:secteur
+  rationale: >-
+    `secteur_niveau` says how close the act's words place it: « arrondissement » (a numbered
+    arrondissement of Paris, Lyon or Marseille, its INSEE code in `secteur_insee`), « lieu » (a
+    named place: a stadium, an arena, a park, a square; its words in `secteur_lieu`), « commune »
+    (the communes it names, their codes in `secteur_insee`), « departement » (a whole
+    département), « non_lu » (no place in the sector, or no sector read). One sector per act:
+    every day of the act has it. Hatch the sector when it is an arrondissement or a place, the
+    whole commune otherwise; nothing is drawn from the annexed plans.
+  lieu: '(?:sur le site d[eu]s?|aux abords d[eu]s?|au (?:stade|parc|palais|club)|a l.arena|a la (?:place|porte|salle)|au champ de mars)\s*(?:l.|la |le |les )?([^,;]{3,80}?)(?=\s+(?:le |les |du |a l.occasion|dans le cadre|de \d)|[,;]|$)'
+  departement: '\bdans (?:le|les) departements?\b|\ben (?:seine-saint-denis|val-de-marne|hauts-de-seine)\b'
+  villes_arrondissements: {paris: ["75056", "751"], lyon: ["69123", "6938"], marseille: ["13055", "132"]}

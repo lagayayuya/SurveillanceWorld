@@ -39,3 +39,22 @@ def test_read_for_the_measured_family_only():
     assert ld.champs({"administration": "pref62", "champs": {"article_1": a1}}, R) == {}
     got = ld.champs({"administration": "pref94", "champs": {"article_1": a1}}, R)
     assert got["service_id"] == "gendarmerie" and got["finalites"] == ["secours"]
+
+
+def test_a_drone_act_s_sector_is_placed_by_arrondissement_place_commune_or_departement():
+    """rule:registre_drones@1:secteur, on the police prefecture family's own words."""
+    import lacarte_registre as registre
+    from lacarte_registre.lecture_drones import situer
+
+    noms = {"paris": "75056", "saint-denis": "93066", "pantin": "93055"}
+    r = registre.RULES
+    assert situer("dans certains secteurs du 19ème arrondissement de Paris", noms, r) == {
+        "secteur_niveau": "arrondissement", "secteur_insee": ["75119"]}  # fmt: skip
+    stade = situer("au match de football précité au Parc des Princes le 27 septembre", noms, r)
+    assert stade["secteur_niveau"] == "lieu"
+    assert situer("sur les communes de Saint-Denis et Pantin (93)", noms, r) == {
+        "secteur_niveau": "commune", "secteur_insee": ["93055", "93066"]}  # fmt: skip
+    assert situer("dans le département de la Seine-Saint-Denis", noms, r) == {
+        "secteur_niveau": "departement"}  # fmt: skip
+    assert situer("à l'occasion de l'événement susvisé", noms, r) == {"secteur_niveau": "non_lu"}
+    assert situer(None, noms, r) == {"secteur_niveau": "non_lu"}
