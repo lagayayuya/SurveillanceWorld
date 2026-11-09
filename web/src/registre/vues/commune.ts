@@ -433,7 +433,11 @@ export class Commune extends Vue<Props, State> {
               bh: X?.dico.communes[x.k]?.nom ?? x.k,
               bl: `${fmt(x.v)} · ${ordinal(i + 1)}`,
               go: x.k === insee ? "" : communeHref(x.k),
-              bc: x.k === insee ? "" : t("commune_a.b.fiche"),
+              bc: x.k === insee ? "" : T("commune_a.b.fiche"),
+              // a dot that opens a fiche is reached by Tab, Enter opens it (recette 33)
+              tab: x.k === insee ? null : "0",
+              role: x.k === insee ? null : "link",
+              al: `${X?.dico.communes[x.k]?.nom ?? x.k} · ${fmt(x.v)} · ${ordinal(i + 1)}`,
             }))
         : null;
     // a figure's rank: its strate named on the first figure only, as the board writes it (« 2e sur
@@ -1492,7 +1496,8 @@ export class Commune extends Vue<Props, State> {
       ...x,
       tip: [x.l, x.rb, x.tip].filter(Boolean).join("\n"),
       sr: x.tip,
-      bc: nSec.has(x.href) ? t("commune_a.b.section", { n: nSec.get(x.href) ?? "" }) : "",
+      dotsL: x.rb,
+      bc: nSec.has(x.href) ? T("commune_a.b.section", { n: nSec.get(x.href) ?? "" }) : "",
     }));
 
     return {

@@ -36,6 +36,27 @@
 .rg .va.com .dot.me {
   background: var(--type-registre);
 }
+/* a head figure: its words one link (its section), its rank's dots beside it, each its own link to
+   a fiche (recette 33: Tab reaches them, Enter opens): a link cannot hold another, so the card is a
+   block and its words the link, the card's click following that link (bulle.ts, « Clic : … ») */
+.rg .th.va.com .fig > a.fa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+.rg .va.com .fig:has(> a.fa:focus-visible) {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--line);
+}
+.rg .va.com .dot[tabindex] {
+  cursor: pointer;
+}
+.rg .va.com .dot:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
 
 /* « Vue 3D »: the live map's door, black with a pink shadow, black in dark too (Ju 09/11: « en
    sombre, le bloc Vue 3D reste noir, comme dans la maquette en clair »; the dark board inverts it) */
@@ -753,7 +774,7 @@
    ran over three or four lines at 1024) */
 @media (min-width: 960px) {
   .rg .va.com .fig .fl,
-  .rg .va.com .fig .rk span {
+  .rg .va.com .fig .rk > span:not(.dots) {
     /* two lines exactly: the clamp alone let the third line's top show under them */
     line-height: 1.25;
     max-height: 2.5em;
