@@ -291,3 +291,37 @@ def test_the_recents_sort_drone_acts_by_publication(built):
 
     recents = read(built, "index.json")["recents"]
     assert [sort_key(e) for e in recents] == sorted(map(sort_key, recents), reverse=True)
+
+
+def test_a_helicopter_s_captation_is_served_apart_never_counted_as_a_drone():
+    """rule:registre_drones@1:aeronef (Ju, 2026-11-09): the aircraft read on the title and
+    article 1, then on the act's sentences naming one; a helicopter's act out of `dr`, the
+    days and « publiés avant le vol », counted in `helico`; an act naming none stays a drone's."""
+    import lacarte_registre as registre
+    from lacarte_registre import collecte, comptes, lecture_drones, regles
+
+    rules = registre.RULES
+    assert lecture_drones.aeronef(["… caméras installées sur deux hélicoptères …"], rules) == (
+        "helicoptere"
+    )
+    assert lecture_drones.aeronef(["… sur des aéronefs …", "aéronefs télé-pilotés"], rules) == (
+        "drone"
+    )
+    assert lecture_drones.aeronef(["1 hélicoptère et trois drones"], rules) == "drone"
+    assert lecture_drones.aeronef(["… sur des aéronefs …", ""], rules) == "non_lu"
+    act = {"id": "ppparis:ab:2026-01165", "type": "drone", "sous_type": None, "acte": "2026-01165",
+           "titre": "Arrêté n°2026-01165 autorisant la captation … caméras installées sur deux "
+                    "hélicoptères", "champs": {"dates": ["2026-09-25"], "article_1": "Article 1er"},
+           "administration": "ppparis", "recueil": "r", "recueil_nom": "Arrêté",
+           "recueil_date": "2026-09-18", "url": "u", "gabarit": "en-tete", "commune": None,
+           "insee": None}  # fmt: skip
+    admin = {"code": "75", "genre": "departement", "nom": "Paris"}
+    heli = collecte.act_event(act, admin, {"dates"}, None, None)
+    plain = {**act, "titre": "Arrêté autorisant la captation … sur des aéronefs", "acte": "2"}
+    drone = collecte.act_event(plain, admin, {"dates"}, None, None)
+    assert (heli["aeronef"], drone["aeronef"]) == ("helicoptere", "non_lu")
+    assert not regles.is_drone_act(heli) and regles.is_helico_act(heli)
+    assert regles.is_drone_act(drone) and not regles.is_helico_act(drone)
+    c = comptes._counts([heli, drone])
+    assert (c["dr"], c["helico"]) == (1, 1)
+    assert drones.publication([heli, drone])["avant"] == 1  # the drone's only

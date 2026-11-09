@@ -13,17 +13,26 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from lacarte_registre.regles import EI, Event, Registre, is_act, is_camera_act, is_drone_act
+from lacarte_registre.regles import (
+    EI,
+    Event,
+    Registre,
+    is_act,
+    is_camera_act,
+    is_drone_act,
+    is_helico_act,
+)
 
 
 def _counts(events: Iterable[Event]) -> dict[str, int]:
-    o = {"docs": 0, "con": 0, "cam": 0, "dr": 0, "arr": 0}
+    o = {"docs": 0, "con": 0, "cam": 0, "dr": 0, "helico": 0, "arr": 0}
     for e in events:
         o["docs"] += 1
         # a contract once: a copy is its second publication (as the lists count it)
         o["con"] += e["t"] == "attribution" and not e.get("copie")
         o["cam"] += is_camera_act(e)
         o["dr"] += is_drone_act(e)
+        o["helico"] += is_helico_act(e)  # a helicopter's captation, never in `dr`
         o["arr"] += is_act(e)
     return o
 

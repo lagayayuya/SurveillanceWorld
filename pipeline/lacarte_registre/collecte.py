@@ -300,6 +300,8 @@ def act_event(
         if k in nv:
             e[k] = nv[k]
     if a["type"] == "drone":
+        # a drone or a helicopter (rules/registre_drones.yaml `aeronef`)
+        e["aeronef"] = lecture_drones.aeronef_acte(a, rules_dir or registre.RULES)
         # what the article 1 says where no model read it (rules/registre_drones.yaml `texte`)
         for k, v in lecture_drones.champs(a, rules_dir or registre.RULES).items():
             e.setdefault(k, v)

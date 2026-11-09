@@ -41,6 +41,7 @@ from lacarte_registre.regles import (
     disp,
     is_camera_act,
     is_drone_act,
+    is_helico_act,
     sort_key,
     typ,
     year_group,
@@ -348,7 +349,7 @@ def sellers_and_buyers(reg: Registre, events: Iterable[Event]) -> dict[str, list
     return {"vendeurs": _contracts_ranked(sellers), "acheteurs": _contracts_ranked(buyers)}
 
 
-YEAR_KINDS = ("con", "mod", "ao", "sub", "cam", "dr")
+YEAR_KINDS = ("con", "mod", "ao", "sub", "cam", "dr", "helico")
 
 
 def per_year(events: Iterable[Event]) -> dict[str, dict[str, int]]:
@@ -359,7 +360,10 @@ def per_year(events: Iterable[Event]) -> dict[str, dict[str, int]]:
         y = (e.get("date") or "")[:4]
         if not y.isdigit():
             continue
-        k = "cam" if is_camera_act(e) else "dr" if is_drone_act(e) else typ(e)
+        k = (
+            "cam" if is_camera_act(e) else "dr" if is_drone_act(e)
+            else "helico" if is_helico_act(e) else typ(e)
+        )  # fmt: skip
         if k == "con" and e.get("copie"):
             continue  # a contract once, as the département's figures count it
         if k in YEAR_KINDS:

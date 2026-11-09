@@ -57,6 +57,38 @@ def lire(article_1: str | None, rules_dir: Path) -> dict[str, Any]:
     return out
 
 
+def plie(s: str | None) -> str:
+    """Folded with its spaces: lower case, no accent, one space."""
+    s = unicodedata.normalize("NFKD", (s or "").replace("’", "'"))
+    return re.sub(r"\s+", " ", s.encode("ascii", "ignore").decode().lower()).strip()
+
+
+@cache
+def _aeronef(rules_dir: Path) -> tuple[re.Pattern[str], re.Pattern[str]]:
+    conf = yaml.safe_load((rules_dir / "registre_drones.yaml").read_text("utf-8"))["aeronef"]
+    return re.compile(conf["helicoptere"]), re.compile(conf["drone"])
+
+
+def aeronef(textes: list[str | None], rules_dir: Path) -> str:
+    """« drone », « helicoptere » or « non_lu » (rule:registre_drones@1:aeronef): the first
+    of `textes` that names an aircraft decides (the title and article 1, then the act's
+    own sentences naming one)."""
+    heli, drone = _aeronef(rules_dir)
+    for t in textes:
+        t = plie(t)
+        if drone.search(t):
+            return "drone"
+        if heli.search(t):
+            return "helicoptere"
+    return "non_lu"
+
+
+def aeronef_acte(a: dict[str, Any], rules_dir: Path) -> str:
+    ch = a.get("champs") or {}
+    first = f"{a.get('titre') or ''} {ch.get('article_1') or ''}"
+    return aeronef([first, ch.get("aeronef_extrait")], rules_dir)
+
+
 def champs(a: dict[str, Any], rules_dir: Path) -> dict[str, Any]:
     """The fields for a drone act of the family the rule was measured on (the police
     prefecture and the four départements of its agglomeration), nothing for another."""

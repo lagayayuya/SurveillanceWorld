@@ -106,7 +106,7 @@ def non_deduits(events: list[Event]) -> list[dict[str, Any]]:
     rows = [
         {
             "acte": e["id"],
-            "kind": KINDS[e["t"]],
+            "kind": "helicoptere" if e.get("aeronef") == "helicoptere" else KINDS[e["t"]],
             "date": e.get("date"),
             "url": e.get("url"),
             "ref": e.get("ref"),
@@ -141,6 +141,8 @@ def creneaux(
         ]
         site_ids = sorted({z["site"] for z in drawn if z.get("site") in here})
         kind = a.get("kind") or "drone"
+        if kind == "drone" and (by_id.get(a["acte"]) or {}).get("aeronef") == "helicoptere":
+            kind = "helicoptere"  # drawn, marked, never added to the drones' hours
         for p in a.get("periodes") or []:
             key = (p["t0"], p["t1"], tuple(site_ids), kind)
             slot = out.get(key)

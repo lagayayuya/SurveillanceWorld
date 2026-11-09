@@ -94,7 +94,7 @@ def test_the_intercommunalities_count_each_document_once(built):
     lyon = s["epcis"][METROPOLE_LYON]
     assert lyon["nom"] == "Métropole de Lyon"
     assert len(lyon["communes"]) == 34
-    assert lyon["uniq"] == {"docs": 219, "con": 191, "cam": 10, "dr": 3, "arr": 13}
+    assert lyon["uniq"] == {"docs": 219, "con": 191, "cam": 10, "dr": 3, "helico": 0, "arr": 13}
     assert lyon["acheteur"] is True
     assert sum(len(x["communes"]) for x in s["epcis"].values()) == len(s["communes"])
     # a shared decree is in several communes, once in its intercommunality

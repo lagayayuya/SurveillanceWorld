@@ -27,7 +27,16 @@ from pathlib import Path
 from typing import Any
 
 from lacarte_registre import chiffres, comptes, fermetures
-from lacarte_registre.regles import EI, Event, disp, is_drone_act, sort_key, typ, year_group
+from lacarte_registre.regles import (
+    EI,
+    Event,
+    disp,
+    is_drone_act,
+    is_helico_act,
+    sort_key,
+    typ,
+    year_group,
+)
 from lacarte_registre.selection import plain
 
 COLUMNS = ("id", "t", "d", "p", "y", "date", "rang", "mots", "doc", "dico")
@@ -122,6 +131,8 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
     fin = ctx.couverture["maj"][:10]
     debut = (dt.date.fromisoformat(fin) - dt.timedelta(days=365)).isoformat()
     vols: defaultdict[str, set[str]] = defaultdict(set)
+    # a helicopter's days apart, never a drone's (rule:registre_drones@1:aeronef)
+    vols_h: defaultdict[str, set[str]] = defaultdict(set)
     for e in reg.evenements:
         kinds[typ(e)] += 1
         if e.get("dep"):
@@ -135,15 +146,16 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
         for k in dict.fromkeys([e.get("insee"), *(e.get("partage") or [])]):
             if not k or k not in reg.communes:
                 continue
-            c = coms.setdefault(k, {"docs": 0, "con": 0, "cam": 0, "dr": 0})
-            if is_drone_act(e):
+            c = coms.setdefault(k, {"docs": 0, "con": 0, "cam": 0, "dr": 0, "helico": 0})
+            if is_drone_act(e) or is_helico_act(e):
                 # the collection's acts list their days; the pilot's give a period
                 days = e.get("jours") or chiffres.jours([e.get("periode") or ""])
-                vols[k].update(d for d in days if debut < d <= fin)
+                (vols if is_drone_act(e) else vols_h)[k].update(d for d in days if debut < d <= fin)
             c["docs"] += 1
             c["con"] += e["t"] == "attribution" and not e.get("copie")
             c["cam"] += e["t"] == "arrete"
             c["dr"] += is_drone_act(e)
+            c["helico"] += is_helico_act(e)
         if e["t"] != "attribution":
             continue
         # a contract published twice still names its company and its buyer, and counts once
@@ -183,6 +195,7 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
         # its own counted contracts (comptes.commune, as departement/<d>.json stats.communes)
         c["amt"] = round(st.get("montant") or 0, 2)
         c["jv"] = len(vols.get(k, ()))
+        c["jv_helico"] = len(vols_h.get(k, ()))
     # a département's map counts every commune of it, a document or not; its acts as its
     # page counts them (comptes.departement)
     carte_dep: Counter[str] = Counter()
@@ -191,7 +204,7 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             carte_dep[d] += n
     for d, o in deps.items():
         dst = comptes.departement(reg, d)
-        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"])
+        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"], helico=dst["helico"])
     # a company named in a contract that counts, never a sole trader
     dico_ent = {s: ctx.entreprise(s) for s in sorted(ents)}
     ent_rows = {

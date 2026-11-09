@@ -125,3 +125,22 @@ texte:
     frontieres: "surveillancedesfrontieres"
     secours: "secoursauxpersonnes"
     infractions: "constatationdesinfractions"
+
+# The aircraft of an aerial captation (L. 242-5): a drone, a helicopter, or not read. Read on
+# the act's title and article 1 first, then on its own sentences that name an aircraft
+# (collection reader 8, `champs.aeronef_extrait`, visas included); folded text (no accent,
+# lower case). Measured 2026-11-09 on the 8 398 drone acts collected, title and article 1
+# alone: drone 1 867, helicopter 52, both 61, none 6 418 (Paris 1 458 of 1 505).
+aeronef:
+  id: rule:registre_drones@1:aeronef
+  rationale: >-
+    Ju, 2026-11-09: the helicopters' captations belong in the register, never in the drones'
+    figures (the site says « drones »). `helicoptere` when the act names a helicopter, a
+    plane or a manned aircraft and no drone; `drone` when it names a drone, a remotely
+    piloted aircraft or one without crew (an act naming both flies drones: `drone`);
+    `non_lu` when it names neither. A `non_lu` act stays in the drones' figures, as before
+    this rule: « caméras installées sur des aéronefs » is the law's wording for the drones
+    the police fly, and leaving them out would take Paris from 1 505 acts to 46; Ju decides
+    whether they leave (regles.is_drone_act, one line).
+  helicoptere: 'helicopteres?|\bavions?\b|aeronefs? (?:habites?|avec (?:pilote|equipage))'
+  drone: 'drones?|tele-?pilot|sans (?:equipage|personne a bord)|circulant sans personne'

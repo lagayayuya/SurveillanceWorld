@@ -40,6 +40,7 @@ from lacarte_registre import (
     fermetures,
     fusion,
     geo,
+    lecture_drones,
     national,
     natures,
     recherche,
@@ -93,6 +94,10 @@ def run(
         if e["t"] in natures.TYPES:
             text = e.get("objet") or titles.get(e.get("affaire") or "")
             e["natures"] = natures.classer(text, e.get("cpv") or [], rn)["natures"]
+    # the pilot's drone acts, read on their title alone (rules/registre_drones.yaml `aeronef`)
+    for e in pilote.reg["evenements"]:
+        if e["t"] == "arrete_drone" and "aeronef" not in e:
+            e["aeronef"] = lecture_drones.aeronef([e.get("titre")], rules)
     reg = regles.appliquer(pilote, corr)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
