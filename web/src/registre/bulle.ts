@@ -85,6 +85,10 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
         const i = document.createElement("i");
         i.className = `sw ${m[1]}`;
         i.setAttribute("aria-hidden", "true");
+        // the series' colour as its legend draws it: the swatch classes are the view's (under
+        // .va.com, .va.ent…), out of reach of the bubble, which lives beside the view
+        const c = couleur(m[1]);
+        if (c) i.style.background = c;
         s.append(i, m[2]);
       } else s.textContent = l;
       tip.append(s);
@@ -115,18 +119,67 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
     placer(el);
   };
 
-  // above the element, centred, kept inside the screen (8 px from its edges); below when the top
-  // of the screen would cut it
+  /** A series' colour read where the view draws it: a legend swatch, a bar, a mark. */
+  const couleur = (cls: string): string | null => {
+    const sel = cls
+      .trim()
+      .split(/\s+/)
+      .map((c) => `.${CSS.escape(c)}`)
+      .join("");
+    for (const e of root.querySelectorAll(sel)) {
+      const st = getComputedStyle(e);
+      const bg = st.backgroundColor;
+      if (bg && !/^(transparent|rgba\(0, 0, 0, 0\))$/.test(bg)) return bg;
+      const fill = e instanceof SVGElement ? st.fill : "";
+      if (fill && fill !== "none" && !/^rgba\(0, 0, 0, 0\)$/.test(fill)) return fill;
+    }
+    return null;
+  };
+
+  /** Where a bubble may stand: the frame's visible scroll (or the 3D view's panel), under the
+   * section bar that sticks at its top, 8 px from every edge. */
+  const cadre = (el: Element) => {
+    const box = (
+      el.closest(".v3p") ??
+      hote.parentElement ??
+      document.documentElement
+    ).getBoundingClientRect();
+    let top = Math.max(box.top, 0);
+    const bottom = Math.min(box.bottom, window.innerHeight);
+    const left = Math.max(box.left, 0);
+    const right = Math.min(box.right, document.documentElement.clientWidth);
+    for (const s of root.querySelectorAll(".toc")) {
+      const r = s.getBoundingClientRect();
+      if (r.height && r.top <= top + 2 && r.bottom > top && !s.contains(el)) top = r.bottom;
+    }
+    return { top: top + 8, bottom: bottom - 8, left: left + 8, right: right - 8 };
+  };
+
+  // whole inside the frame: above the element, centred; else below; else beside it (right, then
+  // left), its middle level with the element's; clamped to the frame on both axes
   const placer = (el: Element) => {
     const r = el.getBoundingClientRect();
     const hr = hote.getBoundingClientRect();
-    const vw = document.documentElement.clientWidth;
+    const B = cadre(el);
     tip.style.left = "0px";
     tip.style.top = "0px";
+    tip.style.maxWidth = `${Math.max(160, Math.min(300, B.right - B.left))}px`;
     const w = tip.offsetWidth;
     const h = tip.offsetHeight;
-    const x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), vw - w - 8);
-    const y = r.top - h - 10 >= 8 ? r.top - h - 10 : r.bottom + 10;
+    const clampX = (x: number) => Math.min(Math.max(B.left, x), Math.max(B.left, B.right - w));
+    const clampY = (y: number) => Math.min(Math.max(B.top, y), Math.max(B.top, B.bottom - h));
+    let x: number;
+    let y: number;
+    if (r.top - h - 10 >= B.top) {
+      x = clampX(r.left + r.width / 2 - w / 2);
+      y = r.top - h - 10;
+    } else if (r.bottom + 10 + h <= B.bottom) {
+      x = clampX(r.left + r.width / 2 - w / 2);
+      y = r.bottom + 10;
+    } else {
+      x = r.right + 10 + w <= B.right ? r.right + 10 : clampX(r.left - w - 10);
+      y = clampY(r.top + r.height / 2 - h / 2);
+    }
     tip.style.left = `${(x - hr.left).toFixed(0)}px`;
     tip.style.top = `${(y - hr.top).toFixed(0)}px`;
   };
@@ -171,6 +224,19 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
       ev.preventDefault();
       ev.stopImmediatePropagation();
       allerA(go);
+      return;
+    }
+    // « Clic : … » promised: the whole element does it, not only its underlined name — a click
+    // beside its link or button follows that link or button
+    const on =
+      ev.target instanceof Element ? ev.target.closest("a[href], button, input, label") : null;
+    if (el.getAttribute("data-bc") && !el.matches("a[href], button") && !(on && el.contains(on))) {
+      const lien = el.querySelector("a[href], button");
+      if (lien) {
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        cliquer(lien);
+      }
     }
   };
   const focus = (ev: FocusEvent) => {

@@ -897,6 +897,10 @@
   z-index: 60;
   max-width: min(300px, calc(100vw - 16px));
 }
+/* an element whose bubble says « Clic : … » is clicked whole (bulle.ts) */
+.rg .va [data-bc] {
+  cursor: pointer;
+}
 .rg .va .tip .sw {
   display: inline-block;
   margin-right: 6px;
