@@ -36,6 +36,7 @@ from lacarte_registre import (
     collecte,
     comptes,
     couverture,
+    departements,
     exporter,
     fermetures,
     fusion,
@@ -94,6 +95,20 @@ def run(
         if e["t"] in natures.TYPES:
             text = e.get("objet") or titles.get(e.get("affaire") or "")
             e["natures"] = natures.classer(text, e.get("cpv") or [], rn)["natures"]
+    # every document's département in the COG form, an unknown code dropped (departements.py)
+    # the 101 départements of the régions' rule (registre_chiffres.yaml), the overseas
+    # collectivities the commune references hold
+    chiffres_conf = yaml.safe_load((rules / "registre_chiffres.yaml").read_text("utf-8"))
+    officiels = {d for r in chiffres_conf["regions"].values() for d in r["deps"]}
+    officiels |= {c.get("dep") for c in pilote.reg["communes"].values() if c.get("dep")}
+    ref = root / "national" / "communes.json"  # the national reference, every commune of France
+    if ref.is_file():
+        officiels |= {
+            c.get("dep") for c in json.loads(ref.read_text("utf-8"))["communes"].values()
+        } - {None}
+    deps_fixed = departements.normaliser(
+        [*pilote.reg["evenements"], *pilote.reg["affaires"].values()], officiels
+    )
     # the pilot's drone acts, read on their title alone (rules/registre_drones.yaml `aeronef`)
     for e in pilote.reg["evenements"]:
         if e["t"] == "arrete_drone" and "aeronef" not in e:
@@ -177,6 +192,7 @@ def run(
     if col_summary:
         summary["collecte"] = col_summary
     summary["textes_repares"] = repaired
+    summary["departements"] = deps_fixed
     summary["non_lus"] = cov["non_lus"]
     summary["maj"] = cov["maj"]
     return summary

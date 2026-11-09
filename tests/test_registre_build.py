@@ -393,3 +393,10 @@ def test_every_commune_says_whether_its_camera_and_drone_acts_are_read(built):
     assert d[MIONS]["couverture_actes"] == rows[MIONS]["couverture_actes"]
     deps = read(built, "listes.json")["lignes"]["departements"]
     assert all(set(r["couverture_actes_communes"].values()) <= states for r in deps.values())
+
+
+def test_the_lists_serve_official_departement_codes_only(built):
+    import re
+
+    deps = read(built, "listes.json")["lignes"]["departements"]
+    assert deps and all(re.fullmatch(r"0[1-9]|[1-8]\d|9[0-5]|2[AB]|97\d|98\d", d) for d in deps)
