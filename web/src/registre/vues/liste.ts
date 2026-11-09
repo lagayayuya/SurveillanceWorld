@@ -168,9 +168,29 @@ function nomValeur(f: Filtre, v: string, C: Corpus | null, P: Pick<Props, "couve
  * other keys (« 1 », « 20A », « 97 »…) left out, as their count. */
 function lignes(C: Corpus, liste: Liste): Rang[] {
   const r = rangs(C, liste);
-  if (liste === "departements") return r.filter((x) => vraiDepartement(x.id));
-  if (liste === "intercommunalites") return r.map((x) => epciEnLigne(C, x));
+  if (liste === "departements")
+    return r.filter((x) => vraiDepartement(x.id)).map(sansContrat(liste));
+  if (liste === "intercommunalites") {
+    const vide = sansContrat(liste);
+    return r.map((x) => vide(epciEnLigne(C, x)));
+  }
   return r;
+}
+
+/** A département's or an intercommunality's amount without any contract: « — », « aucun
+ * contrat », not « non publié » (nothing is hidden: there is nothing; recette 27), as a commune's
+ * row says it (listes.ts). */
+function sansContrat(liste: "departements" | "intercommunalites"): (x: Rang) => Rang {
+  const k = DEFS[liste].cols.filter((c) => !c.deps).findIndex((c) => c.cle === "montant");
+  return (x) => {
+    if (k < 0 || x.v.con !== 0) return x;
+    const cells = [...x.cells];
+    cells[k] = [
+      { span: "—", cls: "v" },
+      { span: t("liste.a.aucun_contrat_court"), cls: "sub" },
+    ];
+    return { ...x, cells };
+  };
 }
 
 /** An intercommunality's row: one destination, its name's and its row's, its v2 fiche (its
