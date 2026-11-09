@@ -228,6 +228,12 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
     "Secteur cité : 14e arrondissement, « aux abords des lycées et des universités »",
   );
   assert.equal(secteurPanneau(aujourdhui), "");
+  // `secteur`, the act's own words (not served in `non_deduits` yet): said when no place is cited,
+  // the whole commune still hatched (no shape)
+  const ditOu = { ...aujourdhui, secteur: "à Paris  le 30 juin 2026 " };
+  assert.equal(secteurPanneau(ditOu), "Secteur cité : « à Paris le 30 juin 2026 »");
+  assert.equal(sansLieu([], [ditOu], null, null, {}), true);
+  assert.equal(secteurPanneau({ ...complet, secteur: "ailleurs" }), secteurPanneau(complet));
   assert.equal(
     zonePanneau(complet),
     "Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas",

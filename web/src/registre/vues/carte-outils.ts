@@ -55,6 +55,11 @@ export type NonDeduit = {
   motif?: { categorie: string | null; libelle: string | null };
   finalites?: string[];
   lieux?: Lieu[];
+  /** The act's own words for where (A reads them for the Préfecture de police and the petite
+   * couronne, 5d8e95a: « à Paris le 30 juin 2026 à l'occasion de l'événement susvisé »): a text,
+   * no shape; not yet copied into `non_deduits` (besoins-donnees, 09/11). Shown in the panel's
+   * « Où » when no place is cited; the sector is hatched alone only from a shape (`lieux[].forme`). */
+  secteur?: string;
 };
 /** A cited place's shape, approximate: an arrondissement's outline, a widened street, a circle. */
 export type Forme = {
@@ -510,7 +515,8 @@ export function zonePanneau(a: NonDeduit): string {
  * (« 14e arrondissement, « aux abords des lycées et des universités » »); nothing when none. */
 export function secteurPanneau(a: NonDeduit): string {
   const ls = (a.lieux ?? []).filter((l) => l.texte);
-  if (!ls.length) return "";
+  const dit = (a.secteur ?? "").replace(/\s+/g, " ").trim();
+  if (!ls.length) return dit ? t("carte.secteur_cite", { l: t("carte.cite", { x: dit }) }) : "";
   const mots = ls.map((l) => (l.genre === "autre" ? t("carte.cite", { x: l.texte }) : l.texte));
   return t("carte.secteur_cite", { l: mots.join(", ") });
 }
