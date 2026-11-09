@@ -49,7 +49,7 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
-import { couvertureActes, lecture, type RowActes } from "./comparer-a.ts";
+import { couvertureActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
 import { exportRows } from "./documents.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
@@ -353,6 +353,7 @@ export class Commune extends Vue<Props, State> {
     // registre_couverture@1:actes_commune), « non lu », never 0, where it is not (Ju 09/11,
     // recette 01-02); the counts are the build's (its row, its file's stats), never its documents
     const propre = f.stats.communes[insee] as (RowActes & { arr?: number }) | undefined;
+    const hors = horsCommune(f.stats.dep?.depStats, f.stats.dep?.uniq);
     const couv = couvertureActes({
       insee,
       dep: c.dep,
@@ -362,6 +363,7 @@ export class Commune extends Vue<Props, State> {
       depTotal: f.stats.dep?.depStats,
     });
     const lu = lecture(couv);
+    const nCam = X?.lignes.communes[insee]?.cam ?? propre?.cam ?? 0;
     const nDr = X?.lignes.communes[insee]?.dr ?? propre?.dr ?? 0;
     const st = strate(pop);
     const pairs = X
@@ -572,17 +574,31 @@ export class Commune extends Vue<Props, State> {
         .filter(Boolean)
         .sort()[0] ?? "2024";
     const pct = (v: number) => Math.round((100 * v) / Math.max(1, parts.total));
+    // four cases (recette 02): the cameras its decrees authorise; its decrees counted, their
+    // cameras not read; none, read (a true 0); its decrees not read
+    const camCas = !lu.cam ? "nl" : parts.total ? "lus" : nCam ? "nb" : "aucun";
+    const voirArretes: Handler = (ev) => {
+      ev.preventDefault();
+      this.versDocs({ onglet: "aut" });
+    };
     const cam = {
       n: camN,
       ans: [
-        ...(lu.cam && parts.total
+        ...(camCas === "lus"
           ? [
               T("commune_a.cam_ans_a", { y: depuis }),
               { strong: T("commune_a.cam_ans_n", { n: fr(parts.total) }) },
               T("commune_a.cam_ans_b", { nom }),
             ]
-          : [t("commune_a.cam_ans_nl", { nom })]),
-        ...(carteN != null ? [t("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : []),
+          : camCas === "nb"
+            ? [
+                { strong: T("commune_a.cam_ans_nb", { n: nCam, y: depuis }) },
+                T("commune_a.cam_ans_nb_b", { nom }),
+              ]
+            : camCas === "aucun"
+              ? [T("commune_a.cam_ans_aucun", { nom, y: depuis })]
+              : [T("commune_a.cam_ans_nl", { nom })]),
+        ...(carteN != null ? [T("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : ["."]),
       ] as RichItem[],
       kAut: T("commune_a.cam_k", { y: depuis }),
       parts:
@@ -607,7 +623,17 @@ export class Commune extends Vue<Props, State> {
               }))
           : null,
       nonLu:
-        lu.cam && parts.total ? "" : lus ? t("commune_a.cam_non_lu_c") : t("commune_a.cam_non_lu"),
+        camCas === "nb"
+          ? T("commune_a.cam_nb_nl", { n: nCam })
+          : camCas !== "nl"
+            ? ""
+            : !lus
+              ? T("commune_a.cam_non_lu")
+              : hors?.cam
+                ? T("commune_a.cam_non_lu_hors", { n: hors.cam, nom })
+                : T("commune_a.cam_non_lu_c"),
+      aucun: camCas === "aucun" ? T("commune_a.cam_aucun_lu", { y: depuis }) : "",
+      voir: camCas === "nb" ? { l: T("commune_a.cam_voir", { n: nCam }), pick: voirArretes } : null,
       osm: carteN ? fr(carteN) : "",
       osmNon: carteN === 0,
       carteHref: communeHref(insee, "carte"),
