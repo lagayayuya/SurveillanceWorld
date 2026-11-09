@@ -678,3 +678,7 @@ One line per decision: date — decision — reason.
 - 2026-11-09 — An intercommunality without a fiche links to the list of its communes, so every intercommunality in Comparer is a link — Ju 2026-11-09 « uniformise », and the rule that a mention with a fiche is a link.
 - 2026-11-09 — The commune's Vue 3D block stays black in dark mode, against the dark board — Ju 2026-11-09.
 - 2026-11-09 — « Publiés avant le vol ? » names its départements by their drone decrees, the most first (listes.json `lignes.departements[d].dr`, Paris first) — Ju 2026-11-09; an approximation until `publication` gives a count per authority.
+- 2026-11-09 — The 3D view counts only the acts that authorise a flight: an act with `fin` (abrogation, withdrawal) leaves it as it leaves listes.json's `dr` — one figure per commune (Paris 642), Ju 2026-11-09.
+- 2026-11-09 — An act whose exact place is not read hatches the whole commune; the label on its edge and its dotted line go, the legend says it — Ju 2026-11-09.
+- 2026-11-09 — Beside the 3D panel a click on the map is the view's: it centres the commune in the part the panel leaves free, opens another commune's view, or frames an arrondissement of Paris, Lyon or Marseille; the site's map no longer opens a hidden fiche there.
+- 2026-11-09 — The 3D view's calendar shows twelve months, « Toute la période » the three years; its tab follows the door: « Ouvrir la vue 3D » and « Vue 3D ↗ » open Fiche, the day doors open Drones — Ju 2026-11-09.
