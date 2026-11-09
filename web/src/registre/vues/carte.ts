@@ -1665,7 +1665,14 @@ class CarteDrones extends Vue<Props, State> {
       calAlt: t("carte.cal_alt", { nom, de: dateTxt(g.A), a: dateTxt(finCal) }),
       calAide: t(g.tel ? "carte.cal_aide_tel" : "carte.cal_aide"),
       calLive: S.jf >= 0 && phrase ? `${phrase.date} · ${phrase.reste}` : "",
-      hasSum: !!phrase,
+      // the day's line keeps its two lines, filled or not (Ju, 09/11: nothing moves on hover)
+      // its whole sentence in a bubble: the frame's (bulle.ts) on a phone, where the calendar is in
+      // the sheet; on a wide screen the calendar stands over the map, out of the panel that clips
+      // the frame's bubble, and the theme's own (socle-a [data-tip]) shows it above the line
+      sumTip: !!phrase && isLarge,
+      sumBulle: !!phrase && !isLarge,
+      sumTout: phrase ? `${phrase.date} · ${phrase.reste}` : "",
+      noSum: !phrase,
       sum: phrase ?? { date: "", reste: "" },
       calClick: ((e) => {
         const x = this.jourSous(e);

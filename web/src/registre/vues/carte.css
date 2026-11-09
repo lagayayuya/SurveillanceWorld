@@ -185,18 +185,51 @@
   border-color: var(--type-registre);
   border-width: 2px;
 }
+/* the day's line (Ju, 09/11): two lines high whatever the day, the rest cut « … » and whole in its
+   bubble (carte.ts sumTip, sumBulle); empty, it says what to do */
+.rg .v-carte .cal-sum-w {
+  font: inherit;
+}
+.rg .v-carte .cal-sum-t[data-tip]:is(:hover, :focus-visible)::after {
+  width: min(420px, 100%);
+}
+.rg .v-carte .cal-sum-t:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
 .rg .v-carte .cal-sum {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  height: 36px;
   margin: 8px 0 0;
   font:
-    400 13px / 1.35 "Special Elite",
+    400 13px / 18px "Special Elite",
     monospace;
+}
+.rg .v-carte .cal-sum.vide {
+  color: var(--muted);
 }
 .rg .v-carte .cal-sum b {
   font-family: Archivo, sans-serif;
   font-size: 15px;
+  line-height: 18px;
   font-weight: 900;
   font-stretch: 75%;
   text-transform: uppercase;
+}
+.rg .v-carte .cal-sum:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+/* folded, the band's words on one line */
+.rg .v-carte .frise-bande .tw {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* the phone's calendar: a month a row, scrolling within its box, the latest months on top */
 .rg .v-carte .frise-g.cal-tel {

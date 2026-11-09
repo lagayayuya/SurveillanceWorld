@@ -192,7 +192,7 @@ test("the phone's grid: a row per month, the latest on top, a column per day of 
 test("the sentence on the chosen day, as the board writes it, and with today's data", () => {
   const p = phraseJour(d("2026-11-04"), [], [complet], "drone");
   assert.equal(p.date, `Mer.${N}4${N}nov.${N}2026`);
-  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
+  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
   assert.equal(
     phraseJour(d("2026-11-04"), [], [aujourdhui], "drone").reste,
     "1 arrêté · horaires non publiés (justesse en cours de mesure) · lieu pas encore lu",
@@ -203,7 +203,7 @@ test("the sentence on the chosen day, as the board writes it, and with today's d
 
 test("a row's words: hours in each state, service and reason, the zone's state; nothing for a field not published", () => {
   assert.deepEqual(motsLigne(complet), {
-    h: "7 h 30 – 15 h 30",
+    h: "7 h 30 – 15 h 30",
     svc: "Direction de la sécurité de proximité de l'agglomération parisienne · mouvement social lycéen et étudiant",
     zst: "zone non lue (plan annexé) · secteur cité 14e arrondissement",
   });
@@ -223,8 +223,8 @@ test("a row's words: hours in each state, service and reason, the zone's state; 
   // never the raw ref, the title or the recueil's file name
   for (const r of [aujourdhui, complet])
     for (const v of Object.values(motsLigne(r))) assert.ok(!/recueil|préfecture \(|Arrêté 2026/.test(v), v);
-  assert.equal(horaireTxt("20h00-fin"), "20 h 00 – fin");
-  assert.equal(horaireTxt("18h00-03h00"), "18 h 00 – 3 h 00");
+  assert.equal(horaireTxt("20h00-fin"), "20 h 00 – fin");
+  assert.equal(horaireTxt("18h00-03h00"), "18 h 00 – 3 h 00");
   assert.equal(horaireTxt("toute la journée"), "toute la journée");
 });
 

@@ -78,7 +78,7 @@
         <p class="sr" aria-live="polite">{{calLive}}</p>
       </div>
       <p class="fl"><span><i class="cal0"></i>{{t.carte.cal_leg_aucun}}</span><span><i class="cal1"></i>{{t.carte_a.cal_leg_1}}</span><span><i class="cal2"></i>{{t.carte_a.cal_leg_2}}</span><span><i class="cal3"></i>{{t.carte_a.cal_leg_3}}</span><span><i class="cal4"></i>{{t.carte.cal_leg_4}}</span><span><i class="calc"></i>{{t.carte.cal_leg_choisi}}</span></p>
-      <sc-if value="{{hasSum}}"><p class="cal-sum"><b>{{sum.date}}</b> · {{sum.reste}}</p></sc-if>
+      <sc-if value="{{sumTip}}"><div class="va cal-sum-w"><div class="cal-sum-t" tabindex="0" data-tip="{{sumTout}}"><p class="cal-sum"><b>{{sum.date}}</b> · {{sum.reste}}</p></div></div></sc-if><sc-if value="{{sumBulle}}"><p class="cal-sum" tabindex="0" data-bh="{{sum.date}}" data-bl="{{sum.reste}}"><b>{{sum.date}}</b> · {{sum.reste}}</p></sc-if><sc-if value="{{noSum}}"><p class="cal-sum vide">{{t.carte_a.cal_sum_vide}}</p></sc-if>
       </sc-if>
     </section></sc-if>
 

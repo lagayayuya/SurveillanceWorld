@@ -191,8 +191,8 @@ test("the volumes: a slot once per site, its acts once, its share of a period, n
   assert.equal(volumeHeight(v.s3.heures, maxH, 5000), 20);
   assert.ok(volumeHeight(v.s1.heures, maxH, 5000) > volumeHeight(v.s2.heures, maxH, 5000));
   // short (v2.3: the labels must not cover each other): the hours, or « sans horaires »
-  assert.equal(volLabel(v.s1), "12 h");
-  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h");
+  assert.equal(volLabel(v.s1), "12 h");
+  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h");
   assert.equal(volLabel(v.s3), "sans horaires");
 });
 
@@ -217,10 +217,10 @@ test("the outline from the head of the map file: read as soon as it has come, no
 
 test("the words: dates, hours, the chart's tooltip, the tickets, the list's title", () => {
   assert.equal(dateTxt(at("2026-10-23", 19)), `23${N}oct.${N}2026`);
-  assert.equal(dateTxt(at("2026-10-23", 19), true), `23${N}oct.${N}2026, 19 h 00`);
+  assert.equal(dateTxt(at("2026-10-23", 19), true), `23${N}oct.${N}2026, 19 h 00`);
   assert.equal(dateTxt(Date.UTC(2025, 10, 1)), `1er${N}nov.${N}2025`);
-  assert.equal(heuresTxt(2.5), "2,5 h");
-  assert.equal(heuresTxt(1367), `1${N}367 h`);
+  assert.equal(heuresTxt(2.5), "2,5 h");
+  assert.equal(heuresTxt(1367), `1${N}367 h`);
   assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");
   assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "0 h", n: 0 }), "Semaine du 20 oct. : 0 h");
   assert.equal(t("carte.t_arretes", { n: 50 }), "arrêtés drones");
@@ -300,8 +300,8 @@ test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () 
   assert.equal(appareils(mine, 4), 2);
   assert.equal(appareils([z({ cameras: null })], 4), 4);
   assert.equal(appareils([z({ cameras: null })], null), null);
-  assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
-  assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
+  assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
+  assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
   assert.equal(plage(slot({ t0: at("2026-10-06", 0), t1: at("2026-10-07", 0) })), `6${N}oct.${N}2026, horaires non précisés`);
 });
 
