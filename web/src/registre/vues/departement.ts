@@ -336,6 +336,9 @@ class DepartementA extends Vue<PropsA, StateA> {
     const N = this.noms();
     const nom = N.nom;
     const st = f.stats.depStats;
+    const stD = st as typeof st & { dr_commune?: number; dr_autorite?: number };
+    const drC = stD.dr_commune ?? st.dr ?? 0;
+    const drA = stD.dr_autorite ?? null;
     const L: Lexique = { entreprises: f.entreprises, acheteurs: f.acheteurs, communes: f.communes };
     const coms = communes(f);
     const cv = this.props.couverture;
@@ -493,14 +496,22 @@ class DepartementA extends Vue<PropsA, StateA> {
       },
       {
         cls: lu ? "fig" : "fig nl",
-        // Paris counts the police prefecture's acts, wherever they fly (A, 08/11): its label says it
-        k: t(dep === "75" ? "departement_a.fig.dr_pp" : "departement_a.fig.dr"),
-        v: lu ? fr(st.dr) : t("liste.non_lu"),
-        u: lu ? t("departement_a.fig.arretes", { n: st.dr }) : "",
+        // two named counts (A, 09/11): the acts that fly in its communes, the figure; those its
+        // authorities signed, wherever they fly, its line (the police prefecture's for Paris)
+        k: t("departement_a.fig.dr"),
+        v: lu ? fr(drC) : t("liste.non_lu"),
+        u: lu ? t("departement_a.fig.arretes_communes", { n: drC }) : "",
         l: lu
-          ? hors.dr
-            ? t("departement_a.fig.dr_places", { p: places.dr, n: drComs })
-            : t("departement_a.fig.dr_l", { n: drComs })
+          ? drA != null && drA !== drC
+            ? t(
+                dep === "75" ? "departement_a.fig.dr_autorite_pp" : "departement_a.fig.dr_autorite",
+                {
+                  n: drA,
+                },
+              )
+            : hors.dr
+              ? t("departement_a.fig.dr_places", { p: places.dr, n: drComs })
+              : t("departement_a.fig.dr_l", { n: drComs })
           : "",
         rk: rk("dr", false),
         tip: t("departement_a.fig.dr_tip", { y: anA }),
@@ -540,10 +551,19 @@ class DepartementA extends Vue<PropsA, StateA> {
         { strong: t("departement_a.lead_cam", { n: st.cam }) },
         t("departement_a.lead_cam_b", { y: anA }),
       ]);
-    if (lu && st.dr)
+    if (lu && (drC || drA))
       morceaux.push([
-        { strong: t("departement_a.lead_dr", { n: st.dr }) },
-        ...(dep === "75" ? [t("departement_a.lead_dr_pp")] : []),
+        { strong: t("departement_a.lead_dr_communes", { n: drC }) },
+        ...(drA != null && drA !== drC
+          ? [
+              t(
+                dep === "75"
+                  ? "departement_a.lead_dr_autorite_pp"
+                  : "departement_a.lead_dr_autorite",
+                { n: drA },
+              ),
+            ]
+          : []),
       ]);
     if (morceaux.length) {
       lead.push(`${capital(N.dans)}, `);
