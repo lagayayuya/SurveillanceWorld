@@ -228,3 +228,17 @@
   line-clamp: 2;
   overflow: hidden;
 }
+
+/* a legend's entries, the same box whether read or pressed (Ju 09/11, § 1.6): the swatch and the
+   words in a grid of two columns, the swatch on the words' first baseline, every entry starting at
+   the same left edge when the legend wraps */
+.rg .va.home .sleg {
+  align-items: baseline;
+}
+.rg .va.home .sleg > :has(> .sw) {
+  display: inline-grid;
+  grid-template-columns: 12px auto;
+  column-gap: 6px;
+  align-items: baseline;
+  text-align: left;
+}

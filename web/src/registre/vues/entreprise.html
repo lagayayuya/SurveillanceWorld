@@ -51,7 +51,7 @@
           </svg>
           <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
         </div>
-        <div class="sleg"><sc-for list="{{s2.leg}}" as="l"><span class="{{l.cls}}"><i class="{{l.sw}}" aria-hidden="true"></i>{{{l.l}}} · <b>{{l.v}}</b></span></sc-for></div>
+        <div class="sleg"><sc-for list="{{s2.leg}}" as="l"><span class="{{l.cls}}"><i class="{{l.sw}}" aria-hidden="true"></i><span class="lt">{{{l.l}}} · <b>{{l.v}}</b></span></span></sc-for></div>
         <p class="note">{{{s2.note}}}</p>
       </div>
     </section>
@@ -135,7 +135,7 @@
           </svg>
           <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
         </div>
-        <div class="sleg"><sc-for list="{{s5.leg}}" as="l"><span class="lg"><i class="{{l.sw}}" aria-hidden="true"></i>{{{l.l}}}</span></sc-for><span class="lg"><i class="sw live" aria-hidden="true"></i>{{t.entreprise_a.en_cours}}</span><span class="lg"><i class="sw done" aria-hidden="true"></i>{{t.entreprise_a.termine}}</span><span class="lg ord">{{t.entreprise_a.modif_survol}}</span><span class="lg tel">{{t.entreprise_a.modif_toucher}}</span></div>
+        <div class="sleg"><sc-for list="{{s5.leg}}" as="l"><span class="lg"><i class="{{l.sw}}" aria-hidden="true"></i><span class="lt">{{{l.l}}}</span></span></sc-for><span class="lg"><i class="sw live" aria-hidden="true"></i><span class="lt">{{t.entreprise_a.en_cours}}</span></span><span class="lg"><i class="sw done" aria-hidden="true"></i><span class="lt">{{t.entreprise_a.termine}}</span></span><span class="lg ord">{{t.entreprise_a.modif_survol}}</span><span class="lg tel">{{t.entreprise_a.modif_toucher}}</span></div>
         <p class="note">{{t.entreprise_a.frise_note}}<sc-if value="{{s5.caches}}"> {{s5.caches}}</sc-if></p></div>
     </section>
     </sc-if>

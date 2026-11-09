@@ -503,3 +503,17 @@
 .rg .va.dep .row2.seul {
   grid-template-columns: 1fr;
 }
+
+/* a legend's entries, the same box whether read or pressed (Ju 09/11, § 1.6): the swatch and the
+   words in a grid of two columns, the swatch on the words' first baseline, every entry starting at
+   the same left edge when the legend wraps */
+.rg .va.dep .sleg {
+  align-items: baseline;
+}
+.rg .va.dep .sleg > :has(> .sw) {
+  display: inline-grid;
+  grid-template-columns: 12px auto;
+  column-gap: 6px;
+  align-items: baseline;
+  text-align: left;
+}

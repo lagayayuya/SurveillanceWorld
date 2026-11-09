@@ -629,7 +629,7 @@
 /* a legend's series hides on a click (its button pressed when shown) and stands out on a hover */
 .rg .va.com .lgb {
   min-height: 32px;
-  padding: 2px 6px;
+  padding: 2px 0;
   background: none;
   border: 0;
   color: inherit;
@@ -719,11 +719,6 @@
   pointer-events: none;
 }
 
-/* a legend's buttons read as its spans: left-aligned, the words flowing after the swatch */
-.rg .va.com .lgb {
-  display: inline-block;
-  text-align: left;
-}
 @media (max-width: 959px) {
   .rg .va.com .sbar .seg.pt b {
     display: none;
@@ -737,9 +732,6 @@
   .rg .va.com .ch-h .seg-ctl button {
     flex: 1 1 auto;
   }
-}
-.rg .va.com .lgb .sw {
-  margin-right: 6px;
 }
 @media (max-width: 959px) {
   /* an 18 px bar holds its numbers at 13 px */
@@ -769,4 +761,23 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
+}
+
+/* a legend's entries, the same box whether read or pressed (Ju 09/11, § 1.6): the swatch and the
+   words in a grid of two columns, the swatch on the words' first baseline, every entry starting at
+   the same left edge when the legend wraps */
+.rg .va.com .sleg {
+  align-items: baseline;
+}
+.rg .va.com .sleg > :has(> .sw) {
+  display: inline-grid;
+  grid-template-columns: 12px auto;
+  column-gap: 6px;
+  align-items: baseline;
+  align-content: center;
+  text-align: left;
+}
+/* beside the money's pressed entries, a read-only entry takes their height: even rows */
+.rg .va.com .sleg:has(> .lgb) > .lg:not(.lgb) {
+  min-height: 32px;
 }
