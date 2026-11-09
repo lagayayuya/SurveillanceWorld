@@ -30,7 +30,7 @@ import {
   zoomIncline,
 } from "../drones.ts";
 import { count, fr } from "../format.ts";
-import { carteDuSite, laisser, seFerme } from "../hote.ts";
+import { carteDuSite, laisser, retour, retourPossible, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
 import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
@@ -1574,6 +1574,14 @@ class CarteDrones extends Vue<Props, State> {
 
     return {
       ...this.base("carte"),
+      // « ← Retour » (Ju, 09/11): the page before, as the frame's own back button goes (hote.ts
+      // retour); a page opened cold has none, and the link goes to the commune's fiche
+      retourHref: communeHref(insee),
+      retourClic: ((e) => {
+        if (!retourPossible()) return;
+        e.preventDefault();
+        retour();
+      }) as Handler,
       nom,
       letters: coupe(nom),
       lead: estFiche

@@ -283,7 +283,7 @@
   white-space: nowrap;
 }
 
-/* « ← Le registre »: the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
+/* « ← Retour » (« ← Le registre » on the board, Ju 09/11): the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
    modes; cadre.css's .mback is drawn for the dark head of the frame, its ground left out (B7) */
 .rg .v-carte .maptag .mback {
   background: #111;

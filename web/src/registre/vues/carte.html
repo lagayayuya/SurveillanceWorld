@@ -1,7 +1,7 @@
 <div class="{{th}}">
 
   <div class="maptag">
-    <a class="mback" href="/registre/">{{t.carte.retour_registre}}</a>
+    <a class="mback" href="{{retourHref}}" onClick="{{retourClic}}">{{t.carte_a.retour}}</a>
     <sc-if value="{{legOuverte}}"><div class="leg" id="cd-legende">
       <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte.leg_non_lue_plan}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
