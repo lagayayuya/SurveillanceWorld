@@ -674,3 +674,7 @@ One line per decision: date — decision — reason.
 - 2026-11-08 — Comparer reads only listes.json's rows and compares the figures as written (its yellow and its sentence on the rounding); Chemin entre deux draws at most 6 steps and the 5 paths of largest amount, all counted.
 - 2026-11-08 — The links rule reads lot 4's views: the graph's centre is its page's own name, a node a control whose detail holds the fiche's link.
 - 2026-11-09 — « Le même métier » on a company's fiche is the companies holding contracts of the same nature in its départements (the build's `pairs`), no longer the same NAF code — the contracts' nature is served (A, 2026-11-08) and says the trade better than a declared code.
+- 2026-11-09 — An unread decree is « non lu », never 0: drones read where the département is collected and « drone » is not below its threshold; cameras likewise, and only with at least one decree counted for the commune — Paris's camera decrees are not served (Ju 2026-11-09).
+- 2026-11-09 — An intercommunality without a fiche links to the list of its communes, so every intercommunality in Comparer is a link — Ju 2026-11-09 « uniformise », and the rule that a mention with a fiche is a link.
+- 2026-11-09 — The commune's Vue 3D block stays black in dark mode, against the dark board — Ju 2026-11-09.
+- 2026-11-09 — « Publiés avant le vol ? » names its départements by their drone decrees, the most first (listes.json `lignes.departements[d].dr`, Paris first) — Ju 2026-11-09; an approximation until `publication` gives a count per authority.
