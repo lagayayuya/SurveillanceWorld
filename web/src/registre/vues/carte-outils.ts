@@ -697,6 +697,16 @@ export function horsVols(e: ActeVol | undefined, insee: string): boolean {
   return ici.length > 0 && !ici.includes(insee);
 }
 
+/** The commune's helicopter acts (A, cf3c5a7: `stats.communes[k].helico`, the build's count): shown
+ * apart, « hélicoptère », never added to the drones (horsVols leaves them out of every count);
+ * 0 for an older file. */
+export function helicopteres(d: Donnees): number {
+  const insee = String((d.f as { commune?: { insee?: string } }).commune?.insee ?? "");
+  const st = (d.f as { stats?: { communes?: Record<string, { helico?: number }> } }).stats;
+  const n = st?.communes?.[insee]?.helico;
+  return typeof n === "number" && n > 0 ? n : 0;
+}
+
 /** The commune file's slots (an older file has none: no slot), without the acts that are not its
  * drone flights (horsVols). */
 export function drones(d: Donnees): Drones {

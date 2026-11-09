@@ -36,6 +36,7 @@
     </div></sc-if>
     <sc-if value="{{estDrones}}"><div class="dp-body dp-dr" id="v3p-drones" role="tabpanel" aria-labelledby="v3p-t-drones">
       <div class="dfigs"><sc-for list="{{dr.figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.bl}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span></div></sc-for></div>
+      <sc-if value="{{dr.helico}}"><p class="note dp-helico"><b>{{t.carte_a.helico_k}}</b> · {{dr.helico}}</p></sc-if>
       <sc-if value="{{dr.avenir}}"><h3 class="dp-h">{{t.carte_a.avenir_h}}</h3>
         <div class="card"><ul class="avenir"><sc-for list="{{dr.avenir}}" as="a"><li><b>{{a.d}}</b><span>{{a.n}}</span><button type="button" class="go" onClick="{{a.pick}}">{{t.carte_a.afficher_jour}}</button></li></sc-for></ul><p class="note">{{t.carte_a.avenir_note}}</p></div></sc-if>
       <h3 class="dp-h">{{t.carte_a.vol_h}}</h3>

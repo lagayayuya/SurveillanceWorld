@@ -63,6 +63,7 @@ import {
   genre,
   grilleMois,
   grilleSemaines,
+  helicopteres,
   heuresTxt,
   horairesMots,
   jourDe,
@@ -1621,6 +1622,8 @@ class CarteDrones extends Vue<Props, State> {
           bl: t("carte_a.d_zones_b"),
         },
       ],
+      // a helicopter's acts, apart (A, 09/11): never in the figures above, which count drones
+      helico: helicopteres(d) ? t("carte_a.helico", { n: helicopteres(d) }) : "",
       avenir: avenir.length ? avenir : null,
       vol: [barre(nom, vC, sansActe), barre(t("carte_a.france"), vF)],
       volNote: sansActe

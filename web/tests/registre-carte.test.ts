@@ -36,6 +36,7 @@ import {
   dateTxt,
   drones,
   genre,
+  helicopteres,
   heuresTxt,
   lundi,
   mois,
@@ -269,6 +270,33 @@ test("an act that ends an authorisation (`fin`) is no flight: out of the view, a
   // a slot of two acts stays while one of them still authorises
   const y = sansFins({ creneaux: [slot({ t0: 0, t1: H, actes: ["x", "a"] })], non_deduits: [], formes: {} }, (a) => a === "x");
   assert.equal(y.creneaux.length, 1);
+});
+
+test("a helicopter's act is shown apart, never a drone's (A, cf3c5a7): out of the drones, its count the build's", () => {
+  // Paris on 9 Nov. 2026: 1 act `kind: "helicoptere"`, `stats.communes["75056"].helico` 1
+  const nd = (acte: string, kind: string) => ({ acte, kind, date: "2026-11-01", url: null, page: null, raisons: [] });
+  const f = {
+    commune: { insee: "75056" },
+    stats: { communes: { "75056": { dr: 1, helico: 1 } } },
+    drones: { creneaux: [], non_deduits: [nd("d", "drone"), nd("h", "helicoptere")] },
+  };
+  const ev = new Map([
+    ["d", { id: "d", aeronef: "non_lu" }],
+    ["h", { id: "h", aeronef: "helicoptere" }],
+  ]);
+  const d = { f, ev } as unknown as Donnees;
+  assert.deepEqual(
+    drones(d).non_deduits.map((a) => a.acte),
+    ["d"],
+  );
+  assert.equal(helicopteres(d), 1);
+  assert.equal(
+    t("carte_a.helico", { n: 1 }),
+    "1 arrêté autorise des caméras sur un hélicoptère, compté à part\u00a0: jamais avec les drones.",
+  );
+  // none served (an older build, another commune): no mention
+  assert.equal(helicopteres({ f: { commune: { insee: "75056" } } } as unknown as Donnees), 0);
+  assert.equal(helicopteres({ f: { ...f, commune: { insee: "69123" } } } as unknown as Donnees), 0);
 });
 
 test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () => {
