@@ -589,7 +589,8 @@ class Sommaire extends Vue<Props, State> {
         dk: t(`accueil.dk.${dk(e.t)}`),
         lieu: [lieu] as RichItem[],
         ref,
-        objet: minuscule(titreDoc(e)),
+        // the board's objets: lower case, no closing full stop (a title is not a sentence)
+        objet: minuscule(titreDoc(e).trim().replace(/\.$/, "")),
       };
     });
     const gros = I.gros.slice(0, 6).map((e) => {
