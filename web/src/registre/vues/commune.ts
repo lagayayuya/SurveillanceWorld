@@ -322,6 +322,9 @@ export class Commune extends Vue<Props, State> {
     const el = document.getElementById(href.slice(1));
     if (!el) return;
     ev.preventDefault();
+    // the step's address says the section, as the frame's own anchors do (hote.ts): the back
+    // button from another fiche brings the commune back at it
+    history.replaceState(history.state, "", href);
     const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
   };
