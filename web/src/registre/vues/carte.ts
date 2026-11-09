@@ -326,11 +326,22 @@ class CarteDrones extends Vue<Props, State> {
   etape(): string {
     return t("carte_a.etape");
   }
+  /** The commune's slots and acts listed without one, the acts that end an authorisation left out
+   * (carte-outils sansFins): read once per commune file. */
+  private get DR(): ReturnType<typeof drones> {
+    if (this.drD !== this.props.d) {
+      this.drD = this.props.d;
+      this.drX = drones(this.props.d);
+    }
+    return this.drX as ReturnType<typeof drones>;
+  }
+  private drD: Donnees | null = null;
+  private drX: ReturnType<typeof drones> | null = null;
   private get T(): Creneau[] {
-    return drones(this.props.d).creneaux;
+    return this.DR.creneaux;
   }
   private get ND(): NonDeduit[] {
-    return drones(this.props.d).non_deduits;
+    return this.DR.non_deduits;
   }
   private periode(): Periode {
     const S = this.state;
@@ -476,7 +487,7 @@ class CarteDrones extends Vue<Props, State> {
           groupe: (n) => t("carte.vol_groupe", { n }),
           boite: d.f.commune.bbox,
           inclinaison: inclinaison(),
-          formes: drones(d).formes,
+          formes: this.DR.formes,
           onNonLue: this.basculerSz,
           onChoix: (id) => {
             const i = this.slotOf(id);
@@ -792,7 +803,7 @@ class CarteDrones extends Vue<Props, State> {
     L.choisir(cur >= 0 ? T[cur].sites : []);
     // board B: the cited sectors of the acts shown, all of them over the whole period, a chosen
     // day's only; their labels for a chosen day or act; the commune's edge and its label
-    const formes = drones(this.props.d).formes;
+    const formes = this.DR.formes;
     const r = this.periode();
     const choisi = S.sel && cur < 0 ? S.sel : null;
     const ids: string[] = [];
@@ -832,7 +843,7 @@ class CarteDrones extends Vue<Props, State> {
   /** « Voir sur la carte » for a cited sector: its shape framed (drones.formes). */
   private voirForme(id: string): Handler {
     return () => {
-      const f = drones(this.props.d).formes[id];
+      const f = this.DR.formes[id];
       const b = f ? bboxOf(rings(f.geometry as Parameters<typeof rings>[0])) : null;
       if (this.map && b) this.voler(this.map, b);
     };
@@ -974,7 +985,7 @@ class CarteDrones extends Vue<Props, State> {
     const nom = d.f.commune.nom;
     const T = this.T;
     const ND = this.ND;
-    const formes = drones(d).formes;
+    const formes = this.DR.formes;
     const r = this.periode();
     const now = today();
     const jour = this.jourChoisi();

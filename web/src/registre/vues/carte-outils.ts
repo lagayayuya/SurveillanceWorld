@@ -584,14 +584,31 @@ export function volLabel(v: { heures: number; n: number }): string {
   return t("carte.vol_label", { h: v.heures ? heuresTxt(v.heures) : t("carte.vol_sans_horaires") });
 }
 
-/** The commune file's slots (an older file has none: no slot). */
+/** The acts that authorise a flight: an act that ends an authorisation (its event's `fin`: an
+ * abrogation, a withdrawal) is a drone document but no flight, and leaves the view, as it leaves
+ * listes.json's `dr` (pipeline regles.is_drone_act): one count of a commune's acts everywhere. A
+ * slot goes when every act of it is such an end. */
+export function sansFins(x: Drones, fin: (acte: string) => boolean): Drones {
+  return {
+    ...x,
+    creneaux: x.creneaux.filter((c) => !c.actes.length || c.actes.some((a) => !fin(a))),
+    non_deduits: x.non_deduits.filter((a) => !fin(a.acte)),
+  };
+}
+
+/** The commune file's slots (an older file has none: no slot), without the acts that end an
+ * authorisation (sansFins). */
 export function drones(d: Donnees): Drones {
   const x = (d.f as { drones?: Partial<Drones> }).drones;
-  return {
-    creneaux: x?.creneaux ?? [],
-    non_deduits: x?.non_deduits ?? [],
-    formes: x?.formes ?? {},
-  };
+  const ev = (d as { ev?: Donnees["ev"] }).ev;
+  return sansFins(
+    {
+      creneaux: x?.creneaux ?? [],
+      non_deduits: x?.non_deduits ?? [],
+      formes: x?.formes ?? {},
+    },
+    (acte) => !!(ev?.get(acte) as { fin?: string | null } | undefined)?.fin,
+  );
 }
 
 // --- a slot's keys, its zones, its words (v2.1 A4, A8) -----------------------------------------

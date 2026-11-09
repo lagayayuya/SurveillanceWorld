@@ -40,6 +40,7 @@ import {
   moisAxe,
   type NonDeduit,
   repere,
+  sansFins,
   semaines,
   sitesHours,
   span,
@@ -238,6 +239,34 @@ test("a commune file without `drones` (an older build) has no slot and no act li
   });
   const f = { drones: { creneaux: [slot({ t0: 0, t1: H })], non_deduits: [] } };
   assert.equal(drones({ f } as unknown as Donnees).creneaux.length, 1);
+});
+
+test("an act that ends an authorisation (`fin`) is no flight: out of the view, as out of listes.json's `dr`", () => {
+  // Paris on 9 Nov. 2026: 649 acts listed, 7 of them abrogations or withdrawals, `dr` 642
+  const nd = (acte: string) => ({ acte, kind: "drone", date: "2026-11-01", url: null, page: null, raisons: [] });
+  const f = {
+    drones: {
+      creneaux: [slot({ t0: 0, t1: H, actes: ["a"] }), slot({ t0: 0, t1: H, actes: ["x"] })],
+      non_deduits: [nd("b"), nd("y"), nd("z")],
+    },
+  };
+  const ev = new Map([
+    ["x", { id: "x", fin: "abrogation" }],
+    ["y", { id: "y", fin: "retrait" }],
+    ["z", { id: "z", fin: null }],
+  ]);
+  const x = drones({ f, ev } as unknown as Donnees);
+  assert.deepEqual(
+    x.creneaux.map((c) => c.actes[0]),
+    ["a"],
+  );
+  assert.deepEqual(
+    x.non_deduits.map((a) => a.acte),
+    ["b", "z"],
+  );
+  // a slot of two acts stays while one of them still authorises
+  const y = sansFins({ creneaux: [slot({ t0: 0, t1: H, actes: ["x", "a"] })], non_deduits: [], formes: {} }, (a) => a === "x");
+  assert.equal(y.creneaux.length, 1);
 });
 
 test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () => {
