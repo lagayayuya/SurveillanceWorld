@@ -10,10 +10,10 @@
     </div></sc-if>
   </div>
   <div class="ctl" role="group" aria-label="{{t.carte.vue_carte}}">
-    <button class="sq" type="button" aria-pressed="{{is3d}}" onClick="{{tog3d}}" aria-label="{{t.carte.incliner}}">3D</button>
-    <button class="sq" type="button" onClick="{{rotL}}" aria-label="{{t.carte.tourner_gauche}}">↺</button>
-    <button class="sq" type="button" onClick="{{rotR}}" aria-label="{{t.carte.tourner_droite}}">↻</button>
-    <button class="sq" type="button" onClick="{{north}}" aria-label="{{t.carte.remettre_le_nord_en_haut}}" style="font-size: 12px">N</button>
+    <button class="sq" type="button" aria-pressed="{{is3d}}" onClick="{{tog3d}}" aria-label="{{t.carte.incliner}}" data-l="{{t.carte.incliner}}">3D</button>
+    <button class="sq" type="button" onClick="{{rotL}}" aria-label="{{t.carte.tourner_gauche}}" data-l="{{t.carte.tourner_gauche}}">↺</button>
+    <button class="sq" type="button" onClick="{{rotR}}" aria-label="{{t.carte.tourner_droite}}" data-l="{{t.carte.tourner_droite}}">↻</button>
+    <button class="sq" type="button" onClick="{{north}}" aria-label="{{t.carte.remettre_le_nord_en_haut}}" data-l="{{t.carte.remettre_le_nord_en_haut}}" style="font-size: 12px">N</button>
     <sc-if value="{{legTicket}}"><button class="sq legt" type="button" aria-expanded="{{legPressed}}" aria-controls="cd-legende" onClick="{{togLeg}}">{{t.carte.legende}}</button></sc-if>
   </div>
 

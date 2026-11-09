@@ -405,6 +405,37 @@
   }
 }
 
+/* the map's commands say what they do on hover and on the keyboard's focus (Ju, 09/11), beside
+   them on the map's side, in the « ← Retour » ticket's ink; their name is their aria-label too */
+.rg .v-carte .ctl .sq[data-l] {
+  position: relative;
+}
+.rg .v-carte .ctl .sq[data-l]:focus-visible::after,
+.rg .v-carte .ctl .sq[data-l]:hover::after {
+  content: attr(data-l);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 9px;
+  background: #111;
+  color: #f2efe6;
+  border: 2px solid #f2efe6;
+  font:
+    700 13px / 1.2 Archivo,
+    sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+}
+@media (hover: none) {
+  .rg .v-carte .ctl .sq[data-l]:not(:focus-visible):hover::after {
+    content: none;
+  }
+}
+
 /* v2.3 (Ju): the legend and the chart folded by default on a wide screen, the map left free; the
    legend a ticket beside the commands, the chart a thin band that keeps the chosen week */
 .rg .v-carte .ctl .legt {
