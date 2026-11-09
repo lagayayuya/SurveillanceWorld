@@ -1212,13 +1212,20 @@ intercommunality's fiche (`?ic=`) stays v2's, in the same module, until it has a
 
 `/registre/entreprise/<siren>` is board Entreprise-Electriox-A (`vues/entreprise.*`,
 `vues/entreprise-a.ts`, `vues/entreprise-a.css` under `.va.ent`). The head: the name cut out word by
-word, its NAF activity (a link to that code's companies), its SIREN (never a sole trader's), the
-contracts' collection day, a sentence; « Partager », « Citer », « Exporter » (its documents as CSV),
+word, its NAF activity (a link to that code's companies), its SIREN (never a sole trader's), its
+SIRENE record (build of 09/11; a legal person's only): INSEE's category as the board's chip, its
+words in a bubble, « siège à <commune> » linked to the commune's fiche when one exists (the file's
+lexicon, else listes.json once read) with its département, « créée en <year> », the headcount band
+and its year; the contracts' collection day, a sentence; « Partager », « Citer », « Exporter » (its documents as CSV),
 « Comparer avec… ». Four figures: public money (its largest client's share), clients by
 département, running contracts, offers received. Sections: 1 · its clients by amount, coloured by
 a rule (its largest client, that client's département, elsewhere); 2 · its contracts by year
-(amounts or counts; a column: that year in « Tous les documents »); 3 · the nature of its contracts
-(« non lu ») and the companies of the same NAF code in its départements; 4 · joint contracts, offers,
+(amounts or counts; a column: that year in « Tous les documents »); 3 · « Ses contrats, par nature »:
+the counted contracts by the build's `natures` (installation = fourniture_installation or
+travaux_genie_civil, maintenance, lecture de plaques, autre = the rest; a contract can count in
+several cases, a case with none is not drawn; a case filters « Tous les documents », a chip lifts
+it, a case of one contract opens it), and « Le même métier, dans les mêmes départements », the
+build's `pairs` (5 shown, the number the nature × département couples they share); 4 · joint contracts, offers,
 the graph centred on it (a node opens `/registre/graphe/<buyer>`), the companies that worked for its
 clients; 5 · the frieze of its contracts, the running ones outlined. Then « Tous les documents »
 (Année ▾, Acheteur ▾, sort, CSV) and the sources. A duration over 240 months is not drawn.
