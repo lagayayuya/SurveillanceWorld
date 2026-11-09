@@ -110,7 +110,8 @@
   cursor: pointer;
 }
 .rg .va .fr path:hover,
-.rg .va .fr path.on {
+.rg .va .fr path.hl,
+.rg .va .fr path:focus-visible {
   stroke: var(--type-registre);
   stroke-width: 2.5;
 }
@@ -168,9 +169,6 @@
 .rg .va.home .nw {
   white-space: nowrap;
 }
-.rg .va.home .tapinfo {
-  display: none;
-}
 
 @media (max-width: 959px) {
   .rg .va.home .cut {
@@ -207,9 +205,6 @@
   .rg .va .entry .go {
     margin-top: 4px;
     font-size: 12.5px;
-  }
-  .rg .va.home .tapinfo {
-    display: block;
   }
   .rg .va.home .docs td {
     font-size: 14px;

@@ -31,7 +31,7 @@
   </section>
 
   <div class="figs">
-    <sc-for list="{{figs}}" as="f"><a class="fig" href="{{f.href}}" data-tip="{{f.tip}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><span>{{f.r}}</span></span><span class="sr">{{f.tip}}</span></a></sc-for>
+    <sc-for list="{{figs}}" as="f"><a class="fig" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><span>{{f.r}}</span></span><span class="sr">{{f.tip}}</span></a></sc-for>
   </div>
 
   <div class="body"><main>
@@ -76,17 +76,15 @@
           <sc-if value="{{carte.attente}}"><p class="note" role="status">{{carte.attente}}</p></sc-if>
           <sc-if value="{{carte.pret}}">
             <div class="mapwrap">
-              <div class="tipwrap zw" onPointerLeave="{{carte.quitter}}">
-                <svg class="fr" viewBox="{{carte.vb}}" width="{{carte.w}}" height="{{carte.h}}" role="img" aria-label="{{carte.titre}}">
-                  <sc-for list="{{carte.deps}}" as="d"><path class="{{d.cls}}" d="{{d.d}}" onMouseEnter="{{d.survol}}" onClick="{{d.pick}}"></path></sc-for>
+              <div class="zw">
+                <svg class="fr" viewBox="{{carte.vb}}" width="{{carte.w}}" height="{{carte.h}}" role="group" aria-label="{{carte.titre}}">
+                  <sc-for list="{{carte.deps}}" as="d"><path class="{{d.cls}}" d="{{d.d}}" tabindex="0" role="link" aria-label="{{d.bh}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></path></sc-for>
                   <sc-for list="{{carte.etiquettes}}" as="x"><text class="ml" x="{{x.x}}" y="{{x.y}}" text-anchor="middle">{{x.l}}</text></sc-for>
                 </svg>
                 <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
-                <sc-if value="{{carte.tip}}"><div class="tip" style="{{carte.tip.st}}"><b class="tt-h">{{carte.tip.nom}}</b><span><b>{{carte.tip.v1}}</b>{{carte.tip.v1b}}</span><span>{{carte.tip.v2}}</span><span>{{carte.tip.v3}}</span><em>{{t.accueil.carte_clic}}</em></div></sc-if>
               </div>
               <div class="mleg"><sc-for list="{{carte.leg}}" as="l"><span><i class="{{l.cls}}" aria-hidden="true"></i>{{l.l}}</span></sc-for><span class="hint">{{carte.survol}}</span><span class="hint">{{{carte.outremer}}}</span><span class="hint">{{carte.attribution}}</span></div>
             </div>
-            <sc-if value="{{carte.touche}}"><p class="note tapinfo" role="status"><b>{{carte.touche.nom}}</b> · {{carte.touche.ligne}} <a class="go" href="{{carte.touche.href}}">{{t.accueil.carte_fiche}}</a></p></sc-if>
           </sc-if>
         </div>
         <div class="{{gros.r.cls}}">

@@ -193,8 +193,6 @@ type State = BaseState & {
   mesure: Mesure;
   X: Listes | null;
   geo: Geo | null;
-  survol: string | null;
-  touche: string | null;
   carteEchec: boolean;
   autour: "" | "cherche" | "refus" | "echec";
 };
@@ -217,8 +215,6 @@ class Sommaire extends Vue<Props, State> {
       mesure: "argent",
       X: null,
       geo: null,
-      survol: null,
-      touche: null,
       carteEchec: false,
       autour: "",
     };
@@ -383,8 +379,9 @@ class Sommaire extends Vue<Props, State> {
   private basculer = (k: string): void =>
     this.setState({ open: { ...this.state.open, [k]: !this.state.open[k] } });
 
-  /** The map: the départements, their class in the measure chosen, the bubble of the one hovered
-   * (on a phone the one touched, then its fiche), the five largest named. */
+  /** The map: the départements, their class in the measure chosen, the five largest named. Each
+   * carries its bubble (bulle.ts: hovered, focused, or touched once, then « Ouvrir ») and its
+   * fiche as its click. */
   private carte() {
     const S = this.state;
     const m = S.mesure;
@@ -392,10 +389,10 @@ class Sommaire extends Vue<Props, State> {
     const onglets = MESURES.map((x) => ({
       l: t(`accueil.mesure.${x}`),
       on: x === m ? "true" : "false",
-      pick: (() => this.setState({ mesure: x, survol: null, touche: null })) as Handler,
+      pick: (() => this.setState({ mesure: x })) as Handler,
     }));
     const titre = t(`accueil.carte_titre.${m}`);
-    const base = { titre, onglets, quitter: (() => this.setState({ survol: null })) as Handler };
+    const base = { titre, onglets };
     if (!S.geo || !S.X)
       return {
         ...base,
@@ -404,33 +401,25 @@ class Sommaire extends Vue<Props, State> {
       };
     const G = S.geo;
     const L = S.X.lignes.departements as Record<string, Ligne>;
-    const fig = (code: string) => {
-      const o = L[code];
-      const lu = cv.departements[code]?.etat === "collecte";
-      return {
-        nom: `${G.departements[code]?.nom ?? nomDep(this.props, code)} (${code})`,
-        v1: montantA(o?.amt ?? 0),
-        v1b: ` · ${t("accueil.tip_contrats", { n: o?.con ?? 0 })}`,
-        v2: o?.carte != null ? t("accueil.tip_carte", { n: fr(o.carte) }) : t("liste.non_lu"),
-        v3: lu
-          ? t("accueil.tip_lus", { cam: fr(o?.cam ?? 0), dr: fr(o?.dr ?? 0) })
-          : t("accueil.tip_pas_lus"),
-      };
-    };
     const deps = Object.entries(G.departements).map(([code, g]) => {
       const v = valeur(m, L[code]);
+      const o = L[code];
+      const lu = cv.departements[code]?.etat === "collecte";
       return {
         code,
         d: g.d,
         v,
-        cls: `q${classe(m, v)}${S.survol === code || S.touche === code ? " on" : ""}`,
-        survol: (() => {
-          if (large()) this.setState({ survol: code });
-        }) as Handler,
-        pick: (() => {
-          if (large() || S.touche === code) aller(departementHref(code));
-          else this.setState({ touche: code });
-        }) as Handler,
+        cls: `q${classe(m, v)}`,
+        bh: `${g.nom ?? nomDep(this.props, code)} (${code})`,
+        bl: [
+          `${montantA(o?.amt ?? 0)} · ${t("accueil.tip_contrats", { n: o?.con ?? 0 })}`,
+          o?.carte != null ? t("accueil.tip_carte", { n: fr(o.carte) }) : t("liste.non_lu"),
+          lu
+            ? t("accueil.tip_lus", { cam: fr(o?.cam ?? 0), dr: fr(o?.dr ?? 0) })
+            : t("accueil.tip_pas_lus"),
+        ].join("\n"),
+        bc: t("accueil.carte_clic"),
+        go: departementHref(code),
       };
     });
     const etiquettes = [...deps]
@@ -441,15 +430,6 @@ class Sommaire extends Vue<Props, State> {
         const [x, y] = milieu(d.d);
         return { x: x.toFixed(0), y: (y - 4).toFixed(0), l: court(G.departements[d.code].nom) };
       });
-    const tipDe = (code: string | null) => {
-      if (!code || !G.departements[code]) return null;
-      const [x, y] = milieu(G.departements[code].d);
-      return {
-        ...fig(code),
-        st: `left: ${((100 * x) / G.largeur).toFixed(2)}%; top: ${((100 * y) / G.hauteur).toFixed(2)}%`,
-      };
-    };
-    const touche = S.touche && G.departements[S.touche] ? fig(S.touche) : null;
     const s = SEUILS[m];
     // the board's legend: « 2 à 8 M€ », the unit once
     const u = (v: number, unite = true) =>
@@ -463,14 +443,6 @@ class Sommaire extends Vue<Props, State> {
       h: String(G.hauteur),
       deps,
       etiquettes,
-      tip: large() ? tipDe(S.survol) : null,
-      touche: touche
-        ? {
-            nom: touche.nom,
-            ligne: `${touche.v1}${touche.v1b} · ${touche.v2} · ${touche.v3}`,
-            href: departementHref(S.touche as string),
-          }
-        : null,
       leg: [
         { cls: "sw q0", l: t("accueil.leg_moins", { v: u(s[0]) }) },
         { cls: "sw q1", l: t("accueil.leg_entre", { a: u(s[0], false), b: u(s[1]) }) },
@@ -518,6 +490,7 @@ class Sommaire extends Vue<Props, State> {
         l: t("accueil.fig.docs_l", { n: fr(n?.listes.communes ?? 0) }),
         r: t("accueil.fig.maj", { date: maj }),
         tip: t("accueil.fig.docs_tip"),
+        bc: t("accueil.fig.docs_bc"),
         href: "/registre/couverture",
       },
       {
@@ -530,6 +503,7 @@ class Sommaire extends Vue<Props, State> {
           a: fr(n?.listes.acheteurs ?? 0),
         }),
         tip: t("accueil.fig.argent_tip"),
+        bc: t("accueil.fig.argent_bc"),
         href: "/registre/contrats",
       },
       {
@@ -539,6 +513,7 @@ class Sommaire extends Vue<Props, State> {
         l: t("accueil.fig.aut_l"),
         r: t("accueil.fig.aut_r", { n: fr(I.facettes.p?.dr ?? 0) }),
         tip: t("accueil.fig.aut_tip", { n: T.deps_lus ?? 0 }),
+        bc: t("accueil.fig.aut_bc"),
         href: "/registre/arretes",
       },
       {
@@ -548,6 +523,7 @@ class Sommaire extends Vue<Props, State> {
         l: t("accueil.fig.carte_l"),
         r: t("accueil.fig.carte_r"),
         tip: t("accueil.fig.carte_tip"),
+        bc: t("accueil.fig.carte_bc"),
         href: "/",
       },
     ];
@@ -717,15 +693,6 @@ class Sommaire extends Vue<Props, State> {
       maj: t("accueil.fig.maj", { date: maj }),
     };
   }
-}
-
-/** Follows a register link from a handler (the frame's router takes it, hote.ts). */
-function aller(href: string): void {
-  const a = document.createElement("a");
-  a.href = href;
-  document.getElementById("registre")?.append(a);
-  a.click();
-  a.remove();
 }
 
 async function donnees(r: Route): Promise<Record<string, unknown>> {
