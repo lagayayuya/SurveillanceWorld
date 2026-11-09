@@ -51,13 +51,15 @@
 
         <table class="docs lt" onKeyDown="{{clavierTable}}">
           <caption class="sr">{{caption}}</caption>
-          <thead><tr><th scope="col" class="rk2">{{t.liste.a.rang}}</th><th scope="col">{{nomCol}}</th><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}"><sc-if value="{{c.tri}}"><button type="button" class="thb" onClick="{{c.pick}}">{{c.l}}{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}">{{c.l}}</sc-if></th></sc-for></tr></thead>
+          <thead><tr><sc-if value="{{choix}}"><th scope="col" class="ck"><span class="sr">{{t.liste.a.comparer}}</span></th></sc-if><th scope="col" class="rk2">{{t.liste.a.rang}}</th><th scope="col" class="nm">{{nomCol}}</th><sc-for list="{{cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}"><sc-if value="{{c.tri}}"><button type="button" class="thb" onClick="{{c.pick}}">{{c.l}}{{c.arrow}}</button></sc-if><sc-if value="{{c.fixe}}">{{c.l}}</sc-if></th></sc-for><sc-if value="{{grapheCol}}"><th scope="col" class="gr"><span class="sr">{{t.liste.a.graphe}}</span></th></sc-if></tr></thead>
           <tbody>
             <sc-for list="{{rows}}" as="r">
               <tr class="{{r.cls}}" onClick="{{r.ouvrir}}">
+                <sc-if value="{{r.ck}}"><td class="ck" data-label=""><button type="button" class="cb" role="checkbox" aria-checked="{{r.ck.on}}" aria-label="{{r.ck.aide}}" disabled="{{r.ck.off}}" onClick="{{r.ck.pick}}"></button></td></sc-if>
                 <td class="rk2" data-label="">{{r.rk}}</td>
                 <td data-t="1">{{{r.lien}}}<sc-if value="{{r.sous}}"><span class="sub">{{{r.sous}}}</span></sc-if></td>
                 <sc-for list="{{r.cells}}" as="c"><td class="{{c.cls}}" data-label="{{c.lbl}}">{{{c.v}}}</td></sc-for>
+                <sc-if value="{{r.graphe}}"><td class="n gr" data-label=""><sc-if value="{{r.graphe.href}}"><a class="go" href="{{r.graphe.href}}" aria-label="{{r.graphe.aide}}">{{t.liste.a.graphe}}</a></sc-if></td></sc-if>
               </tr>
             </sc-for>
           </tbody>
@@ -69,6 +71,8 @@
       </div>
     </section>
   </main></div>
+
+  <sc-if value="{{cmp}}"><div class="cmpbar" role="group" aria-label="{{t.liste.a.comparer}}"><span aria-live="polite"><b>{{cmp.n}}</b> : {{cmp.noms}}</span><span class="note2">{{t.liste.a.jusqu_a}}</span><button type="button" class="btn" onClick="{{cmp.vider}}">{{t.liste.a.vider}}</button><a class="btn pri" href="{{cmp.href}}">{{t.liste.a.comparer}}</a></div></sc-if>
 
   <sc-if value="{{feuille.open}}">
     <div class="shade" onClick="{{feuille.fermer}}"></div>

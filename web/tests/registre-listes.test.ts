@@ -489,3 +489,16 @@ test("a list of départements holds the real ones only (recette 04)", async () =
   for (const d of ["1", "6", "9", "20", "20A", "20B", "96", "97", "98", "99", "979", "990", ""])
     assert.ok(!vraiDepartement(d), d);
 });
+
+test("a list's rows chosen for Comparer: four at most, the address Comparer reads (recette 08)", async () => {
+  const { basculer, comparable, comparerHref } = await import(
+    "../src/registre/vues/listes-outils.ts"
+  );
+  let ids: string[] = [];
+  for (const id of ["a", "b", "c", "d", "e"]) ids = basculer(ids, id);
+  assert.deepEqual(ids, ["a", "b", "c", "d"]);
+  assert.deepEqual(basculer(ids, "b"), ["a", "c", "d"]);
+  assert.equal(comparerHref("communes", ["69123", "69029"]), "/registre/comparer?communes=69123,69029");
+  assert.equal(comparerHref("entreprises", ["794108878"]), "/registre/comparer?entreprises=794108878");
+  assert.ok(comparable("communes") && comparable("entreprises") && !comparable("departements"));
+});

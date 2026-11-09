@@ -59,7 +59,7 @@
   container-type: inline-size;
 }
 .rg .va .lt td[data-t],
-.rg .va .lt thead th:nth-child(2) {
+.rg .va .lt thead th.nm {
   min-width: 11em;
 }
 @container (min-width: 600px) and (max-width: 1060px) {
@@ -109,8 +109,11 @@
     900 18px Archivo,
     sans-serif;
 }
+/* the row named (?ligne=) or chosen to compare: the board's dark yellow, its words in the text's
+   colour (socle-a's vivid row, with its dark words, is the fiches' own subject's) */
 .rg .va .lt tr.me td {
   background: var(--warn-bg);
+  color: var(--fg);
 }
 .rg .va .lt tbody tr {
   cursor: pointer;
@@ -138,6 +141,69 @@
     monospace;
   color: var(--muted);
   white-space: nowrap;
+}
+
+/* « Comparer » (Liste-Communes-A, Liste-Entreprises-A): a box per row, the bar under the list */
+.rg .va .lt .ck {
+  width: 30px;
+  padding-right: 0;
+}
+.rg .va .lt .cb {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -6px 0 0 -6px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.rg .va .lt .cb::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--line);
+  background: var(--bg-2);
+  box-sizing: border-box;
+}
+.rg .va .lt .cb[aria-checked="true"]::before {
+  background: var(--fg);
+  box-shadow: inset 0 0 0 2px var(--bg-2);
+}
+.rg .va .lt .cb:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+.rg .va .lt .cb:focus-visible {
+  outline: 3px solid var(--fg);
+  outline-offset: -2px;
+}
+.rg .va .lt .gr {
+  white-space: nowrap;
+}
+.rg .va .cmpbar {
+  position: sticky;
+  bottom: 24px;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: -40px auto 24px;
+  padding: 10px 12px 10px 18px;
+  background: var(--fg);
+  color: var(--bg);
+  border: 2px solid var(--fg);
+  box-shadow: 5px 5px 0 var(--type-registre);
+  font-size: 15px;
+}
+.rg .va .cmpbar .note2 {
+  font:
+    400 13px "Special Elite",
+    monospace;
 }
 
 /* the menus' kit is in socle-a.css (shared with the fiches' « Tous les documents ») */
@@ -389,8 +455,29 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  .rg .va .lt td:not([data-t], .srt, .rk2) {
+  .rg .va .lt td:not([data-t], .srt, .rk2, .ck) {
     display: none;
+  }
+  /* the box, a finger's target (44 px) */
+  .rg .va .lt td.ck {
+    flex: 0 0 auto;
+    width: auto;
+    margin: -10px 0 -10px -6px;
+    padding: 0;
+  }
+  .rg .va .lt .cb {
+    width: 44px;
+    height: 44px;
+    margin: 0;
+  }
+  .rg .va .cmpbar {
+    bottom: 12px;
+    margin: -20px 12px 16px;
+    max-width: none;
+    width: auto;
+  }
+  .rg .va .cmpbar > span:first-child {
+    flex: 1 0 100%;
   }
   .rg .va .lt td.srt {
     background: none;

@@ -65,7 +65,13 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import "./autorisations.css";
 import "./liste.css";
 import template from "./liste.html?raw";
-import { vraiDepartement } from "./listes-outils.ts";
+import {
+  basculer,
+  comparable,
+  comparerHref,
+  MAX_COMPARER,
+  vraiDepartement,
+} from "./listes-outils.ts";
 
 /** The rows shown at first, then added by « Voir … de plus » (a list of names: by a hundred; a
  * list of documents: a page of the API at a time). */
@@ -100,6 +106,8 @@ type State = BaseState & {
   /** the list's link just copied */
   copie: boolean;
   autour: "" | "cherche" | "refus" | "echec";
+  /** the rows chosen to compare (communes or companies), in the order chosen */
+  pris: string[];
 };
 const VIDE: Lexique = { entreprises: {}, acheteurs: {}, communes: {}, affaires: {} };
 
@@ -205,6 +213,7 @@ export class ListeVue extends Vue<Props, State> {
       feuille: false,
       copie: false,
       autour: "",
+      pris: [],
     };
   }
 
@@ -261,9 +270,10 @@ export class ListeVue extends Vue<Props, State> {
     next?.querySelector<HTMLElement>("a")?.focus();
     ev.nativeEvent.preventDefault();
   };
-  /** A row clicked outside its link follows its link (the board's rows are targets). */
+  /** A row clicked outside its link follows its link (the board's rows are targets); its box
+   * (« Comparer ») and its other links keep their own click. */
   private ouvrir: Handler = (ev) => {
-    if ((ev.target as Element | null)?.closest?.("a, button")) return;
+    if ((ev.target as Element | null)?.closest?.("a, button, input, label")) return;
     (ev.currentTarget as HTMLElement).querySelector<HTMLElement>("td[data-t] a")?.click();
   };
   /** « Copier le lien »: its address, filters and order with it. */
@@ -499,6 +509,12 @@ export class ListeVue extends Vue<Props, State> {
     );
   };
 
+  /** A row's box: chosen to compare, or no more (four at most). */
+  private cocher(id: string): Handler {
+    return () => this.setState({ pris: basculer(this.state.pris, id) });
+  }
+  private vider: Handler = () => this.setState({ pris: [] });
+
   private ouvrirFeuille: Handler = () => {
     this.setState({ feuille: true, menu: null });
     this.focusDans(".v-liste .fsheet button");
@@ -654,6 +670,8 @@ export class ListeVue extends Vue<Props, State> {
         arrow: marque(c) ? (e.dir < 0 ? " ▾" : " ▴") : "",
         pick: (c.tri ? this.trier(c.tri) : () => {}) as Handler,
       }));
+    // « Comparer » (Liste-Communes-A, Liste-Entreprises-A): a box per row, the bar under the list
+    const choix = comparable(liste);
     const rows = list.slice(0, S.lim).map((r, i) => {
       let j = 0;
       const cells = def.cols.flatMap((c) => {
@@ -667,13 +685,32 @@ export class ListeVue extends Vue<Props, State> {
           },
         ];
       });
+      const pris = choix && S.pris.includes(r.id);
+      const ent = liste === "entreprises" ? C?.L.entreprises[r.id] : undefined;
       return {
         rk: i + 1,
         lien: [r.lien] as RichItem[],
         sous: r.sous,
         cells,
-        cls: r.id === S.sel ? "me" : "",
+        // a row chosen to compare is marked as the board marks it (« me »), as the row named
+        cls: r.id === S.sel || pris ? "me" : "",
         ouvrir: this.ouvrir,
+        ck: choix
+          ? {
+              on: pris ? "true" : "false",
+              off: !pris && S.pris.length >= MAX_COMPARER,
+              aide: t("liste.a.cocher", { nom: r.nom }),
+              pick: this.cocher(r.id),
+            }
+          : null,
+        // « Graphe » (Liste-Entreprises-A): a company with its fiche, never a sole trader (the
+        // graph links legal persons only, DECISIONS 2026-11-07)
+        graphe:
+          liste === "entreprises"
+            ? ent?.ref && !(ent as { entrepreneur_individuel?: boolean }).entrepreneur_individuel
+              ? { href: `/registre/graphe/${r.id}`, aide: t("liste.a.graphe_l", { nom: r.nom }) }
+              : { href: "", aide: "" }
+            : null,
       };
     });
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
@@ -782,6 +819,17 @@ export class ListeVue extends Vue<Props, State> {
       copier: this.copierLien,
       copierL: t(S.copie ? "liste.lien_copie" : "liste.copier_lien"),
       nonLus: t("registre.non_lus", { n: I.non_lus }),
+      choix,
+      grapheCol: liste === "entreprises",
+      cmp:
+        choix && S.pris.length
+          ? {
+              n: t(`liste.a.choisies.${liste}`, { n: S.pris.length }),
+              noms: S.pris.map((id) => all.find((x) => x.id === id)?.nom ?? id).join(", "),
+              vider: this.vider,
+              href: comparerHref(liste as "communes" | "entreprises", S.pris),
+            }
+          : null,
     };
   }
 }
