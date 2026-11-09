@@ -463,8 +463,12 @@ export class Commune extends Vue<Props, State> {
           (v) => T("commune_a.b.cameras", { n: fr(v) }),
         ),
         r: rk(rCarte, "", nomStrateC(st)),
-        rb: rk(rCarte, "", tout),
-        tip: t("commune_a.fig.cameras_tip", { nom }),
+        // ranked by the number of cameras, not per inhabitant as the lists and the neighbours are:
+        // its bubble says so (recette 28)
+        rb: rCarte
+          ? T("commune_a.rang_cam", { r: ordinal(rCarte.r), n: fr(rCarte.n), strate: tout })
+          : "",
+        tip: T("commune_a.fig.cameras_tip", { nom }),
         href: "#cameras",
       },
       {
