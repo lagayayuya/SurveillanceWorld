@@ -41,6 +41,8 @@ export type Parcours = {
     date_a_verifier: boolean;
     entreprises: string[];
     montant: number | null;
+    /** every lot of the previous call for tenders (it included) when it had several, else [] */
+    lots?: { affaire: string; date: string; entreprises: string[]; montant: number | null }[];
   } | null;
   suivant: { affaire: string; date: string } | null;
   entreprises: Record<string, { contrats: number; collectivites: number }>;

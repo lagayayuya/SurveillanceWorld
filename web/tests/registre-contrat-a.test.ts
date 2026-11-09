@@ -11,6 +11,7 @@ import {
   avancement,
   avant,
   communDebut,
+  cpvDe,
   documents,
   dureeAnnoncee,
   ecart,
@@ -18,8 +19,10 @@ import {
   type FichierAcheteur,
   hote,
   jours,
+  lotsAvis,
   mixte,
   modifs,
+  naturesDe,
   offres,
   procedure,
   refCourte,
@@ -263,4 +266,89 @@ test("the words several objets begin with, cut at a whole word", () => {
   assert.equal(communDebut(["Maintenance des caméras", "Maintenance des capteurs"]), "Maintenance des");
   assert.equal(communDebut(["Un seul objet"]), "Un seul objet");
   assert.equal(communDebut([]), "");
+});
+
+test("the previous call for tenders' lots, as the build lists them: their number, the sum published, their holders", () => {
+  const lot = (affaire: string, montant: number | null, entreprises = ["111111111"]) => ({ affaire, date: "2022-03-10", entreprises, montant });
+  const P = {
+    ...vide,
+    precedent: {
+      affaire: "L2",
+      date: "2022-03-10",
+      date_a_verifier: false,
+      entreprises: ["111111111"],
+      montant: 6e6,
+      lots: [lot("L1", 4e6), lot("L2", 6e6, ["111111111", "222222222"])],
+    },
+  };
+  const x = avant(P, null);
+  assert.equal(x?.lots, 2);
+  assert.equal(x?.montant, 1e7);
+  assert.deepEqual(x?.entreprises, ["111111111", "222222222"]);
+  // the buyer's file gives the common objet and the modifications, never another sum or count
+  const A: FichierAcheteur = {
+    acheteur: {},
+    evenements: [ev({ id: "L1~1", t: "modification", affaire: "L1" }), ev({ id: "L2~1", t: "modification", affaire: "L2" })],
+    affaires: {
+      L1: { titre: "Vidéoprotection-Lot 1-Maintenance", events: ["L1~1"] },
+      L2: { titre: "Vidéoprotection-Lot 2-Fourniture", events: ["L2~1"] },
+    },
+    lots: { G: { somme: 9e9, membres: [{ affaire: "L2" }, { affaire: "L9" }, { affaire: "L8" }] } },
+  };
+  const y = avant(P, A);
+  assert.equal(y?.titre, "Vidéoprotection");
+  assert.equal(y?.lots, 2);
+  assert.equal(y?.montant, 1e7);
+  assert.equal(y?.modifs, 2);
+  // a lot without a published amount: the sum of the others; none published: not published
+  assert.equal(avant({ ...P, precedent: { ...P.precedent, lots: [lot("L1", null), lot("L2", 6e6)] } }, null)?.montant, 6e6);
+  assert.equal(avant({ ...P, precedent: { ...P.precedent, lots: [lot("L1", null), lot("L2", null)] } }, null)?.montant, null);
+  // [] : the previous contract alone
+  assert.equal(avant({ ...P, precedent: { ...P.precedent, lots: [] } }, null)?.lots, 1);
+  assert.equal(avant({ ...P, precedent: { ...P.precedent, lots: [] } }, null)?.montant, 6e6);
+});
+
+test("a document's natures: its own, else the dossier's; known keys in their order, « autre » only alone", () => {
+  const att = ev({ id: "C1~0", t: "attribution", natures: ["maintenance", "fourniture_installation"] });
+  const avis = ev({ id: "A1", t: "avis", natures: ["drones"] });
+  assert.deepEqual(naturesDe(att, [avis, att]), ["fourniture_installation", "maintenance"]);
+  assert.deepEqual(naturesDe(ev({ id: "C1~0", t: "attribution" }), [avis, att]), ["fourniture_installation", "maintenance", "drones"]);
+  assert.deepEqual(naturesDe(ev({ id: "X", t: "avis", natures: ["autre", "lecture_plaques", "inconnue"] }), []), ["lecture_plaques"]);
+  assert.deepEqual(naturesDe(ev({ id: "X", t: "avis", natures: ["autre"] }), []), ["autre"]);
+  assert.deepEqual(naturesDe(null, [ev({ id: "Y", t: "avis", natures: ["drones"], copie: true })]), []);
+});
+
+test("the CPV codes: the contract's first, then the notices', each once, 8 digits only", () => {
+  const att = ev({ id: "C1~0", t: "attribution", cpv: ["50324100"], ref: "DECP x" });
+  const evs = [
+    ev({ id: "A1", t: "avis", ref: "BOAMP 25-1", cpv: ["35125300", "50324100", "3512"] }),
+    att,
+    ev({ id: "C1~1", t: "modification", cpv: ["99999999"] }),
+    ev({ id: "R1", t: "resultat", ref: "BOAMP 26-2", cpv: ["35125300", "48219700"] }),
+  ];
+  assert.deepEqual(cpvDe(evs, att), [
+    { code: "50324100", contrat: true, avis: "BOAMP 25-1" },
+    { code: "35125300", contrat: false, avis: "BOAMP 25-1" },
+    { code: "48219700", contrat: false, avis: "BOAMP 26-2" },
+  ]);
+  assert.deepEqual(cpvDe([], null), []);
+});
+
+test("a notice's lots: how many, and the duration, renewals and price weight they all share", () => {
+  const l = (o: Record<string, unknown>) => ({ lot: "LOT-1", titre: "Lot", criteres: [], ...o });
+  assert.deepEqual(lotsAvis(ev({ id: "R", t: "resultat", lots: [l({ titre: " Caméras ", duree_mois: 24, reconductions: 0, poids_prix: 35 })] })), {
+    n: 1,
+    titres: ["Caméras"],
+    duree: 24,
+    reconductions: 0,
+    prix: 35,
+  });
+  const deux = lotsAvis(
+    ev({ id: "R", t: "avis", lots: [l({ duree_mois: 47.7, reconductions: 3, poids_prix: 40 }), l({ duree_mois: 48, reconductions: null, poids_prix: 60 })] }),
+  );
+  assert.equal(deux?.n, 2);
+  assert.equal(deux?.duree, 48);
+  assert.equal(deux?.reconductions, null);
+  assert.equal(deux?.prix, null);
+  assert.equal(lotsAvis(ev({ id: "R", t: "avis" })), null);
 });

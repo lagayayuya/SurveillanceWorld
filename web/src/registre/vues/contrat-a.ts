@@ -378,9 +378,11 @@ export function acheteurStats(
   return { n, montant: A.stats?.montant ?? A.acheteur.montant ?? 0, depuis: ans[0] ?? "" };
 }
 
-/** The previous contract (the build's `parcours.precedent`), as the buyer's file groups it: the
- * lots signed with it on the same day (`lots`: their number, their sum, their common objet), and
- * the modifications published on them. Without the buyer's file: the previous contract alone. */
+/** The previous contract (the build's `parcours.precedent`) and the lots of its call for tenders
+ * (the build's `precedent.lots`, A 1a0da86: every lot, it included, when there were several):
+ * their number, the sum of the amounts they publish, their holders. The buyer's file adds what
+ * the build does not put there: the lots' common objet and the modifications published on them
+ * (without `precedent.lots`, its lots signed the same day as the previous contract). */
 export type Avant = {
   affaire: string;
   annee: string;
@@ -393,29 +395,36 @@ export type Avant = {
 export function avant(P: Parcours, A: FichierAcheteur | null): Avant | null {
   const p = P.precedent;
   if (!p) return null;
+  const L = p.lots ?? [];
+  const publies = L.map((l) => l.montant).filter((m): m is number => typeof m === "number");
   const base: Avant = {
     affaire: p.affaire,
     annee: p.date.slice(0, 4),
     titre: "",
-    lots: 1,
-    montant: p.montant,
-    entreprises: p.entreprises,
+    lots: Math.max(1, L.length),
+    montant: L.length ? (publies.length ? publies.reduce((a, b) => a + b, 0) : null) : p.montant,
+    entreprises: L.length ? [...new Set(L.flatMap((l) => l.entreprises))] : p.entreprises,
     modifs: 0,
   };
   if (!A) return base;
-  const g = Object.values(A.lots ?? {}).find((x) =>
-    (x.membres ?? []).some((m) => m.affaire === p.affaire),
-  );
-  const affaires = g ? (g.membres ?? []).map((m) => m.affaire) : [p.affaire];
-  const objets = g
-    ? (g.membres ?? []).map((m) => m.objet ?? "")
-    : [A.affaires[p.affaire]?.titre ?? ""];
+  const g = L.length
+    ? null
+    : Object.values(A.lots ?? {}).find((x) =>
+        (x.membres ?? []).some((m) => m.affaire === p.affaire),
+      );
+  const affaires = L.length
+    ? L.map((l) => l.affaire)
+    : g
+      ? (g.membres ?? []).map((m) => m.affaire)
+      : [p.affaire];
+  const objet = (x: string) =>
+    (g?.membres ?? []).find((m) => m.affaire === x)?.objet ?? A.affaires[x]?.titre ?? "";
   const evIds = new Set(affaires.flatMap((x) => A.affaires[x]?.events ?? []));
   return {
     ...base,
-    titre: communDebut(objets),
-    lots: affaires.length,
-    montant: g?.somme ?? p.montant,
+    titre: communDebut(affaires.map(objet)),
+    lots: L.length ? base.lots : affaires.length,
+    montant: L.length ? base.montant : (g?.somme ?? p.montant),
     modifs: A.evenements.filter((e) => e.t === "modification" && evIds.has(e.id) && !e.copie)
       .length,
   };
@@ -436,4 +445,89 @@ export function communDebut(objets: string[]): string {
       ? debut.replace(/[\p{L}\p{N}]+$/u, "")
       : debut;
   return mot.replace(/[\s\-–—,;:(]+(lot\s*\d*)?[\s\-–—,;:(]*$/iu, "").trim();
+}
+
+/** The natures the build reads for a contract or a notice (rules on its objet and its codes, A,
+ * 9715077), in this order: the first ones say the most about what is bought. */
+export const NATURES = [
+  "fourniture_installation",
+  "travaux_genie_civil",
+  "maintenance",
+  "centre_supervision",
+  "lecture_plaques",
+  "video_algorithmique",
+  "drones",
+  "reseau_fibre",
+  "conseil_amo",
+  "autre",
+] as const;
+export type Nature = (typeof NATURES)[number];
+
+/** A document's natures: the main document's own (one source), else every nature the dossier's
+ * documents carry; known keys only, in NATURES' order, « autre » only when it is alone. */
+export function naturesDe(main: Evenement | null | undefined, evs: Evenement[]): Nature[] {
+  const de = (e: Evenement | null | undefined): string[] =>
+    Array.isArray(e?.natures) ? (e.natures as unknown[]).map(String) : [];
+  const own = de(main);
+  const tous = new Set(own.length ? own : evs.filter((e) => !e.copie).flatMap(de));
+  const xs = NATURES.filter((k) => tous.has(k));
+  return xs.length > 1 ? xs.filter((k) => k !== "autre") : xs;
+}
+
+/** A CPV code the documents publish (8 digits; the build serves the codes, not their labels):
+ * whether the contract (DECP) gives it, and the first notice that does. */
+export type Cpv = { code: string; contrat: boolean; avis: string };
+/** The CPV codes of a dossier: the contract's first, then the notices' in their order, each once;
+ * a modification repeats the contract's. */
+export function cpvDe(evs: Evenement[], att?: Evenement | null): Cpv[] {
+  const out = new Map<string, Cpv>();
+  const codes = (e: Evenement | null | undefined): string[] =>
+    (Array.isArray(e?.cpv) ? (e.cpv as unknown[]) : [])
+      .map((c) => String(c).trim())
+      .filter((c) => /^\d{8}$/.test(c));
+  for (const c of codes(att)) out.set(c, { code: c, contrat: true, avis: "" });
+  for (const e of evs.filter((x) => AO.test(x.t) && !x.copie))
+    for (const c of codes(e)) {
+      const x = out.get(c);
+      if (!x) out.set(c, { code: c, contrat: false, avis: String(e.ref ?? "") });
+      else if (!x.avis) x.avis = String(e.ref ?? "");
+    }
+  return [...out.values()];
+}
+
+/** The lots a notice publishes (eForms, A 9715077: `lots` = [{lot, titre, duree_mois,
+ * reconductions, criteres, poids_prix}]): how many, and what they share. A value is null when no
+ * lot publishes it or when the lots differ; `duree` in whole months; `prix`: the price's weight in
+ * the award, in % (the build's `poids_prix`, never recomputed from `criteres`). */
+export type LotsAvis = {
+  n: number;
+  titres: string[];
+  duree: number | null;
+  reconductions: number | null;
+  prix: number | null;
+};
+export function lotsAvis(e: Evenement | null | undefined): LotsAvis | null {
+  const lots = (Array.isArray(e?.lots) ? e.lots : []) as {
+    titre?: unknown;
+    duree_mois?: unknown;
+    reconductions?: unknown;
+    poids_prix?: unknown;
+  }[];
+  if (!lots.length) return null;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null);
+  // the one value every lot publishes, else null
+  const commun = (xs: (number | null)[]): number | null =>
+    xs.every((x) => x != null && x === xs[0]) ? xs[0] : null;
+  return {
+    n: lots.length,
+    titres: lots.map((l) => String(l.titre ?? "").trim()).filter(Boolean),
+    duree: commun(
+      lots.map((l) => {
+        const m = num(l.duree_mois);
+        return m && Math.round(m) > 0 ? Math.round(m) : null;
+      }),
+    ),
+    reconductions: commun(lots.map((l) => num(l.reconductions))),
+    prix: commun(lots.map((l) => num(l.poids_prix))),
+  };
 }
