@@ -4,7 +4,7 @@
       <span class="kind"><i class="ico-r" aria-hidden="true"></i>{{t.accueil.kind}}</span>
       <h1 class="sr">{{title}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
       <p class="lead">{{{lead}}}</p>
-      <div class="bigsearch" role="search"><span class="ico-s" aria-hidden="true"></span><label class="sr" for="acc-q">{{t.sommaire.chercher}}</label><input id="acc-q" class="ph" type="search" value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="{{t.accueil.chercher_exemple}}"><button type="button" class="btn pri" onClick="{{chercher}}">{{t.accueil.chercher}}</button></div>
+      <div class="bigsearch" role="search"><span class="ico-s" aria-hidden="true"></span><label class="sr" for="acc-q">{{t.sommaire.chercher}}</label><span class="phw"><input id="acc-q" class="ph" type="search" value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="{{t.accueil.chercher_exemple}}"><span class="{{phx}}" aria-hidden="true">{{t.accueil.chercher_exemple}}</span></span><button type="button" class="btn pri" onClick="{{chercher}}">{{t.accueil.chercher}}</button></div>
       <p class="tries"><span>{{t.accueil.essayer}}</span><sc-for list="{{essais}}" as="e"><a class="chip t" href="{{e.href}}" onClick="{{e.pick}}">{{e.l}}</a></sc-for><button type="button" class="near" onClick="{{autour}}">{{t.accueil.autour}}</button></p>
       <sc-if value="{{autourEtat}}"><p class="note" role="status">{{autourEtat}}</p></sc-if>
     </div>

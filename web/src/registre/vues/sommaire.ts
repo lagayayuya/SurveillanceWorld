@@ -631,6 +631,8 @@ class Sommaire extends Vue<Props, State> {
         t("accueil.lead_c"),
       ] as RichItem[],
       q: S.q,
+      // the hint's box keeps its place once a word is typed: the field does not jump
+      phx: S.q ? "phx off" : "phx",
       onQ: this.onQ,
       onKey: this.onKey,
       chercher: this.lancer,
