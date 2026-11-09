@@ -35,7 +35,7 @@
           <button type="button" class="fh" aria-expanded="{{s1.quoi.r.exp}}" aria-controls="{{s1.quoi.r.id}}" onClick="{{s1.quoi.r.basculer}}"><span>{{s1.quoi.r.titre}}</span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{s1.quoi.r.id}}"><h3 class="k">{{t.contrat_a.quoi}}</h3>
             <ul class="what"><sc-for list="{{s1.quoi.rows}}" as="x"><li><b>{{{x.b}}}</b><span>{{x.s}}</span></li></sc-for></ul>
-            <p class="note">{{t.contrat_a.quoi_note}}</p>
+            <p class="note">{{s1.quoi.note}}</p>
           </div>
         </div>
       </div>

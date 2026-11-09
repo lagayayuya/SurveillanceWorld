@@ -40,6 +40,8 @@ import {
   aVerifier,
   avancement,
   avant,
+  type Cpv,
+  cpvDe,
   documents,
   dureeAnnoncee,
   type Ecart,
@@ -49,8 +51,12 @@ import {
   type FichierAcheteur,
   hote,
   jours,
+  type LotsAvis,
+  lotsAvis,
   mixte,
   modifs,
+  type Nature,
+  naturesDe,
   offres,
   procedure,
   refCourte,
@@ -116,6 +122,32 @@ const ecartTxt = (e: Ecart): string =>
 const jourDe = (s: Etape): string => (s.e?.date_annee ? s.date.slice(0, 4) : shortDate(s.date));
 const premiereMinuscule = (s: string): string =>
   s && /^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
+/** The natures in words, in a line (« Fourniture et installation, maintenance »). */
+const natTxt = (ns: Nature[]): string => {
+  const x = ns.map((k) => t(`contrat_a.nature.${k}`)).join(", ");
+  return x.charAt(0).toUpperCase() + x.slice(1);
+};
+/** The notices of a call for tenders. */
+const AO_T = /^(avis|resultat|rectificatif)$/;
+/** The CPV codes the « Ce qui est acheté » list shows one by one; beyond, one row says the rest. */
+const CPV_MAX = 6;
+/** What a notice's lots share, in sentences for a step's bubble: how many, the duration and the
+ * renewals announced, the price's weight in the award. */
+const lotsTip = (L: LotsAvis | null, dureeDejaDite: boolean): string[] =>
+  L
+    ? [
+        ...(L.n > 1 ? [t("contrat_a.tip.lots", { n: L.n })] : []),
+        ...(L.duree && !dureeDejaDite
+          ? [t("contrat_a.tip.duree_annoncee", { d: duree(L.duree) })]
+          : []),
+        ...(L.reconductions === 0
+          ? [t("contrat_a.tip.sans_reconduction")]
+          : L.reconductions
+            ? [t("contrat_a.tip.reconductible", { n: L.reconductions })]
+            : []),
+        ...(L.prix != null ? [t("contrat_a.tip.prix", { p: fr(L.prix) })] : []),
+      ]
+    : [];
 
 class Contrat extends Vue<Props, State> {
   private fini = false;
@@ -315,6 +347,11 @@ class Contrat extends Vue<Props, State> {
     const mx = mixte(att);
     const av = aVerifier(evs);
     const M = modifs(evs, att);
+    // what is bought: the natures the build reads, the CPV codes the documents publish
+    const nat = naturesDe(F.main, evs);
+    const cpv = cpvDe(evs, att);
+    // a call for tenders' lots: the last notice that publishes them (the result adds the criteria)
+    const lotsAo = lotsAvis([...evs].reverse().find((e) => AO_T.test(e.t) && lotsAvis(e)));
     // the modifications in a line: the amount or duration they bring, else how many publish a change
     const resumeModifs = (): string => {
       const fin2 = this.changeTxt(M.montant, M.duree, att);
@@ -452,15 +489,38 @@ class Contrat extends Vue<Props, State> {
         ? {
             r: repli(S.open, "quoi", t("contrat_a.quoi"), 0, this.basculer),
             rows: [
-              {
-                b: (dlObjet ? dlObjet.v : objetCourt) as Rich,
-                s: t("contrat_a.quoi_objet"),
-              },
-              ...(att?.dispositif && has(`registre.registre.disp_${dispositifDe(att)}`)
+              // without a code: the objet and the register's own classification, as before
+              ...(cpv.length
+                ? []
+                : [
+                    {
+                      b: (dlObjet ? dlObjet.v : objetCourt) as Rich,
+                      s: t("contrat_a.quoi_objet"),
+                    },
+                  ]),
+              ...(nat.length ? [{ b: natTxt(nat) as Rich, s: t("contrat_a.quoi_nature") }] : []),
+              ...(!cpv.length &&
+              att?.dispositif &&
+              has(`registre.registre.disp_${dispositifDe(att)}`)
                 ? [
                     {
                       b: t(`registre.disp_${dispositifDe(att)}`) as Rich,
                       s: t("contrat_a.quoi_disp"),
+                    },
+                  ]
+                : []),
+              ...(cpv.length > CPV_MAX ? cpv.slice(0, CPV_MAX - 1) : cpv).map((c: Cpv) => ({
+                b: c.code as Rich,
+                s: t(c.contrat ? "contrat_a.quoi_cpv_contrat" : "contrat_a.quoi_cpv"),
+              })),
+              ...(cpv.length > CPV_MAX
+                ? [
+                    {
+                      b: t("contrat_a.quoi_cpv_plus", { n: cpv.length - CPV_MAX + 1 }) as Rich,
+                      s: cpv
+                        .slice(CPV_MAX - 1)
+                        .map((c) => c.code)
+                        .join(", "),
                     },
                   ]
                 : []),
@@ -483,6 +543,11 @@ class Contrat extends Vue<Props, State> {
                   ]
                 : []),
             ],
+            note: [
+              t(cpv.length ? "contrat_a.quoi_note_cpv" : "contrat_a.quoi_note_sans_cpv"),
+              ...(nat.length ? [t("contrat_a.quoi_note_nature")] : []),
+              t("contrat_a.quoi_note_cahier"),
+            ].join(" "),
           }
         : null,
       how: {
@@ -504,6 +569,9 @@ class Contrat extends Vue<Props, State> {
                   : (F.dl.find((x) => x.k === t("contrat.d_forme"))?.v ??
                     t("contrat.non_publiee"))) as Rich,
               },
+              // the form of the orders and the conditions: not served yet (A, 08/11), one « non
+              // lu » per case
+              ...(ac ? [{ k: t("contrat_a.kv.commandes"), v: t("liste.non_lu") as Rich }] : []),
               {
                 k: t("contrat_a.kv.procedure"),
                 v: (proc
@@ -521,6 +589,7 @@ class Contrat extends Vue<Props, State> {
                       })
                     : t("contrat_a.tit_aucun")) as Rich,
               },
+              { k: t("contrat_a.kv.conditions"), v: t("contrat_a.conditions_nl") as Rich },
               {
                 k: t("contrat_a.kv.totaux"),
                 v: (av
@@ -539,7 +608,34 @@ class Contrat extends Vue<Props, State> {
                         : t("contrat_a.totaux_compte")) as Rich,
               },
             ]
-          : [...F.dl, ...F.qui].map((x) => ({ k: x.k, v: x.v })),
+          : [
+              ...[...F.dl, ...F.qui].map((x) => ({ k: x.k, v: x.v })),
+              // a call for tenders: what it buys and its lots, on the same rows' grammar
+              ...(F.kind === "ao" && nat.length
+                ? [{ k: t("contrat_a.kv.nature"), v: natTxt(nat) as Rich }]
+                : []),
+              ...(F.kind === "ao" && cpv.length
+                ? [
+                    {
+                      k: t("contrat_a.kv.cpv"),
+                      v: t("contrat_a.cpv_liste", {
+                        codes: cpv.map((c) => c.code).join(", "),
+                        n: cpv.length,
+                      }) as Rich,
+                    },
+                  ]
+                : []),
+              ...(F.kind === "ao" && lotsAo
+                ? [
+                    {
+                      k: t("contrat_a.kv.lots"),
+                      v: [t("contrat_a.lots_n", { n: lotsAo.n }), ...lotsTip(lotsAo, false)].join(
+                        " ",
+                      ) as Rich,
+                    },
+                  ]
+                : []),
+            ],
       },
     };
 
@@ -560,7 +656,15 @@ class Contrat extends Vue<Props, State> {
           .filter(Boolean)
           .join(" · ");
         const pc = typeof e?.procedure === "string" ? procLong(e.procedure) : "";
-        bl = [pc, dm ? t("contrat_a.tip.duree_annoncee", { d: duree(dm) }) : ""]
+        const la = lotsAvis(e);
+        if (la && la.n > 1) ss = [ss, t("contrat_a.lots", { n: la.n })].filter(Boolean).join(" · ");
+        bl = [
+          pc,
+          dm ? t("contrat_a.tip.duree_annoncee", { d: duree(dm) }) : "",
+          ...lotsTip(la, !!dm),
+          // the deadline for offers: not served yet (A, 08/11)
+          t("contrat_a.tip.date_limite_nl"),
+        ]
           .filter(Boolean)
           .join(" ");
       } else if (s.k === "rect") {
@@ -591,7 +695,11 @@ class Contrat extends Vue<Props, State> {
         ss = [refCourte(s.ref), o ? t("contrat_a.ss.offres", { n: o.n }) : ""]
           .filter(Boolean)
           .join(" · ");
-        bl = o ? t("contrat_a.tip.attr_offres", { n: o.n }) : t("contrat_a.tip.attr");
+        const la = lotsAvis(e);
+        bl = [
+          o ? t("contrat_a.tip.attr_offres", { n: o.n }) : t("contrat_a.tip.attr"),
+          ...(la?.prix != null ? [t("contrat_a.tip.prix", { p: fr(la.prix) })] : []),
+        ].join(" ");
       } else if (s.k === "sub") {
         ss = [somme(e?.montant), refCourte(s.ref)].filter(Boolean).join(" · ");
       } else if (s.k === "aut") {
@@ -814,7 +922,11 @@ class Contrat extends Vue<Props, State> {
                   cls: off?.source === "avis" ? "ok" : "part",
                   l: t("contrat_a.src.attr"),
                   d: t(
-                    off?.source === "avis" ? "contrat_a.src.attr_ok" : "contrat_a.src.attr_part",
+                    off?.source === "avis"
+                      ? res.some((e) => lotsAvis(e)?.prix != null)
+                        ? "contrat_a.src.attr_ok_crit"
+                        : "contrat_a.src.attr_ok"
+                      : "contrat_a.src.attr_part",
                   ),
                 },
               ]
