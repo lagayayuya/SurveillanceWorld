@@ -195,6 +195,7 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
         # its own counted contracts (comptes.commune, as departement/<d>.json stats.communes)
         c["amt"] = round(st.get("montant") or 0, 2)
         c["jv"] = len(vols.get(k, ()))
+        c["couverture_actes"] = st["couverture_actes"]
         c["jv_helico"] = len(vols_h.get(k, ()))
     # a département's map counts every commune of it, a document or not; its acts as its
     # page counts them (comptes.departement)

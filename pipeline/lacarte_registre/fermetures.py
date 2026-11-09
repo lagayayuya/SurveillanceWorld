@@ -133,8 +133,36 @@ class Context:
 
     def commune_stats(self, insee: str) -> dict[str, Any]:
         if insee not in self._commune_stats:
-            self._commune_stats[insee] = comptes.commune(self.reg, insee)
+            st = comptes.commune(self.reg, insee)
+            st["couverture_actes"] = self.couverture_actes(insee, st)
+            self._commune_stats[insee] = st
         return self._commune_stats[insee]
+
+    def couverture_actes(self, insee: str, st: dict[str, Any]) -> dict[str, str]:
+        """{cam, dr}: « lu », « partiel » or « non_lu »
+        (rule:registre_couverture@1:actes_commune)."""
+        dep = (self.reg.communes.get(insee) or {}).get("dep") or ""
+        if not hasattr(self, "_sans_commune"):
+            self._sans_commune: dict[str, dict[str, int]] = {}
+        if dep not in self._sans_commune:
+            unplaced = [
+                e for e in self.reg.by_dep.get(dep, [])
+                if not e.get("insee") or e["insee"] not in self.reg.communes
+            ]  # fmt: skip
+            self._sans_commune[dep] = {
+                "cam": sum(is_camera_act(e) for e in unplaced),
+                "dr": sum(is_drone_act(e) for e in unplaced),
+            }
+        read = ((self.couverture or {}).get("departements") or {}).get(dep, {}).get("etat")
+        out = {}
+        for k in ("cam", "dr"):
+            if read != "collecte":
+                out[k] = "non_lu"
+            elif self._sans_commune[dep][k]:
+                out[k] = "partiel" if st.get(k) else "non_lu"
+            else:
+                out[k] = "lu"
+        return out
 
     def nom_court(self, siren: str) -> str | None:
         cat = (self.acheteurs.get(siren) or {}).get("categorie")

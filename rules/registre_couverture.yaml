@@ -132,3 +132,15 @@ departements:
     id: rule:registre_couverture@1:val_d_oise
     etat: non_collecte
     rationale: A pilot département whose préfecture's acts are not collected yet.
+
+# A commune's reading of the prefectoral acts, per family: the cameras' (`cam`, video
+# protection) and the drones' (`dr`), served as `couverture_actes` wherever a commune's
+# figures are (listes.json rows, a commune's and a département's stats.communes).
+actes_commune:
+  id: rule:registre_couverture@1:actes_commune
+  rationale: >-
+    « non_lu » when its département's acts are not collected, or when its département has acts
+    of the family that name no commune and the commune has none (Paris: 222 camera acts of the
+    75, none placed in Paris: « non lu », never 0); « partiel » when the commune has some and
+    its département also has some placed nowhere; « lu » otherwise, a 0 then meaning none. The
+    département's own state stays in couverture.json.
