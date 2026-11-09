@@ -117,6 +117,26 @@ export type AvantVol = {
   /** more acts without days of flight than with: the card says the others do not publish them */
   ailleurs: boolean;
 };
+/** The départements of « Publiés avant le vol ? » named in the order of their acts, the most first
+ * (Ju 09/11, choice 4: Paris first). `publication.deps` carries no count per département: the
+ * count is the build's drone acts of each (listes.json `lignes.departements[d].dr`: Paris 782,
+ * Bouches-du-Rhône 349, Rhône 126 on 09/11), a stand-in for the acts the card counts (633, 263,
+ * 50 measured by A on 08/11), which rank them alike. Until listes.json is there, or for a
+ * département it does not count, the order measured then: 75, 13, 69, then the others as served. */
+const ORDRE_MESURE = ["75", "13", "69"];
+export function ordreDeps(deps: string[], compte?: (d: string) => number | undefined): string[] {
+  const rang = (d: string) => {
+    const i = ORDRE_MESURE.indexOf(d);
+    return i < 0 ? ORDRE_MESURE.length + deps.indexOf(d) : i;
+  };
+  const n = compte ? deps.map(compte) : [];
+  const tous = !!compte && n.every((x) => typeof x === "number");
+  return deps
+    .map((d, i) => ({ d, n: tous ? (n[i] as number) : 0 }))
+    .sort((a, b) => b.n - a.n || rang(a.d) - rang(b.d))
+    .map((x) => x.d);
+}
+
 /** « Publiés avant le vol ? »: the three shares in whole percents summing to 100 (the largest
  * remainders rounded up), on the acts counted; « non lu » when none is. */
 export function avantVol(p: Publication | null | undefined): AvantVol {

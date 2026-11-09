@@ -48,6 +48,7 @@ import {
   nomAcheteur,
   ONGLETS,
   type Onglet,
+  ordreDeps,
   type Publication,
   QUESTION,
   recentes,
@@ -146,11 +147,13 @@ const jourMois = (d: string): string => {
 };
 
 /** « Publiés avant le vol ? » as the card draws it: the sentence saying on which acts, the bar. */
-function carteVol(p: Publication | null | undefined) {
+function carteVol(p: Publication | null | undefined, X: Listes | null) {
   const v = avantVol(p);
   if (v.nonLu)
     return { nonLu: true, lu: false, phrase: [] as RichItem[], parts: [], ailleurs: false };
-  const noms = v.deps.map((d) => t(`departement.du_${d}`));
+  // the départements by their drone acts, the most first (accueil-outils.ts `ordreDeps`)
+  const deps = ordreDeps(v.deps, X ? (d) => X.lignes.departements[d]?.dr : undefined);
+  const noms = deps.map((d) => t(`departement.du_${d}`));
   const ou = noms.length ? new Intl.ListFormat("fr", { type: "conjunction" }).format(noms) : "";
   const cls = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" };
   return {
@@ -691,7 +694,7 @@ class Sommaire extends Vue<Props, State> {
         tout: TOUT[S.onglet],
       },
       carte: this.carte(),
-      vol: carteVol((I as { drones?: { publication?: Publication } }).drones?.publication),
+      vol: carteVol((I as { drones?: { publication?: Publication } }).drones?.publication, S.X),
       pleinEcran,
       gros: {
         r: repli(S.open, "gros", t("accueil.gros"), gros.length, this.basculer),

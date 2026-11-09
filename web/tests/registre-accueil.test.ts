@@ -14,6 +14,7 @@ import {
   nomAcheteur,
   QUESTION,
   recentes,
+  ordreDeps,
 } from "../src/registre/vues/accueil-outils.ts";
 
 const ev = (id: string, t: string, date: string, publie?: string) =>
@@ -106,4 +107,16 @@ test("« Publiés avant le vol ? »: shares on the acts counted, « non lu » wh
   assert.equal(avantVol(undefined).nonLu, true);
   // more counted than not: no « ailleurs »
   assert.equal(avantVol({ avant: 1, jour_meme: 1, apres: 1, total: 3, non_lus: 2 }).ailleurs, false);
+});
+
+test("« Publiés avant le vol ? » names its départements by their acts, Paris first (Ju 09/11)", () => {
+  const dr: Record<string, number> = { "13": 349, "69": 126, "75": 782 };
+  // the build's order (13, 69, 75) by the counts of listes.json
+  assert.deepEqual(ordreDeps(["13", "69", "75"], (d) => dr[d]), ["75", "13", "69"]);
+  // before listes.json, or a count missing: the order measured on 08/11, then the others
+  assert.deepEqual(ordreDeps(["13", "69", "75"]), ["75", "13", "69"]);
+  assert.deepEqual(ordreDeps(["92", "13", "75"], (d) => dr[d]), ["75", "13", "92"]);
+  // a larger count goes first, ties keep the measured order
+  assert.deepEqual(ordreDeps(["75", "13"], () => 5), ["75", "13"]);
+  assert.deepEqual(ordreDeps(["75", "69"], (d) => (d === "69" ? 900 : 10)), ["69", "75"]);
 });
