@@ -1232,10 +1232,15 @@ whole (smaller beyond 70 and 110 characters), the buyer's and holders' chips (a 
 « Partager », « Citer », « Voir les documents d'origine ». Four figures: ceiling or amount (mixed,
 rise « à vérifier », the amount at signature), duration and planned end (eForms `duree_mois`),
 competition (offers from the DECP, else the award notice, else « non lu »; the procedure), the
-modifications. Sections: 1 · who buys what; 2 · the parcours (documents at equal intervals, the real
-gap written, the planned end computed, today's point); 3 · before and after. Then « Les documents »
-(a row opens its source) and the sources. A call for tenders, a grant or a decree take the same
-grammar.
+modifications. Sections: 1 · who buys what (the natures the build reads and the CPV codes, the
+contract's first, labels « libellé non lu »; the objet and dispositif only without a code;
+« Commandes » and « Conditions » « non lu » per case); 2 · the parcours (documents at equal
+intervals, the real gap written, the planned end computed, today's point; the call for tenders'
+bubble its lots, renewals and price weight (`poids_prix`), « Date limite des offres : non lue »;
+the award notice's the price weight); 3 · before and after (the previous lots from
+`parcours.precedent.lots`). Then « Les documents » (a row opens its source) and the sources. A call
+for tenders, a grant or a decree take the same grammar; a call for tenders' record adds Nature,
+Codes CPV and Lots rows.
 
 ### 1.18 The register's redesign v3, lot 4 (2026-11-08): the centred graph, Comparer, Chemin entre deux
 
@@ -2272,7 +2277,7 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 | Entreprise-Electriox-A: every client, contract, document | 12 clients then the graph, 18 rows of frieze, 15 documents then « Voir les N » | real companies reach 251 buyers and 393 contracts |
 | Entreprise-Electriox-A: the legend hides a series on a click | hover only | its names are links to their fiches |
 | Contrat-Lyon-2026-A: signals, « lien à vérifier » | absent | not served |
-| Contrat-Lyon-2026-A: the short title, the estimate, the deadline, the CPV codes, Commandes, Conditions | the whole object; the procedure and « dans les totaux » instead | not served |
+| Contrat-Lyon-2026-A: the short title, the estimate, the deadline, CPV labels, « code principal », Commandes and Conditions as text | the whole object; codes with « libellé non lu »; Commandes and Conditions « non lu »; the procedure and « dans les totaux » kept; no « Offres » step | CPV labels, date_limite, clause_sociale, variantes, fonds_ue, forme not served (A, 08/11) |
 | Contrat-Lyon-2026-A: « Concurrence : à lire » | the offers from the DECP or the award notice | eForms offers served since 2026-11-08 |
 | Graphe-plein: a shared node's size the sum of its edges | its largest edge | edges must not be summed (a joint contract carries its whole amount on each) |
 | Graphe-plein: every node drawn | at most 12 / 40 / 8, the rest « +N »; the table and the CSV whole | real neighbourhoods reach 250 clients |
