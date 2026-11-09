@@ -233,3 +233,32 @@
   align-items: baseline;
   text-align: left;
 }
+
+/* the map in dark: the board's ramp (Accueil-Registre-A-sombre), the light's order — nothing in
+   the ground, then pale pink for little to deep magenta for much, as the 2026-10-06 rule wants
+   (« the darker, the more filled ») — its labels light on a dark halo (recette 09: the lighter-
+   the-more ramp of socle-a put the white labels on the palest pink) */
+[data-mode="dark"] .rg .va.home .q0 {
+  fill: var(--bg);
+  background: var(--bg);
+}
+[data-mode="dark"] .rg .va.home .q1 {
+  fill: #ffd1e6;
+  background: #ffd1e6;
+}
+[data-mode="dark"] .rg .va.home .q2 {
+  fill: #ff9ccb;
+  background: #ff9ccb;
+}
+[data-mode="dark"] .rg .va.home .q3 {
+  fill: #ff5fae;
+  background: #ff5fae;
+}
+[data-mode="dark"] .rg .va.home .q4 {
+  fill: #c4006c;
+  background: #c4006c;
+}
+[data-mode="dark"] .rg .va.home .fr .ml {
+  fill: var(--fg);
+  stroke: var(--bg);
+}

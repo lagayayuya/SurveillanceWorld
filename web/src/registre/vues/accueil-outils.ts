@@ -160,3 +160,23 @@ export function avantVol(p: Publication | null | undefined): AvantVol {
     ailleurs: (p.non_lus ?? 0) > total,
   };
 }
+
+/** The map's labels, the largest first, `n` at most, none over another: a label whose box (its
+ * letters' width estimated, 15 px Archivo at 80 %) meets a placed one is left for the next. */
+export function etiquettesLibres<T extends { x: number; y: number; l: string }>(
+  candidats: T[],
+  n = 5,
+  em = 7.2,
+  h = 16,
+): T[] {
+  const pris: T[] = [];
+  for (const c of candidats) {
+    if (pris.length >= n) break;
+    const w = c.l.length * em;
+    const meet = pris.some(
+      (p) => Math.abs(p.x - c.x) < (w + p.l.length * em) / 2 + 2 && Math.abs(p.y - c.y) < h + 2,
+    );
+    if (!meet) pris.push(c);
+  }
+  return pris;
+}

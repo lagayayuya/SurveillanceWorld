@@ -44,6 +44,7 @@ import { type BaseState, large, Vue } from "../vue.ts";
 import {
   avantVol,
   casseNormale,
+  etiquettesLibres,
   jourDoc,
   nomAcheteur,
   ONGLETS,
@@ -422,14 +423,16 @@ class Sommaire extends Vue<Props, State> {
         go: departementHref(code),
       };
     });
-    const etiquettes = [...deps]
-      .filter((d) => d.v != null && d.v > 0)
-      .sort((a, b) => (b.v ?? 0) - (a.v ?? 0))
-      .slice(0, 5)
-      .map((d) => {
-        const [x, y] = milieu(d.d);
-        return { x: x.toFixed(0), y: (y - 4).toFixed(0), l: court(G.departements[d.code].nom) };
-      });
+    // the five largest named, none over another (the Nord and the Pas-de-Calais met)
+    const etiquettes = etiquettesLibres(
+      [...deps]
+        .filter((d) => d.v != null && d.v > 0)
+        .sort((a, b) => (b.v ?? 0) - (a.v ?? 0))
+        .map((d) => {
+          const [x, y] = milieu(d.d);
+          return { x, y: y - 4, l: court(G.departements[d.code].nom) };
+        }),
+    ).map((e) => ({ x: e.x.toFixed(0), y: e.y.toFixed(0), l: e.l }));
     const s = SEUILS[m];
     // the board's legend: « 2 à 8 M€ », the unit once
     const u = (v: number, unite = true) =>

@@ -120,3 +120,17 @@ test("« Publiés avant le vol ? » names its départements by their acts, Paris
   assert.deepEqual(ordreDeps(["75", "13"], () => 5), ["75", "13"]);
   assert.deepEqual(ordreDeps(["75", "69"], (d) => (d === "69" ? 900 : 10)), ["69", "75"]);
 });
+
+test("the map's labels never meet: the next largest is named instead", async () => {
+  const { etiquettesLibres } = await import("../src/registre/vues/accueil-outils.ts");
+  const c = [
+    { x: 100, y: 20, l: "Pas-de-Cal." },
+    { x: 130, y: 30, l: "Nord" },
+    { x: 300, y: 300, l: "Rhône" },
+    { x: 100, y: 60, l: "Somme" },
+  ];
+  assert.deepEqual(
+    etiquettesLibres(c, 3).map((e) => e.l),
+    ["Pas-de-Cal.", "Rhône", "Somme"],
+  );
+});
