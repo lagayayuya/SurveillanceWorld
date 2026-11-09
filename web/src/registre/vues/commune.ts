@@ -940,15 +940,17 @@ export class Commune extends Vue<Props, State> {
       const W = 24 + (col + 1) * 15;
       // a month's label needs about 24 units: the last one, cut at the edge, is left out
       while (mois.length && Number(mois[mois.length - 1].x) + 24 > W) mois.pop();
-      const motifs = new Map<string, number>();
-      let sansMotif = 0;
+      // distinct days per class: two acts of one motive on one day are one day of flight
+      const joursMotif = new Map<string, Set<string>>();
+      const joursSans = new Set<string>();
       for (const e of d.all)
         if (e.t === "arrete_drone") {
           const m = classeMotif((e as { motif?: unknown }).motif);
-          const kk = new Set((jpa.get(e.id) ?? []).filter((j) => jours.has(j))).size;
-          if (m) motifs.set(m, (motifs.get(m) ?? 0) + kk);
-          else sansMotif += kk;
+          const set = m ? (joursMotif.get(m) ?? joursMotif.set(m, new Set()).get(m)) : joursSans;
+          for (const j of jpa.get(e.id) ?? []) if (jours.has(j)) set?.add(j);
         }
+      const motifs = new Map([...joursMotif].map(([m, s]) => [m, s.size] as const));
+      const sansMotif = joursSans.size;
       const mx = Math.max(1, ...motifs.values(), sansMotif);
       const vol = avantVol((f as { drones?: { publication?: Publication } }).drones?.publication);
       const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
