@@ -184,6 +184,23 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
     tip.style.top = `${(y - hr.top).toFixed(0)}px`;
   };
 
+  /** A row of a list or a table that leads somewhere, clicked beside its link: its first link. The
+   * documents' table and the rows that choose (aria-current) have their own click. */
+  const ligne = (ev: MouseEvent): boolean => {
+    const tg = ev.target instanceof Element ? ev.target : null;
+    if (!tg || tg.closest("a[href], button, input, label, select, summary")) return false;
+    const row = tg.closest(
+      ":is(ol.top, ol.rank) > li, table:not(.docs) tbody tr:not([aria-current])",
+    );
+    if (!row || !root.contains(row)) return false;
+    const lien = row.querySelector("a[href]");
+    if (!lien) return false;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    cliquer(lien);
+    return true;
+  };
+
   const cible = (n: EventTarget | null): Element | null =>
     n instanceof Element ? n.closest(SEL) : null;
 
@@ -207,6 +224,7 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
     const el = cible(ev.target);
     if (!el || !root.contains(el)) {
       if (tactile && cur && !tip.contains(ev.target as Node)) cacher();
+      ligne(ev);
       return;
     }
     if (tactile) {
@@ -236,8 +254,10 @@ export function bulles(root: HTMLElement, hote: HTMLElement): () => void {
         ev.preventDefault();
         ev.stopImmediatePropagation();
         cliquer(lien);
+        return;
       }
     }
+    ligne(ev);
   };
   const focus = (ev: FocusEvent) => {
     if (!clavier) return;

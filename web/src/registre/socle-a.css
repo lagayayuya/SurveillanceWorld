@@ -502,6 +502,29 @@
   text-decoration-color: var(--type-acheteur);
 }
 
+/* --- rows that lead somewhere: one hover, the lists' (Liste-Communes-A) ------------------------- */
+/* the whole row is clicked (bulle.ts) and lit dark yellow; the row of the page's own subject stays
+   vivid yellow, without the dashed rule under it nor its link's underline */
+.rg .va :is(ol.top, ol.rank) > li:has(a[href]),
+.rg .va table tbody tr:has(a[href]) {
+  cursor: pointer;
+}
+.rg .va :is(ol.top, ol.rank) > li:has(a[href]):not(.me):hover,
+.rg .va table tbody tr:has(a[href]):not(.me):hover > td {
+  background: var(--warn-bg);
+}
+.rg .va :is(ol.top, ol.rank) > li.me,
+.rg .va table tbody tr.me > td {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  border-bottom-color: transparent;
+}
+.rg .va :is(ol.top, ol.rank) > li.me a,
+.rg .va table tbody tr.me a {
+  color: inherit;
+  text-decoration: none;
+}
+
 /* --- tables ------------------------------------------------------------------------------------- */
 .rg .va .docs {
   width: 100%;
