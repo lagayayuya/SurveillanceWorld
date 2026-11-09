@@ -1392,8 +1392,11 @@ export class Commune extends Vue<Props, State> {
       go: this.allerSection,
     });
     toc.push({ href: "#sources", l: t("commune_a.toc.sources"), cls: "", go: this.allerSection });
+    // the 3D view's doors open on its Fiche tab; its drones' doors (a day, today) on Drones (Ju 09/11,
+    // choice 5)
+    const vue3d = `${communeHref(insee, "carte")}?onglet=fiche`;
     toc.push({
-      href: communeHref(insee, "carte"),
+      href: vue3d,
       l: t("commune_a.toc.vue3d"),
       cls: "t3d",
       go: (() => {}) as Handler,
@@ -1443,7 +1446,7 @@ export class Commune extends Vue<Props, State> {
             s: nAuj ? t("commune_a.v3_drones_auj", { n: nAuj }) : t("commune_a.v3_drones_s"),
           },
         ],
-        href: communeHref(insee, "carte"),
+        href: vue3d,
         jour: nAuj ? `${communeHref(insee, "carte")}?jour=${maj}` : "",
       },
       toc,
