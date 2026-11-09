@@ -1290,6 +1290,31 @@ name cut out, two tabs (the ARIA tabs pattern: the arrows move between them).
   served) and the slots, as before.
 - **On a phone** the panel is the sheet; the sticker is dropped, the figures keep their whole line.
 
+### 1.20 The register after Ju's test of 2026-11-09 (lots 1 to 5)
+
+Verified in the modal at its real widths (908, 1164 and 1324 px of frame for 1024, 1280 and
+1440 px windows; 390 on a phone), dark first. **One bubble** (`bulle.ts`, used by every view, the
+home's map and figures included): it stands whole inside the frame's visible scroll, or the 3D
+panel, under the stuck contents bar: above its element, else below, else beside it; a swatch takes
+its series' colour from the view; an element whose bubble promises « Clic : … » is clicked whole.
+**One row hover**: a listed, ranked or table row that holds a link is lit `--warn-bg`, takes the
+pointer and is clicked whole; the page's own row stays `--type-territoire`, without its dashed rule.
+Figures never break (no-break spaces in thousands; `t()` puts a no-break space before « : ; ? ! »
+and inside guillemets). Nothing changes height on hover (the 3D view's day line keeps two lines, its
+sentence in a bubble). The lists keep the name column at 11 em and drop secondary columns in a
+narrow frame (container queries); a control's segments each draw their frame, so a wrapped control
+leaves no empty box; a legend's entry wraps under its own text; a cut-out name wraps only after a
+hyphen or a space (`coupeMots`). **One figure per measure**, the build's: a commune's drone acts are
+`dr` (Paris 641) on the list, the fiche, Comparer, « Publiés quand ? » and the 3D view, which leaves
+out acts placed in other communes, helicopters' and ends of authorisations; a département shows
+`dr_commune` (acts flying in its communes) with `dr_autorite` (signed by its authorities, the
+police prefecture for Paris) on its line; helicopters are a mention apart. A family whose
+`couverture_actes` is `non_lu` says « non lu », never 0. The home's « Le graphe » opens the graph;
+only the 104 official départements are listed; Comparer holds four communes at 1024 px. The 3D
+view: « ← Retour », the whole commune hatched where the act's place is not read and the cited
+arrondissement alone where it is, a click on the map centres it in the free part or opens another
+commune's view, the opening tab follows the door, twelve months by default.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
