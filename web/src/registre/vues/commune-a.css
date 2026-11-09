@@ -752,3 +752,7 @@
 .rg .va.com .cal rect.passe {
   opacity: 0.25;
 }
+/* « Comparer … avec… » clear of the ranking or the note above it (Ju 09/11) */
+.rg .va.com .btn.pri.cmp {
+  margin-top: 18px;
+}

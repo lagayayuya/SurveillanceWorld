@@ -1159,6 +1159,8 @@ export class Commune extends Vue<Props, State> {
               ? {
                   titre: t("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
                   rows: autour(sr, 5, nomStrate(st)),
+                  // the communes that buy through their intercommunality: the money's caveat only
+                  note: m === "eph",
                 }
               : null,
           attente: "",

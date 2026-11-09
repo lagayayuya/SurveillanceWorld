@@ -154,7 +154,7 @@
         <sc-if value="{{vois.strate}}">
         <div class="card"><h3 class="k">{{vois.strate.titre}}</h3>
           <ol class="rank"><sc-for list="{{vois.strate.rows}}" as="r"><li class="{{r.cls}}" data-bh="{{r.bh}}" data-bl="{{r.bl}}" data-bc="{{r.bc}}"><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol>
-          <p class="note">{{t.commune_a.strate_note}}</p><a class="btn pri" href="{{vois.comparer}}">{{vois.comparerL}}</a></div>
+          <sc-if value="{{vois.strate.note}}"><p class="note">{{t.commune_a.strate_note}}</p></sc-if><a class="btn pri cmp" href="{{vois.comparer}}">{{vois.comparerL}}</a></div>
         </sc-if>
         <sc-if value="{{vois.attente}}"><p class="note" role="status">{{vois.attente}}</p></sc-if>
       </div>
