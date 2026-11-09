@@ -26,7 +26,8 @@ export type FichePanneau = {
   offresPubliees: number;
   /** the size class, for the ranks' words */
   strate: number;
-  /** the camera decrees: read for its département, and what they authorise */
+  /** the camera decrees: read (its département collected, one decree here with its cameras),
+   * and what they authorise */
   arretesLus: boolean;
   autorisees: number;
   /** the first year of its counted contracts */
@@ -47,6 +48,10 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
   const jv = X?.lignes.communes[c.insee]?.jv;
   const jours = jv ?? joursDeVol(d.all, d.f.couverture.maj).size;
   const pub = s.counted.filter((e) => typeof e.offres === "number");
+  const arr = lastArretes(d.all);
+  // read only where a decree says its cameras: a département collected but none read here
+  // (Paris: no video decree served) is « pas encore lus », never « 0 caméras »
+  const lus = arr.some((e) => e.t === "arrete" && !e.copie && typeof e.cameras === "number");
   return {
     cameras,
     rCameras: X
@@ -75,8 +80,8 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
     uneOffre: pub.filter((e) => e.offres === 1).length,
     offresPubliees: pub.length,
     strate: st,
-    arretesLus: d.arretes.collectes,
-    autorisees: camerasAutorisees(lastArretes(d.all)).total,
+    arretesLus: d.arretes.collectes && lus,
+    autorisees: camerasAutorisees(arr).total,
     depuis: s.counted[0]?.date?.slice(0, 4) ?? "",
   };
 }

@@ -94,6 +94,14 @@ import {
   zonesDe,
 } from "./carte-outils.ts";
 
+/** « lundi 30 novembre »: the lead's next flight day, as the board writes it (no year). */
+const PROCHAIN = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
+
 /** The tilt of the map in 3D, degrees: 50 on a wide screen (R1a's tilted map's), 35 on a phone,
  * whose narrow map at 50° showed the volumes more than the streets (v2.4, Ju). */
 const inclinaison = (): number => (large() ? 50 : 35);
@@ -1448,6 +1456,7 @@ class CarteDrones extends Vue<Props, State> {
       .slice(0, 5)
       .map(([iso, as]) => ({
         d: jourLong(jourMs(iso)),
+        lead: PROCHAIN.format(jourMs(iso)),
         n: t("carte_a.avenir_n", { n: as.size }),
         pick: (() => choisirJour(jourMs(iso))) as Handler,
       }));
@@ -1562,13 +1571,7 @@ class CarteDrones extends Vue<Props, State> {
             { strong: t("carte_a.lead_dr_n", { n: fr(tk.actes) }) },
             t("carte_a.lead_dr_b", { nom }),
             ...(avenir[0]
-              ? [
-                  " ",
-                  t("carte_a.lead_dr_prochain"),
-                  " ",
-                  { strong: avenir[0].d.replace(/^./, (x) => x.toLocaleLowerCase("fr")) },
-                  ".",
-                ]
+              ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
               : []),
           ] as Rich),
       onglets: (["fiche", "drones"] as const).map((o) => ({
