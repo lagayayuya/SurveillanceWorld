@@ -554,11 +554,10 @@ class Sommaire extends Vue<Props, State> {
       { k: "communes", cls: "card entry c-pink", href: "/registre/communes" },
       { k: "drones", cls: "card entry c-blue", href: "/registre/arretes?disp=dr" },
       { k: "entreprises", cls: "card entry c-lav", href: "/registre/entreprises" },
-      // the graph comes with lot 4: its entry is here, said to come (not a link to nowhere)
-      { k: "graphe", cls: "card entry c-wht", href: "" },
+      // the graph without a centre (lot 4): « Choisissez un centre », the busiest companies
+      { k: "graphe", cls: "card entry c-wht", href: "/registre/graphe" },
     ].map((e) => ({
       ...e,
-      off: !e.href,
       l: t(`accueil.entree.${e.k}`),
       d: t(`accueil.entree.${e.k}_d`),
       go: t(`accueil.entree.${e.k}_go`),

@@ -38,8 +38,7 @@
     <section class="sec"><h2><span class="num" aria-hidden="true">→</span>{{t.accueil.commencer}}</h2>
       <div class="entries">
         <sc-for list="{{entrees}}" as="e">
-          <sc-if value="{{e.href}}"><a class="{{e.cls}}" href="{{e.href}}"><b>{{e.l}}</b><span>{{e.d}}</span><i class="go">{{e.go}}</i></a></sc-if>
-          <sc-if value="{{e.off}}"><div class="{{e.cls}}" aria-disabled="true"><b>{{e.l}}</b><span>{{e.d}}</span><i class="go">{{e.go}}</i></div></sc-if>
+          <a class="{{e.cls}}" href="{{e.href}}"><b>{{e.l}}</b><span>{{e.d}}</span><i class="go">{{e.go}}</i></a>
         </sc-for>
       </div>
     </section>

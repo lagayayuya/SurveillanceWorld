@@ -76,10 +76,6 @@
   transform: translate(-2px, -2px);
   box-shadow: 7px 7px 0 var(--line);
 }
-.rg .va .entry[aria-disabled="true"] {
-  border-style: dashed;
-  box-shadow: none;
-}
 .rg .va .rowa {
   display: flex;
   justify-content: space-between;
