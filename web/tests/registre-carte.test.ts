@@ -19,6 +19,7 @@ import {
   zoomIncline,
 } from "../src/registre/drones.ts";
 import { setMessages, t } from "../src/registre/i18n.ts";
+import { etatDrones } from "../src/registre/vues/carte-fiche.ts";
 import {
   appareils,
   type Creneau,
@@ -375,4 +376,17 @@ test("a click on an arrondissement of the map is its city's: Paris, Lyon, Marsei
   assert.equal(communeDe("13217"), "13217");
   assert.equal(communeDe("93066"), "93066");
   assert.equal(communeDe("75056"), "75056");
+});
+
+test("recette 12: a commune without drone acts says « aucun » where read, « non lu » where not", () => {
+  // Rhône read, Oullins without any act: « aucun », never « 0 arrêté »
+  assert.equal(etatDrones(true, 0, 0), "aucun");
+  // Allier: « drone » below its threshold, Vichy without any act: « non lu »
+  assert.equal(etatDrones(false, 0, 0), "non_lu");
+  // acts outside the period: none over it, whatever the reading
+  assert.equal(etatDrones(false, 0, 3), "aucun");
+  assert.equal(etatDrones(true, 0, 3), "aucun");
+  // acts over the period: counted
+  assert.equal(etatDrones(true, 5, 5), "lu");
+  assert.equal(etatDrones(false, 2, 2), "lu");
 });

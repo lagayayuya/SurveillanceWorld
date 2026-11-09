@@ -41,7 +41,7 @@ import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import { avantVol, type Publication } from "./accueil-outils.ts";
 import template from "./carte.html?raw";
-import { fichePanneau } from "./carte-fiche.ts";
+import { etatDrones, fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
 import "./carte.css";
 import {
@@ -1320,7 +1320,13 @@ class CarteDrones extends Vue<Props, State> {
     if (!T.length && !ND.length) {
       const couv = d.f.couverture.departement;
       const nArr = d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
-      if (couv.etat !== "collecte" && !nArr)
+      if (couv.etat === "collecte" && !nArr && !fichePanneau(d, S.X).dronesLus)
+        vide = [
+          t("carte_a.dr_nl_court", { nom }),
+          " ",
+          { a: { href: "/registre/couverture", text: t("carte.vide_couverture") } },
+        ];
+      else if (couv.etat !== "collecte" && !nArr)
         vide = [
           { span: etatDepartementLie(d.f.commune.dep, d.f.stats.dep.nom, couv), cls: "" },
           " ",
@@ -1418,11 +1424,19 @@ class CarteDrones extends Vue<Props, State> {
     const pubC = (d.f as { drones?: { publication?: Publication } }).drones?.publication;
     const vC = avantVol(pubC);
     const vF = avantVol(S.pubFrance);
+    // recette 12: a commune without any act says « aucun » where its decrees are read, « non lu »
+    // where they are not — never « 0 arrêté », « dont 0 avec horaires » or « 0 zone tracée »
+    const actesTous =
+      T.length + ND.length + d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
+    const eDr = etatDrones(F.dronesLus, tk.actes, actesTous);
+    const sansActe = eDr === "aucun" && actesTous === 0;
+    const joursNl = eDr === "non_lu";
     const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
-    const barre = (l: string, v: ReturnType<typeof avantVol>) => ({
+    const barre = (l: string, v: ReturnType<typeof avantVol>, aucun = false) => ({
       l,
       lu: !v.nonLu,
       nonLu: v.nonLu,
+      st: aucun ? t("carte_a.aucun_arrete") : t("liste.non_lu"),
       parts: v.parts.map((x) => ({
         cls: `seg ${clsV[x.k]}${x.pct < 10 ? " pt" : ""}`,
         st: `flex: ${Math.max(1, x.pct)}`,
@@ -1457,6 +1471,18 @@ class CarteDrones extends Vue<Props, State> {
         n: t("carte_a.avenir_n", { n: as.size }),
         pick: (() => afficherJour(jourMs(iso))) as Handler,
       }));
+    // the days of flight over 12 months: « non lu », « aucun jour de vol », or their count
+    const joursFig = (rg: boolean) =>
+      joursNl
+        ? { v: t("liste.non_lu"), u: "", l: "" }
+        : F.jours
+          ? {
+              v: fr(F.jours),
+              u: t("carte_a.jours_u", { n: F.jours }),
+              l: rg ? avec(t("carte_a.sur_12"), rangL(F.rJours)) : t("carte_a.sur_12"),
+            }
+          : { v: t("carte_a.aucun"), u: "", l: t("carte_a.sur_12_aucun") };
+    const nlFig = { cls: "fig nl", v: t("liste.non_lu"), u: "", l: "" };
     const ficheV = {
       figs: [
         {
@@ -1481,11 +1507,11 @@ class CarteDrones extends Vue<Props, State> {
           versDrones: null,
         },
         {
-          cls: "fig",
+          cls: joursNl ? "fig nl" : "fig",
           k: t("carte_a.f_drones"),
-          v: fr(F.jours),
-          u: t("carte_a.jours_u", { n: F.jours }),
-          l: avec(t("carte_a.sur_12"), rangL(F.rJours)),
+          ...joursFig(true),
+          // the link to the tab follows the line, or stands alone under « non lu »
+          sep: joursNl ? "" : " · ",
           bl: t("commune_a.fig.drones_tip", { nom }),
           versDrones: versOnglet("drones"),
         },
@@ -1519,43 +1545,67 @@ class CarteDrones extends Vue<Props, State> {
     const drV = {
       figs: [
         {
-          cls: "fig",
           k: t("carte_a.d_arretes"),
-          v: fr(tk.actes),
-          u: "",
-          l: t("carte_a.d_horaires", { n: fr(tk.horairesLus) }),
+          ...(eDr === "non_lu"
+            ? nlFig
+            : eDr === "aucun"
+              ? { cls: "fig", v: t("carte_a.aucun"), u: "", l: "" }
+              : {
+                  cls: "fig",
+                  v: fr(tk.actes),
+                  u: "",
+                  l: tk.horairesLus ? t("carte_a.d_horaires", { n: fr(tk.horairesLus) }) : "",
+                }),
           bl: t("carte_a.d_arretes_b"),
         },
         {
-          cls: "fig",
+          cls: joursNl ? "fig nl" : "fig",
           k: t("carte_a.f_drones"),
-          v: fr(F.jours),
-          u: t("carte_a.jours_u", { n: F.jours }),
-          l: t("carte_a.sur_12"),
+          ...joursFig(false),
           bl: t("commune_a.fig.drones_tip", { nom }),
         },
         {
-          cls: vC.nonLu ? "fig nl" : "fig",
           k: t("carte_a.d_avant"),
-          v: vC.nonLu ? t("liste.non_lu") : `${vC.parts[0].pct}`,
-          u: vC.nonLu ? "" : "%",
-          l: vF.nonLu ? "" : t("carte_a.d_france", { p: vF.parts[0].pct }),
+          ...(sansActe
+            ? { cls: "fig", v: t("carte_a.aucun"), u: "", l: t("carte_a.d_avant_aucun") }
+            : {
+                cls: vC.nonLu ? "fig nl" : "fig",
+                v: vC.nonLu ? t("liste.non_lu") : `${vC.parts[0].pct}`,
+                u: vC.nonLu ? "" : "%",
+                l: "",
+              }),
+          ...(vF.nonLu
+            ? {}
+            : {
+                l: avec(
+                  sansActe ? t("carte_a.d_avant_aucun") : "",
+                  t("carte_a.d_france", { p: vF.parts[0].pct }),
+                ),
+              }),
           bl: t("carte_a.d_avant_b"),
         },
         {
-          cls: "fig",
           k: t("carte_a.d_zones"),
-          v: fr(tk.tracees),
-          u: "",
-          l: tk.tracees ? "" : t("carte_a.d_zones_0"),
+          ...(eDr === "non_lu"
+            ? nlFig
+            : eDr === "aucun"
+              ? { cls: "fig", v: t("carte_a.aucune"), u: "", l: "" }
+              : {
+                  cls: "fig",
+                  v: fr(tk.tracees),
+                  u: "",
+                  l: tk.tracees ? "" : t("carte_a.d_zones_0"),
+                }),
           bl: t("carte_a.d_zones_b"),
         },
       ],
       avenir: avenir.length ? avenir : null,
-      vol: [barre(nom, vC), barre(t("carte_a.france"), vF)],
-      volNote: vC.nonLu
-        ? t("carte_a.vol_note_nl")
-        : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total) }),
+      vol: [barre(nom, vC, sansActe), barre(t("carte_a.france"), vF)],
+      volNote: sansActe
+        ? t("carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
+        : vC.nonLu
+          ? t("carte_a.vol_note_nl")
+          : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total) }),
     };
 
     return {
@@ -1572,13 +1622,26 @@ class CarteDrones extends Vue<Props, State> {
       letters: coupeMots(nom),
       lead: estFiche
         ? lead
-        : ([
-            { strong: t("carte_a.lead_dr_n", { n: fr(tk.actes) }) },
-            t("carte_a.lead_dr_b", { nom }),
-            ...(avenir[0]
-              ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
-              : []),
-          ] as Rich),
+        : eDr === "non_lu"
+          ? ([
+              t("carte_a.lead_dr_nl_a", { nom }),
+              { strong: t("carte_a.aut_nl_b") },
+              t("carte_a.lead_dr_nl_c"),
+            ] as Rich)
+          : eDr === "aucun"
+            ? ([
+                t("carte_a.lead_dr_aucun", { nom }),
+                ...(avenir[0]
+                  ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
+                  : []),
+              ] as Rich)
+            : ([
+                { strong: t("carte_a.lead_dr_n", { n: fr(tk.actes) }) },
+                t("carte_a.lead_dr_b", { n: tk.actes, nom }),
+                ...(avenir[0]
+                  ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
+                  : []),
+              ] as Rich),
       onglets: (["fiche", "drones"] as const).map((o) => ({
         id: `v3p-t-${o}`,
         panel: o === "fiche" ? "v3p-fiche" : "v3p-drones",

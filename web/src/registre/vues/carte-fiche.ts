@@ -7,6 +7,7 @@ import type { Donnees } from "../commun.ts";
 import { ess, lastArretes } from "../commun.ts";
 import type { Listes } from "../listes.ts";
 import { camerasAutorisees, joursDeVol, rang, strate } from "./commune-a.ts";
+import { lecture } from "./comparer-a.ts";
 
 export type Rang = { r: number; n: number } | null;
 export type FichePanneau = {
@@ -30,6 +31,10 @@ export type FichePanneau = {
    * and what they authorise */
   arretesLus: boolean;
   autorisees: number;
+  /** the drone decrees are read here (its département collected, « drone » above its threshold:
+   * `lecture`, as Comparer and the lists read it); unread, a commune without any act is « non lu »,
+   * never « 0 arrêté » (Ju 09/11, recette 12) */
+  dronesLus: boolean;
   /** the first year of its counted contracts */
   depuis: string;
 };
@@ -82,6 +87,16 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
     strate: st,
     arretesLus: d.arretes.collectes && lus,
     autorisees: camerasAutorisees(arr).total,
+    dronesLus: lecture(d.f.couverture.departement, X?.lignes.communes[c.insee]).dr,
     depuis: s.counted[0]?.date?.slice(0, 4) ?? "",
   };
+}
+
+/** What the Drones tab says of the acts over the period (recette 12): « lu » with a count, « aucun »
+ * when the decrees are read and none falls in it, « non_lu » when they are not read and the commune
+ * has no act at all (an act listed below the threshold is still counted). */
+export type EtatDrones = "lu" | "aucun" | "non_lu";
+export function etatDrones(lus: boolean, actesPeriode: number, actesTous: number): EtatDrones {
+  if (actesPeriode > 0) return "lu";
+  return lus || actesTous > 0 ? "aucun" : "non_lu";
 }

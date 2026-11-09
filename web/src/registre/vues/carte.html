@@ -25,7 +25,7 @@
       <p class="dp-lead">{{{lead}}}</p>
     </div>
     <sc-if value="{{estFiche}}"><div class="dp-body" id="v3p-fiche" role="tabpanel" aria-labelledby="v3p-t-fiche">
-      <div class="dfigs"><sc-for list="{{fiche.figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.bl}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}<sc-if value="{{f.versDrones}}"> · <button type="button" class="go" onClick="{{f.versDrones}}">{{t.carte_a.onglet_drones_l}}</button></sc-if></span></div></sc-for></div>
+      <div class="dfigs"><sc-for list="{{fiche.figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.bl}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}<sc-if value="{{f.versDrones}}">{{f.sep}}<button type="button" class="go" onClick="{{f.versDrones}}">{{t.carte_a.onglet_drones_l}}</button></sc-if></span></div></sc-for></div>
       <h3 class="dp-h">{{t.carte_a.ici_h}}</h3>
       <div class="card"><p class="m0">{{t.carte_a.ici_a}}<b>{{t.carte_a.ici_b}}</b>{{t.carte_a.ici_c}}</p>
         <div class="sleg"><span class="lg"><i class="sw rz1" aria-hidden="true"></i>{{t.carte_a.rz1}}</span><span class="lg"><i class="sw rz2" aria-hidden="true"></i>{{t.carte_a.rz2}}</span><span class="lg"><i class="sw rz3" aria-hidden="true"></i>{{t.carte_a.rz3}}</span></div></div>
@@ -39,7 +39,7 @@
       <sc-if value="{{dr.avenir}}"><h3 class="dp-h">{{t.carte_a.avenir_h}}</h3>
         <div class="card"><ul class="avenir"><sc-for list="{{dr.avenir}}" as="a"><li><b>{{a.d}}</b><span>{{a.n}}</span><button type="button" class="go" onClick="{{a.pick}}">{{t.carte_a.afficher_jour}}</button></li></sc-for></ul><p class="note">{{t.carte_a.avenir_note}}</p></div></sc-if>
       <h3 class="dp-h">{{t.carte_a.vol_h}}</h3>
-      <div class="card"><sc-for list="{{dr.vol}}" as="v"><div class="vrow"><span class="vn">{{v.l}}</span><sc-if value="{{v.lu}}"><div class="sbar petite" style="height: 20px" data-bg=""><sc-for list="{{v.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><b>{{x.l}}</b></span></sc-for></div></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{t.liste.non_lu}}</span></sc-if></div></sc-for>
+      <div class="card"><sc-for list="{{dr.vol}}" as="v"><div class="vrow"><span class="vn">{{v.l}}</span><sc-if value="{{v.lu}}"><div class="sbar petite" style="height: 20px" data-bg=""><sc-for list="{{v.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><b>{{x.l}}</b></span></sc-for></div></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{v.st}}</span></sc-if></div></sc-for>
         <div class="sleg"><span class="lg"><i class="sw p-ok" aria-hidden="true"></i>{{t.accueil.vol_avant}}</span><span class="lg"><i class="sw p-mid" aria-hidden="true"></i>{{t.accueil.vol_jour_meme}}</span><span class="lg"><i class="sw p-late" aria-hidden="true"></i>{{t.accueil.vol_apres}}</span></div>
         <p class="note">{{dr.volNote}}</p></div>
     </div></sc-if>
