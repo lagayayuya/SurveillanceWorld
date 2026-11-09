@@ -100,6 +100,8 @@ const moisCourt = (d: string): string =>
 const ent = (href: string | null, text: string, cls = "ent"): RichItem =>
   href ? { a: { href, text, cls } } : text;
 const nomStrate = (s: number): string => t(`commune_a.strate.${s}`);
+/** The strate in a head figure's two lines: its bounds alone (« 20 000 à 100 000 hab. »). */
+const nomStrateC = (s: number): string => t(`commune_a.strate_c.${s}`);
 const clsSerie = (s: Serie): string =>
   s === "ville" ? "c-ville" : s === "transports" ? "c-transp" : "c-autres";
 
@@ -420,10 +422,18 @@ export class Commune extends Vue<Props, State> {
               bc: x.k === insee ? "" : t("commune_a.b.fiche"),
             }))
         : null;
-    const rk = (r: { r: number; n: number } | null, extra = "") =>
+    // a figure's rank: its strate named on the first figure only, as the board writes it (« 2e sur
+    // 11 villes de 200 000 hab. et plus », then « 2e sur 11 »), by its bounds alone to hold in two
+    // lines; the full words in its bubble
+    const rk = (r: { r: number; n: number } | null, extra = "", strate = "") =>
       r
-        ? `${t("commune_a.rang", { r: ordinal(r.r), n: fr(r.n), strate: nomStrate(st) })}${extra}`
+        ? `${
+            strate
+              ? t("commune_a.rang", { r: ordinal(r.r), n: fr(r.n), strate })
+              : t("commune_a.rang_c", { r: ordinal(r.r), n: fr(r.n) })
+          }${extra}`
         : extra.replace(/^ · /, "");
+    const tout = nomStrate(st);
     const nomEpci = f.stats.epci?.nom ?? "";
     const figs = [
       {
@@ -437,7 +447,8 @@ export class Commune extends Vue<Props, State> {
           (_k, v) => v.carte ?? -1,
           (v) => t("commune_a.b.cameras", { n: fr(v) }),
         ),
-        r: rk(rCarte),
+        r: rk(rCarte, "", nomStrateC(st)),
+        rb: rk(rCarte, "", tout),
         tip: t("commune_a.fig.cameras_tip", { nom }),
         href: "#cameras",
       },
@@ -456,6 +467,7 @@ export class Commune extends Vue<Props, State> {
           (v) => t("commune_a.b.eph", { n: fr(Math.round(v)) }),
         ),
         r: rk(rEph),
+        rb: rk(rEph, "", tout),
         tip: t("commune_a.fig.argent_tip"),
         href: "#argent",
       },
@@ -471,6 +483,7 @@ export class Commune extends Vue<Props, State> {
           (v) => t("commune_a.b.jours", { n: v }),
         ),
         r: rk(rJv, nAuj ? ` · ${t("commune_a.fig.auj", { n: nAuj })}` : ""),
+        rb: rk(rJv, nAuj ? ` · ${t("commune_a.fig.auj", { n: nAuj })}` : "", tout),
         tip: t("commune_a.fig.drones_tip", { nom }),
         href: "#drones",
       },
@@ -489,6 +502,7 @@ export class Commune extends Vue<Props, State> {
           : t("commune_a.fig.non_publiee_l", { n: s.counted.length }),
         dots: null,
         r: uneOffre ? t("commune_a.fig.territoire", { n: uneOffre }) : "",
+        rb: uneOffre ? t("commune_a.fig.territoire", { n: uneOffre }) : "",
         tip: t("commune_a.fig.concurrence_tip"),
         href: "#entreprises",
       },
@@ -1384,10 +1398,13 @@ export class Commune extends Vue<Props, State> {
       cls: "t3d",
       go: (() => {}) as Handler,
     });
-    // a head figure's click goes to its section, by the number the section has here
+    // a head figure's click goes to its section, by the number the section has here; its bubble
+    // holds its words in full (two lines at most on the card, Ju 09/11) and its rank's strate
     const nSec = new Map(toc.map((x) => [x.href, x.l.split(" · ")[0]]));
     const figsB = figs.map((x) => ({
       ...x,
+      tip: [x.l, x.rb, x.tip].filter(Boolean).join("\n"),
+      sr: x.tip,
       bc: nSec.has(x.href) ? t("commune_a.b.section", { n: nSec.get(x.href) ?? "" }) : "",
     }));
 

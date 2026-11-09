@@ -10,7 +10,7 @@
   </section>
 
   <div class="figs">
-    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" aria-hidden="true"><sc-for list="{{f.dots}}" as="d"><i class="{{d.cls}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.tip}}</span></a></sc-for>
+    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" aria-hidden="true"><sc-for list="{{f.dots}}" as="d"><i class="{{d.cls}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.sr}}</span></a></sc-for>
   </div>
 
   <section class="v3" aria-label="{{v3.titre}}">

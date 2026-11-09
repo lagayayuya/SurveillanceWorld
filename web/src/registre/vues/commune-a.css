@@ -756,3 +756,17 @@
 .rg .va.com .btn.pri.cmp {
   margin-top: 18px;
 }
+/* the head figures' words in two lines at most, the rest in their bubble (Ju 09/11: the mono text
+   ran over three or four lines at 1024) */
+@media (min-width: 960px) {
+  .rg .va.com .fig .fl,
+  .rg .va.com .fig .rk span {
+    /* two lines exactly: the clamp alone let the third line's top show under them */
+    line-height: 1.25;
+    max-height: 2.5em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
