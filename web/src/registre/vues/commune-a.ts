@@ -159,3 +159,44 @@ export function classeMotif(motif: unknown): ClasseMotif | null {
   if (c === "stupefiants") return "stupefiants";
   return "autre";
 }
+
+// --- a name in a sentence (recette 21): « des Baux-de-Provence », « au Mans », « la CC … » ------
+
+const VOYELLE = /^[AEIOUYÀÂÉÈÊËÎÏÔÖÛÜaeiouyàâéèêëîïôöûü]/;
+const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** « de » before a commune's name, its article contracted: « de Lyon », « d'Aix-en-Provence »,
+ * « des Baux-de-Provence », « du Mans », « de La Ciotat », « de L'Haÿ-les-Roses » (the elision as
+ * texte.ts `elider` writes it, which t() applies to every sentence; an initial H keeps « de »). */
+export function deNom(nom: string): string {
+  if (/^Les /.test(nom)) return `des ${nom.slice(4)}`;
+  if (/^Le /.test(nom)) return `du ${nom.slice(3)}`;
+  if (VOYELLE.test(nom)) return `d'${nom}`;
+  return `de ${nom}`;
+}
+/** « à » before a commune's name: « à Lyon », « aux Baux-de-Provence », « au Mans », « à La
+ * Ciotat ». */
+export function aNom(nom: string): string {
+  if (/^Les /.test(nom)) return `aux ${nom.slice(4)}`;
+  if (/^Le /.test(nom)) return `au ${nom.slice(3)}`;
+  return `à ${nom}`;
+}
+/** A sentence written with the plain name (« de {nom} », « à {nom} »), its prepositions contracted
+ * with the name's article; a « hab.. » left by a size class ending a sentence made one point. */
+export function contracte(s: string, nom: string): string {
+  if (!nom) return s;
+  const n = esc(nom);
+  return s
+    .replace(new RegExp(`(^|[\\s(« ])de ${n}(?![\\p{L}\\p{N}-])`, "gu"), (_m, p) => p + deNom(nom))
+    .replace(new RegExp(`(^|[\\s(« ])à ${n}(?![\\p{L}\\p{N}-])`, "gu"), (_m, p) => p + aNom(nom))
+    .replace(/(hab|etc)\.\.(?=\s|$)/g, "$1.");
+}
+/** An intercommunality's name with its article, after « dans » or « de »: « la CC Vallée des
+ * Baux-Alpilles », « la Métropole de Lyon », « l'EPT Paris Terres d'Envol »; a name without a word
+ * that says its kind stays bare (« Grand Paris Seine Ouest »). */
+export function articleEpci(nom: string): string {
+  if (/^(CC|CA|CU|Communauté|Métropole|Eurométropole)\b/u.test(nom)) return `la ${nom}`;
+  if (/^(Établissement|EPT)\b/u.test(nom)) return `l'${nom}`;
+  if (/^Syndicat\b/u.test(nom)) return `le ${nom}`;
+  return nom;
+}

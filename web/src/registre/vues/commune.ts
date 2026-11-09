@@ -38,8 +38,10 @@ import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
 import { avantVol, casseNormale, type Publication } from "./accueil-outils.ts";
 import {
   argentParAnnee,
+  articleEpci,
   camerasAutorisees,
   classeMotif,
+  contracte,
   fournisseurs,
   grandsSystemes,
   joursDeVol,
@@ -339,6 +341,8 @@ export class Commune extends Vue<Props, State> {
     const c = f.commune;
     const insee = c.insee;
     const nom = c.nom;
+    // the commune's name in a sentence, its article contracted (« des Baux-de-Provence »)
+    const T = (k: string, p: Record<string, string | number> = {}) => contracte(t(k, p), nom);
     const pop = c.pop ?? 0;
     const maj = f.couverture.maj;
     const s = ess(d);
@@ -429,8 +433,8 @@ export class Commune extends Vue<Props, State> {
       r
         ? `${
             strate
-              ? t("commune_a.rang", { r: ordinal(r.r), n: fr(r.n), strate })
-              : t("commune_a.rang_c", { r: ordinal(r.r), n: fr(r.n) })
+              ? T("commune_a.rang", { r: ordinal(r.r), n: fr(r.n), strate })
+              : T("commune_a.rang_c", { r: ordinal(r.r), n: fr(r.n) })
           }${extra}`
         : extra.replace(/^ · /, "");
     const tout = nomStrate(st);
@@ -445,7 +449,7 @@ export class Commune extends Vue<Props, State> {
         dots: dots(
           rCarte,
           (_k, v) => v.carte ?? -1,
-          (v) => t("commune_a.b.cameras", { n: fr(v) }),
+          (v) => T("commune_a.b.cameras", { n: fr(v) }),
         ),
         r: rk(rCarte, "", nomStrateC(st)),
         rb: rk(rCarte, "", tout),
@@ -454,84 +458,92 @@ export class Commune extends Vue<Props, State> {
       },
       {
         cls: eph == null ? "fig nl" : "fig",
-        k: t("commune_a.fig.argent"),
-        v: eph == null ? t("commune_a.fig.argent_aucun") : fr(eph),
-        u: eph == null ? "" : t("commune_a.fig.argent_u"),
+        k: T("commune_a.fig.argent"),
+        v: eph == null ? T("commune_a.fig.argent_aucun") : fr(eph),
+        u: eph == null ? "" : T("commune_a.fig.argent_u"),
         l:
           eph == null
-            ? t("commune_a.fig.argent_l0")
-            : t("commune_a.fig.argent_l", { m: montantA(eur), y: an0 }),
+            ? T("commune_a.fig.argent_l0")
+            : T("commune_a.fig.argent_l", { m: montantA(eur), y: an0 }),
         dots: dots(
           rEph,
           (k, v) => ((v.amt ?? 0) > 0 && pairPop(k) > 0 ? (v.amt ?? 0) / pairPop(k) : -1),
-          (v) => t("commune_a.b.eph", { n: fr(Math.round(v)) }),
+          (v) => T("commune_a.b.eph", { n: fr(Math.round(v)) }),
         ),
         r: rk(rEph),
         rb: rk(rEph, "", tout),
-        tip: t("commune_a.fig.argent_tip"),
+        tip: T("commune_a.fig.argent_tip"),
         href: "#argent",
       },
       {
         cls: !lu.dr && !nj ? "fig nl" : "fig",
-        k: t("commune_a.fig.drones"),
+        k: T("commune_a.fig.drones"),
         v: !lu.dr && !nj ? t("liste.non_lu") : fr(nj),
-        u: !lu.dr && !nj ? "" : t("commune_a.fig.jours"),
-        l: !lu.dr && !nj ? t("commune_a.fig.drones_nl") : t("commune_a.fig.drones_l"),
+        u: !lu.dr && !nj ? "" : T("commune_a.fig.jours"),
+        l: !lu.dr && !nj ? T("commune_a.fig.drones_nl") : T("commune_a.fig.drones_l"),
         dots: dots(
           rJv,
           (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
-          (v) => t("commune_a.b.jours", { n: v }),
+          (v) => T("commune_a.b.jours", { n: v }),
         ),
-        r: rk(rJv, nAuj ? ` · ${t("commune_a.fig.auj", { n: nAuj })}` : ""),
-        rb: rk(rJv, nAuj ? ` · ${t("commune_a.fig.auj", { n: nAuj })}` : "", tout),
-        tip: t("commune_a.fig.drones_tip", { nom }),
+        r: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : ""),
+        rb: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : "", tout),
+        tip: T("commune_a.fig.drones_tip", { nom }),
         href: "#drones",
       },
       {
         cls: pubOffres.length ? "fig" : "fig nl",
-        k: t("commune_a.fig.concurrence"),
+        k: T("commune_a.fig.concurrence"),
         v: pubOffres.length
-          ? t("commune_a.fig.offres_v", {
+          ? T("commune_a.fig.offres_v", {
               n: pubOffres.filter((e) => e.offres === 1).length,
               m: pubOffres.length,
             })
-          : t("commune_a.fig.non_publiee"),
+          : T("commune_a.fig.non_publiee"),
         u: "",
         l: pubOffres.length
-          ? t("commune_a.fig.offres_l")
-          : t("commune_a.fig.non_publiee_l", { n: s.counted.length }),
+          ? T("commune_a.fig.offres_l")
+          : T("commune_a.fig.non_publiee_l", { n: s.counted.length }),
         dots: null,
-        r: uneOffre ? t("commune_a.fig.territoire", { n: uneOffre }) : "",
-        rb: uneOffre ? t("commune_a.fig.territoire", { n: uneOffre }) : "",
-        tip: t("commune_a.fig.concurrence_tip"),
+        r: uneOffre ? T("commune_a.fig.territoire", { n: uneOffre }) : "",
+        rb: uneOffre ? T("commune_a.fig.territoire", { n: uneOffre }) : "",
+        tip: T("commune_a.fig.concurrence_tip"),
         href: "#entreprises",
       },
     ];
 
     // --- the lead -----------------------------------------------------------------------------
     const lead: RichItem[] = [];
+    // a sentence's point, once: a size class already ends on « hab. » (recette 21, « hab.. »)
+    const point = (sep: string) => {
+      if (!lead.length) return;
+      const last = lead[lead.length - 1];
+      if (typeof last === "string" && /\.\s*$/.test(last)) {
+        if (sep.endsWith(" ")) lead[lead.length - 1] = `${last.trimEnd()} `;
+      } else lead.push(sep);
+    };
     if (eur > 0) {
       lead.push(
-        t("commune_a.lead_a", { nom }),
+        T("commune_a.lead_a", { nom }),
         { strong: montantA(eur) },
-        t("commune_a.lead_b", { y: an0 }),
+        T("commune_a.lead_b", { y: an0 }),
       );
-      if (eph != null) lead.push({ strong: t("commune_a.lead_eph", { n: fr(eph) }) });
+      if (eph != null) lead.push({ strong: T("commune_a.lead_eph", { n: fr(eph) }) });
       if (rEph)
         lead.push(
-          t("commune_a.lead_rang", { r: ordinal(rEph.r), n: rEph.n, strate: nomStrate(st) }),
+          T("commune_a.lead_rang", { r: ordinal(rEph.r), n: rEph.n, strate: nomStrate(st) }),
         );
-      lead.push(". ");
+      point(". ");
     }
     if (carteN != null)
-      lead.push({ strong: t("commune_a.lead_cam", { n: fr(carteN) }) }, t("commune_a.lead_cam_b"));
+      lead.push({ strong: T("commune_a.lead_cam", { n: fr(carteN) }) }, T("commune_a.lead_cam_b"));
     if (nj)
       lead.push(
-        t("commune_a.lead_dr_a"),
-        { strong: t("commune_a.lead_dr", { n: nj }) },
-        t("commune_a.lead_dr_b"),
+        T("commune_a.lead_dr_a"),
+        { strong: T("commune_a.lead_dr", { n: nj }) },
+        T("commune_a.lead_dr_b"),
       );
-    lead.push(".");
+    point(".");
 
     // --- the sections, numbered in turn ---------------------------------------------------------
     let n = 0;
@@ -544,7 +556,7 @@ export class Commune extends Vue<Props, State> {
     const parts = camerasAutorisees(arr);
     const systemes = grandsSystemes(arr);
     const camN = num();
-    entree("cameras", `${camN} · ${t("commune_a.toc.cameras")}`);
+    entree("cameras", `${camN} · ${T("commune_a.toc.cameras")}`);
     // the first year of the decrees read (not the day their collection began)
     const depuis =
       arr
@@ -557,14 +569,14 @@ export class Commune extends Vue<Props, State> {
       ans: [
         ...(lu.cam && parts.total
           ? [
-              t("commune_a.cam_ans_a", { y: depuis }),
-              { strong: t("commune_a.cam_ans_n", { n: fr(parts.total) }) },
-              t("commune_a.cam_ans_b", { nom }),
+              T("commune_a.cam_ans_a", { y: depuis }),
+              { strong: T("commune_a.cam_ans_n", { n: fr(parts.total) }) },
+              T("commune_a.cam_ans_b", { nom }),
             ]
           : [t("commune_a.cam_ans_nl", { nom })]),
         ...(carteN != null ? [t("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : []),
       ] as RichItem[],
-      kAut: t("commune_a.cam_k", { y: depuis }),
+      kAut: T("commune_a.cam_k", { y: depuis }),
       parts:
         lu.cam && parts.total
           ? (
@@ -591,14 +603,14 @@ export class Commune extends Vue<Props, State> {
       osm: carteN ? fr(carteN) : "",
       osmNon: carteN === 0,
       carteHref: communeHref(insee, "carte"),
-      osmB: t("commune_a.b.osm_clic", { nom }),
-      note: t("commune_a.cam_note", { y: depuis }),
+      osmB: T("commune_a.b.osm_clic", { nom }),
+      note: T("commune_a.cam_note", { y: depuis }),
       systemes: systemes.length
         ? systemes.map((x) => ({
             nom: [
               x.siren && f.entreprises[x.siren]?.ref ? lienEnt(x.siren) : tidy(titleCase(x.nom)),
             ] as RichItem[],
-            n: t("commune_a.arretes_n", { n: x.arretes }),
+            n: T("commune_a.arretes_n", { n: x.arretes }),
             cams: fr(x.cameras),
           }))
         : null,
@@ -621,7 +633,7 @@ export class Commune extends Vue<Props, State> {
     let arg = null;
     if (territoire.length) {
       const argN = num();
-      entree("argent", `${argN} · ${t("commune_a.toc.argent")}`);
+      entree("argent", `${argN} · ${T("commune_a.toc.argent")}`);
       const k = vue === "hab" && pop > 0 ? 1 / pop : 1e-6;
       const tot = (a: (typeof annees)[number]) => (a.ville + a.transports + a.autres) * k;
       const max = Math.max(1e-9, ...annees.map(tot));
@@ -651,14 +663,14 @@ export class Commune extends Vue<Props, State> {
         const nb = (s2: Serie) =>
           pris.filter((e) => (e.date ?? "").startsWith(a.an) && serie(e) === s2).length;
         return {
-          bh: `${a.an} · ${vue === "hab" ? t("commune_a.tip_hab", { n: fr(tv) }) : montantA(a.ville + a.transports + a.autres)}`,
+          bh: `${a.an} · ${vue === "hab" ? T("commune_a.tip_hab", { n: fr(tv) }) : montantA(a.ville + a.transports + a.autres)}`,
           bl: parSerie
             .map(
               (s2) =>
-                `§${clsSerie(s2)}§${t(`commune_a.serie.${s2}`, { nom })} · ${montantA(a[s2])} · ${t("commune_a.b.contrats", { n: nb(s2) })}`,
+                `§${clsSerie(s2)}§${t(`commune_a.serie.${s2}`, { nom })} · ${montantA(a[s2])} · ${T("commune_a.b.contrats", { n: nb(s2) })}`,
             )
             .join("\n"),
-          bc: tv > 0 ? t("commune_a.b.col_clic") : "",
+          bc: tv > 0 ? T("commune_a.b.col_clic") : "",
           tab: tv > 0 ? "0" : "-1",
           pick: (() => {
             if (tv > 0) this.versDocs({ onglet: "con", annee: a.an, territoire: vue === "tous" });
@@ -679,19 +691,19 @@ export class Commune extends Vue<Props, State> {
         ans: [
           ...(eur > 0
             ? [
-                t("commune_a.arg_ans_a"),
+                T("commune_a.arg_ans_a"),
                 { strong: montantA(eur) },
-                t("commune_a.arg_ans_b", { n: s.counted.length }),
-                t("commune_a.arg_ans_y", { y: an0 }),
+                T("commune_a.arg_ans_b", { n: s.counted.length }),
+                T("commune_a.arg_ans_y", { y: an0 }),
               ]
-            : [t("commune_a.arg_ans_0", { nom })]),
+            : [T("commune_a.arg_ans_0", { nom })]),
           ...(totaux.transports > 0 && vue === "tous"
-            ? [t("commune_a.arg_ans_tr"), { strong: montantA(totaux.transports) }, "."]
+            ? [T("commune_a.arg_ans_tr"), { strong: montantA(totaux.transports) }, "."]
             : []),
           " ",
-          subs ? t("commune_a.arg_ans_sub", { n: subs }) : t("commune_a.arg_ans_nosub"),
+          subs ? T("commune_a.arg_ans_sub", { n: subs }) : T("commune_a.arg_ans_nosub"),
         ] as RichItem[],
-        titre: t("commune_a.argent_titre", { nom }),
+        titre: T("commune_a.argent_titre", { nom }),
         vues: (["tous", "ville", "hab"] as const).map((o) => ({
           l: t(`commune_a.argent_vue.${o}`),
           on: vue === o ? "true" : "false",
@@ -714,7 +726,7 @@ export class Commune extends Vue<Props, State> {
             sw: `sw ${clsSerie(s2)}`,
             s: s2,
             l: t(`commune_a.serie.${s2}`, { nom }),
-            v: totaux[s2] > 0 ? montantA(totaux[s2]) : t("commune_a.aucun"),
+            v: totaux[s2] > 0 ? montantA(totaux[s2]) : T("commune_a.aucun"),
             on: S.masque.includes(s2) ? "false" : "true",
             pick: (() =>
               this.setState({
@@ -726,8 +738,8 @@ export class Commune extends Vue<Props, State> {
         legSub: [
           {
             sw: "sw c-sub",
-            l: t("commune_a.serie.sub"),
-            v: subs ? fr(subs) : t("commune_a.aucune_trouvee"),
+            l: T("commune_a.serie.sub"),
+            v: subs ? fr(subs) : T("commune_a.aucune_trouvee"),
           },
         ],
       };
@@ -738,7 +750,7 @@ export class Commune extends Vue<Props, State> {
     let entS = null;
     if (fs.length) {
       const entN = num();
-      entree("entreprises", `${entN} · ${t("commune_a.toc.entreprises")}`);
+      entree("entreprises", `${entN} · ${T("commune_a.toc.entreprises")}`);
       const max = Math.max(1, fs[0].montant);
       const autres = (siren: string) => {
         const cl = X?.lignes.entreprises[siren]?.clientes;
@@ -749,10 +761,10 @@ export class Commune extends Vue<Props, State> {
       entS = {
         n: entN,
         ans: [
-          { strong: t("commune_a.ent_ans_n", { n: fs.length }) },
-          t("commune_a.ent_ans_a", { y: an0 }),
+          { strong: T("commune_a.ent_ans_n", { n: fs.length }) },
+          T("commune_a.ent_ans_a", { y: an0 }),
           ...(fs.length > 1 && part >= 50
-            ? [" ", lienEnt(fs[0].siren), t("commune_a.ent_ans_b", { p: part })]
+            ? [" ", lienEnt(fs[0].siren), T("commune_a.ent_ans_b", { p: part })]
             : []),
         ] as RichItem[],
         r: repli(S.open, "fourn", t("accueil.voir_detail"), top.length, this.basculer),
@@ -763,8 +775,8 @@ export class Commune extends Vue<Props, State> {
             nom: [lienEnt(x.siren)] as RichItem[],
             st: `width: ${((100 * x.montant) / max).toFixed(1)}%`,
             m: montantA(x.montant),
-            c: `${t("commune_a.ent_c", { n: x.contrats })} · ${x.annees.join(", ")}`,
-            o: o == null ? "" : o ? t("commune_a.ent_o", { n: o }) : t("commune_a.ent_o0"),
+            c: `${T("commune_a.ent_c", { n: x.contrats })} · ${x.annees.join(", ")}`,
+            o: o == null ? "" : o ? T("commune_a.ent_o", { n: o }) : T("commune_a.ent_o0"),
             // « N autres acheteurs »: the graph centred on the company (Lyon-A-comportements, lot 4)
             og: o && f.entreprises[x.siren]?.ref ? `/registre/graphe/${x.siren}` : "",
             // the words without their link: no other buyer, or no fiche to centre on
@@ -772,7 +784,7 @@ export class Commune extends Vue<Props, State> {
           };
         }),
         g: {
-          titre: t("commune_a.graphe_titre", { nom }),
+          titre: T("commune_a.graphe_titre", { nom }),
           nodes: top.map((x, i) => {
             const a = -Math.PI / 2 + (i * 2 * Math.PI) / top.length;
             const r = 130;
@@ -788,12 +800,12 @@ export class Commune extends Vue<Props, State> {
               ci: `i${i}`,
               bh: nomEnt(x.siren),
               bl: [
-                t("commune_a.b.avec", { nom, m: montantA(x.montant) }),
-                o == null ? "" : t("commune_a.ent_o_b", { n: o }),
+                T("commune_a.b.avec", { nom, m: montantA(x.montant) }),
+                o == null ? "" : T("commune_a.ent_o_b", { n: o }),
               ]
                 .filter(Boolean)
                 .join("\n"),
-              bc: aFiche ? t("commune_a.b.graphe", { nom: nomEnt(x.siren) }) : "",
+              bc: aFiche ? T("commune_a.b.graphe", { nom: nomEnt(x.siren) }) : "",
               x: nx.toFixed(0),
               y: ny.toFixed(0),
               rx: (nx - sz / 2).toFixed(1),
@@ -829,7 +841,7 @@ export class Commune extends Vue<Props, State> {
     let dos = null;
     if (affs.length) {
       const dosN = num();
-      entree("dossiers", `${dosN} · ${t("commune_a.toc.dossiers")}`);
+      entree("dossiers", `${dosN} · ${T("commune_a.toc.dossiers")}`);
       dos = {
         n: dosN,
         rows: affs.map((x, i) => {
@@ -867,8 +879,8 @@ export class Commune extends Vue<Props, State> {
                 s:
                   k === "contrat"
                     ? [
-                        e.montant ? t("commune_a.plafond", { m: montantA(e.montant) }) : "",
-                        mods ? t("commune_a.modifs", { n: mods }) : "",
+                        e.montant ? T("commune_a.plafond", { m: montantA(e.montant) }) : "",
+                        mods ? T("commune_a.modifs", { n: mods }) : "",
                       ]
                         .filter(Boolean)
                         .join(" · ")
@@ -897,7 +909,7 @@ export class Commune extends Vue<Props, State> {
     let dr = null;
     if (nj || nAuj) {
       const drN = num();
-      entree("drones", `${drN} · ${t("commune_a.toc.drones")}`);
+      entree("drones", `${drN} · ${T("commune_a.toc.drones")}`);
       // the calendar: twelve months of weeks ending on the update's day, Monday first; « À venir »:
       // the 30 days after it
       const fin = new Date(`${maj}T12:00:00Z`);
@@ -959,8 +971,8 @@ export class Commune extends Vue<Props, State> {
           x: String(24 + col * 15),
           y: String(16 + wd * 15),
           bh: jourLong(iso),
-          bl: t("commune_a.b.arretes_dr", { n: nb }),
-          bc: nb ? t("commune_a.b.jour_clic") : "",
+          bl: T("commune_a.b.arretes_dr", { n: nb }),
+          bc: nb ? T("commune_a.b.jour_clic") : "",
           tab: nb ? "0" : "-1",
           pick: (() => {
             if (nb) allerA(`${communeHref(insee, "carte")}?jour=${iso}`);
@@ -993,12 +1005,12 @@ export class Commune extends Vue<Props, State> {
           ...(nAuj
             ? [
                 " ",
-                { strong: t("commune_a.dr_auj", { d: jourCourt(maj) }) },
-                t("commune_a.dr_auj_n", { n: nAuj }),
+                { strong: T("commune_a.dr_auj", { d: jourCourt(maj) }) },
+                T("commune_a.dr_auj_n", { n: nAuj }),
               ]
             : []),
         ] as RichItem[],
-        titre: t("commune_a.cal_titre", { nom }),
+        titre: T("commune_a.cal_titre", { nom }),
         vb: `0 0 ${W} 124`,
         w: String(W),
         h: "124",
@@ -1017,7 +1029,7 @@ export class Commune extends Vue<Props, State> {
         })),
         motifF: S.motifF
           ? {
-              l: t("commune_a.b.motif_chip", { m: t(`commune_a.motif.${S.motifF}`) }),
+              l: T("commune_a.b.motif_chip", { m: t(`commune_a.motif.${S.motifF}`) }),
               lever: (() => this.setState({ motifF: "" })) as Handler,
             }
           : null,
@@ -1046,8 +1058,8 @@ export class Commune extends Vue<Props, State> {
                   l: t(`commune_a.motif.${m}`),
                   st: `width: ${((100 * v) / mx).toFixed(0)}%`,
                   n: fr(v),
-                  bl: t("commune_a.b.jours_vol", { n: v }),
-                  bc: t("commune_a.b.motif_clic"),
+                  bl: T("commune_a.b.jours_vol", { n: v }),
+                  bc: T("commune_a.b.motif_clic"),
                   on: S.motifF === m ? "true" : "false",
                   pick: (() => this.setState({ motifF: S.motifF === m ? "" : m })) as Handler,
                 })),
@@ -1055,10 +1067,10 @@ export class Commune extends Vue<Props, State> {
                 ? [
                     {
                       cls: "hb q",
-                      l: t("commune_a.motif_non_lu"),
+                      l: T("commune_a.motif_non_lu"),
                       st: `width: ${((100 * sansMotif) / mx).toFixed(0)}%`,
                       n: fr(sansMotif),
-                      bl: t("commune_a.b.jours_vol", { n: sansMotif }),
+                      bl: T("commune_a.b.jours_vol", { n: sansMotif }),
                       bc: "",
                       on: "",
                       pick: null,
@@ -1082,7 +1094,7 @@ export class Commune extends Vue<Props, State> {
                 leg: `${t(`accueil.vol_${x.k}`)} · ${fr(x.n)}`,
                 bh: t(`accueil.vol_${x.k}`),
                 bl: `${fr(x.n)} · ${x.pct} %`,
-                bc: t("commune_a.b.vol_clic"),
+                bc: T("commune_a.b.vol_clic"),
                 pick: (() => this.setState({ volF: S.volF === x.k ? "" : x.k })) as Handler,
               })),
               liste: S.volF ? volListe(d.all, S.volF, insee, jpa) : null,
@@ -1109,7 +1121,7 @@ export class Commune extends Vue<Props, State> {
           ? v.toFixed(1).replace(".", ",")
           : m === "eph"
             ? t("socle_a.e", { n: fr(v) })
-            : t("commune_a.jours_n", { n: fr(v) });
+            : T("commune_a.jours_n", { n: fr(v) });
       const lien = (k: string, nm: string): RichItem[] => [
         ent(X?.dico.communes[k]?.ref ? communeHref(k) : null, nm, ""),
       ];
@@ -1130,8 +1142,8 @@ export class Commune extends Vue<Props, State> {
           nom: lien(x.k, X?.dico.communes[x.k]?.nom ?? x.k),
           v: fmt(x.v),
           bh: X?.dico.communes[x.k]?.nom ?? x.k,
-          bl: `${fmt(x.v)}\n${t("commune_a.b.rang_ou", { r: ordinal(rows.indexOf(x) + 1), n: rows.length, ou })}`,
-          bc: x.k === insee ? "" : t("commune_a.b.fiche"),
+          bl: `${fmt(x.v)}\n${T("commune_a.b.rang_ou", { r: ordinal(rows.indexOf(x) + 1), n: rows.length, ou })}`,
+          bc: x.k === insee ? "" : T("commune_a.b.fiche"),
         }));
       };
       const ep = classe(membres);
@@ -1140,21 +1152,22 @@ export class Commune extends Vue<Props, State> {
       const ml = t(`commune_a.mesure_l.${m}`);
       if (X && (ep.length > 1 || sr.length > 1)) {
         n++;
-        entree("voisines", `${vN} · ${t("commune_a.toc.voisines")}`);
+        entree("voisines", `${vN} · ${T("commune_a.toc.voisines")}`);
         vois = {
           n: vN,
           ans:
             iE >= 0 && ep.length > 1
               ? ([
-                  t("commune_a.vois_ans", {
+                  T("commune_a.vois_ans", {
                     nom,
-                    epci: nomEpci,
+                    // « Dans la CC Vallée des Baux-Alpilles » (recette 21)
+                    epci: articleEpci(nomEpci),
                     r: ordinal(iE + 1),
                     n: ep.length,
                     m: ml,
                   }),
                 ] as RichItem[])
-              : ([t("commune_a.vois_ans_strate", { nom, strate: nomStrate(st) })] as RichItem[]),
+              : ([T("commune_a.vois_ans_strate", { nom, strate: nomStrate(st) })] as RichItem[]),
           mesures: (["cameras", "eph", "drones"] as const).map((o) => ({
             l: t(`commune_a.mesure.${o}`),
             on: m === o ? "true" : "false",
@@ -1163,7 +1176,7 @@ export class Commune extends Vue<Props, State> {
           epci:
             ep.length > 1
               ? {
-                  titre: t("commune_a.vois_epci", { epci: nomEpci, m: ml }),
+                  titre: T("commune_a.vois_epci", { epci: nomEpci, m: ml }),
                   rows: autour(ep, 8, nomEpci),
                   note: t("commune_a.vois_epci_note", { n: membres.length, k: ep.length }),
                 }
@@ -1171,7 +1184,7 @@ export class Commune extends Vue<Props, State> {
           strate:
             sr.length > 1
               ? {
-                  titre: t("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
+                  titre: T("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
                   rows: autour(sr, 5, nomStrate(st)),
                   // the communes that buy through their intercommunality: the money's caveat only
                   note: m === "eph",
@@ -1179,7 +1192,7 @@ export class Commune extends Vue<Props, State> {
               : null,
           attente: "",
           comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
-          comparerL: t("commune_a.comparer", { nom }),
+          comparerL: T("commune_a.comparer", { nom }),
         };
       } else if (!X) {
         vois = {
@@ -1188,7 +1201,7 @@ export class Commune extends Vue<Props, State> {
           mesures: [],
           epci: null,
           strate: null,
-          attente: t("commune_a.vois_attente"),
+          attente: T("commune_a.vois_attente"),
         };
       }
     }
@@ -1263,7 +1276,7 @@ export class Commune extends Vue<Props, State> {
       ...(S.territoire
         ? [
             {
-              l: t("commune_a.argent_vue.tous"),
+              l: T("commune_a.argent_vue.tous"),
               lever: (() => this.setState({ territoire: false })) as Handler,
             },
           ]
@@ -1295,7 +1308,7 @@ export class Commune extends Vue<Props, State> {
       menus: [
         this.menuDocs(
           "annee",
-          t("commune_a.m_annee"),
+          T("commune_a.m_annee"),
           S.annee,
           anneesDoc.map((v) => ({ v, l: v })),
           (v) => ({ annee: v }),
@@ -1304,7 +1317,7 @@ export class Commune extends Vue<Props, State> {
           ? [
               this.menuDocs(
                 "ent",
-                t("commune_a.m_ent"),
+                T("commune_a.m_ent"),
                 S.entF,
                 entsDoc.map(([v, n2]) => ({ v, l: `${nomEnt(v)} · ${fr(n2)}` })),
                 (v) => ({ entF: v }),
@@ -1315,7 +1328,7 @@ export class Commune extends Vue<Props, State> {
           ? [
               this.menuDocs(
                 "montant",
-                t("commune_a.m_montant"),
+                T("commune_a.m_montant"),
                 S.tranche,
                 (["m1", "m2", "m3"] as const).map((v) => ({ v, l: t(`commune_a.tranche.${v}`) })),
                 (v) => ({ tranche: v as Tranche }),
@@ -1360,7 +1373,7 @@ export class Commune extends Vue<Props, State> {
         dos:
           (f.affaires[e.affaire]?.events?.length ?? 0) > 1
             ? ([
-                { a: { href: documentHref(e.affaire), text: t("commune_a.dossier") } },
+                { a: { href: documentHref(e.affaire), text: T("commune_a.dossier") } },
               ] as RichItem[])
             : (["—"] as RichItem[]),
       })),
@@ -1371,33 +1384,33 @@ export class Commune extends Vue<Props, State> {
         tgt.closest("tr")?.querySelector<HTMLAnchorElement>("td a")?.click();
       }) as Handler,
       vide: !docRows.length,
-      plus: docRows.length > 10 ? t("commune_a.documents_plus", { n: fr(docRows.length) }) : "",
+      plus: docRows.length > 10 ? T("commune_a.documents_plus", { n: fr(docRows.length) }) : "",
       tout: communeHref(insee, "documents"),
     };
     const srcRows = [
-      { cls: "ok", l: t("accueil.src.contrats"), d: t("commune_a.src.contrats") },
-      { cls: "ok", l: t("accueil.src.ao"), d: t("commune_a.src.ao") },
+      { cls: "ok", l: t("accueil.src.contrats"), d: T("commune_a.src.contrats") },
+      { cls: "ok", l: t("accueil.src.ao"), d: T("commune_a.src.ao") },
       {
         cls: lu.cam || lu.dr ? "part" : "non",
-        l: t("commune_a.src.arretes"),
-        d: lu.cam || lu.dr ? t("commune_a.src.arretes_d", { y: depuis }) : t("liste.non_lu"),
+        l: T("commune_a.src.arretes"),
+        d: lu.cam || lu.dr ? T("commune_a.src.arretes_d", { y: depuis }) : t("liste.non_lu"),
       },
-      { cls: "part", l: t("accueil.src.subventions"), d: t("commune_a.src.subventions") },
+      { cls: "part", l: t("accueil.src.subventions"), d: T("commune_a.src.subventions") },
       { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },
     ];
     toc.push({
       href: "#documents",
-      l: t("commune_a.toc.documents"),
+      l: T("commune_a.toc.documents"),
       cls: "",
       go: this.allerSection,
     });
-    toc.push({ href: "#sources", l: t("commune_a.toc.sources"), cls: "", go: this.allerSection });
+    toc.push({ href: "#sources", l: T("commune_a.toc.sources"), cls: "", go: this.allerSection });
     // the 3D view's doors open on its Fiche tab; its drones' doors (a day, today) on Drones (Ju 09/11,
     // choice 5)
     const vue3d = `${communeHref(insee, "carte")}?onglet=fiche`;
     toc.push({
       href: vue3d,
-      l: t("commune_a.toc.vue3d"),
+      l: T("commune_a.toc.vue3d"),
       cls: "t3d",
       go: (() => {}) as Handler,
     });
@@ -1420,10 +1433,10 @@ export class Commune extends Vue<Props, State> {
         ...(nomEpci && c.epci_ref ? [{ l: nomEpci, href: `/registre/${c.epci_ref}` }] : []),
       ],
       meta: [
-        ...(pop ? [t("commune_a.habitants", { n: fr(pop) })] : []),
-        t("commune_a.insee", { insee }),
+        ...(pop ? [T("commune_a.habitants", { n: fr(pop) })] : []),
+        T("commune_a.insee", { insee }),
         ...(f.couverture.departement.dernier_recueil
-          ? [t("commune_a.collecte", { d: jourCourt(f.couverture.departement.dernier_recueil) })]
+          ? [T("commune_a.collecte", { d: jourCourt(f.couverture.departement.dernier_recueil) })]
           : []),
       ],
       lead,
@@ -1432,18 +1445,18 @@ export class Commune extends Vue<Props, State> {
       citerL: t(S.cite ? "commune_a.cite" : "commune_a.citer"),
       figs: figsB,
       v3: {
-        titre: t("commune_a.v3_titre", { nom }),
+        titre: T("commune_a.v3_titre", { nom }),
         items: [
           {
-            b: t("commune_a.v3_cameras"),
+            b: T("commune_a.v3_cameras"),
             s:
               carteN != null
                 ? t("commune_a.v3_cameras_s", { n: fr(carteN) })
                 : t("commune_a.v3_cameras_s0"),
           },
           {
-            b: t("commune_a.v3_drones"),
-            s: nAuj ? t("commune_a.v3_drones_auj", { n: nAuj }) : t("commune_a.v3_drones_s"),
+            b: T("commune_a.v3_drones"),
+            s: nAuj ? T("commune_a.v3_drones_auj", { n: nAuj }) : T("commune_a.v3_drones_s"),
           },
         ],
         href: vue3d,

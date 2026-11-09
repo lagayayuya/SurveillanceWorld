@@ -3,8 +3,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  aNom,
   argentParAnnee,
+  articleEpci,
   camerasAutorisees,
+  contracte,
+  deNom,
   fournisseurs,
   grandsSystemes,
   joursDeVol,
@@ -95,4 +99,27 @@ test("a drone act's motive in the board's classes", () => {
   assert.equal(classeMotif({ categorie: "stupefiants" }), "stupefiants");
   assert.equal(classeMotif(undefined), null);
   assert.equal(classeMotif({ categorie: null }), null);
+});
+
+test("a name in a sentence: its article contracted, a size class's point once (recette 21)", () => {
+  assert.equal(deNom("Les Baux-de-Provence"), "des Baux-de-Provence");
+  assert.equal(deNom("Le Mans"), "du Mans");
+  assert.equal(deNom("La Ciotat"), "de La Ciotat");
+  assert.equal(deNom("Lyon"), "de Lyon");
+  assert.equal(deNom("Aix-en-Provence"), "d'Aix-en-Provence");
+  assert.equal(aNom("Les Baux-de-Provence"), "aux Baux-de-Provence");
+  assert.equal(aNom("Le Mans"), "au Mans");
+  assert.equal(aNom("La Ciotat"), "à La Ciotat");
+  const nom = "Les Baux-de-Provence";
+  assert.equal(
+    contracte(`Les arrêtés de caméras de ${nom} ne sont pas lus`, nom),
+    "Les arrêtés de caméras des Baux-de-Provence ne sont pas lus",
+  );
+  assert.equal(contracte(`des drones à ${nom} sur 12 mois`, nom), "des drones aux Baux-de-Provence sur 12 mois");
+  // a name inside a longer name, or another word: untouched
+  assert.equal(contracte("la gare de Le Mans-Nord", "Le Mans"), "la gare de Le Mans-Nord");
+  assert.equal(contracte("Vichy parmi les communes de 20 000 à 100 000 hab..", "Vichy"), "Vichy parmi les communes de 20 000 à 100 000 hab.");
+  assert.equal(articleEpci("CC Vallée des Baux-Alpilles"), "la CC Vallée des Baux-Alpilles");
+  assert.equal(articleEpci("Métropole du Grand Paris"), "la Métropole du Grand Paris");
+  assert.equal(articleEpci("Grand Paris Seine Ouest"), "Grand Paris Seine Ouest");
 });
