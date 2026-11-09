@@ -49,11 +49,20 @@ def test_a_drone_act_s_sector_is_placed_by_arrondissement_place_commune_or_depar
     noms = {"paris": "75056", "saint-denis": "93066", "pantin": "93055"}
     r = registre.RULES
     assert situer("dans certains secteurs du 19ème arrondissement de Paris", noms, r) == {
-        "secteur_niveau": "arrondissement", "secteur_insee": ["75119"]}  # fmt: skip
+        "secteur_niveau": "arrondissement", "secteur_insee": ["75119"],
+        "secteur": "Paris 19e"}  # fmt: skip
     stade = situer("au match de football précité au Parc des Princes le 27 septembre", noms, r)
-    assert stade["secteur_niveau"] == "lieu"
-    assert situer("sur les communes de Saint-Denis et Pantin (93)", noms, r) == {
-        "secteur_niveau": "commune", "secteur_insee": ["93055", "93066"]}  # fmt: skip
+    assert stade == {"secteur_niveau": "lieu", "secteur_lieu": "Parc des Princes",
+                     "secteur": "Parc des Princes"}  # fmt: skip
+    # the place, never the event: no person served (Ju, 2026-11-09)
+    concert = situer("en Seine-Saint-Denis à l'occasion des concerts de Jeanne DUPONT au "
+                     "Stade de France", noms, r)  # fmt: skip
+    assert concert["secteur"] == "Stade de France" and "DUPONT" not in str(concert)
+    assert situer("l'autorisation porte sur la mise en place", noms, r)["secteur_niveau"] != "lieu"
+    libelles = {"93066": "Saint-Denis", "93055": "Pantin"}
+    assert situer("sur les communes de Saint-Denis et Pantin (93)", noms, r, None, libelles) == {
+        "secteur_niveau": "commune", "secteur_insee": ["93055", "93066"],
+        "secteur": "Pantin, Saint-Denis"}  # fmt: skip
     assert situer("dans le département de la Seine-Saint-Denis", noms, r) == {
         "secteur_niveau": "departement"}  # fmt: skip
     assert situer("à l'occasion de l'événement susvisé", noms, r) == {"secteur_niveau": "non_lu"}

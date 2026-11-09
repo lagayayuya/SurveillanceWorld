@@ -20,3 +20,22 @@ apostrophes:
       par: "œuvre"
     - motif: "\\?UVRE"
       par: "ŒUVRE"
+
+# A person named in a title or an objet (« concerts de [a singer] au Stade de France »,
+# « visite du Pape [name] »): masked at the build, the event's kind and place kept. Measured
+# 2026-11-09 on the collected acts: 43 titles name a performer or a public figure (42 of them
+# drone acts). No natural person in the served data (Ju, 2026-11-09).
+personnes:
+  id: rule:registre_textes@1:personnes
+  rationale: >-
+    What follows « concert(s), spectacle(s), tournée(s), show(s), représentation(s) de / du /
+    des » is a performer when it starts with a capital: its capitalised words are replaced by
+    « […] », the mark the reader already puts for a name after a civility; a word in lower
+    case (« au », « le ») ends it. A pope's name after « Pape » is dropped, the office kept.
+    A capitalised group that is not a person (« spectacle de Noël ») is masked too: a lost
+    word, never a person served.
+  remplacements:
+    - motif: "(?i:\\b(concerts?|spectacles?|tourn[ée]es?|shows?|représentations?)\\s+(de|du|des|d'|d’)\\s*)(?:(?i:la|le|les)\\s+|(?i:l'|l’))?[A-ZÉÈÀÂÊÎÔÛÇ][\\w'’.&-]*(?:\\s+(?:[A-ZÉÈÀÂÊÎÔÛÇ0-9][\\w'’.&-]*|(?:de|du|des|et|&)(?=\\s+[A-ZÉÈÀÂÊÎÔÛÇ])))*"
+      par: "\\1 \\2 […]"
+    - motif: "\\b([Pp]ape)\\s+[A-ZÉ][a-zéèêëîïôöûü]+(?:\\s+[IVXLC]+\\b)?"
+      par: "\\1"

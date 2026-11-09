@@ -105,14 +105,40 @@ def _secteur(rules_dir: Path) -> dict[str, Any]:
     }
 
 
+def _plie_avec_places(s: str) -> tuple[str, list[int]]:
+    """`plie(s)` and, for each of its characters, its place in `s` (a span read on the folded
+    text is cut from the act's own text, its capitals and accents kept)."""
+    out: list[str] = []
+    at: list[int] = []
+    for i, ch in enumerate(s.replace("’", "'")):
+        if ch.isspace():
+            if out and out[-1] != " ":
+                out.append(" ")
+                at.append(i)
+            continue
+        for f in unicodedata.normalize("NFKD", ch).encode("ascii", "ignore").decode().lower():
+            out.append(f)
+            at.append(i)
+    while out and out[-1] == " ":
+        out.pop()
+        at.pop()
+    return "".join(out), at
+
+
 def situer(
-    secteur: str | None, noms: dict[str, str], rules_dir: Path, ville: str | None = None
+    secteur: str | None,
+    noms: dict[str, str],
+    rules_dir: Path,
+    ville: str | None = None,
+    libelles: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """{secteur_niveau, secteur_insee?, secteur_lieu?} (rule:registre_drones@1:secteur):
-    `noms` the folded names of the communes it may name → their code; `ville` the city an
-    arrondissement without its city belongs to (the act's own commune)."""
+    """{secteur_niveau, secteur?, secteur_insee?, secteur_lieu?} (rule:registre_drones@1:secteur):
+    `noms` the folded names of the communes it may name → their code, `libelles` a code → its
+    name; `ville` the city an arrondissement without its city belongs to (the act's own
+    commune). `secteur` is the place alone, never the act's words."""
     conf = _secteur(rules_dir)
-    t = plie(secteur)
+    raw = re.sub(r"\s+", " ", secteur or "").strip()
+    t, at = _plie_avec_places(raw)
     if not t:
         return {"secteur_niveau": "non_lu"}
     arr = []
@@ -122,14 +148,24 @@ def situer(
         if prefix and 1 <= int(n) <= 20:
             arr.append(f"{prefix[1]}{int(n):02d}" if prefix[1] != "6938" else f"6938{int(n)}")
     if arr:
-        return {"secteur_niveau": "arrondissement", "secteur_insee": sorted(set(arr))}
-    if m := conf["lieu"].search(t):
-        return {"secteur_niveau": "lieu", "secteur_lieu": m.group(0).strip()}
+        codes = sorted(set(arr))
+        nums = [str(int(c[-2:])) if not c.startswith("6938") else c[-1] for c in codes]
+        city = {"751": "Paris", "693": "Lyon", "132": "Marseille"}[codes[0][:3]]
+        label = f"{city} {', '.join(n + ('er' if n == '1' else 'e') for n in nums)}"
+        return {"secteur_niveau": "arrondissement", "secteur_insee": codes, "secteur": label}
+    m = conf["lieu"].search(t)
+    if m and " " in m.group(0).strip():  # a kind alone (« Arena », « Palais ») is no place
+        place = raw[at[m.start()] : at[m.end() - 1] + 1].strip(" ,;.")
+        place = place[0].upper() + place[1:]
+        return {"secteur_niveau": "lieu", "secteur_lieu": place, "secteur": place}
     named = sorted(
         {k for n, k in noms.items() if re.search(rf"(?<![a-z-]){re.escape(n)}(?![a-z-])", t)}
     )
     if named:
-        return {"secteur_niveau": "commune", "secteur_insee": named}
+        out: dict[str, Any] = {"secteur_niveau": "commune", "secteur_insee": named}
+        if libelles and all(k in libelles for k in named):
+            out["secteur"] = ", ".join(libelles[k] for k in named)
+        return out
     if conf["departement"].search(t):
         return {"secteur_niveau": "departement"}
     return {"secteur_niveau": "non_lu"}

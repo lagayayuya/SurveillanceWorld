@@ -43,3 +43,20 @@ def test_the_records_are_mended_in_place_and_counted():
             {"objet": "mise en ?uvre", "titre": "l?emploi"}]  # fmt: skip
     assert textes.appliquer(recs, RULES) == 2
     assert recs[0]["titre"] == "autorisation d'un système" and recs[2]["titre"] == "l'emploi"
+
+
+def test_a_person_a_title_names_is_masked_the_event_and_place_kept():
+    """rule:registre_textes@1:personnes (Ju, 2026-11-09): no natural person served."""
+    import lacarte_registre as registre
+    from lacarte_registre import textes
+
+    rules = textes.personnes(registre.RULES)
+    recs = [
+        {"titre": "Arrêté … à l'occasion des concerts de Jeanne DUPONT au Stade de France"},
+        {"titre": "Arrêté … lors de la visite du Pape Pierre II à Paris"},
+        {"titre": "Arrêté … à l'occasion de la manifestation du 1er mai", "objet": None},
+    ]
+    assert textes.masquer(recs, rules) == 2
+    assert recs[0]["titre"] == "Arrêté … à l'occasion des concerts de […] au Stade de France"
+    assert recs[1]["titre"] == "Arrêté … lors de la visite du Pape à Paris"
+    assert recs[2]["titre"].endswith("manifestation du 1er mai")

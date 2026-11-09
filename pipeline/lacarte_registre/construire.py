@@ -87,6 +87,11 @@ def run(
         "documents": textes.appliquer(pilote.reg["evenements"], fix),
         "affaires": textes.appliquer(list(pilote.reg["affaires"].values()), fix),
     }
+    # a person a title or an objet names, masked (rule:registre_textes@1:personnes)
+    who = textes.personnes(rules)
+    repaired["personnes"] = textes.masquer(
+        [*pilote.reg["evenements"], *pilote.reg["affaires"].values()], who
+    )
     # what each contract and notice buys (rules/registre_natures.yaml): its objet (the
     # pilot's documents have none: their affaire's title), then its CPV codes
     rn = natures.load(rules / "registre_natures.yaml")
@@ -121,14 +126,17 @@ def run(
         noms.setdefault(c.get("dep") or "", {})[lecture_drones.plie(c.get("nom"))] = k
     pp = {n: k for d in ("75", "92", "93", "94") for n, k in noms.get(d, {}).items()}
     villes = {"75056": "paris", "69123": "lyon", "13055": "marseille"}
+    libelles = {k: c.get("nom") for k, c in reg.communes.items() if c.get("nom")}
     for e in reg.evenements:
         if e["t"] == "arrete_drone":  # no sector read: « non_lu »
             here = (
                 pp if e.get("dep") in ("75", "92", "93", "94") else noms.get(e.get("dep") or "", {})
             )
+            # the act's words never served: the place alone (an event may name a person)
+            words = e.pop("secteur", None)
             e.update(
                 lecture_drones.situer(
-                    e.get("secteur"), here, rules, villes.get(e.get("insee") or "")
+                    words, here, rules, villes.get(e.get("insee") or ""), libelles
                 )
             )
     conf = couverture.rules(rules / "registre_couverture.yaml")

@@ -160,7 +160,12 @@ secteur:
     (the communes it names, their codes in `secteur_insee`), « departement » (a whole
     département), « non_lu » (no place in the sector, or no sector read). One sector per act:
     every day of the act has it. Hatch the sector when it is an arrondissement or a place, the
-    whole commune otherwise; nothing is drawn from the annexed plans.
-  lieu: '(?:sur le site d[eu]s?|aux abords d[eu]s?|au (?:stade|parc|palais|club)|a l.arena|a la (?:place|porte|salle)|au champ de mars)\s*(?:l.|la |le |les )?([^,;]{3,80}?)(?=\s+(?:le |les |du |a l.occasion|dans le cadre|de \d)|[,;]|$)'
+    whole commune otherwise; nothing is drawn from the annexed plans. `secteur` is served as the
+    place alone (the place's name, the arrondissement, the communes' names), never the act's
+    words: an event's description may name a person (Ju, 2026-11-09).
+  # a place is its kind and its name (« Stade de France », « Parc des Princes », « place de la
+  # Concorde »), never what happens there: « concerts de [a singer] au Stade de France » gives
+  # « Stade de France » (Ju, 2026-11-09: no natural person in the served data)
+  lieu: '\b(?:stade|parc|arena|palais|(?:place|porte) (?=de |d.|des |du )|salle|club de france|champ de mars|esplanade|hippodrome|circuit|zenith|velodrome|chateau|jardin|bois (?=de |du )|gare|aeroport|hotel de ville|basilique|cathedrale|pont|quai|avenue|boulevard|rue|champs-elysees|tour eiffel|trocadero|invalides)\b(?:\s+(?:de la|de l.|des|du|de|d.)?\s*[a-z0-9-]+){0,4}?(?=\s+(?:le|les|a l.occasion|dans le cadre|et|a|au|aux|pour|lors|ainsi|sur|de \d|du \d)\b|\s*[,;.()]|$)'
   departement: '\bdans (?:le|les) departements?\b|\ben (?:seine-saint-denis|val-de-marne|hauts-de-seine)\b'
   villes_arrondissements: {paris: ["75056", "751"], lyon: ["69123", "6938"], marseille: ["13055", "132"]}
