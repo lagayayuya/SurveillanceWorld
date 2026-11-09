@@ -1626,7 +1626,12 @@ class CarteDrones extends Vue<Props, State> {
           ? ([
               t("carte_a.lead_dr_nl_a", { nom }),
               { strong: t("carte_a.aut_nl_b") },
-              t("carte_a.lead_dr_nl_c"),
+              // collected but below the threshold of accuracy (`sous_le_seuil`), or not collected
+              t(
+                d.f.couverture.departement.etat === "collecte"
+                  ? "carte_a.lead_dr_nl_c_seuil"
+                  : "carte_a.lead_dr_nl_c",
+              ),
             ] as Rich)
           : eDr === "aucun"
             ? ([
