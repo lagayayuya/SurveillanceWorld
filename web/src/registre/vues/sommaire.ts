@@ -11,7 +11,7 @@
 // anything is drawn (listes.ts redirection).
 
 import { communeHref } from "../commun.ts";
-import { entName, type Index, type Lexique, titre as titreDoc } from "../corpus.ts";
+import { docHref, entName, type Index, type Lexique, titre as titreDoc } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import { load } from "../donnees.ts";
@@ -36,7 +36,7 @@ import {
   redirection,
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
-import type { Route } from "../routes.ts";
+import { documentHref, type Route } from "../routes.ts";
 import { coupeMots, montantA, pleinEcran, plusProche, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import { pluriel, type TypeCle } from "../types.ts";
@@ -377,6 +377,12 @@ class Sommaire extends Vue<Props, State> {
     );
   };
 
+  /** A latest document's row clicked beside its links: its document (the objet's link). */
+  private ouvrirLigne: Handler = (ev) => {
+    if ((ev.target as Element | null)?.closest?.("a, button")) return;
+    (ev.currentTarget as HTMLElement).querySelector<HTMLElement>("a.ob")?.click();
+  };
+
   private basculer = (k: string): void =>
     this.setState({ open: { ...this.state.open, [k]: !this.state.open[k] } });
 
@@ -567,6 +573,9 @@ class Sommaire extends Vue<Props, State> {
             ? ""
             : String(e.ref ?? "");
       return {
+        // the row leads to the document (its objet the link; the place keeps its own)
+        href: docHref(LR, e),
+        ouvrir: this.ouvrirLigne,
         date: jourMois(jourDoc(e, S.onglet) ?? I.maj),
         dk: t(`accueil.dk.${dk(e.t)}`),
         lieu: [lieu] as RichItem[],
@@ -608,6 +617,14 @@ class Sommaire extends Vue<Props, State> {
         ligne: [...ents, ...(ents.length && obj ? [" · "] : []), obj] as RichItem[],
         an: (e.date ?? "").slice(0, 4),
         m: montantA(e.montant ?? 0),
+        // the contract: its amount the row's first link, which a click on the row follows
+        // (bulle.ts: a row's first link), the buyer and the companies keeping their own
+        href: documentHref(e.affaire),
+        aide: t("accueil.gros_lien", {
+          m: montantA(e.montant ?? 0),
+          an: (e.date ?? "").slice(0, 4),
+          objet: obj,
+        }),
       };
     });
     const srcRows = [
