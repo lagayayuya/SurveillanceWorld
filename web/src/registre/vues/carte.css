@@ -741,6 +741,9 @@
      the door to the other tab) */
   .rg .v-carte .v3p .dfigs .fig .fl {
     display: block;
+    /* recette 24: the socle's one-line max-height let the Drones figure's second line spill
+       under the card's edge; the card grows with its line */
+    max-height: none;
     overflow: visible;
     -webkit-line-clamp: unset;
   }
