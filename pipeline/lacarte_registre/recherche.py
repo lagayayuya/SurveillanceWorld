@@ -205,7 +205,8 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
             carte_dep[d] += n
     for d, o in deps.items():
         dst = comptes.departement(reg, d)
-        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"], helico=dst["helico"])
+        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"], helico=dst["helico"],
+                 dr_commune=dst["dr_commune"], dr_autorite=dst["dr_autorite"])  # fmt: skip
         # what a commune of it without a row says (rule:registre_couverture@1:actes_commune)
         o["couverture_actes_communes"] = ctx.couverture_actes(d, {})
     # a company named in a contract that counts, never a sole trader

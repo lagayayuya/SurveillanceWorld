@@ -238,3 +238,14 @@ def test_every_contract_and_notice_says_what_it_buys(built):
     docs = [e for e in documents(built) if e["t"] in natures.TYPES]
     assert docs and all(e["natures"] and set(e["natures"]) <= keys for e in docs)
     # the extract's documents have no objet nor title: `autre`, never empty
+
+
+def test_a_departement_counts_its_drone_acts_placed_and_issued(built):
+    """dr_commune: placed in one of its communes; dr_autorite: issued by its authorities
+    (the police prefecture's act of the extract names no commune: issued, placed nowhere)."""
+    paris = read(built, "departement/75.json")["stats"]["depStats"]
+    assert (paris["dr_commune"], paris["dr_autorite"]) == (0, 1)
+    rhone = read(built, "departement/69.json")["stats"]["depStats"]
+    assert rhone["dr_commune"] >= 1 and rhone["dr_autorite"] >= 1
+    rows = read(built, "listes.json")["lignes"]["departements"]
+    assert (rows["75"]["dr_commune"], rows["75"]["dr_autorite"]) == (0, 1)

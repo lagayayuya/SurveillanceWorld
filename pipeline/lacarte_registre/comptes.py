@@ -66,10 +66,31 @@ def uniq(reg: Registre, insees: Iterable[str]) -> dict[str, int]:
     return _counts(evs)
 
 
+def drones_departement(reg: Registre, dep: str) -> dict[str, int]:
+    """The département's drone acts two ways, each act once: `dr_commune` those placed in one of
+    its communes (an act shared with one of them included), `dr_autorite` those its authorities
+    issued, wherever they fly (the Préfecture de police's in the inner suburbs: Paris 641
+    placed, 781 issued on 2026-11-09). `dr` stays the documents filed under it (both, once)."""
+    autorites = reg.pilote.get("AUTORITES_DEP", {}) or {}
+    placed: set[str] = set()
+    issued: set[str] = set()
+    for k, c in reg.communes.items():
+        if c.get("dep") != dep:
+            continue
+        placed |= {e["id"] for e in reg.by_insee.get(k, []) if is_drone_act(e)}
+    for e in reg.evenements:
+        if is_drone_act(e):
+            a = e.get("autorite")
+            if ((autorites.get(a) if a else None) or e.get("dep")) == dep:
+                issued.add(e["id"])
+    return {"dr_commune": len(placed), "dr_autorite": len(issued)}
+
+
 def departement(reg: Registre, dep: str) -> dict[str, Any]:
     evs = reg.by_dep.get(dep, [])
     return {
         **_counts(evs),
+        **drones_departement(reg, dep),
         "sansCommune": sum(1 for e in evs if not e.get("insee") or e["insee"] not in reg.communes),
         "montant": _amount(e for e in evs if e["compte"]),
         "montantBrut": _amount(e for e in evs if e["t"] == "attribution"),
