@@ -493,7 +493,8 @@ class DepartementA extends Vue<PropsA, StateA> {
       },
       {
         cls: lu ? "fig" : "fig nl",
-        k: t("departement_a.fig.dr"),
+        // Paris counts the police prefecture's acts, wherever they fly (A, 08/11): its label says it
+        k: t(dep === "75" ? "departement_a.fig.dr_pp" : "departement_a.fig.dr"),
         v: lu ? fr(st.dr) : t("liste.non_lu"),
         u: lu ? t("departement_a.fig.arretes", { n: st.dr }) : "",
         l: lu
@@ -539,7 +540,11 @@ class DepartementA extends Vue<PropsA, StateA> {
         { strong: t("departement_a.lead_cam", { n: st.cam }) },
         t("departement_a.lead_cam_b", { y: anA }),
       ]);
-    if (lu && st.dr) morceaux.push([{ strong: t("departement_a.lead_dr", { n: st.dr }) }]);
+    if (lu && st.dr)
+      morceaux.push([
+        { strong: t("departement_a.lead_dr", { n: st.dr }) },
+        ...(dep === "75" ? [t("departement_a.lead_dr_pp")] : []),
+      ]);
     if (morceaux.length) {
       lead.push(`${capital(N.dans)}, `);
       for (const [i, m] of morceaux.entries()) {

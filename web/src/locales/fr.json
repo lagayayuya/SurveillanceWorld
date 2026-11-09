@@ -4216,6 +4216,8 @@
   "registre.departement_a.fig.arretes": "{n, plural, one {arrêté} other {arrêtés}}",
   "registre.departement_a.fig.dr_l": "{n, plural, =0 {} one {dans # commune} other {dans # communes}}",
   "registre.departement_a.fig.dr_tip": "Arrêtés préfectoraux autorisant des drones, lus depuis {y}.",
+  "registre.departement_a.fig.dr_pp": "Drones · Préfecture de police comprise",
+  "registre.departement_a.lead_dr_pp": " (ceux de la Préfecture de police compris, où qu'ils volent)",
   "registre.departement_a.sur": "sur {n}",
   "registre.departement_a.sur_tous": "sur {n} départements et collectivités",
   "registre.departement_a.sur_lus": "sur les {n} départements lus",

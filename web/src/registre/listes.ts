@@ -45,6 +45,7 @@ import { montantA } from "./socle-a.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
 import { pluriel, type TypeCle } from "./types.ts";
 import { appareils } from "./vues/commune-outils.ts";
+import { couvertureActes, lecture } from "./vues/comparer-a.ts";
 
 export { LISTES, type Liste };
 
@@ -339,7 +340,16 @@ function rangsCommunes(C: Corpus): Rang[] {
   const lus = collectes(C);
   return Object.entries(C.X.communes).map(([insee, c]) => {
     const x = C.L.communes[insee];
-    const ok = lus.has(x.dep);
+    // the build's reading of each family (comparer-a.ts couvertureActes, recette 01): never a 0
+    // where the commune's acts are not read
+    const lu = lecture(
+      couvertureActes({
+        insee,
+        dep: x.dep,
+        etat: lus.has(x.dep) ? "collecte" : undefined,
+        X: { lignes: C.X, dico: C.L } as never,
+      }),
+    );
     const carte = c.carte ?? null;
     const pop = x.pop ?? 0;
     const p1000 = carte != null && pop > 0 ? (1000 * carte) / pop : -1;
@@ -384,21 +394,21 @@ function rangsCommunes(C: Corpus): Rang[] {
           ? [v(montantA(amt)), sub(t("liste.a.eph", { n: fr(eph) }))]
           : [v(NA), sub(t("liste.a.aucun_contrat"))],
         fr(c.con),
-        ok ? fr(c.cam) : nonLu(),
-        ok ? (c.dr ? fr(c.dr) : NA) : nonLu(),
+        lu.cam ? fr(c.cam) : nonLu(),
+        lu.dr ? (c.dr ? fr(c.dr) : NA) : nonLu(),
       ],
       mots: plain(`${x.nom} ${nomDep(C, x.dep)} ${nomEpci}`),
       f: {
         dep: [x.dep],
-        drones: ok && c.dr > 0 ? ["1"] : [],
+        drones: lu.dr && c.dr > 0 ? ["1"] : [],
         taille: [taille(pop)],
         epci: epci ? [epci] : [],
       },
       v: {
         docs: c.docs,
         con: c.con,
-        aut: ok ? c.cam : -1,
-        dr: ok ? c.dr : -1,
+        aut: lu.cam ? c.cam : -1,
+        dr: lu.dr ? c.dr : -1,
         carte: carte ?? -1,
         pop,
         p1000,
@@ -413,8 +423,8 @@ function rangsCommunes(C: Corpus): Rang[] {
         documents: c.docs,
         contrats: c.con,
         montant: amt || "",
-        autorisations: ok ? c.cam : "",
-        drones: ok ? c.dr : "",
+        autorisations: lu.cam ? c.cam : "",
+        drones: lu.dr ? c.dr : "",
         carte: carte ?? "",
       },
     };

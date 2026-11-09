@@ -7,7 +7,7 @@ import type { Donnees } from "../commun.ts";
 import { ess, lastArretes } from "../commun.ts";
 import type { Listes } from "../listes.ts";
 import { camerasAutorisees, joursDeVol, rang, strate } from "./commune-a.ts";
-import { lecture } from "./comparer-a.ts";
+import { couvertureActes, lecture, type RowActes } from "./comparer-a.ts";
 
 export type Rang = { r: number; n: number } | null;
 export type FichePanneau = {
@@ -54,6 +54,25 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
   const jours = jv ?? joursDeVol(d.all, d.f.couverture.maj).size;
   const pub = s.counted.filter((e) => typeof e.offres === "number");
   const arr = lastArretes(d.all);
+  // the build's reading of the commune's acts, as the fiche and Comparer read it (comparer-a.ts)
+  const stA = (
+    d.f as {
+      stats?: {
+        communes?: Record<string, RowActes>;
+        dep?: { depStats?: { cam?: number; dr?: number } };
+      };
+    }
+  ).stats;
+  const lu = lecture(
+    couvertureActes({
+      insee: c.insee,
+      dep: String((c as { dep?: string }).dep ?? ""),
+      etat: d.f.couverture.departement.etat,
+      X: X as never,
+      propre: stA?.communes?.[c.insee],
+      depTotal: stA?.dep?.depStats,
+    }),
+  );
   // read only where a decree says its cameras: a département collected but none read here
   // (Paris: no video decree served) is « pas encore lus », never « 0 caméras »
   const lus = arr.some((e) => e.t === "arrete" && !e.copie && typeof e.cameras === "number");
@@ -85,9 +104,9 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
     uneOffre: pub.filter((e) => e.offres === 1).length,
     offresPubliees: pub.length,
     strate: st,
-    arretesLus: d.arretes.collectes && lus,
+    arretesLus: lu.cam && lus,
     autorisees: camerasAutorisees(arr).total,
-    dronesLus: lecture(d.f.couverture.departement, X?.lignes.communes[c.insee]).dr,
+    dronesLus: lu.dr,
     depuis: s.counted[0]?.date?.slice(0, 4) ?? "",
   };
 }

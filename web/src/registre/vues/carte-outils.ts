@@ -646,18 +646,36 @@ export function communeDe(code: string): string {
   return code;
 }
 
-/** The commune file's slots (an older file has none: no slot), without the acts that end an
- * authorisation (sansFins). */
+type ActeVol = {
+  fin?: string | null;
+  aeronef?: string | null;
+  insee?: string | null;
+  communes?: string[] | null;
+};
+/** An act the view does not count as one of its commune's drone flights: one that ends an
+ * authorisation (`fin`), a helicopter's (`aeronef`, never added to drones: A, 09/11), or one the
+ * file holds in context, placed in other communes (Paris's file holds a Saint-Denis act). The
+ * view's count is then the build's `dr` (641 for Paris), never a count of the file's events. */
+export function horsVols(e: ActeVol | undefined, insee: string): boolean {
+  if (!e) return false;
+  if (e.fin || e.aeronef === "helicoptere") return true;
+  const ici = [e.insee, ...(e.communes ?? [])].filter(Boolean).map((c) => communeDe(String(c)));
+  return ici.length > 0 && !ici.includes(insee);
+}
+
+/** The commune file's slots (an older file has none: no slot), without the acts that are not its
+ * drone flights (horsVols). */
 export function drones(d: Donnees): Drones {
   const x = (d.f as { drones?: Partial<Drones> }).drones;
   const ev = (d as { ev?: Donnees["ev"] }).ev;
+  const insee = String((d.f as { commune?: { insee?: string } }).commune?.insee ?? "");
   return sansFins(
     {
       creneaux: x?.creneaux ?? [],
       non_deduits: x?.non_deduits ?? [],
       formes: x?.formes ?? {},
     },
-    (acte) => !!(ev?.get(acte) as { fin?: string | null } | undefined)?.fin,
+    (acte) => horsVols(ev?.get(acte) as ActeVol | undefined, insee),
   );
 }
 
