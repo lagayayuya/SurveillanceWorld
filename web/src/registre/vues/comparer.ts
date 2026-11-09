@@ -16,7 +16,7 @@ import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
 import { departementHref, phrase } from "../liens.ts";
-import { type CouvertureX, etapeListe, type Listes, nomDep } from "../listes.ts";
+import { type CouvertureX, etapeListe, type Listes, nomDep, TOUTES } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
@@ -748,15 +748,21 @@ function dansDep(d: string): RichItem {
 const naf = (X: Listes, siren: string): string =>
   (X.dico.entreprises[siren] as { naf_libelle?: string | null } | undefined)?.naf_libelle ?? "";
 
-/** A commune's line under its name: its inhabitants, its intercommunality (a link to its fiche). */
+/** A commune's line under its name: its inhabitants, its intercommunality, a link for every
+ * column (Ju 09/11: « uniformise »): to its fiche when it buys, else to the list of its communes
+ * (the Métropole du Grand Paris has no fiche: it buys nothing in its name). */
 function sousCommune(X: Listes, insee: string): RichItem[] {
   const x = X.dico.communes[insee];
   const e = x?.epci ?? "";
   const nom = e ? (X.dico.epcis?.[e]?.nom ?? X.dico.acheteurs[e]?.nom ?? "") : "";
   const ref = e ? (X.dico.epcis?.[e]?.ref ?? X.dico.acheteurs[e]?.ref) : undefined;
+  // every size of commune: the list's own default (a strate) would leave out some of its members
+  const href = ref
+    ? `/registre/${ref}`
+    : `/registre/communes?epci=${encodeURIComponent(e)}&taille=${TOUTES}`;
   return [
     t("comparer_a.hab", { n: fr(x?.pop ?? 0) }),
-    ...(nom ? [" · ", ref ? { a: { href: `/registre/${ref}`, text: nom } } : nom] : []),
+    ...(nom ? [" · ", { a: { href, text: nom } }] : []),
   ];
 }
 
