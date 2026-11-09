@@ -525,7 +525,8 @@
 }
 .rg .va.com .rank li {
   display: grid;
-  grid-template-columns: 1fr auto;
+  /* its rank first, as the board's counter (recette 17): 28 px for two digits, wider for more */
+  grid-template-columns: calc(var(--rn, 2) * 1ch + 12px) 1fr auto;
   padding: 7px 0;
   border-bottom: 1.5px dashed var(--rule);
 }

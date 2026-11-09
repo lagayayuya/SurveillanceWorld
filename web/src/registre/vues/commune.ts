@@ -1190,8 +1190,11 @@ export class Commune extends Vue<Props, State> {
       const autour = (rows: { k: string; v: number }[], nb: number, ou: string) => {
         const i = rows.findIndex((x) => x.k === insee);
         const lo = Math.max(0, Math.min(i - 2, rows.length - nb));
+        // each row says its rank, the window starting where it starts (recette 17: « Lyon 7e »
+        // read as 3rd without them)
         return (i < 0 ? rows.slice(0, nb) : rows.slice(lo, lo + nb)).map((x) => ({
           cls: x.k === insee ? "me" : "",
+          rg: String(rows.indexOf(x) + 1),
           nom: lien(x.k, X?.dico.communes[x.k]?.nom ?? x.k),
           v: fmt(x.v),
           bh: X?.dico.communes[x.k]?.nom ?? x.k,
@@ -1199,6 +1202,13 @@ export class Commune extends Vue<Props, State> {
           bc: x.k === insee ? "" : T("commune_a.b.fiche"),
         }));
       };
+      const debut = (rows: { k: string }[], nb: number) => {
+        const i = rows.findIndex((x) => x.k === insee);
+        return String(i < 0 ? 1 : Math.max(0, Math.min(i - 2, rows.length - nb)) + 1);
+      };
+      // the rank's column holds the window's largest rank (« 1 234 » in a size class of thousands)
+      const largeurRang = (rows: { k: string }[], nb: number) =>
+        `--rn: ${String(Math.min(rows.length, Number(debut(rows, nb)) + nb - 1)).length}`;
       const ep = classe(membres);
       const sr = classe(pairs.map(([k]) => k));
       const iE = ep.findIndex((x) => x.k === insee);
@@ -1231,7 +1241,9 @@ export class Commune extends Vue<Props, State> {
               ? {
                   titre: T("commune_a.vois_epci", { epci: nomEpci, m: ml }),
                   rows: autour(ep, 8, nomEpci),
-                  note: t("commune_a.vois_epci_note", { n: membres.length, k: ep.length }),
+                  start: debut(ep, 8),
+                  rn: largeurRang(ep, 8),
+                  note: T("commune_a.vois_epci_note", { n: membres.length, k: ep.length }),
                 }
               : null,
           strate:
@@ -1239,6 +1251,8 @@ export class Commune extends Vue<Props, State> {
               ? {
                   titre: T("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
                   rows: autour(sr, 5, nomStrate(st)),
+                  start: debut(sr, 5),
+                  rn: largeurRang(sr, 5),
                   // the communes that buy through their intercommunality: the money's caveat only
                   note: m === "eph",
                 }
