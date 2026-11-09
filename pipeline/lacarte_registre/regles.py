@@ -120,7 +120,7 @@ def is_camera_act(e: Event) -> bool:
 def is_drone_act(e: Event) -> bool:
     """A drone flight's act: an abrogation or a withdrawal (`fin`, fins.py) is a drone
     document but no flight; a helicopter's captation is an aerial act but no drone
-    (rule:registre_drones@1:aeronef; an act whose aircraft is not read stays a drone's)."""
+    (rule:registre_drones@1:aeronef: an act that names no aircraft is a drone's, Ju 2026-11-09)."""
     return e["t"] == "arrete_drone" and not e.get("fin") and e.get("aeronef") != "helicoptere"
 
 

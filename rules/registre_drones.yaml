@@ -138,10 +138,10 @@ aeronef:
     figures (the site says « drones »). `helicoptere` when the act names a helicopter, a
     plane or a manned aircraft and no drone; `drone` when it names a drone, a remotely
     piloted aircraft or one without crew (an act naming both flies drones: `drone`);
-    `non_lu` when it names neither. A `non_lu` act stays in the drones' figures, as before
-    this rule: « caméras installées sur des aéronefs » is the law's wording for the drones
-    the police fly, and leaving them out would take Paris from 1 505 acts to 46; Ju decides
-    whether they leave (regles.is_drone_act, one line).
+    `non_lu` when it names neither. « Un arrêté qui ne nomme pas l'appareil est compté comme
+    un drone ; les hélicoptères nommés sont comptés à part » (Ju, 2026-11-09): « caméras
+    installées sur des aéronefs » is the law's wording for the drones the police fly, and
+    leaving them out would take Paris from 1 505 acts to 46.
   helicoptere: 'helicopteres?|\bavions?\b|aeronefs? (?:habites?|avec (?:pilote|equipage))'
   drone: 'drones?|tele-?pilot|sans (?:equipage|personne a bord)|circulant sans personne'
 
