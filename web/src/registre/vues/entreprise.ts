@@ -29,15 +29,19 @@ import { casseNormale } from "./accueil-outils.ts";
 import { exportRows } from "./documents.ts";
 import {
   type Arete,
+  activiteNatures,
   axe,
+  CASES,
+  type Case,
+  casesDe,
   deArt,
   doublons,
   echelle,
   friseLignes,
   groupements,
-  memeMetier,
   offresPubliees,
   parAnnee,
+  parNature,
   SERIES,
   type Serie,
   seriesDe,
@@ -67,6 +71,8 @@ type State = BaseState & {
   ach: string;
   tri: "date" | "montant";
   menu: string;
+  /** « Tous les documents » filtered by a case of « Ses contrats, par nature » */
+  nature: Case | "";
   tout: boolean;
   actions: boolean;
   cite: boolean;
@@ -94,6 +100,8 @@ const meur = (n: number): string =>
     : n >= 1e4
       ? t("socle_a.me", { n: (n / 1e6).toFixed(2).replace(".", ",") })
       : t("socle_a.e", { n: fr(n) });
+/** A document's natures (the build's, A 08/11): a list, a contract can have several. */
+const naturesDe = (e: Evenement): string[] | undefined => (e as { natures?: string[] }).natures;
 const coupeTexte = (s: string, n: number): string =>
   s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s;
 /** « A, B et C ». */
@@ -132,6 +140,7 @@ export class Entreprise extends Vue<Props, State> {
       ach: "",
       tri: "date",
       menu: "",
+      nature: "",
       tout: false,
       actions: false,
       cite: false,
@@ -243,6 +252,7 @@ export class Entreprise extends Vue<Props, State> {
     this.setState({
       annee: "",
       ach: "",
+      nature: "",
       menu: "",
       tout: false,
       ...patch,
@@ -787,27 +797,44 @@ export class Entreprise extends Vue<Props, State> {
       };
     }
 
-    // 3 · what it does
+    // 3 · what it does: its contracts by nature (the build's, read in their objet by rules), the
+    // companies of the same trade in the same départements (the build's `pairs`)
     let s3 = null;
     if (CT.length) {
       const n3 = num();
       entree("quoi", `${n3} · ${t("entreprise_a.toc.quoi")}`);
-      const naf = F.entreprise.naf ?? "";
       const depsK = deps.map(([d]) => d);
-      const rows =
-        X && naf
-          ? memeMetier(
-              X.lignes.entreprises as never,
-              X.dico.entreprises as never,
-              naf,
-              depsK,
-              siren,
-            )
-          : [];
-      const lapi = CT.filter((c) => F.affaires[c.e.affaire]?.dispositif === "lapi");
-      const ans: RichItem[] = [
-        P.activite ? `${t(`entreprise.activite_${P.activite}`)}.` : t("entreprise_a.quoi_nl"),
-      ];
+      const pairs = (F.pairs ?? []).filter((x) => !isEi(x.siren)).slice(0, 5);
+      const nat = parNature(CT.map((c) => ({ c, natures: naturesDe(c.e) })));
+      const natN = (k: Case) => nat.par[k].length;
+      const natMax = Math.max(1, ...CASES.map(natN));
+      const lapi = nat.par.lapi.map((x) => x.c);
+      const act = activiteNatures(natN("installation"), natN("maintenance"), nat.deux, CT.length);
+      const ans: RichItem[] = [];
+      if (nat.sans === CT.length) ans.push(t("entreprise_a.quoi_nl"));
+      else if (act.verbes === "ie")
+        ans.push(
+          t("entreprise_a.quoi_elle"),
+          { strong: t("entreprise_a.quoi_installe") },
+          t("entreprise_a.quoi_et"),
+          { strong: t("entreprise_a.quoi_entretient") },
+          act.deux === "plupart"
+            ? t("entreprise_a.quoi_plupart")
+            : act.deux
+              ? t("entreprise_a.quoi_deux_n", { n: act.deux })
+              : ".",
+        );
+      else if (act.verbes)
+        ans.push(
+          t("entreprise_a.quoi_elle"),
+          {
+            strong: t(
+              act.verbes === "i" ? "entreprise_a.quoi_installe" : "entreprise_a.quoi_entretient",
+            ),
+          },
+          ".",
+        );
+      else ans.push(t("entreprise_a.quoi_ni"));
       if (lapi.length === 1)
         ans.push(
           t("entreprise_a.quoi_lapi_un"),
@@ -818,39 +845,57 @@ export class Entreprise extends Vue<Props, State> {
       s3 = {
         n: n3,
         ans,
-        r: repli(S.open, "metier", t("entreprise_a.metier_k"), rows.length, this.basculer),
-        rows: rows.length
-          ? rows.map((x) => ({
+        // a case with no contract is left out (the board draws three); one contract: the
+        // contract itself, more: « Tous les documents » filtered by that case
+        nat: CASES.filter((k) => natN(k) > 0).map((k) => {
+          const un = natN(k) === 1 ? nat.par[k][0].c : null;
+          const autres = k === "autre" ? nat.autres : [];
+          return {
+            l: t(`entreprise_a.nat.${k}`),
+            n: fr(natN(k)),
+            st: `width: ${((100 * natN(k)) / natMax).toFixed(0)}%`,
+            href: un ? docHref(F, un.e) : null,
+            btn: !un,
+            pick: (() => this.versDocs({ onglet: "con", nature: k })) as Handler,
+            bh: t(`entreprise_a.nat.${k}`),
+            bl: un
+              ? `${coupeTexte(objet(un.e), 80)}, ${nomClient(un.b)}, ${longMonth(un.d)}`
+              : [
+                  t(`entreprise_a.nat_b.${k}`, { n: natN(k) }),
+                  ...autres
+                    .slice(0, 6)
+                    .map(([x, m]) => `· ${t(`entreprise_a.nat_k.${x}`)} : ${fr(m)}`),
+                ].join("\n"),
+            bc: un ? t("entreprise_a.b.contrat_clic") : t("entreprise_a.b.nat_clic"),
+          };
+        }),
+        natNl: nat.sans === CT.length,
+        natNote:
+          nat.sans === CT.length
+            ? t("entreprise_a.natures_non_lu")
+            : [
+                t("entreprise_a.natures_note"),
+                ...(nat.sans ? [t("entreprise_a.natures_sans", { n: nat.sans })] : []),
+              ].join(" "),
+        r: repli(S.open, "metier", t("entreprise_a.metier_k"), pairs.length, this.basculer),
+        rows: pairs.length
+          ? pairs.map((x) => ({
               nom: [lienEnt(x.siren)] as RichItem[],
-              n: t("entreprise_a.u_contrats_n", { n: x.n }),
+              n: t("entreprise_a.metier_n", { n: x.n }),
             }))
           : null,
-        vide: !naf
-          ? t("entreprise_a.metier_sans_naf")
-          : !X
-            ? t("entreprise_a.attente")
-            : rows.length
-              ? ""
-              : t("entreprise_a.metier_aucune"),
-        note: naf
-          ? ([
-              F.entreprise.naf_libelle
-                ? t("entreprise_a.metier_note_a", {
-                    naf,
-                    l: casseNormale(F.entreprise.naf_libelle).toLowerCase(),
-                  })
-                : t("entreprise_a.metier_note_a0", { naf }),
-              ...(depsK.length > 3
-                ? [t("entreprise_a.metier_note_n", { n: depsK.length })]
-                : [
-                    t("entreprise_a.metier_dans"),
-                    ...liste(
-                      depsK.map((d) => ({ span: depLie(d, depArt(d, depNom(d))), cls: "" })),
-                    ),
-                  ]),
-              t("entreprise_a.metier_note_b"),
-            ] as RichItem[])
-          : ([t("entreprise_a.metier_note_c")] as RichItem[]),
+        vide: pairs.length ? "" : t("entreprise_a.metier_aucune"),
+        note: [
+          t("entreprise_a.metier_note_a"),
+          ...(depsK.length > 3
+            ? [t("entreprise_a.metier_note_n", { n: depsK.length })]
+            : [
+                t("entreprise_a.metier_dans"),
+                ...liste(depsK.map((d) => ({ span: depLie(d, depArt(d, depNom(d))), cls: "" }))),
+              ]),
+          t("entreprise_a.metier_note_b"),
+          ...(pairs.length ? [t("entreprise_a.metier_chiffre")] : []),
+        ] as RichItem[],
       };
     }
 
@@ -1225,7 +1270,8 @@ export class Entreprise extends Vue<Props, State> {
       .filter(
         (e) =>
           (!S.annee || String(e.date ?? "").startsWith(S.annee)) &&
-          (!S.ach || buyerDe(e) === S.ach),
+          (!S.ach || buyerDe(e) === S.ach) &&
+          (!S.nature || casesDe(naturesDe(e)).includes(S.nature)),
       )
       .sort(
         S.tri === "montant"
@@ -1248,8 +1294,24 @@ export class Entreprise extends Vue<Props, State> {
         n: fr(F.evenements.filter(filtres[o]).length),
         on: o === ong ? "true" : "false",
         pick: (() =>
-          this.setState({ onglet: o, annee: "", ach: "", menu: "", tout: false })) as Handler,
+          this.setState({
+            onglet: o,
+            annee: "",
+            ach: "",
+            nature: "",
+            menu: "",
+            tout: false,
+          })) as Handler,
       })),
+      // the case of « Ses contrats, par nature » that filters them, lifted by its chip
+      actifs: S.nature
+        ? [
+            {
+              l: t(`entreprise_a.nat.${S.nature}`),
+              lever: (() => this.setState({ nature: "", tout: false })) as Handler,
+            },
+          ]
+        : null,
       menus: [
         this.menuDocs(
           "annee",

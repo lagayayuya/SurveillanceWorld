@@ -4,16 +4,19 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  activiteNatures,
   type Arete,
   axe,
+  type Case,
+  casesDe,
   deArt,
   doublons,
   echelle,
   friseLignes,
   groupements,
-  memeMetier,
   offresPubliees,
   parAnnee,
+  parNature,
   seriesDe,
   voisins,
 } from "../src/registre/vues/entreprise-a.ts";
@@ -117,23 +120,50 @@ test("its clients' other suppliers: counted per client, its partners out of the 
   );
 });
 
-test("the same trade in its départements: same NAF code, contracts there, never itself nor a sole trader", () => {
-  const lignes = {
-    "1": { deps: { "69": 3 } },
-    "2": { deps: { "69": 2, "74": 4 } },
-    "3": { deps: { "13": 9 } },
-    "4": { deps: { "69": 8 } },
-    "5": { deps: { "69": 1 } },
-  };
-  const dico = {
-    "1": { naf: "43.21A" },
-    "2": { naf: "43.21A" },
-    "3": { naf: "43.21A" },
-    "4": { naf: "80.20Z" },
-    "5": { naf: "43.21A", entrepreneur_individuel: true },
-  };
-  assert.deepEqual(memeMetier(lignes, dico, "43.21A", ["69", "74"], "1"), [{ siren: "2", n: 6 }]);
-  assert.deepEqual(memeMetier(lignes, dico, "", ["69"], "1"), []);
+test("a contract's natures fall in the board's four cases, several at once", () => {
+  assert.deepEqual(casesDe(["maintenance", "fourniture_installation"]), ["installation", "maintenance"]);
+  assert.deepEqual(casesDe(["travaux_genie_civil"]), ["installation"]);
+  assert.deepEqual(casesDe(["lecture_plaques"]), ["lapi"]);
+  // every other key is « autre », counted once however many it has
+  assert.deepEqual(casesDe(["centre_supervision", "reseau_fibre", "drones"]), ["autre"]);
+  assert.deepEqual(casesDe(["fourniture_installation", "centre_supervision"]), ["installation", "autre"]);
+  assert.deepEqual(casesDe([]), []);
+  assert.deepEqual(casesDe(undefined), []);
+});
+
+test("its contracts by nature: a contract in each of its cases, both counted, none read said", () => {
+  const r = parNature([
+    { id: "a", natures: ["fourniture_installation", "maintenance"] },
+    { id: "b", natures: ["fourniture_installation", "travaux_genie_civil"] },
+    { id: "c", natures: ["maintenance", "centre_supervision"] },
+    { id: "d", natures: ["lecture_plaques", "centre_supervision", "reseau_fibre"] },
+    { id: "e", natures: ["autre"] },
+    { id: "f", natures: [] },
+    { id: "g" },
+  ]);
+  const ids = (k: Case) => r.par[k].map((x) => x.id);
+  // b has two installation keys: one contract, counted once
+  assert.deepEqual(ids("installation"), ["a", "b"]);
+  assert.deepEqual(ids("maintenance"), ["a", "c"]);
+  assert.deepEqual(ids("lapi"), ["d"]);
+  assert.deepEqual(ids("autre"), ["c", "d", "e"]);
+  assert.equal(r.deux, 1);
+  assert.equal(r.sans, 2);
+  // « autre »'s keys for its bubble: contracts per key, the most first
+  assert.deepEqual(r.autres, [
+    ["centre_supervision", 2],
+    ["autre", 1],
+    ["reseau_fibre", 1],
+  ]);
+});
+
+test("« Que fait-elle ? »: its verbs from the cases, « la plupart » past half its contracts", () => {
+  assert.deepEqual(activiteNatures(11, 10, 9, 15), { verbes: "ie", deux: "plupart" });
+  assert.deepEqual(activiteNatures(11, 10, 7, 15), { verbes: "ie", deux: 7 });
+  assert.deepEqual(activiteNatures(3, 2, 0, 5), { verbes: "ie", deux: null });
+  assert.deepEqual(activiteNatures(4, 0, 0, 5), { verbes: "i", deux: null });
+  assert.deepEqual(activiteNatures(0, 4, 0, 5), { verbes: "e", deux: null });
+  assert.deepEqual(activiteNatures(0, 0, 0, 5), { verbes: null, deux: null });
 });
 
 test("the frieze: an axis by days; rows by client, the most money first; a cap keeps the running ones", () => {

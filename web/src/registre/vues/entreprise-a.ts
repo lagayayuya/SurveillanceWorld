@@ -135,24 +135,67 @@ export function voisins(
   return { parClient, ent };
 }
 
-/** « Le même métier, dans les mêmes départements »: the companies of the same NAF code (SIRENE,
- * listes.json `dico.entreprises`) with contracts in its départements (`lignes.entreprises[].deps`),
- * the most contracts there first. Not the contracts' nature, which the build does not serve. */
-export function memeMetier(
-  lignes: Record<string, { deps?: Record<string, number> }>,
-  dico: Record<string, { naf?: string | null; entrepreneur_individuel?: boolean }>,
-  naf: string,
-  deps: string[],
-  siren: string,
-  n = 5,
-): { siren: string; n: number }[] {
-  if (!naf || !deps.length) return [];
-  return Object.entries(lignes)
-    .filter(([k]) => k !== siren && dico[k]?.naf === naf && !dico[k]?.entrepreneur_individuel)
-    .map(([k, v]) => ({ siren: k, n: deps.reduce((s, d) => s + (v.deps?.[d] ?? 0), 0) }))
-    .filter((x) => x.n > 0)
-    .sort((a, b) => b.n - a.n || a.siren.localeCompare(b.siren))
-    .slice(0, n);
+/** « Ses contrats, par nature »: the board's four cases, from the build's `natures` of a contract
+ * (a list, A 08/11: a contract can have several). Installation is `fourniture_installation` or
+ * `travaux_genie_civil`, maintenance `maintenance`, lapi `lecture_plaques`, « autre » every other
+ * key (supervision centre, network, consulting, drones, algorithmic video, `autre`). */
+export type Case = "installation" | "maintenance" | "lapi" | "autre";
+export const CASES: Case[] = ["installation", "maintenance", "lapi", "autre"];
+export function casesDe(natures: readonly string[] | null | undefined): Case[] {
+  const out = new Set<Case>();
+  for (const k of natures ?? []) {
+    if (k === "fourniture_installation" || k === "travaux_genie_civil") out.add("installation");
+    else if (k === "maintenance") out.add("maintenance");
+    else if (k === "lecture_plaques") out.add("lapi");
+    else out.add("autre");
+  }
+  return CASES.filter((c) => out.has(c));
+}
+
+/** Its contracts by case (a contract in each of its cases), how many cover both installation and
+ * maintenance, how many have no nature read, and the keys counted in « autre » (contracts per key,
+ * the most first) for its bubble. */
+export function parNature<C extends { natures?: readonly string[] | null }>(
+  contrats: C[],
+): {
+  par: Record<Case, C[]>;
+  deux: number;
+  sans: number;
+  autres: [string, number][];
+} {
+  const par: Record<Case, C[]> = { installation: [], maintenance: [], lapi: [], autre: [] };
+  const autres = new Map<string, number>();
+  let deux = 0;
+  let sans = 0;
+  for (const c of contrats) {
+    const cs = casesDe(c.natures);
+    if (!cs.length) sans++;
+    for (const k of cs) par[k].push(c);
+    if (cs.includes("installation") && cs.includes("maintenance")) deux++;
+    for (const k of new Set(c.natures ?? []))
+      if (casesDe([k])[0] === "autre") autres.set(k, (autres.get(k) ?? 0) + 1);
+  }
+  return {
+    par,
+    deux,
+    sans,
+    autres: [...autres].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])),
+  };
+}
+
+/** What « Que fait-elle ? » says of its contracts' natures: the verbs (installs, maintains, both or
+ * neither) and, for both, whether most of its contracts cover the two (« la plupart ») or how many. */
+export function activiteNatures(
+  installe: number,
+  entretient: number,
+  deux: number,
+  n: number,
+): { verbes: "ie" | "i" | "e" | null; deux: "plupart" | number | null } {
+  const verbes = installe && entretient ? "ie" : installe ? "i" : entretient ? "e" : null;
+  return {
+    verbes,
+    deux: verbes !== "ie" || !deux ? null : deux > n / 2 ? "plupart" : deux,
+  };
 }
 
 /** A date's place on the frieze's axis: `x0` at 1 January of `y0`, `x1` at 1 January after

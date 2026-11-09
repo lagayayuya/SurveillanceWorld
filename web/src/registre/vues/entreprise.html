@@ -62,8 +62,9 @@
       <p class="ans">{{{s3.ans}}}</p>
       <div class="row2">
         <div class="card"><h3 class="k">{{t.entreprise_a.natures_k}}</h3>
-          <p><span class="state">{{t.liste.non_lu}}</span></p>
-          <p class="note">{{t.entreprise_a.natures_non_lu}}</p></div>
+          <div class="hbs" data-bg=""><sc-for list="{{s3.nat}}" as="h"><sc-if value="{{h.href}}"><a class="hb" href="{{h.href}}" data-bh="{{h.bh}}" data-bl="{{h.bl}}" data-bc="{{h.bc}}"><span>{{h.l}}</span><i style="{{h.st}}" aria-hidden="true"></i><b>{{h.n}}</b></a></sc-if><sc-if value="{{h.btn}}"><button type="button" class="hb" onClick="{{h.pick}}" data-bh="{{h.bh}}" data-bl="{{h.bl}}" data-bc="{{h.bc}}"><span>{{h.l}}</span><i style="{{h.st}}" aria-hidden="true"></i><b>{{h.n}}</b></button></sc-if></sc-for></div>
+          <sc-if value="{{s3.natNl}}"><p><span class="state">{{t.liste.non_lu}}</span></p></sc-if>
+          <p class="note">{{s3.natNote}}</p></div>
         <div class="{{s3.r.cls}}">
           <button type="button" class="fh" aria-expanded="{{s3.r.exp}}" aria-controls="{{s3.r.id}}" onClick="{{s3.r.basculer}}"><span>{{s3.r.titre}}<small>{{s3.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
           <div class="fb" id="{{s3.r.id}}"><h3 class="k">{{t.entreprise_a.metier_k}}</h3>

@@ -57,6 +57,10 @@ export type FichierEntreprise = Lexique & {
     deps?: Record<string, number>;
   } | null;
   page: Page;
+  /** « Même métier, mêmes départements » (A, 08/11): the companies holding counted contracts of a
+   * same nature (`autre` aside) in a département where it holds one; `n` the (nature, département)
+   * couples they share. Ten at most, its partners in a joint contract and sole traders never. */
+  pairs?: { siren: string; n: number }[];
   /** the build's groups of contracts (lots of one tender, the same contract published twice) */
   lots?: Record<string, { insee?: string; nature?: string; entreprises?: string[] }>;
 };

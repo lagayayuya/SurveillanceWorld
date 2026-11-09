@@ -244,6 +244,37 @@
   opacity: 0.3;
 }
 
+/* 3 · its contracts by nature (the board's .hb): a case's name, its bar, its count; a case is a
+   control (its contracts in « Tous les documents », or its one contract) */
+.rg .va.ent .hb {
+  display: grid;
+  grid-template-columns: 110px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.rg .va.ent .hb span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.ent .hb i {
+  display: block;
+  height: 12px;
+  background: var(--type-document);
+  border: 1.5px solid var(--line);
+}
+.rg .va.ent .hb b {
+  text-align: right;
+}
 /* 3 · 4 · ranked lists */
 .rg .va.ent .top {
   margin: 0;
@@ -558,6 +589,10 @@
   .rg .th.va.ent .top li > .tn a {
     display: inline-flex;
     align-items: center;
+    min-height: 44px;
+  }
+  .rg .va.ent .hb {
+    grid-template-columns: 96px 1fr 28px;
     min-height: 44px;
   }
   .rg .va.ent .top li {
