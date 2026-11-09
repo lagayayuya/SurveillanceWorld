@@ -625,13 +625,22 @@ class Chemin extends Vue<Props, State> {
           },
           { cls: "ok", l: t("chemin_a.cov3") },
         ],
+        // recette 31: one figure per thing, the build's (listes.json `comptes.listes`, the
+        // accueil's « 1 195 entreprises · 968 acheteurs »), the collectivities said apart — the
+        // graph's own count (2 093 buyers with an edge) took them in under the same word
         note:
           A && f
-            ? t("chemin_a.note", {
-                date: shortDate(A.maj),
-                na: t("chemin_a.n_acheteurs", { n: f.nA }),
-                ne: t("chemin_a.n_entreprises", { n: f.nE }),
-              })
+            ? this.props.X.comptes?.listes
+              ? t("chemin_a.note_listes", {
+                  date: shortDate(A.maj),
+                  na: t("chemin_a.n_acheteurs", { n: this.props.X.comptes.listes.acheteurs }),
+                  ne: t("chemin_a.n_entreprises", { n: this.props.X.comptes.listes.entreprises }),
+                })
+              : t("chemin_a.note", {
+                  date: shortDate(A.maj),
+                  na: t("chemin_a.n_acheteurs", { n: f.nA }),
+                  ne: t("chemin_a.n_entreprises", { n: f.nE }),
+                })
             : t("chemin_a.note_non_lu"),
       },
     };
