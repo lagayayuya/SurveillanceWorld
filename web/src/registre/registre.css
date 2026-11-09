@@ -414,6 +414,11 @@
   font-size: 14px;
   color: var(--muted);
 }
+/* a filter's label wraps at a syllable before it runs under its count (« Modifications31 », recette 25) */
+.rg .v-documents .chk > span:nth-child(2) {
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
 
 /* --- autorisations (its mockup's own rules) --- */
 .rg .v-autorisations .mk {
@@ -1415,7 +1420,9 @@
    table keeps to its column */
 .rg .v-documents table.t td:nth-child(2),
 .rg .v-documents table.t td:nth-child(3) {
-  overflow-wrap: anywhere;
+  /* words break at a syllable, never anywhere (recette 25) */
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 .rg .v-documents table.t td.num > div {
   white-space: normal;
