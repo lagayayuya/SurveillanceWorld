@@ -475,9 +475,22 @@
   text-transform: uppercase;
   cursor: pointer;
 }
+/* the active tab (Ju, 09/11: it did not show): full ground, its word underlined, pressed in (its
+   shadow gone, moved onto it); the other stands up, on the page's ground */
+.rg .v-carte .v3p .tabs button:not(.on) {
+  background: var(--bg);
+}
 .rg .v-carte .v3p .tabs button.on {
   background: var(--fg);
   color: var(--bg);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+.rg .v-carte .v3p .tabs button:not(.on):hover {
+  background: var(--warn-bg);
 }
 .rg .v-carte .v3p .dp-lead {
   margin: 10px 0 0;
