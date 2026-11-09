@@ -747,6 +747,8 @@ export class ListeVue extends Vue<Props, State> {
       letters: coupeMots(liste === "acheteurs" && e.f.cat ? nomListe(liste, e.f.cat) : titreA),
       lead,
       q: e.q,
+      // the hint's box (whole on a phone, liste.css), hidden with its height once a word is typed
+      phx: e.q ? "phx off" : "phx",
       onQ: ((ev) => this.set({ q: ev.value })) as Handler,
       exemple: t(
         `liste.a.exemple.${["communes", "entreprises"].includes(liste) ? liste : "autres"}`,
