@@ -149,6 +149,27 @@ def test_headings_without_a_number_and_the_verb_that_is_not_one():
     assert a.champs["dates"] == ["2026-11-01"] and a.champs["n_cameras_drone"] == 4
 
 
+def test_the_verb_before_a_page_foot_is_not_a_heading():
+    """The Préfecture de police's acts published alone (2026-00550, measured 2026-11-09): its
+    « ARRÊTE : » falls at a page's end, the next page's foot « N° 2026-00550 3 » before
+    article 1; read as a heading, the act was cut there and lost its title."""
+    text = (
+        "PREFECTURE DE POLICE\nCABINET DU PRÉFET\nArrêté n°2026-00550\n"
+        "autorisant la captation, l'enregistrement et la transmission d'images au moyen de "
+        "caméras \ninstallées sur des aéronefs à Paris le samedi 9 mai 2026\n"
+        "Le préfet de police,\nVu le code de la sécurité intérieure ;\n"
+        "Considérant la manifestation prévue le 9 mai 2026 ;\nARRETE\xa0:\n"
+        "N°\xa02026-00550 3\nArticle 1er – La captation, l'enregistrement et la transmission "
+        "d'images par la direction de l'ordre public et de la circulation sont autorisés à "
+        "Paris le 9 mai 2026 de 10h00 à 20h00.\nArticle 2 – Le présent arrêté est publié.\n"
+    )
+    assert [n for _, n in parse_raa.heads(text)] == ["2026-00550"]
+    com = parse_raa.Communes({"75056": {"nom": "Paris", "dep": "75"}}, {"75"})
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2026, 5, 8))
+    assert (a.acte, a.type) == ("2026-00550", "drone")
+    assert a.titre.startswith("Arrêté n°2026-00550 autorisant la captation")
+
+
 def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
     read = {"type": "videoprotection", "insee": "69383", "commune": "Lyon",
             "champs": {"n_total": 4}}  # fmt: skip

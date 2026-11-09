@@ -42,11 +42,12 @@ import yaml
 # bound needs its comma, hours « a15h00 », « minuit », « à partir de », a stated total;
 # 4: a drone act's article 1 as written (`champs.article_1`), nothing else changed;
 # 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »); 6: an aerial act that is
-# no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act
-VERSION = 6
+# no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act;
+# 7: « ARRÊTE : » with a page's foot before article 1 is no heading
+VERSION = 7
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
-MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}}
+MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}, 7: {3, 4, 5, 6, 7}}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -101,7 +102,12 @@ def heads(txt: str, cut: bool = True) -> list[tuple[int, str | None]]:
     for m in HEAD.finditer(txt):
         nxt = strip(txt[m.end() : m.end() + 250])
         nxt = LEADERS.sub(lambda r: r.group()[0], nxt) if cut else nxt
-        if re.match(r"\W*:?\W*article\b", nxt) or not TITLE_NEXT.match(nxt):
+        # the verb opening the dispositif (« ARRÊTE : Article 1er »), a page's foot between
+        # them too (« ARRÊTE :\nN° 2026-00550 3\nArticle 1er »: the Préfecture de police's
+        # single acts, read as an act whose title is its article 1, 2026-11-09)
+        if re.match(r"\W*:?\W*(?:n\s?°\s*[\d\s/.-]*\d\s+)?article\b", nxt):
+            continue
+        if not TITLE_NEXT.match(nxt):
             continue
         num = NUMBER.match(nxt)
         out.append((m.start(), re.sub(r"\s+", "", num.group(1)) if num else None))
