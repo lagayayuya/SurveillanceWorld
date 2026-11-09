@@ -683,3 +683,10 @@ One line per decision: date — decision — reason.
 - 2026-11-09 — Beside the 3D panel a click on the map is the view's: it centres the commune in the part the panel leaves free, opens another commune's view, or frames an arrondissement of Paris, Lyon or Marseille; the site's map no longer opens a hidden fiche there.
 - 2026-11-09 — The 3D view's calendar shows twelve months, « Toute la période » the three years; its tab follows the door: « Ouvrir la vue 3D » and « Vue 3D ↗ » open Fiche, the day doors open Drones — Ju 2026-11-09.
 - 2026-11-09 — Chemin entre deux names the build's counts of companies and buyers (listes.json `comptes.listes`, the home's), the collectivities said apart — one figure per thing (recette 31).
+- 2026-11-09 — The arrondissement a drone act names (`secteur_niveau` arrondissement) is hatched alone, its shape drawn from the site's admin tiles (layer communes, code c): the commune file serves no shape for Paris's sectors; every other level keeps the whole commune hatched.
+- 2026-11-09 — A commune's helicopter acts are a mention in the 3D view, never a genre of its filter, never added to drones — « Tous » adds up every genre it holds (A 2026-11-09).
+- 2026-11-09 — The 3D view counts only its commune's own drone flights: acts placed in other communes (a Saint-Denis act in Paris's file), helicopters' and ends of authorisations leave it, so its count is the build's `dr` (Paris 641) — Ju 2026-11-09, « ne compte jamais evenements ».
+- 2026-11-09 — « Le graphe » on the home opens /registre/graphe — lot 4 delivered (recette 03); supersedes the « Bientôt » of 2026-11-08.
+- 2026-11-09 — The lists of communes and companies choose up to four rows for Comparer; a company's row links its graph on a wide screen — boards Liste-*-A (recette 08).
+- 2026-11-09 — The home's map in dark keeps the light ramp's order (ground, then pale to deep magenta) — board Accueil-Registre-A-sombre, rule of 2026-10-06 (recette 09).
+- 2026-11-09 — An intercommunality's row and name lead to its v2 fiche (?ic=) — one destination per row (recette 19).
