@@ -512,6 +512,7 @@ export class Entreprise extends Vue<Props, State> {
     ];
 
     // --- the lead -------------------------------------------------------------------------------
+    const natLead = parNature(CT.map((c) => ({ c, natures: naturesDe(c.e) })));
     const nClients = t(allCommunes ? "entreprise_a.n_communes" : "entreprise_a.n_acheteurs", {
       n: CL.length,
     });
@@ -535,7 +536,22 @@ export class Entreprise extends Vue<Props, State> {
         { strong: [lienClient(top)] },
         t("entreprise_a.lead_pese", { p: pct(topCl.amt) }),
       );
-    if (P.activite) lead.push(" ", t(`entreprise.activite_${P.activite}`), ".");
+    // what it does, read in its contracts' natures (Ju 09/11, choice 6), no longer the page's
+    // `activite`: none read, nothing said
+    const verbes = activiteNatures(
+      natLead.par.installation.length,
+      natLead.par.maintenance.length,
+      natLead.deux,
+      CT.length,
+    ).verbes;
+    if (verbes)
+      lead.push(
+        " ",
+        t(
+          `entreprise.activite_${{ ie: "installe_entretient", i: "installe", e: "entretient" }[verbes]}`,
+        ),
+        ".",
+      );
     if (run.length && derniere)
       lead.push(
         t("entreprise_a.lead_run_a"),
@@ -805,7 +821,7 @@ export class Entreprise extends Vue<Props, State> {
       entree("quoi", `${n3} · ${t("entreprise_a.toc.quoi")}`);
       const depsK = deps.map(([d]) => d);
       const pairs = (F.pairs ?? []).filter((x) => !isEi(x.siren)).slice(0, 5);
-      const nat = parNature(CT.map((c) => ({ c, natures: naturesDe(c.e) })));
+      const nat = natLead;
       const natN = (k: Case) => nat.par[k].length;
       const natMax = Math.max(1, ...CASES.map(natN));
       const lapi = nat.par.lapi.map((x) => x.c);
