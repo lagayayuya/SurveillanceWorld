@@ -3,7 +3,7 @@
     <div class="hero-l">
       <span class="kind"><i class="ico-e" aria-hidden="true"></i>{{t.entreprise_a.kind}}</span>
       <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{mots}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
-      <p class="meta"><sc-if value="{{naf}}"><a class="chip t" href="{{naf.href}}" data-bh="{{naf.l}}" data-bl="{{naf.bl}}" data-bc="{{naf.bc}}">{{naf.l}}</a></sc-if><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for><sc-if value="{{todo}}"><span class="todo" tabindex="0" data-bl="{{todo.bl}}">{{todo.l}}</span></sc-if><sc-if value="{{collecte}}"><span>{{collecte}}</span></sc-if></p>
+      <p class="meta"><sc-if value="{{naf}}"><a class="chip t" href="{{naf.href}}" data-bh="{{naf.l}}" data-bl="{{naf.bl}}" data-bc="{{naf.bc}}">{{naf.l}}</a></sc-if><sc-if value="{{cat}}"><span class="chip t" tabindex="0" data-bh="{{cat.bh}}" data-bl="{{cat.bl}}">{{cat.l}}</span></sc-if><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for><sc-if value="{{siege}}"><span data-mention="{{siege.dm}}">{{{siege.l}}}</span></sc-if><sc-for list="{{ident}}" as="m"><span>{{m}}</span></sc-for><sc-if value="{{todo}}"><span class="todo" tabindex="0" data-bl="{{todo.bl}}">{{todo.l}}</span></sc-if><sc-if value="{{collecte}}"><span>{{collecte}}</span></sc-if></p>
       <p class="lead">{{{lead}}}</p>
     </div>
     <div class="{{act.cls}}">

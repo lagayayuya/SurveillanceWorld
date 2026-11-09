@@ -1312,6 +1312,38 @@ export class Entreprise extends Vue<Props, State> {
     toc.push({ href: "#sources", l: t("entreprise_a.toc.sources"), go: this.allerSection });
     const nSec = new Map(toc.map((x) => [x.href, x.l.split(" · ")[0]]));
 
+    // its SIRENE record (a legal person's only): INSEE's category, its head office (its commune's
+    // fiche when the build wrote one: the file's lexicon, else listes.json's, which holds every
+    // commune with a fiche), the year it was created, its headcount
+    const E = F.entreprise;
+    const sc = ei ? "" : (E.siege_commune ?? "");
+    const scNom = sc ? (E.siege_commune_nom ?? F.communes[sc]?.nom ?? "") : "";
+    const scFiche = !!(sc && (F.communes[sc]?.ref || X?.dico.communes[sc]?.ref));
+    const sd = ei ? "" : (E.siege_departement ?? F.communes[sc]?.dep ?? "");
+    const siege: RichItem[] | null = scNom
+      ? [
+          t("entreprise_a.siege"),
+          lienA(scFiche ? communeHref(sc) : null, scNom, "ent com"),
+          // its département when it says more than the city (Paris is both)
+          ...(sd && depNom(sd) && depNom(sd) !== scNom
+            ? [" (", { a: { href: departementHref(sd), text: depNom(sd), cls: "" } }, ")"]
+            : []),
+        ]
+      : null;
+    const ident = ei
+      ? []
+      : [
+          ...(E.creation ? [t("entreprise_a.creee", { y: String(E.creation) })] : []),
+          ...(E.effectif
+            ? [
+                E.effectif_annee
+                  ? t("entreprise_a.effectif_an", { e: E.effectif, y: E.effectif_annee })
+                  : E.effectif,
+              ]
+            : []),
+        ];
+    const identOk = !!(siege && E.creation && E.effectif);
+
     const srcRows = [
       {
         cls: "ok",
@@ -1322,7 +1354,7 @@ export class Entreprise extends Vue<Props, State> {
       },
       { cls: "ok", l: t("entreprise_a.src.ao"), d: t("entreprise_a.src.ao_d"), href: "", lien: "" },
       {
-        cls: "part",
+        cls: !ei && identOk ? "ok" : "part",
         l: t("entreprise_a.src.identite"),
         d: ei ? t("entreprise_a.src.identite_ei") : t("entreprise_a.src.identite_d"),
         // a legal person's official record (the Annuaire des entreprises), never a sole trader's
@@ -1365,7 +1397,28 @@ export class Entreprise extends Vue<Props, State> {
           : null,
       // a sole trader: neither its name nor its number (the number names the person in SIRENE)
       meta: ei ? [t("entreprise_a.ei")] : [t("entreprise_a.siren", { siren: sirenTxt })],
-      todo: ei ? null : { l: t("entreprise_a.todo"), bl: t("entreprise_a.todo_tip") },
+      cat:
+        !ei && E.categorie
+          ? {
+              l: E.categorie,
+              bh: t(`entreprise_a.cat.${E.categorie}`),
+              bl: t("entreprise_a.cat_b"),
+            }
+          : null,
+      siege: siege
+        ? {
+            l: siege,
+            // before listes.json is read, a commune outside the file's lexicon may still have its
+            // fiche: not a mention yet (the links test renders without listes.json)
+            dm: !scFiche && !X ? "non" : null,
+          }
+        : null,
+      ident,
+      // a legal person whose record SIRENE does not give: said, not hidden
+      todo:
+        ei || siege || ident.length
+          ? null
+          : { l: t("entreprise_a.todo"), bl: t("entreprise_a.todo_tip") },
       collecte: contrats?.collecte_le
         ? t("entreprise_a.collecte", { d: shortDate(contrats.collecte_le) })
         : "",

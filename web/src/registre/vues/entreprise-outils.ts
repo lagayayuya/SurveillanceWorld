@@ -33,6 +33,16 @@ export type FichierEntreprise = Lexique & {
     entrepreneur_individuel?: boolean;
     naf?: string | null;
     naf_libelle?: string | null;
+    // SIRENE's record of a legal person (A, 08/11 and 09/11; never a sole trader's): INSEE's
+    // category (PME, ETI, GE), the year it was created, its headcount band in words and its year,
+    // its head office's commune (INSEE code, an arrondissement given as its city) and département
+    categorie?: "PME" | "ETI" | "GE" | null;
+    creation?: number | null;
+    effectif?: string | null;
+    effectif_annee?: string | null;
+    siege_commune?: string | null;
+    siege_commune_nom?: string | null;
+    siege_departement?: string | null;
   };
   evenements: Evenement[];
   affaires: Record<string, Affaire>;
