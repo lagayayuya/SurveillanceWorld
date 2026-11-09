@@ -2290,10 +2290,12 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 |---|---|---|
 | Vue3D-Paris-fiche: « À vérifier sur ce territoire », signals | absent | signals later (Ju 2026-11-07) |
 | Vue3D-Paris-fiche: « Caméras autorisées » with the dossiers waiting (« 218 dossiers attendent ») | the read decrees' cameras, or « pas encore lus » without a count | the dossiers waiting are not served |
-| Vue3D-Paris-drones: « Jour affiché » with its secteur, service, finalités, cameras | the existing slot detail (motive, service, purposes, cameras when read) | the secteur is not served (A: not displayable as is) |
+| Vue3D-Paris-drones: « Jour affiché » with its secteur, service, finalités, cameras | the existing slot detail (motive, service, purposes, cameras when read) | the secteur, now read for the police prefecture's acts, is not among the drone layer's fields (`non_deduits`), which the interface does not build |
 | Vue3D-Paris-drones: « Les derniers arrêtés » as a table (day, hours, motive) | the existing list of slots under the calendar | the list already carries the day, the hours and the service; the motive « non lu » stays in the detail |
 | Vue3D-Paris-fiche: the tab « Fiche » first | « Drones » by default, « Fiche » by `?onglet=fiche` | the commune's door and the bench's drone checks keep `/carte` |
 | Vue3D-Paris: « Suivre (RSS) » | absent | no feed |
+| Vue3D-Paris-fiche: a panel about a third of the screen, its breadcrumb on one line | the live map's panel, its width (about half at 960 px), the breadcrumb wrapping « Vue 3D » | the map's panel keeps its width and sizes shared with the map's other states (2026-10-30) |
+| Vue3D-Paris: the map opened at street level on the cited sector | the live map's own opening on the commune (its outline, the zone not read) | the map's opening view is the map's, not the panel's; the board's view is an example |
 
 ### The register v3, lot 2 (2026-11-08): a commune's fiche
 
