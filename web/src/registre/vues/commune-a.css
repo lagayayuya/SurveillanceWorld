@@ -37,12 +37,13 @@
   background: var(--type-registre);
 }
 
-/* « Vue 3D »: the live map's door, black (cream in dark: the ink) with a pink shadow */
+/* « Vue 3D »: the live map's door, black with a pink shadow, black in dark too (Ju 09/11: « en
+   sombre, le bloc Vue 3D reste noir, comme dans la maquette en clair »; the dark board inverts it) */
 .rg .va.com .v3 {
   margin: 22px 40px 0;
   padding: 18px 28px;
-  background: var(--fg);
-  color: var(--bg);
+  background: #111111;
+  color: #ffffff;
   border: 3px solid var(--line);
   box-shadow: 8px 8px 0 var(--type-registre);
 }
@@ -79,7 +80,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 8px 10px;
-  border: 2px solid var(--bg);
+  border: 2px solid #ffffff;
 }
 .rg .va.com .v3-l b {
   font-family: Archivo, sans-serif;
@@ -103,11 +104,11 @@
   margin-top: 16px;
 }
 .rg .th.va.com .v3 .go {
-  color: var(--bg);
+  color: #ffffff;
 }
 .rg .va.com .v3 .btn.pri {
-  border-color: var(--bg);
-  box-shadow: 4px 4px 0 var(--bg);
+  border-color: #ffffff;
+  box-shadow: 4px 4px 0 #ffffff;
 }
 .rg .va.com .btn.big {
   padding: 12px 18px;
@@ -118,21 +119,27 @@
   font-size: 13px;
 }
 
-/* the yellow table of contents, stuck at the top of the frame's scroll */
+/* the yellow table of contents, stuck at the top of the frame's scroll: one line at every width,
+   scrolled sideways when it does not fit, « Vue 3D ↗ » at its end (Ju 09/11); clear of the Vue 3D
+   block's pink shadow by a gap of its own */
 .rg .va.com .toc {
   position: sticky;
   top: 0;
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   gap: 6px;
-  margin-top: 14px;
+  margin-top: 34px;
   padding: 10px 40px;
   background: var(--type-territoire);
   border-top: 2px solid var(--line);
   border-bottom: 2px solid var(--line);
 }
 .rg .th.va.com .toc a {
+  flex: none;
+  white-space: nowrap;
   padding: 7px 12px;
   border: 2px solid #111111;
   background: #ffffff;
@@ -146,7 +153,14 @@
   text-transform: uppercase;
   text-decoration: none;
 }
+/* « Vue 3D ↗ » stays in sight at the bar's right end while the sections scroll under it */
 .rg .th.va.com .toc a.t3d {
+  position: sticky;
+  right: 0;
+  /* the bar's yellow on both sides: the sections scrolled under it do not show past it */
+  box-shadow:
+    -8px 0 0 var(--type-territoire),
+    40px 0 0 var(--type-territoire);
   margin-left: auto;
   background: #111111;
   color: #ffffff;
@@ -562,11 +576,13 @@
     align-items: flex-start;
   }
   .rg .va.com .toc {
-    flex-wrap: nowrap;
-    overflow-x: auto;
     padding: 8px 16px;
-    white-space: nowrap;
-    margin-top: 12px;
+    margin-top: 28px;
+  }
+  .rg .th.va.com .toc a.t3d {
+    box-shadow:
+      -8px 0 0 var(--type-territoire),
+      16px 0 0 var(--type-territoire);
   }
   .rg .th.va.com .toc a {
     flex: none;
