@@ -184,6 +184,12 @@
 .rg .va.home .nw {
   white-space: nowrap;
 }
+/* a latest document's place on one line (« Bouches-du-Rhône », never cut at its hyphen) and its
+   reference, as a number, never cut (« BOAMP 26-107520 »; recette 18): the objet takes the rest */
+.rg .va.home .wk .docs .lieu a,
+.rg .va.home .wk .docs .rf {
+  white-space: nowrap;
+}
 
 @media (max-width: 959px) {
   .rg .va.home .cut {
