@@ -21,7 +21,6 @@ import {
   calque,
   entieres,
   lireContour,
-  poseBord,
   rings,
   type Site,
   TEINTES,
@@ -81,6 +80,7 @@ import {
   phraseJour,
   plage,
   reperesCal,
+  sansLieu,
   secteurPanneau,
   semaineDe,
   sitesHours,
@@ -488,7 +488,6 @@ class CarteDrones extends Vue<Props, State> {
           boite: d.f.commune.bbox,
           inclinaison: inclinaison(),
           formes: this.DR.formes,
-          onNonLue: this.basculerSz,
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) {
@@ -500,7 +499,6 @@ class CarteDrones extends Vue<Props, State> {
         if (contour) this.layer.contour(contour);
         this.synced = "";
         this.syncMap();
-        this.poserEtiquette(map);
         // an act opened by its address rendered its panel before the zones were there: its
         // places' « Voir sur la carte » now
         this.setState({ calque: true });
@@ -526,111 +524,6 @@ class CarteDrones extends Vue<Props, State> {
     else if (!map.isMoving()) this.demarrerTour();
   }
 
-  // --- the label on the commune's edge (board B) ---------------------------------------------------
-  /** « zone non lue · 3 arrêtés ce jour »: set on the commune's boundary, along it, in the free
-   * part of the map (never a card in its middle); a click keeps the list to the acts without a
-   * drawn zone. Styled here, in the board's .edge (it lives on the map, outside the register). */
-  private etiquette: HTMLButtonElement | null = null;
-  private etiqI: number | null = null;
-  private etiqImage = 0;
-  private readonly basculerSz = () => this.setState({ sz: !this.state.sz, sel: null, vu: null });
-  private poserEtiquette(map: MlMap): void {
-    if (this.etiquette || typeof document !== "object") return;
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "rg-cd-bord";
-    b.setAttribute(
-      "style",
-      "position:absolute;left:0;top:0;z-index:2;display:none;padding:12px 4px;margin:0;border:0;" +
-        "background:none;cursor:pointer;transform-origin:50% 50%",
-    );
-    const s = document.createElement("span");
-    b.append(s);
-    b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.basculerSz();
-    });
-    map.getContainer().append(b);
-    this.etiquette = b;
-    map.on("move", this.suivreEtiquette);
-    map.on("resize", this.suivreEtiquette);
-    this.majEtiquette();
-  }
-  private readonly suivreEtiquette = () => {
-    if (this.etiqImage) return;
-    this.etiqImage = requestAnimationFrame(() => {
-      this.etiqImage = 0;
-      this.placerEtiquette();
-    });
-  };
-  /** The words and the look (the theme's paper and the drones' blue, read again on each change). */
-  private majEtiquette(): void {
-    const b = this.etiquette;
-    if (!b) return;
-    const S = this.state;
-    const n = tickets(this.T, this.ND, this.periode(), S.k).nonLues;
-    const jour = this.jourChoisi();
-    const on = n > 0 && S.k !== "vsa";
-    this.layer?.nonLue(on);
-    const tt = this.teintes();
-    const s = b.firstElementChild as HTMLElement;
-    s.textContent = t(jour != null ? "carte.bord_label_jour" : "carte.bord_label", { n });
-    s.setAttribute(
-      "style",
-      `display:block;padding:2px 7px;background:${S.sz ? tt.bleu : tt.fond};` +
-        `color:${S.sz ? tt.fond : tt.bleu};border:2px dotted ${tt.bleu};` +
-        "font:800 11.5px Archivo,sans-serif;font-stretch:78%;text-transform:uppercase;" +
-        "white-space:nowrap;letter-spacing:.01em",
-    );
-    b.setAttribute("aria-pressed", S.sz ? "true" : "false");
-    b.setAttribute("aria-label", `${s.textContent}. ${t("carte.bord_aria")}`);
-    b.dataset.on = on ? "1" : "";
-    this.placerEtiquette();
-  }
-  private placerEtiquette(): void {
-    const b = this.etiquette;
-    const map = this.map;
-    const ring = this.layer?.bordure();
-    if (!b || !map || !ring?.length || !b.dataset.on) {
-      if (b) b.style.display = "none";
-      return;
-    }
-    const W = map.getContainer().clientWidth;
-    const H = map.getContainer().clientHeight;
-    const f = libre();
-    // the label half outside the free part would cover the panel: its half-width kept in
-    b.style.display = "block";
-    const m = Math.min((W - f.left - f.right) / 2 - 1, (b.offsetWidth || 140) / 2 + 8);
-    const pts = ring.map((p) => {
-      const q = map.project(p);
-      return [q.x, q.y] as [number, number];
-    });
-    // the cited sector's label (its words, ~280 px wide) and the edge's half-width kept apart
-    const loin = (this.layer?.ancres() ?? []).map((c) => {
-      const q = map.project(c);
-      return { x: q.x, y: q.y, r: 150 + m };
-    });
-    const pose = poseBord(
-      pts,
-      { x0: f.left + m, y0: f.top + 16, x1: W - f.right - m, y1: H - f.bottom - 16 },
-      this.etiqI,
-      loin,
-    );
-    if (!pose) {
-      b.style.display = "none";
-      return;
-    }
-    this.etiqI = pose.i;
-    b.style.display = "block";
-    b.style.transform = `translate(${pose.x}px, ${pose.y}px) translate(-50%, -50%) rotate(${pose.angle.toFixed(1)}deg)`;
-  }
-  private retirerEtiquette(): void {
-    if (this.etiqImage) cancelAnimationFrame(this.etiqImage);
-    this.map?.off("move", this.suivreEtiquette);
-    this.map?.off("resize", this.suivreEtiquette);
-    this.etiquette?.remove();
-    this.etiquette = null;
-  }
   /** Whether the commune was framed: once, then the view moves the camera only when asked. */
   private cadree = false;
   /** To the commune (its box, else the outline's or the zones'), or to a zone, tilted, in the part
@@ -694,7 +587,6 @@ class CarteDrones extends Vue<Props, State> {
     map.off("pitchend", this.onPitch);
     map.off("moveend", this.onMove);
     map.off("click", this.onCarte);
-    this.retirerEtiquette();
     // the register closed over this view (✕, Escape): the map stays tilted on the commune with its
     // volumes and the period chosen (v2.2 point 3), a ticket on it to leave them; any other page
     // of the register, the volumes go
@@ -802,7 +694,8 @@ class CarteDrones extends Vue<Props, State> {
     L.survoler(hov >= 0 ? T[hov].sites : []);
     L.choisir(cur >= 0 ? T[cur].sites : []);
     // board B: the cited sectors of the acts shown, all of them over the whole period, a chosen
-    // day's only; their labels for a chosen day or act; the commune's edge and its label
+    // day's only; their labels for a chosen day or act; the whole commune hatched while an act
+    // shown has no place read (Ju, 09/11)
     const formes = this.DR.formes;
     const r = this.periode();
     const choisi = S.sel && cur < 0 ? S.sel : null;
@@ -818,7 +711,7 @@ class CarteDrones extends Vue<Props, State> {
       }
     }
     L.secteurs(ids, labs);
-    this.majEtiquette();
+    L.nonLue(sansLieu(T, this.ND, r, S.k, formes));
   }
 
   // --- the page --------------------------------------------------------------------------------
@@ -1625,6 +1518,9 @@ class CarteDrones extends Vue<Props, State> {
       },
       hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length) && S.k !== "drone",
       hasDrone: S.k !== "vsa",
+      // the legend says the hatchings the map shows: a cited sector's, the whole commune's
+      hasSecteurs: Object.keys(formes).length > 0,
+      hachureCommune: sansLieu(T, ND, r, S.k, formes),
       hasEnt: S.ent.length > 0 && S.k !== "vsa",
       hasFrise: droneT.length + droneND.length > 0,
       is3d: S.is3d ? "true" : "false",
@@ -1644,7 +1540,7 @@ class CarteDrones extends Vue<Props, State> {
       nTR: fr(tk.tracees),
       lTR: t("carte.t_tracees", { n: tk.tracees }),
       nNL: fr(tk.nonLues),
-      lNL: t("carte.t_non_lues", { n: tk.nonLues }),
+      lNL: t("carte_a.t_lieu_nl", { n: tk.nonLues }),
       calSous: sousCal,
       allOn: r || S.sz ? "false" : "true",
       allYear: (() => this.setPeriode(null, { sz: false })) as Handler,

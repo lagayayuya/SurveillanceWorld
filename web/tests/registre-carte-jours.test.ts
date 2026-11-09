@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { hachuresSecteur, pave, poseBord } from "../src/registre/drones.ts";
+import { hachuresSecteur, pave } from "../src/registre/drones.ts";
 import { setMessages } from "../src/registre/i18n.ts";
 import {
   autoriteTxt,
@@ -28,6 +28,7 @@ import {
   niveau,
   phraseJour,
   reperesCal,
+  sansLieu,
   secteurPanneau,
   tickets,
   zonePanneau,
@@ -173,10 +174,10 @@ test("the phone's grid: a row per month, the latest on top, a column per day of 
 test("the sentence on the chosen day, as the board writes it, and with today's data", () => {
   const p = phraseJour(d("2026-11-04"), [], [complet], "drone");
   assert.equal(p.date, `Mer.${N}4${N}nov.${N}2026`);
-  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · zone non lue");
+  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
   assert.equal(
     phraseJour(d("2026-11-04"), [], [aujourdhui], "drone").reste,
-    "1 arrêté · horaires non publiés (justesse en cours de mesure) · zone non lue",
+    "1 arrêté · horaires non publiés (justesse en cours de mesure) · lieu pas encore lu",
   );
   assert.equal(phraseJour(d("2026-11-03"), [], [aujourdhui], "drone").reste, "aucun arrêté");
   assert.equal(jourLong(d("2026-11-01")), `Dim.${N}1er${N}nov.${N}2026`);
@@ -243,26 +244,22 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   assert.deepEqual(finalitesTxt(aujourdhui), []);
 });
 
-test("the map's board B pieces: the label on the free part of the edge, a hatching the map shows through", () => {
-  // a rectangle's edge on the screen; the free part leaves out its right side (the panel)
-  const pts: [number, number][] = [
-    [100, 100],
-    [300, 100],
-    [500, 100],
-    [500, 300],
-    [300, 300],
-    [100, 300],
-  ];
-  const cadre = { x0: 50, y0: 50, x1: 350, y1: 350 };
-  const p = poseBord(pts, cadre, null);
-  assert.equal(p?.i, 0); // the leftmost free point
-  assert.ok(p && p.angle > -90 && p.angle <= 90); // read from left to right
-  // kept while it stays free (no jump as the map moves), never where the panel is
-  assert.equal(poseBord(pts, cadre, 5)?.i, 5);
-  assert.equal(poseBord(pts, cadre, 2)?.i, 0);
-  assert.equal(poseBord(pts, { x0: 600, y0: 0, x1: 700, y1: 50 }, null), null);
-  // never over a cited sector's label: the points near its anchor are left out
-  assert.equal(poseBord(pts, cadre, 0, [{ x: 100, y: 120, r: 60 }])?.i, 5);
+test("the map's hatching: a sector's, the whole commune's, the map seen through it", () => {
+  // the whole commune while an act shown has no place read (Ju, 09/11); a cited sector drawn by
+  // the commune file's shapes is hatched alone
+  const formes = { "75114": {} };
+  assert.equal(sansLieu([], [aujourdhui], null, null, formes), true);
+  assert.equal(sansLieu([], [complet], null, null, formes), false);
+  assert.equal(sansLieu([], [complet], null, null, {}), true);
+  // a slot over a site has its place; one without a site has none; another day's act is not shown
+  assert.equal(sansLieu([slot({ t0: d("2026-11-04"), t1: d("2026-11-05") })], [], null, null, {}), false);
+  assert.equal(
+    sansLieu([slot({ t0: d("2026-11-04"), t1: d("2026-11-05"), sites: [] })], [], null, null, {}),
+    true,
+  );
+  assert.equal(sansLieu([], [aujourdhui], [d("2026-11-05"), d("2026-11-06")], null, {}), false);
+  // the kind shown: a drone act is not hatched under « algorithmes »
+  assert.equal(sansLieu([], [aujourdhui], null, "vsa", {}), false);
   const h = hachuresSecteur("#2c6f9e");
   assert.equal(h.width, 14);
   const alpha = [...h.data].filter((_, i) => i % 4 === 3);

@@ -247,6 +247,27 @@ export function tickets(
   };
 }
 
+/** Whether an act shown over the period has no place read (Ju, 09/11: the whole commune hatched
+ * then): a slot without a site, an act listed without a slot whose cited places draw no shape of
+ * `formes` (a cited sector alone is hatched then, not the commune). */
+export function sansLieu(
+  T: Creneau[],
+  ND: NonDeduit[],
+  r: Periode,
+  k: Genre,
+  formes: Record<string, unknown>,
+): boolean {
+  return (
+    T.some((c) => deGenre(k, c.kind) && inPeriod(c, r) && !c.sites.length) ||
+    ND.some(
+      (a) =>
+        deGenre(k, a.kind) &&
+        ndDans(a, r) &&
+        !(a.lieux ?? []).some((l) => l.forme && formes[l.forme]),
+    )
+  );
+}
+
 // --- « Jours de vol autorisés » (lot R4.2, board B) ---------------------------------------------
 
 /** A day's ms (00:00 UTC) from YYYY-MM-DD. */
@@ -539,7 +560,8 @@ export function phraseJour(
       heures,
       sec ? t("carte.secteur_cite_jour", { l: sec }) : "",
       tracees ? t("carte.n_zones_tracees", { n: tracees }) : "",
-      nonLues ? t("carte.n_zones_non_lues", { n: nonLues }) : "",
+      // the map hatches the whole commune for them (Ju, 09/11: one word, not « 2 zones non lues »)
+      nonLues ? t("carte_a.lieu_nl") : "",
     ]
       .filter(Boolean)
       .join(" · "),

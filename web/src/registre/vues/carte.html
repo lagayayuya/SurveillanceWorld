@@ -3,7 +3,7 @@
   <div class="maptag">
     <a class="mback" href="{{retourHref}}" onClick="{{retourClic}}">{{t.carte_a.retour}}</a>
     <sc-if value="{{legOuverte}}"><div class="leg" id="cd-legende">
-      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte.leg_non_lue_plan}}</span></sc-if>
+      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span></sc-if><sc-if value="{{hasSecteurs}}"><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span></sc-if><sc-if value="{{hachureCommune}}"><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte_a.leg_commune}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
       <span class="leg-in" style="color: var(--muted)">{{t.carte.leg_trace}}</span>
@@ -55,7 +55,7 @@
       <div class="ticket"><div class="v">{{nA}}</div><div class="l">{{lA}}</div></div>
       <div class="ticket"><div class="v">{{nHL}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_horaires_lus}}">{{t.carte.t_horaires_lus}}</span></div></div>
       <div class="ticket"><div class="v">{{nTR}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_tracees}}">{{lTR}}</span></div></div>
-      <div class="ticket"><div class="v">{{nNL}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte.aide_non_lues}}">{{lNL}}</span></div></div>
+      <div class="ticket"><div class="v">{{nNL}}</div><div class="l"><span class="aide" tabindex="0" data-aide="{{t.carte_a.aide_lieu_nl}}">{{lNL}}</span></div></div>
     </div>
     <p class="note">{{t.arretes.lus_par_programme}}</p>
     </sc-if>

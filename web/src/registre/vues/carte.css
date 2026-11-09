@@ -40,6 +40,16 @@
 .rg .v-carte .leg .leg-in {
   padding-left: 23px;
 }
+/* a line of the legend on two lines (« Hachures sur toute la commune… »): its words beside the
+   swatch, not under it */
+.rg .v-carte .leg > span:has(> i) {
+  display: flex;
+  align-items: flex-start;
+}
+.rg .v-carte .leg > span > i {
+  flex: none;
+  margin-top: 3px;
+}
 .rg .v-carte .cd-titre {
   margin: 0;
   font-size: 18px;
@@ -198,7 +208,8 @@
   text-align: right;
   font-size: 12px;
 }
-/* the legend's two new states (board B): a cited sector hatched, a zone not read a dotted edge */
+/* the legend's two hatchings (board B): a cited sector, and the whole commune when the exact place
+   is not read yet */
 .rg .v-carte .leg i.lg-sc {
   display: inline-block;
   width: 14px;
@@ -212,13 +223,20 @@
     color-mix(in srgb, var(--drone-trait) 25%, transparent) 2px 6px
   );
 }
+/* the whole commune hatched (Ju, 09/11): the sectors' hatching within the commune's ink line */
 .rg .v-carte .leg i.lg-nl {
   display: inline-block;
+  flex: none;
   width: 14px;
   height: 12px;
   margin-right: 6px;
   vertical-align: -1px;
-  border: 3px dotted var(--drone-trait);
+  border: 2px solid var(--fg);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--drone-trait) 0 2px,
+    color-mix(in srgb, var(--drone-trait) 25%, transparent) 2px 6px
+  );
 }
 .rg .v-carte .cd-lieux,
 .rg .v-carte .cd-cren {
