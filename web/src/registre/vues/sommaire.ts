@@ -605,7 +605,11 @@ class Sommaire extends Vue<Props, State> {
           : nomE;
         return i ? [", ", lienE] : [lienE];
       });
-      const obj = casseNormale(e.objet).replace(/^./, (x) => x.toLocaleLowerCase("fr"));
+      // after its companies (« Spie · fourniture… ») the objet goes on the line in lower case;
+      // alone, it opens the line with its capital
+      const obj = casseNormale(e.objet).replace(/^./, (x) =>
+        ents.length ? x.toLocaleLowerCase("fr") : x,
+      );
       return {
         qui: [
           e.acheteur_ref
