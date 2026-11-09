@@ -604,7 +604,7 @@ try {
       secs: [...document.querySelectorAll("#registre .toc a[href^='#']")].map((a) =>
         a.textContent.trim(),
       ),
-      door: document.querySelector('#registre .toc a.t3d[href$="/carte"]')?.textContent.trim(),
+      door: document.querySelector('#registre .toc a.t3d[href*="/carte"]')?.textContent.trim(),
     }));
     await go("/registre/");
     const sommaire = await page.evaluate(
@@ -970,10 +970,10 @@ try {
           document.querySelector("#registre #vue").append(a);
         }, insee);
         await page.click("#smoke-aller");
-        await page.waitForSelector('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]', {
+        await page.waitForSelector('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]', {
           timeout: 20000,
         });
-        await page.click('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]');
+        await page.click('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]');
         await framed(insee, "site");
       }
       await context.close();
@@ -1008,7 +1008,7 @@ try {
     await page.waitForTimeout(1500);
     const moves = [];
     for (const go of [
-      () => page.locator('#registre :is(a.bporte, .toc a.t3d)[href$="/carte"]').first().tap(),
+      () => page.locator('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]').first().tap(),
       () => page.goBack(),
     ]) {
       await page.evaluate(() => {
