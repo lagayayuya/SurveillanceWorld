@@ -214,6 +214,10 @@
 .rg .va .lt .gr {
   white-space: nowrap;
 }
+/* « Graphe » keeps its underline on a chosen row, as the board draws it */
+.rg .va .lt tr.me .gr a {
+  text-decoration: underline;
+}
 .rg .va .cmpbar {
   position: sticky;
   bottom: 24px;
