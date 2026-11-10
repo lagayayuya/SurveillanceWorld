@@ -1315,6 +1315,25 @@ view: « ← Retour », the whole commune hatched where the act's place is not r
 arrondissement alone where it is, a click on the map centres it in the free part or opens another
 commune's view, the opening tab follows the door, twelve months by default.
 
+### 1.21 The register after Ju's look at the production of 2026-11-10
+
+The 3D view hatches every commune with drone acts, from the site's admin tiles when the commune has
+no outline of its own (134 of 142): light over the period, full on the day chosen or hovered; every
+date it shows says whether it is a day of flight or of publication; « Publiés avant le vol ? » sets
+each label over its bar, the second naming the départements it counts. The home's search shows each
+result's name on its own line, two columns at most on a wide screen and one on a phone, five per
+type then « Voir les N ». A list of documents filters by one « Année ▾ » menu beside
+« Département ▾ », every control of a row the same height; a filter with a single value and a column
+empty on every row shown are hidden; the decrees' list says « Arrêtés lus dans N départements » with
+a fold that lists them. Every date a list or a fiche shows says which it is (« publié le », « vol
+le », « signé le », « arrêté du »…), and a drone act is ordered by its publication everywhere; the
+commune's « Aujourd'hui » says the days the day's acts were published. Every chart's value axis
+takes its unit from its maximum and round steps (socle-a.ts `axeA`). A graph node opens a card with
+« Ouvrir la fiche → » and « Centrer ici » (Enter does it, Escape closes it); on a phone the graph
+stands whole in the width. The contract's parcours places « Aujourd'hui » among its steps. Where a
+département is collected but its acts are placed in no commune, pages say « Arrêtés de … lus, pas
+encore rattachés aux communes », never « non lu ». Comparer recalls what its yellow means.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
