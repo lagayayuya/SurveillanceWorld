@@ -526,3 +526,27 @@
     min-height: 460px;
   }
 }
+
+/* the map in dark: the board's ramp (Departement-Rhone-A-sombre), the light's order — the ground
+   for nothing, then pale pink for little to deep magenta for much — as the home's map (sommaire.css,
+   recette 09); socle-a's dark ramp (the more, the lighter) put the highest on the palest pink */
+[data-mode="dark"] .rg .va.dep .q0 {
+  fill: var(--bg);
+  background: var(--bg);
+}
+[data-mode="dark"] .rg .va.dep .q1 {
+  fill: #ffd1e6;
+  background: #ffd1e6;
+}
+[data-mode="dark"] .rg .va.dep .q2 {
+  fill: #ff9ccb;
+  background: #ff9ccb;
+}
+[data-mode="dark"] .rg .va.dep .q3 {
+  fill: #ff5fae;
+  background: #ff5fae;
+}
+[data-mode="dark"] .rg .va.dep .q4 {
+  fill: #c4006c;
+  background: #c4006c;
+}
