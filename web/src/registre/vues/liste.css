@@ -552,8 +552,8 @@
    columns under it, in place of a wall of a hundred chips */
 .rg .va .lus .plie {
   /* 44 px to touch, the sentence's line kept (an inline box's padding moves no line) */
-  margin: -12px 0;
-  padding: 12px 0;
+  margin: -14px 0;
+  padding: 14px 0;
   border: 0;
   background: none;
   color: inherit;

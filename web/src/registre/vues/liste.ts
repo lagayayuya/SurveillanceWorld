@@ -19,7 +19,7 @@ import type { Handler, Rich, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
-import { departementHref, lien, lienDepartement, phrase } from "../liens.ts";
+import { departementHref, lien, phrase } from "../liens.ts";
 import {
   adresse,
   appliquer,
@@ -634,7 +634,10 @@ export class ListeVue extends Vue<Props, State> {
             departements: {
               span: Object.keys(hors.departements)
                 .filter(vraiDepartement)
-                .flatMap((d, j) => [...(j ? [", "] : []), lienDepartement(d, nom(d))]),
+                .flatMap((d, j) => [
+                  ...(j ? [", "] : []),
+                  lien("departement", departementHref(d), nom(d), true),
+                ]),
               cls: "",
             },
             provenances: new Intl.ListFormat("fr", { type: "disjunction" }).format(
