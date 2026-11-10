@@ -43,7 +43,7 @@
       <div class="card">
         <div class="ch-h"><h3 class="k">{{t.entreprise_a.annees_k}}</h3><div class="seg-ctl" role="group" aria-label="{{t.entreprise_a.annees_k}}"><sc-for list="{{s2.vues}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
         <div class="zw">
-          <svg class="chart" viewBox="0 0 1240 270" width="1240" height="270" role="group" aria-label="{{s2.titre}}" data-bg="">
+          <svg class="chart" viewBox="{{s2.vb}}" width="{{s2.vw}}" height="270" role="group" aria-label="{{s2.titre}}" data-bg="">
             <sc-for list="{{s2.grille}}" as="g"><line class="grid" x1="44" x2="1240" y1="{{g.y}}" y2="{{g.y}}"></line><text class="ax" x="38" y="{{g.ty}}" text-anchor="end">{{g.l}}</text></sc-for>
             <text class="ax" x="{{s2.ux}}" y="16" text-anchor="{{s2.ua}}">{{s2.unite}}</text>
             <sc-for list="{{s2.cols}}" as="c"><g class="col" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" onClick="{{c.pick}}"><rect class="hit" x="{{c.hx}}" y="6" width="{{c.hw}}" height="244"></rect><sc-for list="{{c.rects}}" as="r"><rect class="{{r.cls}}" x="{{c.x}}" y="{{r.y}}" width="{{c.w}}" height="{{r.h}}" rx="2"></rect></sc-for><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="248" text-anchor="middle">{{c.an}}</text></g></sc-for>

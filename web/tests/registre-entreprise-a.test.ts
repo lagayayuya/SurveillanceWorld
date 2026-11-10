@@ -11,7 +11,6 @@ import {
   casesDe,
   deArt,
   doublons,
-  echelle,
   friseLignes,
   groupements,
   offresPubliees,
@@ -62,12 +61,6 @@ test("the money by year: every year shown, each series' amount and count", () =>
       ["2023", 0, 0, 0, 0, 0],
     ],
   );
-});
-
-test("a chart's scale: at most four lines under the largest value, the plot as tall as it", () => {
-  assert.deepEqual(echelle(20.3), { pas: 5, lignes: 4, haut: 20.3 });
-  assert.deepEqual(echelle(3), { pas: 1, lignes: 3, haut: 3 });
-  assert.deepEqual(echelle(0), { pas: 1, lignes: 0, haut: 1 });
 });
 
 test("the offers: the fewest and the most, over the contracts that publish them", () => {

@@ -39,6 +39,54 @@ export function montantA(n: number): string {
   return t("socle_a.e", { n: fr(n) });
 }
 
+/** A chart's value axis (Ju 10/11, every chart of the register): the unit chosen once from the
+ * chart's largest value — an amount below 1 M€ in euros (« 25 000 », « 50 000 »), from 1 M€ in
+ * millions (« 5 », « 10 ») — and graduations on round values, multiples of one step taken from
+ * 1, 2, 2,5 and 5 times a power of ten, written with one decimal at most in their unit (an amount
+ * in euros and a count whole). The step is the smallest that needs `lignes` graduations at most to
+ * reach the largest value; `haut` is the last graduation (the plot's top), `ticks` every
+ * graduation from 0 to it, in the values' own unit (euros, a count), with their label; `val`
+ * writes a bar's value in the axis's unit. A per-inhabitant amount (`reel`) or a count (`nb`)
+ * keeps its unit (`u` null: the view names it); no value above 0, no graduation. */
+export type AxeA = {
+  u: "e" | "me" | null;
+  pas: number;
+  haut: number;
+  ticks: { v: number; l: string }[];
+  val: (v: number) => string;
+};
+export function axeA(max: number, sorte: "eur" | "nb" | "reel" = "eur", lignes = 4): AxeA {
+  const div = sorte === "eur" && max >= 1e6 ? 1e6 : 1;
+  const u = sorte !== "eur" ? null : div > 1 ? "me" : "e";
+  // the unit's whole numbers: euros, a count; a million or a per-inhabitant amount takes a decimal
+  const entier = sorte === "nb" || (sorte === "eur" && div === 1);
+  const net = (x: number) => Math.round(x * 1e6) / 1e6;
+  const un = (x: number) => Math.round(x * 10) / 10;
+  const ecrit = (x: number) => (entier ? fr(x) : String(un(x)).replace(".", ","));
+  const val = (v: number) => {
+    const x = v / div;
+    return !entier && x > 0 && x < 0.05 ? `< ${ecrit(0.1)}` : ecrit(x);
+  };
+  const m = max / div;
+  if (!(m > 0)) return { u, pas: 0, haut: 0, ticks: [], val };
+  let pas = 0;
+  for (let e = Math.floor(Math.log10(m / lignes)) - 1; !pas; e++)
+    for (const k of [1, 2, 2.5, 5]) {
+      const p = net(k * 10 ** e);
+      const rond = entier ? Number.isInteger(p) : un(p) === p;
+      if (rond && Math.ceil(m / p - 1e-9) <= lignes) {
+        pas = p;
+        break;
+      }
+    }
+  const n = Math.max(1, Math.ceil(m / pas - 1e-9));
+  const ticks = Array.from({ length: n + 1 }, (_, i) => {
+    const x = net(i * pas);
+    return { v: x * div, l: ecrit(x) };
+  });
+  return { u, pas: pas * div, haut: n * pas * div, ticks, val };
+}
+
 /** The nearest commune of a point (the device's position, never sent): the communes' points
  * (listes.json `dico.communes[].ll`), by the distance on the sphere. */
 export function plusProche(

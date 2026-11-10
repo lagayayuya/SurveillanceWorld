@@ -35,7 +35,7 @@ import { etapeListe, type Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
-import { type Coupe, coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { axeA, type Coupe, coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { couverture, sources } from "../sources.ts";
 import { capital } from "../texte.ts";
 import { ICONE_DRONES, type TypeCle } from "../types.ts";
@@ -826,9 +826,9 @@ class DepartementA extends Vue<PropsA, StateA> {
       const ans9 = annees(f.maj);
       const Y = (y: string) =>
         f.stats.annees[y] ?? { con: 0, ao: 0, mod: 0, sub: 0, cam: 0, dr: 0 };
-      const max = Math.max(1, ...ans9.map((y) => Y(y).con));
-      const pas = [1, 2, 5, 10, 20, 50, 100, 200].find((p) => max / p <= 4) ?? Math.ceil(max / 4);
-      const haut = pas * Math.ceil(max / pas);
+      // round graduations, multiples of one step (socle-a.ts axeA, Ju 10/11)
+      const ax = axeA(Math.max(1, ...ans9.map((y) => Y(y).con)), "nb");
+      const haut = ax.haut;
       const yv = (v: number) => 210 - (186 * v) / haut;
       const slot = 64.5;
       const W = Math.ceil(49.8 + ans9.length * slot + 4);
@@ -877,10 +877,11 @@ class DepartementA extends Vue<PropsA, StateA> {
         ch: {
           w: String(W),
           titre: t("departement_a.annees_titre", { dans: N.dans }),
-          grille: [1, 2, 3, 4].map((i) => {
-            const v = (haut / 4) * i;
-            return { y: yv(v).toFixed(1), ty: (yv(v) + 4).toFixed(1), l: fr(v) };
-          }),
+          grille: ax.ticks.map((g) => ({
+            y: yv(g.v).toFixed(1),
+            ty: (yv(g.v) + 4).toFixed(1),
+            l: g.l,
+          })),
           cols: ans9.map((y, i) => {
             const a = Y(y);
             const x = 49.8 + i * slot;

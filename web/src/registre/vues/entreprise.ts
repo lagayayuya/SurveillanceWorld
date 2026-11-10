@@ -21,7 +21,7 @@ import type { VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import type { Route } from "../routes.ts";
 import { signalerHref } from "../signaler.ts";
-import { coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { axeA, coupe, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { annuaire, couverture } from "../sources.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
@@ -36,7 +36,6 @@ import {
   casesDe,
   deArt,
   doublons,
-  echelle,
   friseLignes,
   groupements,
   offresPubliees,
@@ -671,26 +670,25 @@ export class Entreprise extends Vue<Props, State> {
       const ans = parAnnee(CT, ser.de, ya, majY);
       // no amount counted (a mixed contract, a ceiling for others): its contracts counted only
       const nb = S.vue === "n" || !(total > 0);
-      const maxM = Math.max(0, ...ans.map((a) => a.total));
-      const kilo = !nb && maxM < 1e6;
-      const k = nb ? 1 : kilo ? 1e-3 : 1e-6;
-      const val = (a: (typeof ans)[number], s: Serie) => (nb ? a.n[s] : a.m[s] * k);
-      const tot = (a: (typeof ans)[number]) => (nb ? a.nb : a.total * k);
-      const sc = echelle(Math.max(0, ...ans.map(tot)));
+      const val = (a: (typeof ans)[number], s: Serie) => (nb ? a.n[s] : a.m[s]);
+      const tot = (a: (typeof ans)[number]) => (nb ? a.nb : a.total);
+      // the unit from the largest year, round graduations (socle-a.ts axeA, Ju 10/11); the board's
+      // plot as tall as that year, its graduations under it (5, 10, 15, 20 under 20,3 M€)
+      const maxT = Math.max(0, ...ans.map(tot));
+      const ax = axeA(maxT, nb ? "nb" : "eur", 5);
       const H = 194;
-      const y = (v: number) => 230 - (H * v) / (sc.haut || 1);
+      const y = (v: number) => 230 - (H * v) / (maxT || 1);
       const w = Math.min(96, (1180 / ans.length) * 0.53);
       // the last column's value (« 32,4 ») stays inside the chart, however narrow its bar
       const fin = 1240 - Math.max(w / 2, 24);
       const slot = ans.length > 1 ? (fin - 60 - w / 2) / (ans.length - 1) : 0;
       const cx0 = ans.length > 1 ? 60 + w / 2 : 650;
-      const v1 = (v: number) =>
-        nb || kilo ? fr(v) : (v >= 1 ? v.toFixed(1) : v.toFixed(2)).replace(".", ",");
+      const v1 = ax.val;
       const cols = ans.map((a, i) => {
         const cx = cx0 + i * slot;
         let base = 230;
         const rects = SERIES.filter((s) => val(a, s) > 0).map((s) => {
-          const h = Math.max(2, (H * val(a, s)) / (sc.haut || 1));
+          const h = Math.max(2, (H * val(a, s)) / (maxT || 1));
           base -= h;
           return { cls: CLS[s], y: base.toFixed(1), h: h.toFixed(1) };
         });
@@ -769,17 +767,22 @@ export class Entreprise extends Vue<Props, State> {
         })),
         unite: nb
           ? t("entreprise_a.unite_n")
-          : kilo
-            ? t("entreprise_a.unite_k")
+          : ax.u === "e"
+            ? t("entreprise_a.unite_e")
             : t("entreprise_a.unite_m"),
         // the unit over the axis's numbers; a word (« contrats ») from the chart's left edge
         ux: nb ? "0" : "38",
         ua: nb ? "start" : "end",
-        grille: Array.from({ length: sc.lignes }, (_, i) => (i + 1) * sc.pas).map((v) => ({
-          y: y(v).toFixed(1),
-          ty: (y(v) + 4).toFixed(1),
-          l: nb || kilo ? fr(v) : String(Math.round(v * 100) / 100).replace(".", ","),
-        })),
+        grille: ax.ticks
+          .filter((g) => g.v <= maxT + 1e-9)
+          .map((g) => ({
+            y: y(g.v).toFixed(1),
+            ty: (y(g.v) + 4).toFixed(1),
+            l: g.l,
+          })),
+        // euros take more room than millions: the axis's numbers move the drawing to the right
+        vb: ax.u === "e" ? "-20 0 1260 270" : "0 0 1240 270",
+        vw: ax.u === "e" ? "1260" : "1240",
         cols,
         leg: seriesPresentes.map((s) => ({
           cls: `lg l-${s}`,

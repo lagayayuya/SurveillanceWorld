@@ -68,17 +68,6 @@ export function parAnnee(
   return out;
 }
 
-/** A chart's scale: the grid's step (at most four lines under the largest value) and the value
- * the plot's full height stands for (the largest, so that the tallest bar fills it). */
-export function echelle(max: number): { pas: number; lignes: number; haut: number } {
-  if (!(max > 0)) return { pas: 1, lignes: 0, haut: 1 };
-  const base = 10 ** Math.floor(Math.log10(max));
-  const pas =
-    [0.1, 0.2, 0.25, 0.5, 1, 2, 2.5, 5, 10].map((k) => k * base).find((p) => max / p <= 4.1) ??
-    10 * base;
-  return { pas, lignes: Math.floor(max / pas + 1e-9), haut: max };
-}
-
 /** The offers its contracts received, when the notice publishes them: the fewest and the most,
  * over how many contracts. */
 export function offresPubliees(contrats: ContratA[]): { min: number; max: number; n: number } {

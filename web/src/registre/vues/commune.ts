@@ -31,7 +31,7 @@ import type { VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import { documentHref, type Route } from "../routes.ts";
 import { signalerHref } from "../signaler.ts";
-import { coupeMots, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { axeA, coupeMots, montantA, pleinEcran, repli } from "../socle-a.ts";
 import { tidy, titleCase } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
@@ -678,20 +678,15 @@ export class Commune extends Vue<Props, State> {
     if (territoire.length) {
       const argN = num();
       entree("argent", `${argN} · ${T("commune_a.toc.argent")}`);
-      const k = vue === "hab" && pop > 0 ? 1 / pop : 1e-6;
+      // euros, or euros per inhabitant: the axis's unit and round graduations (socle-a.ts axeA)
+      const k = vue === "hab" && pop > 0 ? 1 / pop : 1;
       const tot = (a: (typeof annees)[number]) => (a.ville + a.transports + a.autres) * k;
-      const max = Math.max(1e-9, ...annees.map(tot));
-      const pas =
-        [0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50, 100, 200].find((p) => max / p <= 4) ??
-        Math.ceil(max / 4);
-      const haut = Math.max(pas * Math.ceil(max / pas), pas);
+      const ax = axeA(Math.max(0, ...annees.map(tot)), vue === "hab" ? "reel" : "eur");
+      const haut = ax.haut || 1;
       const y = (v: number) => 226 - (196 * v) / haut;
       const slot = 900 / Math.max(1, annees.length);
       const w = Math.min(70, slot - 24);
-      const v1 = (v: number) =>
-        vue === "hab"
-          ? fr(v)
-          : (v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(1) : v.toFixed(2)).replace(".", ",");
+      const v1 = ax.val;
       const cols = annees.map((a, i) => {
         const x = 70 + i * slot + (slot - w) / 2;
         let base = 226;
@@ -754,15 +749,26 @@ export class Commune extends Vue<Props, State> {
           pick: (() => this.setState({ argent: o, col: null })) as Handler,
         })),
         grille: [
-          ...[1, 2, 3, 4]
-            .map((i) => (haut / 4) * i)
-            .map((v) => ({
-              y: y(v).toFixed(1),
-              ty: (y(v) + 4).toFixed(1),
-              l: vue === "hab" ? fr(v) : String(Math.round(v * 100) / 100).replace(".", ","),
-            })),
-          { y: "-20", ty: "20", l: t(vue === "hab" ? "commune_a.unite_hab" : "commune_a.unite_m") },
+          ...ax.ticks.map((g) => ({
+            y: y(g.v).toFixed(1),
+            ty: (y(g.v) + 4).toFixed(1),
+            l: g.l,
+          })),
+          {
+            y: "-20",
+            ty: "20",
+            l: t(
+              vue === "hab"
+                ? "commune_a.unite_hab"
+                : ax.u === "me"
+                  ? "commune_a.unite_m"
+                  : "commune_a.unite_e",
+            ),
+          },
         ],
+        // euros take more room than millions: the axis's numbers move the drawing to the right
+        vb: ax.u === "e" ? "-18 0 1018 270" : "0 0 1000 270",
+        vw: ax.u === "e" ? "1018" : "1000",
         cols,
         leg: (["ville", "transports", "autres"] as const)
           .filter((s2) => totaux[s2] > 0 || s2 === "ville")
