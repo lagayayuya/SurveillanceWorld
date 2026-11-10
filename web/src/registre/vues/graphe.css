@@ -150,77 +150,93 @@
 }
 
 /* --- the drawing: four signs (Graphe-grammaire) ----------------------------------------------- */
-.rg .va.v-graphe svg .l {
+.rg .va.v-graphe svg .l,
+.rg .va .plein svg.g2 .l {
   stroke: #8f897e;
   stroke-width: 1.6;
   transition: opacity 0.12s;
   pointer-events: none;
 }
-.rg .va.v-graphe svg .l.more {
+.rg .va.v-graphe svg .l.more,
+.rg .va .plein svg.g2 .l.more {
   stroke-dasharray: 2 3;
 }
-.rg .va.v-graphe svg .a {
+.rg .va.v-graphe svg .a,
+.rg .va .plein svg.g2 .a {
   fill: var(--type-registre);
   stroke: var(--line);
   stroke-width: 2;
 }
 /* a buyer at the edge, pale: the board's pale square in a round (a buyer-centred graph) */
-.rg .va.v-graphe svg .a1 {
+.rg .va.v-graphe svg .a1,
+.rg .va .plein svg.g2 .a1 {
   fill: #ffd1e6;
   stroke: #b07a96;
   stroke-width: 1.4;
 }
-.rg .va.v-graphe svg .e1 {
+.rg .va.v-graphe svg .e1,
+.rg .va .plein svg.g2 .e1 {
   fill: #e9e3fb;
   stroke: #8c84a8;
   stroke-width: 1.4;
 }
-.rg .va.v-graphe svg .e2 {
+.rg .va.v-graphe svg .e2,
+.rg .va .plein svg.g2 .e2 {
   fill: var(--type-entreprise);
   stroke: var(--line);
   stroke-width: 2;
 }
-.rg .va.v-graphe svg .bdg {
+.rg .va.v-graphe svg .bdg,
+.rg .va .plein svg.g2 .bdg {
   fill: var(--fg);
 }
-.rg .va.v-graphe svg .bdt {
+.rg .va.v-graphe svg .bdt,
+.rg .va .plein svg.g2 .bdt {
   font:
     900 13px Archivo,
     sans-serif;
   fill: var(--bg);
   pointer-events: none;
 }
-.rg .va.v-graphe svg .bdt-s {
+.rg .va.v-graphe svg .bdt-s,
+.rg .va .plein svg.g2 .bdt-s {
   font-size: 10px;
 }
-.rg .va.v-graphe svg .mo {
+.rg .va.v-graphe svg .mo,
+.rg .va .plein svg.g2 .mo {
   stroke: var(--line);
   stroke-width: 1.5;
   stroke-dasharray: 3 2;
 }
-.rg .va.v-graphe svg .mo.a {
+.rg .va.v-graphe svg .mo.a,
+.rg .va .plein svg.g2 .mo.a {
   fill: #ffd1e6;
 }
-.rg .va.v-graphe svg .mo.e {
+.rg .va.v-graphe svg .mo.e,
+.rg .va .plein svg.g2 .mo.e {
   fill: #e9e3fb;
 }
 /* « +N »: not `.mt`, which v2's cadre.css unsets */
-.rg .va.v-graphe svg .gmt {
+.rg .va.v-graphe svg .gmt,
+.rg .va .plein svg.g2 .gmt {
   font:
     800 12.5px Archivo,
     sans-serif;
   fill: #111111;
   pointer-events: none;
 }
-.rg .va.v-graphe svg .c0 {
+.rg .va.v-graphe svg .c0,
+.rg .va .plein svg.g2 .c0 {
   fill: var(--type-entreprise);
   stroke: var(--line);
   stroke-width: 3;
 }
-.rg .va.v-graphe svg .c0.a {
+.rg .va.v-graphe svg .c0.a,
+.rg .va .plein svg.g2 .c0.a {
   fill: var(--type-registre);
 }
-.rg .va.v-graphe svg .tc {
+.rg .va.v-graphe svg .tc,
+.rg .va .plein svg.g2 .tc {
   font-family: Archivo, sans-serif;
   font-size: 16px;
   font-weight: 900;
@@ -230,7 +246,9 @@
   pointer-events: none;
 }
 .rg .va.v-graphe svg .t0,
-.rg .va.v-graphe svg .t2 {
+.rg .va.v-graphe svg .t2,
+.rg .va .plein svg.g2 .t0,
+.rg .va .plein svg.g2 .t2 {
   font-family: Archivo, sans-serif;
   font-size: 14px;
   font-weight: 800;
@@ -241,10 +259,12 @@
   stroke-width: 4px;
   pointer-events: none;
 }
-.rg .va.v-graphe svg .t2 {
+.rg .va.v-graphe svg .t2,
+.rg .va .plein svg.g2 .t2 {
   font-size: 15px;
 }
-.rg .va.v-graphe svg .t1 {
+.rg .va.v-graphe svg .t1,
+.rg .va .plein svg.g2 .t1 {
   font:
     400 12px Archivo,
     sans-serif;
@@ -442,14 +462,19 @@
 /* --- dark: the dark boards, but every text readable (4.5:1) and every « +N » too ----------------- */
 [data-mode="dark"] .rg .va.v-graphe svg .e1,
 [data-mode="dark"] .rg .va.v-graphe svg .mo.e,
-[data-mode="dark"] .rg .va.v-graphe svg .mo.a {
+[data-mode="dark"] .rg .va.v-graphe svg .mo.a,
+[data-mode="dark"] .rg .va .plein svg.g2 .e1,
+[data-mode="dark"] .rg .va .plein svg.g2 .mo.e,
+[data-mode="dark"] .rg .va .plein svg.g2 .mo.a {
   fill: var(--bg-2);
 }
-[data-mode="dark"] .rg .va.v-graphe svg .a1 {
+[data-mode="dark"] .rg .va.v-graphe svg .a1,
+[data-mode="dark"] .rg .va .plein svg.g2 .a1 {
   fill: var(--bg-2);
   stroke: #d47fae;
 }
-[data-mode="dark"] .rg .va.v-graphe svg .gmt {
+[data-mode="dark"] .rg .va.v-graphe svg .gmt,
+[data-mode="dark"] .rg .va .plein svg.g2 .gmt {
   fill: var(--fg);
 }
 
@@ -492,10 +517,11 @@
     padding: 0;
     overflow: hidden;
   }
-  /* a window of 430 px on the drawing at 820 px, centred on the centre: panned with a finger,
-     pinched to zoom */
+  /* recette 23, Ju's decision of 10/11 (the intention, not the board, itself cropped): the whole
+     drawing in the width at the opening; pinched, it grows inside this window and pans with a
+     finger; « ⤢ Plein écran » shows it larger */
   .rg .va.v-graphe .gv {
-    height: 430px;
+    aspect-ratio: 1000 / 940;
     overflow: auto;
     touch-action: pan-x pan-y;
     scrollbar-width: none;
@@ -505,7 +531,7 @@
     display: none;
   }
   .rg .va.v-graphe .gv svg {
-    width: 820px;
+    width: 100%;
     max-width: none;
   }
   .rg .va.v-graphe .zoom.top {

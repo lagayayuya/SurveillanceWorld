@@ -84,7 +84,6 @@ function indexDe(G: FichierGraphe): Index {
 
 class Graphe extends Vue<Props, State> {
   private gv: HTMLElement | null = null;
-  private centrePour = "";
   private L: Lexique;
   private v: Voisinage | null;
   private d: Dessin | null;
@@ -179,7 +178,8 @@ class Graphe extends Vue<Props, State> {
     return { titre: this.titre() };
   }
 
-  // --- the phone's window on the drawing: centred, panned, pinched ------------------------------
+  // --- the phone's window on the drawing: the whole drawing in the width (recette 23), pinched to
+  // grow inside it and panned ------------------------------------------------------------------------
   componentDidMount(): void {
     this.brancher();
   }
@@ -208,17 +208,6 @@ class Graphe extends Vue<Props, State> {
         el.addEventListener("touchend", this.pinceFin, { passive: true });
       }
     }
-    if (!el || large()) return;
-    const cle = `${this.props.centre}|${this.state.tab}`;
-    if (this.centrePour === cle) return;
-    this.centrePour = cle;
-    // the board's window: the svg at 820 px, 230 px to the left and 140 px up (the centre a little
-    // below the middle, the first circle's top in view)
-    const svg = el.querySelector("svg");
-    if (!svg) return;
-    const k = svg.getBoundingClientRect().width / 820;
-    el.scrollLeft = 230 * k - (el.clientWidth - 358) / 2;
-    el.scrollTop = 140 * k;
   }
   private depart: { d: number; w: number; cx: number; cy: number } | null = null;
   private pince0 = (ev: TouchEvent): void => {
