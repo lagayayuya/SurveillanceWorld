@@ -33,11 +33,25 @@ commune_par_regle:
     2026-11-10 on 50 camera acts drawn among those placed (seed 20261110, 10 in each of the
     44, 67, 17, 02 and 07, each read by hand on Attrap's text): 49 right (98 %), the wrong one an
     establishment « route de Clisson - 44115 Basse-Goulaine » placed in Clisson (a street
-    named after a commune). Served at 95 % or more (Ju); an act with no commune read stays
-    unplaced.
+    named after a commune). A second drawing (seed 20261111, 30 acts in the 59, 33, 31) found
+    bundles of acts under one number and acts of several communes placed in their first one:
+    13 of its 16 single acts right; they are now placed in none (`exclure_titre`,
+    `communes_au_titre_max`). A third drawing among the acts so kept (seed 20261112, 30 in the
+    35, 76, 83): 28 right, the 2 wrong « habilitations » to view a prison's images, no camera
+    authorisation, now excluded too. In all, as served before that last exclusion, 90 of 93
+    right (96.8 %); the second drawing wrote the bundle rule and the third the « habilitation »
+    one, so the drawing that only measured is the third (28 of 30). Served at 95 % or more
+    (Ju); an act with no commune read stays unplaced.
   taux: 0.95
+  # an act that is not one establishment's: a bundle of acts under one number (« Arrêté n° VPA
+  # / 2026 / 290 à 299 », « 31 arrêtés », « Arrêtés … (Commission du 15 octobre 2024) », the
+  # Préfecture de police's « communication des arrêtés »), the commission's own composition;
+  # and one whose title names two communes or more (France Travail's six agencies, bakeries in
+  # three villages): placed in none (2026-11-10, a second drawing)
+  exclure_titre: '\barretes\b|\b\d+ arretes\b|n° ?[\w /.-]*\d+ ?a ?\d+\b|\bcommission (?:departementale )?du\b|\bliste des\b|composition de la commission|communication des|habilitation|agrement|visionnage'
+  communes_au_titre_max: 1
   types:
-    videoprotection: {justes: 49, mesures: 50}
+    videoprotection: {justes: 90, mesures: 93}
 
 # The reference readings through Anthropic's Message Batches API (lacarte_collecte/
 # references.py): the price per million tokens of each model the readings may use, input and

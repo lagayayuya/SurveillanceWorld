@@ -372,6 +372,38 @@ def publies_pilote(events: list[regles.Event], acts: list[dict[str, Any]]) -> li
     ]
 
 
+def _un_etablissement(root: Path, conf: dict[str, Any]) -> Any:
+    """Whether an act is one establishment's (rule:collecte_seuils@1:commune_par_regle): not a
+    bundle by its title, its title naming at most `communes_au_titre_max` communes of its
+    département (the national reference's names, four letters or more)."""
+    from lacarte_collecte import parse_raa
+
+    excl = re.compile(conf.get("exclure_titre") or r"(?!)")
+    most = int(conf.get("communes_au_titre_max", 1))
+    ref = root / "national" / "communes.json"
+    by_dep: dict[str, list[str]] = {}
+    if ref.is_file():
+        for c in json.loads(ref.read_text("utf-8"))["communes"].values():
+            n = parse_raa.loose(c.get("nom") or "")
+            if len(n) >= 4:
+                by_dep.setdefault(c.get("dep") or "", []).append(n)
+    rx: dict[str, re.Pattern[str] | None] = {}
+
+    def seul(a: dict[str, Any]) -> bool:
+        title = parse_raa.strip(a.get("titre") or "")
+        if excl.search(title):
+            return False
+        dep = a.get("departement") or ""
+        if dep not in rx:
+            names = sorted(set(by_dep.get(dep, [])), key=len, reverse=True)
+            alts = "|".join(re.escape(n) for n in names)
+            rx[dep] = re.compile(r"(?<![a-z])(" + alts + r")(?![a-z])") if names else None
+        found = set(rx[dep].findall(parse_raa.loose(title))) if rx[dep] else set()
+        return len(found) <= most
+
+    return seul
+
+
 def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote, dict[str, int]]:
     reg = p.reg
     cov = json.loads((root / DIR / "couverture.json").read_text("utf-8"))
@@ -415,6 +447,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         k for k, v in (par_regle.get("types") or {}).items()
         if v["mesures"] and v["justes"] / v["mesures"] >= par_regle["taux"]
     }  # fmt: skip
+    seul = _un_etablissement(root, par_regle)
     for a in once:
         if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
             continue
@@ -426,7 +459,7 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         published = {
             g for g, v in groups.items() if v.get("publie") and (g in GROUPS or g in NOUVEAUX)
         }
-        if a["type"] in commune_partout:
+        if a["type"] in commune_partout and seul(a):
             published.add("commune")
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
