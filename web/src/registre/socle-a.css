@@ -611,6 +611,12 @@
   vertical-align: -1px;
   text-indent: 0;
 }
+/* an entry a view lays out as a grid (its words in .lt) takes no hanging indent: the indent
+   pulled its first letter under the swatch */
+.rg .va .lg:has(> .lt) {
+  padding-left: 0;
+  text-indent: 0;
+}
 .rg .va .sw {
   display: inline-block;
   width: 12px;

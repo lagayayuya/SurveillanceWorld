@@ -189,5 +189,8 @@ export const pleinEcran: Handler = (ev) => {
     }
   });
   scope.append(wrap);
+  // a drawing wider than the screen opens on its middle, not its left edge (the graph)
+  const b = d.querySelector<HTMLElement>(".plein-b");
+  if (b) b.scrollLeft = (b.scrollWidth - b.clientWidth) / 2;
   fermer.focus();
 };
