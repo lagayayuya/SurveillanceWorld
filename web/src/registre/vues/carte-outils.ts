@@ -301,6 +301,34 @@ export function zonesHachurees(
   return { arrondissements: [...arr].sort(), commune };
 }
 
+/** What the map hatches, and how strongly (Ju, 10/11: « sans jour choisi, une hachure légère ; le
+ * jour choisi, ou survolé, hachuré en plein »): the day hovered (the calendar's pointer or keys),
+ * full, when anything is hatched on it (a drawn place, an arrondissement, the whole commune); else
+ * the period's, full only when it is one chosen day. A hovered day without any act keeps the
+ * period's light hatching: the map does not blink as the pointer crosses empty days. */
+export function periodeHachuree(
+  T: Creneau[],
+  ND: NonDeduit[],
+  r: Periode,
+  survol: number | null,
+  k: Genre,
+  insee: string,
+  formes: Record<string, unknown>,
+): { r: Periode; plein: boolean } {
+  if (survol != null) {
+    const rj: Periode = [survol, survol + DAY];
+    const z = zonesHachurees(T, ND, rj, k, insee, formes);
+    const dessine = ND.some(
+      (a) =>
+        deGenre(k, a.kind) &&
+        ndDans(a, rj) &&
+        (a.lieux ?? []).some((l) => l.forme && formes[l.forme]),
+    );
+    if (dessine || z.commune || z.arrondissements.length) return { r: rj, plein: true };
+  }
+  return { r, plein: !!r && r[1] - r[0] === DAY };
+}
+
 // --- « Jours de vol autorisés » (lot R4.2, board B) ---------------------------------------------
 
 /** A day's ms (00:00 UTC) from YYYY-MM-DD. */

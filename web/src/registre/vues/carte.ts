@@ -84,6 +84,7 @@ import {
   niveau,
   overlaps,
   type Periode,
+  periodeHachuree,
   phraseJour,
   plage,
   reperesCal,
@@ -778,9 +779,12 @@ class CarteDrones extends Vue<Props, State> {
     L.choisir(cur >= 0 ? T[cur].sites : []);
     // board B: the cited sectors of the acts shown, all of them over the whole period, a chosen
     // day's only; their labels for a chosen day or act; the whole commune hatched while an act
-    // shown has no place read (Ju, 09/11), an arrondissement it names alone (A, 09/11)
+    // shown has no place read (Ju, 09/11), an arrondissement it names alone (A, 09/11); light over
+    // the period, full for the day chosen or hovered (Ju, 10/11: carte-outils periodeHachuree)
     const formes = this.DR.formes;
-    const r = this.periode();
+    const insee = this.props.d.insee;
+    const survol = S.jv >= 0 ? S.jv : S.jf >= 0 ? S.jf : null;
+    const { r, plein } = periodeHachuree(T, this.ND, this.periode(), survol, S.k, insee, formes);
     const choisi = S.sel && cur < 0 ? S.sel : null;
     const ids: string[] = [];
     const labs: { id: string; mots: string }[] = [];
@@ -794,9 +798,10 @@ class CarteDrones extends Vue<Props, State> {
       }
     }
     L.secteurs(ids, labs);
-    const z = zonesHachurees(T, this.ND, r, S.k, this.props.d.insee, formes);
+    const z = zonesHachurees(T, this.ND, r, S.k, insee, formes);
     L.arrondissements(z.arrondissements);
     L.nonLue(z.commune);
+    L.plein(plein);
   }
 
   // --- the page --------------------------------------------------------------------------------

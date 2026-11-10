@@ -78,6 +78,7 @@ export const COUCHES = {
   arrondissement: `${P}-arrondissement`,
   arrondissementBord: `${P}-arrondissement-bord`,
   nonLue: `${P}-non-lue`,
+  nonLueAdmin: `${P}-non-lue-admin`,
   secteurLab: `${P}-secteur-lab`,
 } as const;
 /** The site's layers of the cameras (layers.ts: their fields, the filmed streets, the pictograms):
@@ -363,8 +364,12 @@ export type Calque = {
   boite(id: string): BBox | null;
   /** The cited sectors shown (ids of `formes`, hatched), and the labels of some of them. */
   secteurs(ids: string[], labels?: { id: string; mots: string }[]): void;
-  /** The whole commune hatched (acts whose exact place is not read yet are shown), or not. */
+  /** The whole commune hatched (acts whose exact place is not read yet are shown), or not: from
+   * its outline, else (a commune without a map file of its own, 134 of the 142 with drone acts on
+   * 10/11) from the site's commune shape (admin tiles). */
   nonLue(on: boolean): void;
+  /** Ju, 10/11: the hatchings light over the period, full for a day chosen or hovered. */
+  plein(on: boolean): void;
   /** The municipal arrondissements an act shown names (A's sectors, 09/11), hatched alone as a
    * cited sector is: their shapes are the site's own (admin tiles, layer `communes`, code `c`). */
   arrondissements(codes: string[]): void;
@@ -646,7 +651,7 @@ function couchesSous(t: Teintes, admin: boolean): LayerSpecification[] {
       id: COUCHES.secteur,
       type: "fill",
       source: SRC_SEC,
-      paint: { "fill-pattern": HACHURE_SEC },
+      paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
     },
     {
       id: COUCHES.secteurBord,
@@ -659,18 +664,27 @@ function couchesSous(t: Teintes, admin: boolean): LayerSpecification[] {
       id: COUCHES.nonLue,
       type: "fill",
       source: SRC_NL,
-      paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": 0.75 },
+      paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
     },
-    // an arrondissement the act names: a cited sector's look, its shape the site's tiles'
+    // an arrondissement the act names: a cited sector's look, its shape the site's tiles'; the
+    // whole commune from the same tiles when it has no outline of its own
     ...(admin
       ? ([
+          {
+            id: COUCHES.nonLueAdmin,
+            type: "fill",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
+          },
           {
             id: COUCHES.arrondissement,
             type: "fill",
             source: "admin",
             "source-layer": "communes",
             filter: arrondissementsFiltre([]),
-            paint: { "fill-pattern": HACHURE_SEC },
+            paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
           },
           {
             id: COUCHES.arrondissementBord,
@@ -685,6 +699,17 @@ function couchesSous(t: Teintes, admin: boolean): LayerSpecification[] {
       : []),
   ];
 }
+/** The hatchings' opacity over the period (Ju, 10/11: « une hachure légère »), and for a day
+ * chosen or hovered (« hachuré en plein »). */
+export const HACHURE_LEGERE = 0.4;
+export const HACHURE_PLEINE = 1;
+/** The hatched fills whose opacity says light or full. */
+const HACHEES = [
+  COUCHES.secteur,
+  COUCHES.nonLue,
+  COUCHES.nonLueAdmin,
+  COUCHES.arrondissement,
+] as const;
 /** The site's areas whose code is one of `codes` (none for none). */
 export const arrondissementsFiltre = (codes: string[]): ExpressionSpecification => [
   "in",
@@ -827,6 +852,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   let secIds: string[] = [];
   let secLabs: { id: string; mots: string }[] = [];
   let nonLueOn = false;
+  let pleinOn = false;
   let arrCodes: string[] = [];
   const formeDe = (id: string) => o.formes?.[id]?.geometry as Area | undefined;
   const secteursData = (): GeoJSON.FeatureCollection =>
@@ -867,6 +893,24 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
           ]
         : [],
     );
+
+  /** No outline: the site's commune shape hatched instead (its tiles' code), else nothing there. */
+  const nonLueAdmin = () => {
+    if (map.getLayer(COUCHES.nonLueAdmin))
+      map.setFilter(
+        COUCHES.nonLueAdmin,
+        arrondissementsFiltre(nonLueOn && !outline ? [insee] : []),
+      );
+  };
+  const intensite = () => {
+    for (const id of HACHEES)
+      if (map.getLayer(id))
+        (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(
+          id,
+          "fill-opacity",
+          pleinOn ? HACHURE_PLEINE : HACHURE_LEGERE,
+        );
+  };
 
   map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
@@ -999,6 +1043,12 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       if (on === nonLueOn) return;
       nonLueOn = on;
       set(SRC_NL, nonLueData());
+      nonLueAdmin();
+    },
+    plein(on) {
+      if (on === pleinOn) return;
+      pleinOn = on;
+      intensite();
     },
     arrondissements(codes) {
       if (codes.length === arrCodes.length && codes.every((c, i) => c === arrCodes[i])) return;
@@ -1010,6 +1060,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       outline = c;
       set(SRC_COM, communeData());
       set(SRC_NL, nonLueData());
+      nonLueAdmin();
       if (map.getLayer(COUCHES.communeAdmin)) map.removeLayer(COUCHES.communeAdmin);
       set(SRC, zonesData());
     },
@@ -1028,6 +1079,8 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
         for (const [k, v] of Object.entries(l.paint))
           (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(l.id, k, v);
       }
+      // the light or full hatching the view asked for, not the layers' default
+      intensite();
     },
     cadre: box,
     plusHaut: () => Math.max(0, ...hauteurs.values()),
