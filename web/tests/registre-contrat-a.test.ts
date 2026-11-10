@@ -17,6 +17,7 @@ import {
   ecart,
   avecAujourdhui,
   etapes,
+  sorteDeDate,
   type FichierAcheteur,
   hote,
   jours,
@@ -110,6 +111,20 @@ test("today, the build's day, among the steps: before the first one after it, it
     ["auj", "1 ans"],
   ]);
   assert.equal(avecAujourdhui(etapes(fichier()), "").length, 5, "no build day: unchanged");
+});
+
+test("each date says which: published, signed, a range of modifications, a flight, a year, the end", () => {
+  const E = avecAujourdhui(etapes(fichier()), "2026-11-10");
+  assert.deepEqual(E.map(sorteDeDate), ["avis", "contrat", "modif", "attr", "auj", "fin"]);
+  const evs = [
+    ev({ id: "C1~0", t: "attribution", date: "2022-08-01", montant: 1e6, duree: "12" }),
+    ...[1, 2, 3].map((n) => ev({ id: `C1~${n}`, t: "modification", date: `2023-0${n + 6}-01`, modif_n: n })),
+  ];
+  assert.deepEqual(etapes(fichier({ evenements: evs })).map(sorteDeDate).slice(0, 2), ["contrat", "modifs"]);
+  const base = E[0];
+  assert.equal(sorteDeDate({ ...base, k: "aut", e: ev({ id: "D", t: "arrete_drone", date: "2026-11-18" }) }), "vol");
+  assert.equal(sorteDeDate({ ...base, k: "aut", e: ev({ id: "A", t: "arrete", date: "2026-01-02" }) }), "date");
+  assert.equal(sorteDeDate({ ...base, k: "sub", e: ev({ id: "S", t: "subvention", date: "2026-12-31", date_annee: true }) }), "an");
 });
 
 test("a gap under a year in days, then whole years or months", () => {

@@ -61,6 +61,7 @@ import {
   offres,
   procedure,
   refCourte,
+  sorteDeDate,
 } from "./contrat-a.ts";
 import {
   docMontre,
@@ -121,6 +122,17 @@ const ecartTxt = (e: Ecart): string =>
 /** A step's or a row's date: a document dated by its year only (a grant) shows the year, never
  * the build's 31 December. */
 const jourDe = (s: Etape): string => (s.e?.date_annee ? s.date.slice(0, 4) : shortDate(s.date));
+/** A step's or a row's date, saying which (Ju's point 4 of 10/11): « publié le 27 juin 2025 »,
+ * « signé le 6 janv. 2026 », « de 2026 »… (sorteDeDate). Today names itself. */
+function quelleDate(s: Etape): string {
+  const k = sorteDeDate(s);
+  if (k === "auj") return jourDe(s);
+  return t(`contrat_a.date.${k}`, {
+    d: shortDate(s.date),
+    d1: s.jusqu ? shortDate(s.jusqu) : "",
+    an: s.date.slice(0, 4),
+  });
+}
 const premiereMinuscule = (s: string): string =>
   s && /^[A-ZÀ-ÖØ-Þ][a-zà-öø-ÿ]/.test(s) ? s[0].toLowerCase() + s.slice(1) : s;
 /** The natures in words, in a line (« Fourniture et installation, maintenance »). */
@@ -699,7 +711,8 @@ class Contrat extends Vue<Props, State> {
         bl = t("contrat_a.tip.contrat");
       } else if (s.k === "modif") {
         if (groupe) {
-          ss = `${shortDate(s.date)} → ${shortDate(s.jusqu)}`;
+          // the range is in its date line (quelleDate)
+          ss = "";
           bl = M.muettes ? t("contrat_a.tip.modif_muette") : resumeModifs();
         } else {
           const one = modifs([e as Evenement], att);
@@ -735,10 +748,10 @@ class Contrat extends Vue<Props, State> {
         cls: `sp-st ${s.k}${s.probable ? " prob" : ""}`,
         gap: s.ecart ? ecartTxt(s.ecart) : "",
         k: t(`contrat_a.k.${s.k}`),
-        d: jourDe(s),
+        d: quelleDate(s),
         b: x.b,
         s: x.ss,
-        bh: `${t(`contrat_a.k.${s.k}`)} · ${jourDe(s)}`,
+        bh: `${t(`contrat_a.k.${s.k}`)} · ${quelleDate(s)}`,
         bl: x.bl,
         url: href,
         sans: !href,
@@ -896,7 +909,7 @@ class Contrat extends Vue<Props, State> {
       plus: D.length > 12 && !S.tous ? t("contrat_a.docs_tous", { n: D.length }) : "",
       voirTous: (() => this.setState({ tous: true })) as Handler,
       rows: (D.length > 12 && !S.tous ? D.slice(0, 10) : D).map((s) => ({
-        d: jourDe(s),
+        d: quelleDate(s),
         k: t(`contrat_a.k.${s.k}`),
         ref: refCourte(s.ref) || t(`contrat_a.k.${s.k}`),
         dit: ditDe(s),

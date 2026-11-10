@@ -231,6 +231,22 @@ export function avecAujourdhui(E: Etape[], maj: string): Etape[] {
   }
   return out;
 }
+/** Which date a step's is (Ju's point 4 of 10/11, « chaque date dit laquelle »): a notice's
+ * publication (BOAMP: `avis`, `rect`, `attr`), a contract's or a modification's signature (DECP
+ * `dateNotification`; the head already says « signé le »), several modifications' range
+ * (`modifs`), a drone decree's first flight day (`vol`, the build's `date` for it), another
+ * decree's or a grant's own date (`date`), a year alone (`an`), the planned end (`fin`), today
+ * (`auj`). The word is the catalogue's `contrat_a.date.<it>`. */
+export type SorteDate = EtapeK | "modifs" | "vol" | "date" | "an";
+export function sorteDeDate(s: Etape): SorteDate {
+  if (s.k === "auj") return "auj";
+  if (s.e?.date_annee) return "an";
+  if (s.k === "modif" && s.jusqu && s.jusqu !== s.date) return "modifs";
+  if (s.k === "aut") return s.e?.t === "arrete_drone" ? "vol" : "date";
+  if (s.k === "sub") return "date";
+  return s.k;
+}
+
 /** « Les documents »: every document of the dossier in its order, each modification its own row,
  * a probable one of another dossier in its place; no planned end. */
 export const documents = (f: Fichier): Etape[] => etapes(f, false);
