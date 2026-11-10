@@ -45,8 +45,9 @@ import yaml
 # no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act;
 # 7: « ARRÊTE : » with a page's foot before article 1 is no heading; 8: the helicopters'
 # captures are drone-type acts, and every aerial act keeps its aircraft's words; 9: a single
-# act's title before its heading
-VERSION = 9
+# act's title before its heading; 10: the camera numbers' elided and labelled forms, a
+# camera act's holder words
+VERSION = 10
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
 MEME_TEXTE = {
@@ -56,6 +57,7 @@ MEME_TEXTE = {
     7: {3, 4, 5, 6, 7},
     8: {3, 4, 5, 6, 7, 8},
     9: {3, 4, 5, 6, 7, 8, 9},
+    10: {3, 4, 5, 6, 7, 8, 9, 10},
 }
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
@@ -307,7 +309,13 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
     if (k := w.find("modifie comme suit")) >= 0:
         w = w[k:]
     # « 17 camerasexterieures »: the OCR's words run together
-    w = re.sub(r"(cameras?)(interieure|exterieure|visionnant)", r"\1 \2", w)
+    w = re.sub(r"(cameras?)(interieure|exterieure|visionnant|filmant)", r"\1 \2", w)
+    # « 5 caméra(s) intérieure(s) » (the Gironde's form), the OCR's « caméres », « O caméra »
+    w = w.replace("(s)", "s").replace("cameras)", "cameras")
+    w = re.sub(r"\bcameres?\b", "cameras", w)
+    w = re.sub(r"(?<![a-z0-9])o (cameras?)\b", r"0 \1", w)
+    # « deuxcaméras », « 4caméras »: a number run into its noun
+    w = re.sub(r"\b(" + NUMW[1:-1] + r")(cameras?)\b", r"\1 \2", w)
     out: dict[str, Any] = {
         "n_interieur": None,
         "n_exterieur": None,
@@ -315,11 +323,38 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
         "n_total": None,
         "delta_ou_total": None,
     }
+    # « Nombre de caméras intérieures : 2 » (the Bas-Rhin's form, its 0 often read « O »),
+    # anywhere in the act: a labelled number is not a figure in passing
+    form = {}
+    labels = (
+        ("n_interieur", r"interieures?"),
+        ("n_exterieur", r"exterieures?"),
+        ("n_voie_publique", r"(?:filmant|visionnant) (?:la )?voie publique"),
+    )
+    for k, what in labels:
+        # « intérieures : 4Nombre de… », « : ONombre »: the next label glued to the number
+        if m := re.search(
+            r"nombre de cameras ?"
+            + what
+            + r" ?: ?(\d{1,4}(?!\d)|o(?=nombre|enregistr|finalit|retransm|[^a-z]|$))",
+            n,
+        ):
+            form[k] = 0 if m.group(1) == "o" else int(m.group(1))
+    if form:
+        out.update(form)
     if m := re.search(NUMW + r" cameras? interieures?", w):
         out["n_interieur"] = num(m.group(1))
     if m := re.search(NUMW + r" cameras? exterieures?", w):
         out["n_exterieur"] = num(m.group(1))
-    road = r" cameras? (?:visionnant (?:la |l')?(?:voie|espace) publi|(?:sur|de) (?:la )?voie publique|voie publique)"  # noqa: E501
+    # « 12 caméras intérieures et 4 extérieures »: the second's noun left out
+    elided = (
+        r"cameras? (interieures?|exterieures?)(?: soumises a autorisation)?(?: ?,| et) (?:de )?"
+    )
+    if m := re.search(elided + NUMW + r" (?:cameras? )?(interieures?|exterieures?)\b", w):
+        k = "n_interieur" if m.group(3).startswith("int") else "n_exterieur"
+        if out[k] is None:
+            out[k] = num(m.group(2))
+    road = r" cameras? (?:(?:visionnant|filmant) (?:la |l')?(?:voie|espace) publi|(?:sur|de) (?:la )?voie publique|voie publique)"  # noqa: E501
     if m := re.search(NUMW + road, w):
         out["n_voie_publique"] = num(m.group(1))
     subset = re.search(r"dont " + NUMW + r" (?:cameras? )?visionnant", w)
@@ -327,6 +362,14 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
         out["n_voie_publique"] = num(subset.group(1))
     parts = ("n_interieur", "n_exterieur", "n_voie_publique")
     vals = [out[k] for k in parts if out[k] is not None]
+    # a kind of camera the act names without a number we can read (« et de G caméras
+    # extérieures »): no total summed, a part is not the whole
+    named = {
+        "n_interieur": r"cameras? interieures?",
+        "n_exterieur": r"(?:cameras? )?exterieures?\b",
+        "n_voie_publique": r"cameras? (?:visionnant|filmant|de) (?:la )?voie publique",
+    }
+    unread = any(out[k] is None and re.search(rx, w) for k, rx in named.items())
     stated = re.search(
         r"nombre total (?:de cameras )?(?:a|est porte a|est fixe a|de|s'eleve a) " + NUMW,
         dispositif(n),
@@ -334,10 +377,12 @@ def cams_vp(n: str, sub: str) -> dict[str, Any]:
     if stated:
         # « portant ainsi le nombre total à 736 caméras » (a modification's article 2)
         out["n_total"] = num(stated.group(1))
-    elif vals:
+    elif vals and not unread:
         out["n_total"] = sum(out[k] or 0 for k in parts[:2]) if subset else sum(vals)
-    elif m := re.search(
-        r"(?:pour|de|comprenant|compose de|constitue de) " + NUMW + r" cameras?\b", w
+    elif not unread and (
+        m := re.search(
+            r"(?:pour|de|comprenant|compose de|constitue de) " + NUMW + r" cameras?\b", w
+        )
     ):
         out["n_total"] = num(m.group(1))
     if sub == "modification":
@@ -514,6 +559,19 @@ TITRE_AVANT = re.compile(
 )
 
 
+DOSSIER = re.compile(
+    r"(?:dossier|enregistree? sous (?:le )?(?:n ?°|numero)(?: de dossier)?)\s*(?:n ?°\s*)?"
+    r"(\d{4}[/.-]?\d{2,6}(?:[/.-]\d{1,4})?)"
+)
+CITE = re.compile(r"(?i)\S+ \S+ \S+ (?:cit[ée]|susvis|pr[ée]cit|mentionn)")
+TITULAIRE = re.compile(
+    r"(?i)\b(?:pour le compte d[eu]|soci[ée]t[ée] d[ée]nomm[ée]e"
+    r"|repr[ée]sentant (?:de )?(?:l['’]|le |la )\s*"
+    r"(?:[ée]tablissement|enseigne|agence|soci[ée]t[ée])"
+    r"|(?:pour|concernant|au sein de|dans) (?:l['’]|le |la )\s*"
+    r"(?:[ée]tablissement|enseigne|agence|commune|mairie|camping|magasin|"
+    r"h[ôo]tel|restaurant|b[âa]timent|parking|centre))[^;]{0,200}"
+)
 TITRE_TEXTE = re.compile(
     r"(?i)\b(?:portant|autorisant|fixant|relatif|modifiant|abrogeant|r[ée]glementant|accordant)\b"
     r"[\s\S]{20,300}?(?=\s*\n\s*(?:vu\b|le pr[ée]fet|consid[ée]rant)|$)"
@@ -552,7 +610,19 @@ def lire(text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date
             date_acte=when.isoformat(),
         )
         if kind == "videoprotection":
-            a.champs = cams_vp(n, sub)
+            # its holder's words (the subject of article 1, the visas' « pour l'établissement… »),
+            # kept for the build's holder rule, never served; a name after a civility masked
+            flat = re.sub(r"\s+", " ", m.texte)
+            # « dans l'établissement cité à l'article 1er » names no one
+            found = [x for x in TITULAIRE.finditer(flat) if not CITE.match(x.group(0))]
+            pour = found[0] if found else None
+            a.champs = {
+                **cams_vp(n, sub),
+                "article_1": article_1(m.texte),
+                "titulaire_extrait": mask(pour.group(0))[:300] if pour else "",
+                # its system's file number: a renewal is the same system, counted once
+                "dossier": (d.group(1) if (d := DOSSIER.search(n)) else None),
+            }
         elif kind == "drone":
             a.champs = {**drone_fields(n, strip(m.titre), when), "article_1": article_1(m.texte)}
         elif kind == "cameras_pietons":

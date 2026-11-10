@@ -207,6 +207,40 @@ def test_a_single_act_whose_title_comes_before_its_heading():
     assert a.titre.startswith("Arrêté n°2025-00732 autorisant la captation")
 
 
+def test_reader_10_reads_the_elided_labelled_and_ocr_forms_and_never_sums_a_part():
+    """Measured 2026-11-10 on three drawings: « 12 caméras intérieures et 4 extérieures », the
+    Bas-Rhin's labels with « O » for 0, the Gironde's « caméra(s) », the OCR's « caméres »;
+    a kind named without a readable number gives no total."""
+
+    def cams(t):
+        return parse_raa.cams_vp(parse_raa.strip("ARRÊTE : Article 1er - " + t), "autorisation")
+
+    assert (
+        cams("Ce dispositif qui comprend 12 caméras intérieures et 4 extérieures.")["n_total"] == 16
+    )
+    lab = cams("Nombre de caméras intérieures : 4Nombre de caméras extérieures : ONombre de "
+               "caméras filmant la voie publique : Oenregistrement : oui")  # fmt: skip
+    assert (lab["n_interieur"], lab["n_exterieur"], lab["n_voie_publique"], lab["n_total"]) == (
+        4, 0, 0, 4)  # fmt: skip
+    assert cams("pour 5 caméra(s) intérieure(s) et 2 caméra(s) extérieure(s).")["n_total"] == 7
+    assert cams("composé de 10 caméras intérieures et de 5 caméres extérieures.")["n_total"] == 15
+    assert cams("composé de 3 caméras intérieures et de G caméras extérieures.")["n_total"] is None
+
+
+def test_reader_10_keeps_a_camera_act_s_holder_words_and_its_file_number():
+    text = (
+        "Arrêté CAB/SPAS/VIDÉO/25-214 portant autorisation d'un système de vidéoprotection "
+        "(dossier n°20250384)\nVU la demande présentée par M. Jean Dupont, agissant en sa qualité "
+        "de gérante de la société dénommée S.A.R.L. LA LICORNE, au sein de l'établissement situé "
+        "14 rue de Mayence - 44000 NANTES ;\nARRÊTE :\nArticle 1er - M. Jean Dupont est "
+        "autorisé à mettre en œuvre un système comportant un total de 3 caméras.\n"
+    )
+    [a] = parse_raa.lire(text, parse_raa.Communes({}, set()), KINDS, dt.date(2025, 1, 1))
+    assert a.champs["dossier"] == "20250384"
+    assert "société dénommée" in a.champs["titulaire_extrait"]
+    assert "Dupont" not in a.champs["article_1"]  # a name after a civility masked
+
+
 def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
     read = {"type": "videoprotection", "insee": "69383", "commune": "Lyon",
             "champs": {"n_total": 4}}  # fmt: skip
