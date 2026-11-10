@@ -15,6 +15,7 @@ import {
   documents,
   dureeAnnoncee,
   ecart,
+  avecAujourdhui,
   etapes,
   type FichierAcheteur,
   hote,
@@ -87,6 +88,28 @@ test("a step drawn before one it follows in time (the planned end before the las
   const E = etapes(f);
   assert.deepEqual(E.map((s) => s.k), ["contrat", "modif", "fin"]);
   assert.equal(E[2].ecart, null, "the end comes before the last modification (2023-09-01)");
+});
+
+test("today, the build's day, among the steps: before the first one after it, its gaps the real ones", () => {
+  const E = avecAujourdhui(etapes(fichier()), "2026-11-10T05:11:00Z");
+  assert.deepEqual(
+    E.map((s) => [s.k, s.date, s.ecart && `${s.ecart.n} ${s.ecart.u}`]),
+    [
+      ["avis", "2025-06-27", null],
+      ["contrat", "2026-01-06", "193 jours"],
+      ["modif", "2026-01-08", "2 jours"],
+      ["attr", "2026-01-18", "10 jours"],
+      ["auj", "2026-11-10", "296 jours"],
+      ["fin", "2030-01-06", "38 mois"],
+    ],
+  );
+  // past the planned end: today at the end
+  const fini = avecAujourdhui(etapes(fichier()), "2031-01-06");
+  assert.deepEqual(fini.slice(-2).map((s) => [s.k, s.ecart && `${s.ecart.n} ${s.ecart.u}`]), [
+    ["fin", "4 ans"],
+    ["auj", "1 ans"],
+  ]);
+  assert.equal(avecAujourdhui(etapes(fichier()), "").length, 5, "no build day: unchanged");
 });
 
 test("a gap under a year in days, then whole years or months", () => {

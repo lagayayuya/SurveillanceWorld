@@ -69,7 +69,17 @@ export function avancement(debut: string, mois: number, maj: string): Avancement
  * (`rect`), the contract (`contrat`), its modifications (`modif`, several grouped: `n`, the last
  * day `jusqu`), the award notice (`attr`), a grant (`sub`), a decree (`aut`), the planned end
  * (`fin`, computed). `probable`: a document of another dossier the build links by a rule. */
-export type EtapeK = "avis" | "rect" | "contrat" | "modif" | "attr" | "sub" | "aut" | "fin";
+export type EtapeK =
+  | "avis"
+  | "rect"
+  | "contrat"
+  | "modif"
+  | "attr"
+  | "sub"
+  | "aut"
+  | "fin"
+  /** the build's day, placed among the steps (recette, improvement 8) */
+  | "auj";
 export type Etape = {
   k: EtapeK;
   id: string;
@@ -187,6 +197,37 @@ export function etapes(f: Fichier, grouper = true): Etape[] {
     // no gap written
     const d = jours(prev.jusqu || prev.date, out[i].date);
     out[i].ecart = d < 0 ? null : ecart(d);
+  }
+  return out;
+}
+/** The parcours with « aujourd'hui », the build's day (never the reader's clock), in its place
+ * (recette, improvement 8; the company's timeline draws it too): before the first step after it,
+ * else at the end; the gaps on either side are the real ones. No day: the steps as they are. */
+export function avecAujourdhui(E: Etape[], maj: string): Etape[] {
+  const jour = maj.slice(0, 10);
+  if (!jour) return E;
+  const i = E.findIndex((s) => s.date > jour);
+  const at = i < 0 ? E.length : i;
+  const prev = E[at - 1];
+  const d = prev ? jours(prev.jusqu || prev.date, jour) : -1;
+  const auj: Etape = {
+    k: "auj",
+    id: "",
+    date: jour,
+    ref: "",
+    url: "",
+    n: 0,
+    jusqu: "",
+    probable: false,
+    affaire: "",
+    ecart: prev && d >= 0 ? ecart(d) : null,
+    e: null,
+  };
+  const out = [...E.slice(0, at), auj, ...E.slice(at)];
+  const next = out[at + 1];
+  if (next) {
+    const dn = jours(jour, next.date);
+    out[at + 1] = { ...next, ecart: dn < 0 ? null : ecart(dn) };
   }
   return out;
 }

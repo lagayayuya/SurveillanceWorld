@@ -40,6 +40,7 @@ import {
   aVerifier,
   avancement,
   avant,
+  avecAujourdhui,
   type Cpv,
   cpvDe,
   documents,
@@ -649,6 +650,16 @@ class Contrat extends Vue<Props, State> {
     const plafondMot = ac ? t("contrat_a.plafond") : "";
     const etapeTxt = (s: Etape) => {
       const e = s.e;
+      // today (the build's day): where the execution stands, when it runs
+      if (s.k === "auj")
+        return {
+          b:
+            avc?.etat === "cours"
+              ? t("contrat_a.b.auj_cours", { n: avc.ecoules, total: avc.total })
+              : t("contrat_a.b.auj"),
+          ss: t("contrat_a.ss.auj"),
+          bl: t("contrat_a.tip.auj"),
+        };
       const groupe = s.k === "modif" && !!s.jusqu;
       const b = groupe
         ? t("contrat_a.b.modifs", { n: s.n })
@@ -716,7 +727,8 @@ class Contrat extends Vue<Props, State> {
       if (s.probable) bl = [bl, t("contrat_a.tip.probable")].filter(Boolean).join(" ");
       return { b, ss, bl };
     };
-    const steps = E.map((s) => {
+    // the parcours with today in its place (recette, improvement 8), as the company's timeline
+    const steps = avecAujourdhui(E, maj).map((s) => {
       const x = etapeTxt(s);
       const href = s.probable && s.affaire ? documentHref(s.affaire) : s.url;
       return {
