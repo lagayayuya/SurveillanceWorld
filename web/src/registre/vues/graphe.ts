@@ -2,8 +2,10 @@
 // Graphe-plein, its phone and dark variants, and Graphe-grammaire): « Qui travaille avec qui ».
 // In the middle the centre; around it, its partners (the first circle); at the edge, pale, the
 // partners that work with one of them only; between two, full and with their count, those that
-// work with several. Hovered or focused, a node keeps only its lines; clicked (Enter, a second
-// tap), its detail in the side panel, with « Recentrer » (a new address: /registre/graphe/<it>).
+// work with several. Hovered or focused, a node keeps only its lines; clicked (Enter, a tap), a
+// small card beside it (Ju's point 6 of 10/11): its name, its amount, « Ouvrir la fiche → » and,
+// but for the centre, « Centrer ici » (a new address: /registre/graphe/<it>); its detail in the
+// side panel too. Escape or ✕ closes the card and gives the focus back to the node.
 // « Vue tableau » gives the same links as rows (?vue=tableau), « Exporter » every edge of the
 // neighbourhood as CSV. Its data: the build's graph (graphe/aretes.json, legal persons only) and
 // the companies' names (listes.json); an edge's amount is never summed with another's.
@@ -266,21 +268,46 @@ class Graphe extends Vue<Props, State> {
         return;
       }
       const sel = this.state.sel === k ? null : k;
+      // the card says what the node's bubble said, beside it: the bubble goes, as Escape would
+      // close it (bulle.ts closes an open bubble on Escape, and only it)
+      const bulle = document.getElementById("bulle");
+      if (sel && bulle && !bulle.hidden)
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
       this.setState({ sel, vu: null });
-      if (sel && !large())
+      // Enter (bulle.ts clicks for it: no pointer, `detail` 0): the focus into the card, on its
+      // first link; a pointer's click leaves it on the node
+      if (sel && (ev.nativeEvent as MouseEvent).detail === 0)
         requestAnimationFrame(() => {
-          const card = document.getElementById("gp-sel");
-          const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
-          card?.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "nearest" });
+          const c = document.querySelector("#vue .v-graphe .gcard");
+          (c?.querySelector<HTMLElement>(".ga a") ?? c?.querySelector<HTMLElement>(".gx"))?.focus();
         });
     };
   }
-  /** Escape on a node lets the node chosen go (the bubble, when open, goes first: bulle.ts); the
-   * register closes only when nothing is chosen. */
+  /** The card closed (Escape, ✕, a click on the drawing's background): the focus back on its
+   * node when it was in the card. */
+  private fermer(rendre: boolean): void {
+    const k = this.state.sel;
+    if (!k) return;
+    this.setState({ sel: null });
+    if (rendre)
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>(`#vue .v-graphe .nd[data-k="${k}"]`)?.focus(),
+      );
+  }
+  private fermerCarte: Handler = (ev) => {
+    const dans = !!(ev.currentTarget as Element).closest(".gcard");
+    this.fermer(dans);
+  };
+  private fond: Handler = (ev) => {
+    if (ev.nativeEvent.target === ev.currentTarget) this.fermer(false);
+  };
+  /** Escape on a node or in its card closes the card (the bubble, when open, goes first:
+   * bulle.ts); the register closes only when nothing is chosen. */
   private clavier: Handler = (ev) => {
     if (ev.key !== "Escape" || !this.state.sel || ev.nativeEvent.defaultPrevented) return;
     ev.preventDefault();
-    this.setState({ sel: null });
+    const tg = ev.nativeEvent.target as Element | null;
+    this.fermer(!!tg?.closest?.(".gcard, .nd"));
   };
   private basculer(tab = !this.state.tab): void {
     const q = new URLSearchParams(location.search);
@@ -438,8 +465,12 @@ class Graphe extends Vue<Props, State> {
       if (n.sorte === "s") return n.forme === "e" ? "e1" : "a1";
       return n.forme === "e" ? "e2" : "a";
     };
+    // a finger's tap opens the card at once (the card is the bubble, with its two links): no
+    // bubble first, which bulle.ts would show on the first tap
+    const doigt = typeof matchMedia === "function" && matchMedia("(hover: none)").matches;
     const noeuds = d.noeuds.map((n) => {
       const b = this.bulle(n, v, sec);
+      const bb = doigt ? { bh: null, bl: null, bc: null } : b;
       const lab = n.lab;
       const groupe = n.sorte === "g1" || n.sorte === "g2";
       return {
@@ -451,7 +482,7 @@ class Graphe extends Vue<Props, State> {
         aria: groupe
           ? `${b.bh}, ${b.bl.split("\n")[0]}`
           : t("graphe_a.aria_noeud", { nom: this.court(n.k), m: montantA(n.m) }),
-        ...b,
+        ...bb,
         rond: n.forme === "a",
         carre: n.forme === "e",
         fc: fc(n),
@@ -494,6 +525,10 @@ class Graphe extends Vue<Props, State> {
           cE: e ? { x: 500 - d.centre.w / 2, w: d.centre.w } : null,
           cA: e ? null : { rx: d.centre.w / 2 },
           ctxt: d.centre.txt,
+          c: this.centreNoeud(v, doigt),
+          carte: S.sel ? this.carte(S.sel, v, d, sec) : null,
+          fermer: this.fermerCarte,
+          fond: this.fond,
           quitter: this.quitter(),
           clavier: this.clavier,
           leg: {
@@ -576,6 +611,101 @@ class Graphe extends Vue<Props, State> {
       ],
     };
     return { ...base, ...actions, lead, choix: null, g, tb, side, pleinEcran };
+  }
+
+  /** The build's own figures for a SIREN (listes.json, the lists' rows): its contracts and their
+   * amount; null when the lists do not have it (a buyer the graph alone names). */
+  private total(s: string, r: Role): { n: number; amt: number } | null {
+    const X = this.props.X.lignes;
+    const x = r === "e" ? X.entreprises[s] : X.acheteurs[s];
+    return x ? { n: x.n, amt: x.amt } : null;
+  }
+  /** Why a node has no link to a fiche: a sole trader is never named nor given one. */
+  private sansFiche(s: string): string {
+    if (this.estAcheteur(s)) return t("graphe_a.carte_sans_fiche");
+    return this.L.entreprises[s]?.entrepreneur_individuel
+      ? t("graphe_a.carte_sans_fiche_ei")
+      : t("graphe_a.carte_sans_fiche");
+  }
+
+  /** The centre as a node: focusable, its bubble, its card (no amount summed from its edges: the
+   * lists' total, the build's figure). */
+  private centreNoeud(v: Voisinage, doigt: boolean) {
+    const S = this.state;
+    const nom = this.court(v.centre);
+    const tot = this.total(v.centre, v.role);
+    const ligne = this.totalLigne(tot);
+    return {
+      cls: `nd s-c${S.sel === "c" ? " on" : ""}${S.vu === "c" ? " vu" : ""}`,
+      pressed: S.sel === "c" ? "true" : "false",
+      aria: ligne ? `${nom}, ${ligne}` : nom,
+      bh: doigt ? null : nom,
+      bl: doigt ? null : ligne,
+      bc: doigt ? null : t("graphe_a.clic_detail"),
+      pick: this.clic("c"),
+      hover: this.survol("c"),
+    };
+  }
+  private totalLigne(tot: { n: number; amt: number } | null): string {
+    if (!tot) return "";
+    return tot.amt > 0
+      ? t("graphe_a.carte_total", { contrats: count(tot.n, "contrat"), m: montantA(tot.amt) })
+      : t("graphe_a.carte_total_n", { contrats: count(tot.n, "contrat") });
+  }
+
+  /** The small card of the node chosen, beside it (Ju's point 6): its kind, its name, its amount
+   * as its bubble says it, « Ouvrir la fiche → » when it has one, « Centrer ici » but for the
+   * centre. Placed in the drawing's units: beside the node, towards the drawing's middle. On a
+   * phone it stands under the drawing (graphe.css). */
+  private carte(k: string, v: Voisinage, d: Dessin, sec: Map<string, Second>) {
+    const e = v.role === "e";
+    let x: number;
+    let y: number;
+    let z: number;
+    let tag: string;
+    let lignes: string[];
+    let id: string;
+    let centrer: string | null = null;
+    if (k === "c") {
+      id = v.centre;
+      x = 500;
+      y = 450;
+      z = 24;
+      tag = t("graphe_a.carte_tag_c");
+      const l = this.totalLigne(this.total(v.centre, v.role));
+      lignes = l ? [l] : [];
+    } else {
+      const n = d.noeuds.find(
+        (m) => m.k === k && (m.sorte === "p" || m.sorte === "b" || m.sorte === "s"),
+      );
+      if (!n) return null;
+      id = n.k;
+      ({ x, y, z } = n);
+      const pm = this.premiersMots(v);
+      tag =
+        n.sorte === "p"
+          ? t(`graphe_a.leg_p_${pm.k}`)
+          : t(`graphe_a.carte_tag_${n.sorte}_${e ? "e" : "a"}`);
+      lignes = this.bulle(n, v, sec).bl.split("\n").filter(Boolean).slice(0, 4);
+      centrer = this.recentrer(n.k, n.forme);
+    }
+    const fiche = this.href(id);
+    // beside the node, towards the middle: left of it on the right side, under it in the upper half
+    const droite = x > 600;
+    const gauche = x < 400;
+    const haut = y < 470;
+    const tx = droite ? "-100%" : gauche ? "0" : "-50%";
+    const top = ((haut ? y + z + 8 : y - z - 8) / 940) * 100;
+    return {
+      nom: this.court(id),
+      cls: haut ? "dessous" : "dessus",
+      st: `left: ${(x / 10).toFixed(2)}%; top: ${top.toFixed(2)}%; transform: translate(${tx}, ${haut ? "0" : "-100%"})`,
+      tag,
+      lignes,
+      fiche: fiche ?? "",
+      sans: fiche ? "" : this.sansFiche(id),
+      centrer: centrer ?? "",
+    };
   }
 
   /** The detail of the node chosen (« Cliquez : son détail ici »): who it is, its links in this

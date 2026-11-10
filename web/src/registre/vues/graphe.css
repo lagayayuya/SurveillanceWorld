@@ -285,6 +285,80 @@
   stroke-width: 4;
 }
 
+/* the centre is a node too: its card, its fiche (Ju's point 6) */
+.rg .va.v-graphe .g2 .nd.s-c:is(:hover, .vu) .c0 {
+  stroke-width: 4;
+}
+.rg .va.v-graphe .g2 .nd.s-c.on .c0 {
+  stroke-width: 5;
+}
+.rg .va.v-graphe .g2 .nd.s-c:focus-visible .c0 {
+  stroke: var(--focus);
+  stroke-width: 5;
+}
+
+/* --- the node's card (Ju's point 6): no board draws it; the boards' .card, .tag and .btn, beside
+   the node, towards the drawing's middle; under the drawing on a phone ---------------------------- */
+.rg .va.v-graphe .gcard {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 260px;
+  max-width: calc(100% - 16px);
+  padding: 12px 14px 14px;
+}
+.rg .va.v-graphe .gcard .tag {
+  margin-right: 30px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.rg .va.v-graphe .gcard .gn {
+  margin: 4px 30px 2px 0;
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.05;
+  font-stretch: 70%;
+  text-transform: uppercase;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+.rg .va.v-graphe .gcard .gl {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.v-graphe .gcard .gl.gs {
+  color: var(--muted);
+}
+.rg .va.v-graphe .gcard .ga {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.rg .va.v-graphe .gcard .gx {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font:
+    800 16px Archivo,
+    sans-serif;
+  cursor: pointer;
+}
+.rg .va.v-graphe .gcard .gx:focus-visible {
+  outline: 3px solid var(--fg);
+}
+
 /* --- the table view (Graphe-grammaire, « Vue tableau ») ----------------------------------------- */
 .rg .va.v-graphe .mxw {
   margin-top: 10px;
@@ -439,6 +513,28 @@
     right: 10px;
     z-index: 3;
   }
+  /* the card under the drawing, the whole width, its targets 44 px */
+  .rg .va.v-graphe .gcard {
+    position: relative;
+    /* biome-ignore lint/complexity/noImportantStyles: the card's place is computed for a wide screen, inline */
+    inset: auto !important;
+    width: auto;
+    max-width: none;
+    margin: 0 10px 12px;
+    /* biome-ignore lint/complexity/noImportantStyles: the card's place is computed for a wide screen, inline */
+    transform: none !important;
+  }
+  .rg .va.v-graphe .gcard .gx {
+    top: 2px;
+    right: 2px;
+    width: 44px;
+    height: 44px;
+  }
+  .rg .va.v-graphe .gcard .ga .btn {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
   .rg .va.v-graphe .gp-hint {
     display: block;
     position: absolute;
@@ -452,6 +548,10 @@
       400 12px "Special Elite",
       monospace;
     pointer-events: none;
+  }
+  /* the hint at the drawing's foot would stand on the card */
+  .rg .va.v-graphe .zw:has(.gcard) .gp-hint {
+    display: none;
   }
   .rg .va.v-graphe .gp-leg {
     padding: 10px 13px 13px;
