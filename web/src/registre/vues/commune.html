@@ -128,7 +128,7 @@
           <div class="sleg"><span class="lg"><i class="sw c0" aria-hidden="true"></i><span class="lt">{{t.commune_a.cal_aucun}}</span></span><span class="lg"><i class="sw c1" aria-hidden="true"></i><span class="lt">{{t.commune_a.cal_un}}</span></span><span class="lg"><i class="sw c2" aria-hidden="true"></i><span class="lt">{{t.commune_a.cal_plus}}</span></span><span class="lg"><i class="sw today" aria-hidden="true"></i><span class="lt">{{t.commune_a.cal_auj}}</span></span></div>
         </div>
         <div><h3 class="k">{{t.commune_a.aujourdhui}}</h3>
-          <sc-if value="{{dr.auj}}"><ul class="today-l"><sc-for list="{{dr.auj}}" as="a"><li><b>{{a.d}}</b> · {{{a.l}}}</li></sc-for></ul></sc-if>
+          <sc-if value="{{dr.aujPhrase}}"><p class="auj-n">{{dr.aujPhrase}}</p></sc-if><sc-if value="{{dr.auj}}"><ul class="today-l"><sc-for list="{{dr.auj}}" as="a"><li><b>{{a.d}}</b> · {{{a.l}}}</li></sc-for></ul></sc-if>
           <sc-if value="{{dr.aujVide}}"><p class="note">{{t.commune_a.aujourdhui_aucun}}</p></sc-if>
           <a class="btn pri" href="{{dr.href}}">{{t.commune_a.drones_3d}}</a></div>
         </div></div>

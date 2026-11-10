@@ -200,3 +200,25 @@ export function articleEpci(nom: string): string {
   if (/^Syndicat\b/u.test(nom)) return `le ${nom}`;
   return nom;
 }
+
+/** The days today's drone acts were published (Ju 10/11: « arrêtés publiés le 6 et le 8 nov. »):
+ * each day once, in order, grouped by month so that a month is written once after its last day;
+ * a year is kept only when it is not the build's (`an`). */
+export type JoursMois = { jours: number[]; mois: string; an: string | null };
+export function joursPublies(isos: (string | null | undefined)[], an: string): JoursMois[] {
+  const out: JoursMois[] = [];
+  for (const d of [
+    ...new Set(isos.filter((x): x is string => !!x).map((x) => x.slice(0, 10))),
+  ].sort()) {
+    const mois = d.slice(0, 7);
+    const last = out[out.length - 1];
+    if (last && last.mois === mois) last.jours.push(Number(d.slice(8, 10)));
+    else
+      out.push({
+        jours: [Number(d.slice(8, 10))],
+        mois,
+        an: d.slice(0, 4) === an ? null : d.slice(0, 4),
+      });
+  }
+  return out;
+}

@@ -12,6 +12,7 @@ import {
   fournisseurs,
   grandsSystemes,
   joursDeVol,
+  joursPublies,
   rang,
   classeMotif,
   strate,
@@ -122,4 +123,16 @@ test("a name in a sentence: its article contracted, a size class's point once (r
   assert.equal(articleEpci("CC Vallée des Baux-Alpilles"), "la CC Vallée des Baux-Alpilles");
   assert.equal(articleEpci("Métropole du Grand Paris"), "la Métropole du Grand Paris");
   assert.equal(articleEpci("Grand Paris Seine Ouest"), "Grand Paris Seine Ouest");
+});
+
+test("the days today's acts were published: each once, a month written once", () => {
+  assert.deepEqual(joursPublies(["2026-11-08", "2026-11-06", "2026-11-06T10:00", null], "2026"), [
+    { jours: [6, 8], mois: "2026-11", an: null },
+  ]);
+  assert.deepEqual(joursPublies(["2026-11-02", "2025-12-30", "2026-10-31"], "2026"), [
+    { jours: [30], mois: "2025-12", an: "2025" },
+    { jours: [31], mois: "2026-10", an: null },
+    { jours: [2], mois: "2026-11", an: null },
+  ]);
+  assert.deepEqual(joursPublies([], "2026"), []);
 });

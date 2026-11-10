@@ -502,6 +502,12 @@
 .rg .va.com .sw.today {
   border: 2.5px solid var(--type-registre);
 }
+/* « 2 vols autorisés aujourd'hui (arrêtés publiés le 6 et le 9 nov.) » (Ju 10/11) */
+.rg .va.com .auj-n {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
 .rg .va.com .today-l {
   list-style: none;
   margin: 10px 0 0;

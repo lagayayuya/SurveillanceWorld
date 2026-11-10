@@ -45,6 +45,7 @@ import {
   fournisseurs,
   grandsSystemes,
   joursDeVol,
+  joursPublies,
   rang,
   type Serie,
   strate,
@@ -99,6 +100,21 @@ const moisCourt = (d: string): string =>
   new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" }).format(
     new Date(`${d}T12:00:00Z`),
   );
+/** « le 6 et le 8 nov. », « le 30 déc. 2025 et le 2 janv. »: days of publication, a month once
+ * after its last day, a year only when it is not the build's (commune-a.ts joursPublies). */
+function datesPubliees(isos: (string | null | undefined)[], an: string): string {
+  const items = joursPublies(isos, an).flatMap((g) =>
+    g.jours.map((j, i) => {
+      const le = j === 1 ? t("commune_a.le_premier") : t("commune_a.le_jour", { d: j });
+      if (i < g.jours.length - 1) return le;
+      // the day and its month never apart
+      return `${le}\u00a0${moisCourt(`${g.mois}-01`)}${g.an ? `\u00a0${g.an}` : ""}`;
+    }),
+  );
+  return items.length > 1
+    ? `${items.slice(0, -1).join(", ")}${t("commune_a.et_jours")}${items[items.length - 1]}`
+    : (items[0] ?? "");
+}
 const ent = (href: string | null, text: string, cls = "ent"): RichItem =>
   href ? { a: { href, text, cls } } : text;
 const nomStrate = (s: number): string => t(`commune_a.strate.${s}`);
@@ -158,7 +174,7 @@ function volListe(
     .sort((a, b) => (b.ecart ?? 0) - (a.ecart ?? 0))
     .slice(0, 12)
     .map((x) => ({
-      d: jourCourt(x.pub),
+      d: t("commune_a.publie", { d: datesPubliees([x.pub], "") }),
       l: [
         {
           a: {
@@ -391,6 +407,17 @@ export class Commune extends Vue<Props, State> {
       (e) => e.t === "arrete_drone" && ((e.jours as string[] | undefined) ?? []).includes(maj),
     );
     const nAuj = auj.length;
+    const pubDe = (e: Evenement) => String((e as { publie?: string }).publie ?? "");
+    const pubs = auj.map(pubDe).filter(Boolean);
+    const sansPub = nAuj - pubs.length;
+    const aujPhrase = pubs.length
+      ? T("commune_a.auj_phrase", {
+          n: nAuj,
+          p: pubs.length,
+          dates: datesPubliees(pubs, maj.slice(0, 4)),
+          sans: sansPub ? T("commune_a.auj_sans", { q: sansPub }) : "",
+        })
+      : T("commune_a.auj_phrase_0", { n: nAuj });
     const pubOffres = s.counted.filter((e) => typeof e.offres === "number");
     const uneOffre = d.all.filter(
       (e) => e.t === "attribution" && !e.communal && !e.copie && e.offres === 1,
@@ -1092,9 +1119,13 @@ export class Commune extends Vue<Props, State> {
               lever: (() => this.setState({ motifF: "" })) as Handler,
             }
           : null,
+        // which date (Ju 10/11): the flights are today's, their acts were published earlier
+        aujPhrase: nAuj ? aujPhrase : "",
         auj: nAuj
           ? auj.map((e) => ({
-              d: jourCourt(maj),
+              d: pubDe(e)
+                ? t("commune_a.publie", { d: datesPubliees([pubDe(e)], maj.slice(0, 4)) })
+                : t("commune_a.publie_non_lu"),
               l: [
                 {
                   a: {
@@ -1428,7 +1459,12 @@ export class Commune extends Vue<Props, State> {
       parDate: (() => this.setState({ tri: "date" })) as Handler,
       parM: (() => this.setState({ tri: "montant" })) as Handler,
       rows: docRows.slice(0, 10).map((e) => ({
-        d: e.date ? jourCourt(e.date) : "",
+        // a drone act's date is its first day of flight, not its publication (Ju 10/11): said
+        d: e.date
+          ? e.t === "arrete_drone"
+            ? t("commune_a.vol_le", { d: jourCourt(e.date) })
+            : jourCourt(e.date)
+          : "",
         doc: [
           {
             a: {
