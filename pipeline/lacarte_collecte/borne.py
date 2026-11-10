@@ -15,13 +15,17 @@ from collections.abc import Callable
 from multiprocessing.connection import Connection
 from typing import Any
 
+DEMARRAGE = 120.0  # seconds a child may take to start
+
 
 class TropLong(Exception):
     """The reading did not end within the limit; its child was killed."""
 
 
 def _servir(conn: Connection) -> None:
-    """The child: a function and its arguments in, its result (or its error) out."""
+    """The child: ready said once, then a function and its arguments in, its result (or its
+    error) out."""
+    conn.send(("pret", None))
     while True:
         try:
             fn, args = conn.recv()
@@ -49,6 +53,11 @@ class Lecteur:
         self._proc.start()
         child.close()
         self._conn = parent
+        # the limit is the reading's, not the child's start (a loaded machine takes seconds to
+        # spawn one: 2026-11-10, the test's 0.5 s spent before the first line was read)
+        if not parent.poll(DEMARRAGE) or parent.recv()[0] != "pret":
+            self._tuer()
+            raise TropLong("processus de lecture pas démarré")
 
     def _tuer(self) -> None:
         if self._proc is not None:
