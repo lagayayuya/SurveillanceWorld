@@ -332,6 +332,10 @@
 .rg .va.ctr .sp-st.auj::before {
   border-top-style: dashed;
 }
+/* a planned end already past, today after it: that stretch has happened, solid */
+.rg .va.ctr .sp-st.fin:has(+ .auj)::before {
+  border-top-style: solid;
+}
 .rg .va.ctr .sp-a:hover .dot,
 .rg .va.ctr .sp-a.hl .dot {
   border-width: 4px;
