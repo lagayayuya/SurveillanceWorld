@@ -725,17 +725,18 @@
   text-decoration: underline;
   cursor: pointer;
 }
+/* « Publiés avant le vol ? » (the board's .k2 over its .sbar): each label on its own line over its
+   bar, the bars the card's width (Ju, 10/11: « 3 départements lus » no more on three lines in a
+   90 px column, spilling into the bar) */
 .rg .v-carte .v3p .vrow {
-  display: grid;
-  grid-template-columns: 90px 1fr;
-  align-items: center;
-  gap: 10px;
   margin-bottom: 8px;
 }
-.rg .v-carte .v3p .vn {
+.rg .v-carte .v3p .vrow .k2 {
+  display: block;
+  margin: 4px 0;
   font-family: Archivo, sans-serif;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 900;
   text-transform: uppercase;
 }
 @media (max-width: 959px) {

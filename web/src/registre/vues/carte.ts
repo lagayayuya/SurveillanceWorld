@@ -1650,7 +1650,11 @@ class CarteDrones extends Vue<Props, State> {
       // a helicopter's acts, apart (A, 09/11): never in the figures above, which count drones
       helico: helicopteres(d) ? t("carte_a.helico", { n: helicopteres(d) }) : "",
       avenir: avenir.length ? avenir : null,
-      vol: [barre(nom, vC, sansActe), barre(t("carte_a.france", { n: vF.deps.length }), vF)],
+      // the départements counted named over their bar (Ju, 10/11), « France » when none is served
+      vol: [
+        barre(nom, vC, sansActe),
+        barre(vF.deps.length ? depsLus : t("carte_a.france", { n: 0 }), vF),
+      ],
       volNote: sansActe
         ? t("carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
         : vC.nonLu

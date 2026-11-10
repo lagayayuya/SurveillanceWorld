@@ -40,7 +40,7 @@
       <sc-if value="{{dr.avenir}}"><h3 class="dp-h">{{t.carte_a.avenir_vols_h}}</h3>
         <div class="card"><ul class="avenir"><sc-for list="{{dr.avenir}}" as="a"><li><b>{{a.d}}</b><span>{{a.n}}</span><button type="button" class="go" onClick="{{a.pick}}">{{t.carte_a.afficher_jour}}</button></li></sc-for></ul><p class="note">{{t.carte_a.avenir_note}}</p></div></sc-if>
       <h3 class="dp-h">{{t.carte_a.vol_h}}</h3>
-      <div class="card"><sc-for list="{{dr.vol}}" as="v"><div class="vrow"><span class="vn">{{v.l}}</span><sc-if value="{{v.lu}}"><div class="sbar petite" style="height: 20px" data-bg=""><sc-for list="{{v.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><b>{{x.l}}</b></span></sc-for></div></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{v.st}}</span></sc-if></div></sc-for>
+      <div class="card"><sc-for list="{{dr.vol}}" as="v"><div class="vrow"><span class="k2">{{v.l}}</span><sc-if value="{{v.lu}}"><div class="sbar" style="height: 22px" data-bg=""><sc-for list="{{v.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.bh}}" data-bl="{{x.bl}}"><b>{{x.l}}</b></span></sc-for></div></sc-if><sc-if value="{{v.nonLu}}"><span class="state">{{v.st}}</span></sc-if></div></sc-for>
         <div class="sleg"><span class="lg"><i class="sw p-ok" aria-hidden="true"></i>{{t.accueil.vol_avant}}</span><span class="lg"><i class="sw p-mid" aria-hidden="true"></i>{{t.accueil.vol_jour_meme}}</span><span class="lg"><i class="sw p-late" aria-hidden="true"></i>{{t.accueil.vol_apres}}</span></div>
         <p class="note">{{dr.volNote}}</p></div>
     </div></sc-if>
