@@ -332,3 +332,18 @@
     font-size: 19px;
   }
 }
+
+/* the yellow's meaning under the lead (recette, amélioration 5), its swatch the cells' yellow */
+.rg .va.cmp .note.jaune {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+.rg .va.cmp .note.jaune .sw {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  background: var(--warn-bg);
+  border: 1px solid var(--line);
+}

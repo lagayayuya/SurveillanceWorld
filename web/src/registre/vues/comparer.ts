@@ -735,6 +735,9 @@ export class Comparer extends Vue<Props, State> {
       q: S.q,
       onQ: this.onQ,
       lead,
+      // what the yellow means, under the lead (recette, amélioration 5: the table's own note is
+      // far below it); only where a row can have a yellow, two columns or more
+      jaune: n >= 2 ? t("comparer_a.jaune") : "",
       actions: {
         cls: `actions${S.plus ? " plus" : ""}`,
         sansExport: n === 0,
