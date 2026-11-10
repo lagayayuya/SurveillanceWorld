@@ -34,7 +34,7 @@ from weakref import WeakKeyDictionary
 import yaml
 
 import lacarte_registre as registre
-from lacarte_registre import chiffres, comptes, drones, entreprise, partage, refs
+from lacarte_registre import chiffres, comptes, drones, entreprise, noms, partage, refs
 from lacarte_registre.parcours import Parcours
 from lacarte_registre.regles import (
     EI,
@@ -181,6 +181,10 @@ class Context:
     def acheteur(self, siren: str) -> dict[str, Any]:
         a = self.acheteurs.get(siren) or {}
         out = {k: a.get(k) for k in ACH_DICO if k in a}
+        if ren := noms.renommages(registre.RULES).get(siren):
+            # the same buyer under its other number, named on each one's page
+            out["meme_acheteur"] = next(s for s in ren["sirens"] if s != siren)
+            out["note_renommage"] = ren["note"]
         if self.nom_court(siren):
             out["nom_court"] = self.nom_court(siren)
         if not out.get("nom") and not out.get("nom_court"):
@@ -198,6 +202,9 @@ class Context:
     def entreprise(self, siren: str) -> dict[str, Any]:
         x = self.reg.pilote.reg.get("entreprises", {}).get(siren) or {}
         out = {k: x.get(k) for k in ENT_DICO if k in x}
+        if out.get("nom"):
+            # SIRENE's capitals as the pages write them (rule:registre_noms@1:casse)
+            out["nom_affiche"] = noms.afficher(out["nom"], registre.RULES, siren)
         if r := self.fiches.entreprise(siren):
             out["ref"] = r
         return out
@@ -381,7 +388,12 @@ def sellers_and_buyers(reg: Registre, events: Iterable[Event]) -> dict[str, list
             if s != EI:  # a sole trader: listed nowhere by its own
                 _contract_row(sellers, s, e)
         if b := reg.buyer(e):
+            # one buyer under two numbers (rule:registre_noms@1:renommages): its current one
+            ren = noms.renommages(registre.RULES).get(b)
+            b = ren["nouveau"] if ren else b
             o = _contract_row(buyers, b, e)
+            if ren:
+                o.update(sirens=ren["sirens"], libelle=ren["libelle"], note=ren["note"])
             o["centrale"] = o.get("centrale", False) or e.get("hors_totaux") == "centrale"
     return {"vendeurs": _contracts_ranked(sellers), "acheteurs": _contracts_ranked(buyers)}
 
@@ -473,6 +485,13 @@ def pairs(reg: Registre) -> dict[str, list[dict[str, Any]]]:
     }
 
 
+def _avec_affiche(x: dict[str, Any], siren: str) -> dict[str, Any]:
+    """A company's record with its display name beside SIRENE's (rule:registre_noms@1:casse)."""
+    if not x.get("nom"):
+        return x
+    return {**x, "nom_affiche": noms.afficher(x["nom"], registre.RULES, siren)}
+
+
 def entreprise_file(ctx: Context, siren: str) -> dict[str, Any]:
     reg = ctx.reg
     evs = [e for e in reg.evenements if siren in (e.get("entreprises") or [])]
@@ -486,7 +505,9 @@ def entreprise_file(ctx: Context, siren: str) -> dict[str, Any]:
     }
     return {
         "v": 1,
-        "entreprise": reg.pilote.reg["entreprises"].get(siren) or {"siren": siren},
+        "entreprise": _avec_affiche(
+            reg.pilote.reg["entreprises"].get(siren) or {"siren": siren}, siren
+        ),
         **closed,
         "pairs": peers,
         "stats": stats,

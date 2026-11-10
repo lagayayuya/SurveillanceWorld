@@ -32,7 +32,7 @@ import yaml
 
 import lacarte_registre as registre
 from lacarte_collecte import arretes
-from lacarte_registre import fins, lecture_drones, motifs, partage, regles, selection
+from lacarte_registre import fins, lecture_drones, motifs, noms, partage, regles, selection
 
 DIR = "collecte"
 KINDS = {
@@ -470,6 +470,9 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     affaires = {k: v for k, v in reg["affaires"].items() if k not in dropped}
     for e in new:
         kind = "subvention" if e["t"].startswith("subvention") else "acte"
+        if kind == "subvention" and e.get("beneficiaire"):
+            # the DGCL's « Commune De Maisse » as the pages write it (rules/registre_noms.yaml)
+            e["beneficiaire"] = noms.afficher(e["beneficiaire"], rules)
         title = f"Subvention : {e['beneficiaire']}" if kind == "subvention" else e["ref"]
         affaires[e["affaire"]] = {
             "id": e["affaire"],

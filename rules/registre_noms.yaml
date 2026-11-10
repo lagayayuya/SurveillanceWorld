@@ -1,0 +1,90 @@
+# The names as the pages show them (pipeline/lacarte_registre/noms.py): SIRENE writes a
+# company in capitals (« SPIE CITYNETWORKS »), the DGCL a beneficiary with every word capitalised
+# (« Commune De Maisse »). The display name keeps the acronyms, puts back the accents of common
+# words, writes the small words in lower case; a name the usual form of which no rule gives is
+# in `usuels`. The source's name stays as it is beside it (`nom`).
+version: 1
+
+casse:
+  id: rule:registre_noms@1:casse
+  rationale: >-
+    The recette (constat 26, 2026-11-09): « Edf Business Services et Travaux », « Spie
+    Citynetworks », « Eiffage Energie Systemes », « Snef » where the mockup writes « EDF … »,
+    « Spie CityNetworks », « Eiffage Énergie Systèmes », « SNEF »; and « Commune De Coupvray ».
+    A word of the source in capitals is an acronym when it is listed in `sigles` or has no
+    vowel (« SNCF », « BTP »); otherwise it is written with its first letter in capital, its
+    accents put back when it is listed in `accents`; a small word (`minuscules`) is in lower
+    case unless it begins the name; « D'AZUR » is « d'Azur ».
+  sigles: [EDF, GDF, SNEF, SNCF, RATP, SFR, BNP, LCL, CIC, SAS, SASU, SARL, SA, SNC, EURL, SCOP, GIE, SEM, SPL,
+           SEMOP, BTP, TP, IDF, ICS, IBM, NTT, SPIE, CCAS, CHU, CH, EPCI, SIVOM, SIVU, SDIS, OPH, HLM, ERDF, RTE,
+           VINCI, ENGIE, CNIM, SEMAPA, SNEF, CITEOS, INEO, AXIANS, SCC, SFR, SPB, GTM, NGE, EGIS, SETEC, CGI]
+  # written as their owners write them, not in capitals
+  noms: {VINCI: Vinci, ENGIE: Engie, CITEOS: Citeos, INEO: Ineo, AXIANS: Axians, EGIS: Egis, SETEC: Setec,
+         SPIE: Spie}
+  minuscules: [de, du, des, d, l, la, le, les, et, en, sur, sous, aux, au, a, à, pour, par]
+  accents:
+    energie: énergie
+    energies: énergies
+    systeme: système
+    systemes: systèmes
+    securite: sécurité
+    electricite: électricité
+    electrique: électrique
+    electriques: électriques
+    electronique: électronique
+    cote: côte
+    reseau: réseau
+    reseaux: réseaux
+    telecom: télécom
+    telecoms: télécoms
+    telecommunications: télécommunications
+    ingenierie: ingénierie
+    societe: société
+    generale: générale
+    general: général
+    equipement: équipement
+    equipements: équipements
+    etude: étude
+    etudes: études
+    etablissements: établissements
+    regie: régie
+    region: région
+    regional: régional
+    regionale: régionale
+    telesurveillance: télésurveillance
+    videoprotection: vidéoprotection
+    video: vidéo
+    controle: contrôle
+    prevention: prévention
+    communaute: communauté
+    agglomeration: agglomération
+    metropole: métropole
+    departement: département
+    departemental: départemental
+    departementale: départementale
+    collectivite: collectivité
+    eclairage: éclairage
+    amenagement: aménagement
+    developpement: développement
+    societes: sociétés
+    federation: fédération
+    entreprise: entreprise
+  usuels:
+    "434085395": Spie CityNetworks
+
+# A buyer that changed its SIREN when it was renamed, one buyer under two numbers: its contracts
+# are ranked as one, under its current number, its page and the former one's naming each other.
+renommages:
+  id: rule:registre_noms@1:renommages
+  rationale: >-
+    The recette (constat 29, 2026-11-09): the Rhône's « plus gros acheteurs » list « Sytral
+    (transports lyonnais) » (8,2 M€) and « Sytral Mobilités » (6,8 M€) apart, the same buyer
+    renamed in 2022 (the Syndicat mixte des transports pour le Rhône et l'agglomération
+    lyonnaise became Sytral Mobilités, an établissement public local, on 1 January 2022, a new
+    SIREN); the commune of Lyon already adds them. The mockup: « Sytral (deux noms) · 15,1 M€ »
+    and a note.
+  acheteurs:
+    - ancien: "256900994"
+      nouveau: "200096386"
+      libelle: Sytral (deux noms)
+      note: Le Sytral est devenu Sytral Mobilités le 1er janvier 2022, sous un nouveau numéro SIREN. Ses contrats sont additionnés.

@@ -249,3 +249,14 @@ def test_a_departement_counts_its_drone_acts_placed_and_issued(built):
     assert rhone["dr_commune"] >= 1 and rhone["dr_autorite"] >= 1
     rows = read(built, "listes.json")["lignes"]["departements"]
     assert (rows["75"]["dr_commune"], rows["75"]["dr_autorite"]) == (0, 1)
+
+
+def test_the_sytral_is_one_buyer_under_its_two_numbers(built):
+    """rule:registre_noms@1:renommages (the recette's constat 29)."""
+    rows = read(built, "departement/69.json")["stats"]["acheteurs"]
+    sirens = [r["siren"] for r in rows]
+    assert "256900994" not in sirens
+    sytral = [r for r in rows if r["siren"] == "200096386"]
+    assert sytral, "the extract's Sytral contracts are ranked under its current number"
+    assert sytral[0]["libelle"] == "Sytral (deux noms)"
+    assert set(sytral[0]["sirens"]) == {"200096386", "256900994"}
