@@ -1260,6 +1260,8 @@ const ORDRE: TypeCle[] = [
   "sub",
 ];
 const KINDS_ORDRE: Kind[] = ["con", "mod", "ao", "aut", "sub"];
+/** The results shown of each type, then « Voir les N » (Ju 10/11: five at most). */
+export const PAR_TYPE = 5;
 
 /** A name's fiche, from its reference (only a fiche the build wrote has one). */
 const parRef = (ref: string | undefined): string => (ref ? `/registre/${ref}` : "");
@@ -1356,7 +1358,7 @@ function trouveDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evenement)
 export async function chercherDocuments(
   q0: string,
   C: Pick<Corpus, "couverture">,
-  par = 4,
+  par = PAR_TYPE,
   doFetch: typeof fetch = fetch,
 ): Promise<Groupe[] | null> {
   const q = q0.trim();
@@ -1380,7 +1382,7 @@ export async function chercherDocuments(
 
 /** The results by type, in the summary's order: the first `par` of each, how many, and the list
  * that shows them all (filtered by the same words). */
-export function grouper(res: Trouve[], q: string, par = 4): Groupe[] {
+export function grouper(res: Trouve[], q: string, par = PAR_TYPE): Groupe[] {
   const by = new Map<TypeCle, Trouve[]>();
   for (const r of res) by.set(r.type, [...(by.get(r.type) ?? []), r]);
   return ORDRE.filter((k) => by.get(k)?.length).map((k) => {

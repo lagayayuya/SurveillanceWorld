@@ -24,6 +24,7 @@ import {
   etapeListe,
   etatDe,
   grouper,
+  PAR_TYPE,
   type Listes,
   listeHref,
   nomListe,
@@ -380,6 +381,21 @@ test("the search: names by type, a commune whose name starts so first, each with
   const sansFiche = corpus({ ...X, dico: { ...L, communes: { ...L.communes, "69001": { nom: "Alphaville", dep: "69" } } } } as Listes, couverture);
   assert.ok(!chercherNoms(sansFiche, "alphaville").some((x) => x.type === "commune"));
   assert.deepEqual(chercherNoms(C, "a"), []);
+});
+
+test("the search: five results of a type at most, with how many there are (Ju 10/11)", () => {
+  const res = Array.from({ length: 8 }, (_, i) => ({
+    type: "commune" as const,
+    id: String(69001 + i),
+    nom: `Ville ${i}`,
+    detail: "",
+    href: `/registre/commune/${69001 + i}`,
+  }));
+  const [g] = grouper(res, "ville");
+  assert.equal(PAR_TYPE, 5);
+  assert.equal(g.rows.length, 5);
+  assert.equal(g.n, 8);
+  assert.equal(g.tout, "/registre/communes?q=ville");
 });
 
 test("the search: the documents by kind, through the API; none when it does not answer", async () => {

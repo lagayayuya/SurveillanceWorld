@@ -479,7 +479,7 @@ class Sommaire extends Vue<Props, State> {
       rows: g.rows.map((r) => ({ lien: lienTrouve(r) as RichItem, meta: r.detail })),
       plus:
         g.n > g.rows.length && g.tout !== "/registre/"
-          ? t("sommaire.tout_voir", { n: fr(g.n) })
+          ? t("sommaire.voir_les", { n: fr(g.n) })
           : "",
       tout: g.tout,
     }));

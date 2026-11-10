@@ -14,9 +14,21 @@
 }
 .rg .va.home .resultats .res {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  /* two columns at most on a wide screen, one on a phone (Ju 10/11: four were too narrow, a name
+     cut word by word) */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 16px;
   padding: 16px 40px 0;
+}
+/* a result: its name on its own line, what it is under it (socle-a's `.top li` is a grid of three
+   columns, the name squeezed beside its line) */
+.rg .va.home .resultats .res .top li {
+  display: block;
+  min-width: 0;
+}
+.rg .va.home .resultats .res .top li > span:first-child {
+  display: block;
 }
 .rg .va.home .resultats > .note {
   padding: 0 40px;
@@ -203,6 +215,7 @@
     grid-template-columns: 1fr;
   }
   .rg .va.home .resultats .res {
+    grid-template-columns: minmax(0, 1fr);
     padding: 12px 16px 0;
   }
   .rg .va.home .resultats > .note {
