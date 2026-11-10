@@ -690,3 +690,5 @@ One line per decision: date — decision — reason.
 - 2026-11-09 — The lists of communes and companies choose up to four rows for Comparer; a company's row links its graph on a wide screen — boards Liste-*-A (recette 08).
 - 2026-11-09 — The home's map in dark keeps the light ramp's order (ground, then pale to deep magenta) — board Accueil-Registre-A-sombre, rule of 2026-10-06 (recette 09).
 - 2026-11-09 — An intercommunality's row and name lead to its v2 fiche (?ic=) — one destination per row (recette 19).
+- 2026-11-10 — A node of the graph opens a card beside it (its fiche, « Centrer ici »), the main gesture instead of the detail on the right — Ju (point 6): the graph did not lead to the fiches.
+- 2026-11-10 — On a phone the graph stands whole in the width; it is read by pinching, full screen or the table view — Ju (recette 23): the intention, not the board.
