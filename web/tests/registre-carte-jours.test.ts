@@ -194,7 +194,9 @@ test("the phone's grid: a row per month, the latest on top, a column per day of 
 
 test("the sentence on the chosen day, as the board writes it, and with today's data", () => {
   const p = phraseJour(d("2026-11-04"), [], [complet], "drone");
-  assert.equal(p.date, `Mer.${N}4${N}nov.${N}2026`);
+  // a day with acts is a day of flight, said so (Ju, 10/11); a day without any, the calendar's
+  assert.equal(p.date, `Vol le mer.${N}4${N}nov.${N}2026`);
+  assert.equal(phraseJour(d("2026-11-03"), [], [aujourdhui], "drone").date, `Mar.${N}3${N}nov.${N}2026`);
   assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
   assert.equal(
     phraseJour(d("2026-11-04"), [], [aujourdhui], "drone").reste,

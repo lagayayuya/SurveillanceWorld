@@ -484,6 +484,17 @@ export function jourLong(ms: number): string {
   const w = WEEKDAY.format(ms);
   return `${w.charAt(0).toUpperCase()}${w.slice(1)}${NBSP}${dateTxt(ms)}`;
 }
+/** Ju, 10/11: a date says which it is. « Vol le mer. 4 nov. 2026 » (a day of flight, a slot's
+ * « 4 nov. 2026 à 07 h 30 → 15 h 30 »), the date's first letter set low after « le ». */
+export function volLe(date: string): string {
+  return t("carte_a.vol_le", { date: `${date.charAt(0).toLowerCase()}${date.slice(1)}` });
+}
+/** An act's day of publication (its recueil's, the build's `publie`: YYYY-MM-DD), null when the
+ * file does not serve it. */
+export function publieDe(e: object | null | undefined): string | null {
+  const p = (e as { publie?: unknown } | null | undefined)?.publie;
+  return typeof p === "string" && jourDe(p) ? p : null;
+}
 /** « 07h30-15h30 » → « 7 h 30 – 15 h 30 », « 20h00-fin » → « 20 h 00 – fin »; anything else as
  * written. */
 export function horaireTxt(h: string): string {
@@ -634,7 +645,8 @@ export function phraseJour(
     ...ns.map((a) => a.acte),
   ]).size;
   return {
-    date: jourLong(d),
+    // a day with acts is a day of flight; a day without any is only the calendar's
+    date: n ? volLe(jourLong(d)) : jourLong(d),
     reste: [
       n ? count(n, "arrete") : t("carte.jour_aucun"),
       heures,
@@ -812,6 +824,13 @@ export function appareils(zs: ZoneLue[], acte: number | null | undefined): numbe
 }
 /** « 11 nov. 2025, 7 h 00 → 11 h 00 », the end's date too when it is another day; the date
  * alone when the act states no hours. */
+/** A slot as the panel titles it (Ju, 10/11: a date says which it is): « Vol le 4 nov. 2026, 07 h 30
+ * → 15 h 30 » within a day, « Vol du 23 oct. 2026, 19 h 00 au 25 oct. 2026, 07 h 00 » over several. */
+export function plageVol(c: Creneau): string {
+  const jour = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  if (c.heures == null || jour(c.t0) === jour(c.t1 - 1)) return volLe(plage(c));
+  return t("carte_a.vol_du_au", { de: dateTxt(c.t0, true), a: dateTxt(c.t1, true) });
+}
 export function plage(c: Creneau): string {
   if (c.heures == null) return t("carte.plage_sans_heures", { date: dateTxt(c.t0) });
   const a = new Date(c.t0);

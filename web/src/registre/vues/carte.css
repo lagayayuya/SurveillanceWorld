@@ -351,6 +351,26 @@
 .rg .v-carte .zrow .h {
   white-space: nowrap;
 }
+/* the list's heads (the board's « Jour du vol · Horaires · Motif », table.docs th): what each date is
+   (Ju, 10/11: « vol le » or « publié le »); a head, never a row that is touched or hovered */
+.rg .v-carte .zrow.zhead {
+  min-height: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border-bottom: 0;
+  cursor: default;
+  font-family: Archivo, sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .v-carte .zrow.zhead:hover {
+  background: none;
+}
+.rg .v-carte .zrow.zhead .h {
+  font-weight: 900;
+}
 
 /* « ← Retour » (« ← Le registre » on the board, Ju 09/11): the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
    modes; cadre.css's .mback is drawn for the dark head of the frame, its ground left out (B7) */

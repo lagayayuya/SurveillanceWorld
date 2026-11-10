@@ -53,6 +53,7 @@ import {
   camerasTxt,
   cles,
   communeDe,
+  dateActe,
   dateTxt,
   deAdresse,
   debutCal,
@@ -86,7 +87,8 @@ import {
   type Periode,
   periodeHachuree,
   phraseJour,
-  plage,
+  plageVol,
+  publieDe,
   reperesCal,
   secteurPanneau,
   semaineDe,
@@ -96,6 +98,7 @@ import {
   tickets,
   versAdresse,
   volLabel,
+  volLe,
   type ZoneLue,
   zonePanneau,
   zonesDe,
@@ -1152,7 +1155,11 @@ class CarteDrones extends Vue<Props, State> {
       const uniques = (xs: (string | null | undefined)[]) =>
         [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))].join(" ; ");
       const haut = zs.find((z) => z.hauteur_lue && z.hauteur);
-      const dateA = e?.date ? dateTxt(jourMs(e.date)) : null;
+      // the act's own date, from its id (« arrêté du 3 novembre »): the event's `date` is a day of
+      // flight for some acts (Ju, 10/11: a date says which it is), its day of publication apart
+      const duA = dateActe(acte);
+      const dateA = duA ? dateTxt(jourMs(duA)) : null;
+      const pubA = publieDe(e);
       const ref = e?.ref ?? null;
       const page = e?.page ?? null;
       const nature = typeof e?.nature_vol === "string" ? e.nature_vol : "";
@@ -1166,7 +1173,7 @@ class CarteDrones extends Vue<Props, State> {
         c: aut.c,
         i: icone("aut"),
         k: t(vsa ? "carte.det_vsa" : "carte.det_drone"),
-        title: plage(c),
+        title: plageVol(c),
         sub: dateA ? t("carte.det_acte_du", { date: dateA }) : "",
         lieuxK: t("carte.lieux_k"),
         lieux: lieux(zs).map((x) => ({
@@ -1178,7 +1185,7 @@ class CarteDrones extends Vue<Props, State> {
         creneaux:
           freres.length > 1
             ? freres.map(([x, i]) => ({
-                l: plage(x),
+                l: plageVol(x),
                 cur: i === cur ? "true" : "false",
                 href: `${communeHref(insee, "carte")}${this.requete(this.K[i])}`,
                 pick: this.choix(this.K[i]),
@@ -1215,6 +1222,7 @@ class CarteDrones extends Vue<Props, State> {
           ),
           ...(haut ? ligne("carte.hauteur_k", t("carte.hauteur_m", { n: haut.hauteur ?? 0 })) : []),
           ...ligne("carte.type_acte_k", e?.sous_type),
+          ...ligne("carte_a.publie_k", pubA ? dateTxt(jourMs(pubA)) : null),
           ...ligne("carte.communes_k", autres.join(", ")),
           ...ligne(
             "carte.source",
@@ -1243,7 +1251,7 @@ class CarteDrones extends Vue<Props, State> {
         c: aut.c,
         i: icone("aut"),
         k: t(a.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
-        title: [jourA != null ? jourLong(jourA) : t("format.date_non_publiee"), hs]
+        title: [jourA != null ? volLe(jourLong(jourA)) : t("format.date_non_publiee"), hs]
           .filter(Boolean)
           .join(" · "),
         sub: enTete(a),
@@ -1275,6 +1283,10 @@ class CarteDrones extends Vue<Props, State> {
           ...(js.length > 1
             ? ligne("carte.jours_k", js.map((j) => dateTxt(jourMs(j))).join(", "))
             : []),
+          ...(() => {
+            const p = publieDe(e);
+            return ligne("carte_a.publie_k", p ? dateTxt(jourMs(p)) : null);
+          })(),
         ],
         note: "",
         links: [
@@ -1400,7 +1412,7 @@ class CarteDrones extends Vue<Props, State> {
     const listT = S.sz
       ? t("carte.liste_sz", { arr })
       : jour != null
-        ? `${t("carte.liste_jour", { date: jourLong(jour), arr })}${
+        ? `${t("carte.liste_jour", { date: volLe(jourLong(jour)), arr })}${
             hJour ? t("carte.liste_h_vol", { h: heuresTxt(hJour) }) : ""
           }`
         : !rows.length
@@ -1830,6 +1842,7 @@ class CarteDrones extends Vue<Props, State> {
       hasSz: S.sz,
       szTous: (() => this.setState({ sz: false, sel: null, vu: null })) as Handler,
       rows: rows.map((x) => x.row),
+      hasRows: rows.length > 0,
       vide,
     };
   }
