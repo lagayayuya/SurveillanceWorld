@@ -3466,8 +3466,12 @@ try {
 
   await Promise.all(consoleRead);
   check("no page or console errors", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));
+  // The CI's build has no register: a sheet's département file answers 404, which the sheets
+  // read as « non lu » (placedata.ts loadDep).
   const unexpected = failedRequests.filter(
-    (r) => !/internal error|cancelled|ERR_INTERNET|aborted/i.test(r),
+    (r) =>
+      !/internal error|cancelled|ERR_INTERNET|aborted/i.test(r) &&
+      !/^404 \S+\/data\/registre\/departement\//.test(r),
   );
   check(
     "no unexpected failed request",

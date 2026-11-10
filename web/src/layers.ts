@@ -41,6 +41,17 @@ export const DETAIL_MIN = DETAIL_FADE[0];
 /** A camera's tap target around its pictogram, in CSS px (`camera-hit`); main.ts keeps a
  * tapped camera's whole target in the part of the map the panels leave free. */
 export const CAMERA_HIT_RADIUS = 20;
+/** Invisible: the commune under a camera (main.ts cameraGap, the camera sheet's « Combien en
+ * manque-t-il ? », board 12), added only while it is read, then removed: drawn at the street
+ * level the admin source would bring its IGN attribution there (the admin tiles stop at z11,
+ * one tile then covers a whole town). */
+export const COMMUNES_PROBE: LayerSpecification = {
+  id: "communes-probe",
+  type: "fill",
+  source: "admin",
+  "source-layer": "communes",
+  paint: { "fill-opacity": 0 },
+};
 export const COUNT_MAX = 15; // communes stay loaded (invisible) up to here to count cameras
 
 // Colours come from the theme's tokens (theme.ts palette(), --map-* in theme/*.css), read
@@ -723,17 +734,6 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       "source-layer": "communes",
       minzoom: AREA_FADE[0],
       maxzoom: COUNT_MAX,
-      paint: { "fill-opacity": 0 },
-    },
-    {
-      // Invisible: the commune under a camera, from the street level on (main.ts cameraGap,
-      // the camera sheet's « Combien en manque-t-il ? », board 12). The admin tiles stop at z11
-      // and are drawn bigger above: one tile for a whole town.
-      id: "communes-probe",
-      type: "fill",
-      source: "admin",
-      "source-layer": "communes",
-      minzoom: COUNT_MAX,
       paint: { "fill-opacity": 0 },
     },
     // --- streets -----------------------------------------------------------------------

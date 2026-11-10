@@ -42,6 +42,7 @@ import {
   CAMERA_HIT_RADIUS,
   CITY_FADE,
   COMMUNES_MIN,
+  COMMUNES_PROBE,
   DEFAULT_LEVEL,
   DETAIL_MIN,
   drawnBasemap,
@@ -763,6 +764,7 @@ const closeSheet = (reason = "close") => {
   writeParams({ cam: null, insee: null });
   shownHistory = null;
   shownGap = null;
+  stopProbe();
   areaLegend(null);
 };
 /** The open camera's history (history.ts, lot U): asked once per opening, kept while the
@@ -805,50 +807,65 @@ const areaLegend = (p: AreaProps | null): void => {
   const breaks = meta.area_classes;
   if (!p || !breaks?.length) return;
   const pub = panel.mode.publicOnly;
-  void import("./arealegend").then((m) => {
-    if (shownArea !== p) return;
-    legendShown?.remove();
-    legendShown = m.legendBox(
-      {
-        name: String(p.nm),
-        departement: isDepartement(p),
-        y: Number(p[pub ? "hi_pub" : "hi"] ?? 0),
-        n: Number(p[pub ? "n_pub" : "n"] ?? 0),
-      },
-      breaks,
-    );
-    document.body.append(legendShown);
-  });
+  void import("./arealegend")
+    .then((m) => {
+      if (shownArea !== p) return;
+      legendShown?.remove();
+      legendShown = m.legendBox(
+        {
+          name: String(p.nm),
+          departement: isDepartement(p),
+          y: Number(p[pub ? "hi_pub" : "hi"] ?? 0),
+          n: Number(p[pub ? "n_pub" : "n"] ?? 0),
+        },
+        breaks,
+      );
+      document.body.append(legendShown);
+    })
+    .catch(() => {});
 };
 /** The camera sheet's « Combien en manque-t-il ? » (board 12, cameragap.ts): a slot kept while
  * the sheet is drawn again, filled with the block of the commune under the camera, read from the
  * invisible communes layers (layers.ts communes-probe) once the map has drawn them there. */
 let shownGap: { id: string; slot: HTMLElement; add: boolean } | null = null;
 const PROBES = ["communes-probe", "communes-count"];
+/** The probe's wait for a drawn commune, if one is under way. */
+let probeWait: (() => void) | null = null;
+/** Stop reading the commune under a camera: the wait and the probe layer gone (the sheet
+ * closed or replaced; a map at rest would give no further « idle » to end them). */
+const stopProbe = () => {
+  if (probeWait) map.off("idle", probeWait);
+  probeWait = null;
+  if (map.getLayer(COMMUNES_PROBE.id)) map.removeLayer(COMMUNES_PROBE.id);
+};
 const cameraGap = (id: string, lngLat: [number, number]): HTMLElement => {
   // Made again when the add becomes possible (the session known after the sheet opened).
   const add = addFrom() !== undefined;
   if (shownGap?.id === id && shownGap.add === add) return shownGap.slot;
+  stopProbe();
   const slot = document.createElement("div");
   slot.className = "gap-slot";
   shownGap = { id, slot, add };
   const fill = (): boolean => {
     if (shownGap?.slot !== slot) return true;
+    if (!map.getLayer(COMMUNES_PROBE.id) && map.getSource("admin")) map.addLayer(COMMUNES_PROBE);
     const layers = PROBES.filter((l) => map.getLayer(l));
     const point = map.project(lngLat);
     const f = map.queryRenderedFeatures([point.x, point.y], { layers })[0];
     if (!f) return false;
     const onAdd = addFrom();
-    void import("./cameragap").then((m) =>
-      m.fillCameraGap(slot, f.properties as AreaProps, { onAdd }),
-    );
+    // A page left meanwhile aborts the chunk's load: nothing to say then.
+    void import("./cameragap")
+      .then((m) => m.fillCameraGap(slot, f.properties as AreaProps, { onAdd }))
+      .catch(() => {});
     return true;
   };
-  if (!fill()) {
-    const again = () => {
-      if (fill()) map.off("idle", again);
+  if (fill()) stopProbe();
+  else {
+    probeWait = () => {
+      if (fill()) stopProbe();
     };
-    map.on("idle", again);
+    map.on("idle", probeWait);
   }
   return slot;
 };
@@ -1136,9 +1153,9 @@ const areaOptions = () => ({
   // Board 12: the « manque » block's add, « Voir ces rues sur la carte », « Où sont-elles ? ».
   onAdd: addFrom(true),
   onStreets: () => {
-    if (shownArea) void showStreets(String(shownArea.c));
+    if (shownArea) void showStreets(String(shownArea.c)).catch(() => {});
   },
-  onCommune: (insee: string) => void openAreaByCode(insee, "list"),
+  onCommune: (insee: string) => void openAreaByCode(insee, "list").catch(() => {}),
 });
 // Code -> [name, département, [west, south, east, north]] (tiles/areas.json), fetched the
 // first time an area is opened: its tiles only hold the pieces in view.
@@ -1187,6 +1204,7 @@ function openArea(p: AreaProps, how: string) {
   shown = null;
   if (panel.opened) panel.setOpened(false);
   shownGap = null;
+  stopProbe();
   selectArea(p);
   renderAreaSheet(sheet, p, areaOptions());
   sheetPanel.open("half");
@@ -1208,6 +1226,7 @@ function showAccount(state: "peek" | "half" | "full" = "half"): void {
   if (shownArea) selectArea(null);
   areaLegend(null);
   shownGap = null;
+  stopProbe();
   shown = null;
   if (panel.opened) panel.setOpened(false);
   writeParams({ cam: null, insee: null });
@@ -1238,7 +1257,10 @@ async function openAreaByCode(code: string, how: string): Promise<void> {
     if (!boundsOf(index, code)) return;
     const first = Object.keys(index).find((k) => k !== code && parentCommune(k) === code);
     const depCode = first ? index[first][1] : "";
-    const dep = await import("./placedata").then((m) => m.loadDep(depCode));
+    const dep = await import("./placedata").then(
+      (m) => m.loadDep(depCode),
+      () => null,
+    );
     const c = dep?.communes[code];
     if (!c) return;
     openArea(
@@ -1273,7 +1295,7 @@ async function openAreaByCode(code: string, how: string): Promise<void> {
   map.on("idle", onIdle);
 }
 const wantedArea = readParam("insee");
-if (wantedArea) void openAreaByCode(wantedArea, "link");
+if (wantedArea) void openAreaByCode(wantedArea, "link").catch(() => {});
 /** « Voir ces rues sur la carte » (board 12): the commune framed at a zoom where its streets are
  * drawn (STREET_FADE: the streets within reach in colour, the others plain), its sheet kept; on a
  * phone the sheet lowered to its peek so that the streets show. */
