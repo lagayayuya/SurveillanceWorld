@@ -5,12 +5,12 @@
 // name, a decree not read entirely, a reviewed date) are the build's flags, read here, never
 // recomputed. Every name that has its fiche is a typed link (liens.ts).
 
-import { benefLabel, commune, communeHref, type Donnees, isArr, sortKey } from "../commun.ts";
+import { benefLabel, commune, communeHref, type Donnees, isArr } from "../commun.ts";
 import { corrections, nomsDe } from "../corrige.ts";
 import type { Rich } from "../dc.ts";
 import type { Evenement } from "../donnees.ts";
 import { EI } from "../donnees.ts";
-import { addMonths, count, docDate, fr, money, shortDate } from "../format.ts";
+import { addMonths, count, fr, money, shortDate } from "../format.ts";
 import { t } from "../i18n.ts";
 import { lien, lienDocument } from "../liens.ts";
 import type { Miette, VueModule } from "../modale.ts";
@@ -21,7 +21,7 @@ import { typeDocument } from "../types.ts";
 import { type BaseState, large, type Partage, partageDe, Vue } from "../vue.ts";
 import "./commune.css";
 import "./autorisations.css";
-import { sansFormule } from "../listes.ts";
+import { cleDate, dateDite, sansFormule } from "../listes.ts";
 import { documentHref } from "../routes.ts";
 import {
   filCommune,
@@ -275,7 +275,8 @@ class Documents extends Vue<Props, State> {
     const key =
       S.sort === "fig"
         ? (r: Row) => (r.amt != null ? 1e12 + r.amt : r.cam != null ? r.cam : -1)
-        : (r: Row) => sortKey(r.e);
+        : // a drone act by its publication (Ju's rule), as the lists and the search API order it
+          (r: Row) => cleDate(r.e);
     list.sort((a, b) => {
       const va = key(a);
       const vb = key(b);
@@ -285,7 +286,8 @@ class Documents extends Vue<Props, State> {
       const e = r.e;
       const reasons = nonLu(e);
       return {
-        date: docDate(e.date, e.date_annee),
+        // the date says which it is (Ju 10/11): « publié le », « signé le », « arrêté du »…
+        date: dateDite(e, true),
         flag: !!e.date_lue && e.date_lue !== e.date,
         type: typeLabel(e),
         objet: lienDocument(L, e, r.objet, true),
@@ -386,7 +388,7 @@ class Documents extends Vue<Props, State> {
     const isSub = e.t.startsWith("subvention");
     const a = d.affaire(e.affaire);
     const rows: [string, string][] = [
-      [t("documents.p_date"), docDate(e.date, e.date_annee)],
+      [t("documents.p_date"), dateDite(e)],
       [t("documents.p_type"), typeLabel(e)],
       [isA ? t("documents.p_beneficiaire") : t("documents.p_acheteur"), r.qui],
     ];
@@ -505,7 +507,7 @@ class Documents extends Vue<Props, State> {
       };
     }
     return {
-      kicker: `${typeLabel(e)} · ${docDate(e.date, e.date_annee)}`,
+      kicker: `${typeLabel(e)} · ${dateDite(e, true)}`,
       title: r.objet,
       rows: rows.map(([k, v]) => ({ k, v })),
       corr: corrections(e, nomsDe(d)),

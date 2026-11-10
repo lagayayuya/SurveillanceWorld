@@ -196,6 +196,14 @@
 .rg .va.home .nw {
   white-space: nowrap;
 }
+/* the word that says which date it is, under the day (Ju 10/11) */
+.rg .va.home .nw .dw {
+  display: block;
+  font:
+    400 12px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
 /* a latest document's place on one line (« Bouches-du-Rhône », never cut at its hyphen) and its
    reference, as a number, never cut (« BOAMP 26-107520 »; recette 18): the objet takes the rest */
 .rg .va.home .wk .docs .lieu a,

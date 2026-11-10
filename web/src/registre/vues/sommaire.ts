@@ -33,6 +33,7 @@ import {
   lienTrouve,
   nomDep,
   ordonner,
+  quelleDate,
   redirection,
 } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
@@ -577,6 +578,8 @@ class Sommaire extends Vue<Props, State> {
         href: docHref(LR, e),
         ouvrir: this.ouvrirLigne,
         date: jourMois(jourDoc(e, S.onglet) ?? I.maj),
+        // which date it is, under it (Ju 10/11): « publié », « signé », « vol »…
+        dw: jourDoc(e, S.onglet) ? t(`accueil.date_mot.${quelleDate(e)}`) : "",
         dk: t(`accueil.dk.${dk(e.t)}`),
         lieu: [lieu] as RichItem[],
         ref,

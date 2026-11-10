@@ -14,7 +14,6 @@ import {
   benef,
   buyerOf,
   DISPS,
-  date,
   depNom,
   entName,
   type Index,
@@ -25,7 +24,7 @@ import {
 } from "./corpus.ts";
 import type { Rich, RichItem } from "./dc.ts";
 import type { Acheteur, Couverture, Evenement } from "./donnees.ts";
-import { count, fr, money } from "./format.ts";
+import { count, fr, money, shortDate } from "./format.ts";
 import { has, t } from "./i18n.ts";
 import {
   departementDans,
@@ -682,6 +681,49 @@ function entreprises(L: Lexique, d: Ligne): Rich {
   return out;
 }
 
+// --- a document's date, and which one it is (Ju 10/11) --------------------------------------------
+
+/** A drone act's publication day (`publie`, its recueil's), the day the lists sort it by
+ * (regles.sort_key); null when the build did not read it. */
+export const publie = (e: Evenement): string | null =>
+  e.t === "arrete_drone" ? ((e as { publie?: string | null }).publie ?? null) : null;
+
+/** The day a document is ordered by: a drone act's publication, any other document's date (a
+ * subsidy dated by its year at its year's start), as the search API orders them. */
+export const cleDate = (e: Evenement): string =>
+  publie(e) ?? (e.date_annee ? `${(e.date ?? "").slice(0, 4)}-00-00` : (e.date ?? ""));
+
+/** A document's date said with what it is: a contract « signé le » (DECP's notification), a
+ * notice « publié le » (BOAMP's publication), a camera decree « arrêté du » (its day, else its
+ * recueil's), a region's subsidy « votée le », one dated by its year « en 2024 »; a drone act
+ * « publié le 8 nov. 2026 · vol le 9 nov. 2026 » (its recueil, its first flight day), its flight
+ * left out when `court`. */
+export function dateDite(e: Evenement, court = false): string {
+  const P = publie(e);
+  if (e.t === "arrete_drone") {
+    const vol = e.date ? t("liste.date.vol", { date: shortDate(e.date) }) : "";
+    if (!P) return vol;
+    const pub = t("liste.date.publie", { date: shortDate(P) });
+    return court || !vol ? pub : `${pub} · ${vol}`;
+  }
+  if (!e.date) return "";
+  if (e.date_annee) return t("liste.date.annee", { an: e.date.slice(0, 4) });
+  return t(`liste.date.${quelleDate(e)}`, { date: shortDate(e.date) });
+}
+
+/** Which date a document's is (the key of « publié le », « signé le »…): a drone act's the
+ * publication when read, else its flight. */
+export function quelleDate(
+  e: Evenement,
+): "publie" | "vol" | "signe" | "arrete" | "votee" | "annee" | "du" {
+  if (e.t === "arrete_drone") return publie(e) ? "publie" : "vol";
+  if (e.date_annee) return "annee";
+  if (e.t === "attribution" || e.t === "modification") return "signe";
+  if (/^(avis|resultat|rectificatif)$/.test(e.t)) return "publie";
+  if (e.t === "arrete") return "arrete";
+  return e.t === "subvention_region" ? "votee" : "du";
+}
+
 /** A document as a row of its list (the search API's page: its names in `L`). */
 export function rangDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evenement): Rang {
   const d = ligne(L, e);
@@ -719,7 +761,7 @@ export function rangDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evene
   // a decree from another département's or a zone's préfecture says where it comes from (v2.3)
   const prov = typeof e.provenance === "string" && e.provenance !== "collecte" ? e.provenance : "";
   const sous = [
-    date(e) + (e.date_lue ? "*" : ""),
+    dateDite(e) + (e.date_lue ? "*" : ""),
     prov && has(`registre.sommaire.par_source.provenance.${prov}`)
       ? t("liste.provenance", { p: t(`sommaire.par_source.provenance.${prov}`) })
       : "",
@@ -1349,7 +1391,7 @@ function trouveDocument(L: Lexique, C: Pick<Corpus, "couverture">, e: Evenement)
     type: d.k as TypeCle,
     id: d.id,
     nom: d.title,
-    detail: [date(e), d.com || nomDep(C, e.dep ?? "")].filter(Boolean).join(" · "),
+    detail: [dateDite(e, true), d.com || nomDep(C, e.dep ?? "")].filter(Boolean).join(" · "),
     href: d.href,
   };
 }
