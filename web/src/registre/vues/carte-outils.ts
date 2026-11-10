@@ -825,10 +825,20 @@ export function appareils(zs: ZoneLue[], acte: number | null | undefined): numbe
 /** « 11 nov. 2025, 7 h 00 → 11 h 00 », the end's date too when it is another day; the date
  * alone when the act states no hours. */
 /** A slot as the panel titles it (Ju, 10/11: a date says which it is): « Vol le 4 nov. 2026, 07 h 30
- * → 15 h 30 » within a day, « Vol du 23 oct. 2026, 19 h 00 au 25 oct. 2026, 07 h 00 » over several. */
+ * → 15 h 30 » within a day, « Vol du 23 oct. 2026, 19 h 00 au 25 oct. 2026, 07 h 00 » over several;
+ * a slot without hours by its days alone (« Vol du 5 déc. 2025 au 8 déc. 2025 », « Vol le 19 nov.
+ * 2025, horaires non précisés »), its ends taken to the nearest midnight: the build stores some of
+ * them from Paris's midnight (22 h or 23 h UTC, 10/11), the others from 00 h. */
 export function plageVol(c: Creneau): string {
   const jour = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-  if (c.heures == null || jour(c.t0) === jour(c.t1 - 1)) return volLe(plage(c));
+  if (c.heures == null) {
+    const minuit = (ms: number) => Math.round(ms / DAY) * DAY;
+    const a = minuit(c.t0);
+    const b = Math.max(a + DAY, minuit(c.t1));
+    if (b - a <= DAY) return volLe(t("carte.plage_sans_heures", { date: dateTxt(a) }));
+    return t("carte_a.vol_du_au", { de: dateTxt(a), a: dateTxt(b - DAY) });
+  }
+  if (jour(c.t0) === jour(c.t1 - 1)) return volLe(plage(c));
   return t("carte_a.vol_du_au", { de: dateTxt(c.t0, true), a: dateTxt(c.t1, true) });
 }
 export function plage(c: Creneau): string {

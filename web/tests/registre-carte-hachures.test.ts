@@ -13,7 +13,14 @@ import {
   HACHURE_PLEINE,
   TEINTES,
 } from "../src/registre/drones.ts";
-import { type NonDeduit, periodeHachuree } from "../src/registre/vues/carte-outils.ts";
+import { readFileSync } from "node:fs";
+import { setMessages } from "../src/registre/i18n.ts";
+import {
+  type Creneau,
+  type NonDeduit,
+  periodeHachuree,
+  plageVol,
+} from "../src/registre/vues/carte-outils.ts";
 
 const DAY = 86_400_000;
 const d = (s: string) => Date.parse(`${s}T00:00:00Z`);
@@ -153,4 +160,26 @@ test("the period hatched light, the day chosen or hovered full, an empty hovered
   const formes = { f1: { geometry: {} } };
   const lieu = acte("d", "2026-09-01", { lieux: [{ texte: "parc", genre: "lieu", forme: "f1" }] });
   assert.equal(periodeHachuree([], [lieu], null, d("2026-09-01"), null, "93055", formes).plein, true);
+});
+
+test("a slot's title says it is a flight, over one day or several, with hours or without (Ju, 10/11)", () => {
+  const catalogue: Record<string, string> = JSON.parse(
+    readFileSync(new URL("../src/locales/fr.json", import.meta.url), "utf8"),
+  );
+  setMessages(Object.fromEntries(Object.entries(catalogue).filter(([k]) => k.startsWith("registre."))));
+  const N = "\u00a0";
+  const ms = (s: string) => Date.parse(`${s}Z`);
+  const c = (t0: string, t1: string, heures: number | null): Creneau =>
+    ({ t0: ms(t0), t1: ms(t1), heures, kind: "drone", actes: ["x"], sites: [], statut: "" }) as unknown as Creneau;
+  // hours within a day
+  assert.match(plageVol(c("2026-11-04T07:30", "2026-11-04T15:30", 8)), /^Vol le 4\u00a0nov\.\u00a02026/);
+  // hours over two days: from … to …
+  assert.match(plageVol(c("2026-10-23T19:00", "2026-10-25T07:00", 36)), /^Vol du 23\u00a0oct\.\u00a02026.* au 25\u00a0oct\.\u00a02026/);
+  // without hours over four days, stored from Paris's midnight (Rhône, 10/11): its four days, no hour
+  assert.equal(plageVol(c("2025-12-04T23:00", "2025-12-08T22:59", null)), `Vol du 5${N}déc.${N}2025 au 8${N}déc.${N}2025`);
+  // the same from 00 h (as the hours are stored): the same days
+  assert.equal(plageVol(c("2025-12-05T00:00", "2025-12-09T00:00", null)), `Vol du 5${N}déc.${N}2025 au 8${N}déc.${N}2025`);
+  // one whole day, either way: that day
+  assert.match(plageVol(c("2025-11-18T23:00", "2025-11-19T22:59", null)), /^Vol le 19\u00a0nov\.\u00a02025, horaires non précisés$/);
+  assert.match(plageVol(c("2025-11-19T00:00", "2025-11-20T00:00", null)), /^Vol le 19\u00a0nov\.\u00a02025, horaires non précisés$/);
 });
