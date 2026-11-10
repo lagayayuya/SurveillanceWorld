@@ -72,6 +72,15 @@
 .rg .va .ctl2 .sp {
   flex: 1;
 }
+/* a row of commands (Ju 10/11): its keys and its menus (« Département ▾ », « Année ▾ ») one
+   height, the keys' (the site's .chip asks 44 px, the phone's rows have their own panel) */
+.rg .va .ctl2 :is(.seg-ctl button, .chip.f) {
+  box-sizing: border-box;
+  height: 34px;
+  min-height: 0;
+  padding: 0 12px;
+  font-stretch: 82%;
+}
 .rg .va .mctl2,
 .rg .va .achips:not(.large) {
   display: none;
@@ -536,5 +545,40 @@
   .rg .va .rowa {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+/* the decrees' head (Ju 10/11): one sentence, « Voir les 100 départements ▾ », the list folded in
+   columns under it, in place of a wall of a hundred chips */
+.rg .va .lus .plie {
+  /* 44 px to touch, the sentence's line kept (an inline box's padding moves no line) */
+  margin: -12px 0;
+  padding: 12px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rg .va .lus .plie[aria-expanded="true"] span {
+  display: inline-block;
+  transform: rotate(180deg);
+}
+.rg .va .lus-deps {
+  list-style: none;
+  margin: 4px 0 12px;
+  padding: 0;
+  columns: 4 180px;
+  column-gap: 16px;
+}
+.rg .va .lus-deps li {
+  break-inside: avoid;
+  padding: 2px 0;
+}
+@media (max-width: 959px) {
+  .rg .va .lus-deps {
+    columns: 2;
   }
 }

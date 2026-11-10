@@ -526,3 +526,26 @@ test("an intercommunality's row leads to its département's page: its buyer's, e
   assert.equal(depEpci(undefined, ["69", "01"]), "69");
   assert.equal(depEpci(null, []), "");
 });
+
+test("a filter of one value is hidden, a column empty on every row too (Ju 10/11)", async () => {
+  const { filtreUtile, colonnesVides, celluleVide } = await import(
+    "../src/registre/vues/listes-outils.ts"
+  );
+  // « Vidéoprotection · 5 349 » beside « Tous · 5 349 »: nothing to choose
+  assert.equal(filtreUtile({ "": 5349, vp: 5349 }, ["vp", "dr"], false), false);
+  assert.equal(filtreUtile({ "": 9, vp: 5, dr: 4 }, ["vp", "dr"], false), true);
+  // chosen, it stays (to be taken off)
+  assert.equal(filtreUtile({ "": 5, vp: 5 }, ["vp", "dr"], true), true);
+  // the lists' « — » in its shapes: a string, a link-less item, a span
+  assert.ok(celluleVide("—"));
+  assert.ok(celluleVide(["—"]));
+  assert.ok(celluleVide([{ span: "—", cls: "v" }]));
+  assert.ok(celluleVide(""));
+  assert.ok(!celluleVide([{ a: { href: "/registre/commune/69123", text: "Lyon" } }]));
+  const rows = [
+    [["Lyon"], [""], "—"],
+    [["Mions"], ["—"], "2 drones"],
+  ];
+  assert.deepEqual([...colonnesVides(rows)], [1]);
+  assert.deepEqual([...colonnesVides([])], []);
+});

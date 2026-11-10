@@ -26,7 +26,6 @@
           <div class="ctl2">
             <sc-if value="{{tailles}}"><span class="lk" id="lst-taille">{{t.liste.a.filtre.taille}}</span><div class="seg-ctl" role="group" aria-labelledby="lst-taille"><sc-for list="{{tailles}}" as="x"><button type="button" aria-pressed="{{x.on}}" onClick="{{x.pick}}">{{x.l}} · {{x.n}}</button></sc-for></div><span class="sp"></span></sc-if>
             <sc-if value="{{filtrerLk}}"><span class="lk">{{t.liste.a.filtrer}}</span></sc-if>
-            <sc-for list="{{segs}}" as="g"><div class="seg-ctl" role="group" aria-label="{{g.lbl}}"><sc-for list="{{g.keys}}" as="d"><button type="button" aria-pressed="{{d.on}}" onClick="{{d.pick}}">{{d.l}} · {{d.n}}</button></sc-for></div></sc-for>
             <sc-for list="{{menus}}" as="m">
               <div class="dancre {{m.f}}">
                 <button type="button" class="chip f" aria-haspopup="dialog" aria-expanded="{{m.ouvert}}" onClick="{{m.basculer}}">{{m.l}} ▾</button>
@@ -42,12 +41,16 @@
                 </sc-if>
               </div>
             </sc-for>
+            <sc-for list="{{segs}}" as="g"><div class="seg-ctl" role="group" aria-label="{{g.lbl}}"><sc-for list="{{g.keys}}" as="d"><button type="button" aria-pressed="{{d.on}}" onClick="{{d.pick}}">{{d.l}} · {{d.n}}</button></sc-for></div></sc-for>
             <sc-if value="{{drones}}"><button type="button" class="chip f" aria-pressed="{{drones.on}}" onClick="{{drones.basculer}}">{{t.liste.avec_drones}} · {{drones.n}}</button></sc-if>
           </div>
         </sc-if>
         <sc-if value="{{dchips}}"><div class="achips large" role="group" aria-label="{{t.liste.a.filtres_actifs}}"><sc-for list="{{dchips}}" as="c"><button type="button" class="chip f on" onClick="{{c.ote}}" aria-label="{{c.aide}}">{{c.l}} <span aria-hidden="true">✕</span></button></sc-for></div></sc-if>
         <sc-if value="{{argent}}"><p class="note">{{t.argent.enveloppe}}</p></sc-if>
-        <sc-if value="{{resumeArretes}}"><p class="note">{{{resumeArretes}}}</p></sc-if>
+        <sc-if value="{{lus}}"><div class="lus">
+          <p class="note">{{{lus.phrase}}}<sc-if value="{{lus.pli}}"> <button type="button" class="go plie" aria-expanded="{{lus.exp}}" onClick="{{lus.basculer}}">{{lus.voir}} <span aria-hidden="true">▾</span></button></sc-if></p>
+          <sc-if value="{{lus.ouvert}}"><ul class="lus-deps" aria-label="{{lus.liste}}"><sc-for list="{{lus.deps}}" as="d"><li>{{{d}}}</li></sc-for></ul><sc-if value="{{lus.hors}}"><p class="note">{{{lus.hors}}}</p></sc-if></sc-if>
+        </div></sc-if>
 
         <table class="docs lt" onKeyDown="{{clavierTable}}">
           <caption class="sr">{{caption}}</caption>
@@ -104,6 +107,21 @@
             </sc-if></div></sc-for>
         </div>
       </sc-if>
+      <sc-for list="{{feuille.autres}}" as="m">
+        <div class="fs-g"><span class="fs-k">{{m.titre}}</span>
+          <div class="dancre {{m.f}}"><button type="button" class="sel2" onClick="{{m.basculer}}" aria-expanded="{{m.ouvert}}">{{m.l}}<b>{{m.etat}} ▾</b></button>
+            <sc-if value="{{m.menu}}">
+                  <div class="dmenu" role="dialog" aria-label="{{m.l}}" onKeyDown="{{m.clavier}}">
+                    <sc-if value="{{m.cherche}}"><label class="dq"><span class="sr">{{m.chercher}}</span><input type="search" value="{{m.q}}" onInput="{{m.onQ}}" placeholder="{{m.chercher}}"></label></sc-if>
+                    <ul class="dliste" role="listbox" aria-multiselectable="true" aria-label="{{m.l}}">
+                      <sc-for list="{{m.tous}}" as="d"><li class="{{d.cls}}" role="option" aria-selected="{{d.on}}" tabindex="-1" data-v="{{d.v}}" onClick="{{d.pick}}"><span class="dbox" aria-hidden="true"></span><span class="dnom">{{d.nom}}</span><span class="dn">{{d.n}}</span></li></sc-for>
+                    </ul>
+                    <sc-if value="{{m.vide}}"><p class="note">{{t.liste.dep.aucun}}</p></sc-if>
+                    <div class="dpied"><button type="button" class="btn" onClick="{{m.effacer}}">{{t.liste.tout_effacer}}</button><button type="button" class="btn pri" onClick="{{m.fermer}}">{{m.voir}}</button></div>
+                  </div>
+            </sc-if></div>
+        </div>
+      </sc-for>
       <sc-if value="{{drones}}"><button type="button" class="chip f" aria-pressed="{{drones.on}}" onClick="{{drones.basculer}}">{{t.liste.avec_drones}} · {{drones.n}}</button></sc-if>
       <button type="button" class="btn pri wide2" onClick="{{feuille.fermer}}">{{feuille.voir}}</button>
     </div>

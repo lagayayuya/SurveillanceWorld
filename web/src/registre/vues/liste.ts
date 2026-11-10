@@ -19,7 +19,7 @@ import type { Handler, Rich, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
-import { lien } from "../liens.ts";
+import { departementHref, lien, lienDepartement, phrase } from "../liens.ts";
 import {
   adresse,
   appliquer,
@@ -69,9 +69,11 @@ import { epciHref } from "./departement-outils.ts";
 import template from "./liste.html?raw";
 import {
   basculer,
+  colonnesVides,
   comparable,
   comparerHref,
   depEpci,
+  filtreUtile,
   MAX_COMPARER,
   vraiDepartement,
 } from "./listes-outils.ts";
@@ -224,6 +226,8 @@ function epciEnLigne(C: Corpus, x: Rang): Rang {
 export class ListeVue extends Vue<Props, State> {
   private def: Def = DEFS[this.props.liste];
 
+  /** a list of documents' last counts (the API's facets) */
+  private comptes: Resultat["comptes"] = {};
   /** the latest page asked: an older answer is dropped */
   private n = 0;
 
@@ -472,10 +476,11 @@ export class ListeVue extends Vue<Props, State> {
     const chosen = choisis(S.e.f[f]);
     const q = plain(S.menuQ.trim());
     const open = S.menu === f;
-    const dyn = f === "dep" ? valeurs("dep") : Object.keys(c).filter((v) => v !== "");
+    // the départements and the years in their own order (« Avant 2018 » last), the others the data's
+    const dyn = f === "dep" || f === "annee" ? valeurs(f) : Object.keys(c).filter((v) => v !== "");
     const have = dyn.filter((v) => c[v] || chosen.includes(v));
     const ordre =
-      f === "dep"
+      f === "dep" || f === "annee"
         ? have
         : f === "depuis"
           ? have.sort((a, b) => b.localeCompare(a))
@@ -503,6 +508,9 @@ export class ListeVue extends Vue<Props, State> {
     const l = t(`liste.a.filtre.${f}`);
     return {
       f,
+      titre: l,
+      // a menu of one value chooses nothing: hidden (Ju 10/11)
+      utile: filtreUtile(c, dyn, chosen.length > 0),
       l:
         chosen.length === 1
           ? `${l} · ${nomValeur(f, chosen[0], this.props.C, this.props)}`
@@ -517,7 +525,7 @@ export class ListeVue extends Vue<Props, State> {
       ouvert: open ? "true" : "false",
       menu: open,
       basculer: this.ouvrirMenu(f),
-      cherche: f !== "depuis",
+      cherche: f !== "depuis" && f !== "annee",
       chercher: t("liste.a.chercher"),
       q: S.menuQ,
       onQ: ((ev) => this.setState({ menuQ: ev.value })) as Handler,
@@ -583,6 +591,60 @@ export class ListeVue extends Vue<Props, State> {
     }
   };
 
+  /** The decrees' head (Ju 10/11: the wall of the hundred départements' chips): « Contrats, avis et
+   * subventions : toute la France. Arrêtés lus dans 100 départements. » and a fold that lists
+   * them, with the decrees read outside them. The count is the build's (`deps_lus`, the home's). */
+  private arretesLus() {
+    const cv = this.props.couverture;
+    const r = cv.resume ?? [];
+    const zone = r.find((x) => x.familles.includes("arretes"))?.zone;
+    // before the build wrote its summary: the pilot's sentence, as before
+    if (!Array.isArray(zone)) return { pli: false, phrase: couvertureLiee(cv) };
+    const deps = zone.filter(vraiDepartement);
+    const n = this.props.I.totaux.deps_lus ?? deps.length;
+    const france = r.find((x) => x.zone === "france");
+    const et = new Intl.ListFormat("fr", { type: "conjunction" });
+    const familles = france
+      ? et.format(france.familles.map((f) => t(`sommaire.par_source.${f}`)))
+      : "";
+    const ouvert = !!this.state.open.lus;
+    const hors = r.find((x) => x.arretes_hors_collecte?.n)?.arretes_hors_collecte;
+    const nom = (d: string) => nomDep({ couverture: cv }, d);
+    return {
+      pli: true,
+      phrase: [
+        familles
+          ? `${t("sommaire.par_source.ligne", {
+              familles: familles.charAt(0).toUpperCase() + familles.slice(1),
+              zone: t("sommaire.par_source.france"),
+            })} `
+          : "",
+        t("liste.a.arretes_lus", { n }),
+      ].join(""),
+      ouvert,
+      exp: ouvert ? "true" : "false",
+      voir: t(ouvert ? "liste.a.arretes_lus_masquer" : "liste.a.arretes_lus_voir", { n }),
+      basculer: (() => this.setState({ open: { ...this.state.open, lus: !ouvert } })) as Handler,
+      deps: deps.map((d) => [lien("departement", departementHref(d), nom(d), true)] as RichItem[]),
+      liste: t("liste.a.arretes_lus_liste"),
+      // the decrees read outside them, each département a link (sources.ts's sentence, folded)
+      hors: hors
+        ? phrase("sommaire.par_source.hors", {
+            n: hors.n,
+            departements: {
+              span: Object.keys(hors.departements)
+                .filter(vraiDepartement)
+                .flatMap((d, j) => [...(j ? [", "] : []), lienDepartement(d, nom(d))]),
+              cls: "",
+            },
+            provenances: new Intl.ListFormat("fr", { type: "disjunction" }).format(
+              Object.keys(hors.provenances).map((p) => t(`sommaire.par_source.provenance.${p}`)),
+            ),
+          })
+        : null,
+    };
+  }
+
   renderVals() {
     const { liste, C, I } = this.props;
     const def = this.def;
@@ -592,8 +654,11 @@ export class ListeVue extends Vue<Props, State> {
     // a list of names: its rows here; a list of documents: the pages the API gave
     const docs = !!def.kind;
     const all = C ? lignes(C, liste) : [];
+    // a list of documents keeps its last counts while a page is asked: its filters do not vanish
+    // under the click that asked it
+    if (S.docs) this.comptes = S.docs.comptes;
     const { list, comptes: cpt } = docs
-      ? { list: S.docs?.rows ?? [], comptes: S.docs?.comptes ?? {} }
+      ? { list: S.docs?.rows ?? [], comptes: this.comptes }
       : appliquer(def, all, e);
     const total = docs ? (S.docs?.total ?? 0) : list.length;
     const n = comptesIndex(I) as Comptes;
@@ -641,6 +706,8 @@ export class ListeVue extends Vue<Props, State> {
     // the other filters of one value (a département's state, a year, a device): keys
     const segs = def.filtres
       .filter((f) => !MENUS.includes(f) && f !== "drones" && f !== "taille" && f !== "cat")
+      // a filter of one value (« Vidéoprotection · 5 349 » = « Tous · 5 349 ») is hidden (Ju 10/11)
+      .filter((f) => filtreUtile(cpt[f] ?? {}, valeurs(f), !!e.f[f]))
       .map((f) => {
         const c = cpt[f] ?? {};
         const cur = e.f[f] ?? "";
@@ -667,9 +734,10 @@ export class ListeVue extends Vue<Props, State> {
           ],
         };
       });
-    const menus = def.filtres
+    const tousMenus = def.filtres
       .filter((f) => MENUS.includes(f))
       .map((f) => this.menu(f, cpt[f] ?? {}, total, k));
+    const menus = tousMenus.filter((m) => m.utile);
     // the active filters, as chips (on a phone all of them; on a wide screen the menus' ones)
     const chipsMenus = menus.flatMap((m) => m.chips);
     const achips = [
@@ -766,6 +834,13 @@ export class ListeVue extends Vue<Props, State> {
             : null,
       };
     });
+    // a column empty on every row shown (a list of documents: « Bénéficiaire », « Caméras ou
+    // appareils » all « — ») is hidden, its head with it (Ju 10/11)
+    const vides = docs ? colonnesVides(rows.map((r) => r.cells.map((c) => c.v))) : new Set();
+    const colsVues = cols.filter((_, i) => !vides.has(i));
+    const rowsVues = vides.size
+      ? rows.map((r) => ({ ...r, cells: r.cells.filter((_, i) => !vides.has(i)) }))
+      : rows;
     const filtre = !!e.q.trim() || def.filtres.some((f) => e.f[f]);
     const shown = Math.min(S.lim, list.length);
     const reste = total - shown;
@@ -841,14 +916,19 @@ export class ListeVue extends Vue<Props, State> {
             ]
           : null,
         segs,
-        menus: menus.length ? menus : null,
+        // the place under « Où », each other menu (« Année », « Métier », « Depuis ») its own
+        menus: (() => {
+          const ou = menus.filter((m) => m.f === "dep" || m.f === "epci");
+          return ou.length ? ou : null;
+        })(),
+        autres: menus.filter((m) => m.f !== "dep" && m.f !== "epci"),
         voir: t("liste.a.voir_n", { n: fr(total), quoi }),
       },
       argent: def.argent,
       caption: t("liste.caption", { liste: nomListe(liste, e.f.cat) }),
       nomCol: def.nom,
-      cols,
-      rows,
+      cols: colsVues,
+      rows: rowsVues,
       empty: list.length === 0 && !S.charge && !S.echec && (!docs || !!S.docs),
       etat: S.echec ? t("liste.echec") : S.charge && !list.length ? t("liste.chargement") : "",
       reset: (() =>
@@ -869,7 +949,7 @@ export class ListeVue extends Vue<Props, State> {
             )
           : enregistrer(`registre-${liste}.csv`, csv(def, list))) as Handler,
       arretes: liste === "arretes",
-      resumeArretes: liste === "arretes" ? couvertureLiee(this.props.couverture) : null,
+      lus: liste === "arretes" ? this.arretesLus() : null,
       clavierTable: this.clavierTable,
       copier: this.copierLien,
       copierL: t(S.copie ? "liste.lien_copie" : "liste.copier_lien"),

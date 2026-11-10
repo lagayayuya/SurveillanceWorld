@@ -223,8 +223,9 @@ export const FILTRES: Filtre[] = [
   "drones",
 ];
 /** The filters whose values are several at once (« 69,13 ») and chosen in a menu (theme A's
- * « Département ▾ », « Intercommunalité ▾ », « Métier ▾ », « Depuis ▾ »). */
-export const MENUS: Filtre[] = ["dep", "epci", "naf", "depuis"];
+ * « Département ▾ », « Intercommunalité ▾ », « Métier ▾ », « Depuis ▾ »; « Année ▾ », Ju 10/11:
+ * the years were a row of keys). */
+export const MENUS: Filtre[] = ["dep", "epci", "naf", "depuis", "annee"];
 
 /** A row: its name (a typed link, the pictogram alone), the line under it, its other cells, what
  * its filters, its sort keys and its CSV read. */

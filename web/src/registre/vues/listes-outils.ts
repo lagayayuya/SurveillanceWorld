@@ -1,5 +1,7 @@
 // The lists' rules that read data (boards Liste-Communes-A, Liste-Entreprises-A), pure, for the
-// tests: which départements are real, the « Comparer » choice.
+// tests: which départements are real, the « Comparer » choice, which filters and columns show.
+
+import type { Rich, RichItem } from "../dc.ts";
 
 /** A real département's code: 01–95 (the Corse's 2A and 2B, never 20), the overseas 971–978 and
  * 984–989. The build's listes.json and couverture.json also hold keys that are not (« 1 »…« 9 »
@@ -36,4 +38,37 @@ export function depEpci(acheteurDep: string | null | undefined, depsCommunes: st
   let best = "";
   for (const [d, k] of n) if (k > (n.get(best) ?? 0)) best = d;
   return best;
+}
+
+/** A filter worth showing (Ju 10/11): more than one value with rows, or one chosen. A filter of one
+ * value (« Vidéoprotection · 5 349 » beside « Tous · 5 349 ») chooses nothing: hidden. */
+export const filtreUtile = (
+  c: Record<string, number>,
+  valeurs: string[],
+  actif: boolean,
+): boolean => actif || valeurs.filter((v) => (c[v] ?? 0) > 0).length > 1;
+
+/** A cell's words, its links' and spans' included. */
+function mots(c: Rich | RichItem): string {
+  if (typeof c === "string") return c;
+  if (Array.isArray(c)) return c.map(mots).join("");
+  if ("a" in c) return mots(c.a.text);
+  if ("span" in c) return mots(c.span);
+  if ("strong" in c) return mots(c.strong);
+  if ("em" in c) return mots(c.em);
+  return "";
+}
+/** A cell that says nothing: empty, or the lists' « — ». */
+export const celluleVide = (c: Rich | undefined): boolean => {
+  const m = c == null ? "" : mots(c).trim();
+  return m === "" || m === "—";
+};
+/** The columns empty on every row shown (Ju 10/11: « Bénéficiaire », « Caméras ou appareils : — »
+ * on a whole page), by their index among the cells; none when there is no row. */
+export function colonnesVides(rows: (Rich | undefined)[][]): Set<number> {
+  const out = new Set<number>();
+  if (!rows.length) return out;
+  const n = Math.max(...rows.map((r) => r.length));
+  for (let i = 0; i < n; i++) if (rows.every((r) => celluleVide(r[i]))) out.add(i);
+  return out;
 }
