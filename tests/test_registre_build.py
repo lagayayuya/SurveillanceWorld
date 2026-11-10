@@ -400,3 +400,10 @@ def test_the_lists_serve_official_departement_codes_only(built):
 
     deps = read(built, "listes.json")["lignes"]["departements"]
     assert deps and all(re.fullmatch(r"0[1-9]|[1-8]\d|9[0-5]|2[AB]|97\d|98\d", d) for d in deps)
+
+
+def test_the_lists_serve_the_map_s_public_cameras_beside_all_of_them(built):
+    rows = read(built, "listes.json")["lignes"]
+    for r in [*rows["communes"].values(), *rows["departements"].values()]:
+        if r.get("carte_pub") is not None and r.get("carte") is not None:
+            assert r["carte_pub"] <= r["carte"]

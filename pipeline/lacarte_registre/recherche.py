@@ -197,6 +197,8 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
         c["jv"] = len(vols.get(k, ()))
         c["couverture_actes"] = st["couverture_actes"]
         c["cam_aut"] = st["cam_aut"]
+        # the map's cameras the map classes public (its operator: OpenStreetMap, ODbL)
+        c["carte_pub"] = (reg.pilote.get("CARTE_PUB", {}) or {}).get(k)
         c["jv_helico"] = len(vols_h.get(k, ()))
     # a département's map counts every commune of it, a document or not; its acts as its
     # page counts them (comptes.departement)
@@ -204,9 +206,14 @@ def listes(ctx: fermetures.Context) -> dict[str, Any]:
     for k, n in (reg.pilote.get("CARTE_N_ALL", {}) or {}).items():
         if n and (d := (reg.communes.get(k) or {}).get("dep")):
             carte_dep[d] += n
+    pub_dep: Counter[str] = Counter()
+    for k, n in (reg.pilote.get("CARTE_PUB", {}) or {}).items():
+        if n and (d := (reg.communes.get(k) or {}).get("dep")):
+            pub_dep[d] += n
     for d, o in deps.items():
         dst = comptes.departement(reg, d)
-        o.update(carte=carte_dep.get(d, 0), cam=dst["cam"], dr=dst["dr"], helico=dst["helico"],
+        o.update(carte=carte_dep.get(d, 0), carte_pub=pub_dep.get(d, 0), cam=dst["cam"],
+                 dr=dst["dr"], helico=dst["helico"],
                  dr_commune=dst["dr_commune"], dr_autorite=dst["dr_autorite"],
                  cam_aut=dst["cam_aut"])  # fmt: skip
         # what a commune of it without a row says (rule:registre_couverture@1:actes_commune)
