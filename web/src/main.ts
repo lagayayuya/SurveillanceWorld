@@ -17,6 +17,7 @@ import type { Point } from "geojson";
 import { Protocol } from "pmtiles";
 import { isVisitor, loadSession, onSession, type Session } from "./account/session";
 import { type AreaProps, isDepartement, renderAreaSheet } from "./area";
+import { parentCommune } from "./arrondissements";
 import { BottomSheet } from "./bottomsheet";
 import { lowestZoom, recentre } from "./bounds";
 import { DEFAULT_CONFIG, loadConfig } from "./config";
@@ -56,6 +57,7 @@ import {
   proposalHover,
   proposalLinkHalo,
   proposalTapeLayers,
+  STREET_FADE,
   sources,
   stacked,
   surveillanceLayers,
@@ -760,6 +762,8 @@ const closeSheet = (reason = "close") => {
   selectArea(null);
   writeParams({ cam: null, insee: null });
   shownHistory = null;
+  shownGap = null;
+  areaLegend(null);
 };
 /** The open camera's history (history.ts, lot U): asked once per opening, kept while the
  * sheet is drawn again (a level, the mode), asked again at the next opening — so that a
@@ -768,6 +772,85 @@ let shownHistory: { id: string; slot: HTMLElement } | null = null;
 const historyOf = (id: string): HTMLElement => {
   if (shownHistory?.id !== id) shownHistory = { id, slot: historySlot(id) };
   return shownHistory.slot;
+};
+/** « + Ajouter une caméra » of the « manque » block (gap.ts): the map's own add (« ＋ Ajouter »,
+ * participate/index.ts), as a tap on it; none while the add is not offered (signed-out state
+ * unknown, contributions closed). From a commune's sheet, the map first goes to the street level
+ * in the middle of the commune, where the add starts. */
+const addFrom = (fromArea = false): (() => void) | undefined => {
+  const fab = document.getElementById("fab-add");
+  if (!fab || fab.hidden) return undefined;
+  return () => {
+    if (!fromArea) {
+      fab.click();
+      return;
+    }
+    // The middle of the part of the map the sheet leaves free, where the area is framed.
+    const pad = { top: 0, bottom: 0, left: 0, right: 0, ...freePadding() };
+    const box = map.getContainer().getBoundingClientRect();
+    const centre = map.unproject([
+      (pad.left + box.width - pad.right) / 2,
+      (pad.top + box.height - pad.bottom) / 2,
+    ]);
+    closeSheet("add from the sheet");
+    map.once("moveend", () => fab.click());
+    map.easeTo({ center: centre, zoom: DETAIL_MIN + 0.5, duration: 600 });
+  };
+};
+/** The map's legend of the open area (board 12, arealegend.ts), over the map; null removes it. */
+let legendShown: HTMLElement | null = null;
+const areaLegend = (p: AreaProps | null): void => {
+  legendShown?.remove();
+  legendShown = null;
+  const breaks = meta.area_classes;
+  if (!p || !breaks?.length) return;
+  const pub = panel.mode.publicOnly;
+  void import("./arealegend").then((m) => {
+    if (shownArea !== p) return;
+    legendShown?.remove();
+    legendShown = m.legendBox(
+      {
+        name: String(p.nm),
+        departement: isDepartement(p),
+        y: Number(p[pub ? "hi_pub" : "hi"] ?? 0),
+        n: Number(p[pub ? "n_pub" : "n"] ?? 0),
+      },
+      breaks,
+    );
+    document.body.append(legendShown);
+  });
+};
+/** The camera sheet's « Combien en manque-t-il ? » (board 12, cameragap.ts): a slot kept while
+ * the sheet is drawn again, filled with the block of the commune under the camera, read from the
+ * invisible communes layers (layers.ts communes-probe) once the map has drawn them there. */
+let shownGap: { id: string; slot: HTMLElement; add: boolean } | null = null;
+const PROBES = ["communes-probe", "communes-count"];
+const cameraGap = (id: string, lngLat: [number, number]): HTMLElement => {
+  // Made again when the add becomes possible (the session known after the sheet opened).
+  const add = addFrom() !== undefined;
+  if (shownGap?.id === id && shownGap.add === add) return shownGap.slot;
+  const slot = document.createElement("div");
+  slot.className = "gap-slot";
+  shownGap = { id, slot, add };
+  const fill = (): boolean => {
+    if (shownGap?.slot !== slot) return true;
+    const layers = PROBES.filter((l) => map.getLayer(l));
+    const point = map.project(lngLat);
+    const f = map.queryRenderedFeatures([point.x, point.y], { layers })[0];
+    if (!f) return false;
+    const onAdd = addFrom();
+    void import("./cameragap").then((m) =>
+      m.fillCameraGap(slot, f.properties as AreaProps, { onAdd }),
+    );
+    return true;
+  };
+  if (!fill()) {
+    const again = () => {
+      if (fill()) map.off("idle", again);
+    };
+    map.on("idle", again);
+  }
+  return slot;
 };
 /** Focus a camera feature (from a tap or a ?cam= link) and open its sheet at half height. */
 const openCamera = (f: MapGeoJSONFeature, how: string) => {
@@ -779,6 +862,7 @@ const openCamera = (f: MapGeoJSONFeature, how: string) => {
   setFocus({ id: Number(f.id), n: Number(p.n), lngLat, props });
   if (panel.opened) panel.setOpened(false);
   selectArea(null);
+  areaLegend(null);
   shown = f.properties as CameraProps;
   shownHistory = null; // read again at each opening
   renderSheet(sheet, shown, sheetOptions());
@@ -1049,6 +1133,12 @@ const areaOptions = () => ({
     return `${window.location.origin}/?insee=${encodeURIComponent(String(shownArea.c))}${est}`;
   },
   publicOnly: panel.mode.publicOnly,
+  // Board 12: the « manque » block's add, « Voir ces rues sur la carte », « Où sont-elles ? ».
+  onAdd: addFrom(true),
+  onStreets: () => {
+    if (shownArea) void showStreets(String(shownArea.c));
+  },
+  onCommune: (insee: string) => void openAreaByCode(insee, "list"),
 });
 // Code -> [name, département, [west, south, east, north]] (tiles/areas.json), fetched the
 // first time an area is opened: its tiles only hold the pieces in view.
@@ -1060,12 +1150,28 @@ const areaIndex = () => {
 };
 /** Frame an area in the part of the map the panels leave free (`padding`, by default the
  * open sheet's), at a zoom where its level is drawn. */
+/** An area's bounds: its own, or its arrondissements' together (Paris, Lyon, Marseille, which
+ * the tiles split). */
+function boundsOf(index: AreaIndex, code: string): [number, number, number, number] | null {
+  const own = index[code]?.[2];
+  if (own) return own;
+  const parts = Object.keys(index).filter((k) => k !== code && parentCommune(k) === code);
+  if (!parts.length) return null;
+  const b = parts.map((k) => index[k][2]);
+  return [
+    Math.min(...b.map((x) => x[0])),
+    Math.min(...b.map((x) => x[1])),
+    Math.max(...b.map((x) => x[2])),
+    Math.max(...b.map((x) => x[3])),
+  ];
+}
 async function fitArea(code: string, animate: boolean, padding?: PaddingOptions | number) {
-  const entry = (await areaIndex())[code];
-  if (!entry) return;
-  const dep = entry[1] === code;
+  const index = await areaIndex();
+  const bounds = boundsOf(index, code);
+  if (!bounds) return;
+  const dep = index[code]?.[1] === code;
   locate.release();
-  map.fitBounds(entry[2], {
+  map.fitBounds(bounds, {
     padding: padding ?? freePadding(),
     // Communes are drawn up to CITY_FADE (11.5 leaves them fully opaque); départements
     // below COMMUNES_MIN.
@@ -1080,6 +1186,7 @@ function openArea(p: AreaProps, how: string) {
   setFocus(null);
   shown = null;
   if (panel.opened) panel.setOpened(false);
+  shownGap = null;
   selectArea(p);
   renderAreaSheet(sheet, p, areaOptions());
   sheetPanel.open("half");
@@ -1087,6 +1194,7 @@ function openArea(p: AreaProps, how: string) {
   // Like a camera's field: the area in the map the sheet leaves free (a link frames it
   // itself, without animation).
   if (how !== "link") void fitArea(String(p.c), true);
+  areaLegend(p);
 }
 /** A sheet of the account (account/index.ts, profile/leaderboard.ts), rendered in #sheet,
  * shown in place of the camera's or the area's: their focus and outline let go, the
@@ -1098,13 +1206,18 @@ function showAccount(state: "peek" | "half" | "full" = "half"): void {
   // layers cannot be filtered yet).
   if (panel.focus) setFocus(null);
   if (shownArea) selectArea(null);
+  areaLegend(null);
+  shownGap = null;
   shown = null;
   if (panel.opened) panel.setOpened(false);
   writeParams({ cam: null, insee: null });
   sheetPanel.open(state);
 }
 panel.onWho = () => {
-  if (shownArea && sheetPanel.state) renderAreaSheet(sheet, shownArea, areaOptions());
+  if (shownArea && sheetPanel.state) {
+    renderAreaSheet(sheet, shownArea, areaOptions());
+    areaLegend(shownArea);
+  }
 };
 for (const id of [...AREA_LAYERS, FOCUS_MARKER_RING]) {
   map.on("mouseenter", id, () => {
@@ -1114,29 +1227,68 @@ for (const id of [...AREA_LAYERS, FOCUS_MARKER_RING]) {
     map.getCanvas().style.cursor = "";
   });
 }
-// ?insee=<code>: frame the area from the index (its tiles may not be loaded, e.g. at the
-// default street zoom), low enough for it to be drawn, then open its sheet.
+/** Open an area's sheet by its code (?insee=, « Où sont-elles ? »): framed from the index (its
+ * tiles may not be loaded, e.g. at the default street zoom), low enough for it to be drawn, then
+ * its sheet from its tile. Paris, Lyon and Marseille, which the tiles split into arrondissements,
+ * open a sheet of the commune drawn from the register alone (areapunk.ts, `parent`). */
+async function openAreaByCode(code: string, how: string): Promise<void> {
+  const index = await areaIndex();
+  const entry = index[code];
+  if (!entry) {
+    if (!boundsOf(index, code)) return;
+    const first = Object.keys(index).find((k) => k !== code && parentCommune(k) === code);
+    const depCode = first ? index[first][1] : "";
+    const dep = await import("./placedata").then((m) => m.loadDep(depCode));
+    const c = dep?.communes[code];
+    if (!c) return;
+    openArea(
+      {
+        c: code,
+        nm: c.nom,
+        d: depCode,
+        dn: dep.departement.nom,
+        n: dep.stats.communes[code]?.carte ?? 0,
+        parent: 1,
+      },
+      how,
+    );
+    if (how === "link") void fitArea(code, false);
+    return;
+  }
+  // First at the right zoom for its tiles to load, then in the part of the map the sheet leaves
+  // free once it is open.
+  await fitArea(code, false, 40);
+  const layer = entry[1] === code ? "departements" : "communes";
+  let tries = 0;
+  const onIdle = () => {
+    const f = map
+      .querySourceFeatures("admin", { sourceLayer: layer })
+      .find((x) => x.properties.c === code);
+    if (f) {
+      openArea(f.properties as AreaProps, "link");
+      void fitArea(code, false);
+    }
+    if (f || ++tries >= 8) map.off("idle", onIdle);
+  };
+  map.on("idle", onIdle);
+}
 const wantedArea = readParam("insee");
-if (wantedArea) {
-  void areaIndex().then(async (index) => {
-    const entry = index[wantedArea];
-    if (!entry) return;
-    // First at the right zoom for its tiles to load, then in the part of the map the sheet
-    // leaves free once it is open.
-    await fitArea(wantedArea, false, 40);
-    const layer = entry[1] === wantedArea ? "departements" : "communes";
-    let tries = 0;
-    const onIdle = () => {
-      const f = map
-        .querySourceFeatures("admin", { sourceLayer: layer })
-        .find((x) => x.properties.c === wantedArea);
-      if (f) {
-        openArea(f.properties as AreaProps, "link");
-        void fitArea(wantedArea, false);
-      }
-      if (f || ++tries >= 8) map.off("idle", onIdle);
-    };
-    map.on("idle", onIdle);
+if (wantedArea) void openAreaByCode(wantedArea, "link");
+/** « Voir ces rues sur la carte » (board 12): the commune framed at a zoom where its streets are
+ * drawn (STREET_FADE: the streets within reach in colour, the others plain), its sheet kept; on a
+ * phone the sheet lowered to its peek so that the streets show. */
+async function showStreets(code: string): Promise<void> {
+  const bounds = boundsOf(await areaIndex(), code);
+  if (!bounds) return;
+  const cam = map.cameraForBounds(bounds, { padding: freePadding() });
+  if (!cam) return;
+  debugEvent(`streets of ${code}`);
+  locate.release();
+  if (isPhone()) sheetPanel.open("peek");
+  map.easeTo({
+    center: cam.center,
+    zoom: Math.max(cam.zoom ?? 0, STREET_FADE[1] + 0.25),
+    duration: 800,
   });
 }
 // Back from OpenStreetMap (?osm=, OSM lot 1): its sheet at once, « Chargement de votre
@@ -1203,6 +1355,7 @@ const sheetOptions = () => {
     // The facts the sheet marks « ? » (chips.ts): « Modifier »'s assumed lines.
     answerable: target ? (participation?.answerable(target) ?? []) : [],
     history: shown ? historyOf(String(shown.id)) : undefined,
+    gap: shown && panel.focus ? cameraGap(String(shown.id), panel.focus.lngLat) : undefined,
   };
 };
 // Signed in or out (account/session.ts; at start, the answer may come after a ?cam= link

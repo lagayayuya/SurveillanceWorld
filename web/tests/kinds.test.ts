@@ -35,7 +35,6 @@ test("icons.ts KINDS is the build's list, in its order", () => {
 test("every other list of kinds holds the build's kinds", () => {
   const sorted = (l: readonly string[]) => [...l].sort();
   const lists: [string, readonly string[]][] = [
-    ["areapunk.ts KINDS", listAfter(read("../src/areapunk.ts"), /^const KINDS =/m)],
     ["machine.ts order", listAfter(read("../src/machine.ts"), "const order: Kind[] =")],
     ["profile/collection.ts KINDS", COLLECTION],
   ];

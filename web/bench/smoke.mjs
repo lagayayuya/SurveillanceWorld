@@ -184,21 +184,16 @@ const otherPicto = (page) =>
     return [`#${dim.join("")}`, 12];
   });
 
-/** The punk area sheet's « Rues » ticket (its accessible name) and its colour line
- * (areapunk.ts shareFace, placeLine; DECISIONS 2026-10-09, « Punk sheets on a phone… »). */
-const AREA_TICKET =
-  /^(1 sur [\d\s]+|\d+ sur 10) rues à portée$|^\d+\s% des rues à portée$|^Aucune rue à portée$/;
-const AREA_PLACE =
-  /^Sa couleur : (la classe la moins filmée \(moins de|(une classe peu filmée|la classe du milieu|une classe très filmée) \(de [\d,]+ à|la classe la plus filmée \(plus de) [\d,]+\s% des rues à portée\)$|^Sur la carte : hachurée, aucune caméra recensée\.$/;
+/** The commune sheet's third figure, Y said as a maximum (board 12, « 1 sur 5 rues à portée, au
+ * plus »; areapunk.ts streetShare), and the map's legend line of the chosen commune
+ * (arealegend.ts chosenLine). */
+const AREA_FIGURE = /^(1 sur [\d\s]+|\d+ sur 10|\d+\s%|Aucune)$/i;
+const AREA_LEGEND =
+  /^.+ : (entre \d+ et \d+\s%|moins de \d+\s%|plus de \d+\s%|aucune caméra relevée)$/;
 /** The open area sheet holds in its width (DECISIONS 2026-10-09, « Punk sheets on a
- * phone… »): nothing scrolls sideways, the title ends left of ↑ and ×, and the map's cursor
- * stays over its ramp even with a name longer than it (its text lengthened here). Run in
- * the page. */
+ * phone… »): nothing scrolls sideways and the title ends left of ↑ and ×. Run in the page. */
 const AREA_FIT = () => {
   const box = (e) => e.getBoundingClientRect();
-  const cursor = document.querySelector("#sheet .area-cursor");
-  const ramp = document.querySelector("#sheet .area-ramp");
-  if (cursor) cursor.textContent = "Paris 12e Arrondissement, un nom plus long que la rampe";
   const words = [...document.querySelectorAll("#sheet .cut-word")].map((w) => box(w).right);
   const buttons = [...document.querySelectorAll("#sheet .sheet-head :is(.sheet-grab, .close)")]
     .map(box)
@@ -214,10 +209,6 @@ const AREA_FIT = () => {
     sideways,
     title: Math.round(Math.max(...words)),
     buttons: Math.round(Math.min(...buttons)),
-    // A hatched area has no cursor.
-    cursor:
-      !cursor ||
-      (box(cursor).left >= box(ramp).left - 1 && box(cursor).right <= box(ramp).right + 1),
   };
 };
 /** Whether area `code`'s middle (tiles/areas.json bounds) lies in the map the panels leave
@@ -1237,7 +1228,7 @@ try {
     visible: !document.getElementById("sheet").hidden,
     name: document.querySelector("#sheet .area-name")?.textContent ?? "",
     head: document.querySelector("#sheet .headline")?.textContent ?? "",
-    streets: document.querySelector("#sheet #area-tab-streets")?.getAttribute("aria-label") ?? "",
+    streets: document.querySelector("#sheet .kf3 > div:nth-child(3) b")?.textContent ?? "",
     text: document.getElementById("sheet").innerText,
     selected: JSON.stringify(window.__map.getFilter("communes-selected")),
   }));
@@ -1245,67 +1236,72 @@ try {
     "click on a commune opens its sheet and outlines it",
     areaSheet.visible &&
       areaSheet.name === city.name &&
-      // Mockup 24a with Y only, as a maximum: « 1 sur N rues à portée » (or « N sur 10 »,
-      // or the percentage; 2026-10-08), never X nor a certainty (DECISIONS 2026-10-06,
-      // « Punk commune and département sheets… »); the 100 m street without « au plus » /
-      // « au moins » (2026-10-08), the ticket and the colour line neither (2026-10-09,
-      // « Punk sheets on a phone… »).
-      AREA_TICKET.test(areaSheet.streets) &&
-      !/Entre [\d,]+ %|à coup sûr|direction connue|au moins|au\splus/.test(areaSheet.text) &&
+      // Board 12 (v3): Y only, as a maximum: « 1 sur N », « N sur 10 », the percentage, never X
+      // nor a certainty (DECISIONS 2026-10-06, « Punk commune and département sheets… »).
+      AREA_FIGURE.test(areaSheet.streets) &&
+      !/Entre [\d,]+ %|à coup sûr|direction connue/.test(areaSheet.text) &&
       areaSheet.selected.includes(`"${city.code}"`),
     JSON.stringify({ ...areaSheet, text: undefined }),
   );
-  // Its colour on the map in words, its class's range « des rues à portée » (2026-10-09).
-  const place = await page
-    .waitForSelector("#sheet .area-place-text", { timeout: 10000 })
+  // Its colour on the map in words: the map's legend of the chosen commune (board 12).
+  const legend = await page
+    .waitForSelector(".mlegend .row:last-child span", { timeout: 10000 })
     .then((e) => e.textContent())
     .catch(() => "");
-  check("punk commune sheet: its colour's class in words", AREA_PLACE.test(place), place);
+  check(
+    "commune sheet: the map's legend says its colour's class",
+    AREA_LEGEND.test(legend),
+    legend,
+  );
   const fit = await page.evaluate(AREA_FIT);
   check(
-    "punk commune sheet: no sideways scroll, title left of ×, the cursor over its ramp",
-    fit.sideways.length === 0 && fit.title <= fit.buttons && fit.cursor,
+    "commune sheet: no sideways scroll, title left of ×",
+    fit.sideways.length === 0 && fit.title <= fit.buttons,
     JSON.stringify(fit),
   );
-  // 24a's tickets are tabs: a click and the arrows choose, the panel follows.
-  await page.click("#area-tab-cameras");
-  await page.keyboard.press("ArrowRight");
-  const tabs = await page.evaluate(() => ({
-    selected: [...document.querySelectorAll("#sheet [role=tab]")]
-      .filter((b) => b.getAttribute("aria-selected") === "true")
-      .map((b) => b.id),
-    focused: document.activeElement?.id ?? "",
-    panel: document.getElementById("area-panel")?.getAttribute("aria-labelledby") ?? "",
+  // « Combien en manque-t-il ? » (board 12): what the data does not serve is « non lu », never 0
+  // (the CI's build has no register: every authorised count is unread).
+  const gap = await page.evaluate(() => ({
+    label: document.querySelector("#sheet .gap")?.getAttribute("aria-label") ?? "",
+    carte: document.querySelector("#sheet .gap .gv")?.textContent ?? "",
+    aut: [...document.querySelectorAll("#sheet .gap-split > div:nth-child(2) li b")].map(
+      (b) => b.textContent,
+    ),
   }));
   check(
-    "punk commune sheet: its tickets are tabs (click, arrows), the panel follows",
-    tabs.selected.join() === "area-tab-who" &&
-      tabs.focused === "area-tab-who" &&
-      tabs.panel === "area-tab-who",
-    JSON.stringify(tabs),
+    "commune sheet: « Combien en manque-t-il ? », unread counts « non lu », never 0",
+    gap.label.length > 0 &&
+      gap.carte !== "" &&
+      gap.aut.length === 3 &&
+      gap.aut.every((x) => x === "non lu"),
+    JSON.stringify(gap),
   );
-  // « Qui filme ? » ends with every camera by operator class; « La liste des caméras »
-  // counts them by type, each row with its sticker (24a, 16a): both add up to the ticket.
-  const counted = () =>
-    page.evaluate(() => ({
-      n: Number.parseInt(document.querySelector("#area-tab-cameras .area-tab-v").textContent, 10),
-      rows: [...document.querySelectorAll("#area-panel .area-list li")].map((li) => ({
-        n: Number(li.querySelector(".area-count")?.textContent),
-        sticker: li.querySelector(".area-sticker canvas") !== null,
-      })),
-    }));
-  const byClass = await counted();
-  await page.click("#area-tab-cameras");
-  const byKind = await counted();
-  const sum = (c) => c.rows.reduce((s, r) => s + r.n, 0);
+  // « Qui filme ? » is a fold (button[aria-expanded]): it opens on its operators and every
+  // camera by operator class, which add up to the cameras on the map.
+  const shut = await page.evaluate(() =>
+    document.getElementById("area-who")?.offsetHeight === 0
+      ? document.querySelector("#sheet .acc")?.getAttribute("aria-expanded")
+      : "shown while folded",
+  );
+  await page.click("#sheet .acc");
+  const who = await page.evaluate(() => ({
+    expanded: document.querySelector("#sheet .acc")?.getAttribute("aria-expanded"),
+    shown: (document.getElementById("area-who")?.offsetHeight ?? 0) > 0,
+    n: Number(
+      document.querySelector("#sheet .kf3 > div:first-child b")?.textContent.replace(/\D/g, ""),
+    ),
+    classes: [...document.querySelectorAll("#area-who .area-classes li .area-count")].map((b) =>
+      Number(b.textContent),
+    ),
+  }));
   check(
-    "punk commune sheet: cameras by type with stickers, by operator class in « Qui filme ? »",
-    byClass.rows.length === 4 &&
-      sum(byClass) === byClass.n &&
-      byKind.rows.length > 0 === byKind.n > 0 &&
-      byKind.rows.every((r) => r.sticker && r.n > 0) &&
-      sum(byKind) === byKind.n,
-    JSON.stringify({ byClass, byKind }),
+    "commune sheet: « Qui filme ? » folded, opens on its classes that add up",
+    shut === "false" &&
+      who.expanded === "true" &&
+      who.shown &&
+      who.classes.length === 4 &&
+      who.classes.reduce((a, b) => a + b, 0) === who.n,
+    JSON.stringify({ shut, ...who }),
   );
   await page.waitForTimeout(900);
   await idle(page);

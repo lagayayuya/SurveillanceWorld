@@ -1,57 +1,65 @@
-// The punk commune and département sheet (redesign lot 3.3), ported from mockup 24a: the
-// title in cut-out letters, its line (« Commune · Hauts-de-Seine (92) »), three tickets that
-// are tabs (Rues / Caméras / Qui filme), the gridded panel of the chosen one, the place on
-// the map's colour ramp, « Partager » and « Calcul ? ». It shows only Y, the share of streets
-// within reach of at least one camera (cautious hypothesis, every camera, direction
-// ignored), always as a maximum, never as certain; X is not shown (DECISIONS 2026-10-06,
-// « Punk commune and département sheets show only Y… »). The ticket's share is rounded down
-// (DECISIONS 2026-10-08, « Punk commune and département sheets: the 100 m street… »). What
-// 24a draws and the data cannot feed (the exact rank among communes) is in docs/interface.md
-// §3 « Commune and département sheets (lot 3.3) ». A chunk the punk interface alone
-// downloads (area.ts); its paper is the camera sheet's (theme/punk/sheet.css), its own rules
-// theme/punk/area.css.
+// The punk commune and département sheets, board 12 · Fiches de la carte (v3), ported from its
+// mockups (Carte3-Commune, Carte3-Departement): the title in cut-out letters and its line, one
+// column without tabs. A commune: three figures (cameras on the map, per 1 000 inhabitants with
+// its rank in its intercommunality, streets within reach), « À portée d'une caméra » with the
+// 100 m street drawn and « Voir ces rues sur la carte », the « manque » block (gap.ts), « Qui
+// filme ? » folded, the two doors (drones in 3D, the register). A département: three figures,
+// « Où sont-elles ? » (its communes with the most cameras, each opening its sheet), the same
+// block and doors. Y, the share of streets within reach (cautious hypothesis, every camera,
+// direction ignored), is always a maximum, rounded down (DECISIONS 2026-10-06, 2026-10-08). The
+// register's figures come from the département's file (placedata.ts); what it does not serve is
+// written « non lu ». A chunk the punk interface alone downloads (area.ts); its paper is the
+// camera sheet's (theme/punk/sheet.css), its own rules theme/punk/area.css.
 import { cutout, fitTitle, pinHead } from "./chips";
+import { type Etat, gapBlock, nb } from "./gap";
 import { t } from "./i18n";
-import { porteLieu } from "./registre/hote";
-import { onTheme } from "./theme";
+import {
+  aCommune,
+  actesCam,
+  autOf,
+  type DepFile,
+  depNow,
+  depuis,
+  epciNom,
+  etatCam,
+  euros,
+  isArrondissement,
+  isMetropole,
+  loadDep,
+  parentCommune,
+  per1000,
+  rankInEpci,
+  tenth,
+  tops,
+} from "./placedata";
 
 type Props = Record<string, string | number | undefined>;
-type Breaks = Record<string, { breaks: number[] }>;
-type Meta = { communes?: Breaks; departements?: Breaks; area_classes?: number[] };
 
 export type PunkAreaInput = {
   p: Props;
   /** « Commune · Hauts-de-Seine (92) » (area.ts areaLine). */
   line: string;
   departement: boolean;
-  /** The map's « Qui filme » when the sheet opens: the sheet starts on that set. */
+  /** The map's « Qui filme » when the sheet opens: « Toutes / Publiques » starts on that set. */
   publicOnly: boolean;
   parts: { grab: HTMLElement; close: HTMLElement; share: HTMLElement };
   /** The map's sticker of a camera type (16a), in the mode in force (icons.ts cameraCanvas). */
   sticker: (kind: string) => HTMLCanvasElement;
+  /** « + Ajouter une caméra »: the map's add (main.ts). */
+  onAdd?: () => void;
+  /** « Voir ces rues sur la carte »: the commune framed at a zoom where its streets are drawn. */
+  onStreets?: (publicOnly: boolean) => void;
+  /** A commune of « Où sont-elles ? »: its sheet, the map centred on it. */
+  onCommune?: (insee: string) => void;
 };
 
-type Tab = "streets" | "cameras" | "who";
-const TABS: Tab[] = ["streets", "cameras", "who"];
-// 24a's tickets: tilted at rest, the chosen one tilted the other way and lifted 3 px.
-const ON_TILT = [-3, 2, -2];
-const OFF_TILT = [1, -1.5, 1.5];
 const TOP_OPERATORS = 5; // pipeline/lacarte/admin.py TOP_OPERATORS: the names the tiles keep
-// The tiles' types (`k_<kind>`, pipeline/lacarte/aggregate.py KINDS) in 24a's order: the
-// known types, then the unknown last.
-const KINDS = ["dome", "multidome", "fixed", "ptz", "panorama", "alpr", "doorbell", "unknown"];
 // The operator classes (`n_pub`…, the map's « Qui filme »).
 const CLASSES = ["pub", "pro", "pri", "unk"] as const;
-/** The farthest a ticket's fraction may fall below Y (points); farther, the percentage. */
+/** The farthest a figure's fraction may fall below Y (points); farther, the percentage. */
 const SHARE_GAP = 2;
-
-// The colour breaks (tiles/meta.json, as the map's), asked once: the browser has it already.
-let metaLoad: Promise<Meta> | null = null;
-let meta: Meta | null = null;
-const loadMeta = () =>
-  (metaLoad ??= fetch(`${window.location.origin}/tiles/meta.json`)
-    .then((r) => r.json() as Promise<Meta>)
-    .then((m) => (meta = m)));
+/** « Où sont-elles ? »: the board's six communes. */
+const TOPS = 6;
 
 function el(tag: string, cls = "", text?: string): HTMLElement {
   const e = document.createElement(tag);
@@ -59,14 +67,13 @@ function el(tag: string, cls = "", text?: string): HTMLElement {
   if (text !== undefined) e.textContent = text;
   return e;
 }
-/** Said, not seen. */
-const said = (text: string) => el("span", "sheet-sr", text);
 /** Seen, not said. */
 const drawn = (text: string, cls = "") => {
   const e = el("span", cls, text);
   e.setAttribute("aria-hidden", "true");
   return e;
 };
+const nonLu = () => el("span", "nl", t("gap.non_lu"));
 
 const num = (p: Props, key: string) => Number(p[key] ?? 0);
 /** Rounded up, to the tenth: the metres that may be filmed (with those out of reach rounded
@@ -76,10 +83,10 @@ const up = (v: number) => Math.max(0, Math.ceil(v * 10 - 1e-9) / 10);
 const down = (v: number) => Math.max(0, Math.floor(v * 10 + 1e-9) / 10);
 
 export type Share = { form: "none" } | { form: "one_in" | "n_in_ten" | "pct"; n: number };
-/** Y (%) as the « Rues » ticket says it, rounded down, never above Y: the nearest of « 1 sur
- * N » and « N sur 10 » below it (Y = 51,4 %: « 5 sur 10 »; 27 %: « 1 sur 4 »); when that
- * fraction falls more than SHARE_GAP points below Y, the percentage rounded down to the
- * unit instead (58 %: « 5 sur 10 » would say 8 points less, so « 57 % »); « Aucune » at 0. */
+/** Y (%) as the figure says it, rounded down, never above Y: the nearest of « 1 sur N » and
+ * « N sur 10 » below it (Y = 51,4 %: « 5 sur 10 »; 27 %: « 1 sur 4 »); when that fraction falls
+ * more than SHARE_GAP points below Y, the percentage rounded down to the unit instead (58 %:
+ * « 5 sur 10 » would say 8 points less, so « 57 % »); « Aucune » at 0. */
 export function streetShare(y: number): Share {
   if (y <= 0) return { form: "none" };
   const eps = 1e-9;
@@ -93,53 +100,22 @@ export function streetShare(y: number): Share {
   return { form: "pct", n: Math.floor(y + eps) };
 }
 
-/** The ticket's two lines: « 5 sur 10 » / « rues à portée », « 57 % » / « des rues à
- * portée », « Aucune » / « rue à portée » (DECISIONS 2026-10-09, « Punk sheets on a
- * phone… »). */
-function shareFace(y: number): [string, string] {
+/** The figure's value: « 1 sur 5 », « 57 % », « Aucune ». */
+function shareValue(y: number): string {
   const s = streetShare(y);
-  if (s.form === "none") return [t("area.punk.none"), t("area.punk.tab.streets_none")];
-  const k = s.form === "pct" ? "area.punk.tab.streets_pct" : "area.punk.tab.streets";
-  return [t(`area.punk.${s.form}`, { n: s.n }), t(k)];
+  if (s.form === "none") return t("area.punk.none");
+  return t(`area.punk.${s.form}`, { n: s.n });
 }
 
-/** The class of the map's colour (layers.ts areaColour: a step on the breaks), the breaks in
- * force; null when the map hatches the area (no camera in the set). */
-function mapClass(p: Props, pub: boolean, departement: boolean) {
-  if (num(p, pub ? "n_pub" : "n") <= 0) return null;
-  // The punk map's fixed classes (filters.ts breaks); the quantiles of an older build.
-  const set = meta?.area_classes
-    ? { breaks: meta.area_classes }
-    : meta?.[departement ? "departements" : "communes"]?.[pub ? "hi_pub" : "hi"];
-  if (!set) return undefined;
-  const breaks = set.breaks.filter((b, i, a) => i === 0 || b > a[i - 1]);
-  const y = num(p, pub ? "hi_pub" : "hi");
-  return { breaks, k: breaks.filter((b) => y >= b).length };
-}
-
-/** « Sa couleur : la classe la plus filmée (plus de 18,9 % des rues à portée) »: class k of
- * the map's colours in words (the least and the most filmed, the middle one, a little or a
- * much filmed one between), then its range (DECISIONS 2026-10-09, « Punk sheets on a
- * phone… »). The breaks are deduplicated (mapClass): their count is not fixed. */
-export function placeLine(breaks: number[], k: number): string {
-  const last = breaks.length;
-  const rank =
-    k <= 0
-      ? "least"
-      : k >= last
-        ? "most"
-        : 2 * k === last
-          ? "middle"
-          : 2 * k < last
-            ? "low"
-            : "high";
-  const range =
-    k <= 0
-      ? t("area.punk.place.below", { v: breaks[0] ?? 0 })
-      : k >= last
-        ? t("area.punk.place.above", { v: breaks[last - 1] })
-        : t("area.punk.place.between", { lo: breaks[k - 1], hi: breaks[k] });
-  return t("area.punk.place", { rank: t(`area.punk.place.${rank}`), range });
+/** One of the three figures: its value (a count, « non lu ») and its words. */
+function figure(value: string | HTMLElement, words: string, extra?: HTMLElement): HTMLElement {
+  const box = el("div");
+  const b = el("b");
+  b.append(value);
+  const span = el("span", "", words);
+  if (extra) span.append(" ", extra);
+  box.append(b, span);
+  return box;
 }
 
 function panelHead(title: string, extra?: HTMLElement): HTMLElement {
@@ -149,9 +125,59 @@ function panelHead(title: string, extra?: HTMLElement): HTMLElement {
   return head;
 }
 
-/** « Rues »: the 100 m street, Y in light blue on the ink, the rest empty; two rows. */
-function streets(input: PunkAreaInput, pub: boolean, setPub: (v: boolean) => void): HTMLElement[] {
+const SVG = "http://www.w3.org/2000/svg";
+function svg(tag: string, attrs: Record<string, string | number>): SVGElement {
+  const e = document.createElementNS(SVG, tag);
+  for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, String(v));
+  return e;
+}
+
+/** The board's 100 m street: the metres within reach as two stretches under two cameras (where
+ * the board draws them, moved in when longer), the rest empty, a scale every 25 m. */
+export function streetSvg(on: number, off: number): SVGElement {
+  const W = 360;
+  const px = (m: number) => Math.round(((m * W) / 100) * 10) / 10;
+  const s = svg("svg", { viewBox: `0 0 ${W} 84`, role: "img", class: "street100" });
+  s.setAttribute("aria-label", t("area.v3.street.svg", { on: nb(on), off: nb(off) }));
+  s.append(
+    svg("rect", { class: "road", x: 0, y: 34, width: W, height: 26 }),
+    svg("line", { class: "mid", x1: 0, y1: 47, x2: W, y2: 47 }),
+  );
+  const half = on / 2;
+  if (on > 0) {
+    const starts = [Math.max(0, Math.min(9, 50 - half)), Math.max(50, Math.min(61, 100 - half))];
+    for (const a of starts)
+      s.append(
+        svg("rect", { class: "on", x: px(a), y: 34, width: px(a + half) - px(a), height: 26 }),
+      );
+    for (const a of starts) {
+      const cx = px(a + half / 2);
+      s.append(
+        svg("path", { class: "cone", d: `M${cx} 26 L${px(a)} 34 L${px(a + half)} 34 Z` }),
+        svg("circle", { class: "cam", cx, cy: 18, r: 9 }),
+        svg("rect", { class: "lens", x: cx - 4, y: 15, width: 8, height: 5 }),
+      );
+    }
+  }
+  for (const m of [0, 25, 50, 75, 100]) {
+    const text = svg("text", {
+      class: "scale",
+      x: px(m),
+      y: 78,
+      "text-anchor": m === 0 ? "start" : m === 100 ? "end" : "middle",
+    });
+    text.textContent = m === 0 || m === 100 ? t("sheet.m", { v: m }) : String(m);
+    s.append(text);
+  }
+  return s;
+}
+
+/** « À portée d'une caméra »: « Toutes / Publiques », the 100 m street, its two rows, what
+ * « à portée » means, « Voir ces rues sur la carte ». */
+function streets(input: PunkAreaInput, pub: boolean, setPub: (v: boolean) => void): HTMLElement {
   const { p } = input;
+  const box = el("section", "street");
+  box.setAttribute("aria-label", t("area.v3.street.title"));
   const y = num(p, pub ? "hi_pub" : "hi");
   const max = Math.min(100, up(y));
   const off = down(100 - max);
@@ -176,94 +202,57 @@ function streets(input: PunkAreaInput, pub: boolean, setPub: (v: boolean) => voi
     group.append(b);
   }
 
-  const road100 = drawn("", "area-road");
-  const track = el("span", "area-track");
-  const fill = el("span", "area-fill");
-  fill.style.width = `${max}%`;
-  track.append(el("span", "area-mid"), fill);
-  const scale = el("span", "area-scale");
-  for (const v of [0, 50, 100]) scale.append(el("span", "", v ? t("sheet.m", { v }) : "0"));
-  road100.append(track, scale);
-
-  const rows = el("ul", "area-rows");
-  rows.setAttribute("aria-hidden", "true");
+  const rows = el("ul", "rows");
   const row = (cls: string, m: number, key: string, km: number) => {
-    const li = el("li", `area-row ${cls}`);
+    const li = el("li");
     li.append(
-      el("span", "area-sw"),
-      el("b", "area-num", t("sheet.m", { v: m })),
-      el("span", "area-row-label", t(key)),
-      el("span", "area-row-sub", t("area.punk.km", { v: km })),
+      drawn("", `sw ${cls}`),
+      el("b", "", t("sheet.m", { v: m })),
+      el("span", "", t(key)),
+      el("i", "", t("area.punk.km", { v: km })),
     );
     return li;
   };
   rows.append(
-    row("max", max, "area.punk.row.max", maxKm),
-    row("off", off, "area.punk.row.off", offKm),
+    row("on", max, "area.v3.street.on", maxKm),
+    row("off", off, "area.v3.street.off", offKm),
   );
-  const sentence = said(
-    t("area.punk.streets.said", {
-      name: String(p.nm),
-      pub: pub ? t("area.punk.streets.said_public") : "",
-      max: t("sheet.m", { v: max }),
-      off: t("sheet.m", { v: off }),
-    }),
+  box.append(
+    panelHead(t("area.v3.street.title"), group),
+    el("p", "lead-t", t("area.v3.street.lead")),
+    streetSvg(max, off),
+    rows,
   );
-  const out = [panelHead(t("area.punk.streets.title"), group), road100, rows, sentence];
   if (num(p, pub ? "n_pub" : "n") === 0 && y > 0)
-    out.push(el("p", "area-note", t("area.punk.neighbours")));
-  return out;
+    box.append(el("p", "fine", t("area.punk.neighbours")));
+  box.append(el("p", "fine", t("area.v3.street.fine")));
+  if (input.onStreets) {
+    const go = el("button", "sheet-link go", t("area.v3.street.go"));
+    go.setAttribute("type", "button");
+    go.addEventListener("click", () => input.onStreets?.(pub));
+    box.append(go);
+  }
+  return box;
 }
 
-/** One row of a counted list: label, dotted leader, count; a sticker before it for a type. */
-function countRow(label: string, count: number, sticker?: HTMLElement): HTMLElement {
+/** One row of a counted list: label, dotted leader, count. */
+function countRow(label: string, count: number): HTMLElement {
   const li = el("li");
-  if (sticker) {
-    const slot = drawn("", "area-sticker");
-    slot.append(sticker);
-    li.append(slot);
-  }
   li.append(el("span", "", label), drawn("", "area-leader"));
   li.append(el("b", "area-count", String(count)));
   return li;
 }
 
-/** « La liste des caméras » (24a): the cameras by type with 16a's stickers, a type without
- * camera left out. The stickers are drawn again when the mode changes. */
-function cameras(input: PunkAreaInput): HTMLElement[] {
-  const { p } = input;
-  const n = num(p, "n");
-  const nd = p.nd === undefined ? undefined : Number(p.nd);
-  const sub =
-    n && nd !== undefined
-      ? el("span", "area-sub", t("area.punk.cameras.no_direction", { pct: nd }))
-      : undefined;
-  const head = panelHead(t("area.punk.cameras.title"), sub);
-  if (!n) return [head, el("p", "area-empty", t("area.cameras", { n: 0 }))];
-  const kinds = KINDS.filter((k) => num(p, `k_${k}`) > 0);
-  // Tiles built before the types were counted (pipeline, 2026-10-08) have none.
-  if (!kinds.length) return [head, el("p", "area-empty", t("area.punk.cameras.no_kinds"))];
-  const list = el("ul", "area-list area-kinds");
-  const fill = () =>
-    list.replaceChildren(
-      ...kinds.map((k) => countRow(t(`area.punk.kind.${k}`), num(p, `k_${k}`), input.sticker(k))),
-    );
-  fill();
-  onTheme(fill, () => list.isConnected);
-  return [head, list];
-}
-
-/** « Qui filme ? »: the named operators by cameras, those without a name apart (24a), then
+/** « Qui filme ? »'s fold: the named operators by cameras, those without a name apart, then
  * every camera by operator class, as the map's « Qui filme » counts them. */
-function who(p: Props): HTMLElement[] {
-  const head = panelHead(t("area.punk.who.title"));
+function whoBody(p: Props): HTMLElement[] {
   const n = num(p, "n");
   const ops: [string, number][] = p.ops ? JSON.parse(String(p.ops)) : [];
   const classes = el("ul", "area-list area-classes");
   for (const cls of CLASSES)
     classes.append(countRow(t(`area.punk.class.${cls}`), num(p, `n_${cls}`)));
   const byClass = [el("p", "area-sub area-classes-head", t("area.punk.who.classes")), classes];
-  if (!ops.length) return [head, el("p", "area-empty", t("area.no_operator")), ...byClass];
+  if (!ops.length) return [el("p", "area-empty", t("area.no_operator")), ...byClass];
   const list = el("ol", "area-ops");
   const item = (name: string, count: number, cls = "") => {
     const li = el("li", cls);
@@ -281,57 +270,50 @@ function who(p: Props): HTMLElement[] {
     const key = ops.length < TOP_OPERATORS ? "area.punk.who.unnamed" : "area.punk.who.others";
     list.append(item(t(key), rest, "unnamed"));
   }
-  return [head, list, ...byClass];
+  return [list, ...byClass];
 }
 
-/** « Place sur la carte »: the map's ramp (as many colours as the breaks make), the area's
- * cursor on its own, and the legend's label of its class. */
-function place(input: PunkAreaInput, pub: boolean): HTMLElement {
-  const box = el("section", "area-place");
-  box.setAttribute("aria-labelledby", "area-place-title");
-  const h3 = el("h3", "sheet-sr", t("area.punk.place.title"));
-  h3.id = "area-place-title";
-  box.append(h3);
-  const fill = () => {
-    box.replaceChildren(h3);
-    const c = mapClass(input.p, pub, input.departement);
-    if (c === undefined) return;
-    if (c === null) {
-      box.append(el("p", "area-place-text", t("area.punk.place.none")));
-      return;
-    }
-    const wrap = drawn("", "area-ramp-wrap");
-    const ramp = el("span", "area-ramp");
-    const cells = c.breaks.length + 1;
-    for (let i = 0; i < cells; i++) {
-      const cell = el("span");
-      cell.style.background = `var(--map-area-${i + 1})`;
-      ramp.append(cell);
-    }
-    // The name never runs out of the ramp (no sideways scroll: DECISIONS 2026-10-09, « Punk
-    // sheets on a phone… »): moved back by the same share of its own width as its class's
-    // middle is of the ramp's, cut with « … » when longer than the ramp; the ▾ under it on
-    // the class's middle.
-    const at = ((c.k + 0.5) / cells) * 100;
-    const cursor = el("span", "area-cursor", String(input.p.nm));
-    cursor.style.left = `${at}%`;
-    cursor.style.transform = `translateX(-${at}%) rotate(-3deg)`;
-    const pin = el("span", "area-pin", "▾");
-    pin.style.left = `${at}%`;
-    pin.style.transform = "translateX(-50%)";
-    wrap.append(ramp, cursor, pin);
-    box.append(wrap, el("p", "area-place-text", placeLine(c.breaks, c.k)));
-  };
-  fill();
-  if (!meta) void loadMeta().then(fill, () => {});
-  return box;
+/** A fold: a button[aria-expanded] that shows its body below (RGAA: the state said). */
+function fold(id: string, title: string, v: string, k: string, body: HTMLElement[], open: boolean) {
+  const b = el("button", `acc${open ? " open" : ""}`);
+  b.setAttribute("type", "button");
+  b.setAttribute("aria-expanded", String(open));
+  b.setAttribute("aria-controls", id);
+  b.dataset.fold = id;
+  const words = el("span", "t");
+  words.append(el("span", "v", v), el("span", "k", k));
+  const sign = drawn(open ? "−" : "+", "sg");
+  b.append(el("span", "area-label", title), words, sign);
+  const box = el("div", "acc-body");
+  box.id = id;
+  box.hidden = !open;
+  box.append(...body);
+  b.addEventListener("click", () => {
+    const now = b.getAttribute("aria-expanded") !== "true";
+    b.setAttribute("aria-expanded", String(now));
+    b.classList.toggle("open", now);
+    sign.textContent = now ? "−" : "+";
+    box.hidden = !now;
+  });
+  return [b, box];
+}
+
+/** A door: a link styled as the board's ticket, its value, its words, its arrow. */
+function door(href: string, v: string, k: string, drones = false): HTMLAnchorElement {
+  const a = el("a", `rdoor${drones ? " dr" : ""}`) as HTMLAnchorElement;
+  a.href = href;
+  const words = el("span", "t");
+  words.append(el("span", "v", v), el("span", "k", k));
+  a.append(words, drawn("→", "go"));
+  return a;
 }
 
 /** « Calcul ? » and what it opens. */
 function how(p: Props): [HTMLElement, HTMLElement] {
   const toggle = el("button", "how-toggle sheet-link", t("sheet.punk.how"));
   toggle.setAttribute("type", "button");
-  toggle.append(said(` ${t("sheet.punk.how.said")}`));
+  const said = el("span", "sheet-sr", ` ${t("sheet.punk.how.said")}`);
+  toggle.append(said);
   toggle.setAttribute("aria-expanded", "false");
   toggle.setAttribute("aria-controls", "area-how");
   const box = el("div", "how");
@@ -344,9 +326,7 @@ function how(p: Props): [HTMLElement, HTMLElement] {
     t("area.punk.how.max"),
     t("area.how.share"),
     t("area.punk.how.round"),
-    t("area.punk.how.cameras"),
     t("area.punk.how.who"),
-    // The punk map's fixed classes (filters.ts breaks), written before meta.json is in.
     t("legend.fixed_classes"),
     reliability,
     t("area.how.reliability"),
@@ -373,12 +353,294 @@ function how(p: Props): [HTMLElement, HTMLElement] {
   return [toggle, box];
 }
 
-/** The sheet. Its tabs and « Toutes / Publiques » change the tickets, the panel and the
- * place in place: the frame, its top and its body stay (a phone's sheet sized them). */
+/** The commune's line: the tiles' (« Commune · Rhône (69) »), its intercommunality and its
+ * population when the register lists them. */
+function communeLine(input: PunkAreaInput, dep: DepFile | null): string {
+  const code = String(input.p.c);
+  let line = input.line;
+  if (!dep) return line;
+  const nom = epciNom(dep, parentCommune(code));
+  if (nom) line = t("area.v3.line_epci", { line, epci: nom });
+  const pop = dep.communes[code]?.pop;
+  if (pop) line = t("area.v3.line_pop", { line, pop: nb(pop) });
+  return line;
+}
+
+/** « Lyon dans le registre : 447 arrêtés de caméras → ». */
+function registreLink(nom: string, n: number | undefined, href: string, dep = false) {
+  return {
+    href,
+    label:
+      n === undefined
+        ? t("gap.registre_commune_nl", { nom })
+        : t(dep ? "gap.registre_dep" : "gap.registre_commune", { nom, n }),
+  };
+}
+
+/** The commune's body. A municipal arrondissement is its own on the map (cameras, streets,
+ * operators) and its commune's in the register (the « manque » block, the doors). */
+function communeBody(
+  input: PunkAreaInput,
+  dep: DepFile | null,
+  state: { pub: boolean; folds: Set<string> },
+  redraw: () => void,
+): HTMLElement[] {
+  const { p } = input;
+  const code = String(p.c);
+  const unit = parentCommune(code);
+  const parentNom = isArrondissement(code)
+    ? (dep?.communes[unit]?.nom ?? String(p.nm).replace(/ \d+(er|e) Arrondissement$/i, ""))
+    : String(p.nm);
+  const n = num(p, "n");
+  const stats = dep?.stats.communes[unit];
+  // Paris, Lyon or Marseille opened from a département's list: the register's commune, which
+  // the tiles split into arrondissements (main.ts openAreaByCode); no street nor operator here.
+  const parent = Number(p.parent) === 1;
+
+  // The three figures.
+  const kf = el("div", "kf3");
+  const pop = dep?.communes[code]?.pop;
+  const ratio = per1000(n, pop);
+  const rank = dep && ratio !== null ? rankInEpci(dep, code, n) : null;
+  let rankEm: HTMLElement | undefined;
+  if (rank) {
+    // « · 5e sur 51 de l'intercommunalité », its ordinal's letters raised.
+    rankEm = el("em", "", `· ${rank.r}`);
+    rankEm.append(
+      el("sup", "", t(rank.r === 1 ? "area.v3.kf.rank_er" : "area.v3.kf.rank_e")),
+      ` ${t(dep && isMetropole(dep, code) ? "area.v3.kf.rank_metropole" : "area.v3.kf.rank", { n: rank.sur })}`,
+    );
+  }
+  const y = num(p, state.pub ? "hi_pub" : "hi");
+  kf.append(
+    figure(nb(n), t("area.v3.kf.cameras", { n })),
+    figure(ratio === null ? nonLu() : tenth(ratio), t("area.v3.kf.per1000"), rankEm),
+    parent
+      ? figure(nonLu(), t("area.v3.kf.streets"))
+      : figure(shareValue(y), t(y > 0 ? "area.v3.kf.streets" : "area.v3.kf.streets_none")),
+  );
+
+  const setPub = (v: boolean) => {
+    state.pub = v;
+    redraw();
+    document
+      .querySelector<HTMLElement>(`#sheet .area-toggle[data-set="${v ? "public" : "all"}"]`)
+      ?.focus();
+  };
+
+  // The « manque » block: the commune's (an arrondissement's commune in the register: its map
+  // count is the register's, its split unknown here).
+  const own = unit === code && !parent;
+  const carte = own || parent ? n : (stats?.carte ?? null);
+  const gap = gapBlock({
+    lieu: aCommune(parentNom),
+    carte,
+    publiques: own ? num(p, "n_pub") : null,
+    autres: own ? n - num(p, "n_pub") : null,
+    aut: autOf(stats?.cam_aut),
+    etat: etatCam(dep, unit),
+    onAdd: input.onAdd,
+    registre: stats
+      ? registreLink(parentNom, actesCam(dep, unit), `/registre/commune/${unit}`)
+      : null,
+  });
+
+  // « Qui filme ? », folded.
+  const ops: [string, number][] = p.ops ? JSON.parse(String(p.ops)) : [];
+  const [whoButton, whoBox] = fold(
+    "area-who",
+    t("area.punk.who.title"),
+    ops.length ? ops[0][0] : t("area.punk.none"),
+    ops.length ? t("area.v3.who.top") : t("area.v3.who.none"),
+    whoBody(p),
+    state.folds.has("area-who"),
+  );
+  whoButton.addEventListener("click", () => {
+    if (state.folds.has("area-who")) state.folds.delete("area-who");
+    else state.folds.add("area-who");
+  });
+
+  if (parent) {
+    const box = el("section", "street");
+    box.setAttribute("aria-label", t("area.v3.street.title"));
+    box.append(panelHead(t("area.v3.street.title")), el("p", "fine", t("area.v3.street.parent")));
+    const out = [kf, box, gap];
+    const doors = communeDoors(dep, unit);
+    if (doors) out.push(doors);
+    return out;
+  }
+  const out = [kf, streets(input, state.pub, setPub), gap, whoButton, whoBox];
+  const doors = communeDoors(dep, unit);
+  if (doors) out.push(doors);
+  return out;
+}
+
+/** The two doors: the commune's drones in 3D, its page in the register. */
+function communeDoors(dep: DepFile | null, unit: string): HTMLElement | null {
+  const s = dep?.stats.communes[unit];
+  if (!s) return null;
+  const box = el("div", "doors");
+  const drEtat: Etat = (s.couverture_actes?.dr as Etat | undefined) ?? "non_lu";
+  const dr = s.dr ?? 0;
+  box.append(
+    door(
+      `/registre/commune/${unit}/carte`,
+      dr === 0 && drEtat !== "lu"
+        ? t("area.v3.door.drones_nl")
+        : t("area.v3.door.drones", { n: dr }),
+      t("area.v3.door.drones_k"),
+      true,
+    ),
+    door(
+      `/registre/commune/${unit}`,
+      t("area.v3.door.registre"),
+      actesCam(dep, unit) === undefined
+        ? t("area.v3.door.registre_k_nl")
+        : t("area.v3.door.registre_k", { eur: euros(s.montant ?? 0), n: actesCam(dep, unit) ?? 0 }),
+    ),
+  );
+  return box;
+}
+
+/** The département's body. */
+function departementBody(input: PunkAreaInput, dep: DepFile | null): HTMLElement[] {
+  const { p } = input;
+  const code = String(p.c);
+  const n = num(p, "n");
+  const ds = dep?.stats.depStats;
+  const an = dep ? depuis(dep) : null;
+
+  const kf = el("div", "kf3");
+  const ratio = per1000(n, dep?.departement.pop);
+  const camLu = dep && an !== null && ds?.cam !== undefined;
+  const drC = ds?.dr_commune ?? 0;
+  const drA = ds?.dr_autorite ?? 0;
+  // A département not collected (no year of collection) has no drone count to say: « non lu ».
+  const drLu = ds !== undefined && (drC > 0 || drA > 0 || an !== null);
+  kf.append(
+    figure(
+      nb(n),
+      t("area.v3.kf.dep_cameras"),
+      ratio === null ? undefined : el("em", "", t("area.v3.kf.dep_per1000", { v: tenth(ratio) })),
+    ),
+    camLu
+      ? figure(nb(ds.cam ?? 0), t("area.v3.kf.dep_actes_depuis", { n: ds.cam ?? 0, an: an ?? "" }))
+      : figure(nonLu(), t("area.v3.kf.dep_actes")),
+    !drLu
+      ? figure(nonLu(), t("area.v3.kf.dep_drones", { n: 2 }))
+      : drC > 0
+        ? figure(nb(drC), t("area.v3.kf.dep_drones", { n: drC }))
+        : figure(nb(drA), t("area.v3.kf.dep_drones_autorite", { n: drA })),
+  );
+
+  const out: HTMLElement[] = [kf];
+  // « Où sont-elles ? »
+  if (dep) {
+    const box = el("section", "street");
+    box.setAttribute("aria-label", t("area.v3.tops.label"));
+    box.append(panelHead(t("area.v3.tops.title"), el("span", "area-sub", t("area.v3.tops.sub"))));
+    const top = tops(dep, TOPS);
+    if (top.rows.length) {
+      const headRow = el("div", "tops-head");
+      headRow.setAttribute("aria-hidden", "true");
+      headRow.append(
+        el("span", "", t("area.v3.tops.commune")),
+        el("span"),
+        el("span", "", t("area.v3.tops.cameras")),
+        el("span", "", t("area.v3.tops.per1000")),
+      );
+      const list = el("ul", "tops");
+      const first = top.rows[0].carte;
+      for (const r of top.rows) {
+        const li = el("li");
+        const a = el("a", "", r.nom) as HTMLAnchorElement;
+        a.href = `/?insee=${r.insee}`;
+        a.setAttribute("aria-label", t("area.v3.tops.open", { nom: r.nom, n: nb(r.carte) }));
+        a.addEventListener("click", (e) => {
+          if (!input.onCommune || e.metaKey || e.ctrlKey || e.shiftKey) return;
+          e.preventDefault();
+          input.onCommune(r.insee);
+        });
+        const track = drawn("");
+        const b = el("span", "tb");
+        b.style.width = `${Math.max(2, Math.round((100 * r.carte) / first))}%`;
+        track.append(b);
+        // The board's count and ratio, seen only: the link says them.
+        const count = el("b", "", nb(r.carte));
+        const ratio = el("i", "", r.per1000 === null ? "—" : tenth(r.per1000));
+        for (const x of [count, ratio]) x.setAttribute("aria-hidden", "true");
+        li.append(a, track, count, ratio);
+        list.append(li);
+      }
+      box.append(headRow, list);
+      if (top.total > 0)
+        box.append(
+          el(
+            "p",
+            "fine",
+            t("area.v3.tops.fine", {
+              nom: top.rows[0].nom,
+              pct: Math.round((100 * first) / top.total),
+            }),
+          ),
+        );
+    } else box.append(el("p", "fine", t("area.v3.tops.empty")));
+    const all = el(
+      "a",
+      "sheet-link go",
+      t("area.v3.tops.all", { n: top.communes }),
+    ) as HTMLAnchorElement;
+    all.href = `/registre/communes?dep=${encodeURIComponent(code)}`;
+    box.append(all);
+    out.push(box);
+  }
+
+  const nom = dep?.departement.nom ?? String(p.nm);
+  out.push(
+    gapBlock({
+      lieu: nom,
+      carte: n,
+      publiques: num(p, "n_pub"),
+      autres: n - num(p, "n_pub"),
+      aut: autOf(ds?.cam_aut),
+      // The département's own reading of its acts, once served with `cam_aut`; until then the
+      // sum is never the whole (acts without a commune: depStats.sansCommune).
+      etat: "partiel",
+      onAdd: input.onAdd,
+      registre: dep
+        ? registreLink(nom, camLu ? ds?.cam : undefined, `/registre/departement/${code}`, true)
+        : null,
+    }),
+  );
+  if (dep && ds) {
+    const box = el("div", "doors");
+    const drN = drC > 0 ? drC : drA;
+    box.append(
+      door(
+        `/registre/departement/${code}`,
+        drLu ? t("area.v3.door.drones", { n: drN }) : t("area.v3.door.drones_nl"),
+        t("area.v3.door.drones_k"),
+        true,
+      ),
+      door(
+        `/registre/departement/${code}`,
+        t("area.v3.door.registre"),
+        ds.con === undefined
+          ? t("area.v3.door.registre_k_nl")
+          : t("area.v3.door.registre_k_dep", { eur: euros(ds.montant ?? 0), n: ds.con }),
+      ),
+    );
+    out.push(box);
+  }
+  return out;
+}
+
+/** The sheet. Drawn at once from the tiles, then again when the département's file is in
+ * (the frame kept, the folds and « Toutes / Publiques » as they were, the scroll too). */
 export function punkAreaSheet(frame: HTMLElement, input: PunkAreaInput): void {
   const { p, parts } = input;
-  if (!meta) void loadMeta().catch(() => {});
-  const state = { tab: "streets" as Tab, pub: input.publicOnly };
+  const depCode = String(p.d);
+  const state = { pub: input.publicOnly, folds: new Set<string>() };
   frame.replaceChildren();
   const paper = el("div", "sheet-paper area-paper");
   const top = el("div", "sheet-top");
@@ -389,108 +651,46 @@ export function punkAreaSheet(frame: HTMLElement, input: PunkAreaInput): void {
   // Its letters may wrap after a hyphen (« HAUTS-DE-SEINE » is wider than the paper).
   const title = cutout(String(p.nm), String(p.nm).replace(/-/g, "- "));
   title.querySelector(".sheet-sr")?.classList.add("area-name");
-  column.append(title, el("p", "area-line", input.line));
+  const line = el("p", "area-line", input.line);
+  column.append(title, line);
   parts.close.replaceChildren(drawn("×"));
   parts.grab.replaceChildren();
   head.append(column, parts.grab, parts.close);
+  top.append(head);
 
-  // The tickets are tabs (24a: role tablist, aria-selected); arrows, Home and End move
-  // between them, the chosen one alone in the tab order.
-  const n = num(p, "n");
-  const ops: [string, number][] = p.ops ? JSON.parse(String(p.ops)) : [];
-  const face = (id: Tab): [string, string] => {
-    const y = num(p, state.pub ? "hi_pub" : "hi");
-    if (id === "streets") return shareFace(y);
-    if (id === "cameras") return [String(n), t("area.punk.tab.cameras", { n })];
-    return ops.length ? [ops[0][0], t("area.punk.tab.who")] : ["0", t("area.punk.tab.who_none")];
-  };
-  const tabs = el("div", "area-tabs");
-  tabs.setAttribute("role", "tablist");
-  tabs.setAttribute("aria-label", t("area.punk.tabs"));
-  const panel = el("div", "area-panel");
-  panel.id = "area-panel";
-  panel.setAttribute("role", "tabpanel");
-  panel.style.transform = "rotate(-0.6deg)";
-  const placeSlot = el("div", "area-place-slot");
-
-  const buttons: HTMLElement[] = [];
-  const draw = () => {
-    TABS.forEach((id, i) => {
-      const b = buttons[i];
-      const on = state.tab === id;
-      const [v, k] = face(id);
-      b.className = `area-tab${on ? " on" : ""}`;
-      b.setAttribute("aria-selected", String(on));
-      b.setAttribute("aria-label", `${v} ${k}`);
-      b.tabIndex = on ? 0 : -1;
-      b.style.transform = on
-        ? `rotate(${ON_TILT[i]}deg) translateY(-3px)`
-        : `rotate(${OFF_TILT[i]}deg)`;
-      // A long name (an operator) takes smaller letters on two lines (24a's « DIRIF » is
-      // short).
-      b.replaceChildren(
-        drawn("✓", "area-tab-check"),
-        el("span", `area-tab-v${v.length > 8 ? " long" : ""}`, v),
-        el("span", "area-tab-k", k),
-      );
-    });
-    panel.setAttribute("aria-labelledby", `area-tab-${state.tab}`);
-    panel.replaceChildren(
-      ...(state.tab === "streets"
-        ? streets(input, state.pub, setPub)
-        : state.tab === "cameras"
-          ? cameras(input)
-          : who(p)),
-    );
-    placeSlot.replaceChildren(place(input, state.pub));
-  };
-  const choose = (id: Tab) => {
-    if (state.tab === id) return;
-    state.tab = id;
-    draw();
-  };
-  function setPub(v: boolean) {
-    state.pub = v;
-    draw();
-    panel.querySelector<HTMLElement>(`.area-toggle[data-set="${v ? "public" : "all"}"]`)?.focus();
-  }
-  TABS.forEach((id, i) => {
-    const b = el("button", "area-tab");
-    b.id = `area-tab-${id}`;
-    b.setAttribute("type", "button");
-    b.setAttribute("role", "tab");
-    b.setAttribute("aria-controls", "area-panel");
-    b.addEventListener("click", () => choose(id));
-    b.addEventListener("keydown", (e) => {
-      const to = (
-        { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: TABS.length - 1 } as Record<
-          string,
-          number
-        >
-      )[e.key];
-      if (to === undefined) return;
-      e.preventDefault();
-      const next = TABS[(to + TABS.length) % TABS.length];
-      choose(next);
-      buttons[TABS.indexOf(next)].focus();
-    });
-    tabs.append(b);
-    buttons.push(b);
-  });
-  draw();
-  top.append(head, tabs);
-
-  body.append(panel, placeSlot, drawn("", "sheet-break"));
   const [toggle, explained] = how(p);
   parts.share.classList.add("sheet-link");
-  // The register's page of the commune or département, when it holds one (registre/hote.ts).
-  const door = el("div", "area-registre");
-  void porteLieu(String(p.c), String(p.c) === String(p.d)).then((a) => a && door.append(a));
-  body.append(parts.share, door, toggle, explained);
+  const foot = el("div", "sheet-foot");
+  foot.append(parts.share, toggle);
+
+  const draw = () => {
+    const dep = depNow(depCode) ?? null;
+    line.textContent = input.departement
+      ? dep?.departement.pop
+        ? t("area.v3.line_dep", {
+            code: depCode,
+            pop: nb(dep.departement.pop),
+            n: tops(dep).communes,
+          })
+        : input.line
+      : communeLine(input, dep);
+    const scroller = paper.scrollTop;
+    body.replaceChildren(
+      ...(input.departement ? departementBody(input, dep) : communeBody(input, dep, state, draw)),
+      foot,
+      explained,
+    );
+    paper.scrollTop = scroller;
+  };
+  draw();
   paper.append(top, body);
   const edge = el("div", "sheet-frame");
   edge.append(paper);
   frame.append(edge);
   fitTitle(title);
   pinHead(frame, paper);
+  if (depNow(depCode) === undefined)
+    void loadDep(depCode).then(() => {
+      if (paper.isConnected) draw();
+    });
 }

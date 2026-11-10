@@ -725,6 +725,17 @@ export function surveillanceLayers(breaks: Breaks, mode: Mode): LayerSpecificati
       maxzoom: COUNT_MAX,
       paint: { "fill-opacity": 0 },
     },
+    {
+      // Invisible: the commune under a camera, from the street level on (main.ts cameraGap,
+      // the camera sheet's « Combien en manque-t-il ? », board 12). The admin tiles stop at z11
+      // and are drawn bigger above: one tile for a whole town.
+      id: "communes-probe",
+      type: "fill",
+      source: "admin",
+      "source-layer": "communes",
+      minzoom: COUNT_MAX,
+      paint: { "fill-opacity": 0 },
+    },
     // --- streets -----------------------------------------------------------------------
     ...punkFields(mode),
     ...streetLayers(mode),

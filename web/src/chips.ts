@@ -305,6 +305,8 @@ export type PunkSheetInput = {
     /** The camera's history (history.ts, lot U), last: it comes in once the API has
      * answered, under everything one can tap. */
     history?: HTMLElement;
+    /** « Combien en manque-t-il ? »'s slot (sheet.ts SheetOptions.gap). */
+    gap?: HTMLElement;
   };
 };
 
@@ -632,6 +634,9 @@ export function punkSheet(frame: HTMLElement, input: PunkSheetInput): void {
   }
   // The participation's buttons (« Compléter », « Toujours là ? »), or what replaces them.
   if (parts.actions) body.append(parts.actions);
+  // « Combien en manque-t-il ? » (board 12, gap.ts): the camera's commune, filled by the page
+  // once it knows which.
+  if (parts.gap) body.append(parts.gap);
   // The buttons' line ends here (the links go on the next): see theme/punk/sheet.css.
   body.append(drawn("", "sheet-break"));
   const [toggle, explained] = how(input, all);

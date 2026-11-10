@@ -1,7 +1,7 @@
 // Commune (or municipal arrondissement) and département sheet, in the camera sheet's panel:
-// mockup 24a, drawn by areapunk.ts, a chunk of its own asked for as this module loads; a
-// sheet asked before it arrives shows its grab and close buttons, then is drawn whole when
-// it does.
+// board 12 · Fiches de la carte (v3), drawn by areapunk.ts, a chunk of its own asked for as
+// this module loads; a sheet asked before it arrives shows its grab and close buttons, then is
+// drawn whole when it does.
 import { t } from "./i18n";
 import { cameraCanvas, type Kind } from "./icons";
 import { shareButton } from "./sheet";
@@ -20,6 +20,12 @@ export type AreaOptions = {
   /** Link to this area (?insee=, hypothesis). */
   shareUrl: () => string;
   publicOnly: boolean;
+  /** « + Ajouter une caméra » of the « manque » block (gap.ts). */
+  onAdd?: () => void;
+  /** « Voir ces rues sur la carte ». */
+  onStreets?: (publicOnly: boolean) => void;
+  /** A commune of the département's « Où sont-elles ? ». */
+  onCommune?: (insee: string) => void;
 };
 
 function el(tag: string, attrs: Record<string, string> = {}, text?: string): HTMLElement {
@@ -61,6 +67,9 @@ export function renderAreaSheet(frame: HTMLElement, p: AreaProps, opts: AreaOpti
       publicOnly: pub,
       parts: { grab, close, share: shared() },
       sticker: (kind) => cameraCanvas(kind as Kind),
+      onAdd: opts.onAdd,
+      onStreets: opts.onStreets,
+      onCommune: opts.onCommune,
     });
     return;
   }
