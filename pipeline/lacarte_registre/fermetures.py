@@ -31,6 +31,8 @@ from pathlib import Path
 from typing import Any
 from weakref import WeakKeyDictionary
 
+import yaml
+
 import lacarte_registre as registre
 from lacarte_registre import chiffres, comptes, drones, entreprise, partage, refs
 from lacarte_registre.parcours import Parcours
@@ -140,26 +142,33 @@ class Context:
         return self._commune_stats[insee]
 
     def couverture_actes(self, dep: str, st: dict[str, Any]) -> dict[str, str]:
-        """{cam, dr}: « lu », « partiel » or « non_lu » for a commune of `dep` whose figures
-        are `st` ({} for one without a document) (rule:registre_couverture@1:actes_commune)."""
-        if not hasattr(self, "_sans_commune"):
-            self._sans_commune: dict[str, dict[str, int]] = {}
-        if dep not in self._sans_commune:
-            unplaced = [
-                e for e in self.reg.by_dep.get(dep, [])
-                if not e.get("insee") or e["insee"] not in self.reg.communes
-            ]  # fmt: skip
-            self._sans_commune[dep] = {
-                "cam": sum(is_camera_act(e) for e in unplaced),
-                "dr": sum(is_drone_act(e) for e in unplaced),
-            }
+        """{cam, dr}: « lu », « non_rattache » or « non_lu » for a commune of `dep` whose
+        figures are `st` ({} for one without a document) (rule:registre_couverture@1:actes_commune):
+        « non_lu » its département not collected, « non_rattache » collected but fewer than
+        `part_rattachee` of the family's acts there placed in a commune, « lu » else (0 is 0)."""
+        if not hasattr(self, "_rattache"):
+            conf = yaml.safe_load((registre.RULES / "registre_couverture.yaml").read_text("utf-8"))[
+                "actes_commune"
+            ]
+            self._seuil_rattache = float(conf["part_rattachee"])
+            self._rattache: dict[str, dict[str, float | None]] = {}
+        if dep not in self._rattache:
+            n = {"cam": [0, 0], "dr": [0, 0]}  # [placed, all]
+            for e in self.reg.by_dep.get(dep, []):
+                placed = bool(e.get("insee")) and e["insee"] in self.reg.communes
+                for k, test in (("cam", is_camera_act), ("dr", is_drone_act)):
+                    if test(e):
+                        n[k][1] += 1
+                        n[k][0] += placed
+            self._rattache[dep] = {k: (p / a if a else None) for k, (p, a) in n.items()}
         read = ((self.couverture or {}).get("departements") or {}).get(dep, {}).get("etat")
         out = {}
         for k in ("cam", "dr"):
+            share = self._rattache[dep][k]
             if read != "collecte":
                 out[k] = "non_lu"
-            elif self._sans_commune[dep][k]:
-                out[k] = "partiel" if st.get(k) else "non_lu"
+            elif share is not None and share < self._seuil_rattache:
+                out[k] = "non_rattache"
             else:
                 out[k] = "lu"
         return out

@@ -139,13 +139,11 @@ departements:
 actes_commune:
   id: rule:registre_couverture@1:actes_commune
   rationale: >-
-    « non_lu » when its département's acts are not collected, or when its département has acts
-    of the family that name no commune and the commune has none (Paris: 222 camera acts of the
-    75, none placed in Paris: « non lu », never 0); « partiel » when the commune has some and
-    its département also has some placed nowhere; « lu » otherwise, a 0 then meaning none. A
+    Ju (2026-11-10), three states so the page says what is true: « non_lu » when its
+    département's acts are not collected; « non_rattache » when they are, but fewer than
+    `part_rattachee` of the family's acts in the département are placed in a commune (a
+    commune's number is then a floor, its 0 not a 0); « lu » otherwise, a 0 meaning none. A
     commune without a document has no row in the lists: its département's row says what it
     shows (`couverture_actes_communes`). The département's own state stays in couverture.json.
-    Measured 2026-11-09: most of the national collection's acts name no commune (more than
-    half of the camera acts in 98 of the 100 départements read, of the drone acts in 96), so
-    most communes are « non_lu »: a commune's own count is read where acts are placed (the
-    Bouches-du-Rhône, the Rhône, Paris's drones).
+    Supersedes the « partiel » state of 2026-11-09.
+  part_rattachee: 0.9

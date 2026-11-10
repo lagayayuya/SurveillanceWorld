@@ -408,6 +408,13 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     # the bans leave, the abrogations and withdrawals end the act they cite (fins.py)
     fin = fins.lire(once, rules)
     served: dict[str, regles.Event] = {}
+    # the kinds whose commune, read by the rules, is published everywhere (collecte_seuils.yaml)
+    seuils = yaml.safe_load((rules / "collecte_seuils.yaml").read_text("utf-8"))
+    par_regle = seuils.get("commune_par_regle") or {}
+    commune_partout = {
+        k for k, v in (par_regle.get("types") or {}).items()
+        if v["mesures"] and v["justes"] / v["mesures"] >= par_regle["taux"]
+    }  # fmt: skip
     for a in once:
         if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
             continue
@@ -419,6 +426,8 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         published = {
             g for g, v in groups.items() if v.get("publie") and (g in GROUPS or g in NOUVEAUX)
         }
+        if a["type"] in commune_partout:
+            published.add("commune")
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
         e = act_event(a, admin, published, finals.get(a["id"]), mention, deps, rules)

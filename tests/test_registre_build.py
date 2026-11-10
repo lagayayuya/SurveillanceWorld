@@ -384,7 +384,7 @@ def test_every_commune_says_whether_its_camera_and_drone_acts_are_read(built):
     """rule:registre_couverture@1:actes_commune: the same `couverture_actes` in the lists and
     in a commune's and a département's stats, « lu », « partiel » or « non_lu », never a bare 0."""
     rows = read(built, "listes.json")["lignes"]["communes"]
-    states = {"lu", "partiel", "non_lu"}
+    states = {"lu", "non_rattache", "non_lu"}
     assert rows and all(set(r["couverture_actes"]) == {"cam", "dr"} for r in rows.values())
     assert all(set(r["couverture_actes"].values()) <= states for r in rows.values())
     f = read(built, f"commune/{MIONS}.json")

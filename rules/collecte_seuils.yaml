@@ -21,6 +21,24 @@ types:
   drone: {taux: 0.85}
   cameras_pietons: {taux: 0.95}
   vsa: {taux: 0.85}
+# The commune an act names, read by the rules (lacarte_collecte.parse_raa: the communes of its
+# authority's départements, by their official names), published for a kind everywhere when
+# a drawing of acts read by hand reaches `taux`, whatever the département's own measure.
+commune_par_regle:
+  id: rule:collecte_seuils@1:commune_par_regle
+  rationale: >-
+    Ju (2026-11-09): 4 692 of 5 065 communes said « non lu » because the national
+    collection's acts were not placed. The reader places 58 296 of 62 999 camera acts; the
+    commune was published only where a reference reading measured it (13, 69). Measured
+    2026-11-10 on 50 camera acts drawn among those placed (seed 20261110, 10 in each of the
+    44, 67, 17, 02 and 07, each read by hand on Attrap's text): 49 right (98 %), the wrong one an
+    establishment « route de Clisson - 44115 Basse-Goulaine » placed in Clisson (a street
+    named after a commune). Served at 95 % or more (Ju); an act with no commune read stays
+    unplaced.
+  taux: 0.95
+  types:
+    videoprotection: {justes: 49, mesures: 50}
+
 # The reference readings through Anthropic's Message Batches API (lacarte_collecte/
 # references.py): the price per million tokens of each model the readings may use, input and
 # output, read in the Claude API's model table (cached on 2026-10-06; Haiku's for prompts
