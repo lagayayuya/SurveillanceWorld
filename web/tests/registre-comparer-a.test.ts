@@ -12,6 +12,7 @@ import {
   figuresCommune,
   horsCommune,
   lecture,
+  nonRattache,
   figuresEntreprise,
   hauts,
   idsDe,
@@ -140,4 +141,12 @@ test("the CSV: quoted, a formula escaped, an unread figure empty, its mark and C
     s,
     '﻿"id","nom","montant"\r\n"69123","Lyon","31661950.45"\r\n"x","\'=SOMME(A1)",""\r\n',
   );
+});
+
+test("read in a collected département but placed in no commune: « pas rattachés », not « non lu »", () => {
+  assert.equal(nonRattache("non_lu", "collecte"), true);
+  assert.equal(nonRattache("non_lu", "non_collecte"), false);
+  assert.equal(nonRattache("non_lu", undefined), false);
+  assert.equal(nonRattache("partiel", "collecte"), false);
+  assert.equal(nonRattache("lu", "collecte"), false);
 });

@@ -121,6 +121,14 @@ export function couvertureActes(o: {
   return { cam: k("cam"), dr: k("dr") };
 }
 
+/** A family « non lu » in a commune whose département's acts are collected: they are read, but
+ * none of the family is placed in this commune yet (couverture.json `etat` « collecte »; the data
+ * doc's rule: inside a collected département, `non_lu` means acts that name no commune). Pages
+ * write « Arrêtés de l'Allier lus, pas encore rattachés aux communes » in place of « non lu »
+ * (Ju 10/11, Vichy). */
+export const nonRattache = (c: EtatActes, etatDep: string | undefined): boolean =>
+  c === "non_lu" && etatDep === "collecte";
+
 /** Which counts a page shows: the read ones (« lu », « partiel »); the others say « non lu ». */
 export type Lecture = { cam: boolean; dr: boolean };
 export const lecture = (c: CouvActes): Lecture => ({

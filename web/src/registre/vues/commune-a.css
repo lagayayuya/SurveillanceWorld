@@ -826,3 +826,12 @@
     grid-template-columns: 1fr;
   }
 }
+/* a figure that is not a number (« pas rattachés »): its line says why in full on a phone too,
+   the one-line clamp would cut « Arrêtés de l'Allier lu… » (Ju 10/11, Vichy) */
+@media (max-width: 959px) {
+  .rg .va.com .fig.nl .fl {
+    max-height: none;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}

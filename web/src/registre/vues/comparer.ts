@@ -9,7 +9,7 @@
 // leads to its column's fiche. The address follows the columns, so that a comparison is shared.
 
 import { remplacerAdresse } from "../adresse.ts";
-import { communeHref } from "../commun.ts";
+import { communeHref, depArt } from "../commun.ts";
 import { depNom, entName } from "../corpus.ts";
 import { type Handler, type RichItem, richText as richTexte } from "../dc.ts";
 import { load } from "../donnees.ts";
@@ -43,6 +43,7 @@ import {
   lecture,
   MAX,
 } from "./comparer-a.ts";
+import { deArt } from "./entreprise-a.ts";
 import "./comparer.css";
 import template from "./comparer.html?raw";
 
@@ -504,24 +505,37 @@ export class Comparer extends Vue<Props, State> {
       const horsCarte = (k === "carte" || k === "p1000") && f.carte === null;
       const nonLu = ((k === "cam" || k === "dr") && f[k] === null) || horsCarte;
       const dep = X.dico.communes[cols[i].id]?.dep ?? "";
-      // its département not collected, or this kind of its decrees not read yet
+      // its département not collected (« non lu »), or collected and this kind of its decrees
+      // placed in no commune yet: read, not attached (comparer-a.ts nonRattache, Ju 10/11)
       const recueils = this.props.couv.departements[dep]?.etat === "collecte";
+      const rattache =
+        nonLu && !horsCarte && recueils
+          ? t("socle_a.non_rattache", { de: deArt(depArt(dep)) })
+          : "";
       return {
         ancre: ANCRE[k],
         nonLu,
-        etat: horsCarte ? t("comparer_a.hors_carte") : undefined,
+        etat: horsCarte
+          ? t("comparer_a.hors_carte")
+          : rattache
+            ? t("socle_a.non_rattache_court")
+            : undefined,
         bl: horsCarte
           ? contracte(t("comparer_a.b_hors_carte", { nom: cols[i].nom }), cols[i].nom)
           : nonLu
             ? recueils
-              ? contracte(t(`comparer_a.b_non_lu_${k}`, { nom: cols[i].nom }), cols[i].nom)
+              ? `${rattache}.`
               : t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
             : k === "p1000" && f.carte !== null && pops[i]
               ? t("comparer_a.b_p1000", { n: fr(f.carte), p: fr(pops[i]) })
               : k === "eph" && f.eph !== null
                 ? t("comparer_a.b_eph", { m: montantA(f.amt), p: fr(pops[i]) })
                 : undefined,
-        sub: (k === "amt" || k === "eph") && !f.amt ? t("comparer_a.sans_contrat") : undefined,
+        sub: rattache
+          ? rattache
+          : (k === "amt" || k === "eph") && !f.amt
+            ? t("comparer_a.sans_contrat")
+            : undefined,
       };
     };
     return GROUPES_C.map(([g, ks]) => ({

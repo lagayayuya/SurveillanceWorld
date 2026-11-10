@@ -35,7 +35,7 @@
           <div class="sbar" style="height: 22px" data-bg=""><sc-for list="{{cam.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.l}}" data-bl="{{x.bl}}" data-bc="{{t.commune_a.b.part_clic}}" onClick="{{x.pick}}"><b>{{x.v}}</b></span></sc-for></div>
           <div class="sleg"><sc-for list="{{cam.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i><span class="lt">{{x.l}} · <b>{{x.v}}</b></span></span></sc-for></div>
         </sc-if>
-        <sc-if value="{{cam.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span> {{cam.nonLu}}</p></sc-if>
+        <sc-if value="{{cam.nonLu}}"><p><sc-if value="{{cam.etat}}"><span class="state">{{cam.etat}}</span> </sc-if>{{cam.nonLu}}</p></sc-if>
         <sc-if value="{{cam.aucun}}"><p>{{cam.aucun}}</p></sc-if>
         <sc-if value="{{cam.voir}}"><p><a class="go" href="#documents" onClick="{{cam.voir.pick}}">{{cam.voir.l}}</a></p></sc-if>
         <h3 class="k" style="margin-top: 18px">{{t.commune_a.releves}}</h3>

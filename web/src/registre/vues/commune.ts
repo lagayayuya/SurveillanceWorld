@@ -16,6 +16,7 @@ import {
   commune as chargerCommune,
   communeHref,
   type Donnees,
+  depArt,
   ess,
   lastArretes,
 } from "../commun.ts";
@@ -50,8 +51,9 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
-import { couvertureActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
+import { couvertureActes, horsCommune, lecture, nonRattache, type RowActes } from "./comparer-a.ts";
 import { exportRows } from "./documents.ts";
+import { deArt } from "./entreprise-a.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
 
@@ -379,6 +381,10 @@ export class Commune extends Vue<Props, State> {
       depTotal: f.stats.dep?.depStats,
     });
     const lu = lecture(couv);
+    // read in its département but placed in no commune yet: said so, not « non lu » (Ju 10/11)
+    const etatDep = f.couverture.departement.etat;
+    const nr = { cam: nonRattache(couv.cam, etatDep), dr: nonRattache(couv.dr, etatDep) };
+    const rattache = t("socle_a.non_rattache", { de: deArt(depArt(c.dep)) });
     const nCam = X?.lignes.communes[insee]?.cam ?? propre?.cam ?? 0;
     const nDr = X?.lignes.communes[insee]?.dr ?? propre?.dr ?? 0;
     const st = strate(pop);
@@ -524,9 +530,14 @@ export class Commune extends Vue<Props, State> {
       {
         cls: !lu.dr && !nj ? "fig nl" : "fig",
         k: T("commune_a.fig.drones"),
-        v: !lu.dr && !nj ? t("liste.non_lu") : fr(nj),
+        v: !lu.dr && !nj ? t(nr.dr ? "socle_a.non_rattache_court" : "liste.non_lu") : fr(nj),
         u: !lu.dr && !nj ? "" : T("commune_a.fig.jours"),
-        l: !lu.dr && !nj ? T("commune_a.fig.drones_nl") : T("commune_a.fig.drones_l"),
+        l:
+          !lu.dr && !nj
+            ? nr.dr
+              ? rattache
+              : T("commune_a.fig.drones_nl")
+            : T("commune_a.fig.drones_l"),
         dots: dots(
           rJv,
           (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
@@ -633,7 +644,7 @@ export class Commune extends Vue<Props, State> {
               ]
             : camCas === "aucun"
               ? [T("commune_a.cam_ans_aucun", { nom, y: depuis })]
-              : [T("commune_a.cam_ans_nl", { nom })]),
+              : [nr.cam ? rattache : T("commune_a.cam_ans_nl", { nom })]),
         ...(carteN != null ? [T("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : ["."]),
       ] as RichItem[],
       kAut: T("commune_a.cam_k", { y: depuis }),
@@ -658,6 +669,7 @@ export class Commune extends Vue<Props, State> {
                 pick: (() => this.versDocs({ onglet: "aut", part: k })) as Handler,
               }))
           : null,
+      etat: camCas === "nl" && !nr.cam ? t("liste.non_lu") : "",
       nonLu:
         camCas === "nb"
           ? T("commune_a.cam_nb_nl", { n: nCam })
@@ -666,8 +678,10 @@ export class Commune extends Vue<Props, State> {
             : !lus
               ? T("commune_a.cam_non_lu")
               : hors?.cam
-                ? T("commune_a.cam_non_lu_hors", { n: hors.cam, nom })
-                : T("commune_a.cam_non_lu_c"),
+                ? `${nr.cam ? `${rattache}. ` : ""}${T("commune_a.cam_non_lu_hors", { n: hors.cam, nom })}`
+                : nr.cam
+                  ? `${rattache}.`
+                  : T("commune_a.cam_non_lu_c"),
       aucun: camCas === "aucun" ? T("commune_a.cam_aucun_lu", { y: depuis }) : "",
       voir: camCas === "nb" ? { l: T("commune_a.cam_voir", { n: nCam }), pick: voirArretes } : null,
       osm: carteN ? fr(carteN) : "",
@@ -1510,7 +1524,12 @@ export class Commune extends Vue<Props, State> {
       {
         cls: lu.cam || lu.dr ? "part" : "non",
         l: T("commune_a.src.arretes"),
-        d: lu.cam || lu.dr ? T("commune_a.src.arretes_d", { y: depuis }) : t("liste.non_lu"),
+        d:
+          lu.cam || lu.dr
+            ? T("commune_a.src.arretes_d", { y: depuis })
+            : nr.cam || nr.dr
+              ? rattache
+              : t("liste.non_lu"),
       },
       { cls: "part", l: t("accueil.src.subventions"), d: T("commune_a.src.subventions") },
       { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },

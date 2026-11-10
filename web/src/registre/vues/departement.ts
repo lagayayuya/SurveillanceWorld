@@ -15,7 +15,7 @@
 // the class `Intercommunalite` below and the second template of departement.html.
 
 import { departementArt, etatDepartement } from "../collecte.ts";
-import { communeHref } from "../commun.ts";
+import { communeHref, depArt } from "../commun.ts";
 import { buyerHref, depGroup, entName, type Lexique, buyerNom as nomAcheteur } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import type { Couverture } from "../donnees.ts";
@@ -63,6 +63,7 @@ import {
   vendeurs,
 } from "./acheteur-outils.ts";
 import { type EtatActes, etatActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
+import { deArt } from "./entreprise-a.ts";
 import "./departement.css";
 import "./departement-a.css";
 import { documentHref } from "../routes.ts";
@@ -348,6 +349,10 @@ class DepartementA extends Vue<PropsA, StateA> {
     // commune (depStats less uniq); « non lu », never 0 (Ju 09/11, recette 01)
     const hors = horsCommune(st, f.stats.uniq) ?? { cam: 0, dr: 0 };
     const luC = (c: { insee?: string; aut: number; dr?: number }) => lecture(couvC(f, lu, c));
+    // collected, a commune's family « non lu » means its acts are read but placed in no commune
+    // yet: said so (comparer-a.ts nonRattache, Ju 10/11, Vichy), « non lu » only when not collected
+    const rattache = t("socle_a.non_rattache", { de: deArt(depArt(dep, N.nom)) });
+    const nonLuC = lu ? t("socle_a.non_rattache_court") : t("liste.non_lu");
     const places = { cam: f.stats.uniq?.cam ?? 0, dr: f.stats.uniq?.dr ?? 0 };
     const an = (k: "con" | "cam") =>
       Object.keys(f.stats.annees)
@@ -682,10 +687,14 @@ class DepartementA extends Vue<PropsA, StateA> {
                   : m === "aut"
                     ? luC(c).cam
                       ? t("departement_a.b.aut", { n: c.aut })
-                      : t("liste.non_lu")
+                      : lu
+                        ? rattache
+                        : t("liste.non_lu")
                     : luC(c).dr
                       ? t("departement_a.b.dr", { n: c.dr })
-                      : t("liste.non_lu"),
+                      : lu
+                        ? rattache
+                        : t("liste.non_lu"),
               t("departement_a.b.docs", { n: c.docs }),
             ].filter(Boolean);
             return {
@@ -1241,8 +1250,8 @@ class DepartementA extends Vue<PropsA, StateA> {
           pop: c.pop ? fr(c.pop) : "—",
           con: fr(c.con),
           montant: mt > 0 ? t("departement_a.euros", { n: fr(mt) }) : "—",
-          cam: !luC(c).cam ? t("liste.non_lu") : c.aut ? fr(c.aut) : "—",
-          dr: !luC(c).dr ? t("liste.non_lu") : c.dr ? fr(c.dr) : "—",
+          cam: !luC(c).cam ? nonLuC : c.aut ? fr(c.aut) : "—",
+          dr: !luC(c).dr ? nonLuC : c.dr ? fr(c.dr) : "—",
           // outside the map (overseas), never « — » read as none (recette 10)
           carte: c.cams == null ? t("departement_a.fig.hors_carte") : fr(c.cams),
         };
@@ -1254,10 +1263,17 @@ class DepartementA extends Vue<PropsA, StateA> {
         tgt.closest("tr")?.querySelector<HTMLAnchorElement>("td a")?.click();
       }) as Handler,
       vide: !pris.length,
-      note:
+      note: [
         tries.length > LIGNES
           ? t("departement_a.communes_note", { n: LIGNES, tri: colL(S.tri).toLowerCase() })
           : t("departement_a.communes_note_toutes", { n: tries.length }),
+        // « pas rattachés » in a cell: what it means, once
+        lu && montre.some((c) => !luC(c).cam || !luC(c).dr)
+          ? t("departement_a.note_rattache", { phrase: rattache })
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" "),
       tout: coms.length > LIGNES ? `/registre/communes?dep=${encodeURIComponent(dep)}` : "",
       toutL: t("departement_a.communes_tout", { du: N.du }),
     };
