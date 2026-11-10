@@ -44,11 +44,19 @@ import yaml
 # 5: the act's day also in figures (« n° 2024.885 du 12/09/2024 »); 6: an aerial act that is
 # no captation of images (a flight ban, jamming, a drone show: collecte_actes.yaml) is no act;
 # 7: « ARRÊTE : » with a page's foot before article 1 is no heading; 8: the helicopters'
-# captures are drone-type acts, and every aerial act keeps its aircraft's words
-VERSION = 8
+# captures are drone-type acts, and every aerial act keeps its aircraft's words; 9: a single
+# act's title before its heading
+VERSION = 9
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
-MEME_TEXTE = {4: {3, 4}, 5: {3, 4, 5}, 6: {3, 4, 5, 6}, 7: {3, 4, 5, 6, 7}, 8: {3, 4, 5, 6, 7, 8}}
+MEME_TEXTE = {
+    4: {3, 4},
+    5: {3, 4, 5},
+    6: {3, 4, 5, 6},
+    7: {3, 4, 5, 6, 7},
+    8: {3, 4, 5, 6, 7, 8},
+    9: {3, 4, 5, 6, 7, 8, 9},
+}
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
     "un": 1,
@@ -499,11 +507,35 @@ class Acte:
         return asdict(self)
 
 
+# a single act's own title, when its text layer put it before its heading (« autorisant la
+# captation… » on the first lines, « Arrêté n°2025-00732 » below it: the Préfecture de police)
+TITRE_AVANT = re.compile(
+    r"\b(?:portant|autorisant|fixant|relatif|modifiant|abrogeant|reglementant|accordant)\b.{20,300}"
+)
+
+
+TITRE_TEXTE = re.compile(
+    r"(?i)\b(?:portant|autorisant|fixant|relatif|modifiant|abrogeant|r[ée]glementant|accordant)\b"
+    r"[\s\S]{20,300}?(?=\s*\n\s*(?:vu\b|le pr[ée]fet|consid[ée]rant)|$)"
+)
+
+
 def lire(text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date) -> list[Acte]:
     out = []
-    for m in split_acts(text):
+    pieces = split_acts(text)
+    for m in pieces:
         n = strip(m.texte)
         kind = classify(m.titre or m.texte[:400], n, kinds)
+        if kind is None and len(pieces) == 1 and m.gabarit == "en-tete":
+            # a document of one act: its title may come before its heading
+            before = text[: max(text.find(m.texte[:40]), 0)]
+            if t := TITRE_AVANT.search(strip(before)):
+                kind = classify(t.group(0), n, kinds)
+                if kind is not None:
+                    head = re.sub(r"\s+", " ", m.texte[:80]).split(" le ")[0].strip()
+                    own = TITRE_TEXTE.search(before)
+                    words = re.sub(r"\s+", " ", own.group(0)).strip() if own else ""
+                    m = Morceau(m.acte, f"{head} {words}".strip(), m.texte, m.gabarit)
         if kind is None:
             continue
         sub = subtype(m.titre, n)

@@ -190,6 +190,23 @@ def test_a_helicopter_s_captation_is_an_aerial_act_with_its_aircraft_s_words():
     assert out == []  # an overflight allowed films nothing
 
 
+def test_a_single_act_whose_title_comes_before_its_heading():
+    """2025-00732 (measured 2026-11-10): the text layer put « autorisant la captation… sur
+    des aéronefs » above « Arrêté n°2025-00732 », whose next line is its day."""
+    text = (
+        "PREFECTURE DE POLICE\nautorisant la captation, l'enregistrement et la transmission "
+        "d'images au moyen de caméras installées sur des aéronefs à l'occasion d'une "
+        "manifestation à Paris\nVu le décret n° 2004-374 du 29 avril 2004 ;\n"
+        "Arrêté n°2025-00732\n\nle jeudi 12 juin 2025\n\nLe préfet de police,\n"
+        "Vu le code de la sécurité intérieure ;\nARRÊTE :\nArticle 1er – La captation, "
+        "l'enregistrement et la transmission d'images par la direction de l'ordre public et de "
+        "la circulation sont autorisés à Paris le 12 juin 2025.\nArticle 2 – Publié.\n"
+    )
+    [a] = parse_raa.lire(text, parse_raa.Communes({}, set()), KINDS, dt.date(2025, 6, 10))
+    assert (a.acte, a.type) == ("2025-00732", "drone")
+    assert a.titre.startswith("Arrêté n°2025-00732 autorisant la captation")
+
+
 def test_a_reference_without_insee_is_compared_by_the_commune_s_name():
     read = {"type": "videoprotection", "insee": "69383", "commune": "Lyon",
             "champs": {"n_total": 4}}  # fmt: skip
