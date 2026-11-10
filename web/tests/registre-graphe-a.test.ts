@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   type Arete,
+  colonnesTableau,
   couper,
   csvGraphe,
   disposer,
@@ -178,6 +179,16 @@ test("the table's rows: shared first, then money; a dot's size by the square roo
   assert.equal(point(0, 100), 8);
   assert.equal(point(100, 100), 24);
   assert.equal(point(25, 100), 16);
+});
+
+test("the table's columns: the most shared first, then the most rows, then money", () => {
+  const v = voisinage(indexer(A), "E0", "e");
+  // B2 shares F1, F2, F3; B1 F1, F3; B3 and B4 one each, two rows each: B4 has more money
+  assert.deepEqual(colonnesTableau(v, ["B1", "B2", "B4", "B3"]), ["B2", "B1", "B4", "B3"]);
+  assert.deepEqual(colonnesTableau(v, ["B3", "B4"]), ["B4", "B3"]);
+  // the rows follow the columns given
+  const rows = tableau(v, colonnesTableau(v, ["B1", "B2", "B4", "B3"]));
+  assert.deepEqual(rows[0].cells.map((c) => c?.m ?? null), [20_000, 10_000, 30_000, null]);
 });
 
 test("the CSV: each edge once, the centre's first, a formula kept as text", () => {

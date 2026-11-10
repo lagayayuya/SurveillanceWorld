@@ -726,6 +726,30 @@ export function tableau(v: Voisinage, colonnes: string[]): LigneT[] {
     .sort((a, b) => b.n - a.n || b.max - a.max || (a.id < b.id ? -1 : 1));
 }
 
+/** The table view's columns (recette, improvement 6): the first-circle node that shares the most
+ * second-circle nodes first, the most useful at the left; then the most rows, the most money with
+ * the centre, the SIREN. The drawing keeps its own order around the centre. */
+export function colonnesTableau(v: Voisinage, colonnes: string[]): string[] {
+  const set = new Set(colonnes);
+  const partages = new Map<string, number>(colonnes.map((k) => [k, 0]));
+  const lignes = new Map<string, number>(colonnes.map((k) => [k, 0]));
+  for (const s of v.seconds)
+    for (const k of s.liens.keys()) {
+      if (!set.has(k)) continue;
+      lignes.set(k, (lignes.get(k) ?? 0) + 1);
+      if (s.liens.size > 1) partages.set(k, (partages.get(k) ?? 0) + 1);
+    }
+  const m = new Map(v.premiers.map((p) => [p.id, p.m]));
+  const n = (x: Map<string, number>, k: string) => x.get(k) ?? 0;
+  return [...colonnes].sort(
+    (a, b) =>
+      n(partages, b) - n(partages, a) ||
+      n(lignes, b) - n(lignes, a) ||
+      n(m, b) - n(m, a) ||
+      (a < b ? -1 : a > b ? 1 : 0),
+  );
+}
+
 /** A dot's diameter in the table (the board's): 8 to 24 px, by the square root of the money. */
 export const point = (m: number, mx: number): number =>
   Math.round(8 + 16 * Math.sqrt(mx > 0 ? m / mx : 0));

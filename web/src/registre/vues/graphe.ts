@@ -30,6 +30,7 @@ import "./graphe.css";
 import template from "./graphe.html?raw";
 import {
   autre,
+  colonnesTableau,
   csvGraphe,
   type Dessin,
   disposer,
@@ -529,10 +530,12 @@ class Graphe extends Vue<Props, State> {
             plus: groupes ? { a: !e, e } : null,
           },
         };
-    // the table view: the same links as rows, the columns the first circle drawn
-    const rows = tableau(v, d.colonnes);
+    // the table view: the same links as rows, the columns the first circle drawn, the one that
+    // shares the most at the left (recette, improvement 6)
+    const colsT = colonnesTableau(v, d.colonnes);
+    const rows = tableau(v, colsT);
     const mx = Math.max(0, ...rows.flatMap((r) => r.cells.map((c) => c?.m ?? 0)));
-    const cols = d.colonnes.map((k) => ({ k, l: this.court(k) }));
+    const cols = colsT.map((k) => ({ k, l: this.court(k) }));
     const tb = S.tab
       ? {
           note: t(e ? "graphe_a.tableau_note_e" : "graphe_a.tableau_note_a", { nom: centre }),
