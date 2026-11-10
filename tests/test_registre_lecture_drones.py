@@ -67,3 +67,15 @@ def test_a_drone_act_s_sector_is_placed_by_arrondissement_place_commune_or_depar
         "secteur_niveau": "departement"}  # fmt: skip
     assert situer("à l'occasion de l'événement susvisé", noms, r) == {"secteur_niveau": "non_lu"}
     assert situer(None, noms, r) == {"secteur_niveau": "non_lu"}
+
+
+def test_a_place_the_text_layer_broke_is_no_place_its_commune_instead():
+    import lacarte_registre as registre
+    from lacarte_registre.lecture_drones import situer
+
+    noms, lib, r = {"paris": "75056"}, {"75056": "Paris"}, registre.RULES
+    assert situer("à la Cathédrale Notr e-Dame de Paris le 8", noms, r, None, lib) == {
+        "secteur_niveau": "commune", "secteur_insee": ["75056"], "secteur": "Paris"}  # fmt: skip
+    assert situer("au Stade de2024-01014 2 France", noms, r)["secteur_niveau"] != "lieu"
+    hippo = situer("à l'Hippodrome de Paris -Longchamp le 5", noms, r)
+    assert hippo["secteur_lieu"] == "Hippodrome de Paris-Longchamp"

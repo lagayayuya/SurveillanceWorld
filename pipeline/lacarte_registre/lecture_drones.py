@@ -105,6 +105,11 @@ def _secteur(rules_dir: Path) -> dict[str, Any]:
     }
 
 
+# a place the text layer broke: a figure, a private-use glyph, a lone letter
+# (« Notr e-Dame », « d e Paris », « Stade de2024-01014 France »)
+LIEU_ABIME = re.compile(r"\d|[\ue000-\uf8ff]|(?<![\w'’])(?![aàyAÀ]\b)\w(?![\w'’])|\w(?=\s\w\b)")
+
+
 def _plie_avec_places(s: str) -> tuple[str, list[int]]:
     """`plie(s)` and, for each of its characters, its place in `s` (a span read on the folded
     text is cut from the act's own text, its capitals and accents kept)."""
@@ -154,10 +159,15 @@ def situer(
         label = f"{city} {', '.join(n + ('er' if n == '1' else 'e') for n in nums)}"
         return {"secteur_niveau": "arrondissement", "secteur_insee": codes, "secteur": label}
     m = conf["lieu"].search(t)
-    if m and " " in m.group(0).strip():  # a kind alone (« Arena », « Palais ») is no place
+    # a kind alone (« Arena », « Palais ») is no place
+    if m and " " in m.group(0).strip():
         place = raw[at[m.start()] : at[m.end() - 1] + 1].strip(" ,;.")
-        place = place[0].upper() + place[1:]
-        return {"secteur_niveau": "lieu", "secteur_lieu": place, "secteur": place}
+        place = re.sub(r"\s+-\s*", "-", place)  # « Paris -Longchamp »
+        if LIEU_ABIME.search(place):
+            m = None  # the PDF's text layer broke it: no place, the commune's level instead
+        else:
+            place = place[0].upper() + place[1:]
+            return {"secteur_niveau": "lieu", "secteur_lieu": place, "secteur": place}
     named = sorted(
         {k for n, k in noms.items() if re.search(rf"(?<![a-z-]){re.escape(n)}(?![a-z-])", t)}
     )
