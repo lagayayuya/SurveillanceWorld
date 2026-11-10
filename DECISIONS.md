@@ -692,3 +692,5 @@ One line per decision: date — decision — reason.
 - 2026-11-09 — An intercommunality's row and name lead to its v2 fiche (?ic=) — one destination per row (recette 19).
 - 2026-11-10 — A node of the graph opens a card beside it (its fiche, « Centrer ici »), the main gesture instead of the detail on the right — Ju (point 6): the graph did not lead to the fiches.
 - 2026-11-10 — On a phone the graph stands whole in the width; it is read by pinching, full screen or the table view — Ju (recette 23): the intention, not the board.
+- 2026-11-10 — The 3D view hatches every commune with drone acts: light over the period, full on the day chosen or hovered; without its own outline (134 of 142 communes), from the site's admin tiles — Ju 2026-11-10 (Pantin).
+- 2026-11-10 — In the 3D view every date says whether it is a day of flight or of publication — Ju 2026-11-10: the list ends on the 9th, the fiche shows the 10th.
