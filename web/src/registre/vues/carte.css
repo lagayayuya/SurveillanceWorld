@@ -249,6 +249,11 @@
   background: var(--accent-fill);
   color: var(--on-accent, #111);
 }
+/* registre.css paints a chosen row's cells (`.r[aria-current] > *`, var(--soft)): over this row's
+   pink they stood as dark boxes, their words unreadable (seen on 10/11, both modes, both widths) */
+.rg .v-carte .r.zrow[aria-current="true"] > * {
+  background: none;
+}
 .rg .v-carte .r.zrow[aria-current="true"] .zst {
   color: inherit;
 }
