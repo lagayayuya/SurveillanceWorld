@@ -53,6 +53,23 @@ commune_par_regle:
   types:
     videoprotection: {justes: 90, mesures: 93}
 
+# The numbers of cameras a video-protection act states, read by the rules (inside, outside, on
+# the public road, the total), published everywhere for one establishment's act
+# (`commune_par_regle`) read by reader `lecteur_min` or later.
+nombres_par_regle:
+  id: rule:collecte_seuils@1:nombres_par_regle
+  rationale: >-
+    Ju (2026-11-10): the cameras authorised against those on the map. Reader 10 read by hand
+    against three drawings of one establishment's acts (50 in the 44, 67, 17, 02, 07; 13 kept of
+    30 in the 59, 33, 31; 30 in the 35, 76, 83): the total read for 76 of 93 (82 %), all 76
+    right. The first and the third drawings mended the reader (« 12 caméras intérieures et 4
+    extérieures », the Bas-Rhin's « Nombre de caméras intérieures : 4 », « caméra(s) »,
+    « caméres », a kind named without a readable number giving no total); before the last
+    mends the third drawing gave 20 right of 22. A wrong number never: a part is not summed.
+  taux: 0.95
+  types:
+    videoprotection: {justes: 76, mesures: 76, lecteur_min: 10}
+
 # The reference readings through Anthropic's Message Batches API (lacarte_collecte/
 # references.py): the price per million tokens of each model the readings may use, input and
 # output, read in the Claude API's model table (cached on 2026-10-06; Haiku's for prompts

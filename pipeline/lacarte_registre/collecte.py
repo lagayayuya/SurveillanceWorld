@@ -32,7 +32,16 @@ import yaml
 
 import lacarte_registre as registre
 from lacarte_collecte import arretes
-from lacarte_registre import fins, lecture_drones, motifs, noms, partage, regles, selection
+from lacarte_registre import (
+    cameras,
+    fins,
+    lecture_drones,
+    motifs,
+    noms,
+    partage,
+    regles,
+    selection,
+)
 
 DIR = "collecte"
 KINDS = {
@@ -448,6 +457,13 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         if v["mesures"] and v["justes"] / v["mesures"] >= par_regle["taux"]
     }  # fmt: skip
     seul = _un_etablissement(root, par_regle)
+    # the camera numbers read by the rules, published for one establishment's act read by a
+    # reader at least `lecteur_min` (collecte_seuils.yaml `nombres_par_regle`)
+    par_nombre = seuils.get("nombres_par_regle") or {}
+    nombres_partout = {
+        k: v.get("lecteur_min", 0) for k, v in (par_nombre.get("types") or {}).items()
+        if v["mesures"] and v["justes"] / v["mesures"] >= par_nombre["taux"]
+    }  # fmt: skip
     for a in once:
         if a["id"] in pilot_ids or a["type"] not in KINDS or a["administration"] not in admins:
             continue
@@ -459,11 +475,21 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         published = {
             g for g, v in groups.items() if v.get("publie") and (g in GROUPS or g in NOUVEAUX)
         }
-        if a["type"] in commune_partout and seul(a):
+        one = seul(a) if a["type"] in commune_partout or a["type"] in nombres_partout else False
+        if a["type"] in commune_partout and one:
             published.add("commune")
+        recent = (a.get("lecteur") or 0) >= nombres_partout.get(a["type"], 10**6)
+        if a["type"] in nombres_partout and one and recent:
+            published.add("nombre")
         n_pub += bool(published)
         deps = departements_vises(a, names, codes)
         e = act_event(a, admin, published, finals.get(a["id"]), mention, deps, rules)
+        if a["type"] == "videoprotection" and "nombre" in published:
+            # its holder's category and its system's file, read by the rules (cameras.py);
+            # the holder's words never served
+            ch = a.get("champs") or {}
+            e["titulaire"] = cameras.titulaire(ch, a.get("titre"), rules)
+            e["dossier"] = ch.get("dossier") or e.get("dossier")
         served[a["id"]] = e
         new.append(e)
     rattachees = _finir(fin, served)

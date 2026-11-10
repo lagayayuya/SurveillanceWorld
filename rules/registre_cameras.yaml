@@ -1,0 +1,33 @@
+# The cameras a commune's video-protection acts authorise (pipeline/lacarte_registre/cameras.py):
+# by holder, inside, outside and on the public road, over the period read. Read by rules on
+# the acts' own words (collection reader 10: the subject of article 1, the visas' « pour
+# l'établissement… »); a holder or a number not read stays null, never 0.
+version: 1
+
+titulaire:
+  id: rule:registre_cameras@1:titulaire
+  rationale: >-
+    Three holders, as on the Lyon pilot's page: « mairie » (the commune, its town hall, its
+    municipal police, its social centre, its intercommunality), « commerces » (a company, a
+    shop, a bank, a hotel, a restaurant, a campsite, a petrol station), « autres » (a holder
+    read that is neither: a hospital, a school, an association, a landlord, a public body).
+    Read on the subject of article 1 (what comes before « est autorisé »), then on the visas'
+    « pour l'établissement… », then on the title; the first that names one decides, a civil
+    servant who signs never (« le maire est chargé de l'exécution » is not a holder).
+    Measured 2026-11-10 by hand on the three drawings of one establishment's acts (86 whose
+    holder the text names): 61 read (71 %), all 61 right; a shop « situé sur la commune de X »
+    is no town hall (the second drawing's first reading put two there).
+  # the commune as the holder only: « la commune de X est autorisée », « pour la commune de », never
+  # a shop « situé sur la commune de X »
+  mairie: '(?:^|[,;:] |\bpour |\bconcernant |\bpar |\bau profit de |\bde )(?:la |le |l.)?(?:commune|mairie|ville|maire|police municipale|ccas|centre communal|communaute (?:de communes|d.agglomeration|urbaine)|metropole|syndicat intercommunal)\b'
+  commerces: '\b(?:societe|s\.?a\.?r\.?l|s\.?a\.?s\.?u?|eurl|snc|sci|enseigne|magasin|commerce|boutique|banque|bancaire|credit|caisse d.epargne|caisse regionale|bnp|lcl|societe generale|la poste|tabac|presse|pharmacie|restaurant|brasserie|bar\b|hotel|camping|supermarche|hypermarche|carrefour|leclerc|lidl|intermarche|auchan|casino|monoprix|franprix|aldi|station[- ]service|garage|concession|bijouterie|boulangerie|agence|directeur regional|gerant|pdg|president directeur|earl|gaec|optique|distributeur automatique|dab\b|retail)'
+  autres: '\b(?:centre hospitalier|hopital|clinique|ehpad|college|lycee|ecole|universite|association|office public|habitat|logement|bailleur|paroisse|eglise|culte|mosquee|synagogue|musee|federation|club|syndicat|chambre de|etablissement public|sncf|ratp|aeroport|commissariat|police nationale)'
+
+nombres:
+  id: rule:registre_cameras@1:nombres
+  rationale: >-
+    A dossier is a system: its latest act counts (an abrogation or a refusal ends it), its
+    cameras inside, outside and on the public road as the act states them, its total as the
+    act states it or as their sum. Measured 2026-11-10 by hand on 50 acts drawn among those
+    placed (10 in each of the 44, 67, 17, 02, 07), then on two fresh ones: the total read for 76
+    of 93 one establishment's acts, all right (rule:collecte_seuils@1:nombres_par_regle).

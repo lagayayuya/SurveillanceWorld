@@ -13,6 +13,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+from lacarte_registre import cameras
 from lacarte_registre.regles import (
     EI,
     Event,
@@ -49,6 +50,8 @@ def commune(reg: Registre, insee: str) -> dict[str, Any]:
     evs = reg.by_insee.get(insee, [])
     return {
         **_counts(evs),
+        # the cameras its acts authorise, by holder (cameras.py)
+        "cam_aut": cameras.autorisees(evs),
         "montant": _amount(e for e in evs if e["compte"] and e["communal"]),
         "carte": carte(reg, insee),
     }
@@ -91,6 +94,7 @@ def departement(reg: Registre, dep: str) -> dict[str, Any]:
     return {
         **_counts(evs),
         **drones_departement(reg, dep),
+        "cam_aut": cameras.autorisees(evs),
         "sansCommune": sum(1 for e in evs if not e.get("insee") or e["insee"] not in reg.communes),
         "montant": _amount(e for e in evs if e["compte"]),
         "montantBrut": _amount(e for e in evs if e["t"] == "attribution"),
