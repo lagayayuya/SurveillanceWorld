@@ -192,6 +192,12 @@ def test_a_recueil_an_older_reader_read_with_no_act_is_asked_again_only_by_its_t
     rules_dir.mkdir()
     for name in ("collecte_actes.yaml", "registre_effacements.yaml", "registre_sources.yaml"):
         (rules_dir / name).write_text((registre.RULES / name).read_text("utf-8"), "utf-8")
+    # the rule of 2026-11-08 (130 titles); since 2026-11-10 every such recueil is asked (« . »)
+    raw = (rules_dir / "collecte_actes.yaml").read_text("utf-8")
+    assert '  titre: "."' in raw
+    (rules_dir / "collecte_actes.yaml").write_text(
+        raw.replace('  titre: "."', '  titre: "captation|a[ée]ronef|drone|cam[ée]ra"'), "utf-8"
+    )
     pref69 = {"nom": "Rhône", "code": "69", "genre": "departement", "attrap": "pref69",
               "index": None, "defi": False, "parcours": False, "vague": 1,
               "actes_12_mois": 9}  # fmt: skip

@@ -56,15 +56,17 @@ def test_a_week_s_run_reads_the_prefectures_while_a_re_reading_waits(tmp_path, m
     night = dt.datetime(2026, 11, 9, 1, 15, tzinfo=ZoneInfo("Europe/Paris"))
     old = {"administration": "pp75", "date": "2025-03-01", "statut": "lu", "lecteur": 2}
     Store(tmp_path, "recueils").add([
-        {"id": "a", "name": "Recueil spécial du 1er mars 2025"} | old,  # no act, no camera
+        {"id": "a", "name": "Recueil spécial du 1er mars 2025"} | old,  # no act: asked too
         {"id": "b", "name": "RAA - n°2025-01165 - captation d'images par drone"} | old,
         {"id": "c", "name": "Recueil n° 12", "statut": "lu", "lecteur": parse_raa.VERSION},
     ])  # fmt: skip
-    assert arretes.en_attente(ctx) == 1  # « b » only
+    assert arretes.en_attente(ctx) == 2  # every empty one since 2026-11-10, « c » read
     cli.tourner(ctx, now=night)
     assert sorted(ran) == ["arretes", "dila"]
     ran.clear()
-    Store(tmp_path, "recueils").add([{"id": "b", "statut": "lu", "lecteur": parse_raa.VERSION}])
+    Store(tmp_path, "recueils").add(
+        [{"id": k, "statut": "lu", "lecteur": parse_raa.VERSION} for k in ("a", "b")]
+    )
     cli.tourner(ctx, now=night)
     assert ran == ["dila"]  # nothing waits: the day's flow only
 

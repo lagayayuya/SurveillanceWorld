@@ -35,8 +35,11 @@ relecture:
     the map shows (a capture, an aircraft, a drone, video protection, a camera), 130 of
     them, among which the Préfecture de police's single acts (« Arrêté n° 2026-01165
     autorisant la captation… », no act by reader 2). The rest wait for the count of acts
-    found: past 5 % of these, two night runs for the others.
-  titre: "captation|a[ée]ronef|drone|vid[ée]o[ -]?protection|vid[ée]o[ -]?surveillance|cam[ée]ra"
+    found: past 5 % of these, two night runs for the others. Counted on 2026-11-10 after the
+    night run (readers 7 and 8): 15 of the 130 give acts (11.5 %), past 5 %: every recueil an
+    older reader read with no act is asked again (Ju's rule, 2026-11-09), about 2 750 requests,
+    some 7 h 40 at Attrap's pace, over the night runs that follow (a run stops at its 4.5 h).
+  titre: "."
 
 types:
   drone:
