@@ -357,6 +357,9 @@ class DepartementA extends Vue<PropsA, StateA> {
         nomDep: N.nom,
         zero: "—",
       });
+    // a commune whose acts are not read, or none attached yet: no number to colour (« nd »)
+    const sansNombre = (c: { insee?: string; aut: number; dr?: number }, k: "cam" | "dr") =>
+      ["non_lu", "aucun_rattache"].includes(ditC(c, k).forme);
     const bulleActes = (c: { insee?: string; aut: number; dr?: number }, k: "cam" | "dr") => {
       const d = ditC(c, k);
       const n = (k === "cam" ? c.aut : c.dr) ?? 0;
@@ -674,10 +677,8 @@ class DepartementA extends Vue<PropsA, StateA> {
             if (!ll) return null;
             const s = f.stats.communes[c.insee];
             // a commune whose acts are not read, or none attached yet, has no colour (« nd »)
-            const vide = (k: "cam" | "dr") =>
-              ["non_lu", "aucun_rattache"].includes(ditC(c, k).forme);
             const v =
-              (m === "aut" && vide("cam")) || (m === "dr" && vide("dr"))
+              (m === "aut" && sansNombre(c, "cam")) || (m === "dr" && sansNombre(c, "dr"))
                 ? null
                 : valeur(m, {
                     pop: c.pop,
@@ -786,6 +787,11 @@ class DepartementA extends Vue<PropsA, StateA> {
         leg: [
           ...[0, 1, 2, 3, 4].map((k) => ({ sw: `sw q${k}`, l: t(`departement_a.leg.${m}.${k}`) })),
           ...(metroK ? [{ sw: "sw metro", l: nomEpci(metroK, f.stats.epcis[metroK]?.nom) }] : []),
+          // the grey points of the acts' modes say what they are (Ju 11/11)
+          ...((m === "aut" || m === "dr") &&
+          coms.some((c) => sansNombre(c, m === "aut" ? "cam" : "dr"))
+            ? [{ sw: "sw nd", l: t("departement_a.leg_nd_actes") }]
+            : []),
         ],
         r: repli(S.open, "equipees", t("departement_a.equipees"), eq.rows.length, this.basculer),
         equipeesNote: t(eq.seuil ? "departement_a.equipees_s" : "departement_a.equipees_s0", {
