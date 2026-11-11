@@ -11,7 +11,7 @@
 // written « non lu ». A chunk the punk interface alone downloads (area.ts); its paper is the
 // camera sheet's (theme/punk/sheet.css), its own rules theme/punk/area.css.
 import { cutout, fitTitle, pinHead } from "./chips";
-import { dansDep, type Etat, gapBlock, nb, registreLien } from "./gap";
+import { artDep, dansDep, type Etat, gapBlock, nb, registreLien } from "./gap";
 import { t } from "./i18n";
 import {
   aCommune,
@@ -625,7 +625,7 @@ function departementBody(input: PunkAreaInput, dep: DepFile | null): HTMLElement
       onAdd: input.onAdd,
       registre: dep
         ? registreLien(
-            nom,
+            artDep(code, nom),
             camLu ? { n: ds?.cam ?? 0, min: false } : undefined,
             `/registre/departement/${code}`,
             true,
