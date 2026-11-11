@@ -563,6 +563,14 @@ test("each date says which it is; a drone act by its publication (Ju 10/11, 11/1
   assert.equal(dateDite(doc({ id: "c", t: "attribution", date: "2026-11-03" })), "signé le 3\u00a0nov.\u00a02026");
   assert.equal(dateDite(doc({ id: "a", t: "avis", date: "2026-11-08" })), "publié le 8\u00a0nov.\u00a02026");
   assert.equal(dateDite(doc({ id: "k", t: "arrete", date: "2026-04-28" })), "daté du 28\u00a0avr.\u00a02026");
+  assert.equal(
+    dateDite(doc({ id: "k2", t: "arrete", date: "2026-04-28", provenance: "collecte" })),
+    "publié le 28\u00a0avr.\u00a02026",
+  );
+  assert.equal(
+    dateDite(doc({ id: "k3", t: "arrete", date: "2026-04-28", provenance: "zone" })),
+    "daté du 28\u00a0avr.\u00a02026",
+  );
   // a decree whose publication is read: « publié le » that day
   assert.equal(dateDite(doc({ id: "p", t: "arrete", date: "2026-04-28", publie: "2026-04-30" } as never)), "publié le 30\u00a0avr.\u00a02026");
   assert.equal(dateDite(doc({ id: "s", t: "subvention_region", date: "2026-09-24" })), "attribuée le 24\u00a0sept.\u00a02026");

@@ -703,8 +703,8 @@ export const cleDate = (e: Evenement): string =>
 
 /** A document's date said with what it is (Ju, 11/11): a contract « signé le » (DECP's
  * notification), a notice « publié le » (BOAMP's publication), a decree « publié le » when its
- * publication is read, else « daté du » (a camera decree's own day: no publication is served for
- * them), a subsidy « attribuée le » (« attribuée en 2024 » when dated by its year), another
+ * publication is read or its date is its recueil's (a collected decree: A, 11/11), else « daté
+ * du » (a decree's own day, the pilot's), a subsidy « attribuée le » (« attribuée en 2024 » when dated by its year), another
  * document dated by its year « en 2024 », anything else « daté du »; a drone act « publié le 8 nov.
  * 2026 · vol le 9 nov. 2026 » (its recueil, its first flight day), its flight left out when
  * `court`. */
@@ -728,6 +728,11 @@ export function dateDite(e: Evenement, court = false): string {
 export const publieLu = (e: Evenement): string | null =>
   e.t.startsWith("arrete") ? ((e as { publie?: string | null }).publie ?? null) : null;
 
+/** A decree read in a prefecture's recueil is dated by that recueil (A, 11/11: « arrêté du » is
+ * false for it); the pilot's decrees (zone) and the others keep their own day. */
+export const recueilli = (e: Evenement): boolean =>
+  e.provenance === "collecte" || e.provenance === "autre_prefecture";
+
 /** Which date a document's is (the key of « publié le », « signé le »…, Ju 11/11): a drone act's
  * the publication when read, else its flight; a subsidy's its award. */
 export function quelleDate(
@@ -738,7 +743,7 @@ export function quelleDate(
   if (e.date_annee) return "annee";
   if (e.t === "attribution" || e.t === "modification") return "signe";
   if (/^(avis|resultat|rectificatif)$/.test(e.t)) return "publie";
-  if (e.t.startsWith("arrete")) return publieLu(e) ? "publie" : "du";
+  if (e.t.startsWith("arrete")) return publieLu(e) || recueilli(e) ? "publie" : "du";
   return "du";
 }
 
