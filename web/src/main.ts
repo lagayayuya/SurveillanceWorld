@@ -37,7 +37,6 @@ import { locale, t, tp } from "./i18n";
 import { addImages, KINDS, type Kind, loadStickers, TAG_PREFIX } from "./icons";
 import { installKeyboard } from "./keyboard";
 import {
-  AREA_FADE,
   AREA_SELECTED_LAYERS,
   areaFillOpacities,
   CAMERA_HIT_RADIUS,
@@ -45,7 +44,8 @@ import {
   COMMUNES_MIN,
   COMMUNES_PROBE,
   DEFAULT_LEVEL,
-  DEP_OUTLINE_MAX,
+  DEP_SELECTED_LAYERS,
+  DEPS_TILES_MAX,
   DETAIL_MIN,
   drawnBasemap,
   FOCUS_MARKER_RADIUS,
@@ -826,15 +826,24 @@ const addFrom = (fromArea = false): (() => void) | undefined => {
 };
 /** The map's legend of the open area (board 12, arealegend.ts), over the map; null removes it. */
 let legendShown: HTMLElement | null = null;
+/** The level the map colours at its zoom (départements below COMMUNES_MIN). */
+const areaLevel = (): "commune" | "departement" =>
+  map.getZoom() < COMMUNES_MIN ? "departement" : "commune";
+let legendLevel = areaLevel();
+let legendSeq = 0;
 const areaLegend = (p: AreaProps | null): void => {
   legendShown?.remove();
   legendShown = null;
+  legendLevel = areaLevel();
+  const level = legendLevel;
+  // Only the latest call draws: two can cross while a département opens and is framed.
+  const seq = ++legendSeq;
   const breaks = meta.area_classes;
   if (!p || !breaks?.length) return;
   const pub = panel.mode.publicOnly;
   void import("./arealegend")
     .then((m) => {
-      if (shownArea !== p) return;
+      if (shownArea !== p || seq !== legendSeq) return;
       legendShown?.remove();
       legendShown = m.legendBox(
         {
@@ -843,6 +852,7 @@ const areaLegend = (p: AreaProps | null): void => {
           art: isDepartement(p) ? m.artDep(String(p.c), String(p.nm)) : undefined,
           y: Number(p[pub ? "hi_pub" : "hi"] ?? 0),
           n: Number(p[pub ? "n_pub" : "n"] ?? 0),
+          level,
         },
         breaks,
       );
@@ -850,6 +860,10 @@ const areaLegend = (p: AreaProps | null): void => {
     })
     .catch(() => {});
 };
+// The legend says the level drawn: drawn again when the zoom crosses the communes' one.
+map.on("zoomend", () => {
+  if (shownArea && areaLevel() !== legendLevel) areaLegend(shownArea);
+});
 /** The camera sheet's « Combien en manque-t-il ? » (board 12, cameragap.ts): a slot kept while
  * the sheet is drawn again, filled with the block of the commune under the camera, read from the
  * invisible communes layers (layers.ts communes-probe) once the map has drawn them there. */
@@ -1165,6 +1179,12 @@ function selectArea(p: AreaProps | null) {
   for (const id of AREA_SELECTED_LAYERS) {
     if (map.getLayer(id)) map.setFilter(id, ["==", ["get", "c"], code]);
   }
+  // A département's outline comes from its own source (admin-deps), loaded only while shown:
+  // a département's code has at most 3 characters, a commune's 5.
+  const dep = code !== "" && code.length <= 3;
+  for (const id of DEP_SELECTED_LAYERS) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", dep ? "visible" : "none");
+  }
 }
 const areaOptions = () => ({
   onClose: () => closeSheet("close button"),
@@ -1208,26 +1228,23 @@ function boundsOf(index: AreaIndex, code: string): [number, number, number, numb
     Math.max(...b.map((x) => x[3])),
   ];
 }
-async function fitArea(code: string, animate: boolean, padding?: PaddingOptions | number) {
+async function fitArea(
+  code: string,
+  animate: boolean,
+  padding?: PaddingOptions | number,
+  maxZoom: number = CITY_FADE[0] - 0.5,
+) {
   const index = await areaIndex();
   const bounds = boundsOf(index, code);
   if (!bounds) return;
   const dep = index[code]?.[1] === code;
   locate.release();
-  if (dep) {
-    // Board 12: a département opens over its communes, outlined (communes from AREA_FADE's
-    // end; its outline drawn up to DEP_OUTLINE_MAX), as close as its whole allows.
-    const cam = map.cameraForBounds(bounds, { padding: padding ?? freePadding() });
-    if (!cam) return;
-    const zoom = Math.min(Math.max(cam.zoom ?? 0, AREA_FADE[1] + 0.05), DEP_OUTLINE_MAX - 0.05);
-    map[animate ? "easeTo" : "jumpTo"]({ center: cam.center, zoom });
-    return;
-  }
   map.fitBounds(bounds, {
     padding: padding ?? freePadding(),
-    // Communes are drawn up to CITY_FADE (11.5 leaves them fully opaque); départements
-    // below COMMUNES_MIN.
-    maxZoom: dep ? COMMUNES_MIN - 0.5 : CITY_FADE[0] - 0.5,
+    // Communes are drawn up to CITY_FADE (11.5 leaves them fully opaque). Board 12: a
+    // département opens over its communes, outlined, as close as its whole allows; whole
+    // first, below the communes' zoom when it does not fit there (Ju 2026-11-11).
+    maxZoom,
     minZoom: dep ? 0 : COMMUNES_MIN,
     animate,
   });
@@ -1318,10 +1335,10 @@ async function openAreaByCode(code: string, how: string): Promise<void> {
     if (how === "link") void fitArea(code, false);
     return;
   }
-  // First at the right zoom for its tiles to load, then in the part of the map the sheet leaves
-  // free once it is open.
-  await fitArea(code, false, 40);
+  // First at the right zoom for its tiles to load (a département's only up to admin.pmtiles'
+  // z8), then in the part of the map the sheet leaves free once it is open.
   const layer = entry[1] === code ? "departements" : "communes";
+  await fitArea(code, false, 40, layer === "departements" ? DEPS_TILES_MAX + 0.9 : undefined);
   let tries = 0;
   const onIdle = () => {
     const f = map

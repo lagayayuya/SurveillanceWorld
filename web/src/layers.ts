@@ -77,6 +77,14 @@ export function sources(base: string): Record<string, SourceSpecification> {
   });
   return {
     admin: { ...src("admin"), attribution: t("attribution.ign") } as SourceSpecification,
+    // The same archive, read no further than its départements go (tiles.DEPS_MAX + 1): MapLibre
+    // then draws the z8 tiles larger beyond, so an open département keeps its outline over
+    // its communes at any zoom (Ju 2026-11-11). Its layers are hidden but while one is open.
+    "admin-deps": {
+      ...src("admin"),
+      maxzoom: DEPS_TILES_MAX,
+      attribution: t("attribution.ign"),
+    } as SourceSpecification,
     admin7: src("admin7"),
     streets: src("streets"),
     detail: src("detail"),
@@ -394,8 +402,14 @@ function areaLayers(
   const deps = layer === "departements";
   const id = deps ? "deps" : "communes";
   // An open département stays outlined over its communes (board 12, « Le Rhône : contour
-  // bleu »), as long as the tiles hold it (tiles.DEPS_MAX + 1, drawn up to z9).
-  const selectedRange = deps ? { maxzoom: DEP_OUTLINE_MAX } : {};
+  // bleu »), from its z8 tiles drawn larger (admin-deps), as far as the communes are drawn.
+  const selectedRange = deps
+    ? {
+        source: "admin-deps",
+        maxzoom: CITY_FADE[1],
+        layout: { "line-join": "round", visibility: "none" },
+      }
+    : { layout: { "line-join": "round" } };
   const base = {
     source: "admin",
     "source-layer": layer,
@@ -440,7 +454,6 @@ function areaLayers(
       id: `${id}-selected-edge`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
-      layout: { "line-join": "round" },
       paint: {
         "line-color": palette().areaSelectedEdge,
         "line-width": AREA_SELECTED + 2,
@@ -454,7 +467,6 @@ function areaLayers(
       id: `${id}-selected`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
-      layout: { "line-join": "round" },
       paint: {
         "line-color": palette().areaSelected,
         "line-width": AREA_SELECTED,
@@ -464,8 +476,10 @@ function areaLayers(
   ] as LayerSpecification[];
 }
 
-/** An open département's outline is drawn over its communes up to here (its z8 tiles). */
-export const DEP_OUTLINE_MAX = 9;
+/** The last zoom of admin.pmtiles holding the départements (tiles.DEPS_MAX + 1). */
+export const DEPS_TILES_MAX = 8;
+/** The open département's outline layers (shown by main.ts selectArea while one is open). */
+export const DEP_SELECTED_LAYERS = ["deps-selected-edge", "deps-selected"];
 /** Punk: the areas' border and the open area's outline, in CSS px. */
 const AREA_BORDER = 0.75;
 const AREA_SELECTED = 3;

@@ -736,6 +736,7 @@
   "area.v3.tops.open": "{nom} : {n} caméras sur la carte, ouvrir sa fiche",
   "area.v3.tops.empty": "Aucune commune du département n'a encore de caméra relevée.",
   "legend.area.title": "Couleur d'une commune",
+  "legend.area.title_dep": "Couleur d'un département",
   "legend.area.lead": "la part de ses rues à portée d'au moins une caméra relevée",
   "legend.area.below": "<{v}\u00a0%",
   "legend.area.between": "{lo}–{hi}",

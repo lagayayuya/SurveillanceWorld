@@ -18,6 +18,9 @@ export type LegendArea = {
   y: number;
   /** Cameras in the map's set (`n` or `n_pub`): none, the hatching. */
   n: number;
+  /** The level the map colours at its zoom: a département framed whole below the communes'
+   * zoom shows the départements' colours (Ju 2026-11-11). Default: communes. */
+  level?: "commune" | "departement";
 };
 
 function el(tag: string, cls = "", text?: string): HTMLElement {
@@ -57,7 +60,7 @@ export function legendBox(a: LegendArea, breaks: number[]): HTMLElement {
   box.setAttribute("aria-label", t("legend.section"));
   box.append(
     // A département's sheet shows its communes (board 12): their colours are the legend's.
-    el("h4", "", t("legend.area.title")),
+    el("h4", "", t(a.level === "departement" ? "legend.area.title_dep" : "legend.area.title")),
     el("p", "lead", t("legend.area.lead")),
   );
   const ramp = el("div", "ramp");
