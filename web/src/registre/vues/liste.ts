@@ -856,7 +856,7 @@ export class ListeVue extends Vue<Props, State> {
     const premieres = shown < total ? ` · ${t("liste.a.premieres", { n: fr(shown) })}` : "";
     const explique =
       liste === "communes"
-        ? ` ${t("liste.a.note.communes", { deps: I.totaux.deps_lus ?? 0 })}`
+        ? ` ${t("liste.a.note.communes", { deps: I.totaux.deps_lus ?? 0 })} ${t("liste.a.note.au_moins")}`
         : liste === "entreprises"
           ? ` ${t("liste.a.note.entreprises")}`
           : "";

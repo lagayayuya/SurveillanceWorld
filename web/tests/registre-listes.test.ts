@@ -177,7 +177,7 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.match(richText(beta?.cells[2]), /aucun contrat de la commune elle-même/);
   const gamma = rangs(C, "communes").find((r) => r.id === "91001");
   assert.equal(gamma?.v.aut, -1);
-  assert.equal(richText(gamma?.cells[4]), "non lu");
+  assert.equal(richText(gamma?.cells[4]), "pas encore lus");
   assert.match(JSON.stringify(gamma?.cells[4]), /"cls":"nonlu"/);
 
   // an intercommunality that buys has its name and its buyer's fiche; one that does not, its name

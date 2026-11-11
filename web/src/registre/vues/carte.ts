@@ -41,6 +41,7 @@ import { coupeMots, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import { avantVol, ordreDeps, type Publication } from "./accueil-outils.ts";
+import { ditActes } from "./actes-mots.ts";
 import template from "./carte.html?raw";
 import { etatDrones, fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
@@ -1367,6 +1368,8 @@ class CarteDrones extends Vue<Props, State> {
           " ",
           { a: { href: "/registre/couverture", text: t("carte.vide_couverture") } },
         ];
+      else if (!nArr && fichePanneau(d, S.X).couv.dr === "non_rattache")
+        vide = `${t("carte_a.dr_nr0", { nom })} ${t("socle_a.partie_non_rattachee")}.`;
       else if (couv.etat !== "collecte" && !nArr)
         vide = [
           { span: etatDepartementLie(d.f.commune.dep, d.f.stats.dep.nom, couv), cls: "" },
@@ -1431,6 +1434,13 @@ class CarteDrones extends Vue<Props, State> {
       : t("carte_a.cal_sous_12");
     // --- lot 5 (board Vue3D-Paris-fiche): the panel's head and its two tabs ----------------------
     const F = fichePanneau(d, S.X);
+    // a family whose acts are not all attached to a commune: its counts are minimums (« au moins
+    // N », Ju 11/11), with the sentence that says why; none attached, « aucun encore rattaché »
+    const minDr = F.couv.dr === "non_rattache";
+    const minCam = F.couv.cam === "non_rattache";
+    const auMoins = (m: boolean, x: string) => (m ? t("socle_a.au_moins", { n: x }) : x);
+    const depC = String(d.f.commune.dep ?? "");
+    const ditCam = ditActes(F.couv.cam, F.autorisees, depC, { nomDep: d.f.stats.dep?.nom });
     const ordinal = (n: number) => (n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }));
     const rangL = (x: { r: number; n: number } | null) =>
       x ? t("carte_a.rang", { r: ordinal(x.r), n: fr(x.n) }) : "";
@@ -1482,7 +1492,7 @@ class CarteDrones extends Vue<Props, State> {
       l,
       lu: !v.nonLu,
       nonLu: v.nonLu,
-      st: aucun ? t("carte_a.aucun_arrete") : t("liste.non_lu"),
+      st: aucun ? t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun_arrete") : t("liste.non_lu"),
       parts: v.parts.map((x) => ({
         cls: `seg ${clsV[x.k]}${x.pct < 10 ? " pt" : ""}`,
         st: `flex: ${Math.max(1, x.pct)}`,
@@ -1520,15 +1530,18 @@ class CarteDrones extends Vue<Props, State> {
     // the days of flight over 12 months: « non lu », « aucun jour de vol », or their count
     const joursFig = (rg: boolean) =>
       joursNl
-        ? { v: t("liste.non_lu"), u: "", l: "" }
+        ? { v: t("socle_a.actes_non_lus_court"), u: "", l: "" }
         : F.jours
           ? {
+              pre: minDr ? t("socle_a.au_moins_pre") : "",
               v: fr(F.jours),
               u: t("carte_a.jours_u", { n: F.jours }),
               l: rg ? avec(t("carte_a.sur_12"), rangL(F.rJours)) : t("carte_a.sur_12"),
             }
-          : { v: t("carte_a.aucun"), u: "", l: t("carte_a.sur_12_aucun") };
-    const nlFig = { cls: "fig nl", v: t("liste.non_lu"), u: "", l: "" };
+          : minDr
+            ? { v: t("socle_a.aucun_rattache"), u: "", l: "" }
+            : { v: t("carte_a.aucun"), u: "", l: t("carte_a.sur_12_aucun") };
+    const nlFig = { cls: "fig nl", v: t("socle_a.actes_non_lus_court"), u: "", l: "" };
     const ficheV = {
       figs: [
         {
@@ -1575,14 +1588,19 @@ class CarteDrones extends Vue<Props, State> {
       aut: (F.arretesLus
         ? [
             t("carte_a.aut_lus_a"),
-            { strong: t("carte_a.aut_lus_n", { n: fr(F.autorisees) }) },
+            { strong: auMoins(minCam, t("carte_a.aut_lus_n", { n: fr(F.autorisees) })) },
             t("carte_a.aut_lus_b", { nom }),
+            ...(minCam ? [" ", `${ditCam.phrase}.`] : []),
           ]
-        : [
-            t("carte_a.aut_nl_a", { nom }),
-            { strong: t("carte_a.aut_nl_b") },
-            t("carte_a.aut_nl_c"),
-          ]) as Rich,
+        : F.couv.cam === "non_lu"
+          ? [{ strong: ditCam.phrase }, t("carte_a.aut_nl_c")]
+          : minCam
+            ? [t("commune_a.cam_ans_nr0", { nom }), ". ", `${t("socle_a.partie_non_rattachee")}.`]
+            : [
+                t("carte_a.aut_nl_a", { nom }),
+                { strong: t("carte_a.aut_nl_b") },
+                t("carte_a.aut_nl_c"),
+              ]) as Rich,
       href: communeHref(insee),
       comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
       comparerL: t("carte_a.comparer", { nom }),
@@ -1595,14 +1613,22 @@ class CarteDrones extends Vue<Props, State> {
           ...(eDr === "non_lu"
             ? nlFig
             : eDr === "aucun"
-              ? { cls: "fig", v: t("carte_a.aucun"), u: "", l: "" }
+              ? {
+                  cls: "fig",
+                  v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
+                  u: "",
+                  l: "",
+                }
               : {
                   cls: "fig",
+                  pre: minDr ? t("socle_a.au_moins_pre") : "",
                   v: fr(tk.actes),
                   u: "",
                   l: tk.horairesLus ? t("carte_a.d_horaires", { n: fr(tk.horairesLus) }) : "",
                 }),
-          bl: t("carte_a.d_arretes_b"),
+          bl: minDr
+            ? `${t("carte_a.d_arretes_b")}\n${t("socle_a.partie_non_rattachee")}.`
+            : t("carte_a.d_arretes_b"),
         },
         {
           cls: joursNl ? "fig nl" : "fig",
@@ -1613,7 +1639,12 @@ class CarteDrones extends Vue<Props, State> {
         {
           k: t("carte_a.d_avant"),
           ...(sansActe
-            ? { cls: "fig", v: t("carte_a.aucun"), u: "", l: t("carte_a.d_avant_aucun") }
+            ? {
+                cls: "fig",
+                v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
+                u: "",
+                l: t("carte_a.d_avant_aucun"),
+              }
             : {
                 cls: vC.nonLu ? "fig nl" : "fig",
                 v: vC.nonLu ? t("liste.non_lu") : `${vC.parts[0].pct}`,
@@ -1637,7 +1668,12 @@ class CarteDrones extends Vue<Props, State> {
           ...(eDr === "non_lu"
             ? nlFig
             : eDr === "aucun"
-              ? { cls: "fig", v: t("carte_a.aucune"), u: "", l: "" }
+              ? {
+                  cls: "fig",
+                  v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucune"),
+                  u: "",
+                  l: "",
+                }
               : {
                   cls: "fig",
                   v: fr(tk.tracees),
@@ -1656,7 +1692,7 @@ class CarteDrones extends Vue<Props, State> {
         barre(vF.deps.length ? depsLus : t("carte_a.france", { n: 0 }), vF),
       ],
       volNote: sansActe
-        ? t("carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
+        ? t(minDr ? "carte_a.vol_note_nr0" : "carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
         : vC.nonLu
           ? t("carte_a.vol_note_nl")
           : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total), deps: depsLus }),
@@ -1689,14 +1725,23 @@ class CarteDrones extends Vue<Props, State> {
             ] as Rich)
           : eDr === "aucun"
             ? ([
-                t("carte_a.lead_dr_aucun", { nom }),
+                t(minDr ? "carte_a.dr_nr0" : "carte_a.lead_dr_aucun", { nom }),
+                ...(minDr ? [" ", `${t("socle_a.partie_non_rattachee")}.`] : []),
                 ...(avenir[0]
                   ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
                   : []),
               ] as Rich)
             : ([
-                { strong: t("carte_a.lead_dr_n", { n: fr(tk.actes) }) },
+                {
+                  // the sentence's first words: « Au moins 644 arrêtés »
+                  strong: minDr
+                    ? t("socle_a.au_moins_debut", {
+                        n: t("carte_a.lead_dr_n", { n: fr(tk.actes) }),
+                      })
+                    : t("carte_a.lead_dr_n", { n: fr(tk.actes) }),
+                },
                 t("carte_a.lead_dr_b", { n: tk.actes, nom }),
+                ...(minDr ? [" ", `${t("socle_a.partie_non_rattachee")}.`] : []),
                 ...(avenir[0]
                   ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
                   : []),

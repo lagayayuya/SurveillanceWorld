@@ -11,8 +11,8 @@ import {
   etatActes,
   figuresCommune,
   horsCommune,
+  formeActes,
   lecture,
-  nonRattache,
   figuresEntreprise,
   hauts,
   idsDe,
@@ -71,10 +71,9 @@ test("a commune's figures from its row: per 1 000 inhabitants, per inhabitant, u
 
 test("which decrees are read: « non lu » wherever the coverage is not, never 0 (Ju 09/11, recette 01-02)", () => {
   // the build's rule (rule:registre_couverture@1:actes_commune)
-  assert.equal(etatActes(false, 0, 5), "non_lu");
-  assert.equal(etatActes(true, 222, 0), "non_lu");
-  assert.equal(etatActes(true, 913, 447), "partiel");
-  assert.equal(etatActes(true, 0, 0), "lu");
+  assert.equal(etatActes(false, 0), "non_lu");
+  assert.equal(etatActes(true, 222), "non_rattache");
+  assert.equal(etatActes(true, 0), "lu");
   // the département's acts placed in no commune: its count less its acts placed, each once
   assert.deepEqual(horsCommune({ cam: 222, dr: 782 }, { cam: 0, dr: 642 }), { cam: 222, dr: 140 });
   assert.equal(horsCommune(undefined, { cam: 1 }), undefined);
@@ -84,32 +83,32 @@ test("which decrees are read: « non lu » wherever the coverage is not, never 0
         // Paris-like: no camera act placed, drone acts placed and others not
         "75056": { cam: 0, dr: 642 },
         // a commune the build already reads (served from 580f7cf on)
-        "13011": { cam: 6, dr: 0, couverture_actes: { cam: "partiel", dr: "non_lu" } },
+        "13011": { cam: 6, dr: 0, couverture_actes: { cam: "non_rattache", dr: "lu" } },
         "82121": { cam: 3, dr: 0 },
       },
       departements: {
         "75": { cam: 222, dr: 782 },
         "13": { cam: 3082, dr: 349 },
         "82": { cam: 40, dr: 0 },
-        "03": { cam: 34, dr: 12, couverture_actes_communes: { cam: "non_lu", dr: "non_lu" } },
+        "03": { cam: 34, dr: 12, couverture_actes_communes: { cam: "non_rattache", dr: "non_lu" } },
       },
     },
     dico: { communes: {} },
   } as never;
   const c = (insee: string, dep: string, etat = "collecte") =>
     couvertureActes({ insee, dep, etat, X });
-  // not served: a count above 0 shown, a 0 « non lu » where the département has acts
-  assert.deepEqual(c("75056", "75"), { cam: "non_lu", dr: "partiel" });
-  assert.deepEqual(lecture(c("75056", "75")), { cam: false, dr: true });
+  // not served: every count a minimum where the département has acts of the family
+  assert.deepEqual(c("75056", "75"), { cam: "non_rattache", dr: "non_rattache" });
+  assert.deepEqual(lecture(c("75056", "75")), { cam: true, dr: true });
   // a 0 read where the département has no act of the family at all
-  assert.deepEqual(c("82121", "82"), { cam: "partiel", dr: "lu" });
+  assert.deepEqual(c("82121", "82"), { cam: "non_rattache", dr: "lu" });
   // served: the build's reading wins
-  assert.deepEqual(c("13011", "13"), { cam: "partiel", dr: "non_lu" });
+  assert.deepEqual(c("13011", "13"), { cam: "non_rattache", dr: "lu" });
   // a commune without a row: its département's row says what it shows
-  assert.deepEqual(c("03310", "03"), { cam: "non_lu", dr: "non_lu" });
+  assert.deepEqual(c("03310", "03"), { cam: "non_rattache", dr: "non_lu" });
   // a département not collected: nothing read, whatever the counts
   assert.deepEqual(c("75056", "75", "non_collecte"), { cam: "non_lu", dr: "non_lu" });
-  // without listes.json: the commune's own file, a 0 not read
+  // without listes.json nor the département's count: a minimum
   const seul = couvertureActes({
     insee: "75056",
     dep: "75",
@@ -117,7 +116,7 @@ test("which decrees are read: « non lu » wherever the coverage is not, never 0
     X: null,
     propre: { cam: 0, dr: 642 },
   });
-  assert.deepEqual(lecture(seul), { cam: false, dr: true });
+  assert.deepEqual(seul, { cam: "non_rattache", dr: "non_rattache" });
 });
 
 test("a company's figures from its row, the départements where they all have a client", () => {
@@ -143,10 +142,13 @@ test("the CSV: quoted, a formula escaped, an unread figure empty, its mark and C
   );
 });
 
-test("read in a collected département but placed in no commune: « pas rattachés », not « non lu »", () => {
-  assert.equal(nonRattache("non_lu", "collecte"), true);
-  assert.equal(nonRattache("non_lu", "non_collecte"), false);
-  assert.equal(nonRattache("non_lu", undefined), false);
-  assert.equal(nonRattache("partiel", "collecte"), false);
-  assert.equal(nonRattache("lu", "collecte"), false);
+test("a family's count as served (Ju 11/11): the number, a minimum, none attached, not read", () => {
+  assert.equal(formeActes("lu", 12), "n");
+  assert.equal(formeActes("lu", 0), "n");
+  assert.equal(formeActes("non_rattache", 12), "au_moins");
+  // never « au moins 0 »
+  assert.equal(formeActes("non_rattache", 0), "aucun_rattache");
+  assert.equal(formeActes("non_lu", 3), "non_lu");
+  // a minimum still has its number (sorted at it); « non_lu » has none
+  assert.deepEqual(lecture({ cam: "non_rattache", dr: "non_lu" }), { cam: true, dr: false });
 });

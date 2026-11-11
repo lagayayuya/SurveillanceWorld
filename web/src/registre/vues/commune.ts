@@ -16,7 +16,6 @@ import {
   commune as chargerCommune,
   communeHref,
   type Donnees,
-  depArt,
   ess,
   lastArretes,
 } from "../commun.ts";
@@ -37,6 +36,7 @@ import { tidy, titleCase } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
 import { avantVol, casseNormale, type Publication } from "./accueil-outils.ts";
+import { ditActes } from "./actes-mots.ts";
 import {
   argentParAnnee,
   articleEpci,
@@ -51,9 +51,8 @@ import {
   type Serie,
   strate,
 } from "./commune-a.ts";
-import { couvertureActes, horsCommune, lecture, nonRattache, type RowActes } from "./comparer-a.ts";
+import { couvertureActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
 import { exportRows } from "./documents.ts";
-import { deArt } from "./entreprise-a.ts";
 import "./commune-a.css";
 import template from "./commune.html?raw";
 
@@ -381,12 +380,18 @@ export class Commune extends Vue<Props, State> {
       depTotal: f.stats.dep?.depStats,
     });
     const lu = lecture(couv);
-    // read in its département but placed in no commune yet: said so, not « non lu » (Ju 10/11)
-    const etatDep = f.couverture.departement.etat;
-    const nr = { cam: nonRattache(couv.cam, etatDep), dr: nonRattache(couv.dr, etatDep) };
-    const rattache = t("socle_a.non_rattache", { de: deArt(depArt(c.dep)) });
     const nCam = X?.lignes.communes[insee]?.cam ?? propre?.cam ?? 0;
     const nDr = X?.lignes.communes[insee]?.dr ?? propre?.dr ?? 0;
+    // each family in the words of its served state (Ju 11/11): « lu » the number alone,
+    // « non_rattache » a minimum (« au moins N », « aucun encore rattaché ») with its sentence,
+    // « non_lu » « Arrêtés de l'Allier pas encore lus »; a minimum has no rank
+    const depN = (f.couverture.departement as { nom?: string }).nom;
+    const dit = {
+      cam: ditActes(couv.cam, nCam, c.dep, { nomDep: depN }),
+      dr: ditActes(couv.dr, nDr, c.dep, { nomDep: depN }),
+    };
+    const min = { cam: couv.cam === "non_rattache", dr: couv.dr === "non_rattache" };
+    const auMoins = (k: "cam" | "dr", x: string) => (min[k] ? t("socle_a.au_moins", { n: x }) : x);
     const st = strate(pop);
     const pairs = X
       ? Object.entries(X.lignes.communes).filter(
@@ -443,7 +448,7 @@ export class Commune extends Vue<Props, State> {
         )
       : null;
     const rJv =
-      X && nj > 0
+      X && nj > 0 && !min.dr
         ? rang(
             nj,
             pairs.map(([, v]) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1)),
@@ -528,16 +533,13 @@ export class Commune extends Vue<Props, State> {
         href: "#argent",
       },
       {
-        cls: !lu.dr && !nj ? "fig nl" : "fig",
+        cls: (!lu.dr || min.dr) && !nj ? "fig nl" : "fig",
         k: T("commune_a.fig.drones"),
-        v: !lu.dr && !nj ? t(nr.dr ? "socle_a.non_rattache_court" : "liste.non_lu") : fr(nj),
-        u: !lu.dr && !nj ? "" : T("commune_a.fig.jours"),
-        l:
-          !lu.dr && !nj
-            ? nr.dr
-              ? rattache
-              : T("commune_a.fig.drones_nl")
-            : T("commune_a.fig.drones_l"),
+        // a minimum's « au moins » small before its number, in the unit's size
+        pre: min.dr && nj ? t("socle_a.au_moins_pre") : "",
+        v: (!lu.dr || min.dr) && !nj ? ditActes(couv.dr, 0, c.dep, { nomDep: depN }).v : fr(nj),
+        u: (!lu.dr || min.dr) && !nj ? "" : t("carte_a.jours_u", { n: nj }),
+        l: (!lu.dr || min.dr) && !nj ? dit.dr.phrase : T("commune_a.fig.drones_l"),
         dots: dots(
           rJv,
           (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
@@ -545,7 +547,10 @@ export class Commune extends Vue<Props, State> {
         ),
         r: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : ""),
         rb: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : "", tout),
-        tip: T("commune_a.fig.drones_tip", { nom }),
+        tip:
+          min.dr && nj
+            ? `${dit.dr.phrase}.\n${T("commune_a.fig.drones_tip", { nom })}`
+            : T("commune_a.fig.drones_tip", { nom }),
         href: "#drones",
       },
       {
@@ -597,7 +602,7 @@ export class Commune extends Vue<Props, State> {
     if (nj)
       lead.push(
         T("commune_a.lead_dr_a"),
-        { strong: T("commune_a.lead_dr", { n: nj }) },
+        { strong: auMoins("dr", T("commune_a.lead_dr", { n: nj })) },
         T("commune_a.lead_dr_b"),
       );
     point(".");
@@ -621,9 +626,10 @@ export class Commune extends Vue<Props, State> {
         .filter(Boolean)
         .sort()[0] ?? "2024";
     const pct = (v: number) => Math.round((100 * v) / Math.max(1, parts.total));
-    // four cases (recette 02): the cameras its decrees authorise; its decrees counted, their
-    // cameras not read; none, read (a true 0); its decrees not read
-    const camCas = !lu.cam ? "nl" : parts.total ? "lus" : nCam ? "nb" : "aucun";
+    // five cases (recette 02, Ju 11/11): the cameras its decrees authorise; its decrees counted,
+    // their cameras not read; none, read (a true 0); none attached yet where its département's are
+    // not all (« non_rattache »: the others are minimums); its decrees not read
+    const camCas = !lu.cam ? "nl" : parts.total ? "lus" : nCam ? "nb" : min.cam ? "nr0" : "aucun";
     const voirArretes: Handler = (ev) => {
       ev.preventDefault();
       this.versDocs({ onglet: "aut" });
@@ -634,17 +640,19 @@ export class Commune extends Vue<Props, State> {
         ...(camCas === "lus"
           ? [
               T("commune_a.cam_ans_a", { y: depuis }),
-              { strong: T("commune_a.cam_ans_n", { n: fr(parts.total) }) },
+              { strong: auMoins("cam", T("commune_a.cam_ans_n", { n: fr(parts.total) })) },
               T("commune_a.cam_ans_b", { nom }),
             ]
           : camCas === "nb"
             ? [
-                { strong: T("commune_a.cam_ans_nb", { n: nCam, y: depuis }) },
+                { strong: auMoins("cam", T("commune_a.cam_ans_nb", { n: nCam, y: depuis })) },
                 T("commune_a.cam_ans_nb_b", { nom }),
               ]
             : camCas === "aucun"
               ? [T("commune_a.cam_ans_aucun", { nom, y: depuis })]
-              : [nr.cam ? rattache : T("commune_a.cam_ans_nl", { nom })]),
+              : camCas === "nr0"
+                ? [T("commune_a.cam_ans_nr0", { nom })]
+                : [dit.cam.phrase]),
         ...(carteN != null ? [T("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : ["."]),
       ] as RichItem[],
       kAut: T("commune_a.cam_k", { y: depuis }),
@@ -669,19 +677,16 @@ export class Commune extends Vue<Props, State> {
                 pick: (() => this.versDocs({ onglet: "aut", part: k })) as Handler,
               }))
           : null,
-      etat: camCas === "nl" && !nr.cam ? t("liste.non_lu") : "",
-      nonLu:
-        camCas === "nb"
-          ? T("commune_a.cam_nb_nl", { n: nCam })
-          : camCas !== "nl"
-            ? ""
-            : !lus
-              ? T("commune_a.cam_non_lu")
-              : hors?.cam
-                ? `${nr.cam ? `${rattache}. ` : ""}${T("commune_a.cam_non_lu_hors", { n: hors.cam, nom })}`
-                : nr.cam
-                  ? `${rattache}.`
-                  : T("commune_a.cam_non_lu_c"),
+      etat: camCas === "nl" ? dit.cam.v : "",
+      // a minimum says why, once (« Une partie des arrêtés du département… »)
+      nonLu: [
+        camCas === "nb" ? T("commune_a.cam_nb_nl", { n: nCam }) : "",
+        min.cam ? `${dit.cam.phrase}.` : "",
+        camCas === "nr0" && hors?.cam ? T("commune_a.cam_non_lu_hors", { n: hors.cam, nom }) : "",
+        camCas !== "nl" ? "" : !lus ? T("commune_a.cam_non_lu") : T("commune_a.cam_non_lu_c"),
+      ]
+        .filter(Boolean)
+        .join(" "),
       aucun: camCas === "aucun" ? T("commune_a.cam_aucun_lu", { y: depuis }) : "",
       voir: camCas === "nb" ? { l: T("commune_a.cam_voir", { n: nCam }), pick: voirArretes } : null,
       osm: carteN ? fr(carteN) : "",
@@ -1099,9 +1104,17 @@ export class Commune extends Vue<Props, State> {
         n: drN,
         ans: [
           T("commune_a.dr_ans_a", { nom }),
-          { strong: T("commune_a.lead_dr", { n: nj }) },
+          { strong: auMoins("dr", T("commune_a.lead_dr", { n: nj })) },
           T("commune_a.dr_ans_b"),
-          ...(lu.dr && nDr ? [" ", T("commune_a.dr_ans_actes", { n: nDr, y: anDr })] : []),
+          ...(lu.dr && nDr
+            ? [
+                " ",
+                T(min.dr ? "commune_a.dr_ans_actes_min" : "commune_a.dr_ans_actes", {
+                  n: nDr,
+                  y: anDr,
+                }),
+              ]
+            : []),
           ...(nAuj
             ? [
                 " ",
@@ -1526,10 +1539,13 @@ export class Commune extends Vue<Props, State> {
         l: T("commune_a.src.arretes"),
         d:
           lu.cam || lu.dr
-            ? T("commune_a.src.arretes_d", { y: depuis })
-            : nr.cam || nr.dr
-              ? rattache
-              : t("liste.non_lu"),
+            ? [
+                T("commune_a.src.arretes_d", { y: depuis }),
+                min.cam || min.dr ? `${(min.cam ? dit.cam : dit.dr).phrase}.` : "",
+              ]
+                .filter(Boolean)
+                .join(". ")
+            : dit.cam.phrase,
       },
       { cls: "part", l: t("accueil.src.subventions"), d: T("commune_a.src.subventions") },
       { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },

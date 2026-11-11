@@ -43,6 +43,7 @@ import { signaler } from "./signaler.ts";
 import { montantA } from "./socle-a.ts";
 import { plain, tidy, titleCase } from "./texte.ts";
 import { pluriel, type TypeCle } from "./types.ts";
+import { ditActes } from "./vues/actes-mots.ts";
 import { appareils } from "./vues/commune-outils.ts";
 import { couvertureActes, lecture } from "./vues/comparer-a.ts";
 
@@ -341,15 +342,22 @@ function rangsCommunes(C: Corpus): Rang[] {
   return Object.entries(C.X.communes).map(([insee, c]) => {
     const x = C.L.communes[insee];
     // the build's reading of each family (comparer-a.ts couvertureActes, recette 01): never a 0
-    // where the commune's acts are not read
-    const lu = lecture(
-      couvertureActes({
-        insee,
-        dep: x.dep,
-        etat: lus.has(x.dep) ? "collecte" : undefined,
-        X: { lignes: C.X, dico: C.L } as never,
-      }),
-    );
+    // where the commune's acts are not read; a minimum « au moins N » where they are not all
+    // attached to a commune, sorted at its known number (Ju 11/11)
+    const couv = couvertureActes({
+      insee,
+      dep: x.dep,
+      etat: lus.has(x.dep) ? "collecte" : undefined,
+      X: { lignes: C.X, dico: C.L } as never,
+    });
+    const lu = lecture(couv);
+    const cellActes = (k: "cam" | "dr"): Rich => {
+      const d = ditActes(couv[k], c[k] ?? 0, x.dep, {
+        nomDep: nomDep(C, x.dep),
+        zero: k === "dr" ? NA : undefined,
+      });
+      return d.forme === "non_lu" ? [{ span: d.v, cls: "nonlu" }] : d.v;
+    };
     const carte = c.carte ?? null;
     const pop = x.pop ?? 0;
     const p1000 = carte != null && pop > 0 ? (1000 * carte) / pop : -1;
@@ -394,8 +402,8 @@ function rangsCommunes(C: Corpus): Rang[] {
           ? [v(montantA(amt)), sub(t("liste.a.eph", { n: fr(eph) }))]
           : [v(NA), sub(t("liste.a.aucun_contrat"))],
         fr(c.con),
-        lu.cam ? fr(c.cam) : nonLu(),
-        lu.dr ? (c.dr ? fr(c.dr) : NA) : nonLu(),
+        cellActes("cam"),
+        cellActes("dr"),
       ],
       mots: plain(`${x.nom} ${nomDep(C, x.dep)} ${nomEpci}`),
       f: {
