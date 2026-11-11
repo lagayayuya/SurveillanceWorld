@@ -36,7 +36,7 @@ import { tidy, titleCase } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
 import { avantVol, casseNormale, type Publication } from "./accueil-outils.ts";
-import { ditActes } from "./actes-mots.ts";
+import { ditActes, phraseActes } from "./actes-mots.ts";
 import {
   argentParAnnee,
   articleEpci,
@@ -663,7 +663,7 @@ export class Commune extends Vue<Props, State> {
               ? [T("commune_a.cam_ans_aucun", { nom, y: depuis })]
               : camCas === "nr0"
                 ? [T("commune_a.cam_ans_nr0", { nom })]
-                : [dit.cam.phrase]),
+                : phraseActes(couv.cam, c.dep, depN)),
         ...(carteN != null ? [T("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : ["."]),
       ] as RichItem[],
       kAut: T("commune_a.cam_k", { y: depuis }),
@@ -1552,7 +1552,7 @@ export class Commune extends Vue<Props, State> {
               ]
                 .filter(Boolean)
                 .join(". ")
-            : dit.cam.phrase,
+            : phraseActes(couv.cam, c.dep, depN),
       },
       { cls: "part", l: t("accueil.src.subventions"), d: T("commune_a.src.subventions") },
       { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },

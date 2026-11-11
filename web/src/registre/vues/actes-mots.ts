@@ -2,8 +2,10 @@
 // the build serves (comparer-a.ts `EtatActes`) says how the number reads.
 
 import { depArt } from "../commun.ts";
+import type { RichItem } from "../dc.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
+import { departementDans, phrase } from "../liens.ts";
 import { type EtatActes, type FormeActes, formeActes } from "./comparer-a.ts";
 import { deArt } from "./entreprise-a.ts";
 
@@ -39,4 +41,14 @@ export function ditActes(
     v: forme === "au_moins" ? t("socle_a.au_moins", { n: fmt(n) }) : t("socle_a.aucun_rattache"),
     phrase: t("socle_a.partie_non_rattachee"),
   };
+}
+
+/** The sentence with its département a link to its fiche (every mention that has its fiche is a
+ * link, the owner's rule): « Arrêtés de [l'Allier] pas encore lus »; the others as written. */
+export function phraseActes(etat: EtatActes, dep: string, nomDep?: string | null): RichItem[] {
+  const d = ditActes(etat, 0, dep, { nomDep });
+  if (d.forme !== "non_lu") return d.phrase ? [d.phrase] : [];
+  return phrase("socle_a.actes_non_lus", {
+    de: departementDans(dep, deArt(depArt(dep, nomDep))),
+  });
 }

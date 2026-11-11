@@ -41,7 +41,7 @@ import { coupeMots, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
 import { avantVol, ordreDeps, type Publication } from "./accueil-outils.ts";
-import { ditActes } from "./actes-mots.ts";
+import { ditActes, phraseActes } from "./actes-mots.ts";
 import template from "./carte.html?raw";
 import { etatDrones, fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
@@ -1596,7 +1596,7 @@ class CarteDrones extends Vue<Props, State> {
             ...(minCam ? [" ", `${ditCam.phrase}.`] : []),
           ]
         : F.couv.cam === "non_lu"
-          ? [{ strong: ditCam.phrase }, t("carte_a.aut_nl_c")]
+          ? [{ strong: phraseActes(F.couv.cam, depC, d.f.stats.dep?.nom) }, t("carte_a.aut_nl_c")]
           : minCam
             ? [t("commune_a.cam_ans_nr0", { nom }), ". ", `${t("socle_a.partie_non_rattachee")}.`]
             : [
