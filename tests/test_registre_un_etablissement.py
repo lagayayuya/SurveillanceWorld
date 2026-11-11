@@ -32,6 +32,7 @@ def test_a_bundle_a_list_of_communes_or_an_habilitation_is_placed_in_none(tmp_pa
         ("… POUR LES ÉTABLISSEMENTS FRANCE TRAVAIL DE MAUBEUGE, LILLE, TOURCOING", "59"),
         ("Arrêté portant habilitation vidéoprotection … Centre pénitentiaire", "83"),
         ("Arrêté portant composition de la commission départementale", "33"),
+        ("AP 2024 composition commission vidéoprotection PREF 25 09 24", "25"),
     ):
         assert not seul({"departement": dep, "titre": titre}), titre
 

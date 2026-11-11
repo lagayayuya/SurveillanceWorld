@@ -80,10 +80,11 @@ commune_par_regle:
   taux: 0.95
   # an act that is not one establishment's: a bundle of acts under one number (« Arrêté n° VPA
   # / 2026 / 290 à 299 », « 31 arrêtés », « Arrêtés … (Commission du 15 octobre 2024) », the
-  # Préfecture de police's « communication des arrêtés »), the commission's own composition;
+  # Préfecture de police's « communication des arrêtés »), the commission's own composition
+  # (the Doubs's « AP 2024 composition commission vidéoprotection », 2026-11-11);
   # and one whose title names two communes or more (France Travail's six agencies, bakeries in
   # three villages): placed in none (2026-11-10, a second drawing)
-  exclure_titre: '\barretes\b|\b\d+ arretes\b|n° ?[\w /.-]*\d+ ?a ?\d+\b|\bcommission (?:departementale )?du\b|\bliste des\b|composition de la commission|communication des|habilitation|agrement|visionnage'
+  exclure_titre: '\barretes\b|\b\d+ arretes\b|n° ?[\w /.-]*\d+ ?a ?\d+\b|\bcommission (?:departementale )?du\b|\bliste des\b|composition (?:de la )?commission|communication des|habilitation|agrement|visionnage'
   communes_au_titre_max: 1
   types:
     # the last fresh drawing's (2026-11-11, reader 11, seed 20261114), until the next one
