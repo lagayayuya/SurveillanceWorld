@@ -72,7 +72,11 @@ commune_par_regle:
     Paimbœuf). Checked by a diff, not by a fresh drawing: of the 3 890 camera acts of the four
     drawings' 127 recueils, 97 change; 81 to the commune after the establishment's postcode, 16
     read by hand (11 to their commune, 1 to its applicant's, the establishment's unnamed, 4 to
-    none instead of a wrong one); none worse.
+    none instead of a wrong one); none worse. Read again on the server (2026-11-11, 12 541 recueils):
+    1 107 of 63 027 camera acts change (1.8 %), 40 of them drawn (seed 20261115) and read by
+    hand on their text, all 40 right (« 1308 avenue de Chambéry à Challes-les-Eaux », « 83
+    faubourg de Mulhouse à Kingersheim », « Montembœuf »); in Doubs and Corrèze, 3 of the 18
+    known losses remain (a closure, two Corrèze acts).
   publie: true
   # a département of one commune: every one establishment's act of it is that commune's,
   # no name read (Ju, 2026-11-11: Paris)
