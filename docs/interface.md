@@ -1334,6 +1334,22 @@ stands whole in the width. The contract's parcours places « Aujourd'hui » amon
 département is collected but its acts are placed in no commune, pages say « Arrêtés de … lus, pas
 encore rattachés aux communes », never « non lu ». Comparer recalls what its yellow means.
 
+### 1.22 The register with Ju's answers of 2026-11-11
+
+A commune's camera and drone acts read as the build serves `couverture_actes`: `lu` the number
+alone (0 means 0); `non_rattache` « au moins N » (« aucun encore rattaché » for 0) with « Une partie
+des arrêtés du département n'est pas encore rattachée à une commune »; `non_lu` « Arrêtés de
+<département> pas encore lus » (the département a link), « pas encore lus » in a narrow cell. This
+replaces § 1.21's « Arrêtés de … lus, pas encore rattachés aux communes ». A minimum sorts at its
+known number, has no rank, and a Comparer row holding one has no yellow (its note says so); in the
+3D view « aucun encore rattaché » takes the muted, dashed look of a missing figure. Dates say which
+they are: « signé le » (a contract), « publié le » (a notice, a drone act's recueil, a decree read
+in a recueil), « daté du » (a decree's own day, the pilot's), « attribuée le » / « attribuée en
+<année> » (a subsidy), « vol le » (a day of flight). A graph node's card holds only « Ouvrir la
+fiche → » and « Centrer ici », with its ✕ (the only visible way to close it on a phone); its detail
+stays in the side panel. The 3D legend says a volume's height is its hours of flight authorised
+over the period shown; the département's map says what its grey points are in the acts' modes.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
