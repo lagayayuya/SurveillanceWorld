@@ -46,8 +46,9 @@ import yaml
 # 7: « ARRÊTE : » with a page's foot before article 1 is no heading; 8: the helicopters'
 # captures are drone-type acts, and every aerial act keeps its aircraft's words; 9: a single
 # act's title before its heading; 10: the camera numbers' elided and labelled forms, a
-# camera act's holder words
-VERSION = 11
+# camera act's holder words; 11: a camera act's commune never its authority's town; 12: never
+# a name after « du », « de la » or a street's « route de », « œ » read as « oe »
+VERSION = 12
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
 MEME_TEXTE = {
@@ -59,6 +60,7 @@ MEME_TEXTE = {
     9: {3, 4, 5, 6, 7, 8, 9},
     10: {3, 4, 5, 6, 7, 8, 9, 10},
     11: {3, 4, 5, 6, 7, 8, 9, 10, 11},
+    12: {3, 4, 5, 6, 7, 8, 9, 10, 11, 12},
 }
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
@@ -145,8 +147,10 @@ def strip(s: str) -> str:
 
 def loose(s: str) -> str:
     """For names: no hyphen, apostrophe or underscore (the Pas-de-Calais's titles, « …
-    vidéoprotection _ ST_Martin_Boulogne »), St → Saint, a word's final « s » dropped."""
-    s = strip(s).replace("-", " ").replace("'", " ").replace("_", " ")
+    vidéoprotection _ ST_Martin_Boulogne »), « œ » as the « oe » a text writes (Hœnheim,
+    Paimbœuf), St → Saint, a word's final « s » dropped."""
+    s = strip(s).replace("œ", "oe").replace("æ", "ae")
+    s = s.replace("-", " ").replace("'", " ").replace("_", " ")
     s = re.sub(r"\bst\b", "saint", re.sub(r"\bste\b", "sainte", s))
     return re.sub(r"\s+", " ", re.sub(r"(\w{3,})s\b", r"\1", s)).strip()
 
@@ -513,6 +517,10 @@ def drone_fields(n: str, title_n: str, when: dt.date) -> dict[str, Any]:
 
 
 # --- communes ------------------------------------------------------------------------------
+# A street named after a commune (loose: « route d'Arras » is « route d arras »)
+VOIES = ("rue", "route", "avenue", "chemin", "boulevard", "allee", "impasse", "quai", "faubourg")
+
+
 class Communes:
     """The communes of one or more départements, by their loose name."""
 
@@ -523,7 +531,14 @@ class Communes:
         self._rx = None
         if self.by:
             alts = "|".join(re.escape(k) for k in sorted(self.by, key=len, reverse=True))
-            self._rx = re.compile(r"(?<![a-z])(" + alts + r")(?![a-z])")
+            # never a commune: a name after « du » or « de la » (« le préfet du Doubs », the
+            # letterhead glued « CabinetDE LA CORRÈZE », « le code de la route »: a commune
+            # without its own article is never written so) nor a street's (« 1 route de
+            # Hoerdt 67550 Vendenheim », « avenue de Dunkerque à Lille »)
+            voies = "".join(rf"(?<!{voie} {de} )" for voie in VOIES for de in ("de", "d"))
+            self._rx = re.compile(
+                r"(?<![a-z])(?<!du )(?<!de la )" + voies + "(" + alts + r")(?![a-z])"
+            )
 
     @classmethod
     def load(cls, path: Path, deps: set[str]) -> Communes:

@@ -65,7 +65,14 @@ commune_par_regle:
     name is not blanked. Among the 58 913 one establishment's acts placed, in Doubs too: 11
     closures of that form and 2 compositions of the commission; in Corrèze (19062), 5 of 6 read
     in « PRÉFET CabinetDE LA CORRÈZE » (Tulle, Brive-la-Gaillarde twice, Donzenac). At 48 of 50
-    or more the rule's placement is served (Ju).
+    or more the rule's placement is served (Ju). Reader 12 (2026-11-11): no commune read after
+    « du » or « de la » (« le préfet du Doubs », « CabinetDE LA CORRÈZE », « le code de la
+    route ») nor a street's « rue / route / avenue … de » (« 1 route de Hoerdt 67550
+    Vendenheim », « avenue de Dunkerque à Lille »); « œ » read as the texts' « oe » (Hœnheim,
+    Paimbœuf). Checked by a diff, not by a fresh drawing: of the 3 890 camera acts of the four
+    drawings' 127 recueils, 97 change; 81 to the commune after the establishment's postcode, 16
+    read by hand (11 to their commune, 1 to its applicant's, the establishment's unnamed, 4 to
+    none instead of a wrong one); none worse.
   publie: true
   # a département of one commune: every one establishment's act of it is that commune's,
   # no name read (Ju, 2026-11-11: Paris)
