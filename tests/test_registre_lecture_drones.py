@@ -79,3 +79,39 @@ def test_a_place_the_text_layer_broke_is_no_place_its_commune_instead():
     assert situer("au Stade de2024-01014 2 France", noms, r)["secteur_niveau"] != "lieu"
     hippo = situer("à l'Hippodrome de Paris -Longchamp le 5", noms, r)
     assert hippo["secteur_lieu"] == "Hippodrome de Paris-Longchamp"
+
+
+def test_a_list_of_arrondissements_and_the_communes_beside_them():
+    """75-2024-08-16-00012 (B, 2026-11-10): « à Paris 18 ème et 19 ème ainsi que sur les
+    communes de Saint-Denis et Pantin (93) » was read « Paris 18e » alone."""
+    import lacarte_registre as registre
+    from lacarte_registre.lecture_drones import situer
+
+    noms = {"paris": "75056", "saint-denis": "93066", "pantin": "93055"}
+    libelles = {"75056": "Paris", "93066": "Saint-Denis", "93055": "Pantin"}
+    r = registre.RULES
+    words = ("à Paris 18 ème et 19 ème ainsi que sur les communes de Saint-Denis et Pantin (93) "
+             "dans le cadre des compétitions sportives")  # fmt: skip
+    assert situer(words, noms, r, "paris", libelles) == {
+        "secteur_niveau": "arrondissement",
+        "secteur_insee": ["75118", "75119", "93055", "93066"],
+        "secteur": "Paris 18e, 19e, Pantin, Saint-Denis"}  # fmt: skip
+    assert situer("dans les 18e et 19e arrondissements de Paris", noms, r)["secteur_insee"] == [
+        "75118", "75119"]  # fmt: skip
+
+
+def test_a_shared_drone_act_s_copies_take_their_original_s_place():
+    """B (2026-11-10): 75-2025-10-23-00040 placed in Aubervilliers' file, its raw words in
+    Pantin's; each copy of an act of several communes now says what its original says."""
+    from lacarte_registre.lecture_drones import aux_copies
+
+    o = {"id": "a", "t": "arrete_drone", "insee": "93001", "secteur_niveau": "commune",
+         "secteur_insee": ["93001", "93055"], "secteur": "Aubervilliers, Pantin"}  # fmt: skip
+    copy = {"id": "a", "t": "arrete_drone", "insee": "93055", "insee0": "93001",
+            "secteur": "le 24 octobre 2025 à Aubervilliers et Pantin (93)"}  # fmt: skip
+    by_insee = {"93001": [o], "93055": [copy]}
+    assert aux_copies(by_insee, {"a": o}) == 1
+    assert {k: copy.get(k) for k in ("secteur", "secteur_niveau", "secteur_insee")} == {
+        "secteur": "Aubervilliers, Pantin", "secteur_niveau": "commune",
+        "secteur_insee": ["93001", "93055"]}  # fmt: skip
+    assert copy["insee"] == "93055" and aux_copies(by_insee, {"a": o}) == 0

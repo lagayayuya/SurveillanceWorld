@@ -89,9 +89,12 @@ def aeronef_acte(a: dict[str, Any], rules_dir: Path) -> str:
     return aeronef([first, ch.get("aeronef_extrait")], rules_dir)
 
 
+# « 14e arrondissement de Paris », « 18e et 19e arrondissements », « Paris 18 ème et 19 ème »
+ORDINAL = r"\d{1,2}\s*(?:e|er|eme|ieme)\b"
 ARRONDISSEMENT = re.compile(
-    r"\b(\d{1,2})\s*(?:e|er|eme|ieme)\s+arrondissements?(?:\s+de\s+(paris|lyon|marseille))?"
-    r"|\b(paris|lyon|marseille)\s+(\d{1,2})\s*(?:e|er|eme)\b"
+    rf"\b((?:{ORDINAL}\s*(?:,|et)\s*)*)(\d{{1,2}})\s*(?:e|er|eme|ieme)\s+arrondissements?"
+    r"(?:\s+de\s+(paris|lyon|marseille))?"
+    rf"|\b(paris|lyon|marseille)\s+(\d{{1,2}})\s*(?:e|er|eme)\b((?:\s*(?:,|et)\s*{ORDINAL})*)"
 )
 
 
@@ -130,6 +133,11 @@ def _plie_avec_places(s: str) -> tuple[str, list[int]]:
     return "".join(out), at
 
 
+def _nomme(nom: str, t: str) -> bool:
+    """Whether a folded text names a commune by its folded name, as a whole word."""
+    return re.search(rf"(?<![a-z-]){re.escape(nom)}(?![a-z-])", t) is not None
+
+
 def situer(
     secteur: str | None,
     noms: dict[str, str],
@@ -148,16 +156,27 @@ def situer(
         return {"secteur_niveau": "non_lu"}
     arr = []
     for m in ARRONDISSEMENT.finditer(t):
-        n, city = (m.group(1), m.group(2)) if m.group(1) else (m.group(4), m.group(3))
+        if m.group(2):
+            ns, city = [*re.findall(r"\d{1,2}", m.group(1)), m.group(2)], m.group(3)
+        else:
+            ns, city = [m.group(5), *re.findall(r"\d{1,2}", m.group(6))], m.group(4)
         prefix = conf["villes_arrondissements"].get(city or ville or "")
-        if prefix and 1 <= int(n) <= 20:
-            arr.append(f"{prefix[1]}{int(n):02d}" if prefix[1] != "6938" else f"6938{int(n)}")
+        for n in ns:
+            if prefix and 1 <= int(n) <= 20:
+                arr.append(f"{prefix[1]}{int(n):02d}" if prefix[1] != "6938" else f"6938{int(n)}")
     if arr:
         codes = sorted(set(arr))
         nums = [str(int(c[-2:])) if not c.startswith("6938") else c[-1] for c in codes]
         city = {"751": "Paris", "693": "Lyon", "132": "Marseille"}[codes[0][:3]]
         label = f"{city} {', '.join(n + ('er' if n == '1' else 'e') for n in nums)}"
-        return {"secteur_niveau": "arrondissement", "secteur_insee": codes, "secteur": label}
+        # the other communes it names beside them (« Paris 18e et 19e ainsi que Saint-Denis
+        # et Pantin »), the arrondissements' own city not among them
+        whole = {"Paris": "75056", "Lyon": "69123", "Marseille": "13055"}[city]
+        more = sorted({k for n, k in noms.items() if k != whole and _nomme(n, t)})
+        if more and libelles and all(k in libelles for k in more):
+            label = ", ".join([label, *(libelles[k] for k in more)])
+        return {"secteur_niveau": "arrondissement", "secteur_insee": codes + more,
+                "secteur": label}  # fmt: skip
     m = conf["lieu"].search(t)
     # a kind alone (« Arena », « Palais ») is no place
     if m and " " in m.group(0).strip():
@@ -168,9 +187,7 @@ def situer(
         else:
             place = place[0].upper() + place[1:]
             return {"secteur_niveau": "lieu", "secteur_lieu": place, "secteur": place}
-    named = sorted(
-        {k for n, k in noms.items() if re.search(rf"(?<![a-z-]){re.escape(n)}(?![a-z-])", t)}
-    )
+    named = sorted({k for n, k in noms.items() if _nomme(n, t)})
     if named:
         out: dict[str, Any] = {"secteur_niveau": "commune", "secteur_insee": named}
         if libelles and all(k in libelles for k in named):
@@ -179,6 +196,27 @@ def situer(
     if conf["departement"].search(t):
         return {"secteur_niveau": "departement"}
     return {"secteur_niveau": "non_lu"}
+
+
+PLACE = ("secteur", "secteur_niveau", "secteur_insee", "secteur_lieu")
+
+
+def aux_copies(by_insee: dict[str, list[dict[str, Any]]], by_id: dict[str, dict[str, Any]]) -> int:
+    """A drone act's copies in its other communes' lists (`insee0`) take their original's
+    place, read once; returns how many copies changed."""
+    n = 0
+    for rows in by_insee.values():
+        for c in rows:
+            o = by_id.get(c["id"])
+            if not c.get("insee0") or o is None or c is o or o.get("t") != "arrete_drone":
+                continue
+            before = {k: c.get(k) for k in PLACE}
+            for k in PLACE:
+                c.pop(k, None)
+                if k in o:
+                    c[k] = o[k]
+            n += before != {k: c.get(k) for k in PLACE}
+    return n
 
 
 def champs(a: dict[str, Any], rules_dir: Path) -> dict[str, Any]:

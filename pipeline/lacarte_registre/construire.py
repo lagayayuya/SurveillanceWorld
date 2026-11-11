@@ -139,6 +139,10 @@ def run(
                     words, here, rules, villes.get(e.get("insee") or ""), libelles
                 )
             )
+    # an act of several communes has a copy in each other's list (regles.appliquer, made
+    # before): the copy takes its original's place, never its raw words (B, 2026-11-10:
+    # 75-2025-10-23-00040 placed in Aubervilliers' file, raw in Pantin's)
+    lecture_drones.aux_copies(reg.by_insee, reg.by_id)
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
     couverture.provenances(reg, conf, col)
