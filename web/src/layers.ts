@@ -393,6 +393,9 @@ function areaLayers(
 ): LayerSpecification[] {
   const deps = layer === "departements";
   const id = deps ? "deps" : "communes";
+  // An open département stays outlined over its communes (board 12, « Le Rhône : contour
+  // bleu »), as long as the tiles hold it (tiles.DEPS_MAX + 1, drawn up to z9).
+  const selectedRange = deps ? { maxzoom: DEP_OUTLINE_MAX } : {};
   const base = {
     source: "admin",
     "source-layer": layer,
@@ -433,6 +436,7 @@ function areaLayers(
     // blue stands out on the vivid classes (DECISIONS 2026-10-09).
     {
       ...base,
+      ...selectedRange,
       id: `${id}-selected-edge`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
@@ -440,12 +444,13 @@ function areaLayers(
       paint: {
         "line-color": palette().areaSelectedEdge,
         "line-width": AREA_SELECTED + 2,
-        "line-opacity": areaOpacity(deps, 1),
+        "line-opacity": deps ? 1 : areaOpacity(deps, 1),
       },
     },
     {
       // The area whose sheet is open (filter set by main.ts).
       ...base,
+      ...selectedRange,
       id: `${id}-selected`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
@@ -453,12 +458,14 @@ function areaLayers(
       paint: {
         "line-color": palette().areaSelected,
         "line-width": AREA_SELECTED,
-        "line-opacity": areaOpacity(deps, 1),
+        "line-opacity": deps ? 1 : areaOpacity(deps, 1),
       },
     },
   ] as LayerSpecification[];
 }
 
+/** An open département's outline is drawn over its communes up to here (its z8 tiles). */
+export const DEP_OUTLINE_MAX = 9;
 /** Punk: the areas' border and the open area's outline, in CSS px. */
 const AREA_BORDER = 0.75;
 const AREA_SELECTED = 3;

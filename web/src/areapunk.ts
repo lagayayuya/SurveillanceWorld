@@ -11,7 +11,7 @@
 // written « non lu ». A chunk the punk interface alone downloads (area.ts); its paper is the
 // camera sheet's (theme/punk/sheet.css), its own rules theme/punk/area.css.
 import { cutout, fitTitle, pinHead } from "./chips";
-import { type Etat, gapBlock, nb } from "./gap";
+import { dansDep, type Etat, gapBlock, nb, registreLien } from "./gap";
 import { t } from "./i18n";
 import {
   aCommune,
@@ -366,17 +366,6 @@ function communeLine(input: PunkAreaInput, dep: DepFile | null): string {
   return line;
 }
 
-/** « Lyon dans le registre : 447 arrêtés de caméras → ». */
-function registreLink(nom: string, n: number | undefined, href: string, dep = false) {
-  return {
-    href,
-    label:
-      n === undefined
-        ? t("gap.registre_commune_nl", { nom })
-        : t(dep ? "gap.registre_dep" : "gap.registre_commune", { nom, n }),
-  };
-}
-
 /** The commune's body. A municipal arrondissement is its own on the map (cameras, streets,
  * operators) and its commune's in the register (the « manque » block, the doors). */
 function communeBody(
@@ -396,6 +385,8 @@ function communeBody(
   // Paris, Lyon or Marseille opened from a département's list: the register's commune, which
   // the tiles split into arrondissements (main.ts openAreaByCode); no street nor operator here.
   const parent = Number(p.parent) === 1;
+  // Its arrondissements, [code, name] (main.ts openAreaByCode, from the tiles' index).
+  const arrs: [string, string][] = parent && p.arr ? JSON.parse(String(p.arr)) : [];
 
   // The three figures.
   const kf = el("div", "kf3");
@@ -416,7 +407,7 @@ function communeBody(
     figure(nb(n), t("area.v3.kf.cameras", { n })),
     figure(ratio === null ? nonLu() : tenth(ratio), t("area.v3.kf.per1000"), rankEm),
     parent
-      ? figure(nonLu(), t("area.v3.kf.streets"))
+      ? figure(nb(arrs.length), t("area.v3.kf.arrondissements", { n: arrs.length }))
       : figure(shareValue(y), t(y > 0 ? "area.v3.kf.streets" : "area.v3.kf.streets_none")),
   );
 
@@ -441,7 +432,7 @@ function communeBody(
     etat: etatCam(dep, unit),
     onAdd: input.onAdd,
     registre: stats
-      ? registreLink(parentNom, actesCam(dep, unit), `/registre/commune/${unit}`)
+      ? registreLien(parentNom, actesCam(dep, unit), `/registre/commune/${unit}`)
       : null,
   });
 
@@ -461,9 +452,30 @@ function communeBody(
   });
 
   if (parent) {
+    // Its streets are read arrondissement by arrondissement (the tiles' units): each one's
+    // sheet says them.
     const box = el("section", "street");
-    box.setAttribute("aria-label", t("area.v3.street.title"));
-    box.append(panelHead(t("area.v3.street.title")), el("p", "fine", t("area.v3.street.parent")));
+    box.setAttribute("aria-label", t("area.v3.street.parent_title"));
+    box.append(
+      panelHead(t("area.v3.street.parent_title")),
+      el("p", "fine", t("area.v3.street.parent_pick")),
+    );
+    const list = el("ul", "arrs");
+    for (const [ac, an] of arrs) {
+      const short = an.replace(/^.*?\s(\d+(er|e))\s+Arrondissement$/i, "$1");
+      const li = el("li");
+      const a = el("a", "", short) as HTMLAnchorElement;
+      a.href = `/?insee=${ac}`;
+      a.setAttribute("aria-label", t("area.v3.street.parent_open", { nom: an }));
+      a.addEventListener("click", (e) => {
+        if (!input.onCommune || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        input.onCommune(ac);
+      });
+      li.append(a);
+      list.append(li);
+    }
+    box.append(list);
     const out = [kf, box, gap];
     const doors = communeDoors(dep, unit);
     if (doors) out.push(doors);
@@ -494,9 +506,13 @@ function communeDoors(dep: DepFile | null, unit: string): HTMLElement | null {
     door(
       `/registre/commune/${unit}`,
       t("area.v3.door.registre"),
-      actesCam(dep, unit) === undefined
-        ? t("area.v3.door.registre_k_nl")
-        : t("area.v3.door.registre_k", { eur: euros(s.montant ?? 0), n: actesCam(dep, unit) ?? 0 }),
+      ((a) =>
+        a === undefined
+          ? t("area.v3.door.registre_k_nl")
+          : t(a.min ? "area.v3.door.registre_k_min" : "area.v3.door.registre_k", {
+              eur: euros(s.montant ?? 0),
+              n: a.n,
+            }))(actesCam(dep, unit)),
     ),
   );
   return box;
@@ -598,17 +614,22 @@ function departementBody(input: PunkAreaInput, dep: DepFile | null): HTMLElement
   const nom = dep?.departement.nom ?? String(p.nm);
   out.push(
     gapBlock({
-      lieu: nom,
+      lieu: dansDep(code, nom),
       carte: n,
       publiques: num(p, "n_pub"),
       autres: n - num(p, "n_pub"),
       aut: autOf(ds?.cam_aut),
-      // The département's own reading of its acts, once served with `cam_aut`; until then the
-      // sum is never the whole (acts without a commune: depStats.sansCommune).
-      etat: "partiel",
+      // Every act of a département is its own: read when it is collected; « au moins » comes
+      // from its files not read (`dossiers_non_lus`).
+      etat: an !== null ? "lu" : "non_lu",
       onAdd: input.onAdd,
       registre: dep
-        ? registreLink(nom, camLu ? ds?.cam : undefined, `/registre/departement/${code}`, true)
+        ? registreLien(
+            nom,
+            camLu ? { n: ds?.cam ?? 0, min: false } : undefined,
+            `/registre/departement/${code}`,
+            true,
+          )
         : null,
     }),
   );

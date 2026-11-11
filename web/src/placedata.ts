@@ -71,13 +71,17 @@ export function etatCam(dep: DepFile | null, insee: string): Etat {
   return etatOf(dep?.stats.communes[insee]?.couverture_actes?.cam);
 }
 
-/** The commune's camera acts in the register, when they can be counted: read (`lu`), or some
- * of them tied to it (`partiel` with at least one); undefined otherwise (« non lu », never 0). */
-export function actesCam(dep: DepFile | null, insee: string): number | undefined {
-  const s = dep?.stats.communes[insee];
+/** The commune's camera acts in the register, when they can be counted: read (`lu`, 0 is 0), or
+ * a minimum when its département's acts are not all tied to their commune (`non_rattache` with
+ * at least one: « au moins N »); undefined otherwise (« non lu », never 0). */
+export function actesCam(
+  dep: DepFile | null,
+  insee: string,
+): { n: number; min: boolean } | undefined {
+  const n = dep?.stats.communes[insee]?.cam ?? 0;
   const etat = etatCam(dep, insee);
-  const n = s?.cam ?? 0;
-  if (etat === "lu" || (etat === "partiel" && n > 0)) return n;
+  if (etat === "lu") return { n, min: false };
+  if ((etat === "non_rattache" || etat === "partiel") && n > 0) return { n, min: true };
   return undefined;
 }
 
@@ -90,7 +94,8 @@ export function autOf(raw: unknown): Autorisees | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const rows = CATEGORIES.map((cle) => ({ cle, n: num(o[cle]) }));
-  if (rows.every((r) => r.n === null)) return null;
+  const nonClassees = num(o.non_classees);
+  if (rows.every((r) => r.n === null) && nonClassees === null) return null;
   const p = o.periode;
   const periode: [string, string] | null = Array.isArray(p)
     ? typeof p[0] === "string" && typeof p[1] === "string"
@@ -102,7 +107,13 @@ export function autOf(raw: unknown): Autorisees | null {
           String((p as { a?: string }).a ?? (p as { de: string }).de),
         ]
       : null;
-  return { rows, voiePublique: num(o.voie_publique), periode };
+  return {
+    rows,
+    voiePublique: num(o.voie_publique),
+    periode,
+    nonClassees,
+    incomplet: (num(o.dossiers_non_lus) ?? 0) > 0,
+  };
 }
 
 /** « 4,0 »: a ratio to the tenth, its decimal always written (the board's « 4,0 »). */

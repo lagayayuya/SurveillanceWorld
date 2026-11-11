@@ -77,6 +77,18 @@ function polygons(g: GeoJSON.Geometry): Position[][][] {
   return [];
 }
 
+/** The code (`c`) of the area holding `at` (our admin tiles' `communes` or `departements`
+ * features), for « + Ajouter » from an area's sheet (main.ts addFrom). */
+export function areaCodeAt(areas: Feature[], at: Position): string | undefined {
+  for (const f of areas)
+    for (const [outer, ...holes] of polygons(f.geometry))
+      if (inRing(at, outer) && !holes.some((h) => inRing(at, h))) {
+        const c = f.properties?.c;
+        if (c !== undefined && c !== null) return String(c);
+      }
+  return undefined;
+}
+
 /** The name (`nm`) of the commune holding `at` (our admin tiles' `communes` features). */
 export function communeAt(communes: Feature[], at: Position): string | undefined {
   for (const f of communes)

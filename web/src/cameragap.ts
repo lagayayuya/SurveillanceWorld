@@ -4,8 +4,7 @@
 // its commune's (« À Lyon »): the map's count is the register's for the commune, its split by
 // operator not known here. Asked by the page when a camera opens, a chunk of its own.
 import type { AreaProps } from "./area";
-import { gapBlock } from "./gap";
-import { t } from "./i18n";
+import { gapBlock, registreLien } from "./gap";
 import { aCommune, actesCam, autOf, etatCam, loadDep, parentCommune } from "./placedata";
 
 export async function fillCameraGap(
@@ -34,15 +33,7 @@ export async function fillCameraGap(
       aut: autOf(stats?.cam_aut),
       etat,
       onAdd: opts.onAdd,
-      registre: stats
-        ? {
-            href: `/registre/commune/${unit}`,
-            label:
-              actesCam(dep, unit) === undefined
-                ? t("gap.registre_commune_nl", { nom })
-                : t("gap.registre_commune", { nom, n: actesCam(dep, unit) ?? 0 }),
-          }
-        : null,
+      registre: stats ? registreLien(nom, actesCam(dep, unit), `/registre/commune/${unit}`) : null,
     }),
   );
 }

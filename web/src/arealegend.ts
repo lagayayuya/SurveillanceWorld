@@ -4,10 +4,15 @@
 // breaks), the hatching of a commune without a camera, and the chosen one: its class, or a
 // département's blue outline. Over the map's bottom left on a wide screen; a phone has no room
 // for it (theme/punk/area.css hides it under 700 px, as the board's phone mockups do).
+import { artDep } from "./gap";
 import { t } from "./i18n";
+
+export { artDep };
 
 export type LegendArea = {
   name: string;
+  /** A département's « Le Rhône » (gap.ts artDep). */
+  art?: string;
   departement: boolean;
   /** Y, the share of streets within reach the map colours by (`hi` or `hi_pub`). */
   y: number;
@@ -34,7 +39,7 @@ export function classLabels(breaks: number[]): string[] {
 /** « Vaulx-en-Velin : entre 15 et 30 % », « … : aucune caméra relevée », « Rhône : contour
  * bleu ». */
 export function chosenLine(a: LegendArea, breaks: number[]): string {
-  if (a.departement) return t("legend.area.chosen_dep", { nom: a.name });
+  if (a.departement) return t("legend.area.chosen_dep", { nom: a.art ?? a.name });
   if (a.n <= 0) return t("legend.area.chosen_none", { nom: a.name });
   const k = breaks.filter((b) => a.y >= b).length;
   const range =
@@ -51,7 +56,8 @@ export function legendBox(a: LegendArea, breaks: number[]): HTMLElement {
   const box = el("aside", "mlegend");
   box.setAttribute("aria-label", t("legend.section"));
   box.append(
-    el("h4", "", t(a.departement ? "legend.area.title_dep" : "legend.area.title")),
+    // A département's sheet shows its communes (board 12): their colours are the legend's.
+    el("h4", "", t("legend.area.title")),
     el("p", "lead", t("legend.area.lead")),
   );
   const ramp = el("div", "ramp");

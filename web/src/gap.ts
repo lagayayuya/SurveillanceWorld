@@ -4,8 +4,16 @@
 // (donnees-pour-l-interface, 09/11: « Affiche « non lu », jamais 0, quand l'état n'est pas
 // `lu` »). The authorised cameras come from the register's `cam_aut` (placedata.ts autOf); until
 // it is served the block says so and draws no gap.
-import { type Autorisees, CATEGORIES, type Etat, ecart, nb, totalAut } from "./gapcalc.ts";
-import { t } from "./i18n";
+import {
+  type Autorisees,
+  CATEGORIES,
+  type Etat,
+  ecart,
+  nb,
+  nonRattache,
+  totalAut,
+} from "./gapcalc.ts";
+import { has, t } from "./i18n";
 
 export { type Autorisees, CATEGORIES, type Etat, ecart, nb, totalAut };
 
@@ -33,10 +41,12 @@ function el(tag: string, cls = "", text?: string): HTMLElement {
 }
 const nonLu = () => el("span", "nl", t("gap.non_lu"));
 
-function row(label: string, value: number | null): HTMLElement {
+/** A count's row; a 0 among acts not tied to their commune says « non rattaché », never 0. */
+function row(label: string, value: number | null, nr = false): HTMLElement {
   const li = el("li");
   const b = el("b");
   if (value === null) b.append(nonLu());
+  else if (value === 0 && nr) b.append(el("span", "nl", t("gap.non_rattache")));
   else b.textContent = nb(value);
   const lead = el("span", "lead");
   lead.setAttribute("aria-hidden", "true");
@@ -44,10 +54,16 @@ function row(label: string, value: number | null): HTMLElement {
   return li;
 }
 
-function bar(label: string, value: number | null, max: number, cls: string): HTMLElement {
+function bar(
+  label: string,
+  value: number | null,
+  max: number,
+  cls: string,
+  nr = false,
+): HTMLElement {
   const r = el("div", "gr");
   const track = el("span", "gt");
-  if (value === null) track.append(el("span", "gb nl", t("gap.non_lu")));
+  if (value === null) track.append(el("span", "gb nl", t(nr ? "gap.non_rattache" : "gap.non_lu")));
   else if (value > 0) {
     const fill = el("span", `gb ${cls}`);
     fill.style.width = `${Math.max(2, Math.round((1000 * value) / max) / 10)}%`;
@@ -78,6 +94,34 @@ function autTitle(aut: Autorisees | null): string {
     : t("gap.split.aut_de_a", { de: month(p[0]), a: month(p[1]) });
 }
 
+const cap = (s: string) => s.charAt(0).toLocaleUpperCase("fr") + s.slice(1);
+/** « Dans le Rhône », « À Paris », « Dans les Bouches-du-Rhône » (the catalogue's articles,
+ * `dep.dans.<code>`, the register's own copied for the map). */
+export const dansDep = (code: string, nom: string): string =>
+  cap(
+    has(`dep.dans.${code}`) ? t(`dep.dans.${code}`) : t("dep.dans", { art: t("dep.art", { nom }) }),
+  );
+/** « Le Rhône », « Paris ». */
+export const artDep = (code: string, nom: string): string =>
+  cap(has(`dep.art.${code}`) ? t(`dep.art.${code}`) : t("dep.art", { nom }));
+
+/** « Lyon dans le registre : 447 arrêtés de caméras → », « au moins N » when its acts are not all
+ * tied to their commune, the name alone when not read. */
+export function registreLien(
+  nom: string,
+  actes: { n: number; min: boolean } | undefined,
+  href: string,
+  dep = false,
+): { href: string; label: string } {
+  const label =
+    actes === undefined
+      ? t("gap.registre_commune_nl", { nom })
+      : actes.min
+        ? t("gap.registre_commune_min", { nom, n: actes.n })
+        : t(dep ? "gap.registre_dep" : "gap.registre_commune", { nom, n: actes.n });
+  return { href, label };
+}
+
 /** The block. */
 export function gapBlock(input: GapInput): HTMLElement {
   const box = el("section", "gap");
@@ -86,12 +130,14 @@ export function gapBlock(input: GapInput): HTMLElement {
   const head = el("div", "gap-head");
   head.append(el("h3", "area-label", input.lieu), el("span", "area-sub", t("gap.sub")));
 
-  const total = totalAut(input.aut, input.etat);
+  const nr = nonRattache(input.etat);
+  // Not tied and nothing read here: the bar says so, no number (never « 0 »).
+  const total = nr && !totalAut(input.aut, input.etat)?.n ? null : totalAut(input.aut, input.etat);
   const max = Math.max(input.carte ?? 0, total?.n ?? 0, 1);
   const bars = el("div", "gap-bars");
   bars.append(
     bar(t("gap.carte"), input.carte, max, "c"),
-    bar(t("gap.autorisees"), total ? total.n : null, max, "a"),
+    bar(t("gap.autorisees"), total ? total.n : null, max, "a", nr),
   );
 
   const big = el("p", "gap-big");
@@ -99,12 +145,17 @@ export function gapBlock(input: GapInput): HTMLElement {
   if (e.kind === "plus") {
     big.append(
       el("b", "", t(e.auMoins ? "gap.big.au_moins" : "gap.big.plus", { n: nb(e.n) })),
-      el("span", "", t(e.auMoins ? "gap.big.text_partiel" : "gap.big.text")),
+      el("span", "", t(e.auMoins ? "gap.big.au_moins_text" : "gap.big.text")),
     );
   } else if (e.kind === "moins") {
     big.append(el("span", "", t("gap.big.moins", { v: nb(e.n), n: e.n })));
   } else {
-    big.append(el("span", "", t(e.kind === "non_lu" ? "gap.big.non_lu" : "gap.big.incomplet")));
+    const key = {
+      non_lu: "gap.big.non_lu",
+      non_rattache: "gap.big.non_rattache",
+      incomplet: "gap.big.incomplet",
+    }[e.kind];
+    big.append(el("span", "", t(key)));
   }
 
   const split = el("div", "gap-split");
@@ -119,8 +170,11 @@ export function gapBlock(input: GapInput): HTMLElement {
   const autList = el("ul");
   for (const cle of CATEGORIES) {
     const r = input.aut?.rows.find((x) => x.cle === cle);
-    autList.append(row(t(`gap.cat.${cle}`), r ? r.n : null));
+    autList.append(row(t(`gap.cat.${cle}`), r ? r.n : null, nr));
   }
+  // The cameras whose holder is not read, counted in the total (`non_classees`).
+  const nc = input.aut?.nonClassees ?? null;
+  if (nc) autList.append(row(t("gap.cat.non_classees"), nc));
   autCol.append(el("p", "area-sub", autTitle(input.aut)), autList);
   split.append(mapCol, autCol);
 

@@ -37,6 +37,7 @@ import { locale, t, tp } from "./i18n";
 import { addImages, KINDS, type Kind, loadStickers, TAG_PREFIX } from "./icons";
 import { installKeyboard } from "./keyboard";
 import {
+  AREA_FADE,
   AREA_SELECTED_LAYERS,
   areaFillOpacities,
   CAMERA_HIT_RADIUS,
@@ -44,6 +45,7 @@ import {
   COMMUNES_MIN,
   COMMUNES_PROBE,
   DEFAULT_LEVEL,
+  DEP_OUTLINE_MAX,
   DETAIL_MIN,
   drawnBasemap,
   FOCUS_MARKER_RADIUS,
@@ -68,7 +70,7 @@ import { endFirstLoad } from "./loading";
 import { EMPTY, Locate } from "./locate";
 import { nudge } from "./nudge";
 import { actionSlots, Participation } from "./participate";
-import { nearestStreet } from "./participate/place";
+import { areaCodeAt, nearestStreet } from "./participate/place";
 import type { Proposal } from "./participate/proposals";
 import { setLeaderboardOpener } from "./participate/score";
 import { tracker } from "./position";
@@ -779,6 +781,8 @@ const historyOf = (id: string): HTMLElement => {
  * participate/index.ts), as a tap on it; none while the add is not offered (signed-out state
  * unknown, contributions closed). From a commune's sheet, the map first goes to the street level
  * in the middle of the commune, where the add starts. */
+/** A position older than this is not where the person is any more (seconds). */
+const ADD_FIX_MAX_AGE_S = 600;
 const addFrom = (fromArea = false): (() => void) | undefined => {
   const fab = document.getElementById("fab-add");
   if (!fab || fab.hidden) return undefined;
@@ -787,16 +791,37 @@ const addFrom = (fromArea = false): (() => void) | undefined => {
       fab.click();
       return;
     }
-    // The middle of the part of the map the sheet leaves free, where the area is framed.
+    // Where the person is, when they shared their position and it is in the area (a recent
+    // fix); otherwise the middle of the area as the sheet frames it, with « Placez la caméra
+    // sur la carte » on the add's position step.
+    const area = shownArea;
+    const fix = tracker.fix;
+    const age = tracker.age();
+    let at: [number, number] | null = null;
+    if (area && fix && age !== null && age < ADD_FIX_MAX_AGE_S) {
+      const dep = isDepartement(area);
+      const code = areaCodeAt(
+        map.querySourceFeatures("admin", { sourceLayer: dep ? "departements" : "communes" }),
+        fix.lngLat,
+      );
+      const mine = String(area.c);
+      if (code !== undefined && (code === mine || parentCommune(code) === mine)) at = fix.lngLat;
+    }
     const pad = { top: 0, bottom: 0, left: 0, right: 0, ...freePadding() };
     const box = map.getContainer().getBoundingClientRect();
-    const centre = map.unproject([
-      (pad.left + box.width - pad.right) / 2,
-      (pad.top + box.height - pad.bottom) / 2,
-    ]);
+    const centre = at
+      ? at
+      : map
+          .unproject([
+            (pad.left + box.width - pad.right) / 2,
+            (pad.top + box.height - pad.bottom) / 2,
+          ])
+          .toArray();
+    if (!at && participation?.modify) participation.modify.addHint = "add.place_hint";
+    debugEvent(`add from the sheet (${at ? "at the position" : "in the middle"})`);
     closeSheet("add from the sheet");
     map.once("moveend", () => fab.click());
-    map.easeTo({ center: centre, zoom: DETAIL_MIN + 0.5, duration: 600 });
+    map.easeTo({ center: centre as [number, number], zoom: DETAIL_MIN + 0.5, duration: 600 });
   };
 };
 /** The map's legend of the open area (board 12, arealegend.ts), over the map; null removes it. */
@@ -815,6 +840,7 @@ const areaLegend = (p: AreaProps | null): void => {
         {
           name: String(p.nm),
           departement: isDepartement(p),
+          art: isDepartement(p) ? m.artDep(String(p.c), String(p.nm)) : undefined,
           y: Number(p[pub ? "hi_pub" : "hi"] ?? 0),
           n: Number(p[pub ? "n_pub" : "n"] ?? 0),
         },
@@ -1188,6 +1214,15 @@ async function fitArea(code: string, animate: boolean, padding?: PaddingOptions 
   if (!bounds) return;
   const dep = index[code]?.[1] === code;
   locate.release();
+  if (dep) {
+    // Board 12: a département opens over its communes, outlined (communes from AREA_FADE's
+    // end; its outline drawn up to DEP_OUTLINE_MAX), as close as its whole allows.
+    const cam = map.cameraForBounds(bounds, { padding: padding ?? freePadding() });
+    if (!cam) return;
+    const zoom = Math.min(Math.max(cam.zoom ?? 0, AREA_FADE[1] + 0.05), DEP_OUTLINE_MAX - 0.05);
+    map[animate ? "easeTo" : "jumpTo"]({ center: cam.center, zoom });
+    return;
+  }
   map.fitBounds(bounds, {
     padding: padding ?? freePadding(),
     // Communes are drawn up to CITY_FADE (11.5 leaves them fully opaque); départements
@@ -1271,6 +1306,12 @@ async function openAreaByCode(code: string, how: string): Promise<void> {
         dn: dep.departement.nom,
         n: dep.stats.communes[code]?.carte ?? 0,
         parent: 1,
+        arr: JSON.stringify(
+          Object.keys(index)
+            .filter((k) => k !== code && parentCommune(k) === code)
+            .sort()
+            .map((k) => [k, index[k][0]]),
+        ),
       },
       how,
     );
