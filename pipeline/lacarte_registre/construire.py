@@ -143,6 +143,17 @@ def run(
     # before): the copy takes its original's place, never its raw words (B, 2026-11-10:
     # 75-2025-10-23-00040 placed in Aubervilliers' file, raw in Pantin's)
     lecture_drones.aux_copies(reg.by_insee, reg.by_id)
+    # what each act's and grant's `date` is (B, 2026-11-10), where the collection has not
+    # said it: the pilot's acts are dated by their own day (their id's, « 69-2026-01-07-… »),
+    # a dotation by its year (`date_annee`, 31 December), a region's grant by its vote (the
+    # permanent commission's « délibération CP… » day)
+    for e in [*reg.evenements, *(c for rows in reg.by_insee.values() for c in rows)]:
+        if "date_est" in e or not e.get("date"):
+            continue
+        if e["t"].startswith("arrete"):
+            e["date_est"] = "acte"
+        elif e["t"].startswith("subvention"):
+            e["date_est"] = "annee" if e.get("date_annee") else "vote"
     conf = couverture.rules(rules / "registre_couverture.yaml")
     # where each decree comes from (its own département's collection, a zone préfecture…)
     couverture.provenances(reg, conf, col)

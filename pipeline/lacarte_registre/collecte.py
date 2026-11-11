@@ -248,6 +248,8 @@ def act_event(
         "sous_type": a.get("sous_type"),
         # a day read only when the dates are published; else its recueil's
         "date": (days[0] if days else None) or a["recueil_date"],
+        # what that day is (B, 2026-11-10): its first day of flight, else its recueil's
+        "date_est": "vol" if days else "recueil",
         "insee": insee,
         "dep": dep,
         "affaire": arretes.safe_id(a["id"]),
@@ -550,6 +552,8 @@ def _finir(fin: fins.Fins, served: dict[str, regles.Event]) -> int:
         e["fin"] = kind
         e.pop("jours", None)
         e["periode"], e["date"] = "", e.get("publie") or e["date"]
+        if e.get("publie"):
+            e["date_est"] = "recueil"
         targets = [served[x]["id"] for x in fin.cible.get(rid, []) if x in served]
         if not targets:
             e["abrogation_non_rattachee"] = True
