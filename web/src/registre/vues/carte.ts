@@ -1543,6 +1543,8 @@ class CarteDrones extends Vue<Props, State> {
             ? { v: t("socle_a.aucun_rattache"), u: "", l: "" }
             : { v: t("carte_a.aucun"), u: "", l: t("carte_a.sur_12_aucun") };
     const nlFig = { cls: "fig nl", v: t("socle_a.actes_non_lus_court"), u: "", l: "" };
+    // none attached yet (« aucun encore rattaché »): the dashed, muted figure of a missing number
+    const nlR = minDr ? "fig nl" : "fig";
     const ficheV = {
       figs: [
         {
@@ -1567,7 +1569,7 @@ class CarteDrones extends Vue<Props, State> {
           versDrones: null,
         },
         {
-          cls: joursNl ? "fig nl" : "fig",
+          cls: joursNl || (minDr && !F.jours) ? "fig nl" : "fig",
           k: t("carte_a.f_drones"),
           ...joursFig(true),
           // the link to the tab follows the line, or stands alone under « non lu »
@@ -1615,7 +1617,7 @@ class CarteDrones extends Vue<Props, State> {
             ? nlFig
             : eDr === "aucun"
               ? {
-                  cls: "fig",
+                  cls: nlR,
                   v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
                   u: "",
                   l: "",
@@ -1632,7 +1634,7 @@ class CarteDrones extends Vue<Props, State> {
             : t("carte_a.d_arretes_b"),
         },
         {
-          cls: joursNl ? "fig nl" : "fig",
+          cls: joursNl || (minDr && !F.jours) ? "fig nl" : "fig",
           k: t("carte_a.f_drones"),
           ...joursFig(false),
           bl: t("commune_a.fig.drones_tip", { nom }),
@@ -1641,7 +1643,7 @@ class CarteDrones extends Vue<Props, State> {
           k: t("carte_a.d_avant"),
           ...(sansActe
             ? {
-                cls: "fig",
+                cls: nlR,
                 v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
                 u: "",
                 l: t("carte_a.d_avant_aucun"),
@@ -1670,7 +1672,7 @@ class CarteDrones extends Vue<Props, State> {
             ? nlFig
             : eDr === "aucun"
               ? {
-                  cls: "fig",
+                  cls: nlR,
                   v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucune"),
                   u: "",
                   l: "",
