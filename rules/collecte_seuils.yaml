@@ -47,7 +47,15 @@ commune_par_regle:
     in the Pas-de-Calais, the prefecture's own town (its letterhead, « 62020 ARRAS Cedex »,
     « le préfet de la Moselle… à Metz ») read before the establishment's (Freyming-Merlebach,
     Louvigny, Moulins-lès-Metz, Spicheren, Sarreguemines, Saint-Martin-Boulogne). `publie`
-    false: the rule's placement is not served, its communes « non_rattache ».
+    false: the rule's placement is not served, its communes « non_rattache ». Reader 11
+    (2026-11-11): a camera act's commune is never read in its authority's address (« 57034
+    METZ CEDEX 1 », « BP 71014 »), signature (« Fait à Metz, le ») or name (« préfet du
+    Pas-de-Calais », « sous-préfète de Sarreguemines »); where article 1 names none, its
+    request's visa « situé … 57800 Freyming-Merlebach »; a title's « ST_Martin_Boulogne »
+    read. On that drawing's texts the six wrong are right; an establishment in Bordeaux read
+    only from the prefecture's « 33077 BORDEAUX CEDEX » is placed in none (a known loss: an
+    establishment whose own address is a « cedex » one). Only a new drawing in five
+    départements never drawn measures it.
   publie: false
   # a département of one commune: every one establishment's act of it is that commune's,
   # no name read (Ju, 2026-11-11: Paris)
@@ -61,7 +69,8 @@ commune_par_regle:
   exclure_titre: '\barretes\b|\b\d+ arretes\b|n° ?[\w /.-]*\d+ ?a ?\d+\b|\bcommission (?:departementale )?du\b|\bliste des\b|composition de la commission|communication des|habilitation|agrement|visionnage'
   communes_au_titre_max: 1
   types:
-    videoprotection: {justes: 90, mesures: 93}
+    # the last fresh drawing's (2026-11-11, reader 10), until the next one
+    videoprotection: {justes: 44, mesures: 50}
 
 # The numbers of cameras a video-protection act states, read by the rules (inside, outside, on
 # the public road, the total), published everywhere for one establishment's act

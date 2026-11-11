@@ -47,7 +47,7 @@ import yaml
 # captures are drone-type acts, and every aerial act keeps its aircraft's words; 9: a single
 # act's title before its heading; 10: the camera numbers' elided and labelled forms, a
 # camera act's holder words
-VERSION = 10
+VERSION = 11
 # The readers whose acts a model's reading still fits (the text it read is the same): a
 # version that only adds a field keeps the readings made on the one before.
 MEME_TEXTE = {
@@ -58,6 +58,7 @@ MEME_TEXTE = {
     8: {3, 4, 5, 6, 7, 8},
     9: {3, 4, 5, 6, 7, 8, 9},
     10: {3, 4, 5, 6, 7, 8, 9, 10},
+    11: {3, 4, 5, 6, 7, 8, 9, 10, 11},
 }
 ID = r"(?:\d{2,3}|2[AB])-20\d\d-\d\d-\d\d-\d{5}"
 WORDS = {
@@ -143,8 +144,9 @@ def strip(s: str) -> str:
 
 
 def loose(s: str) -> str:
-    """For names: no hyphen, no apostrophe, St → Saint, a word's final « s » dropped."""
-    s = strip(s).replace("-", " ").replace("'", " ")
+    """For names: no hyphen, apostrophe or underscore (the Pas-de-Calais's titles, « …
+    vidéoprotection _ ST_Martin_Boulogne »), St → Saint, a word's final « s » dropped."""
+    s = strip(s).replace("-", " ").replace("'", " ").replace("_", " ")
     s = re.sub(r"\bst\b", "saint", re.sub(r"\bste\b", "sainte", s))
     return re.sub(r"\s+", " ", re.sub(r"(\w{3,})s\b", r"\1", s)).strip()
 
@@ -535,6 +537,31 @@ class Communes:
         return self.by[m.group(1)] if m else None
 
 
+# The authority's own town, never an act's commune: its postal address (« 57034 METZ CEDEX 1 »,
+# « BP 71014 », « 62020 ARRAS CEDEX 9 », a page foot or a letterhead read inside article 1)
+# and its signature (« Fait à Metz, le … », « À Arras, le 2 février 2024 »). A fresh drawing
+# (2026-11-11): five Moselle acts placed in Metz and a Pas-de-Calais one in Arras that way.
+AUTORITE = re.compile(
+    r"\b(?:bp ?\d+ ?[-,]? ?)?\d{5} [a-z][a-z' -]{1,40}? cedex(?: ?\d{1,2}\b)?"
+    r"|\bfait a [a-z' -]{2,40},? le\b|\ba [a-z' -]{2,40}, le \d"
+    # its name: « le préfet du Pas-de-Calais » is no act of Calais, « la sous-préfète de
+    # Sarreguemines » none of Sarreguemines
+    r"|\b(?:sous-)?prefe(?:te?|cture)s? (?:de la |du |des |de l'|d'|de )"
+    r"[a-z]+(?:-[a-z]+)*(?: (?:de|du|des|et|sur) [a-z]+(?:-[a-z]+)*)?"
+)
+
+
+def sans_autorite(s: str) -> str:
+    """A stripped text with the authority's address and signature blanked out (AUTORITE)."""
+    return AUTORITE.sub(" ", s)
+
+
+# The establishment's own address, where article 1 only says « à l'adresse sus-indiquée »: the
+# visa of the request, « représentant l'établissement « Les Floralies » situé 238, avenue de
+# l'Europe 57800 Freyming-Merlebach » (the Moselle's acts)
+SITUE = re.compile(r"\b(?:situee?s?|sise?s?|implantee?s?)\b[^;]{0,160}")
+
+
 # --- one recueil -----------------------------------------------------------------------------
 @dataclass
 class Acte:
@@ -598,7 +625,14 @@ def lire(text: str, communes: Communes, kinds: list[Type], recueil_date: dt.date
             continue
         sub = subtype(m.titre, n)
         when = act_date(m.texte, recueil_date)
-        com = communes.first(strip(m.titre)) or communes.first(operative(n)[:1500])
+        title, body = strip(m.titre), operative(n)[:1500]
+        if kind == "videoprotection":
+            # a camera act's commune is its establishment's, never its authority's town; a
+            # drone act's « autorisés à Paris, le 9 mai » is its place, kept
+            title, body = sans_autorite(title), sans_autorite(body)
+        com = communes.first(title) or communes.first(body)
+        if com is None and kind == "videoprotection" and (at := SITUE.search(sans_autorite(n))):
+            com = communes.first(at.group(0))
         a = Acte(
             acte=m.acte,
             type=kind,
