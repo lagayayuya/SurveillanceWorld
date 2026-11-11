@@ -26,7 +26,7 @@ import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { t } from "../i18n.ts";
 import { departementHref } from "../liens.ts";
-import type { Listes } from "../listes.ts";
+import { type Listes, publieLu, quelleDate } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
 import { partager } from "../partage.ts";
 import { documentHref, type Route } from "../routes.ts";
@@ -97,6 +97,17 @@ const jourCourt = (d: string): string =>
     year: "numeric",
     timeZone: "UTC",
   }).format(new Date(`${d.slice(0, 10)}T12:00:00Z`));
+/** A document's date said with what it is (Ju 11/11: « signé le », « publié le », « daté du »,
+ * « attribuée le », « vol le »; listes.ts quelleDate): a drone act's row is its first day of
+ * flight. */
+const dateDite = (e: Evenement): string => {
+  if (!e.date) return "";
+  if (e.t === "arrete_drone") return t("commune_a.vol_le", { d: jourCourt(e.date) });
+  const k = quelleDate(e);
+  return k === "annee" || k === "attribuee_an"
+    ? t(`liste.date.${k}`, { an: e.date.slice(0, 4) })
+    : t(`liste.date.${k}`, { date: jourCourt(publieLu(e) ?? e.date) });
+};
 const moisCourt = (d: string): string =>
   new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" }).format(
     new Date(`${d}T12:00:00Z`),
@@ -964,7 +975,7 @@ export class Commune extends Vue<Props, State> {
               return {
                 cls: `st ${k}`,
                 k: t(`commune_a.etape.${k}`),
-                d: e.date ? jourCourt(e.date) : "",
+                d: dateDite(e),
                 b:
                   k === "contrat"
                     ? ((e.entreprises ?? []).flatMap((sr, j) => [
@@ -1487,11 +1498,7 @@ export class Commune extends Vue<Props, State> {
       parM: (() => this.setState({ tri: "montant" })) as Handler,
       rows: docRows.slice(0, 10).map((e) => ({
         // a drone act's date is its first day of flight, not its publication (Ju 10/11): said
-        d: e.date
-          ? e.t === "arrete_drone"
-            ? t("commune_a.vol_le", { d: jourCourt(e.date) })
-            : jourCourt(e.date)
-          : "",
+        d: dateDite(e),
         doc: [
           {
             a: {

@@ -235,15 +235,23 @@ export function avecAujourdhui(E: Etape[], maj: string): Etape[] {
  * publication (BOAMP: `avis`, `rect`, `attr`), a contract's or a modification's signature (DECP
  * `dateNotification`; the head already says « signé le »), several modifications' range
  * (`modifs`), a drone decree's first flight day (`vol`, the build's `date` for it), another
- * decree's or a grant's own date (`date`), a year alone (`an`), the planned end (`fin`), today
- * (`auj`). The word is the catalogue's `contrat_a.date.<it>`. */
-export type SorteDate = EtapeK | "modifs" | "vol" | "date" | "an";
+ * decree's publication when read (`pub`) else its own date (`date`), a grant's award (`sub`,
+ * `sub_an` by its year), a year alone (`an`), the planned end (`fin`), today (`auj`). The word is the catalogue's `contrat_a.date.<it>`. */
+export type SorteDate = EtapeK | "modifs" | "vol" | "date" | "an" | "pub" | "sub_an";
 export function sorteDeDate(s: Etape): SorteDate {
   if (s.k === "auj") return "auj";
+  // a grant « attribuée le », or « attribuée en 2024 » when dated by its year (Ju 11/11)
+  if (s.k === "sub") return s.e?.date_annee ? "sub_an" : "sub";
   if (s.e?.date_annee) return "an";
   if (s.k === "modif" && s.jusqu && s.jusqu !== s.date) return "modifs";
-  if (s.k === "aut") return s.e?.t === "arrete_drone" ? "vol" : "date";
-  if (s.k === "sub") return "date";
+  // a decree « publié le » when its publication is read and is the step's day, else « daté du »;
+  // a drone act's step is its first day of flight
+  if (s.k === "aut")
+    return s.e?.t === "arrete_drone"
+      ? "vol"
+      : (s.e as { publie?: string } | undefined)?.publie === s.date
+        ? "pub"
+        : "date";
   return s.k;
 }
 

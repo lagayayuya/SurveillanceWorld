@@ -701,11 +701,13 @@ export const publie = (e: Evenement): string | null =>
 export const cleDate = (e: Evenement): string =>
   publie(e) ?? (e.date_annee ? `${(e.date ?? "").slice(0, 4)}-00-00` : (e.date ?? ""));
 
-/** A document's date said with what it is: a contract « signé le » (DECP's notification), a
- * notice « publié le » (BOAMP's publication), a camera decree « arrêté du » (its day, else its
- * recueil's), a region's subsidy « votée le », one dated by its year « en 2024 »; a drone act
- * « publié le 8 nov. 2026 · vol le 9 nov. 2026 » (its recueil, its first flight day), its flight
- * left out when `court`. */
+/** A document's date said with what it is (Ju, 11/11): a contract « signé le » (DECP's
+ * notification), a notice « publié le » (BOAMP's publication), a decree « publié le » when its
+ * publication is read, else « daté du » (a camera decree's own day: no publication is served for
+ * them), a subsidy « attribuée le » (« attribuée en 2024 » when dated by its year), another
+ * document dated by its year « en 2024 », anything else « daté du »; a drone act « publié le 8 nov.
+ * 2026 · vol le 9 nov. 2026 » (its recueil, its first flight day), its flight left out when
+ * `court`. */
 export function dateDite(e: Evenement, court = false): string {
   const P = publie(e);
   if (e.t === "arrete_drone") {
@@ -715,21 +717,29 @@ export function dateDite(e: Evenement, court = false): string {
     return court || !vol ? pub : `${pub} · ${vol}`;
   }
   if (!e.date) return "";
-  if (e.date_annee) return t("liste.date.annee", { an: e.date.slice(0, 4) });
-  return t(`liste.date.${quelleDate(e)}`, { date: shortDate(e.date) });
+  const k = quelleDate(e);
+  if (k === "annee" || k === "attribuee_an")
+    return t(`liste.date.${k}`, { an: e.date.slice(0, 4) });
+  return t(`liste.date.${k}`, { date: shortDate(publieLu(e) ?? e.date) });
 }
 
-/** Which date a document's is (the key of « publié le », « signé le »…): a drone act's the
- * publication when read, else its flight. */
+/** A decree's day of publication when the build reads it (`publie`; served for drone acts only,
+ * 11/11), for its words; the order stays `cleDate`'s. */
+export const publieLu = (e: Evenement): string | null =>
+  e.t.startsWith("arrete") ? ((e as { publie?: string | null }).publie ?? null) : null;
+
+/** Which date a document's is (the key of « publié le », « signé le »…, Ju 11/11): a drone act's
+ * the publication when read, else its flight; a subsidy's its award. */
 export function quelleDate(
   e: Evenement,
-): "publie" | "vol" | "signe" | "arrete" | "votee" | "annee" | "du" {
+): "publie" | "vol" | "signe" | "attribuee" | "attribuee_an" | "annee" | "du" {
   if (e.t === "arrete_drone") return publie(e) ? "publie" : "vol";
+  if (e.t.startsWith("subvention")) return e.date_annee ? "attribuee_an" : "attribuee";
   if (e.date_annee) return "annee";
   if (e.t === "attribution" || e.t === "modification") return "signe";
   if (/^(avis|resultat|rectificatif)$/.test(e.t)) return "publie";
-  if (e.t === "arrete") return "arrete";
-  return e.t === "subvention_region" ? "votee" : "du";
+  if (e.t.startsWith("arrete")) return publieLu(e) ? "publie" : "du";
+  return "du";
 }
 
 /** A document as a row of its list (the search API's page: its names in `L`). */

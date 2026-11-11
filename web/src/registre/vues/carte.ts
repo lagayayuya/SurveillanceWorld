@@ -1175,7 +1175,8 @@ class CarteDrones extends Vue<Props, State> {
         i: icone("aut"),
         k: t(vsa ? "carte.det_vsa" : "carte.det_drone"),
         title: plageVol(c),
-        sub: dateA ? t("carte.det_acte_du", { date: dateA }) : "",
+        // the act's own day « daté du » (Ju 11/11); its publication, when read, its own row
+        sub: dateA ? t("carte_a.det_date_du", { date: dateA }) : "",
         lieuxK: t("carte.lieux_k"),
         lieux: lieux(zs).map((x) => ({
           l: x.l,
