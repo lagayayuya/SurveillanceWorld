@@ -326,6 +326,8 @@ def test_the_national_graph_s_edges_are_legal_persons_counted_once(built):
     edges = read(built, "graphe/aretes.json")["aretes"]
     listes = read(built, "listes.json")
     assert edges and all(len(x) == 4 and x[3] >= 1 for x in edges)
+    # an amount never published is null, never 0 (B, 2026-11-10: « 0 € » on the graph)
+    assert any(x[2] is None for x in edges) and not any(x[2] == 0 for x in edges)
     ents = listes["dico"]["entreprises"]
     for _, s, _, _ in edges:
         assert s != "EI" and not (ents.get(s) or {}).get("entrepreneur_individuel"), s

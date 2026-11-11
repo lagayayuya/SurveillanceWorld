@@ -304,9 +304,10 @@ def aretes(ctx: fermetures.Context) -> dict[str, Any]:
     and company that signed a contract together, [buyer, company, amount, n]. A contract
     counted once (a copy never), its whole amount when it counts (`compte`) on each of its
     holders' edges, so the edges do not add up to the total; legal persons only: a sole
-    trader is in no edge, whatever its contracts."""
+    trader is in no edge, whatever its contracts. The amount is null when none of its
+    contracts has a published amount that counts (« non publié », never « 0 € »)."""
     reg = ctx.reg
-    edges: dict[tuple[str, str], list[float]] = {}
+    edges: dict[tuple[str, str], list[Any]] = {}
     for e in reg.evenements:
         if e["t"] != "attribution" or e.get("copie") or not (b := reg.buyer(e)):
             continue
@@ -314,8 +315,9 @@ def aretes(ctx: fermetures.Context) -> dict[str, Any]:
             # a buyer named as its own holder (a SIREN on both sides) is no path
             if s in (EI, b) or ctx.entreprise(s).get("entrepreneur_individuel"):
                 continue
-            o = edges.setdefault((b, s), [0.0, 0])
-            o[0] += (e.get("montant") or 0) if e.get("compte") else 0
+            o = edges.setdefault((b, s), [None, 0])
+            if e.get("compte") and e.get("montant") is not None:
+                o[0] = (o[0] or 0.0) + e["montant"]
             o[1] += 1
     # every buyer of an edge named (the lists name only some: a commune buying is not in
     # them), its fiche when it has one; the companies are the lists' (dico.entreprises)
@@ -326,7 +328,9 @@ def aretes(ctx: fermetures.Context) -> dict[str, Any]:
     return {
         "v": 1,
         "maj": ctx.couverture["maj"],
-        "aretes": [[b, s, round(m), n] for (b, s), (m, n) in sorted(edges.items())],
+        "aretes": [
+            [b, s, None if m is None else round(m), n] for (b, s), (m, n) in sorted(edges.items())
+        ],
         "acheteurs": noms,
     }
 
