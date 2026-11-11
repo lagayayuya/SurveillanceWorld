@@ -3,7 +3,7 @@
   <div class="maptag">
     <a class="mback" href="{{retourHref}}" onClick="{{retourClic}}">{{t.carte_a.retour}}</a>
     <sc-if value="{{legOuverte}}"><div class="leg" id="cd-legende">
-      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span></sc-if><sc-if value="{{hasSecteurs}}"><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span></sc-if><sc-if value="{{hachureArr}}"><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte_a.leg_arrondissement}}</span></sc-if><sc-if value="{{hachureCommune}}"><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte_a.leg_commune}}</span></sc-if>
+      <sc-if value="{{hasDrone}}"><span><i class="sw-zone" aria-hidden="true"></i>{{t.carte.leg_trace_vol}}</span><span><i class="sw-haut" aria-hidden="true"></i>{{t.carte_a.leg_hauteur}}</span></sc-if><sc-if value="{{hasSecteurs}}"><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte.leg_secteur}}</span></sc-if><sc-if value="{{hachureArr}}"><span><i class="lg-sc" aria-hidden="true"></i>{{t.carte_a.leg_arrondissement}}</span></sc-if><sc-if value="{{hachureCommune}}"><span><i class="lg-nl" aria-hidden="true"></i>{{t.carte_a.leg_commune}}</span></sc-if>
       <sc-if value="{{hasEnt}}"><span><i class="sw-ent" aria-hidden="true"></i>{{t.carte.leg_entiere}}</span></sc-if>
       <sc-if value="{{hasVsa}}"><span><i class="sw-vsa" aria-hidden="true"></i>{{t.carte.leg_vsa}}</span></sc-if>
       <span class="leg-in" style="color: var(--muted)">{{t.carte.leg_trace}}</span>
