@@ -55,8 +55,18 @@ commune_par_regle:
     read. On that drawing's texts the six wrong are right; an establishment in Bordeaux read
     only from the prefecture's « 33077 BORDEAUX CEDEX » is placed in none (a known loss: an
     establishment whose own address is a « cedex » one). Only a new drawing in five
-    départements never drawn measures it.
-  publie: false
+    départements never drawn measures it. Fresh drawing (2026-11-11, reader 11, seed 20261114,
+    10 in each of the 29, 68, 50, 63, 25; three where the prefecture is not the largest town:
+    Quimper, Colmar, Saint-Lô, the Manche's acts signed in Avranches): 49 of 50 (98 %), each
+    read by hand on its text, the acts placed in the authority's own town (Quimper, Colmar,
+    Avranches, Clermont-Ferrand, Besançon) all at an establishment of that town. The wrong one:
+    an administrative closure of a Besançon shop placed in the commune of Doubs (25204), read in
+    the letterhead « PRÉFET CABINETdu Doubs », glued by the extraction so that the authority's
+    name is not blanked. Among the 58 913 one establishment's acts placed, in Doubs too: 11
+    closures of that form and 2 compositions of the commission; in Corrèze (19062), 5 of 6 read
+    in « PRÉFET CabinetDE LA CORRÈZE » (Tulle, Brive-la-Gaillarde twice, Donzenac). At 48 of 50
+    or more the rule's placement is served (Ju).
+  publie: true
   # a département of one commune: every one establishment's act of it is that commune's,
   # no name read (Ju, 2026-11-11: Paris)
   departement_une_commune: {"75": {insee: "75056", nom: Paris}}
@@ -69,8 +79,8 @@ commune_par_regle:
   exclure_titre: '\barretes\b|\b\d+ arretes\b|n° ?[\w /.-]*\d+ ?a ?\d+\b|\bcommission (?:departementale )?du\b|\bliste des\b|composition de la commission|communication des|habilitation|agrement|visionnage'
   communes_au_titre_max: 1
   types:
-    # the last fresh drawing's (2026-11-11, reader 10), until the next one
-    videoprotection: {justes: 44, mesures: 50}
+    # the last fresh drawing's (2026-11-11, reader 11, seed 20261114), until the next one
+    videoprotection: {justes: 49, mesures: 50}
 
 # The numbers of cameras a video-protection act states, read by the rules (inside, outside, on
 # the public road, the total), published everywhere for one establishment's act
