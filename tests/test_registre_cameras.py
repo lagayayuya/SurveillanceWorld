@@ -43,5 +43,5 @@ def test_a_dossier_counts_its_latest_act_by_holder_and_kind():
     assert (out["mairie"], out["commerces"], out["autres"], out["non_classees"]) == (12, 6, None, 3)
     assert (out["interieures"], out["exterieures"], out["voie_publique"]) == (4, 2, 12)
     assert (out["dossiers"], out["dossiers_non_lus"], out["sans_dossier"]) == (4, 1, 1)
-    assert out["periode"] == {"debut": "2024-05-01", "fin": "2025-06-01"}
+    assert out["periode"] == {"de": "2024-05-01", "a": "2025-06-01"}
     assert cameras.autorisees([])["mairie"] is None  # nothing read: null, never 0

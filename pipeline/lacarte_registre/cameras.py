@@ -91,5 +91,5 @@ def autorisees(events: Iterable[dict[str, Any]]) -> dict[str, Any]:
                 out[key] = (out[key] or 0) + int(e[field])
     days = sorted(d for d in days if d)
     if days:
-        out["periode"] = {"debut": days[0], "fin": days[-1]}
+        out["periode"] = {"de": days[0], "a": days[-1]}  # the map reads « de », « a »
     return out
