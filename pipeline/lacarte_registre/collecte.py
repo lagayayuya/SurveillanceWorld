@@ -455,7 +455,9 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
     commune_partout = {
         k for k, v in (par_regle.get("types") or {}).items()
         if v["mesures"] and v["justes"] / v["mesures"] >= par_regle["taux"]
-    }  # fmt: skip
+    } if par_regle.get("publie", True) else set()  # fmt: skip
+    une_commune = par_regle.get("departement_une_commune") or {}
+    types_regle = set(par_regle.get("types") or {})
     seul = _un_etablissement(root, par_regle)
     # the camera numbers read by the rules, published for one establishment's act read by a
     # reader at least `lecteur_min` (collecte_seuils.yaml `nombres_par_regle`)
@@ -475,8 +477,15 @@ def fusionner(p: regles.Pilote, root: Path, rules: Path) -> tuple[regles.Pilote,
         published = {
             g for g, v in groups.items() if v.get("publie") and (g in GROUPS or g in NOUVEAUX)
         }
-        one = seul(a) if a["type"] in commune_partout or a["type"] in nombres_partout else False
+        one = (
+            seul(a) if a["type"] in commune_partout or a["type"] in nombres_partout
+            or (a["type"] in types_regle and a.get("departement") in une_commune) else False
+        )  # fmt: skip
         if a["type"] in commune_partout and one:
+            published.add("commune")
+        if one and a["type"] in types_regle and (only := une_commune.get(a.get("departement"))):
+            # Paris: its one establishment's acts are its own, no name read
+            a = {**a, "insee": only["insee"], "commune": only["nom"]}
             published.add("commune")
         recent = (a.get("lecteur") or 0) >= nombres_partout.get(a["type"], 10**6)
         if a["type"] in nombres_partout and one and recent:

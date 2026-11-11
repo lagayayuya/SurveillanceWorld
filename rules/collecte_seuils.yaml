@@ -41,7 +41,17 @@ commune_par_regle:
     authorisation, now excluded too. In all, as served before that last exclusion, 90 of 93
     right (96.8 %); the second drawing wrote the bundle rule and the third the « habilitation »
     one, so the drawing that only measured is the third (28 of 30). Served at 95 % or more
-    (Ju); an act with no commune read stays unplaced.
+    (Ju); an act with no commune read stays unplaced. Ju (2026-11-11): only a drawing never
+    seen counts, 48 of 50 needed. Fresh drawing (seed 20261113, 10 in each of the 06, 34, 38,
+    62, 57): 44 of 50 (88 %). The six wrong: five Moselle acts placed in Metz, an Arras one
+    in the Pas-de-Calais, the prefecture's own town (its letterhead, « 62020 ARRAS Cedex »,
+    « le préfet de la Moselle… à Metz ») read before the establishment's (Freyming-Merlebach,
+    Louvigny, Moulins-lès-Metz, Spicheren, Sarreguemines, Saint-Martin-Boulogne). `publie`
+    false: the rule's placement is not served, its communes « non_rattache ».
+  publie: false
+  # a département of one commune: every one establishment's act of it is that commune's,
+  # no name read (Ju, 2026-11-11: Paris)
+  departement_une_commune: {"75": {insee: "75056", nom: Paris}}
   taux: 0.95
   # an act that is not one establishment's: a bundle of acts under one number (« Arrêté n° VPA
   # / 2026 / 290 à 299 », « 31 arrêtés », « Arrêtés … (Commission du 15 octobre 2024) », the

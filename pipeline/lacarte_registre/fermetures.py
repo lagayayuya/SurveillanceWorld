@@ -151,6 +151,7 @@ class Context:
                 "actes_commune"
             ]
             self._seuil_rattache = float(conf["part_rattachee"])
+            self._une_commune = set(conf.get("departements_une_commune") or [])
             self._rattache: dict[str, dict[str, float | None]] = {}
         if dep not in self._rattache:
             n = {"cam": [0, 0], "dr": [0, 0]}  # [placed, all]
@@ -167,6 +168,8 @@ class Context:
             share = self._rattache[dep][k]
             if read != "collecte":
                 out[k] = "non_lu"
+            elif k == "cam" and dep in self._une_commune:
+                out[k] = "lu"
             elif share is not None and share < self._seuil_rattache:
                 out[k] = "non_rattache"
             else:

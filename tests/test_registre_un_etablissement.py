@@ -34,3 +34,14 @@ def test_a_bundle_a_list_of_communes_or_an_habilitation_is_placed_in_none(tmp_pa
         ("Arrêté portant composition de la commission départementale", "33"),
     ):
         assert not seul({"departement": dep, "titre": titre}), titre
+
+
+def test_the_rule_s_placement_is_hidden_and_paris_takes_its_own_acts():
+    """Ju (2026-11-11): a fresh drawing gave 44 of 50, under 48: the rule's placement is not
+    served; the 75, of one commune, places its one establishment's acts in 75056."""
+    conf = yaml.safe_load((registre.RULES / "collecte_seuils.yaml").read_text("utf-8"))
+    par = conf["commune_par_regle"]
+    assert par["publie"] is False
+    assert par["departement_une_commune"]["75"]["insee"] == "75056"
+    cov = yaml.safe_load((registre.RULES / "registre_couverture.yaml").read_text("utf-8"))
+    assert "75" in cov["actes_commune"]["departements_une_commune"]

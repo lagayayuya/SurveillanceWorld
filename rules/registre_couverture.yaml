@@ -147,3 +147,6 @@ actes_commune:
     shows (`couverture_actes_communes`). The département's own state stays in couverture.json.
     Supersedes the « partiel » state of 2026-11-09.
   part_rattachee: 0.9
+  # a département of one commune: its acts are that commune's (Ju, 2026-11-11: Paris « lu »;
+  # its bundles, the DUPA's « communications des arrêtés », stay uncounted, a known limit)
+  departements_une_commune: ["75"]
