@@ -516,7 +516,7 @@ class Graphe extends Vue<Props, State> {
           cA: e ? null : { rx: d.centre.w / 2 },
           ctxt: d.centre.txt,
           c: this.centreNoeud(v, doigt),
-          carte: S.sel ? this.carte(S.sel, v, d, sec) : null,
+          carte: S.sel ? this.carte(S.sel, v, d) : null,
           fermer: this.fermerCarte,
           fond: this.fond,
           quitter: this.quitter(),
@@ -612,14 +612,6 @@ class Graphe extends Vue<Props, State> {
     const x = r === "e" ? X.entreprises[s] : X.acheteurs[s];
     return x ? { n: x.n, amt: x.amt } : null;
   }
-  /** Why a node has no link to a fiche: a sole trader is never named nor given one. */
-  private sansFiche(s: string): string {
-    if (this.estAcheteur(s)) return t("graphe_a.carte_sans_fiche");
-    return this.L.entreprises[s]?.entrepreneur_individuel
-      ? t("graphe_a.carte_sans_fiche_ei")
-      : t("graphe_a.carte_sans_fiche");
-  }
-
   /** The centre as a node: focusable, its bubble, its card (no amount summed from its edges: the
    * lists' total, the build's figure). */
   private centreNoeud(v: Voisinage, doigt: boolean) {
@@ -645,17 +637,14 @@ class Graphe extends Vue<Props, State> {
       : t("graphe_a.carte_total_n", { contrats: count(tot.n, "contrat") });
   }
 
-  /** The small card of the node chosen, beside it (Ju's point 6): its kind, its name, its amount
-   * as its bubble says it, « Ouvrir la fiche → » when it has one, « Centrer ici » but for the
-   * centre. Placed in the drawing's units: beside the node, towards the drawing's middle. On a
-   * phone it stands under the drawing (graphe.css). */
-  private carte(k: string, v: Voisinage, d: Dessin, sec: Map<string, Second>) {
-    const e = v.role === "e";
+  /** The small card of the node chosen, beside it (Ju's point 6; 11/11: its two actions only, its
+   * detail stays in the side panel): « Ouvrir la fiche → » when it has one, « Centrer ici » but
+   * for the centre; none when it has neither. Placed in the drawing's units: beside the node,
+   * towards the drawing's middle. On a phone it stands under the drawing (graphe.css). */
+  private carte(k: string, v: Voisinage, d: Dessin) {
     let x: number;
     let y: number;
     let z: number;
-    let tag: string;
-    let lignes: string[];
     let id: string;
     let centrer: string | null = null;
     if (k === "c") {
@@ -663,9 +652,6 @@ class Graphe extends Vue<Props, State> {
       x = 500;
       y = 450;
       z = 24;
-      tag = t("graphe_a.carte_tag_c");
-      const l = this.totalLigne(this.total(v.centre, v.role));
-      lignes = l ? [l] : [];
     } else {
       const n = d.noeuds.find(
         (m) => m.k === k && (m.sorte === "p" || m.sorte === "b" || m.sorte === "s"),
@@ -673,15 +659,10 @@ class Graphe extends Vue<Props, State> {
       if (!n) return null;
       id = n.k;
       ({ x, y, z } = n);
-      const pm = this.premiersMots(v);
-      tag =
-        n.sorte === "p"
-          ? t(`graphe_a.leg_p_${pm.k}`)
-          : t(`graphe_a.carte_tag_${n.sorte}_${e ? "e" : "a"}`);
-      lignes = this.bulle(n, v, sec).bl.split("\n").filter(Boolean).slice(0, 4);
       centrer = this.recentrer(n.k, n.forme);
     }
     const fiche = this.href(id);
+    if (!fiche && !centrer) return null;
     // beside the node, towards the middle: left of it on the right side, under it in the upper half
     const droite = x > 600;
     const gauche = x < 400;
@@ -692,10 +673,7 @@ class Graphe extends Vue<Props, State> {
       nom: this.court(id),
       cls: haut ? "dessous" : "dessus",
       st: `left: ${(x / 10).toFixed(2)}%; top: ${top.toFixed(2)}%; transform: translate(${tx}, ${haut ? "0" : "-100%"})`,
-      tag,
-      lignes,
       fiche: fiche ?? "",
-      sans: fiche ? "" : this.sansFiche(id),
       centrer: centrer ?? "",
     };
   }

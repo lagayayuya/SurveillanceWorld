@@ -185,6 +185,11 @@
   background: var(--bg-2);
   border: 2px dashed var(--line);
 }
+/* a commune without a number in the acts' modes (none attached yet, not read): as its point */
+.rg .va.dep .sw.nd {
+  background: var(--bg-2);
+  border: 1.5px dotted var(--line);
+}
 
 /* 2 · the contracts by year */
 .rg .va.dep .chart {

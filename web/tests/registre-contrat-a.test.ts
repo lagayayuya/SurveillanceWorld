@@ -124,7 +124,11 @@ test("each date says which: published, signed, a range of modifications, a fligh
   const base = E[0];
   assert.equal(sorteDeDate({ ...base, k: "aut", e: ev({ id: "D", t: "arrete_drone", date: "2026-11-18" }) }), "vol");
   assert.equal(sorteDeDate({ ...base, k: "aut", e: ev({ id: "A", t: "arrete", date: "2026-01-02" }) }), "date");
-  assert.equal(sorteDeDate({ ...base, k: "sub", e: ev({ id: "S", t: "subvention", date: "2026-12-31", date_annee: true }) }), "an");
+  // a grant « attribuée le » (Ju 11/11), « attribuée en 2026 » when dated by its year
+  assert.equal(sorteDeDate({ ...base, k: "sub", e: ev({ id: "S", t: "subvention", date: "2026-12-31", date_annee: true }) }), "sub_an");
+  assert.equal(sorteDeDate({ ...base, k: "sub", e: ev({ id: "S", t: "subvention_region", date: "2026-03-02" }) }), "sub");
+  // a decree whose publication is read and is the step's day: « publié le »
+  assert.equal(sorteDeDate({ ...base, date: "2026-01-05", k: "aut", e: ev({ id: "P", t: "arrete", date: "2026-01-05", publie: "2026-01-05" } as never) }), "pub");
 });
 
 test("a gap under a year in days, then whole years or months", () => {

@@ -215,6 +215,14 @@
 /* the phone: the board's table in rows (variants.py « tableaux en fiches »): the figure's name
    across, then a value per column, its name over it; the head's ✕ and « + Ajouter » are the chips' */
 @media (max-width: 959px) {
+  /* a state mark (« aucun encore rattaché ») stays inside its column at 390 px */
+  .rg .va .cmpt .state {
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 2px 5px;
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
+  }
   .rg .va.cmp .name .cut {
     font-size: 34px;
   }

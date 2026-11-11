@@ -9,9 +9,9 @@
 // leads to its column's fiche. The address follows the columns, so that a comparison is shared.
 
 import { remplacerAdresse } from "../adresse.ts";
-import { communeHref, depArt } from "../commun.ts";
+import { communeHref } from "../commun.ts";
 import { depNom, entName } from "../corpus.ts";
-import { type Handler, type RichItem, richText as richTexte } from "../dc.ts";
+import type { Handler, RichItem } from "../dc.ts";
 import { load } from "../donnees.ts";
 import { fr } from "../format.ts";
 import { has, t } from "../i18n.ts";
@@ -24,9 +24,11 @@ import { coupeMots, montantA, repli } from "../socle-a.ts";
 import { plain } from "../texte.ts";
 import type { TypeCle } from "../types.ts";
 import { type BaseState, type Partage, Vue } from "../vue.ts";
+import { ditActes } from "./actes-mots.ts";
 import { contracte } from "./commune-a.ts";
 import {
   barres,
+  type CouvActes,
   classement,
   couvertureActes,
   csvComparaison,
@@ -43,7 +45,6 @@ import {
   lecture,
   MAX,
 } from "./comparer-a.ts";
-import { deArt } from "./entreprise-a.ts";
 import "./comparer.css";
 import template from "./comparer.html?raw";
 
@@ -301,12 +302,13 @@ export class Comparer extends Vue<Props, State> {
 
   /** Which of its decrees are read (comparer-a.ts `couvertureActes`, the build's rule): « non
    * lu », never 0, elsewhere. */
-  private lu(insee: string): Lecture {
+  private couvC(insee: string): CouvActes {
     const X = this.props.X;
     const dep = X.dico.communes[insee]?.dep ?? "";
-    return lecture(
-      couvertureActes({ insee, dep, etat: this.props.couv.departements[dep]?.etat, X }),
-    );
+    return couvertureActes({ insee, dep, etat: this.props.couv.departements[dep]?.etat, X });
+  }
+  private lu(insee: string): Lecture {
+    return lecture(this.couvC(insee));
   }
   private figC(insee: string): FiguresCommune {
     const X = this.props.X;
@@ -451,17 +453,23 @@ export class Comparer extends Vue<Props, State> {
       nonLu?: boolean;
       etat?: string;
       ancre?: string;
+      /** the figure in its own words (« au moins 12 »), in place of `txt` */
+      vu?: string;
     },
+    /** a row that holds a minimum (« au moins N »): no highest value can be said, no yellow */
+    sansJaune = false,
   ): Cell[] {
     // the yellow on the figures as written (Lélex's 4,15 and Lyon's 4,07 are both « 4,1 »)
-    const top = hauts(vals.map((v) => (v === null ? null : comme(k, v))));
+    const top = sansJaune
+      ? vals.map(() => false)
+      : hauts(vals.map((v) => (v === null ? null : comme(k, v))));
     const bars = barres(vals);
     return this.colonnes().map((c, i) => {
       const v = vals[i];
       const x = extra(i);
       const href = c.href ? `${c.href}${x.ancre ?? ""}` : "";
       const etat = x.nonLu ? (x.etat ?? t("liste.non_lu")) : "";
-      const vu = etat || (v === null ? "—" : txt(v));
+      const vu = etat || x.vu || (v === null ? "—" : txt(v));
       const lignes = [
         `${label}\u00a0: ${vu}`,
         ...(x.bl ? [x.bl] : []),
@@ -499,40 +507,36 @@ export class Comparer extends Vue<Props, State> {
       dr: fr,
       docs: fr,
     };
+    const etats = cols.map((c) => this.couvC(c.id));
     const extra = (k: KC) => (i: number) => {
       const f = fs[i];
       // outside the map (overseas: no commune counted), « hors carte », never 0 (recette 10)
       const horsCarte = (k === "carte" || k === "p1000") && f.carte === null;
-      const nonLu = ((k === "cam" || k === "dr") && f[k] === null) || horsCarte;
       const dep = X.dico.communes[cols[i].id]?.dep ?? "";
-      // its département not collected (« non lu »), or collected and this kind of its decrees
-      // placed in no commune yet: read, not attached (comparer-a.ts nonRattache, Ju 10/11)
-      const recueils = this.props.couv.departements[dep]?.etat === "collecte";
-      const rattache =
-        nonLu && !horsCarte && recueils
-          ? t("socle_a.non_rattache", { de: deArt(depArt(dep)) })
-          : "";
+      // the decrees in the words of their served state (Ju 11/11): « pas encore lus » where its
+      // département's are not read, « au moins N » or « aucun encore rattaché » where they are not
+      // all attached to a commune, with the sentence that says why
+      const dit = k === "cam" || k === "dr" ? ditActes(etats[i][k], f[k] ?? 0, dep) : null;
+      // no number to show (not read, none attached yet): the cell's state mark, no bar
+      const sansNombre = dit?.forme === "non_lu" || dit?.forme === "aucun_rattache";
+      const nonLu = sansNombre || horsCarte;
+      const min = dit?.forme === "au_moins" || dit?.forme === "aucun_rattache";
       return {
         ancre: ANCRE[k],
         nonLu,
-        etat: horsCarte
-          ? t("comparer_a.hors_carte")
-          : rattache
-            ? t("socle_a.non_rattache_court")
-            : undefined,
+        etat: horsCarte ? t("comparer_a.hors_carte") : sansNombre ? dit?.v : undefined,
+        vu: min ? dit?.v : undefined,
         bl: horsCarte
           ? contracte(t("comparer_a.b_hors_carte", { nom: cols[i].nom }), cols[i].nom)
-          : nonLu
-            ? recueils
-              ? `${rattache}.`
-              : t("comparer_a.b_non_lu", { dans: richTexte(dansDep(dep)) })
+          : dit?.phrase
+            ? `${dit.phrase}.`
             : k === "p1000" && f.carte !== null && pops[i]
               ? t("comparer_a.b_p1000", { n: fr(f.carte), p: fr(pops[i]) })
               : k === "eph" && f.eph !== null
                 ? t("comparer_a.b_eph", { m: montantA(f.amt), p: fr(pops[i]) })
                 : undefined,
-        sub: rattache
-          ? rattache
+        sub: min
+          ? dit?.phrase
           : (k === "amt" || k === "eph") && !f.amt
             ? t("comparer_a.sans_contrat")
             : undefined,
@@ -547,7 +551,14 @@ export class Comparer extends Vue<Props, State> {
         return {
           l: label,
           s: t(`comparer_a.s_${k}`),
-          vals: this.cellules(k, label, vals, fmt[k], extra(k)),
+          vals: this.cellules(
+            k,
+            label,
+            vals,
+            fmt[k],
+            extra(k),
+            (k === "cam" || k === "dr") && etats.some((e) => e[k] === "non_rattache"),
+          ),
         };
       }),
     }));
@@ -633,17 +644,16 @@ export class Comparer extends Vue<Props, State> {
   private sources(cols: Col[]) {
     const X = this.props.X;
     const ds = [...new Set(cols.map((c) => X.dico.communes[c.id]?.dep ?? "").filter(Boolean))];
-    const recueillis = ds.filter((d) => this.props.couv.departements[d]?.etat === "collecte");
-    const non = ds.filter((d) => !recueillis.includes(d));
-    // a collected département where a kind of decree is not read for a commune compared: that
-    // kind's own line (Paris's camera decrees, the Allier's below their threshold), never « lus »
-    const sans = (k: keyof Lecture) =>
-      recueillis.filter((d) =>
-        cols.some((c) => X.dico.communes[c.id]?.dep === d && !this.lu(c.id)[k]),
-      );
-    const camNl = sans("cam");
-    const drNl = sans("dr");
-    const lus = recueillis.filter((d) => !camNl.includes(d) && !drNl.includes(d));
+    // each département in the served state of its compared communes' decrees (Ju 11/11): read
+    // (« lu »), read but not all attached to a commune (« non_rattache », each family its line),
+    // not read (« non_lu »)
+    const de = (d: string) => cols.filter((c) => X.dico.communes[c.id]?.dep === d);
+    const etat = (d: string, k: "cam" | "dr", e: string) =>
+      de(d).some((c) => this.couvC(c.id)[k] === e);
+    const non = ds.filter((d) => etat(d, "cam", "non_lu") || etat(d, "dr", "non_lu"));
+    const nrCam = ds.filter((d) => !non.includes(d) && etat(d, "cam", "non_rattache"));
+    const nrDr = ds.filter((d) => !non.includes(d) && etat(d, "dr", "non_rattache"));
+    const lus = ds.filter((d) => !non.includes(d));
     const dans = (l: string[]) => enPhrase(enumerer(l.map(dansDep)));
     const rows: { cls: string; b: string; d: RichItem[] }[] = [
       { cls: "part", b: t("comparer_a.src_carte_b"), d: [t("comparer_a.src_carte")] },
@@ -656,20 +666,20 @@ export class Comparer extends Vue<Props, State> {
         d: phrase("comparer_a.src_lus", { dans: dans(lus) }),
       });
     for (const [k, l] of [
-      ["cam", camNl],
-      ["dr", drNl],
+      ["cam", nrCam],
+      ["dr", nrDr],
     ] as const)
       if (l.length)
         rows.push({
           cls: "part",
           b: t("comparer_a.src_arretes_b"),
-          d: phrase(`comparer_a.src_non_lus_${k}`, { dans: dans(l) }),
+          d: phrase(`comparer_a.src_nr_${k}`, { dans: dans(l) }),
         });
     if (non.length)
       rows.push({
         cls: "part",
         b: t("comparer_a.src_arretes_b"),
-        d: phrase("comparer_a.src_non_lus", { dans: dans(non) }),
+        d: phrase("comparer_a.src_pas_lus", { dans: dans(non) }),
       });
     return {
       r: repli(
@@ -737,7 +747,16 @@ export class Comparer extends Vue<Props, State> {
       lead,
       // what the yellow means, under the lead (recette, amélioration 5: the table's own note is
       // far below it); only where a row can have a yellow, two columns or more
-      jaune: n >= 2 ? t("comparer_a.jaune") : "",
+      // a row holding a minimum has none (« au moins N », Ju 11/11)
+      jaune:
+        n >= 2
+          ? t(
+              m &&
+                cols.some((c) => Object.values(this.couvC(c.id)).some((e) => e === "non_rattache"))
+                ? "comparer_a.jaune_min"
+                : "comparer_a.jaune",
+            )
+          : "",
       actions: {
         cls: `actions${S.plus ? " plus" : ""}`,
         sansExport: n === 0,

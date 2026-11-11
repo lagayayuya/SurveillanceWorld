@@ -10,7 +10,7 @@
   </section>
 
   <div class="figs">
-    <sc-for list="{{figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><a class="fa" href="{{f.href}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="sr">{{f.sr}}</span></a><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" role="group" aria-label="{{f.dotsL}}"><sc-for list="{{f.dots}}" as="d"><i class="{{d.cls}}" tabindex="{{d.tab}}" role="{{d.role}}" aria-label="{{d.al}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span></div></sc-for>
+    <sc-for list="{{figs}}" as="f"><div class="{{f.cls}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><a class="fa" href="{{f.href}}"><span class="fk">{{f.k}}</span><b class="fv"><sc-if value="{{f.pre}}"><small>{{f.pre}}</small>&nbsp;</sc-if>{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="sr">{{f.sr}}</span></a><span class="rk"><sc-if value="{{f.dots}}"><span class="dots" role="group" aria-label="{{f.dotsL}}"><sc-for list="{{f.dots}}" as="d"><i class="{{d.cls}}" tabindex="{{d.tab}}" role="{{d.role}}" aria-label="{{d.al}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></i></sc-for></span></sc-if><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span></div></sc-for>
   </div>
 
   <section class="v3" aria-label="{{v3.titre}}">
@@ -183,7 +183,7 @@
       <div class="{{srcs.r.cls}}">
         <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
         <div class="fb" id="{{srcs.r.id}}">
-          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b> · {{s.d}}</li></sc-for></ul>
+          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b> · <span>{{{s.d}}}</span></li></sc-for></ul>
           <p class="note">{{t.commune_a.sources_note}} <a class="go" href="{{srcs.signaler}}">{{t.commune_a.signaler}}</a> · <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
         </div>
       </div>

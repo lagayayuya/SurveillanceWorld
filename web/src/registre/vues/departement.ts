@@ -15,7 +15,7 @@
 // the class `Intercommunalite` below and the second template of departement.html.
 
 import { departementArt, etatDepartement } from "../collecte.ts";
-import { communeHref, depArt } from "../commun.ts";
+import { communeHref } from "../commun.ts";
 import { buyerHref, depGroup, entName, type Lexique, buyerNom as nomAcheteur } from "../corpus.ts";
 import type { Handler, RichItem } from "../dc.ts";
 import type { Couverture } from "../donnees.ts";
@@ -62,8 +62,8 @@ import {
   total,
   vendeurs,
 } from "./acheteur-outils.ts";
+import { ditActes } from "./actes-mots.ts";
 import { type EtatActes, etatActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
-import { deArt } from "./entreprise-a.ts";
 import "./departement.css";
 import "./departement-a.css";
 import { documentHref } from "../routes.ts";
@@ -193,8 +193,8 @@ function couvC(
     ?.couverture_actes;
   const tot = f.stats.depStats;
   return {
-    cam: servi?.cam ?? etatActes(collecte, tot.cam ?? 0, c.aut),
-    dr: servi?.dr ?? etatActes(collecte, tot.dr ?? 0, c.dr ?? 0),
+    cam: servi?.cam ?? etatActes(collecte, tot.cam ?? 0),
+    dr: servi?.dr ?? etatActes(collecte, tot.dr ?? 0),
   };
 }
 
@@ -349,10 +349,26 @@ class DepartementA extends Vue<PropsA, StateA> {
     // commune (depStats less uniq); « non lu », never 0 (Ju 09/11, recette 01)
     const hors = horsCommune(st, f.stats.uniq) ?? { cam: 0, dr: 0 };
     const luC = (c: { insee?: string; aut: number; dr?: number }) => lecture(couvC(f, lu, c));
-    // collected, a commune's family « non lu » means its acts are read but placed in no commune
-    // yet: said so (comparer-a.ts nonRattache, Ju 10/11, Vichy), « non lu » only when not collected
-    const rattache = t("socle_a.non_rattache", { de: deArt(depArt(dep, N.nom)) });
-    const nonLuC = lu ? t("socle_a.non_rattache_court") : t("liste.non_lu");
+    // a commune's family in the words of its served state (Ju 11/11): the number alone where read,
+    // « au moins N » / « aucun encore rattaché » where its acts are not all attached to a commune,
+    // « pas encore lus » where they are not read; a minimum is sorted at its known number
+    const ditC = (c: { insee?: string; aut: number; dr?: number }, k: "cam" | "dr") =>
+      ditActes(couvC(f, lu, c)[k], (k === "cam" ? c.aut : c.dr) ?? 0, dep, {
+        nomDep: N.nom,
+        zero: "—",
+      });
+    // a commune whose acts are not read, or none attached yet: no number to colour (« nd »)
+    const sansNombre = (c: { insee?: string; aut: number; dr?: number }, k: "cam" | "dr") =>
+      ["non_lu", "aucun_rattache"].includes(ditC(c, k).forme);
+    const bulleActes = (c: { insee?: string; aut: number; dr?: number }, k: "cam" | "dr") => {
+      const d = ditC(c, k);
+      const n = (k === "cam" ? c.aut : c.dr) ?? 0;
+      const l = t(`departement_a.b.${k === "cam" ? "aut" : "dr"}`, { n });
+      if (d.forme === "n") return l;
+      return d.forme === "au_moins"
+        ? `${t("socle_a.au_moins", { n: l })}\n${d.phrase}.`
+        : `${d.phrase}.`;
+    };
     const places = { cam: f.stats.uniq?.cam ?? 0, dr: f.stats.uniq?.dr ?? 0 };
     const an = (k: "con" | "cam") =>
       Object.keys(f.stats.annees)
@@ -660,13 +676,17 @@ class DepartementA extends Vue<PropsA, StateA> {
             const ll = X.dico.communes[c.insee]?.ll;
             if (!ll) return null;
             const s = f.stats.communes[c.insee];
-            const v = valeur(m, {
-              pop: c.pop,
-              carte: c.cams,
-              montant: s?.montant ?? 0,
-              cam: c.aut,
-              dr: c.dr,
-            });
+            // a commune whose acts are not read, or none attached yet, has no colour (« nd »)
+            const v =
+              (m === "aut" && sansNombre(c, "cam")) || (m === "dr" && sansNombre(c, "dr"))
+                ? null
+                : valeur(m, {
+                    pop: c.pop,
+                    carte: c.cams,
+                    montant: s?.montant ?? 0,
+                    cam: c.aut,
+                    dr: c.dr,
+                  });
             const q = classe(v, SEUILS[m]);
             const [x, y] = cadre.f(proj(ll));
             const href = f.communes[c.insee]?.ref ? communeHref(c.insee) : "";
@@ -684,17 +704,7 @@ class DepartementA extends Vue<PropsA, StateA> {
                       m: montantA(s?.montant ?? 0),
                       v: v == null ? "—" : fr(v),
                     })
-                  : m === "aut"
-                    ? luC(c).cam
-                      ? t("departement_a.b.aut", { n: c.aut })
-                      : lu
-                        ? rattache
-                        : t("liste.non_lu")
-                    : luC(c).dr
-                      ? t("departement_a.b.dr", { n: c.dr })
-                      : lu
-                        ? rattache
-                        : t("liste.non_lu"),
+                  : bulleActes(c, m === "aut" ? "cam" : "dr"),
               t("departement_a.b.docs", { n: c.docs }),
             ].filter(Boolean);
             return {
@@ -777,6 +787,11 @@ class DepartementA extends Vue<PropsA, StateA> {
         leg: [
           ...[0, 1, 2, 3, 4].map((k) => ({ sw: `sw q${k}`, l: t(`departement_a.leg.${m}.${k}`) })),
           ...(metroK ? [{ sw: "sw metro", l: nomEpci(metroK, f.stats.epcis[metroK]?.nom) }] : []),
+          // the grey points of the acts' modes say what they are (Ju 11/11)
+          ...((m === "aut" || m === "dr") &&
+          coms.some((c) => sansNombre(c, m === "aut" ? "cam" : "dr"))
+            ? [{ sw: "sw nd", l: t("departement_a.leg_nd_actes") }]
+            : []),
         ],
         r: repli(S.open, "equipees", t("departement_a.equipees"), eq.rows.length, this.basculer),
         equipeesNote: t(eq.seuil ? "departement_a.equipees_s" : "departement_a.equipees_s0", {
@@ -1158,9 +1173,13 @@ class DepartementA extends Vue<PropsA, StateA> {
             : S.tri === "montant"
               ? montantC(c.insee)
               : S.tri === "cam"
-                ? c.aut
+                ? luC(c).cam
+                  ? c.aut
+                  : -1
                 : S.tri === "dr"
-                  ? c.dr
+                  ? luC(c).dr
+                    ? c.dr
+                    : -1
                   : (c.cams ?? -1);
     const tries = [...pris].sort((a, b) => {
       const va = cle(a);
@@ -1250,8 +1269,8 @@ class DepartementA extends Vue<PropsA, StateA> {
           pop: c.pop ? fr(c.pop) : "—",
           con: fr(c.con),
           montant: mt > 0 ? t("departement_a.euros", { n: fr(mt) }) : "—",
-          cam: !luC(c).cam ? nonLuC : c.aut ? fr(c.aut) : "—",
-          dr: !luC(c).dr ? nonLuC : c.dr ? fr(c.dr) : "—",
+          cam: ditC(c, "cam").v,
+          dr: ditC(c, "dr").v,
           // outside the map (overseas), never « — » read as none (recette 10)
           carte: c.cams == null ? t("departement_a.fig.hors_carte") : fr(c.cams),
         };
@@ -1267,10 +1286,12 @@ class DepartementA extends Vue<PropsA, StateA> {
         tries.length > LIGNES
           ? t("departement_a.communes_note", { n: LIGNES, tri: colL(S.tri).toLowerCase() })
           : t("departement_a.communes_note_toutes", { n: tries.length }),
-        // « pas rattachés » in a cell: what it means, once
-        lu && montre.some((c) => !luC(c).cam || !luC(c).dr)
-          ? t("departement_a.note_rattache", { phrase: rattache })
-          : "",
+        // a minimum or « pas encore lus » in a cell: what it means, once
+        ...[
+          ...new Set(
+            montre.flatMap((c) => [ditC(c, "cam").phrase, ditC(c, "dr").phrase]).filter(Boolean),
+          ),
+        ].map((p) => `${p}.`),
       ]
         .filter(Boolean)
         .join(" "),

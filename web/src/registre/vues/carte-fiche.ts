@@ -7,7 +7,7 @@ import type { Donnees } from "../commun.ts";
 import { ess, lastArretes } from "../commun.ts";
 import type { Listes } from "../listes.ts";
 import { camerasAutorisees, joursDeVol, rang, strate } from "./commune-a.ts";
-import { couvertureActes, lecture, type RowActes } from "./comparer-a.ts";
+import { type CouvActes, couvertureActes, lecture, type RowActes } from "./comparer-a.ts";
 
 export type Rang = { r: number; n: number } | null;
 export type FichePanneau = {
@@ -35,6 +35,9 @@ export type FichePanneau = {
    * `lecture`, as Comparer and the lists read it); unread, a commune without any act is « non lu »,
    * never « 0 arrêté » (Ju 09/11, recette 12) */
   dronesLus: boolean;
+  /** the build's state of each family (Ju 11/11): « non_rattache », its counts are minimums and
+   * carry no rank */
+  couv: CouvActes;
   /** the first year of its counted contracts */
   depuis: string;
 };
@@ -63,16 +66,15 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
       };
     }
   ).stats;
-  const lu = lecture(
-    couvertureActes({
-      insee: c.insee,
-      dep: String((c as { dep?: string }).dep ?? ""),
-      etat: d.f.couverture.departement.etat,
-      X: X as never,
-      propre: stA?.communes?.[c.insee],
-      depTotal: stA?.dep?.depStats,
-    }),
-  );
+  const couv = couvertureActes({
+    insee: c.insee,
+    dep: String((c as { dep?: string }).dep ?? ""),
+    etat: d.f.couverture.departement.etat,
+    X: X as never,
+    propre: stA?.communes?.[c.insee],
+    depTotal: stA?.dep?.depStats,
+  });
+  const lu = lecture(couv);
   // read only where a decree says its cameras: a département collected but none read here
   // (Paris: no video decree served) is « pas encore lus », never « 0 caméras »
   const lus = arr.some((e) => e.t === "arrete" && !e.copie && typeof e.cameras === "number");
@@ -94,8 +96,9 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
         )
       : null,
     jours,
+    // a minimum (« au moins N ») has no rank
     rJours:
-      X && jours > 0
+      X && jours > 0 && couv.dr !== "non_rattache"
         ? rang(
             jours,
             pairs.map(([, v]) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1)),
@@ -107,6 +110,7 @@ export function fichePanneau(d: Donnees, X: Listes | null): FichePanneau {
     arretesLus: lu.cam && lus,
     autorisees: camerasAutorisees(arr).total,
     dronesLus: lu.dr,
+    couv,
     depuis: s.counted[0]?.date?.slice(0, 4) ?? "",
   };
 }

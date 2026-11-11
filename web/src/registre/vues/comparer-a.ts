@@ -49,18 +49,26 @@ export function classement(vals: (number | null)[]): number[] {
 }
 
 /** A commune's reading of the prefectoral acts, per family, the cameras' (`cam`) and the drones'
- * (`dr`), as the build serves it (`couverture_actes`, rule:registre_couverture@1:actes_commune):
- * « non_lu » when its département's acts are not collected, or when its département has acts of
- * the family that name no commune and the commune has none (Paris: 222 camera acts of the 75, none
- * placed in Paris); « partiel » when the commune has some and others are placed nowhere; « lu »
- * otherwise, a 0 then meaning none. One rule for every page: « non lu », never 0 (Ju 09/11). */
-export type EtatActes = "lu" | "partiel" | "non_lu";
+ * (`dr`), as the build serves it (`couverture_actes`, rule:registre_couverture@1:actes_commune,
+ * three states since 93e98a8): « non_lu » when its département's acts are not collected;
+ * « non_rattache » when they are read but not enough of the family is attached to its commune, the
+ * commune's count then a minimum; « lu » otherwise, a 0 then meaning none. Until it is served, the
+ * same rule on what a page has: a collected département with acts of the family placed in no
+ * commune makes every count of it a minimum. */
+export type EtatActes = "lu" | "non_rattache" | "non_lu";
 export type CouvActes = { cam: EtatActes; dr: EtatActes };
-export function etatActes(collecte: boolean, sansCommune: number, n: number): EtatActes {
+export function etatActes(collecte: boolean, sansCommune: number): EtatActes {
   if (!collecte) return "non_lu";
-  if (sansCommune > 0) return n > 0 ? "partiel" : "non_lu";
-  return "lu";
+  return sansCommune > 0 ? "non_rattache" : "lu";
 }
+
+/** How a page writes a family's count (Ju, 11/11), from its state and its number: « lu », the
+ * number alone (`n`); « non_rattache », « au moins N » (`au_moins`), or « aucun encore rattaché »
+ * when N is 0 (`aucun_rattache`), never « au moins 0 »; « non_lu », « pas encore lus », never a
+ * number. The words are the views' (actes-mots.ts). */
+export type FormeActes = "n" | "au_moins" | "aucun_rattache" | "non_lu";
+export const formeActes = (e: EtatActes, n: number): FormeActes =>
+  e === "non_lu" ? "non_lu" : e === "lu" ? "n" : n > 0 ? "au_moins" : "aucun_rattache";
 
 /** A row of a commune's figures that may carry the build's reading (listes.json rows, a commune's
  * or a département's `stats.communes`; served from 580f7cf on). */
@@ -92,12 +100,11 @@ export function horsCommune(
 }
 
 /** A commune's reading: the build's when served (its row, else its own file's figures, else, for a
- * commune without a row, its département's row). Until the build serves it, one rule every page
- * can apply with what it has (the commune's count and its département's): a count above 0 is
- * shown; a 0 is « lu » only when its collected département has no act of the family at all, since
- * every département with acts has some placed in no commune (measured on the build of 09/11: 100
- * of the 100 collected départements with camera acts, as with drone acts) and the 0 may hide them;
- * « non lu » otherwise. */
+ * commune without a row, its département's row); only when none is served, one rule every page
+ * can apply with what it has (its département's count): « non_lu » where the département is not
+ * collected, « non_rattache » (a minimum) where it has acts of the family, since every département
+ * with acts has some placed in no commune (measured on the build of 09/11: 100 of the 100 collected
+ * départements with camera acts, as with drone acts); « lu » where it has none. */
 export function couvertureActes(o: {
   insee: string;
   dep: string;
@@ -113,23 +120,15 @@ export function couvertureActes(o: {
     servi(o.propre?.couverture_actes) ??
     (o.X && !row ? servi(o.X.lignes.departements[o.dep]?.couverture_actes_communes) : null);
   if (s) return s;
-  const n = row ?? o.propre ?? {};
   const tot = o.depTotal ?? o.X?.lignes.departements[o.dep];
   const col = o.etat === "collecte";
-  // without the département's count, its acts placed nowhere are unknown: a 0 is not read
-  const k = (f: "cam" | "dr") => etatActes(col, tot ? (tot[f] ?? 0) : 1, n[f] ?? 0);
+  // without the département's count, its acts placed nowhere are unknown: a count is a minimum
+  const k = (f: "cam" | "dr") => etatActes(col, tot ? (tot[f] ?? 0) : 1);
   return { cam: k("cam"), dr: k("dr") };
 }
 
-/** A family « non lu » in a commune whose département's acts are collected: they are read, but
- * none of the family is placed in this commune yet (couverture.json `etat` « collecte »; the data
- * doc's rule: inside a collected département, `non_lu` means acts that name no commune). Pages
- * write « Arrêtés de l'Allier lus, pas encore rattachés aux communes » in place of « non lu »
- * (Ju 10/11, Vichy). */
-export const nonRattache = (c: EtatActes, etatDep: string | undefined): boolean =>
-  c === "non_lu" && etatDep === "collecte";
-
-/** Which counts a page shows: the read ones (« lu », « partiel »); the others say « non lu ». */
+/** Which counts a page has: the read ones (« lu », and « non_rattache » as a minimum); the others
+ * say « pas encore lus ». */
 export type Lecture = { cam: boolean; dr: boolean };
 export const lecture = (c: CouvActes): Lecture => ({
   cam: c.cam !== "non_lu",

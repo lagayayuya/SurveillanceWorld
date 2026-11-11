@@ -177,7 +177,7 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.match(richText(beta?.cells[2]), /aucun contrat de la commune elle-même/);
   const gamma = rangs(C, "communes").find((r) => r.id === "91001");
   assert.equal(gamma?.v.aut, -1);
-  assert.equal(richText(gamma?.cells[4]), "non lu");
+  assert.equal(richText(gamma?.cells[4]), "pas encore lus");
   assert.match(JSON.stringify(gamma?.cells[4]), /"cls":"nonlu"/);
 
   // an intercommunality that buys has its name and its buyer's fiche; one that does not, its name
@@ -550,7 +550,7 @@ test("a filter of one value is hidden, a column empty on every row too (Ju 10/11
   assert.deepEqual([...colonnesVides([])], []);
 });
 
-test("each date says which it is; a drone act by its publication (Ju 10/11)", async () => {
+test("each date says which it is; a drone act by its publication (Ju 10/11, 11/11)", async () => {
   const { dateDite, cleDate, quelleDate } = await import("../src/registre/listes.ts");
   const drone = doc({ id: "d1", t: "arrete_drone", date: "2026-11-09", publie: "2026-11-08" } as never);
   assert.equal(dateDite(drone), "publié le 8\u00a0nov.\u00a02026 · vol le 9\u00a0nov.\u00a02026");
@@ -562,9 +562,11 @@ test("each date says which it is; a drone act by its publication (Ju 10/11)", as
   assert.equal(cleDate(sansPub), "2026-11-18");
   assert.equal(dateDite(doc({ id: "c", t: "attribution", date: "2026-11-03" })), "signé le 3\u00a0nov.\u00a02026");
   assert.equal(dateDite(doc({ id: "a", t: "avis", date: "2026-11-08" })), "publié le 8\u00a0nov.\u00a02026");
-  assert.equal(dateDite(doc({ id: "k", t: "arrete", date: "2026-04-28" })), "arrêté du 28\u00a0avr.\u00a02026");
-  assert.equal(dateDite(doc({ id: "s", t: "subvention_region", date: "2026-09-24" })), "votée le 24\u00a0sept.\u00a02026");
+  assert.equal(dateDite(doc({ id: "k", t: "arrete", date: "2026-04-28" })), "daté du 28\u00a0avr.\u00a02026");
+  // a decree whose publication is read: « publié le » that day
+  assert.equal(dateDite(doc({ id: "p", t: "arrete", date: "2026-04-28", publie: "2026-04-30" } as never)), "publié le 30\u00a0avr.\u00a02026");
+  assert.equal(dateDite(doc({ id: "s", t: "subvention_region", date: "2026-09-24" })), "attribuée le 24\u00a0sept.\u00a02026");
   const an = doc({ id: "e", t: "subvention_etat", date: "2024-01-01", date_annee: true });
-  assert.equal(dateDite(an), "en 2024");
+  assert.equal(dateDite(an), "attribuée en 2024");
   assert.equal(cleDate(an), "2024-00-00");
 });

@@ -37,6 +37,16 @@
   outline-offset: -1.5px;
   box-sizing: border-box;
 }
+/* a volume's height (Ju 11/11, Lyon): a short and a tall block on one ground line */
+.rg .v-carte .leg i.sw-haut {
+  width: 16px;
+  height: 14px;
+  background:
+    linear-gradient(var(--type-document), var(--type-document)) left bottom / 6px 6px no-repeat,
+    linear-gradient(var(--type-document), var(--type-document)) right bottom / 6px 100% no-repeat;
+  border-bottom: 1.5px solid var(--fg);
+  box-sizing: border-box;
+}
 .rg .v-carte .leg .leg-in {
   padding-left: 23px;
 }
