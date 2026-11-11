@@ -312,3 +312,120 @@ def test_an_aerial_act_that_films_nothing_for_the_state_is_no_drone_act():
     ]
     for t in gone:
         assert parse_raa.classify(t, op, KINDS) is None, t
+
+
+def test_reader_11_never_places_a_camera_act_in_its_authority_s_town():
+    """A fresh drawing (2026-11-11, frozen from the Moselle's and the Pas-de-Calais's acts):
+    the prefecture's page foot (« 57034 METZ CEDEX 1 ») read inside article 1 placed an act
+    of Freyming-Merlebach in Metz; the act's commune is its request's visa, « situé … 57800
+    Freyming-Merlebach », article 1 saying only « à l'adresse sus-indiquée »."""
+    com = parse_raa.Communes(
+        {
+            "57463": {"nom": "Metz", "dep": "57"},
+            "57240": {"nom": "Freyming-Merlebach", "dep": "57"},
+            "57631": {"nom": "Sarreguemines", "dep": "57"},
+        },
+        {"57"},
+    )
+    text = (
+        "Arrêté CAB/DS/PPA-VIDEO/25-451 portant autorisation de fonctionnement d'un système "
+        "de vidéoprotection\nLe préfet de la Moselle\nChevalier de la Légion d'honneur\n"
+        "VU le code de la sécurité intérieure, notamment ses articles L. 251-1 à L. 255-1, "
+        "R. 251-1 à R. 254-2 ;\nVU l'arrêté ministériel du 3 août 2007 portant définition des "
+        "normes techniques des systèmes de vidéosurveillance et ses annexes techniques ;\n"
+        "VU la demande présentée par Mme Jeanne Dupont représentant "
+        "l'établissement « Les Floralies » situé 238, avenue de l'Europe 57800 "
+        "FREYMING-MERLEBACH ainsi que les pièces produites ;\nARRÊTE\nArticle 1 - Dispositif "
+        "autorisé\nMme Jeanne Dupont est autorisée à exploiter à l'adresse sus-indiquée un "
+        "système composé de 17 caméras extérieures,\n1/4 Préfecture de la Moselle - 9, place "
+        "Jean-Marie Rausch - BP 71014 - 57034 METZ CEDEX 1 - Tél. : 03 87 34 87 34\n"
+        "Article 2 - La sous-préfète de Sarreguemines est chargée de l'exécution.\n"
+        "Fait à Metz, le 24 novembre 2025\n"
+    )
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2025, 11, 24))
+    assert (a.commune, a.insee) == ("Freyming-Merlebach", "57240")
+
+
+def test_reader_11_reads_a_title_s_commune_written_with_underscores():
+    """The Pas-de-Calais's titles (« … vidéoprotection _ ST_Martin_Boulogne »), its address
+    « 62020 ARRAS CEDEX 9 » and its name « Pas-de-Calais » (no act of Calais) inside article 1."""
+    com = parse_raa.Communes(
+        {
+            "62041": {"nom": "Arras", "dep": "62"},
+            "62193": {"nom": "Calais", "dep": "62"},
+            "62758": {"nom": "Saint-Martin-Boulogne", "dep": "62"},
+        },
+        {"62"},
+    )
+    text = (
+        "Arrêté CAB/VIDEO/24-14 portant autorisation d'installation d'un système de "
+        "vidéoprotection _ ST_Martin_Boulogne\nLe préfet du Pas-de-Calais\nVU le code ;\n"
+        "ARRÊTE :\n"
+        "Article 1 : le système de vidéoprotection dont les caractéristiques suivent est "
+        "autorisé : rue Ferdinand Buisson 62020 ARRAS CEDEX 9 - Tél : 03 21 21 20 00\n"
+        "Article 2 - Le public est informé.\n"
+    )
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2024, 2, 2))
+    assert a.commune == "Saint-Martin-Boulogne"
+    # without its title's commune, the authority's address and name place it nowhere
+    alone = text.replace("_ ST_Martin_Boulogne", "")
+    [b] = parse_raa.lire(alone, com, KINDS, dt.date(2024, 2, 2))
+    assert b.commune is None
+
+
+def test_reader_12_never_reads_a_departement_s_name_as_its_commune():
+    """A fresh drawing (2026-11-11): a Besançon shop placed in the commune of Doubs, read in the
+    letterhead « PRÉFET CABINETdu Doubs » the extraction glued (a page break inside article 1),
+    where the authority's name is not blanked; Doubs is still read where it is one."""
+    com = parse_raa.Communes(
+        {"25056": {"nom": "Besançon", "dep": "25"}, "25204": {"nom": "Doubs", "dep": "25"}},
+        {"25"},
+    )
+    text = (
+        "Arrêté portant autorisation d'installation d'un système de vidéoprotection dans "
+        "l'établissement ESPACE SOM\nLe préfet du Doubs\nVU le code de la sécurité intérieure, "
+        "notamment ses articles L. 251-1 à L. 255-1, R. 251-1 à R. 254-2 ;\nVU l'arrêté "
+        "ministériel du 3 août 2007 portant définition des normes techniques des systèmes de "
+        "vidéosurveillance et ses annexes techniques ;\nVU l'avis de la commission "
+        "départementale de vidéoprotection ;\nVU la demande présentée pour l'établissement "
+        "ESPACE SOM situé 43 rue d'Arènes 25000 Besançon ;\nARRÊTE\nArticle 1 : "
+        "l'établissement est autorisé à installer 3 caméras intérieures.\n2/3 PRÉFET "
+        "CABINETdu Doubs Direction des sécurités\nArticle 2 : Le public est informé.\n"
+    )
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2026, 2, 9))
+    assert a.commune == "Besançon"
+    shop = text.replace("ESPACE SOM\nLe", "GIFI à DOUBS\nLe")
+    [b] = parse_raa.lire(shop, com, KINDS, dt.date(2026, 2, 9))
+    assert b.commune == "Doubs"
+
+
+def test_reader_12_never_reads_a_street_s_commune():
+    """« 1 route de Hoerdt 67550 Vendenheim »: the establishment is in Vendenheim, not in Hœrdt
+    (the first drawing's « route de Clisson - 44115 Basse-Goulaine » the same)."""
+    com = parse_raa.Communes(
+        {
+            "67506": {"nom": "Vendenheim", "dep": "67"},
+            "67205": {"nom": "Hœrdt", "dep": "67"},
+            "67482": {"nom": "Strasbourg", "dep": "67"},
+        },
+        {"67"},
+    )
+    text = (
+        "ARRETE PREFECTORAL PORTANT AUTORISATION D'UN SYSTEME DE VIDEOPROTECTION\n"
+        "VU le code de la sécurité intérieure ;\nVU la demande présentée concernant "
+        "l'établissement Casse auto démolition situé 1 route de Hoerdt 67550 Vendenheim ;\n"
+        "ARRÊTE\nArticle 1 : L'autorisation est accordée pour cinq ans, pour 4 caméras "
+        "extérieures, au 1 route de Hoerdt 67550 Vendenheim.\n"
+    )
+    [a] = parse_raa.lire(text, com, KINDS, dt.date(2024, 5, 2))
+    assert a.commune == "Vendenheim"
+    elsewhere = text.replace("route de Hoerdt 67550 Vendenheim", "rue de Strasbourg 67720 Hoerdt")
+    [b] = parse_raa.lire(elsewhere, com, KINDS, dt.date(2024, 5, 2))
+    assert b.commune == "Hœrdt"
+
+
+def test_reader_12_reads_oe_as_the_names_oe():
+    """Hœnheim, Paimbœuf, Nœux-les-Mines: the texts write « oe », the names « œ »."""
+    assert parse_raa.loose("Hœnheim") == parse_raa.loose("HOENHEIM") == "hoenheim"
+    com = parse_raa.Communes({"44116": {"nom": "Paimbœuf", "dep": "44"}}, {"44"})
+    assert com.first("situé rue Pierre Jubeau - 44560 PAIMBOEUF") == ("Paimbœuf", "44116")

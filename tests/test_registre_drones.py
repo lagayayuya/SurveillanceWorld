@@ -325,3 +325,20 @@ def test_a_helicopter_s_captation_is_served_apart_never_counted_as_a_drone():
     c = comptes._counts([heli, drone])
     assert (c["dr"], c["helico"]) == (1, 1)
     assert drones.publication([heli, drone])["avant"] == 1  # the drone's only
+
+
+def test_a_slot_without_hours_says_its_days_in_paris(synthetic):
+    """B (2026-11-10): 23 Rhône slots without hours start at 22:00 or 23:00 UTC, midnight in
+    Paris, and fell on the day before; such a slot serves its days as written."""
+    import datetime as dt
+
+    from lacarte_registre import drones
+
+    utc = dt.UTC
+    winter = dt.datetime(2025, 11, 13, 23, 0, tzinfo=utc).timestamp() * 1000
+    summer = dt.datetime(2026, 10, 13, 22, 0, tzinfo=utc).timestamp() * 1000
+    assert (drones.jour_paris(winter), drones.jour_paris(summer)) == ("2025-11-14", "2026-10-14")
+    slots = read(synthetic, f"commune/{MIONS}.json")["drones"]["creneaux"]
+    assert [s.get("jours") for s in slots if s["heures"] is None] == [
+        ["2026-02-01", "2026-02-03"], ["2026-03-01"]]  # fmt: skip
+    assert all("jours" not in s for s in slots if s["heures"] is not None)

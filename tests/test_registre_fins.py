@@ -131,6 +131,7 @@ def test_the_served_ender_has_no_day_and_the_ended_act_keeps_those_before_it():
     assert collecte._finir(f, served) == 1
     a, b, c = served["a"], served["b"], served["c"]
     assert b["abroge"] == ["a"] and "jours" not in b and b["date"] == "2026-05-01"
+    assert b["date_est"] == "recueil"  # its recueil's day, never a flight's
     assert a["abroge_par"] == "b" and a["jours"] == ["2026-05-14"]
     assert a["periode"] == "2026-05-14"
     assert c["abrogation_non_rattachee"] is True and "abroge" not in c

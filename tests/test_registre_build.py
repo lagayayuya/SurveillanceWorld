@@ -51,6 +51,18 @@ def test_mions_counts_415000_euros_19_documents_and_11_acts(built):
     assert f["commune"]["nom"] == "Mions"
 
 
+def test_every_act_and_grant_says_what_its_date_is(built):
+    """B (2026-11-10): an act's `date` is its first day of flight, its recueil's or its own
+    (the pilot's), a grant's its vote or its year; a copy says it as its original does."""
+    f = read(built, f"commune/{MIONS}.json")
+    dated = [e for e in f["evenements"] if e["t"].startswith(("arrete", "subvention"))]
+    assert dated and all(
+        e.get("date_est") in ("vol", "recueil", "acte", "vote", "annee") for e in dated
+    )
+    assert any(e.get("insee0") for e in dated)  # a copy among them
+    assert all(e["date_est"] == "annee" for e in dated if e.get("date_annee"))
+
+
 def test_the_reviewed_date_is_beside_the_source_date(built):
     f = read(built, f"commune/{MIONS}.json")
     [e] = [e for e in f["evenements"] if e["id"] == "216902833000132020_32323500~0"]
@@ -326,6 +338,8 @@ def test_the_national_graph_s_edges_are_legal_persons_counted_once(built):
     edges = read(built, "graphe/aretes.json")["aretes"]
     listes = read(built, "listes.json")
     assert edges and all(len(x) == 4 and x[3] >= 1 for x in edges)
+    # an amount never published is null, never 0 (B, 2026-11-10: « 0 € » on the graph)
+    assert any(x[2] is None for x in edges) and not any(x[2] == 0 for x in edges)
     ents = listes["dico"]["entreprises"]
     for _, s, _, _ in edges:
         assert s != "EI" and not (ents.get(s) or {}).get("entrepreneur_individuel"), s

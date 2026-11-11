@@ -8,6 +8,8 @@ by commune (`parts`). The page reads:
   whose zone was deduced, the acts that authorise the same flights grouped in one slot (their
   ids in `actes`); `heures` the hours the act states, null when it does not state them
   (`heures_sures` false or no hours: the frieze's dashed bar, « horaires non précisés »);
+  `jours` then its first and last day in Paris (« AAAA-MM-JJ »), its t0 and t1 being
+  midnight and 23:59 there;
   `sites` the commune's sites drawn from its zones (a zone under review is not drawn);
   `statut` « relu » when every zone drawn for it was reviewed, else « indicatif »;
 - `non_deduits`: the acts whose zone was not deduced (the build's `non_lu`, regles.py), listed
@@ -19,14 +21,17 @@ What the pilot lacks (no periods, no sites) gives no slot or no site, not an err
 
 from __future__ import annotations
 
+import datetime as dt
 import math
 import re
 from collections.abc import Iterable
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from lacarte_registre.regles import Event, Pilote, is_drone_act
 
 KINDS = {"arrete_drone": "drone", "arrete_vsa": "vsa"}
+PARIS = ZoneInfo("Europe/Paris")
 M_PER_DEG = 111320
 
 
@@ -171,7 +176,17 @@ def creneaux(
     for s in rows:
         st = s.pop("_statuts")
         s["statut"] = "relu" if st == {"relu"} else "indicatif"
+        if s["heures"] is None:
+            # a slot whose act states no hours is whole days, midnight to 23:59 in Paris (its
+            # t0 22:00 or 23:00 UTC): those days as written, read with no time zone (B,
+            # 2026-11-10: the Rhône's fell on the day before)
+            s["jours"] = list(dict.fromkeys([jour_paris(s["t0"]), jour_paris(s["t1"])]))
     return rows
+
+
+def jour_paris(ms: float) -> str:
+    """An instant (ms since 1970, UTC) as its day in Paris, « AAAA-MM-JJ »."""
+    return dt.datetime.fromtimestamp(ms / 1000, PARIS).date().isoformat()
 
 
 def publication(events: Iterable[Event], autorites: dict[str, str] | None = None) -> dict[str, Any]:
