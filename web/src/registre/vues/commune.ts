@@ -403,6 +403,9 @@ export class Commune extends Vue<Props, State> {
     };
     const min = { cam: couv.cam === "non_rattache", dr: couv.dr === "non_rattache" };
     const auMoins = (k: "cam" | "dr", x: string) => (min[k] ? t("socle_a.au_moins", { n: x }) : x);
+    // the same, opening a sentence (« Au moins 1 arrêté de caméras publié depuis 2024 à … »)
+    const auMoinsDebut = (k: "cam" | "dr", x: string) =>
+      min[k] ? t("socle_a.au_moins_debut", { n: x }) : x;
     const st = strate(pop);
     const pairs = X
       ? Object.entries(X.lignes.communes).filter(
@@ -656,7 +659,7 @@ export class Commune extends Vue<Props, State> {
             ]
           : camCas === "nb"
             ? [
-                { strong: auMoins("cam", T("commune_a.cam_ans_nb", { n: nCam, y: depuis })) },
+                { strong: auMoinsDebut("cam", T("commune_a.cam_ans_nb", { n: nCam, y: depuis })) },
                 T("commune_a.cam_ans_nb_b", { nom }),
               ]
             : camCas === "aucun"
