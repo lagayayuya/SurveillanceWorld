@@ -23,6 +23,7 @@ import {
 import { catAcheteur, etapeListe } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
+import { axeA } from "../socle-a.ts";
 import { couverture, sources } from "../sources.ts";
 import {
   type BaseState,
@@ -197,6 +198,11 @@ class Acheteur extends Vue<Props, State> {
     // v2 § 8: one measure on one axis from zero, the years in a row, the detail in the panel)
     const Y = parAnnee(C, Number(TODAY.slice(0, 4)));
     const mxs = Math.max(1, ...Y.map((y) => y.montant));
+    // every bar in one unit, the largest's (socle-a.ts axeA, Ju 10/11): « 90 000 € » beside
+    // « 0,1 M€ » never
+    const ax = axeA(mxs);
+    const surBarre = (n: number) =>
+      n ? t(ax.u === "me" ? "format.meur" : "format.eur", { n: ax.val(n) }) : money(0);
     const ecrites = Y.length <= ECRITES;
     const years = Y.map((a) => {
       const k = `y${a.y}`;
@@ -220,7 +226,7 @@ class Acheteur extends Vue<Props, State> {
       };
       return {
         y: a.y,
-        v: ecrites ? meur(a.montant) : "",
+        v: ecrites ? surBarre(a.montant) : "",
         n: count(a.cs.length, "contrat"),
         label: t("acheteur.annee_label", { y: a.y, v: meur(a.montant), n: a.cs.length }),
         on: String(on),

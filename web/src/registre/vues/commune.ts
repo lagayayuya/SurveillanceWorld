@@ -1,1674 +1,1659 @@
-// View 3 · Commune (/registre/commune/<insee>; R1's mockup Commune-grand for the content, the v2
-// skeleton of V2-Entreprise for the frame). One fiche per collectivité, its territory and its
-// purchases together: the head (its type, its name, its identity line), the band (its sections,
-// « Carte et drones », « Partager »), then L'essentiel, Dans le temps, Avec qui, Documents, Sources.
-// The figures are the build's (commune/<insee>.json, its flags read through commun.ts): the
-// sentences the mockup wrote for Mions are rules, each one hidden where it does not hold. Every
-// sentence that holds a figure in bold or a link is a Rich value, never markup; every mention that
-// has its fiche is a typed link (liens.ts). R1's tilted map is gone: a link opens « Carte et
-// drones », or the commune on the site's map.
+// A commune's fiche (/registre/commune/<insee>; board Lyon-A-theme-actuel of the redesign v3, its
+// behaviours Lyon-A-comportements, its phone and dark variants): the sticker « Commune » and the
+// name cut out, its département and intercommunality, its identity, a sentence of its figures;
+// the four figures (cameras on the map, public money per inhabitant, days of flight, competition),
+// each with its rank among the communes of its size; « Vue 3D » (the live map on the commune, its
+// drones); the yellow table of contents; then 1 · Combien de caméras ?, 2 · Combien ça coûte, et
+// qui paie ?, 3 · Qui équipe la ville ?, 4 · Les dossiers, 5 · Drones et algorithmes, 6 ·
+// Comparée à ses voisines, « Tous les documents », « D'où viennent ces chiffres ». A section with
+// nothing to say is left out, the others numbered in turn. Signals and missions come later (Ju,
+// 07/11): absent. Every figure is the build's: the commune's file, and listes.json (asked once the
+// page is drawn) for the ranks and the neighbours.
 
-import { etatDepartement } from "../collecte.ts";
+import { allerA } from "../bulle.ts";
 import {
-  benefLabel,
-  byDateAsc,
-  commune,
+  byDateDesc,
+  commune as chargerCommune,
   communeHref,
   type Donnees,
-  depArt,
   ess,
-  isCam,
-  isDrone,
-  tete,
+  lastArretes,
 } from "../commun.ts";
-import { docHref } from "../corpus.ts";
-import type { Handler, Rich, RichItem } from "../dc.ts";
-import type { Affaire, Couverture, Evenement, Stats } from "../donnees.ts";
-import { EI } from "../donnees.ts";
-import {
-  addMonths,
-  count,
-  docDate,
-  fr,
-  longDate,
-  longMonth,
-  money,
-  shortDate,
-  shortMonth,
-} from "../format.ts";
-import { has, t } from "../i18n.ts";
-import {
-  lien,
-  lienAcheteur,
-  lienCommune,
-  lienDepartement,
-  lienDocument,
-  lienEntreprise,
-} from "../liens.ts";
+import { entName, titre as titreDoc } from "../corpus.ts";
+import type { Handler, RichItem } from "../dc.ts";
+import type { Evenement } from "../donnees.ts";
+import { load } from "../donnees.ts";
+import { fr } from "../format.ts";
+import { t } from "../i18n.ts";
+import { departementHref } from "../liens.ts";
+import { type Listes, publieLu, quelleDate } from "../listes.ts";
 import type { VueModule } from "../modale.ts";
-import type { Route } from "../routes.ts";
-import { signaler } from "../signaler.ts";
-import { type Source, sources } from "../sources.ts";
-import { calm, capital, proper, sentence } from "../texte.ts";
-import { couleur, icone, type TypeCle, typeDocument } from "../types.ts";
-import { type BaseState, large, type Partage, partageDe, sansTiret, Vue } from "../vue.ts";
-import "./commune.css";
-import { documentHref } from "../routes.ts";
-import template from "./commune.html?raw";
+import { partager } from "../partage.ts";
+import { documentHref, type Route } from "../routes.ts";
+import { signalerHref } from "../signaler.ts";
+import { axeA, coupeMots, montantA, pleinEcran, repli } from "../socle-a.ts";
+import { tidy, titleCase } from "../texte.ts";
+import type { TypeCle } from "../types.ts";
+import { type BaseState, type Partage, partageDe, Vue } from "../vue.ts";
+import { avantVol, casseNormale, type Publication } from "./accueil-outils.ts";
+import { ditActes, phraseActes } from "./actes-mots.ts";
 import {
-  demander,
-  epciHref,
-  lexique,
-  ligneCommune,
-  portesCommune,
-  quiDocument,
-  titreDocument,
-  typeLabel,
-} from "./commune-outils.ts";
-import { enLigne } from "./departement-outils.ts";
-
-const TODAY = new Date().toISOString().slice(0, 10);
-const ELUS = "https://www.data.gouv.fr/datasets/repertoire-national-des-elus-1";
-const NBSP = "\u00a0";
-/** At most this many bars carry their value written; beyond, the tooltip and the panel (v2 § 8). */
-const ECRITES = 12;
-
-// The subsidy sources by département (couverture.json's rows carry no département):
-// rule:registre_couverture@1:source_subventions_region_idf (Île-de-France),
-// rule:registre_couverture@1:source_subventions_region_sud (the Bouches-du-Rhône),
-// rule:registre_couverture@1:source_subventions_etat_<dep> (a préfecture's DETR list).
-const IDF = new Set(["75", "77", "78", "91", "92", "93", "94", "95"]);
-const regionSource = (dep: string) =>
-  IDF.has(dep) ? "subventions_region_idf" : dep === "13" ? "subventions_region_sud" : null;
-
-// --- helpers -------------------------------------------------------------------------------------
-const ym = (d: string) => +d.slice(0, 4) * 12 + (+d.slice(5, 7) - 1);
-const year = (e: Evenement) => (e.date ?? "").slice(0, 4);
-/** « 30/06/2031 » (the mockup's « À surveiller »). */
-const numDate = (d: string) => d.split("-").reverse().join("/");
-/** « 6 mars », « 1er oct. ». */
-const dayMonth = (d: string) => {
-  const day = +d.slice(8, 10);
-  return `${day === 1 ? t("format.premier") : day}${NBSP}${shortDate(d).split(NBSP)[1]}`;
-};
-const strong = (s: Rich): RichItem => ({ strong: s });
-/** The number in words up to twelve (« Trois arrêtés en sept mois »), in figures above. */
-const words = (n: number) => t("commune.nombres").split(",")[n] ?? fr(n);
-const dossierNo = (id: string) => {
-  const n = String(id).split("-").slice(1).join("-");
-  return /^\d{8}$/.test(n) ? `${n.slice(0, 4)}-${n.slice(4)}` : n;
-};
-/** An amount on a bar, as Entreprise writes them: « 5,2 M€ », below 100 000 € in euros. */
-const meur = (n: number): string =>
-  !n ? "—" : n < 1e5 ? money(n) : t("format.meur", { n: (n / 1e6).toFixed(1).replace(".", ",") });
-/** A document type's pictogram and colour, as a template's `.mini` reads them. */
-const picto = (k: TypeCle) => ({ c: `--c: ${couleur(k)}`, i: icone(k) });
-const affHref = (id: string) => documentHref(id);
-
-/** A catalogue message whose placeholders may be rich (bold, a link): the message is the
- * catalogue's, the rich parts are put back in place of their placeholder. */
-type Param = string | number | Exclude<RichItem, string>;
-function rt(key: string, params: Record<string, Param> = {}): RichItem[] {
-  const holes: RichItem[] = [];
-  const flat: Record<string, string | number> = {};
-  for (const [k, v] of Object.entries(params)) {
-    if (typeof v === "object") {
-      flat[k] = `${holes.length}`;
-      holes.push(v);
-    } else flat[k] = v;
-  }
-  return t(key, flat)
-    .split(/(\d+)/)
-    .map((x, i) => (i % 2 ? holes[Number(x)] : x))
-    .filter((x) => x !== "");
-}
-const join = (...parts: (RichItem[] | null | false | undefined)[]): RichItem[] =>
-  parts.filter((p): p is RichItem[] => !!p).flatMap((p, i) => (i ? [" ", ...p] : p));
-
-/** A row's attributes under v2.1's contract (vue.ts `ligne`): its class, `aria-current`, its
- * type's colour, hovered (shown) and chosen. */
-type Row = { cls: string; sel: string; c: string; hover: Handler; pick: Handler };
-type Sel = (k: string, type?: TypeCle, cls?: string) => Row;
-
-type Det = {
-  kicker: string;
-  title: string;
-  rows: [string, string][];
-  note?: string;
-  links?: { l: string; href: string }[];
-};
-type Contrat = Evenement & { lots?: Evenement[]; copies?: number; dl: string };
-type Aff = Affaire & { id: string };
-type Mandat = { mandat: string; premier_tour: string; second_tour: string };
-
-/** What the page computes once from the commune's file. */
-type Prep = {
-  d: Donnees;
-  s: ReturnType<typeof ess>;
-  insee: string;
-  nom: string;
-  dep: string;
-  pop: number;
-  cs: Contrat[];
-  counted: Contrat[];
-  y0: string;
-  total: number;
-  aos: Aff[];
-  main: Aff | null;
-  mainActs: Evenement[];
-  aosPending: Aff[];
-  n: number | null;
-  pub: number | null;
-  collectes: boolean;
-};
-
-function prepare(d: Donnees): Prep {
-  const s = ess(d);
-  const c = d.f.commune;
-  const insee = d.insee;
-  const ev = (id: string) => d.ev.get(id);
-  const affs: Aff[] = Object.entries(d.f.affaires).map(([id, a]) => ({ ...a, id }));
-  // the contracts: a copy once, the lots of one procedure in one row, placed at the reviewed date
-  const cs = d
-    .mergeLots(s.contrats.filter((e) => !e.copie))
-    .map((e) => ({ ...e, dl: d.dateLue(e) }))
-    .sort((a, b) => a.dl.localeCompare(b.dl));
-  const counted = cs.filter((e) => e.compte);
-  const y0 = (counted[0] ?? cs[0])?.dl.slice(0, 4) ?? "";
-  const aos = affs
-    .filter(
-      (a) =>
-        a.insee === insee &&
-        a.kind === "contrat_non_retrouve" &&
-        // a notice the export left undated cannot be placed in time (the CI extract keeps no `debut`)
-        typeof a.debut === "string" &&
-        a.events.some((i) => ev(i)?.t === "avis"),
-    )
-    .sort((a, b) => String(a.debut).localeCompare(String(b.debut)));
-  const main = s.com[0] ? (affs.find((a) => a.id === s.com[0].affaire) ?? null) : null;
-  const mainActs = main
-    ? main.events
-        .map(ev)
-        .filter((e): e is Evenement => !!e && e.cameras != null)
-        .sort(byDateAsc)
-    : [];
-  const since = addMonths(TODAY, -18);
-  const aosPending = aos.filter((a) => !a.contrat_probable && String(a.debut) >= since);
-  return {
-    d,
-    s,
-    insee,
-    nom: c.nom,
-    dep: c.dep,
-    pop: c.pop ?? 0,
-    cs,
-    counted,
-    y0,
-    total: s.eur,
-    aos,
-    main,
-    mainActs,
-    aosPending,
-    n: d.f.carte.n ?? null,
-    pub: d.f.carte.pub ?? null,
-    collectes: d.arretes.collectes,
-  };
-}
+  argentParAnnee,
+  articleEpci,
+  camerasAutorisees,
+  classeMotif,
+  contracte,
+  fournisseurs,
+  grandsSystemes,
+  joursDeVol,
+  joursPublies,
+  rang,
+  type Serie,
+  strate,
+} from "./commune-a.ts";
+import { couvertureActes, horsCommune, lecture, type RowActes } from "./comparer-a.ts";
+import { exportRows } from "./documents.ts";
+import "./commune-a.css";
+import template from "./commune.html?raw";
 
 type Props = Extract<Route, { view: "commune" }> & { d: Donnees };
-type State = BaseState & { allVois: boolean };
+type VueArgent = "tous" | "ville" | "hab";
+type Mesure = "cameras" | "eph" | "drones";
+type Onglet = "con" | "ao" | "aut" | "sub";
+/** « Tous les documents »'s menus (the board's Année ▾, Entreprise ▾, Montant ▾) and the filter a
+ * shape's click puts there (a part of the cameras' bar, Lyon-A-comportements): read on the chips,
+ * lifted in one click. */
+type Part = "mairie" | "commerces" | "autres";
+type Tranche = "" | "m1" | "m2" | "m3";
+type State = BaseState & {
+  X: Listes | null;
+  argent: VueArgent;
+  masque: Serie[];
+  annee: string;
+  entF: string;
+  tranche: Tranche;
+  part: Part | "";
+  tri: "date" | "montant";
+  motifF: string;
+  volF: "" | "avant" | "jour_meme" | "apres";
+  /** a year's column clicked with every buyer shown: the contracts of the whole territory */
+  territoire: boolean;
+  menu: string;
+  /** the calendar on the next 30 days' authorised flights (« À venir ») */
+  avenir: boolean;
+  col: string | null;
+  jour: string | null;
+  mesure: Mesure;
+  onglet: Onglet;
+  cite: boolean;
+};
+
+const ordinal = (n: number): string =>
+  n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n });
+const jourCourt = (d: string): string =>
+  new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(`${d.slice(0, 10)}T12:00:00Z`));
+/** A document's date said with what it is (Ju 11/11: « signé le », « publié le », « daté du »,
+ * « attribuée le », « vol le »; listes.ts quelleDate): a drone act's row is its first day of
+ * flight. */
+const dateDite = (e: Evenement): string => {
+  if (!e.date) return "";
+  if (e.t === "arrete_drone") return t("commune_a.vol_le", { d: jourCourt(e.date) });
+  const k = quelleDate(e);
+  return k === "annee" || k === "attribuee_an"
+    ? t(`liste.date.${k}`, { an: e.date.slice(0, 4) })
+    : t(`liste.date.${k}`, { date: jourCourt(publieLu(e) ?? e.date) });
+};
+const moisCourt = (d: string): string =>
+  new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" }).format(
+    new Date(`${d}T12:00:00Z`),
+  );
+/** « le 6 et le 8 nov. », « le 30 déc. 2025 et le 2 janv. »: days of publication, a month once
+ * after its last day, a year only when it is not the build's (commune-a.ts joursPublies). */
+function datesPubliees(isos: (string | null | undefined)[], an: string): string {
+  const items = joursPublies(isos, an).flatMap((g) =>
+    g.jours.map((j, i) => {
+      const le = j === 1 ? t("commune_a.le_premier") : t("commune_a.le_jour", { d: j });
+      if (i < g.jours.length - 1) return le;
+      // the day and its month never apart
+      return `${le}\u00a0${moisCourt(`${g.mois}-01`)}${g.an ? `\u00a0${g.an}` : ""}`;
+    }),
+  );
+  return items.length > 1
+    ? `${items.slice(0, -1).join(", ")}${t("commune_a.et_jours")}${items[items.length - 1]}`
+    : (items[0] ?? "");
+}
+const ent = (href: string | null, text: string, cls = "ent"): RichItem =>
+  href ? { a: { href, text, cls } } : text;
+const nomStrate = (s: number): string => t(`commune_a.strate.${s}`);
+/** The strate in a head figure's two lines: its bounds alone (« 20 000 à 100 000 hab. »). */
+const nomStrateC = (s: number): string => t(`commune_a.strate_c.${s}`);
+const clsSerie = (s: Serie): string =>
+  s === "ville" ? "c-ville" : s === "transports" ? "c-transp" : "c-autres";
+
+/** The days an act of the commune's zones covers (its periods, in Paris days), as a drone act's. */
+function joursZones(d: Donnees): { id: string; t: string; jours: string[] }[] {
+  const jour = (ms: number) =>
+    new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(ms));
+  return d.f.zones.autorisations
+    .filter((a) => a.kind === "drone" && a.insee.includes(d.insee))
+    .map((a) => {
+      const js = new Set<string>();
+      for (const p of a.periodes ?? []) {
+        for (let ms = p.t0; ms <= p.t1 && js.size < 400; ms += 86400000) js.add(jour(ms));
+        js.add(jour(p.t1));
+      }
+      return { id: String((a as { acte?: string }).acte ?? ""), t: "arrete_drone", jours: [...js] };
+    });
+}
+
+/** Each drone act's days of flight: its own `jours`, else its zones' periods (the pilot's acts). */
+function joursParActe(d: Donnees): Map<string, string[]> {
+  const m = new Map<string, string[]>();
+  for (const z of joursZones(d)) if (z.id) m.set(z.id, [...(m.get(z.id) ?? []), ...z.jours]);
+  for (const e of d.all)
+    if (e.t === "arrete_drone" && ((e.jours as string[] | undefined) ?? []).length)
+      m.set(e.id, e.jours as string[]);
+  return m;
+}
+
+/** « Publiés quand ? »'s bar clicked: the commune's drone acts of that part (their recueil's day,
+ * `publie`, against their first day of flight), the latest published first. */
+function volListe(
+  all: Evenement[],
+  k: "avant" | "jour_meme" | "apres",
+  insee: string,
+  jpa: Map<string, string[]>,
+): { d: string; l: RichItem[]; e: string }[] {
+  const jour = 864e5;
+  return all
+    .filter((e) => e.t === "arrete_drone" && !(e as { fin?: string }).fin)
+    .map((e) => {
+      const pub = String((e as { publie?: string }).publie ?? "");
+      const j0 = [...(jpa.get(e.id) ?? [])].sort()[0] ?? "";
+      const ecart = pub && j0 ? Math.round((Date.parse(pub) - Date.parse(j0)) / jour) : null;
+      return { e, pub, ecart };
+    })
+    .filter(
+      (x) =>
+        x.ecart != null &&
+        (k === "avant" ? x.ecart < 0 : k === "jour_meme" ? x.ecart === 0 : x.ecart > 0),
+    )
+    .sort((a, b) => (b.ecart ?? 0) - (a.ecart ?? 0))
+    .slice(0, 12)
+    .map((x) => ({
+      d: t("commune_a.publie", { d: datesPubliees([x.pub], "") }),
+      l: [
+        {
+          a: {
+            href: `${communeHref(insee, "autorisations")}/${encodeURIComponent(x.e.id)}`,
+            text: casseNormale(String(x.e.titre ?? titreDoc(x.e))).slice(0, 90),
+          },
+        },
+      ] as RichItem[],
+      e:
+        x.ecart === 0
+          ? t("commune_a.b.ecart0")
+          : x.ecart != null && x.ecart > 0
+            ? t("commune_a.b.ecart_apres", { n: x.ecart })
+            : t("commune_a.b.ecart_avant", { n: -(x.ecart ?? 0) }),
+    }));
+}
 
 export class Commune extends Vue<Props, State> {
-  private p?: Prep;
+  private fini = false;
 
   protected init(): Partial<State> {
-    return { allVois: false };
+    return {
+      X: null,
+      argent: "tous",
+      col: null,
+      jour: null,
+      mesure: "cameras",
+      onglet: "con",
+      cite: false,
+      masque: [],
+      annee: "",
+      entF: "",
+      tranche: "",
+      part: "",
+      tri: "date",
+      motifF: "",
+      volF: "",
+      territoire: false,
+      menu: "",
+      avenir: false,
+    };
+  }
+
+  /** A menu of « Tous les documents » (the board's Année ▾…): a chip, its values as a listbox;
+   * arrows move, Enter or a click chooses, Escape closes, the focus back on the chip. */
+  private menuDocs(
+    k: string,
+    l: string,
+    cur: string,
+    opts: { v: string; l: string }[],
+    choisir: (v: string) => Partial<State>,
+  ) {
+    const open = this.state.menu === k;
+    const focus = (sel: string) =>
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(sel)?.focus());
+    const fermer = () => {
+      this.setState({ menu: "" });
+      focus(`.v-commune-a .dancre.m-${k} > button`);
+    };
+    return {
+      cls: `dancre m-${k}`,
+      chip: cur ? "chip f on" : "chip f",
+      l: cur ? (opts.find((o) => o.v === cur)?.l ?? cur) : l,
+      lab: l,
+      ouvert: open ? "true" : "false",
+      menu: open,
+      basculer: (() => {
+        this.setState({ menu: open ? "" : k });
+        if (!open) focus(`.v-commune-a .dancre.m-${k} [role=option]`);
+      }) as Handler,
+      opts: [{ v: "", l: t("commune_a.m_tous") }, ...opts].map((o) => ({
+        l: o.l,
+        on: o.v === cur ? "true" : "false",
+        choisir: (() => {
+          this.setState({ ...choisir(o.v), menu: "" });
+          focus(`.v-commune-a .dancre.m-${k} > button`);
+        }) as Handler,
+      })),
+      clavier: ((ev) => {
+        const os = [
+          ...document.querySelectorAll<HTMLElement>(`.v-commune-a .dancre.m-${k} [role=option]`),
+        ];
+        const i = os.indexOf(document.activeElement as HTMLElement);
+        if (ev.key === "Escape") fermer();
+        else if (ev.key === "ArrowDown") os[Math.min(os.length - 1, i + 1)]?.focus();
+        else if (ev.key === "ArrowUp") (i > 0 ? os[i - 1] : os[0])?.focus();
+        else if ((ev.key === " " || ev.key === "Enter") && i >= 0) os[i].click();
+        else return;
+        ev.nativeEvent.preventDefault();
+        ev.stopPropagation();
+      }) as Handler,
+    };
+  }
+  /** A pointer down outside the open menu closes it. */
+  private dehors = (ev: Event): void => {
+    if (this.state.menu && !(ev.target as Element).closest?.(".v-commune-a .dancre"))
+      this.setState({ menu: "" });
+  };
+
+  /** A shape's click: « Tous les documents » filtered, then reached. */
+  private versDocs(patch: Partial<State>): void {
+    this.setState({
+      annee: "",
+      entF: "",
+      tranche: "",
+      part: "",
+      territoire: false,
+      menu: "",
+      ...patch,
+      open: { ...this.state.open, docs: true },
+    });
+    requestAnimationFrame(() => {
+      const el = document.getElementById("documents");
+      const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      el?.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
+    });
   }
   titre(): string {
     return this.props.d.f.commune.nom;
   }
-  type() {
-    return "commune" as const;
+  type(): TypeCle {
+    return "commune";
   }
   partage(): Partage | null {
-    return partageDe(this.titre(), this.props.d.f.partage);
-  }
-  private get prep(): Prep {
-    this.p ??= prepare(this.props.d);
-    return this.p;
-  }
-  private get L() {
-    return lexique(this.props.d);
+    return partageDe(this.props.d.f.commune.nom, this.props.d.f.partage);
   }
 
-  // --- the page ----------------------------------------------------------------------------------
+  componentDidMount(): void {
+    document.addEventListener("pointerdown", this.dehors, true);
+    // the ranks and the neighbours: listes.json once the page is drawn
+    load<Listes>("listes.json").then(
+      (X) => {
+        if (!this.fini) this.setState({ X });
+      },
+      () => {},
+    );
+  }
+  componentWillUnmount(): void {
+    this.fini = true;
+    document.removeEventListener("pointerdown", this.dehors, true);
+  }
+
+  private basculer = (k: string): void =>
+    this.setState({ open: { ...this.state.open, [k]: !this.state.open[k] } });
+
+  /** « Citer »: the fiche's citation, copied. */
+  private citer: Handler = () => {
+    const c = this.props.d.f.commune;
+    const txt = t("commune_a.citation", {
+      nom: c.nom,
+      date: jourCourt(this.props.d.f.couverture.maj),
+      url: `${location.origin}${communeHref(c.insee)}`,
+    });
+    void navigator.clipboard?.writeText(txt).then(() => {
+      this.setState({ cite: true });
+      setTimeout(() => {
+        if (!this.fini) this.setState({ cite: false });
+      }, 2000);
+    });
+  };
+
+  /** A section's anchor followed in the frame's scroll, smoothly unless motion is reduced. */
+  private allerSection: Handler = (ev) => {
+    const href = (ev.currentTarget as HTMLAnchorElement).getAttribute("href") ?? "";
+    if (!href.startsWith("#")) return;
+    const el = document.getElementById(href.slice(1));
+    if (!el) return;
+    ev.preventDefault();
+    // the step's address says the section, as the frame's own anchors do (hote.ts): the back
+    // button from another fiche brings the commune back at it
+    history.replaceState(history.state, "", href);
+    const doux = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: doux ? "smooth" : "auto", block: "start" });
+  };
+
   renderVals() {
     const S = this.state;
-    const P = this.prep;
-    const { d, s, insee, nom, dep, n, pub, counted, cs, y0, total } = P;
-    const sel: Sel = (k, type, cls) => this.ligne(k, type, cls);
-    const DET: Record<string, Det> = {};
-    const docs = communeHref(insee, "documents");
-    const auts = communeHref(insee, "autorisations");
-
-    // the lead (one sentence) and the four figures
-    let lead: RichItem[];
-    const carteSentence = () =>
-      n == null
-        ? null
-        : n
-          ? rt("commune.lead_carte_connait", { n: strong(count(n, "camera")) })
-          : rt("commune.lead_carte_aucune");
-    if (s.camAut && s.complet) {
-      const qui =
-        s.com[0].type_beneficiaire === "epci"
-          ? t("commune.lead_qui_epci")
-          : t("commune.lead_qui_mairie", { nom });
-      lead = join(
-        rt("commune.lead_aut", {
-          mois: longMonth(s.dateAut ?? ""),
-          cam: strong(count(s.camAut, "camera")),
-          qui,
-        }),
-        s.vpAut != null && rt("commune.lead_rue", { n: strong(fr(s.vpAut)), v: s.vpAut }),
-        n != null &&
-          (n === 0
-            ? rt("commune.lead_carte_aucune_en")
-            : rt(n < s.camAut ? "commune.lead_carte_que" : "commune.lead_carte_en", {
-                n: strong(fr(n)),
-              })),
-      );
-    } else if (s.camAut)
-      lead = rt("commune.lead_dossiers", {
-        depuis: longMonth(d.arretes.depuis ?? s.dateAut ?? ""),
-        dossiers: count(s.com.length, "dossier"),
-        cam: strong(count(s.camAut, "camera")),
-      });
-    else if (counted.length)
-      lead = join(
-        rt("commune.lead_contrats", {
-          y0,
-          nom,
-          n: strong(count(counted.length, "contrat")),
-          eur: strong(money(total)),
-        }),
-        carteSentence(),
-      );
-    else if (s.all.length)
-      lead = join(rt("commune.lead_documents", { n: s.all.length, nom }), carteSentence());
-    else lead = rt("commune.lead_aucun", { nom });
-    if (!P.collectes)
-      lead = join(
-        lead,
-        rt(dep === "75" ? "commune.lead_arretes_paris" : "commune.lead_arretes_non_collectes"),
-      );
-
-    const kpis = [
-      s.camAut
-        ? { v: fr(s.camAut), l: t("commune.kpi_aut_mairie", { n: s.camAut }) }
-        : { v: fr(cs.length), l: t("commune.kpi_contrats_signes", { n: cs.length }) },
-      { v: n == null ? "—" : fr(n), l: t("commune.kpi_carte", { n: n ?? 0 }) },
-      counted.length
-        ? { v: money(total), l: t("commune.kpi_depuis", { y0 }) }
-        : { v: "—", l: t("commune.kpi_aucun_contrat") },
-      { v: fr(s.all.length), l: t("commune.kpi_documents", { n: s.all.length }) },
-    ];
-    // in place of R1's tilted map: « Drones et algorithmes » (v2.1 A5: no link to the site's map,
-    // nor the frame that carried it)
-    const carteLiens: RichItem[] = [
-      lien("commune", communeHref(insee, "carte"), t("commune.carte_et_drones")),
-    ];
-
-    // « Où sont les N autres ? » (10th pass: the public cameras of the map only)
-    const ou: Record<string, unknown> = {
-      show: !!(s.complet && s.vpAut != null && pub != null && pub < s.vpAut),
-    };
-    if (ou.show && s.vpAut != null && pub != null)
-      Object.assign(ou, {
-        k: s.vpAut - pub,
-        vp: s.vpAut,
-        pub,
-        note: t("commune.ou_note", { vp: s.vpAut, pub, k: s.vpAut - pub, n: n ?? 0, nom }),
-        demander: (() =>
-          demander(
-            t("commune.demande_objet_liste", {
-              nom,
-              date: longDate(s.dateAut ?? ""),
-            }),
-            "mairie",
-            nom,
-            dep,
-          )) as Handler,
-      });
-
-    const aut = this.autorise(DET, sel);
-    const prv = this.prives(DET, sel);
-    const arg = this.argent(DET, sel);
-    const chrono = this.chrono(DET, sel);
-    const ter = this.territoires(DET, sel);
-    const ents = this.entreprises(DET, sel);
-    const docsL = this.documents(DET, sel);
-    const drones = this.drones();
-
-    // to watch, and the documents to ask for
-    const veille: { k: string; w: string; t: RichItem[] }[] = [];
-    for (const a of P.aosPending)
-      veille.push({
-        k: "0",
-        w: t("commune.veille_bientot"),
-        t: [
-          strong(t("commune.veille_signer", { nom })),
-          " ",
-          ...rt("commune.veille_signer_texte", { mois: longMonth(String(a.debut)) }),
-        ],
-      });
-    for (const e of cs) {
-      const end = e.duree ? addMonths(e.dl, Number(e.duree)) : null;
-      if (end && end >= TODAY)
-        veille.push({
-          k: end,
-          w: shortMonth(end),
-          t: rt("commune.veille_fin_contrat", {
-            contrat: lienDocument(
-              this.L,
-              e,
-              t("commune.veille_contrat_de", { y: e.dl.slice(0, 4) }),
-            ),
-            ent: e.entreprises?.length
-              ? this.entA(e.entreprises[0])
-              : t("commune.entreprise_non_publiee_une"),
-            mois: Number(e.duree),
-          }),
-        });
-    }
-    // the mairie's authorisations that end: one row (a big city has dozens of dossiers)
-    const ends = s.com
-      .map((e) => d.affaire(e.affaire)?.echeance ?? "")
-      .filter((x) => x >= TODAY)
-      .sort();
-    if (ends.length)
-      veille.push({
-        k: ends[0],
-        w: numDate(ends[0]),
-        t: [
-          ends.length > 1
-            ? t("commune.veille_fin_autorisations", {
-                n: ends.length,
-                date: numDate(ends[ends.length - 1]),
-              })
-            : t("commune.veille_fin_autorisation"),
-        ],
-      });
-    veille.sort((a, b) => a.k.localeCompare(b.k));
-    const introuvables = this.manquants()
-      .slice(0, 2)
-      .map(([q, qui, objet]) => ({
-        q,
-        l: t(qui === "mairie" ? "commune.demander_mairie" : "commune.demander_prefecture"),
-        act: (() => demander(objet, qui, nom, dep)) as Handler,
-      }));
-
-    // at rest the panel says only what to hover or choose, never the figures beside it (B3)
-    // the panel: the row hovered or focused, else the one chosen (A3)
-    const vu = this.affiche();
-    const d0 = vu ? DET[vu] : undefined;
-    const det = d0
-      ? {
-          kicker: d0.kicker,
-          title: d0.title,
-          rows: d0.rows.map(([k, v]) => ({ k, v })),
-          note: d0.note ?? "",
-          links: d0.links ?? [],
-          hint: t("commune.panneau_aide"),
-        }
-      : {
-          kicker: t("commune.det_detail"),
-          title: t("commune.det_survolez"),
-          rows: [],
-          note: "",
-          links: [],
-          hint: "",
-        };
-    const com = tete(d, "ess");
-    const secs = this.sections({
-      essentiel: true,
-      temps: arg.years.length > 0 || chrono.length > 0 || veille.length > 0 || drones.show,
-      avecqui: true,
-      documents: s.all.length > 0 || introuvables.length > 0,
-      sources: true,
+    const d = this.props.d;
+    const f = d.f;
+    const c = f.commune;
+    const insee = c.insee;
+    const nom = c.nom;
+    // the commune's name in a sentence, its article contracted (« des Baux-de-Provence »)
+    const T = (k: string, p: Record<string, string | number> = {}) => contracte(t(k, p), nom);
+    const pop = c.pop ?? 0;
+    const maj = f.couverture.maj;
+    const s = ess(d);
+    const arr = lastArretes(d.all);
+    const lus = d.arretes.collectes;
+    const X = S.X;
+    // which of its decrees are read: the build's reading of each family (couverture_actes, rule
+    // registre_couverture@1:actes_commune), « non lu », never 0, where it is not (Ju 09/11,
+    // recette 01-02); the counts are the build's (its row, its file's stats), never its documents
+    const propre = f.stats.communes[insee] as (RowActes & { arr?: number }) | undefined;
+    const hors = horsCommune(f.stats.dep?.depStats, f.stats.dep?.uniq);
+    const couv = couvertureActes({
+      insee,
+      dep: c.dep,
+      etat: f.couverture.departement.etat,
+      X,
+      propre,
+      depTotal: f.stats.dep?.depStats,
     });
-    const band = this.bandeau("commune", nom, secs);
-    const wide = large();
-    const nArr = s.all.filter((e) => e.t.startsWith("arrete")).length;
-    return {
-      ...this.base("commune"),
-      ...this.info("arg", "met", "ou"),
-      tete: this.tete("commune", nom, ligneCommune(d)),
-      band: { ...band, portes: portesCommune(insee, "fiche") },
-      secs,
-      lay: {
-        inner: wide ? "inner" : "tin",
-        tickets: wide ? "tickets" : "tickets t2",
-        deux: wide ? "deux" : "deux un",
-        yb: wide ? "yb" : "yb t",
-        yl: wide ? "yl" : "yl t",
-      },
-      com,
-      lead,
-      kpis: sansTiret(kpis),
-      carteLiens,
-      ou,
-      aut,
-      arr: aut.arr,
-      prv,
-      priv: prv.priv,
-      arg,
-      years: arg.years,
-      ctr: arg.ctr,
-      aoL: arg.aoL,
-      chrono,
-      drones,
-      ter,
-      terr: ter.terr,
-      vois: S.allVois ? ter.vois : ter.vois.slice(0, 12),
-      voisMore: ter.vois.length > 12,
-      voisLabel: S.allVois
-        ? t("entreprise.reduire")
-        : t("commune.vois_toutes", { n: ter.vois.length }),
-      togVois: (() => this.setState({ allVois: !S.allVois })) as Handler,
-      ents,
-      veille,
-      introuvables,
-      // the most recent; all of them, filtered, on the Documents page
-      docsL: docsL.slice(0, 8),
-      docsPhrase: t(s.all.length > 8 ? "commune.docs_phrase" : "commune.docs_tous", {
-        n: s.all.length,
-      }),
-      tous: [
-        lien("commune", docs, t("commune.tous_documents", { n: s.all.length })),
-        lien("commune", auts, t("commune.toutes_autorisations", { n: nArr })),
-      ],
-      sources: this.sources(),
-      maj: t("commune.maj", { date: longDate(d.f.couverture.maj) }),
-      signalerPhrase: [
-        t("commune.signaler_phrase"),
-        " ",
-        lien("commune", docs, t("commune.signaler_lien")),
-      ] as RichItem[],
-      det,
-      quitter: this.quitter(),
-      nDocs: s.all.length,
-      lien: {
-        dossier: P.main
-          ? communeHref(insee, `autorisations/${encodeURIComponent(P.main.id)}`)
-          : auts,
-        prives: `${docs}?qui=p,n&t=aut`,
-        documents: docs,
-      },
+    const lu = lecture(couv);
+    const nCam = X?.lignes.communes[insee]?.cam ?? propre?.cam ?? 0;
+    const nDr = X?.lignes.communes[insee]?.dr ?? propre?.dr ?? 0;
+    // each family in the words of its served state (Ju 11/11): « lu » the number alone,
+    // « non_rattache » a minimum (« au moins N », « aucun encore rattaché ») with its sentence,
+    // « non_lu » « Arrêtés de l'Allier pas encore lus »; a minimum has no rank
+    const depN = (f.couverture.departement as { nom?: string }).nom;
+    const dit = {
+      cam: ditActes(couv.cam, nCam, c.dep, { nomDep: depN }),
+      dr: ditActes(couv.dr, nDr, c.dep, { nomDep: depN }),
     };
-  }
-
-  /** A company's name, a link to its fiche (a sole trader, its words only). */
-  private entA(siren: string): RichItem {
-    return lienEntreprise(this.L, siren, this.prep.d.entName(siren));
-  }
-
-  /** What the préfecture authorises: the last act of the mairie's main dossier. */
-  private autorise(DET: Record<string, Det>, sel: Sel) {
-    const { d, s, insee, mainActs, main } = this.prep;
-    if (!s.com.length) return { show: false, arr: [] as unknown[] };
-    const last = s.com[0];
-    const a = d.affaire(last.affaire);
-    const src = a?.echeance_source ? d.ev.get(String(a.echeance_source)) : undefined;
-    const lastId = a?.events[a.events.length - 1];
-    const items = [
-      last.videoverbalisation
-        ? { a: t("commune.aut_vv"), b: t("commune.aut_vv_texte") }
-        : { a: t("commune.aut_vv_non"), b: t("commune.non_mentionnee") },
-      last.deport_forces
-        ? { a: t("commune.aut_deport"), b: t("commune.aut_deport_texte") }
-        : { a: t("commune.aut_deport_non"), b: t("commune.non_mentionnee") },
-      a?.echeance
-        ? {
-            a: t("commune.aut_jusqu", { date: longDate(a.echeance) }),
-            b: t(src?.date && src.id !== lastId ? "commune.aut_duree_du" : "commune.aut_duree", {
-              date: numDate(src?.date ?? ""),
-            }),
-          }
-        : { a: t("commune.aut_fin"), b: t("commune.aut_fin_non") },
-    ];
-    const acts = mainActs.slice(-4);
-    const k = acts.length;
-    const mo = k > 1 ? ym(acts[k - 1].date ?? "") - ym(acts[0].date ?? "") : 0;
-    const h3 =
-      k > 1
-        ? capital(t(mo ? "commune.aut_h3" : "commune.aut_h3_mois", { k: words(k), mo: words(mo) }))
-        : t("commune.aut_h3_un");
-    const arr = acts.map((e) => {
-      const key = `a${e.id}`;
-      DET[key] = {
-        kicker: t("commune.arrete_kicker", { date: shortDate(e.date) }),
-        title: t("commune.arrete_titre", { n: e.cameras ?? 0 }),
-        rows: [
-          [
-            t("commune.arrete_vp"),
-            e.cameras_vp != null ? fr(e.cameras_vp) : t("commune.non_precise"),
-          ],
-          [t("commune.arrete_int"), e.cameras_int != null ? fr(e.cameras_int) : "—"],
-          [t("commune.arrete_ext"), e.cameras_ext != null ? fr(e.cameras_ext) : "—"],
-          [t("commune.arrete_duree"), e.duree || t("commune.non_precisee")],
-          [t("commune.arrete_ref"), t("commune.arrete_acte", { id: e.id })],
-        ],
-        links: [
-          {
-            l: t("commune.historique_autorisation"),
-            href: communeHref(insee, `autorisations/${encodeURIComponent(e.affaire)}`),
-          },
-          ...(e.url ? [{ l: t("arretes.voir"), href: e.url }] : []),
-          signaler(e),
-        ],
-      };
-      return {
-        n: fr(e.cameras ?? 0),
-        d: shortDate(e.date),
-        label: t("commune.arrete_cellule", { date: shortDate(e.date), n: e.cameras ?? 0 }),
-        ...sel(key, "aut", "cell"),
-      };
-    });
-    const pts = ((main?.cameras ?? []) as { n: number | null; groupe?: boolean }[])
-      .filter((p) => p.n != null && !p.groupe)
-      .map((p) => fr(p.n ?? 0));
-    const seq = pts.length > 5 ? [pts[0], "…", pts[pts.length - 1]] : pts;
-    return {
-      show: true,
-      items,
-      h3,
-      n: Math.max(1, k),
-      cols: `grid-template-columns: repeat(${Math.max(1, k)}, minmax(0, 1fr))`,
-      arr,
-      hist: lien(
-        "aut",
-        main ? communeHref(insee, `autorisations/${encodeURIComponent(main.id)}`) : null,
-        pts.length > 1
-          ? t("commune.historique_suite", { suite: seq.join(" → ") })
-          : t("commune.historique_autorisation"),
-      ),
-    };
-  }
-
-  /** « Aussi à <commune> »: the shops' and companies' cameras (the last act of each dossier). */
-  private prives(DET: Record<string, Det>, sel: Sel) {
-    const { s, nom, insee } = this.prep;
-    const base = { show: s.prv.length > 0, ...sel("prv", "aut", "prv") };
-    if (!base.show) return { ...base, priv: [] as unknown[] };
-    const ncam = s.prv.reduce((x, e) => x + (e.cameras ?? 0), 0);
-    const kind = (e: Evenement) =>
-      /pharmacie/i.test(e.beneficiaire ?? "")
-        ? "pharmacie"
-        : ["banque", "commerce", "entreprise"].includes(e.type_beneficiaire ?? "")
-          ? (e.type_beneficiaire as string)
-          : "";
-    const late = (k: string) => (k === "commerce" || k === "entreprise" ? 1 : 0);
-    const kinds = [...new Set(s.prv.map(kind))]
-      .filter(Boolean)
-      .sort((a, b) => late(a) - late(b))
-      .map((k) => t(`commune.type_${k}`));
-    const who = (e: Evenement) => proper(benefLabel(e));
-    const byK = new Map<string, { n: number; a: number }>();
-    for (const e of s.prv) {
-      const x = byK.get(who(e)) ?? { n: 0, a: 0 };
-      x.n += e.cameras ?? 0;
-      x.a++;
-      byK.set(who(e), x);
-    }
-    const href = `${communeHref(insee, "documents")}?qui=p,n&t=aut`;
-    DET.prv = {
-      kicker: t("commune.prv_kicker", { ans: [...new Set(s.prv.map(year))].sort().join(", ") }),
-      title: `${count(ncam, "camera")}, ${count(s.prv.length, "arrete")}`,
-      rows: [...byK.entries()]
-        .sort((a, b) => b[1].n - a[1].n)
-        .slice(0, 5)
-        .map(([k, x]) => [
-          x.a > 1 ? t("commune.prv_ligne", { qui: k, n: x.a }) : k,
-          count(x.n, "camera"),
-        ]),
-      links: [{ l: t("commune.les_voir_dans_les_documents"), href }],
-    };
-    return {
-      ...base,
-      cam: count(ncam, "camera"),
-      arr: count(s.prv.length, "arrete"),
-      kinds: kinds.length ? ` (${kinds.slice(0, 2).join(", ")}${kinds.length > 2 ? "…" : ""})` : "",
-      priv: s.prv
-        .slice()
-        .sort(byDateAsc)
-        .slice(-6)
-        .map((e) => ({
-          d: lienDocument(this.L, e, shortDate(e.date)),
-          who: who(e),
-          n: fr(e.cameras ?? 0),
-        })),
-      voir: lien("commune", href, t("commune.les_voir_dans_les_documents")),
-      nom,
-    };
-  }
-
-  /** The money (L'essentiel), the contracts by year and each one's run (Dans le temps). R1's
-   * frieze of contracts and calls for tenders, in lanes, is gone (v2 § 8): one measure by year on
-   * an axis from zero, and the same facts as lists. */
-  private argent(DET: Record<string, Det>, sel: Sel) {
-    const { d, s, insee, cs, counted, y0, total, pop, dep, aos } = this.prep;
-    const L = this.L;
-    const ents = [...new Set(counted.flatMap((e) => e.entreprises ?? []))];
-    const hors = (e: Evenement) =>
-      e.national && !e.hors_totaux
-        ? t("commune.hors_national")
-        : e.hors_totaux && has(`registre.commune.hors_${e.hors_totaux}`)
-          ? t(`commune.hors_${e.hors_totaux}`)
-          : "";
-    let phrase: RichItem[];
-    if (counted.length) {
-      phrase = rt("commune.arg_depuis", { y0 });
-      if (pop)
-        phrase.push(
-          ...rt("commune.arg_habitant", {
-            eur: strong(t("commune.arg_habitant_eur", { eur: money(Math.round(total / pop)) })),
-          }),
-        );
-      if (ents.length === 1)
-        phrase.push(
-          ...rt("commune.arg_une_entreprise", {
-            une: strong(t("commune.arg_une_seule")),
-            ent: this.entA(ents[0]),
-          }),
-        );
-      else if (ents.length) {
-        const list: RichItem[] = ents
-          .slice(0, 4)
-          .flatMap((x, i) => (i ? [", ", this.entA(x)] : [this.entA(x)]));
-        if (ents.length > 4) list.push(t("commune.et_autres", { n: ents.length - 4 }));
-        phrase.push(
-          ...rt("commune.arg_entreprises", {
-            n: strong(count(ents.length, "entreprise")),
-          }),
-          ...list,
-        );
-      }
-    } else if (cs.length) {
-      const raisons = [...new Set(cs.map(hors))].filter(Boolean).join(", ");
-      phrase = raisons
-        ? rt("commune.arg_aucun_compte", { raisons })
-        : rt("commune.arg_aucun_compte_seul");
-    } else phrase = rt("commune.arg_aucun");
-
-    const srcs = new Set(d.f.couverture.sources.map((x) => x.id));
-    const rs = regionSource(dep);
-    const region = !!rs && srcs.has(rs);
-    const etat = srcs.has(`subventions_etat_${dep}`);
-    const couv =
-      !region && etat
-        ? t(
-            has(`registre.commune.couv_region_${dep}`)
-              ? `commune.couv_region_${dep}`
-              : "commune.couv_region",
-          )
-        : region && !etat
-          ? t("commune.couv_etat")
-          : "";
-
-    const endOf = (e: Contrat) => (e.duree ? addMonths(e.dl, Number(e.duree)) : null);
-    const flagged = (e: Evenement) => !!e.date_lue && e.date_lue !== e.date;
-    const names = (e: Evenement) =>
-      e.entreprises?.length
-        ? e.entreprises.map((x) => d.entName(x)).join(", ")
-        : t("commune.entreprise_non_publiee");
-    const who = (e: Evenement): RichItem[] =>
-      e.entreprises?.length
-        ? e.entreprises.flatMap((x, i) => (i ? [", ", this.entA(x)] : [this.entA(x)]))
-        : [t("commune.entreprise_non_publiee")];
-    const cDet = (e: Contrat, k: string) => {
-      const end = endOf(e);
-      const mods = d.f.evenements.filter((x) => x.affaire === e.affaire && x.t === "modification");
-      const lastMod = mods[mods.length - 1];
-      DET[k] = {
-        kicker: t("commune.contrat_kicker", {
-          date: flagged(e) ? `${shortMonth(e.dl)} ?` : shortDate(e.dl),
-        }),
-        title: names(e),
-        rows: [
-          [
-            t("commune.contrat_objet"),
-            d.f.libelles[e.affaire]?.court || calm(e.objet ?? "").toLowerCase(),
-          ],
-          [t("commune.contrat_montant"), money(e.montant)],
-          [
-            t("commune.contrat_duree"),
-            e.duree ? t("commune.mois", { n: Number(e.duree) }) : t("commune.non_publiee"),
-          ],
-          [t("commune.contrat_fin"), end ? shortMonth(end) : "—"],
-          [
-            t("commune.contrat_offres"),
-            e.offres != null ? String(e.offres) : t("commune.non_publie"),
-          ],
-          ...(lastMod
-            ? [
-                [
-                  t("commune.contrat_modifie"),
-                  `${shortDate(lastMod.date)}${mods.every((m) => m.montant === e.montant) ? t("commune.montant_inchange") : ""}`,
-                ] as [string, string],
-              ]
-            : []),
-        ],
-        note: flagged(e)
-          ? t("commune.note_date", { publiee: shortDate(e.date), lue: shortDate(e.date_lue) })
-          : undefined,
-        links: [{ l: t("commune.historique_contrat"), href: affHref(e.affaire) }],
-      };
-    };
-
-    // the contracts, from signature to end: each one (up to five), or each company's (six and more)
-    type Ligne = {
-      l1: RichItem[];
-      l2: string;
-      rep: boolean;
-      l2b: string;
-      cours: string;
-      p: { c: string; i: string };
-    } & Row;
-    let ctr: Ligne[];
-    if (cs.length < 6)
-      ctr = cs.map((e, i) => {
-        const k = `c${i}`;
-        const end = endOf(e);
-        cDet(e, k);
-        return {
-          l1: [
-            lienDocument(
-              L,
-              e,
-              t("commune.frise_contrat", { i: i + 1, eur: money(e.montant) }) +
-                (e.lots
-                  ? t("commune.frise_lots", { n: e.lots.length })
-                  : e.copies
-                    ? t("commune.frise_copies", { n: e.copies })
-                    : ""),
-              true,
-            ),
-            " · ",
-            ...who(e),
-          ],
-          l2: shortMonth(e.dl),
-          rep: flagged(e),
-          l2b: ` → ${end ? shortMonth(end) : t("commune.fin_a_lire")}`,
-          cours: !end || end > TODAY ? t("commune.en_cours") : "",
-          ...sel(k, "con", "ct r"),
-          p: picto("con"),
-        };
-      });
-    else {
-      const by = new Map<string, [Contrat, number][]>();
-      cs.forEach((e, i) => {
-        const k0 = e.entreprises?.[0] ?? "?";
-        by.set(k0, [...(by.get(k0) ?? []), [e, i]]);
-      });
-      ctr = [...by.entries()]
-        .sort((a, b) => a[1][0][0].dl.localeCompare(b[1][0][0].dl))
-        .map(([k0, es]) => {
-          const k = `e${k0}`;
-          const sum = es.reduce((x, [e]) => x + (e.compte ? (e.montant ?? 0) : 0), 0);
-          for (const [e, i] of es) cDet(e, `c${i}`);
-          DET[k] = {
-            kicker: t("commune.ent_kicker", { n: es.length }),
-            title: k0 === "?" ? t("commune.entreprise_non_publiee") : d.entName(k0),
-            rows: es.slice(-5).map(([e]) => [shortDate(e.dl), money(e.montant)]),
-            links:
-              k0 === "?" || k0 === EI
-                ? []
-                : [{ l: t("commune.page_entreprise"), href: `/registre/entreprise/${k0}` }],
-          };
-          return {
-            l1: [
-              k0 === "?" ? t("commune.entreprise_non_publiee") : enLigne(this.entA(k0)),
-              ` · ${count(es.length, "contrat")}`,
-            ],
-            l2: `${[...new Set(es.map(([e]) => e.dl.slice(0, 4)))].join(", ")} · ${money(sum)}`,
-            rep: false,
-            l2b: "",
-            cours: es.some(([e]) => {
-              const end = endOf(e);
-              return !end || end > TODAY;
-            })
-              ? t("commune.en_cours")
-              : "",
-            ...sel(k, "entreprise", "ct r"),
-            p: picto("entreprise"),
-          };
-        });
-    }
-
-    // the calls for tenders: those without a contract found, and the contracts' own notices
-    type Ao = { k: string; debut: string; l: RichItem; suite: string } & Row;
-    const aoL: Ao[] = [];
-    for (const a of aos) {
-      const debut = String(a.debut);
-      const k = `o${a.id}`;
-      const e0 = d.ev.get(a.events[0]);
-      const cp = a.contrat_probable ? String(a.contrat_probable) : "";
-      const cpEv = cp ? d.ev.get(d.affaire(cp)?.events?.[0] ?? "") : undefined;
-      const results = a.events
-        .map((i) => d.ev.get(i))
-        .filter((x): x is Evenement => x?.t === "resultat");
-      const suite = cp
-        ? `${t("commune.ao_contrat_de", { y: cpEv ? d.dateLue(cpEv).slice(0, 4) : "?" })} ~`
-        : ym(debut) > ym(TODAY) - 18
-          ? t("commune.ao_pas_encore")
-          : t("commune.ao_non_retrouve");
-      DET[k] = {
-        kicker: t("commune.ao_kicker", { date: shortDate(debut) }),
-        title: this.titreAff(a.id, e0),
-        rows: [
-          [t("commune.ao_ref"), e0?.ref ?? "—"] as [string, string],
-          ...results.map(
-            (x) =>
-              [t("commune.ao_resultat"), `${shortDate(x.date)} (${x.ref ?? ""})`] as [
-                string,
-                string,
-              ],
-          ),
-          [t("commune.ao_suite"), suite],
-        ],
-        note: cp ? t("commune.note_lien") : undefined,
-        links: [{ l: t("commune.historique_ao"), href: affHref(a.id) }],
-      };
-      aoL.push({
-        k,
-        debut,
-        l: lien("ao", affHref(a.id), this.titreAff(a.id, e0), true),
-        suite,
-        ...sel(k, "ao", "ao r"),
-      });
-    }
-    for (const e of cs)
-      for (const i of d.affaire(e.affaire)?.events ?? []) {
-        const x = d.ev.get(i);
-        if (x?.t !== "avis" || !x.date) continue;
-        const k = `o${x.id}`;
-        const suite = t("commune.ao_contrat_du", { date: shortDate(e.dl) });
-        DET[k] = {
-          kicker: t("commune.ao_kicker", { date: shortDate(x.date) }),
-          title: this.titreAff(e.affaire, x),
-          rows: [
-            [t("commune.ao_ref"), x.ref ?? "—"],
-            [t("commune.ao_suite"), suite],
-          ],
-          links: [{ l: t("commune.historique_contrat"), href: affHref(e.affaire) }],
-        };
-        aoL.push({
-          k,
-          debut: x.date,
-          l: lienDocument(L, x, this.titreAff(e.affaire, x), true),
-          suite,
-          ...sel(k, "ao", "ao r"),
-        });
-      }
-    aoL.sort((a, b) => a.debut.localeCompare(b.debut));
-
-    // the contracts signed each year, from the first one to this year: the amount a total adds
-    const first = cs[0]?.dl.slice(0, 4);
-    const last = +TODAY.slice(0, 4);
-    const yrs = first
-      ? Array.from({ length: last - +first + 1 }, (_, i) => String(+first + i))
+    const min = { cam: couv.cam === "non_rattache", dr: couv.dr === "non_rattache" };
+    const auMoins = (k: "cam" | "dr", x: string) => (min[k] ? t("socle_a.au_moins", { n: x }) : x);
+    const st = strate(pop);
+    const pairs = X
+      ? Object.entries(X.lignes.communes).filter(
+          ([k]) => strate(X.dico.communes[k]?.pop ?? 0) === st,
+        )
       : [];
-    const ya = yrs.map((y) => cs.filter((e) => e.dl.startsWith(y)));
-    const sums = ya.map((l) => l.reduce((x, e) => x + (e.compte ? (e.montant ?? 0) : 0), 0));
-    const mxs = Math.max(1, ...sums);
-    const ecrites = yrs.length <= ECRITES;
-    const years = yrs.map((y, i) => {
-      const k = `y${y}`;
-      const r = sel(k);
-      DET[k] = {
-        kicker: t("commune.annee"),
-        title: y,
-        rows: [
-          [t("commune.annee_contrats"), fr(ya[i].length)],
-          [t("commune.annee_montant"), sums[i] ? money(sums[i]) : "—"],
-          [t("commune.annee_aos"), fr(aoL.filter((a) => a.debut.startsWith(y)).length)],
-        ],
-        links: [
-          {
-            l: t("commune.les_documents_lien"),
-            href: `${communeHref(insee, "documents")}?y=${y}`,
-          },
-        ],
-      };
-      return {
-        y,
-        v: ecrites ? meur(sums[i]) : "",
-        n: count(ya[i].length, "contrat"),
-        label: t("commune.annee_label", { y, v: meur(sums[i]), n: ya[i].length }),
-        on: r.sel,
-        bar: `height: ${sums[i] ? Math.max(3, Math.round((sums[i] / mxs) * 150)) : 0}px; background: var(--fg)`,
-        hover: r.hover,
-        pick: r.pick,
-      };
-    });
+    const pairPop = (k: string) => X?.dico.communes[k]?.pop ?? 0;
+    const nomEnt = (siren: string) => entName(f as never, siren);
+    const lienEnt = (siren: string): RichItem =>
+      ent(f.entreprises[siren]?.ref ? `/registre/entreprise/${siren}` : null, nomEnt(siren));
+    const an0 = s.counted[0]?.date?.slice(0, 4) ?? "";
+    const depNom = (f.couverture.departement as { nom?: string }).nom ?? c.dep;
 
-    // what to keep in mind (the mockup's sentence)
-    let retenir: RichItem[] | "" = "";
-    if (cs.length) {
-      const all = [...new Set(cs.flatMap((e) => e.entreprises ?? []))];
-      if (all.length === 1 && cs.length > 1) {
-        const gaps: [string, string][] = [];
-        for (let i = 1; i < cs.length; i++) {
-          const end = endOf(cs[i - 1]);
-          if (end && ym(cs[i].dl) - ym(end) > 3) gaps.push([end, cs[i].dl]);
-        }
-        retenir = gaps.length
-          ? rt("commune.retenir_trous", {
-              y0,
-              n: gaps.length,
-              mois: ym(gaps[0][1]) - ym(gaps[0][0]),
-              de: longMonth(gaps[0][0]),
-              a: longMonth(gaps[0][1]),
-            })
-          : rt("commune.retenir_suite", { n: words(cs.length), y0 });
-      } else if (all.length === 1) retenir = rt("commune.retenir_un", { ent: this.entA(all[0]) });
-      else if (all.length > 1)
-        retenir = rt("commune.retenir_plusieurs", {
-          n: all.length,
-          y0,
-          ent: this.entA(cs[cs.length - 1].entreprises?.[0] ?? all[0]),
-        });
-    }
-    const offre = cs.filter((e) => e.offres != null).pop();
-    const subRow = s.subs.length
-      ? money(s.subs.reduce((x, e) => x + (e.montant ?? 0), 0))
-      : region || etat
-        ? t("commune.aucune")
-        : t("commune.pas_encore_collectees");
-    const dl = cs.length
-      ? [
-          {
-            k: t("commune.dl_entreprises", { y0: y0 || "—" }),
-            v: String(new Set(cs.flatMap((e) => e.entreprises ?? [])).size),
-          },
-          ...(offre
-            ? [{ k: t("commune.dl_offres", { y: offre.dl.slice(0, 4) }), v: String(offre.offres) }]
-            : []),
-          { k: t("commune.dl_subventions"), v: subRow },
-        ]
-      : [{ k: t("commune.dl_subventions"), v: subRow }];
-    return {
-      total: counted.length ? money(total) : "—",
-      phrase,
-      note: t("commune.arg_note", { couv }),
-      ctrTitre: t(cs.length >= 6 ? "commune.ctr_titre_ent" : "commune.ctr_titre"),
-      retenir,
-      dl,
-      ctr,
-      aoL: aoL.map((o) => ({ ...o, date: shortDate(o.debut) })),
-      years,
-      yearAlt: yrs.length ? t("commune.annees_alt", { de: yrs[0], a: yrs[yrs.length - 1] }) : "",
-    };
-  }
-
-  private titreAff(id: string, e?: Evenement): string {
-    const { d } = this.prep;
-    return (
-      d.f.libelles[id]?.titre ||
-      sentence(e?.objet || d.affaire(id)?.titre || "") ||
-      t("commune.objet_non_publie")
+    // --- the figures --------------------------------------------------------------------------
+    const carteN = d.carte;
+    const eur = s.eur;
+    const eph = pop > 0 && eur > 0 ? eur / pop : null;
+    const jours = joursDeVol([...d.all, ...joursZones(d)], maj);
+    // the days of flight: the build's figure (listes.json `jv`, A's rule, one source per figure)
+    // once loaded; the calendar's own count until then
+    const jvServi = X?.lignes.communes[insee]?.jv;
+    const nj = jvServi ?? jours.size;
+    const auj = d.all.filter(
+      (e) => e.t === "arrete_drone" && ((e.jours as string[] | undefined) ?? []).includes(maj),
     );
-  }
-
-  /** « Ce qui s'est passé »: the mockup's chronology; a big city keeps each year's notable facts.
-   * Each fact's mark is its document's type (pictogram and colour), R1's colours by kind gone. */
-  private chrono(DET: Record<string, Det>, sel: Sel) {
-    const { d, s, insee, nom, cs, aos } = this.prep;
-    type Mk = TypeCle | "vote" | "an";
-    type It = { k: string; d: string; mk: Mk; t: RichItem[]; flag?: boolean; key?: string };
-    const it: It[] = [];
-    const mine = s.mine.filter((e) => !/^arrete_(drone|vsa)$/.test(e.t));
-    const big = mine.length > 30;
-    if (big) {
-      const seen = new Set<string>();
-      const ys = [...new Set(mine.map(year))].filter(Boolean).sort();
-      const firstDrone = s.all.filter(isDrone).sort(byDateAsc)[0];
-      for (const y of ys) {
-        const rs = mine.filter((e) => year(e) === y);
-        const cy = rs.filter((e) => e.t === "attribution" && !e.copie);
-        const facts: RichItem[][] = [];
-        const neu = [...new Set(cy.flatMap((e) => e.entreprises ?? []))].filter(
-          (x) => !seen.has(x),
-        );
-        for (const e of cy) for (const x of e.entreprises ?? []) seen.add(x);
-        if (neu.length && y > ys[0]) {
-          const list: RichItem[] = neu
-            .slice(0, 3)
-            .flatMap((x, i) => (i ? [", ", this.entA(x)] : [this.entA(x)]));
-          if (neu.length > 3) list.push(t("commune.et_autres", { n: neu.length - 3 }));
-          facts.push([t("commune.fait_nouvelle"), ...list]);
-        }
-        const top = cy
-          .filter((e) => e.compte)
-          .sort((a, b) => (b.montant ?? 0) - (a.montant ?? 0))[0];
-        if (top)
-          facts.push(
-            rt("commune.fait_gros", {
-              eur: lienDocument(this.L, top, money(top.montant)),
-              ent: top.entreprises?.length
-                ? this.entA(top.entreprises[0])
-                : t("commune.entreprise_non_publiee_une"),
-            }),
-          );
-        if (firstDrone && year(firstDrone) === y)
-          facts.push(rt("commune.fait_drone", { date: dayMonth(firstDrone.date ?? "") }));
-        const na = rs.filter(isCam).length;
-        if (!facts.length) continue;
-        const k = `y${y}`;
-        DET[`h${k}`] = {
-          kicker: t("commune.annee"),
-          title: y,
-          rows: [
-            [t("commune.annee_contrats"), String(cy.length)],
-            [t("commune.annee_autorisations"), String(na)],
-            [t("commune.annee_documents"), String(rs.length)],
-          ],
-          links: [
-            {
-              l: t("commune.les_documents_lien"),
-              href: `${communeHref(insee, "documents")}?y=${y}`,
-            },
-          ],
-        };
-        const tx: RichItem[] = [];
-        facts.forEach((f, i) => {
-          const first = f[0];
-          const head = typeof first === "string" ? [capital(first), ...f.slice(1)] : f;
-          tx.push(...(i ? [". "] : []), ...head);
-        });
-        tx.push(".");
-        it.push({ k: y, d: y, mk: "an", t: tx, key: `h${k}` });
-      }
-    } else {
-      const dossiers = Object.entries(d.f.affaires)
-        .map(([id, a]): Aff => ({ ...a, id }))
-        .filter((a) => {
-          const lastEv = d.ev.get(a.events[a.events.length - 1]);
-          return a.insee === insee && a.kind === "dossier" && !!lastEv?.communal;
-        });
-      for (const a of dossiers) {
-        const orig = Number(a.origine_annee ?? 0);
-        const debutY = +String(a.debut).slice(0, 4);
-        if (orig && orig < debutY) {
-          const k = `h${a.id}`;
-          DET[k] = {
-            kicker: String(orig),
-            title: t("commune.dossier_titre"),
-            rows: [
-              [
-                t("commune.dossier_prefectoral"),
-                t("commune.dossier_no", { no: a.id.split("-")[1] ?? a.id }),
-              ],
-              [
-                t("commune.dossier_arretes", { de: String(orig), a: String(debutY - 1) }),
-                t("commune.dossier_non_publies"),
-              ],
-            ],
-            links: [
-              {
-                l: t("commune.demander_prefecture_lien"),
-                href: communeHref(insee, `autorisations/${encodeURIComponent(a.id)}`),
-              },
-            ],
-          };
-          it.push({
-            k: `${orig}-00`,
-            d: String(orig),
-            mk: "aut",
-            t: [
-              dossiers.length > 1
-                ? t("commune.chrono_dossier_no", { no: dossierNo(a.id) })
-                : t("commune.chrono_dossier"),
-            ],
-            key: k,
-          });
-        }
-        const pts = (
-          (a.cameras ?? []) as { n: number | null; groupe?: boolean; date: string }[]
-        ).filter((p) => p.n != null && !p.groupe);
-        const evs = a.events
-          .map((i) => d.ev.get(i))
-          .filter((e): e is Evenement => e?.cameras != null);
-        const kLast = evs.length ? `a${evs[evs.length - 1].id}` : "";
-        if (evs.length) {
-          // the cells of « Ce que la préfecture autorise » hold the main dossier's; the others here
-          const e = evs[evs.length - 1];
-          DET[kLast] ??= {
-            kicker: t("commune.arrete_kicker", { date: shortDate(e.date) }),
-            title: t("commune.arrete_titre", { n: e.cameras ?? 0 }),
-            rows: [[t("commune.arrete_ref"), t("commune.arrete_acte", { id: e.id })]],
-            links: [
-              {
-                l: t("commune.historique_autorisation"),
-                href: communeHref(insee, `autorisations/${encodeURIComponent(a.id)}`),
-              },
-            ],
-          };
-        }
-        if (pts.length > 1) {
-          const m = ym(pts[pts.length - 1].date) - ym(pts[0].date);
-          const dl = (pts[pts.length - 1].n ?? 0) - (pts[0].n ?? 0);
-          it.push({
-            k: pts[0].date,
-            d: `${shortMonth(pts[0].date)} → ${shortMonth(pts[pts.length - 1].date)}`,
-            mk: "aut",
-            t: [
-              t("commune.chrono_autorise_suite", {
-                suite: pts.map((p) => fr(p.n ?? 0)).join(t("commune.puis")),
-                delta: dl > 0 ? `+${fr(dl)}` : dl < 0 ? `−${fr(-dl)}` : "±0",
-                m,
-              }),
-            ],
-            key: kLast,
-          });
-        } else if (pts.length)
-          it.push({
-            k: pts[0].date,
-            d: longMonth(pts[0].date),
-            mk: "aut",
-            t: [t("commune.chrono_autorise", { cam: count(pts[0].n ?? 0, "camera") })],
-            key: kLast,
-          });
-      }
-      cs.forEach((e, i) => {
-        const mods = d.f.evenements.filter(
-          (x) => x.affaire === e.affaire && x.t === "modification",
-        );
-        const who: RichItem = e.entreprises?.length
-          ? this.entA(e.entreprises[0])
-          : t("commune.entreprise_non_publiee_une");
-        const what = d.f.libelles[e.affaire]?.court || calm(e.objet ?? "").toLowerCase();
-        const flag = !!e.date_lue && e.date_lue !== e.date;
-        const modTxt = mods.length
-          ? mods.length > 1
-            ? t("commune.modifie_fois", { n: mods.length })
-            : t("commune.modifie_en", { mois: longMonth(mods[0].date ?? "").split(" ")[0] })
-          : "";
-        it.push({
-          k: e.dl,
-          d: flag ? e.dl.slice(0, 4) : longMonth(e.dl),
-          mk: "con",
-          flag,
-          key: `c${i}`,
-          t: i
-            ? rt("commune.chrono_nouveau", { who, mod: modTxt })
-            : rt("commune.chrono_premier", { who, what }),
-        });
-      });
-      for (const a of aos) {
-        const debut = String(a.debut);
-        const e0 = d.ev.get(a.events[0]);
-        const c0 = d.f.libelles[a.id]?.court;
-        const pend = !a.contrat_probable && ym(debut) > ym(TODAY) - 18;
-        const what = c0
-          ? c0.startsWith("pour ")
-            ? ` ${c0}`
-            : ` : ${c0}`
-          : ` : ${calm(e0?.objet ?? "").toLowerCase()}`;
-        it.push({
-          k: debut,
-          d: longMonth(debut),
-          mk: "ao",
-          t: [t(pend ? "commune.chrono_ao_nouveau" : "commune.chrono_ao", { what })],
-          key: `o${a.id}`,
-        });
-      }
-      for (const e of s.subs)
-        it.push({
-          k: e.date ?? "",
-          d: e.date_annee ? year(e) : longMonth(e.date ?? ""),
-          mk: "sub",
-          t: [
-            t(
-              e.t === "subvention_region" ? "commune.chrono_sub_region" : "commune.chrono_sub_etat",
-              {
-                eur: money(e.montant),
-                pour: e.cameras
-                  ? t("commune.chrono_sub_pour", { cam: count(e.cameras, "camera") })
-                  : "",
-              },
-            ),
-          ],
-        });
-      const dr = s.all.filter(isDrone).sort(byDateAsc);
-      if (dr.length)
-        it.push({
-          k: dr[0].date ?? "",
-          d:
-            dr.length > 1
-              ? `${shortMonth(dr[0].date ?? "")} → ${shortMonth(dr[dr.length - 1].date ?? "")}`
-              : longMonth(dr[0].date ?? ""),
-          mk: "aut",
-          t: [t("commune.chrono_drones", { nom, n: dr.length })],
-        });
-    }
-    if (!it.length) return [];
-    const k0 = it.map((x) => x.k).sort()[0];
-    for (const m of d.f.mandats as Mandat[]) {
-      if (!(m.second_tour >= k0 && m.second_tour <= TODAY)) continue;
-      const k = `el${m.mandat}`;
-      DET[k] = {
-        kicker: capital(longMonth(m.premier_tour)),
-        title: t("commune.elections"),
-        rows: [
-          [t("commune.elections_mandat"), m.mandat],
-          [t("commune.elections_elus"), t("commune.elections_source")],
-        ],
-        links: [{ l: t("commune.elections_lien"), href: ELUS }],
-      };
-      it.push({
-        k: big ? `${m.second_tour.slice(0, 4)}~` : m.second_tour,
-        d: longMonth(m.premier_tour),
-        mk: "vote",
-        t: [t("commune.elections_point")],
-        key: k,
-      });
-    }
-    it.sort((a, b) => a.k.localeCompare(b.k));
-    // a fact without a detail (an election): neither shown nor chosen
-    const noop = (() => {}) as Handler;
-    const rien: Row = { cls: "ch", sel: "false", c: "", hover: noop, pick: noop };
-    return it.map((x) => {
-      const doc = x.mk !== "vote" && x.mk !== "an";
-      return {
-        d: x.d,
-        t: x.t,
-        flag: !!x.flag,
-        doc,
-        p: doc ? picto(x.mk as TypeCle) : { c: "", i: "" },
-        mark: doc ? "" : x.mk === "vote" ? "mk vote" : "mk an",
-        ...(x.key ? sel(x.key, doc ? (x.mk as TypeCle) : undefined, "ch r") : rien),
-      };
-    });
-  }
-
-  /** The drones: how many decrees, when, and the way to their frieze (Carte et drones); the
-   * weekly hours themselves are drawn there, from the build's slots. */
-  private drones() {
-    const { d, s, insee, nom } = this.prep;
-    // the acts of the commune, and those naming it among others (its zones' acts)
-    const of = (kind: "drone" | "vsa") => {
-      const own = s.all.filter((e) => e.t === `arrete_${kind}`);
-      const zones = d.f.zones.autorisations.filter(
-        (a) => a.kind === kind && a.insee.includes(insee),
-      );
-      const actes = new Set([...own.map((e) => e.id), ...zones.map((a) => a.acte)]);
-      const dates = [...own.map((e) => e.date ?? ""), ...zones.map((a) => a.date_acte)]
-        .filter(Boolean)
-        .sort();
-      return { n: actes.size, dates };
-    };
-    const phrase = (kind: "drones" | "vsa", x: { n: number; dates: string[] }) =>
-      !x.n
-        ? ""
-        : x.dates.length > 1 && x.dates[0].slice(0, 7) !== x.dates[x.dates.length - 1].slice(0, 7)
-          ? t(`commune.${kind}_phrase`, {
-              n: x.n,
-              nom,
-              de: longMonth(x.dates[0]),
-              a: longMonth(x.dates[x.dates.length - 1]),
+    const nAuj = auj.length;
+    const pubDe = (e: Evenement) => String((e as { publie?: string }).publie ?? "");
+    const pubs = auj.map(pubDe).filter(Boolean);
+    const sansPub = nAuj - pubs.length;
+    const aujPhrase = pubs.length
+      ? T("commune_a.auj_phrase", {
+          n: nAuj,
+          p: pubs.length,
+          dates: datesPubliees(pubs, maj.slice(0, 4)),
+          sans: sansPub ? T("commune_a.auj_sans", { q: sansPub }) : "",
+        })
+      : T("commune_a.auj_phrase_0", { n: nAuj });
+    const pubOffres = s.counted.filter((e) => typeof e.offres === "number");
+    const uneOffre = d.all.filter(
+      (e) => e.t === "attribution" && !e.communal && !e.copie && e.offres === 1,
+    ).length;
+    const rCarte = X
+      ? rang(
+          carteN,
+          pairs.map(([, v]) => v.carte ?? -1),
+        )
+      : null;
+    const rEph = X
+      ? rang(
+          eph,
+          pairs.map(([k, v]) =>
+            (v.amt ?? 0) > 0 && pairPop(k) > 0 ? (v.amt ?? 0) / pairPop(k) : -1,
+          ),
+        )
+      : null;
+    const rJv =
+      X && nj > 0 && !min.dr
+        ? rang(
+            nj,
+            pairs.map(([, v]) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1)),
+          )
+        : null;
+    // the rank's dots: each city of the size class, its name and value in its bubble, its fiche on
+    // a click (Lyon-A-comportements, « Points de rang »)
+    const dots = (
+      r: { r: number; n: number } | null,
+      val: (k: string, v: (typeof pairs)[number][1]) => number,
+      fmt: (v: number) => string,
+    ) =>
+      r && r.n <= 15
+        ? pairs
+            .map(([k, v]) => ({ k, v: val(k, v) }))
+            .filter((x) => x.v >= 0)
+            .sort((a, b) => b.v - a.v)
+            .map((x, i) => ({
+              cls: x.k === insee ? "dot me" : "dot",
+              bh: X?.dico.communes[x.k]?.nom ?? x.k,
+              bl: `${fmt(x.v)} · ${ordinal(i + 1)}`,
+              go: x.k === insee ? "" : communeHref(x.k),
+              bc: x.k === insee ? "" : T("commune_a.b.fiche"),
+              // a dot that opens a fiche is reached by Tab, Enter opens it (recette 33)
+              tab: x.k === insee ? null : "0",
+              role: x.k === insee ? null : "link",
+              al: `${X?.dico.communes[x.k]?.nom ?? x.k} · ${fmt(x.v)} · ${ordinal(i + 1)}`,
+            }))
+        : null;
+    // a figure's rank: its strate named on the first figure only, as the board writes it (« 2e sur
+    // 11 villes de 200 000 hab. et plus », then « 2e sur 11 »), by its bounds alone to hold in two
+    // lines; the full words in its bubble
+    const rk = (r: { r: number; n: number } | null, extra = "", strate = "") =>
+      r
+        ? `${
+            strate
+              ? T("commune_a.rang", { r: ordinal(r.r), n: fr(r.n), strate })
+              : T("commune_a.rang_c", { r: ordinal(r.r), n: fr(r.n) })
+          }${extra}`
+        : extra.replace(/^ · /, "");
+    const tout = nomStrate(st);
+    const nomEpci = f.stats.epci?.nom ?? "";
+    const figs = [
+      {
+        // outside the map (overseas): « hors carte » and why, never « 0 » (recette 10)
+        cls: carteN == null ? "fig nl" : "fig",
+        k: T("commune_a.fig.cameras"),
+        v: carteN == null ? T("commune_a.fig.hors_carte") : fr(carteN),
+        u: "",
+        l: carteN == null ? T("commune_a.fig.hors_carte_l") : T("commune_a.fig.cameras_l"),
+        dots: dots(
+          rCarte,
+          (_k, v) => v.carte ?? -1,
+          (v) => T("commune_a.b.cameras", { n: fr(v) }),
+        ),
+        r: rk(rCarte, "", nomStrateC(st)),
+        // ranked by the number of cameras, not per inhabitant as the lists and the neighbours are:
+        // its bubble says so (recette 28)
+        rb: rCarte
+          ? T("commune_a.rang_cam", { r: ordinal(rCarte.r), n: fr(rCarte.n), strate: tout })
+          : "",
+        tip: T("commune_a.fig.cameras_tip", { nom }),
+        href: "#cameras",
+      },
+      {
+        cls: eph == null ? "fig nl" : "fig",
+        k: T("commune_a.fig.argent"),
+        v: eph == null ? T("commune_a.fig.argent_aucun") : fr(eph),
+        u: eph == null ? "" : T("commune_a.fig.argent_u"),
+        l:
+          eph == null
+            ? T("commune_a.fig.argent_l0")
+            : T("commune_a.fig.argent_l", { m: montantA(eur), y: an0 }),
+        dots: dots(
+          rEph,
+          (k, v) => ((v.amt ?? 0) > 0 && pairPop(k) > 0 ? (v.amt ?? 0) / pairPop(k) : -1),
+          (v) => T("commune_a.b.eph", { n: fr(Math.round(v)) }),
+        ),
+        r: rk(rEph),
+        rb: rk(rEph, "", tout),
+        tip: T("commune_a.fig.argent_tip"),
+        href: "#argent",
+      },
+      {
+        cls: (!lu.dr || min.dr) && !nj ? "fig nl" : "fig",
+        k: T("commune_a.fig.drones"),
+        // a minimum's « au moins » small before its number, in the unit's size
+        pre: min.dr && nj ? t("socle_a.au_moins_pre") : "",
+        v: (!lu.dr || min.dr) && !nj ? ditActes(couv.dr, 0, c.dep, { nomDep: depN }).v : fr(nj),
+        u: (!lu.dr || min.dr) && !nj ? "" : t("carte_a.jours_u", { n: nj }),
+        l: (!lu.dr || min.dr) && !nj ? dit.dr.phrase : T("commune_a.fig.drones_l"),
+        dots: dots(
+          rJv,
+          (_k, v) => ((v.jv ?? 0) > 0 ? (v.jv ?? 0) : -1),
+          (v) => T("commune_a.b.jours", { n: v }),
+        ),
+        r: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : ""),
+        rb: rk(rJv, nAuj ? ` · ${T("commune_a.fig.auj", { n: nAuj })}` : "", tout),
+        tip:
+          min.dr && nj
+            ? `${dit.dr.phrase}.\n${T("commune_a.fig.drones_tip", { nom })}`
+            : T("commune_a.fig.drones_tip", { nom }),
+        href: "#drones",
+      },
+      {
+        cls: pubOffres.length ? "fig" : "fig nl",
+        k: T("commune_a.fig.concurrence"),
+        v: pubOffres.length
+          ? T("commune_a.fig.offres_v", {
+              n: pubOffres.filter((e) => e.offres === 1).length,
+              m: pubOffres.length,
             })
-          : t(`commune.${kind}_phrase_un`, { n: x.n, nom, mois: longMonth(x.dates[0] ?? "") });
-    const dr = of("drone");
-    const vsa = of("vsa");
-    if (!dr.n && !vsa.n) return { show: false, titre: "", phrase: "", lien: "" as RichItem };
-    return {
-      show: true,
-      titre: t(vsa.n ? "commune.drones_vsa_titre" : "commune.drones_titre"),
-      phrase: [phrase("drones", dr), phrase("vsa", vsa)].filter(Boolean).join(" "),
-      lien: lien(
-        "commune",
-        communeHref(insee, "carte"),
-        t(dr.n ? "commune.drones_lien" : "commune.vsa_lien"),
-      ) as RichItem,
-    };
-  }
-
-  /** Its companies (Avec qui): each one's contracts with the commune and what a total adds. */
-  private entreprises(_DET: Record<string, Det>, sel: Sel) {
-    const { cs, d } = this.prep;
-    const by = new Map<string, Contrat[]>();
-    for (const e of cs) {
-      const k0 = e.entreprises?.[0] ?? "?";
-      by.set(k0, [...(by.get(k0) ?? []), e]);
-    }
-    return [...by.entries()]
-      .map(([k0, es]) => ({
-        k0,
-        es,
-        sum: es.reduce((x, e) => x + (e.compte ? (e.montant ?? 0) : 0), 0),
-      }))
-      .sort((a, b) => b.sum - a.sum || b.es.length - a.es.length)
-      .map(({ k0, es, sum }) => {
-        // the frieze's per-company detail when it groups by company, else the first contract's
-        const k = cs.length >= 6 ? `e${k0}` : `c${cs.indexOf(es[0])}`;
-        const ys = [...new Set(es.map((e) => e.dl.slice(0, 4)))];
-        return {
-          nom: k0 === "?" ? t("commune.entreprise_non_publiee") : enLigne(this.entA(k0)),
-          n: count(es.length, "contrat"),
-          ans: ys.length > 1 ? `${ys[0]} → ${ys[ys.length - 1]}` : ys[0],
-          amt: sum ? money(sum) : "—",
-          ...sel(k, "entreprise", "drow ent r"),
-          p: picto("entreprise"),
-          seul: k0 === EI || !!d.f.entreprises[k0]?.entrepreneur_individuel,
-        };
-      });
-  }
-
-  /** Its documents, the most recent first (V2-Entreprise's list): each its record. */
-  private documents(DET: Record<string, Det>, sel: Sel) {
-    const { d } = this.prep;
-    return d.all.map((e) => {
-      const k = `d${e.id}`;
-      const amt =
-        e.t === "attribution" || e.t === "modification" || e.t.startsWith("subvention")
-          ? (e.montant ?? null)
-          : null;
-      const fig =
-        amt != null
-          ? money(amt)
-          : e.t === "arrete" && e.cameras != null
-            ? count(e.cameras, "camera")
-            : "";
-      DET[k] ??= {
-        kicker: `${typeLabel(e)} · ${docDate(e.date, e.date_annee)}`,
-        title: titreDocument(e),
-        rows: [
-          [t("documents.p_date"), docDate(e.date, e.date_annee)],
-          [t("documents.p_type"), typeLabel(e)],
-          ...(fig
-            ? [
-                [t(amt != null ? "documents.p_montant" : "documents.p_cameras"), fig] as [
-                  string,
-                  string,
-                ],
-              ]
-            : []),
-          ...(e.ref ? [[t("documents.p_reference"), e.ref] as [string, string]] : []),
-        ],
-        links: [
-          { l: t("commune.doc_fiche"), href: docHref(this.L, e) },
-          ...(e.url
-            ? [
-                {
-                  l: t(e.t.startsWith("arrete") ? "arretes.voir" : "documents.lien_source"),
-                  href: e.url,
-                },
-              ]
-            : []),
-          signaler(e),
-        ],
-      };
-      const q = quiDocument(d, e, true);
-      return {
-        qui: q.entR || q.quiR,
-        quiStyle: q.qk === "n" ? "font-style: italic; color: var(--muted)" : "",
-        ...sel(k, typeDocument(e), "drow r"),
-        p: picto(typeDocument(e)),
-        d: docDate(e.date, e.date_annee),
-        titre: lienDocument(this.L, e, titreDocument(e), true),
-        fig,
-      };
-    });
-  }
-
-  /** « Sources »: each source the fiche reads, with how far it was read; the map's cameras; a
-   * département whose decrees are not collected says so (a figure that is missing is not zero). */
-  private sources(): Source[] {
-    const { d, dep } = this.prep;
-    const c = d.f.couverture as unknown as Couverture;
-    const rs = regionSource(dep);
-    const out = sources(
-      c,
-      ["contrats", "avis", ...(rs ? [rs] : []), `subventions_etat_${dep}`, `arretes_${dep}`],
-      true,
-    );
-    if (!d.arretes.collectes)
-      out.push({
-        l: t("commune.source_arretes"),
-        ed: etatDepartement(dep, d.f.stats.dep.nom, d.f.couverture.departement),
-        date: "",
-      });
-    out.push({ l: t("commune.source_osm"), ed: t("commune.source_osm_ed"), date: "" });
-    return out;
-  }
-
-  /** The territories (Avec qui): the build's per-commune stats, each document once, the
-   * intercommunality and the département as links; the other communes of its intercommunality. */
-  private territoires(DET: Record<string, Det>, sel: Sel) {
-    const { d, insee, nom, dep, pop, collectes } = this.prep;
-    const L = this.L;
-    const st = d.f.stats;
-    const epci = st.epci as
-      | (typeof st.epci & { achat?: { n: number; montant: number } | null })
-      | null;
-    const dp0 = st.dep as typeof st.dep & { communes_registre?: number };
-    const en = epci?.nom ?? (epci ? t("commune.intercommunalite", { code: epci.code }) : "");
-    const all = epci?.communes ?? [];
-    const reg = all.filter((k) => (st.communes[k]?.docs ?? 0) > 0);
-    const zero = { docs: 0, con: 0, cam: 0, dr: 0, arr: 0, montant: 0 } as Stats;
-    const me = st.communes[insee] ?? zero;
-    const ep = (epci?.uniq ?? zero) as Stats;
-    const dp = dp0.uniq as unknown as Stats;
-    const nDep = dp0.communes_registre ?? 0;
-    const rank =
-      reg
-        .map((k) => ({ k, docs: st.communes[k]?.docs ?? 0 }))
-        .sort((a, b) => b.docs - a.docs)
-        .findIndex((x) => x.k === insee) + 1;
-    const v = (x: Stats, k: keyof Stats) =>
-      k === "cam" || k === "dr" ? (collectes ? fr(Number(x[k] ?? 0)) : "—") : fr(Number(x[k] ?? 0));
-    const epA =
-      /^(métropole|communauté|ca |cc |cu |eurométropole|établissement)/i.test(en) ||
-      /^(CA|CC|CU)\b/.test(en)
-        ? t("commune.article_la")
-        : "";
-    const depNom = dp0.nom ?? dep;
-    const da = depArt(dep, dp0.nom);
-    const rows4 = (x: Stats): [string, string][] => [
-      [t("commune.ter_documents"), v(x, "docs")],
-      [t("commune.ter_contrats"), v(x, "con")],
-      [t("commune.ter_autorisations"), v(x, "cam")],
-      [t("commune.ter_drones"), v(x, "dr")],
+          : T("commune_a.fig.non_publiee"),
+        u: "",
+        l: pubOffres.length
+          ? T("commune_a.fig.offres_l")
+          : T("commune_a.fig.non_publiee_l", { n: s.counted.length }),
+        dots: null,
+        r: uneOffre ? T("commune_a.fig.territoire", { n: uneOffre }) : "",
+        rb: uneOffre ? T("commune_a.fig.territoire", { n: uneOffre }) : "",
+        tip: T("commune_a.fig.concurrence_tip"),
+        href: "#entreprises",
+      },
     ];
-    const epHref = epci ? epciHref(dep, epci.code) : "";
-    const depHref = `/registre/departement/${dep}`;
-    DET.m0 = {
-      kicker: t("commune.commune"),
-      title: nom,
-      rows: [
-        ...rows4(me),
-        ...(rank && epci
+
+    // --- the lead -----------------------------------------------------------------------------
+    const lead: RichItem[] = [];
+    // a sentence's point, once: a size class already ends on « hab. » (recette 21, « hab.. »)
+    const point = (sep: string) => {
+      if (!lead.length) return;
+      const last = lead[lead.length - 1];
+      if (typeof last === "string" && /\.\s*$/.test(last)) {
+        if (sep.endsWith(" ")) lead[lead.length - 1] = `${last.trimEnd()} `;
+      } else lead.push(sep);
+    };
+    if (eur > 0) {
+      lead.push(
+        T("commune_a.lead_a", { nom }),
+        { strong: montantA(eur) },
+        T("commune_a.lead_b", { y: an0 }),
+      );
+      if (eph != null) lead.push({ strong: T("commune_a.lead_eph", { n: fr(eph) }) });
+      if (rEph)
+        lead.push(
+          T("commune_a.lead_rang", { r: ordinal(rEph.r), n: rEph.n, strate: nomStrate(st) }),
+        );
+      point(". ");
+    }
+    if (carteN != null)
+      lead.push({ strong: T("commune_a.lead_cam", { n: fr(carteN) }) }, T("commune_a.lead_cam_b"));
+    if (nj)
+      lead.push(
+        T("commune_a.lead_dr_a"),
+        { strong: auMoins("dr", T("commune_a.lead_dr", { n: nj })) },
+        T("commune_a.lead_dr_b"),
+      );
+    point(".");
+
+    // --- the sections, numbered in turn ---------------------------------------------------------
+    let n = 0;
+    const num = () => String(++n);
+    const toc: { href: string; l: string; cls: string; go: Handler }[] = [];
+    const entree = (id: string, l: string) =>
+      toc.push({ href: `#${id}`, l, cls: "", go: this.allerSection });
+
+    // 1 · cameras
+    const parts = camerasAutorisees(arr);
+    const systemes = grandsSystemes(arr);
+    const camN = num();
+    entree("cameras", `${camN} · ${T("commune_a.toc.cameras")}`);
+    // the first year of the decrees read (not the day their collection began)
+    const depuis =
+      arr
+        .map((e) => (e.date ?? "").slice(0, 4))
+        .filter(Boolean)
+        .sort()[0] ?? "2024";
+    const pct = (v: number) => Math.round((100 * v) / Math.max(1, parts.total));
+    // five cases (recette 02, Ju 11/11): the cameras its decrees authorise; its decrees counted,
+    // their cameras not read; none, read (a true 0); none attached yet where its département's are
+    // not all (« non_rattache »: the others are minimums); its decrees not read
+    const camCas = !lu.cam ? "nl" : parts.total ? "lus" : nCam ? "nb" : min.cam ? "nr0" : "aucun";
+    const voirArretes: Handler = (ev) => {
+      ev.preventDefault();
+      this.versDocs({ onglet: "aut" });
+    };
+    const cam = {
+      n: camN,
+      ans: [
+        ...(camCas === "lus"
           ? [
-              [
-                t("commune.ter_rang", { ter: epA ? `${epA}${en.replace(/^la /, "")}` : en }),
-                t("commune.ter_rang_v", { r: rank, n: reg.length }),
-              ] as [string, string],
+              T("commune_a.cam_ans_a", { y: depuis }),
+              { strong: auMoins("cam", T("commune_a.cam_ans_n", { n: fr(parts.total) })) },
+              T("commune_a.cam_ans_b", { nom }),
             ]
-          : []),
-      ],
-      links: [
-        {
-          l: t("commune.les_documents", { nDocs: me.docs }),
-          href: communeHref(insee, "documents"),
-        },
-      ],
+          : camCas === "nb"
+            ? [
+                { strong: auMoins("cam", T("commune_a.cam_ans_nb", { n: nCam, y: depuis })) },
+                T("commune_a.cam_ans_nb_b", { nom }),
+              ]
+            : camCas === "aucun"
+              ? [T("commune_a.cam_ans_aucun", { nom, y: depuis })]
+              : camCas === "nr0"
+                ? [T("commune_a.cam_ans_nr0", { nom })]
+                : phraseActes(couv.cam, c.dep, depN)),
+        ...(carteN != null ? [T("commune_a.cam_ans_c"), { strong: fr(carteN) }, "."] : ["."]),
+      ] as RichItem[],
+      kAut: T("commune_a.cam_k", { y: depuis }),
+      parts:
+        lu.cam && parts.total
+          ? (
+              [
+                ["mairie", "c-ville", parts.mairie],
+                ["commerces", "c-comm", parts.commerces],
+                ["autres", "c-autres", parts.autres],
+              ] as const
+            )
+              .filter(([, , v]) => v > 0)
+              .map(([k, cls, v]) => ({
+                // a narrow part's number lives in the legend on a phone (pt: under a tenth)
+                cls: `seg ${cls}${pct(v) < 10 ? " pt" : ""}`,
+                sw: `sw ${cls}`,
+                st: `flex: ${v}`,
+                v: fr(v),
+                l: t(`commune_a.part.${k}`),
+                bl: `${fr(v)} · ${pct(v)} %`,
+                pick: (() => this.versDocs({ onglet: "aut", part: k })) as Handler,
+              }))
+          : null,
+      etat: camCas === "nl" ? dit.cam.v : "",
+      // a minimum says why, once (« Une partie des arrêtés du département… »)
+      nonLu: [
+        camCas === "nb" ? T("commune_a.cam_nb_nl", { n: nCam }) : "",
+        min.cam ? `${dit.cam.phrase}.` : "",
+        camCas === "nr0" && hors?.cam ? T("commune_a.cam_non_lu_hors", { n: hors.cam, nom }) : "",
+        camCas !== "nl" ? "" : !lus ? T("commune_a.cam_non_lu") : T("commune_a.cam_non_lu_c"),
+      ]
+        .filter(Boolean)
+        .join(" "),
+      aucun: camCas === "aucun" ? T("commune_a.cam_aucun_lu", { y: depuis }) : "",
+      voir: camCas === "nb" ? { l: T("commune_a.cam_voir", { n: nCam }), pick: voirArretes } : null,
+      osm: carteN ? fr(carteN) : "",
+      osmNon: carteN === 0,
+      osmHors: carteN == null ? T("commune_a.releves_hors", { nom }) : "",
+      carteHref: communeHref(insee, "carte"),
+      osmB: T("commune_a.b.osm_clic", { nom }),
+      note: T("commune_a.cam_note", { y: depuis }),
+      systemes: systemes.length
+        ? systemes.map((x) => ({
+            nom: [
+              x.siren && f.entreprises[x.siren]?.ref ? lienEnt(x.siren) : tidy(titleCase(x.nom)),
+            ] as RichItem[],
+            n: T("commune_a.arretes_n", { n: x.arretes }),
+            cams: fr(x.cameras),
+          }))
+        : null,
     };
-    if (epci)
-      DET.m1 = {
-        kicker: t("commune.ter_intercommunalite"),
-        title: en,
-        rows: [
-          [
-            t("commune.ter_communes"),
-            t("commune.ter_communes_v", { n: all.length, r: reg.length }),
-          ],
-          ...rows4(ep),
-        ],
-        links: [{ l: t("commune.ter_lien_communes", { ter: `${epA}${en}` }), href: epHref }],
-      };
-    DET.m2 = {
-      kicker: t("commune.ter_departement"),
-      title: depNom,
-      rows: [[t("commune.ter_communes_registre"), fr(nDep)], ...rows4(dp)],
-      links: [{ l: `${capital(da)} →`, href: depHref }],
+
+    // 2 · money: every counted contract on its territory, by year and by buyer
+    const territoire = d.all.filter((e) => e.t === "attribution" && e.compte && !e.copie);
+    const serie = (e: Evenement): Serie => {
+      if (e.communal) return "ville";
+      const b = d.buyer(e);
+      return b && f.acheteurs[b]?.categorie === "transports" ? "transports" : "autres";
     };
-    const TER: Record<string, TypeCle> = { m0: "commune", m1: "epci", m2: "departement" };
-    const row = (k: string, nomR: RichItem, sub: string, x: Stats) => ({
-      nom: nomR,
-      sub,
-      n: v(x, "docs"),
-      con: v(x, "con"),
-      aut: v(x, "cam"),
-      dr: v(x, "dr"),
-      ...sel(k, TER[k]),
-    });
-    const terr = [
-      // the fiche's own name is not a link to itself
-      row("m0", { strong: nom }, t("commune.ter_sub_commune", { pop: fr(pop) }), me),
-      ...(epci
-        ? [
-            row(
-              "m1",
-              lien("epci", epHref, en, true),
-              t("commune.ter_sub_epci", { r: reg.length, n: all.length }),
-              ep,
+    const vue = S.argent;
+    const tousPris = vue === "tous" ? territoire : territoire.filter((e) => e.communal);
+    // a series hidden from its legend leaves the bars (Lyon-A-comportements, « Légende »)
+    const pris = tousPris.filter((e) => !S.masque.includes(serie(e)));
+    const { annees } = argentParAnnee(pris, serie as never);
+    const { totaux } = argentParAnnee(tousPris, serie as never);
+    const subs = s.subs.length;
+    let arg = null;
+    if (territoire.length) {
+      const argN = num();
+      entree("argent", `${argN} · ${T("commune_a.toc.argent")}`);
+      // euros, or euros per inhabitant: the axis's unit and round graduations (socle-a.ts axeA)
+      const k = vue === "hab" && pop > 0 ? 1 / pop : 1;
+      const tot = (a: (typeof annees)[number]) => (a.ville + a.transports + a.autres) * k;
+      const ax = axeA(Math.max(0, ...annees.map(tot)), vue === "hab" ? "reel" : "eur");
+      const haut = ax.haut || 1;
+      const y = (v: number) => 226 - (196 * v) / haut;
+      const slot = 900 / Math.max(1, annees.length);
+      const w = Math.min(70, slot - 24);
+      const v1 = ax.val;
+      const cols = annees.map((a, i) => {
+        const x = 70 + i * slot + (slot - w) / 2;
+        let base = 226;
+        const rects = (["ville", "transports", "autres"] as const)
+          .filter((s2) => a[s2] > 0)
+          .map((s2) => {
+            const h = (196 * a[s2] * k) / haut;
+            base -= h;
+            return { cls: clsSerie(s2), y: base.toFixed(1), h: h.toFixed(1) };
+          });
+        const tv = tot(a);
+        const parSerie = (["ville", "transports", "autres"] as const).filter((s2) => a[s2] > 0);
+        const nb = (s2: Serie) =>
+          pris.filter((e) => (e.date ?? "").startsWith(a.an) && serie(e) === s2).length;
+        return {
+          bh: `${a.an} · ${vue === "hab" ? T("commune_a.tip_hab", { n: fr(tv) }) : montantA(a.ville + a.transports + a.autres)}`,
+          bl: parSerie
+            .map(
+              (s2) =>
+                `§${clsSerie(s2)}§${t(`commune_a.serie.${s2}`, { nom })} · ${montantA(a[s2])} · ${T("commune_a.b.contrats", { n: nb(s2) })}`,
+            )
+            .join("\n"),
+          bc: tv > 0 ? T("commune_a.b.col_clic") : "",
+          tab: tv > 0 ? "0" : "-1",
+          pick: (() => {
+            if (tv > 0) this.versDocs({ onglet: "con", annee: a.an, territoire: vue === "tous" });
+          }) as Handler,
+          an: a.an,
+          x: x.toFixed(1),
+          w: w.toFixed(1),
+          cx: (x + w / 2).toFixed(1),
+          hx: (x - 10).toFixed(1),
+          hw: (w + 20).toFixed(1),
+          vy: (y(tv) - 6).toFixed(1),
+          v: tv > 0 ? v1(tv) : "",
+          rects,
+        };
+      });
+      arg = {
+        n: argN,
+        ans: [
+          ...(eur > 0
+            ? [
+                T("commune_a.arg_ans_a"),
+                { strong: montantA(eur) },
+                T("commune_a.arg_ans_b", { n: s.counted.length }),
+                T("commune_a.arg_ans_y", { y: an0 }),
+              ]
+            : [T("commune_a.arg_ans_0", { nom })]),
+          ...(totaux.transports > 0 && vue === "tous"
+            ? [T("commune_a.arg_ans_tr"), { strong: montantA(totaux.transports) }, "."]
+            : []),
+          " ",
+          subs ? T("commune_a.arg_ans_sub", { n: subs }) : T("commune_a.arg_ans_nosub"),
+        ] as RichItem[],
+        titre: T("commune_a.argent_titre", { nom }),
+        vues: (["tous", "ville", "hab"] as const).map((o) => ({
+          l: t(`commune_a.argent_vue.${o}`),
+          on: vue === o ? "true" : "false",
+          pick: (() => this.setState({ argent: o, col: null })) as Handler,
+        })),
+        grille: [
+          ...ax.ticks.map((g) => ({
+            y: y(g.v).toFixed(1),
+            ty: (y(g.v) + 4).toFixed(1),
+            l: g.l,
+          })),
+          {
+            y: "-20",
+            ty: "20",
+            l: t(
+              vue === "hab"
+                ? "commune_a.unite_hab"
+                : ax.u === "me"
+                  ? "commune_a.unite_m"
+                  : "commune_a.unite_e",
             ),
+          },
+        ],
+        // euros take more room than millions: the axis's numbers move the drawing to the right
+        vb: ax.u === "e" ? "-18 0 1018 270" : "0 0 1000 270",
+        vw: ax.u === "e" ? "1018" : "1000",
+        cols,
+        leg: (["ville", "transports", "autres"] as const)
+          .filter((s2) => totaux[s2] > 0 || s2 === "ville")
+          .map((s2) => ({
+            sw: `sw ${clsSerie(s2)}`,
+            s: s2,
+            l: t(`commune_a.serie.${s2}`, { nom }),
+            v: totaux[s2] > 0 ? montantA(totaux[s2]) : T("commune_a.aucun"),
+            on: S.masque.includes(s2) ? "false" : "true",
+            pick: (() =>
+              this.setState({
+                masque: S.masque.includes(s2)
+                  ? S.masque.filter((x) => x !== s2)
+                  : [...S.masque, s2],
+              })) as Handler,
+          })),
+        legSub: [
+          {
+            sw: "sw c-sub",
+            l: T("commune_a.serie.sub"),
+            v: subs ? fr(subs) : T("commune_a.aucune_trouvee"),
+          },
+        ],
+      };
+    }
+
+    // 3 · companies: those of its own contracts
+    const fs = fournisseurs(s.counted);
+    let entS = null;
+    if (fs.length) {
+      const entN = num();
+      entree("entreprises", `${entN} · ${T("commune_a.toc.entreprises")}`);
+      const max = Math.max(1, fs[0].montant);
+      const autres = (siren: string) => {
+        const cl = X?.lignes.entreprises[siren]?.clientes;
+        return cl != null ? Math.max(0, cl - 1) : null;
+      };
+      const top = fs.slice(0, 5);
+      const part = Math.round((100 * fs[0].montant) / Math.max(1, eur));
+      entS = {
+        n: entN,
+        ans: [
+          { strong: T("commune_a.ent_ans_n", { n: fs.length }) },
+          T("commune_a.ent_ans_a", { y: an0 }),
+          ...(fs.length > 1 && part >= 50
+            ? [" ", lienEnt(fs[0].siren), T("commune_a.ent_ans_b", { p: part })]
+            : []),
+        ] as RichItem[],
+        r: repli(S.open, "fourn", t("accueil.voir_detail"), top.length, this.basculer),
+        rows: top.map((x, i) => {
+          const o = autres(x.siren);
+          return {
+            cls: `sup i${i}`,
+            nom: [lienEnt(x.siren)] as RichItem[],
+            st: `width: ${((100 * x.montant) / max).toFixed(1)}%`,
+            m: montantA(x.montant),
+            c: `${T("commune_a.ent_c", { n: x.contrats })} · ${x.annees.join(", ")}`,
+            o: o == null ? "" : o ? T("commune_a.ent_o", { n: o }) : T("commune_a.ent_o0"),
+            // « N autres acheteurs »: the graph centred on the company (Lyon-A-comportements, lot 4)
+            og: o && f.entreprises[x.siren]?.ref ? `/registre/graphe/${x.siren}` : "",
+            // the words without their link: no other buyer, or no fiche to centre on
+            oSeul: o != null && !(o && f.entreprises[x.siren]?.ref),
+          };
+        }),
+        g: {
+          titre: T("commune_a.graphe_titre", { nom }),
+          nodes: top.map((x, i) => {
+            const a = -Math.PI / 2 + (i * 2 * Math.PI) / top.length;
+            const r = 130;
+            const nx = 300 + r * Math.cos(a);
+            const ny = 204 + r * Math.sin(a) * 0.9;
+            const sz = 12 + 20 * Math.sqrt(x.montant / max);
+            const o = autres(x.siren);
+            const mx = 300 + (r + 62) * Math.cos(a);
+            const my = 204 + (r + 62) * Math.sin(a) * 0.9;
+            const aFiche = !!f.entreprises[x.siren]?.ref;
+            return {
+              cls: `nd i${i}`,
+              ci: `i${i}`,
+              bh: nomEnt(x.siren),
+              bl: [
+                T("commune_a.b.avec", { nom, m: montantA(x.montant) }),
+                o == null ? "" : T("commune_a.ent_o_b", { n: o }),
+              ]
+                .filter(Boolean)
+                .join("\n"),
+              bc: aFiche ? T("commune_a.b.graphe", { nom: nomEnt(x.siren) }) : "",
+              x: nx.toFixed(0),
+              y: ny.toFixed(0),
+              rx: (nx - sz / 2).toFixed(1),
+              ry: (ny - sz / 2).toFixed(1),
+              s: sz.toFixed(1),
+              ty: (ny + (Math.sin(a) > 0.2 ? -sz / 2 - 8 : sz / 2 + 18)).toFixed(0),
+              l: nomEnt(x.siren),
+              // a node's click recentres the graph on it (Lyon-A-comportements): the centred graph
+              href: f.entreprises[x.siren]?.ref ? `/registre/graphe/${x.siren}` : "",
+              sans: !f.entreprises[x.siren]?.ref,
+              mo: o ? `+${fr(o)}` : "",
+              // the circle holds its text: about 8 px a character at 12.5 px, 6 px of margin
+              mr: o ? Math.max(15, 4 * `+${fr(o)}`.length + 6) : 15,
+              mx: mx.toFixed(0),
+              my: my.toFixed(0),
+            };
+          }),
+        },
+      };
+    }
+
+    // 4 · dossiers: the commune's own affairs with more than one document, the largest first
+    const affs = Object.entries(f.affaires)
+      .filter(([, a]) => a.kind === "contrat" && a.acheteur_communal && a.insee === insee)
+      .map(([id, a]) => {
+        const evs = a.events.map((x) => d.ev.get(x)).filter((e): e is Evenement => !!e && !e.copie);
+        const con = evs.filter((e) => e.t === "attribution");
+        return { id, a, evs, montant: con.reduce((x, e) => x + (e.montant ?? 0), 0) };
+      })
+      .filter((x) => x.evs.length > 1)
+      .sort((p, q) => q.montant - p.montant)
+      .slice(0, 3);
+    let dos = null;
+    if (affs.length) {
+      const dosN = num();
+      entree("dossiers", `${dosN} · ${T("commune_a.toc.dossiers")}`);
+      dos = {
+        n: dosN,
+        rows: affs.map((x, i) => {
+          const ans = x.evs
+            .map((e) => (e.date ?? "").slice(0, 4))
+            .filter(Boolean)
+            .sort();
+          const per = ans.length
+            ? `, ${ans[0] === ans[ans.length - 1] ? ans[0] : `${ans[0]}-${ans[ans.length - 1]}`}`
+            : "";
+          const titre = `${casseNormale(String(x.a.titre ?? "")).replace(/…$/, "")}${per}`;
+          const mods = x.evs.filter((e) => e.t === "modification").length;
+          const steps = [...x.evs]
+            .filter((e) => e.t !== "modification")
+            .sort((p, q) => (p.date ?? "").localeCompare(q.date ?? ""))
+            .map((e) => {
+              const k = /^(avis|rectificatif)$/.test(e.t)
+                ? "avis"
+                : e.t === "attribution"
+                  ? "contrat"
+                  : e.t === "resultat"
+                    ? "attr"
+                    : "arrete";
+              return {
+                cls: `st ${k}`,
+                k: t(`commune_a.etape.${k}`),
+                d: dateDite(e),
+                b:
+                  k === "contrat"
+                    ? ((e.entreprises ?? []).flatMap((sr, j) => [
+                        ...(j ? [", "] : []),
+                        lienEnt(sr),
+                      ]) as RichItem[])
+                    : ([String(e.ref ?? titreDoc(e)).replace(/^.*, /, "")] as RichItem[]),
+                s:
+                  k === "contrat"
+                    ? [
+                        e.montant ? T("commune_a.plafond", { m: montantA(e.montant) }) : "",
+                        mods ? T("commune_a.modifs", { n: mods }) : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : "",
+              };
+            });
+          return {
+            r: repli(
+              S.open,
+              `dos${i}`,
+              titre,
+              steps.length,
+              this.basculer,
+              S.annee && ans.includes(S.annee) ? "card dos mark" : "card dos",
+            ),
+            titre,
+            href: documentHref(x.id),
+            m: x.montant ? montantA(x.montant) : "",
+            steps,
+          };
+        }),
+      };
+    }
+
+    // 5 · drones
+    let dr = null;
+    if (nj || nAuj) {
+      const drN = num();
+      entree("drones", `${drN} · ${T("commune_a.toc.drones")}`);
+      // the calendar: twelve months of weeks ending on the update's day, Monday first; « À venir »:
+      // the 30 days after it
+      const fin = new Date(`${maj}T12:00:00Z`);
+      const debut = new Date(fin);
+      if (S.avenir) {
+        debut.setUTCDate(debut.getUTCDate() + 1);
+        fin.setUTCDate(fin.getUTCDate() + 30);
+      } else debut.setUTCMonth(debut.getUTCMonth() - 12);
+      debut.setUTCDate(debut.getUTCDate() - ((debut.getUTCDay() + 6) % 7));
+      const finIso = fin.toISOString().slice(0, 10);
+      // a motive's bar chosen: the calendar on that motive's acts only
+      const jpa = joursParActe(d);
+      const joursCal =
+        S.motifF || S.avenir
+          ? joursDeVol(
+              d.all
+                .filter(
+                  (e) =>
+                    e.t === "arrete_drone" &&
+                    (!S.motifF || classeMotif((e as { motif?: unknown }).motif) === S.motifF),
+                )
+                .map((e) => ({ t: e.t, jours: jpa.get(e.id) ?? [] })),
+              S.avenir ? finIso : maj,
+              S.avenir ? 1 : 12,
+            )
+          : jours;
+      const jourLong = (iso: string) =>
+        new Intl.DateTimeFormat("fr-FR", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "UTC",
+        }).format(new Date(`${iso}T12:00:00Z`));
+      const cases: {
+        cls: string;
+        x: string;
+        y: string;
+        bh: string;
+        bl: string;
+        bc: string;
+        tab: string;
+        pick: Handler;
+      }[] = [];
+      const mois: { x: string; l: string }[] = [];
+      let col = 0;
+      let dernier = -1;
+      for (const dt = new Date(debut); dt <= fin; dt.setUTCDate(dt.getUTCDate() + 1)) {
+        const iso = dt.toISOString().slice(0, 10);
+        const wd = (dt.getUTCDay() + 6) % 7;
+        if (wd === 0 && dt > debut) col++;
+        if (wd === 0 && dt.getUTCMonth() !== dernier) {
+          dernier = dt.getUTCMonth();
+          mois.push({ x: String(24 + col * 15), l: moisCourt(iso) });
+        }
+        const nb = joursCal.get(iso) ?? 0;
+        cases.push({
+          cls: `${nb >= 2 ? "c2" : nb === 1 ? "c1" : "c0"}${iso === maj ? " today" : ""}${S.avenir && iso <= maj ? " passe" : ""}`,
+          x: String(24 + col * 15),
+          y: String(16 + wd * 15),
+          bh: jourLong(iso),
+          bl: T("commune_a.b.arretes_dr", { n: nb }),
+          bc: nb ? T("commune_a.b.jour_clic") : "",
+          tab: nb ? "0" : "-1",
+          pick: (() => {
+            if (nb) allerA(`${communeHref(insee, "carte")}?jour=${iso}`);
+          }) as Handler,
+        });
+      }
+      const W = 24 + (col + 1) * 15;
+      // a month's label needs about 24 units: the last one, cut at the edge, is left out
+      while (mois.length && Number(mois[mois.length - 1].x) + 24 > W) mois.pop();
+      // distinct days per class: two acts of one motive on one day are one day of flight
+      const joursMotif = new Map<string, Set<string>>();
+      const joursSans = new Set<string>();
+      for (const e of d.all)
+        if (e.t === "arrete_drone") {
+          const m = classeMotif((e as { motif?: unknown }).motif);
+          const set = m ? (joursMotif.get(m) ?? joursMotif.set(m, new Set()).get(m)) : joursSans;
+          for (const j of jpa.get(e.id) ?? []) if (jours.has(j)) set?.add(j);
+        }
+      const motifs = new Map([...joursMotif].map(([m, s]) => [m, s.size] as const));
+      const sansMotif = joursSans.size;
+      const mx = Math.max(1, ...motifs.values(), sansMotif);
+      const vol = avantVol((f as { drones?: { publication?: Publication } }).drones?.publication);
+      const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
+      // the drone acts as every page counts them (listes.json `dr`: the flights' acts, an act that
+      // ends one left out; recette 01), the first year they were read
+      const anDr =
+        d.all
+          .filter((e) => e.t === "arrete_drone")
+          .map((e) => (e.date ?? "").slice(0, 4))
+          .filter(Boolean)
+          .sort()[0] ?? depuis;
+      dr = {
+        n: drN,
+        ans: [
+          T("commune_a.dr_ans_a", { nom }),
+          { strong: auMoins("dr", T("commune_a.lead_dr", { n: nj })) },
+          T("commune_a.dr_ans_b"),
+          ...(lu.dr && nDr
+            ? [
+                " ",
+                T(min.dr ? "commune_a.dr_ans_actes_min" : "commune_a.dr_ans_actes", {
+                  n: nDr,
+                  y: anDr,
+                }),
+              ]
+            : []),
+          ...(nAuj
+            ? [
+                " ",
+                { strong: T("commune_a.dr_auj", { d: jourCourt(maj) }) },
+                T("commune_a.dr_auj_n", { n: nAuj }),
+              ]
+            : []),
+        ] as RichItem[],
+        titre: T("commune_a.cal_titre", { nom }),
+        vb: `0 0 ${W} 124`,
+        w: String(W),
+        h: "124",
+        mois,
+        jl: [
+          { y: "27", l: "L" },
+          { y: "57", l: "M" },
+          { y: "87", l: "V" },
+          { y: "117", l: "D" },
+        ],
+        cases,
+        fenetres: [false, true].map((v) => ({
+          l: t(v ? "commune_a.cal_avenir" : "commune_a.cal_12"),
+          on: S.avenir === v ? "true" : "false",
+          pick: (() => this.setState({ avenir: v })) as Handler,
+        })),
+        motifF: S.motifF
+          ? {
+              l: T("commune_a.b.motif_chip", { m: t(`commune_a.motif.${S.motifF}`) }),
+              lever: (() => this.setState({ motifF: "" })) as Handler,
+            }
+          : null,
+        // which date (Ju 10/11): the flights are today's, their acts were published earlier
+        aujPhrase: nAuj ? aujPhrase : "",
+        auj: nAuj
+          ? auj.map((e) => ({
+              d: pubDe(e)
+                ? t("commune_a.publie", { d: datesPubliees([pubDe(e)], maj.slice(0, 4)) })
+                : t("commune_a.publie_non_lu"),
+              l: [
+                {
+                  a: {
+                    href: `${communeHref(insee, "carte")}?jour=${maj}`,
+                    text: `« ${casseNormale(String(e.titre ?? titreDoc(e))).slice(0, 90)} »`,
+                  },
+                },
+              ] as RichItem[],
+            }))
+          : null,
+        aujVide: !nAuj,
+        href: `${communeHref(insee, "carte")}${nAuj ? `?jour=${maj}` : ""}`,
+        motifs: motifs.size
+          ? [
+              ...[...motifs]
+                .sort((a, b) => b[1] - a[1])
+                .map(([m, v]) => ({
+                  cls: S.motifF === m ? "hb on" : "hb",
+                  q: false,
+                  l: t(`commune_a.motif.${m}`),
+                  st: `width: ${((100 * v) / mx).toFixed(0)}%`,
+                  n: fr(v),
+                  bl: T("commune_a.b.jours_vol", { n: v }),
+                  bc: T("commune_a.b.motif_clic"),
+                  on: S.motifF === m ? "true" : "false",
+                  pick: (() => this.setState({ motifF: S.motifF === m ? "" : m })) as Handler,
+                })),
+              ...(sansMotif
+                ? [
+                    {
+                      cls: "hb q",
+                      l: T("commune_a.motif_non_lu"),
+                      st: `width: ${((100 * sansMotif) / mx).toFixed(0)}%`,
+                      n: fr(sansMotif),
+                      bl: T("commune_a.b.jours_vol", { n: sansMotif }),
+                      bc: "",
+                      on: "",
+                      pick: null,
+                      q: true,
+                    },
+                  ]
+                : []),
+            ]
+          : null,
+        motifsNonLu: !motifs.size,
+        vol: vol.nonLu
+          ? { lu: false, nonLu: true, parts: [], note: "", liste: null }
+          : {
+              lu: true,
+              nonLu: false,
+              parts: vol.parts.map((x) => ({
+                cls: `seg ${clsV[x.k]}${S.volF === x.k ? " on" : ""}`,
+                st: `flex: ${Math.max(1, x.pct)}`,
+                l: x.pct >= 8 ? fr(x.n) : "",
+                sw: `sw ${clsV[x.k]}`,
+                leg: `${t(`accueil.vol_${x.k}`)} · ${fr(x.n)}`,
+                bh: t(`accueil.vol_${x.k}`),
+                bl: `${fr(x.n)} · ${x.pct} %`,
+                bc: T("commune_a.b.vol_clic"),
+                pick: (() => this.setState({ volF: S.volF === x.k ? "" : x.k })) as Handler,
+              })),
+              liste: S.volF ? volListe(d.all, S.volF, insee, jpa) : null,
+              // the acts whose day of flight and recueil are read, among the commune's drone acts
+              note:
+                lu.dr && nDr > vol.total
+                  ? T("commune_a.publies_note_sur", {
+                      n: fr(vol.total),
+                      t: fr(nDr),
+                      p: vol.parts[2]?.pct ?? 0,
+                    })
+                  : T("commune_a.publies_note", { n: fr(vol.total), p: vol.parts[2]?.pct ?? 0 }),
+            },
+      };
+    }
+
+    // 6 · neighbours: its intercommunality's communes, its strate (listes.json)
+    let vois = null;
+    {
+      const vN = String(n + 1);
+      const m = S.mesure;
+      const val = (k: string): number | null => {
+        const v = X?.lignes.communes[k];
+        const p = pairPop(k);
+        if (!v || p <= 0) return null;
+        if (m === "cameras") return v.carte != null ? (1000 * v.carte) / p : null;
+        if (m === "eph") return (v.amt ?? 0) > 0 ? (v.amt ?? 0) / p : null;
+        return (v.jv ?? 0) > 0 ? (v.jv ?? 0) : null;
+      };
+      const fmt = (v: number) =>
+        m === "cameras"
+          ? v.toFixed(1).replace(".", ",")
+          : m === "eph"
+            ? t("socle_a.e", { n: fr(v) })
+            : T("commune_a.jours_n", { n: fr(v) });
+      const lien = (k: string, nm: string): RichItem[] => [
+        ent(X?.dico.communes[k]?.ref ? communeHref(k) : null, nm, ""),
+      ];
+      const membres =
+        X && c.epci
+          ? Object.keys(X.lignes.communes).filter((k) => X.dico.communes[k]?.epci === c.epci)
+          : [];
+      const classe = (ks: string[]) =>
+        ks
+          .map((k) => ({ k, v: val(k) }))
+          .filter((x): x is { k: string; v: number } => x.v != null)
+          .sort((a, b) => b.v - a.v);
+      const autour = (rows: { k: string; v: number }[], nb: number, ou: string) => {
+        const i = rows.findIndex((x) => x.k === insee);
+        const lo = Math.max(0, Math.min(i - 2, rows.length - nb));
+        // each row says its rank, the window starting where it starts (recette 17: « Lyon 7e »
+        // read as 3rd without them)
+        return (i < 0 ? rows.slice(0, nb) : rows.slice(lo, lo + nb)).map((x) => ({
+          cls: x.k === insee ? "me" : "",
+          rg: String(rows.indexOf(x) + 1),
+          nom: lien(x.k, X?.dico.communes[x.k]?.nom ?? x.k),
+          v: fmt(x.v),
+          bh: X?.dico.communes[x.k]?.nom ?? x.k,
+          bl: `${fmt(x.v)}\n${T("commune_a.b.rang_ou", { r: ordinal(rows.indexOf(x) + 1), n: rows.length, ou })}`,
+          bc: x.k === insee ? "" : T("commune_a.b.fiche"),
+        }));
+      };
+      const debut = (rows: { k: string }[], nb: number) => {
+        const i = rows.findIndex((x) => x.k === insee);
+        return String(i < 0 ? 1 : Math.max(0, Math.min(i - 2, rows.length - nb)) + 1);
+      };
+      // the rank's column holds the window's largest rank (« 1 234 » in a size class of thousands)
+      const largeurRang = (rows: { k: string }[], nb: number) =>
+        `rank rn${Math.max(2, String(Math.min(rows.length, Number(debut(rows, nb)) + nb - 1)).length)}`;
+      const ep = classe(membres);
+      const sr = classe(pairs.map(([k]) => k));
+      const iE = ep.findIndex((x) => x.k === insee);
+      const ml = t(`commune_a.mesure_l.${m}`);
+      if (X && (ep.length > 1 || sr.length > 1)) {
+        n++;
+        entree("voisines", `${vN} · ${T("commune_a.toc.voisines")}`);
+        vois = {
+          n: vN,
+          ans:
+            iE >= 0 && ep.length > 1
+              ? ([
+                  T("commune_a.vois_ans", {
+                    nom,
+                    // « Dans la CC Vallée des Baux-Alpilles » (recette 21)
+                    epci: articleEpci(nomEpci),
+                    r: ordinal(iE + 1),
+                    n: ep.length,
+                    m: ml,
+                  }),
+                ] as RichItem[])
+              : ([T("commune_a.vois_ans_strate", { nom, strate: nomStrate(st) })] as RichItem[]),
+          mesures: (["cameras", "eph", "drones"] as const).map((o) => ({
+            l: t(`commune_a.mesure.${o}`),
+            on: m === o ? "true" : "false",
+            pick: (() => this.setState({ mesure: o })) as Handler,
+          })),
+          epci:
+            ep.length > 1
+              ? {
+                  titre: T("commune_a.vois_epci", { epci: nomEpci, m: ml }),
+                  rows: autour(ep, 8, nomEpci),
+                  start: debut(ep, 8),
+                  rn: largeurRang(ep, 8),
+                  note: T("commune_a.vois_epci_note", { n: membres.length, k: ep.length }),
+                }
+              : null,
+          strate:
+            sr.length > 1
+              ? {
+                  titre: T("commune_a.vois_strate", { strate: nomStrate(st), m: ml }),
+                  rows: autour(sr, 5, nomStrate(st)),
+                  start: debut(sr, 5),
+                  rn: largeurRang(sr, 5),
+                  // the communes that buy through their intercommunality: the money's caveat only
+                  note: m === "eph",
+                }
+              : null,
+          attente: "",
+          comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
+          comparerL: T("commune_a.comparer", { nom }),
+        };
+      } else if (!X) {
+        vois = {
+          n: vN,
+          ans: [] as RichItem[],
+          mesures: [],
+          epci: null,
+          strate: null,
+          attente: T("commune_a.vois_attente"),
+        };
+      }
+    }
+
+    // documents: the four kinds, ten rows of the one chosen, the full list one page away
+    const tabs: { k: Onglet; f: (e: Evenement) => boolean }[] = [
+      // the commune's own contracts (board: « Contrats · 8 » for Lyon), as its own notices
+      {
+        k: "con",
+        f: S.territoire
+          ? (e) => e.t === "attribution" && !e.copie && !!e.compte
+          : (e) => e.t === "attribution" && !e.copie && !!e.communal,
+      },
+      { k: "ao", f: (e) => /^(avis|resultat|rectificatif)$/.test(e.t) },
+      { k: "aut", f: (e) => e.t.startsWith("arrete") },
+      { k: "sub", f: (e) => e.t.startsWith("subvention") },
+    ];
+    const ong = tabs.find((x) => x.k === S.onglet) ?? tabs[0];
+    const aut = ong.k === "aut";
+    const argentDoc = ong.k === "con" || ong.k === "ao" || ong.k === "sub";
+    const ongRows = d.all.filter(ong.f);
+    // the menus' values: those the kind's documents have
+    const anneesDoc = [...new Set(ongRows.map((e) => (e.date ?? "").slice(0, 4)).filter(Boolean))]
+      .sort()
+      .reverse();
+    const parEnt = new Map<string, number>();
+    for (const e of ongRows)
+      for (const sr of e.entreprises ?? []) parEnt.set(sr, (parEnt.get(sr) ?? 0) + 1);
+    const entsDoc = [...parEnt]
+      .sort((p, q) => q[1] - p[1] || nomEnt(p[0]).localeCompare(nomEnt(q[0]), "fr"))
+      .slice(0, 40);
+    const TRANCHES: Record<Exclude<Tranche, "">, [number, number]> = {
+      m1: [0, 1e5],
+      m2: [1e5, 1e6],
+      m3: [1e6, Number.POSITIVE_INFINITY],
+    };
+    const partDe = (e: Evenement): Part =>
+      e.communal
+        ? "mairie"
+        : /^(commerce|banque)$/.test(String(e.type_beneficiaire ?? ""))
+          ? "commerces"
+          : "autres";
+    const docRows = ongRows
+      .filter(
+        (e) =>
+          (!S.annee || (e.date ?? "").startsWith(S.annee)) &&
+          (!S.entF || (e.entreprises ?? []).includes(S.entF)) &&
+          (!S.tranche ||
+            (e.montant != null &&
+              e.montant >= TRANCHES[S.tranche][0] &&
+              e.montant < TRANCHES[S.tranche][1])) &&
+          (!S.part || (aut && e.t === "arrete" && !e.copie && partDe(e) === S.part)),
+      )
+      .sort(
+        S.tri === "montant"
+          ? (p, q) =>
+              (aut
+                ? (q.cameras ?? -1) - (p.cameras ?? -1)
+                : (q.montant ?? -1) - (p.montant ?? -1)) || byDateDesc(p, q)
+          : byDateDesc,
+      );
+    // the filters a shape's click put, each lifted from its chip
+    const actifs = [
+      ...(S.part
+        ? [
+            {
+              l: t(`commune_a.part.${S.part}`),
+              lever: (() => this.setState({ part: "" })) as Handler,
+            },
           ]
         : []),
-      row("m2", lienDepartement(dep, depNom, true), t("commune.ter_sub_dep", { n: nDep }), dp),
+      ...(S.territoire
+        ? [
+            {
+              l: T("commune_a.argent_vue.tous"),
+              lever: (() => this.setState({ territoire: false })) as Handler,
+            },
+          ]
+        : []),
     ];
-    const achat = epci?.achat;
-    const au = da.replace(/^le /, "au ").replace(/^les /, "aux ");
-    // its neighbours: the other communes of its intercommunality the register holds, the most
-    // documented first
-    const vois = reg
-      .filter((k) => k !== insee && L.communes[k])
-      .sort(
-        (a, b) =>
-          (st.communes[b]?.docs ?? 0) - (st.communes[a]?.docs ?? 0) ||
-          L.communes[a].nom.localeCompare(L.communes[b].nom, "fr"),
-      )
-      .map((k) => ({
-        lien: lienCommune(L, k, undefined, true),
-        n: count(st.communes[k]?.docs ?? 0, "document"),
-      }));
-    // a territory named in a sentence is a link to its fiche, its article words (« la », « au »)
-    const terL: RichItem = { span: [epA, lien("epci", epHref, en)], cls: "" };
-    const depL = (art: string): RichItem =>
-      art.endsWith(depNom)
-        ? {
-            span: [art.slice(0, art.length - depNom.length), lienDepartement(dep, depNom)],
-            cls: "",
-          }
-        : lienDepartement(dep, art);
-    return {
-      titre: epci
-        ? rt("commune.ter_titre", { ter: terL, dep: depL(da) })
-        : rt("commune.ter_titre_dep", { dep: depL(da) }),
-      de: epA,
-      epci: en,
-      epciLien: epci ? lien("epci", epHref, en) : "",
-      nCom: all.length,
-      nReg: reg.length,
-      caption: epci
-        ? rt("commune.ter_caption", { nom, ter: terL, dep: depL(au) })
-        : rt("commune.ter_caption_dep", { nom, dep: depL(au) }),
-      couv: collectes
-        ? t("commune.ter_couv", { mois: longMonth(d.arretes.depuis ?? "") })
-        : t("commune.ter_couv_non"),
-      achat: achat?.n
-        ? `${count(achat.n, "contrat")}${achat.montant ? `, ${money(achat.montant)}` : ""}`
-        : "",
-      achatQui: capital(`${epA}${en.split(" ")[0]}`),
-      achatLien: epci ? lienAcheteur(L, epci.code, t("commune.acheteur_public")) : "",
-      liens: [
-        ...(epci
+    const docs = {
+      r: repli(
+        S.open,
+        "docs",
+        t("accueil.voir_detail"),
+        Math.min(10, docRows.length),
+        this.basculer,
+      ),
+      onglets: tabs.map((x) => ({
+        l: t(`commune_a.onglet.${x.k}`),
+        n: fr(d.all.filter(x.f).length),
+        on: x.k === S.onglet ? "true" : "false",
+        pick: (() =>
+          this.setState({
+            onglet: x.k,
+            annee: "",
+            entF: "",
+            tranche: "",
+            part: "",
+            territoire: false,
+            menu: "",
+          })) as Handler,
+      })),
+      menus: [
+        this.menuDocs(
+          "annee",
+          T("commune_a.m_annee"),
+          S.annee,
+          anneesDoc.map((v) => ({ v, l: v })),
+          (v) => ({ annee: v }),
+        ),
+        ...(argentDoc && entsDoc.length
           ? [
-              lien(
-                "epci",
-                epHref,
-                t("commune.ter_lien_communes", {
-                  ter: `${epA}${en.split(" ")[0] === "Métropole" ? "Métropole" : en}`,
-                }),
+              this.menuDocs(
+                "ent",
+                T("commune_a.m_ent"),
+                S.entF,
+                entsDoc.map(([v, n2]) => ({ v, l: `${nomEnt(v)} · ${fr(n2)}` })),
+                (v) => ({ entF: v }),
               ),
             ]
           : []),
-        lienDepartement(dep, capital(da)),
+        ...(argentDoc
+          ? [
+              this.menuDocs(
+                "montant",
+                T("commune_a.m_montant"),
+                S.tranche,
+                (["m1", "m2", "m3"] as const).map((v) => ({ v, l: t(`commune_a.tranche.${v}`) })),
+                (v) => ({ tranche: v as Tranche }),
+              ),
+            ]
+          : []),
       ],
-      voisTitre: epci ? rt("commune.vois_titre", { ter: terL }) : "",
-      vois,
-      terr,
+      actifs,
+      exporter: (() =>
+        exportRows(d, docRows, "csv", `${insee}-${t(`commune_a.onglet.${ong.k}`)}`)) as Handler,
+      col3: t(aut ? "commune_a.col_beneficiaire" : "commune_a.col_entreprise"),
+      col4: t(aut ? "commune_a.col_cameras" : "commune_a.col_montant"),
+      // the columns' sort (Lyon-A-comportements, « En-tête de colonne »): the date, the amount
+      triDate: S.tri === "date" ? "descending" : "none",
+      triM: S.tri === "montant" ? "descending" : "none",
+      parDate: (() => this.setState({ tri: "date" })) as Handler,
+      parM: (() => this.setState({ tri: "montant" })) as Handler,
+      rows: docRows.slice(0, 10).map((e) => ({
+        // a drone act's date is its first day of flight, not its publication (Ju 10/11): said
+        d: dateDite(e),
+        doc: [
+          {
+            a: {
+              href:
+                e.t.startsWith("arrete") && e.insee === insee
+                  ? `${communeHref(insee, "autorisations")}/${encodeURIComponent(e.id)}`
+                  : documentHref(e.affaire),
+              text: casseNormale(titreDoc(e)),
+            },
+          },
+        ] as RichItem[],
+        qui: aut
+          ? ([
+              e.beneficiaire && !String(e.beneficiaire).startsWith("[") && e.nom_publie !== false
+                ? casseNormale(String(e.beneficiaire))
+                : t("commun.nom_non_publie"),
+            ] as RichItem[])
+          : ((e.entreprises ?? []).flatMap((sr, j) => [
+              ...(j ? [", "] : []),
+              lienEnt(sr),
+            ]) as RichItem[]),
+        m: aut ? (e.cameras != null ? fr(e.cameras) : "—") : e.montant ? montantA(e.montant) : "—",
+        dos:
+          (f.affaires[e.affaire]?.events?.length ?? 0) > 1
+            ? ([
+                { a: { href: documentHref(e.affaire), text: T("commune_a.dossier") } },
+              ] as RichItem[])
+            : (["—"] as RichItem[]),
+      })),
+      // a row's click opens its document, as its link does (« Ligne · Ouvre le document »)
+      ligne: ((ev) => {
+        const tgt = ev.nativeEvent.target as Element;
+        if (tgt.closest("a, button")) return;
+        tgt.closest("tr")?.querySelector<HTMLAnchorElement>("td a")?.click();
+      }) as Handler,
+      vide: !docRows.length,
+      plus: docRows.length > 10 ? T("commune_a.documents_plus", { n: fr(docRows.length) }) : "",
+      tout: communeHref(insee, "documents"),
     };
-  }
+    const srcRows = [
+      { cls: "ok", l: t("accueil.src.contrats"), d: T("commune_a.src.contrats") },
+      { cls: "ok", l: t("accueil.src.ao"), d: T("commune_a.src.ao") },
+      {
+        cls: lu.cam || lu.dr ? "part" : "non",
+        l: T("commune_a.src.arretes"),
+        d:
+          lu.cam || lu.dr
+            ? [
+                T("commune_a.src.arretes_d", { y: depuis }),
+                min.cam || min.dr ? `${(min.cam ? dit.cam : dit.dr).phrase}.` : "",
+              ]
+                .filter(Boolean)
+                .join(". ")
+            : phraseActes(couv.cam, c.dep, depN),
+      },
+      { cls: "part", l: t("accueil.src.subventions"), d: T("commune_a.src.subventions") },
+      { cls: "ok", l: t("accueil.src.carte"), d: t("accueil.src.carte_d") },
+    ];
+    toc.push({
+      href: "#documents",
+      l: T("commune_a.toc.documents"),
+      cls: "",
+      go: this.allerSection,
+    });
+    toc.push({ href: "#sources", l: T("commune_a.toc.sources"), cls: "", go: this.allerSection });
+    // the 3D view's doors open on its Fiche tab; its drones' doors (a day, today) on Drones (Ju 09/11,
+    // choice 5)
+    const vue3d = `${communeHref(insee, "carte")}?onglet=fiche`;
+    toc.push({
+      href: vue3d,
+      l: T("commune_a.toc.vue3d"),
+      cls: "t3d",
+      go: (() => {}) as Handler,
+    });
+    // a head figure's click goes to its section, by the number the section has here; its bubble
+    // holds its words in full (two lines at most on the card, Ju 09/11) and its rank's strate
+    const nSec = new Map(toc.map((x) => [x.href, x.l.split(" · ")[0]]));
+    const figsB = figs.map((x) => ({
+      ...x,
+      tip: [x.l, x.rb, x.tip].filter(Boolean).join("\n"),
+      sr: x.tip,
+      dotsL: x.rb,
+      bc: nSec.has(x.href) ? T("commune_a.b.section", { n: nSec.get(x.href) ?? "" }) : "",
+    }));
 
-  /** The documents that exist but are not published (the prototype's missingItems): [question,
-   * whom to ask, what to ask for]. */
-  private manquants(): [string, "mairie" | "prefecture", string][] {
-    const { d, s, insee, nom, aos, collectes } = this.prep;
-    const out: [string, "mairie" | "prefecture", string][] = [];
-    for (const [id, a] of Object.entries(d.f.affaires)) {
-      if (a.insee !== insee) continue;
-      const orig = Number(a.origine_annee ?? 0);
-      const debutY = +String(a.debut).slice(0, 4);
-      const lastEv = d.ev.get(a.events[a.events.length - 1]);
-      if (a.kind === "dossier" && orig && orig < debutY - 1 && lastEv?.communal)
-        out.push([
-          t("commune.manque_dossier", { de: String(orig), a: String(debutY - 1) }),
-          "prefecture",
-          t("commune.manque_dossier_objet", {
-            nom,
-            no: id.split("-")[1] ?? id,
-            de: String(orig),
-            a: String(debutY - 1),
-          }),
-        ]);
-      if (
-        a.kind === "subvention" &&
-        id.startsWith("sub-") &&
-        !a.contrat_probable &&
-        String(a.debut) >= "2019"
-      ) {
-        const e0 = d.ev.get(a.events[0]);
-        out.push([
-          t("commune.manque_sub", { date: numDate(String(a.debut)) }),
-          "mairie",
-          t("commune.manque_sub_objet", { date: numDate(String(a.debut)), ref: e0?.ref ?? "" }),
-        ]);
-      }
-    }
-    for (const a of aos) {
-      if (a.contrat_probable || String(a.debut) < "2019") continue;
-      const e0 = d.ev.get(a.events[0]);
-      out.push([
-        t("commune.manque_ao", { nom, mois: longMonth(String(a.debut)) }),
-        "mairie",
-        t("commune.manque_ao_objet", { date: numDate(String(a.debut)), ref: e0?.ref ?? "" }),
-      ]);
-    }
-    if (!s.all.some((e) => e.t.startsWith("arrete")) && !collectes)
-      out.push([
-        t("commune.manque_arretes", { nom }),
-        "prefecture",
-        t("commune.manque_arretes_objet", { nom }),
-      ]);
-    return out;
+    return {
+      ...this.base("commune-a"),
+      nom,
+      letters: coupeMots(nom),
+      chips: [
+        { l: `${depNom} (${c.dep})`, href: departementHref(c.dep) },
+        ...(nomEpci && c.epci_ref ? [{ l: nomEpci, href: `/registre/${c.epci_ref}` }] : []),
+      ],
+      meta: [
+        ...(pop ? [T("commune_a.habitants", { n: fr(pop) })] : []),
+        T("commune_a.insee", { insee }),
+        ...(f.couverture.departement.dernier_recueil
+          ? [T("commune_a.collecte", { d: jourCourt(f.couverture.departement.dernier_recueil) })]
+          : []),
+      ],
+      lead,
+      partager: ((ev) => partager(this, ev.currentTarget)) as Handler,
+      citer: this.citer,
+      citerL: t(S.cite ? "commune_a.cite" : "commune_a.citer"),
+      figs: figsB,
+      v3: {
+        titre: T("commune_a.v3_titre", { nom }),
+        items: [
+          {
+            b: T("commune_a.v3_cameras"),
+            s:
+              carteN != null
+                ? T("commune_a.v3_cameras_s", { n: fr(carteN) })
+                : T("commune_a.v3_cameras_hors"),
+          },
+          {
+            b: T("commune_a.v3_drones"),
+            s: nAuj ? T("commune_a.v3_drones_auj", { n: nAuj }) : T("commune_a.v3_drones_s"),
+          },
+        ],
+        href: vue3d,
+        jour: nAuj ? `${communeHref(insee, "carte")}?jour=${maj}` : "",
+      },
+      toc,
+      cam,
+      arg,
+      ent: entS,
+      dos,
+      dr,
+      vois,
+      docs,
+      srcs: {
+        r: repli(
+          S.open,
+          "srcs",
+          t("accueil.voir_detail"),
+          srcRows.length,
+          this.basculer,
+          "card srcs",
+        ),
+        rows: srcRows,
+        signaler: s.all[0] ? signalerHref(s.all[0]) : "/registre/glossaire",
+      },
+      pleinEcran,
+    };
   }
 }
 
+async function donnees(r: Route): Promise<Record<string, unknown>> {
+  if (r.view !== "commune") return {};
+  return { d: await chargerCommune(r.insee) };
+}
+
 export default {
-  Vue: Commune,
+  Vue: Commune as unknown as VueModule["Vue"],
   template,
-  donnees: async (r: Route) => ({ d: await commune((r as Props).insee) }),
-} as unknown as VueModule;
+  donnees,
+} satisfies VueModule;

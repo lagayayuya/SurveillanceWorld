@@ -1,96 +1,114 @@
-<div class="{{th}}">
-  <div class="{{cls}}">
-  <sc-if value="{{wide}}">
-      <h1 class="sr">{{title}}</h1><div class="cutout" aria-hidden="true"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
-      <p class="idline tw">{{{idline}}}</p>
-      <p class="lead">{{t.sommaire.lead}}</p>
-      <div role="search" class="cherche">
-        <label>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
-          <span class="sr">{{t.sommaire.chercher}}</span>
-          <input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.sommaire.chercher_exemple}}">
-        </label>
-      </div>
-  </sc-if>
-  <sc-if value="{{tel}}">
-      <h1 class="sr">{{title}}</h1><div class="cutout s" aria-hidden="true" style="margin: 2px 0 0"><sc-for list="{{letters}}" as="x"><span class="{{x.cls}}" style="{{x.st}}">{{x.ch}}</span></sc-for></div>
-      <p class="sober" style="margin: 0">{{t.sommaire.lead_tel}}</p>
-      <p class="idline tw" style="font-size: 12.5px">{{{idlineTel}}}</p>
-      <div role="search" class="cherche tel">
-        <label><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg><span class="sr">{{t.sommaire.chercher}}</span><input type="search" value="{{q}}" onInput="{{onQ}}" placeholder="{{t.sommaire.chercher_exemple_tel}}"></label>
-      </div>
-  </sc-if>
+<div class="{{th}} va home">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-r" aria-hidden="true"></i>{{t.accueil.kind}}</span>
+      <h1 class="sr">{{title}}</h1><div class="name" aria-hidden="true"><sc-for list="{{letters}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
+      <p class="lead">{{{lead}}}</p>
+      <div class="bigsearch" role="search"><span class="ico-s" aria-hidden="true"></span><label class="sr" for="acc-q">{{t.sommaire.chercher}}</label><span class="phw"><input id="acc-q" class="ph" type="search" value="{{q}}" onInput="{{onQ}}" onKeyDown="{{onKey}}" placeholder="{{t.accueil.chercher_exemple}}"><span class="{{phx}}" aria-hidden="true">{{t.accueil.chercher_exemple}}</span></span><button type="button" class="btn pri" onClick="{{chercher}}">{{t.accueil.chercher}}</button></div>
+      <p class="tries"><span>{{t.accueil.essayer}}</span><sc-for list="{{essais}}" as="e"><a class="chip t" href="{{e.href}}" onClick="{{e.pick}}">{{e.l}}</a></sc-for><button type="button" class="near" onClick="{{autour}}">{{t.accueil.autour}}</button></p>
+      <sc-if value="{{autourEtat}}"><p class="note" role="status">{{autourEtat}}</p></sc-if>
+    </div>
+  </section>
+
   <section class="resultats" aria-label="{{t.sommaire.resultats}}" aria-live="polite">
-    <sc-if value="{{cherche}}"><p class="tw etat">{{t.sommaire.recherche_en_cours}}</p></sc-if>
-    <sc-if value="{{aucun}}"><p class="tw etat">{{aucun}}</p></sc-if>
+    <sc-if value="{{cherche}}"><p class="note">{{t.sommaire.recherche_en_cours}}</p></sc-if>
+    <sc-if value="{{aucun}}"><p class="note">{{aucun}}</p></sc-if>
     <sc-if value="{{indispo}}">
-      <p class="tw etat">{{t.sommaire.indisponible}}</p>
-      <p class="sober deps-indispo"><sc-for list="{{depsIndispo}}" as="d"><span>{{{d}}}</span></sc-for></p>
+      <p class="note">{{t.sommaire.indisponible}}</p>
+      <p class="note"><sc-for list="{{depsIndispo}}" as="d"><span>{{{d}}} </span></sc-for></p>
     </sc-if>
     <sc-if value="{{hasRes}}">
       <div class="res">
         <sc-for list="{{res}}" as="g">
-          <div class="groupe">
-            <span class="stk" style="{{g.c}}; align-self: flex-start; margin-bottom: 6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{g.i}}"></path></svg>{{g.l}}</span>
-            <sc-for list="{{g.rows}}" as="r"><div class="rrow r">{{{r.lien}}}<span class="tw">{{r.meta}}</span></div></sc-for>
-            <sc-if value="{{g.plus}}"><a class="tout tw" href="{{g.tout}}">{{g.plus}}</a></sc-if>
+          <div class="card groupe">
+            <h2 class="k">{{g.l}}</h2>
+            <ul class="top"><sc-for list="{{g.rows}}" as="r"><li><span>{{{r.lien}}}</span><span class="rf">{{r.meta}}</span></li></sc-for></ul>
+            <sc-if value="{{g.plus}}"><a class="go" href="{{g.tout}}">{{g.plus}}</a></sc-if>
           </div>
         </sc-for>
       </div>
     </sc-if>
   </section>
-  <sc-if value="{{wide}}">
 
-      <div class="sec">
-        <h2 class="h2">{{t.sommaire.fiches}}</h2>
-        <div class="fams">
-          <sc-for list="{{fams}}" as="f">
-            <div style="{{f.card}}">
-              <span class="stk big" style="{{f.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.i}}"></path></svg>{{f.l}}</span>
-              <p class="sober" style="margin: 4px 0 0; color: var(--muted); font-size: 14.5px">{{f.d}}</p>
-              <ul style="list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--line)">
-                <sc-for list="{{f.rows}}" as="r">
-                  <li class="r" style="border-bottom: 1px solid var(--rule)"><a class="rl" href="{{r.href}}" style="display: flex; align-items: center; min-height: 40px; gap: 4px"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span><span style="flex: 1">{{r.l}}</span><span style="font: 900 20px/1 Archivo, sans-serif; font-stretch: 62%">{{r.n}}</span><span aria-hidden="true" style="margin-left: 6px">→</span></a></li>
-                </sc-for>
-              </ul>
-            </div>
-          </sc-for>
-        </div>
-      </div>
-
-      <div class="sec">
-        <div style="display: flex; align-items: center; justify-content: space-between"><h2 class="h2">{{t.sommaire.lire}}</h2><a href="/registre/glossaire" class="tw" style="font-size: 14px">{{t.sommaire.glossaire}}</a></div>
-        <div style="display: flex; flex-direction: column; gap: 0; border-top: 2px solid var(--line)">
-          <sc-for list="{{phrases}}" as="p">
-            <p class="phrase">
-              <span class="tw" style="font-size: 14px; color: var(--muted); width: 120px">{{p.k}}</span>
-              <sc-for list="{{p.parts}}" as="x"><sc-if value="{{x.isT}}"><span class="nw"><a href="{{x.href}}" class="stk" style="{{x.c}}; text-decoration: none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{x.i}}"></path></svg>{{x.l}}</a>{{x.apres}}</span></sc-if><sc-if value="{{x.isW}}"><span>{{x.w}}</span></sc-if></sc-for>
-            </p>
-          </sc-for>
-        </div>
-      </div>
-
-      <div class="sec">
-        <div class="strip" style="flex-direction: row; align-items: center; gap: 24px; height: auto; min-height: 58px; flex-wrap: wrap">
-          <span><b>{{maj}}</b>{{{jusqu}}}</span>
-          <a href="/registre/couverture">{{t.sommaire.couverture}}</a>
-          <a href="/registre/couverture#non-lus">{{nonLus}}</a>
-        </div>
-      </div>
-  </sc-if>
-
-  <sc-if value="{{tel}}">
-      <h2 class="h2" style="font-size: 24px; margin-top: 10px">{{t.sommaire.fiches_tel}}</h2>
-      <sc-for list="{{fams}}" as="f">
-        <div class="tfam" style="{{f.cardTel}}">
-          <span class="stk" style="{{f.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.i}}"></path></svg>{{f.l}}</span>
-          <div><sc-for list="{{f.rows}}" as="r"><div class="r"><a class="rl trow" href="{{r.href}}"><span class="mini" style="{{r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.i}}"></path></svg></span>{{r.l}}<b>{{r.n}}</b><span aria-hidden="true">→</span></a></div></sc-for></div>
-        </div>
-      </sc-for>
-      <h2 class="h2" style="font-size: 24px; margin-top: 10px">{{t.sommaire.lire}}</h2>
-      <p class="sober phrase-tel"><sc-for list="{{phraseTel}}" as="x"><sc-if value="{{x.isT}}"><span class="nw"><a href="{{x.href}}" class="stk" style="{{x.c}}; text-decoration: none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{x.i}}"></path></svg>{{x.l}}</a>{{x.apres}}</span></sc-if><sc-if value="{{x.isW}}"><span>{{x.w}}</span></sc-if></sc-for></p>
-      <a href="/registre/glossaire" style="align-self: flex-start">{{t.sommaire.lire_suite}}</a>
-      <div class="strip" style="height: auto; margin-top: 8px; font-size: 13.5px"><b>{{maj}}</b><a href="/registre/couverture#non-lus">{{nonLus}}</a></div>
-  </sc-if>
+  <div class="figs">
+    <sc-for list="{{figs}}" as="f"><a class="fig" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><span class="rk"><span>{{f.r}}</span></span><span class="sr">{{f.tip}}</span></a></sc-for>
   </div>
+
+  <div class="body"><main>
+    <section class="sec"><h2><span class="num" aria-hidden="true">→</span>{{t.accueil.commencer}}</h2>
+      <div class="entries">
+        <sc-for list="{{entrees}}" as="e">
+          <a class="{{e.cls}}" href="{{e.href}}"><b>{{e.l}}</b><span>{{e.d}}</span><i class="go">{{e.go}}</i></a>
+        </sc-for>
+      </div>
+    </section>
+
+    <section class="sec"><h2><span class="num" aria-hidden="true">●</span>{{t.accueil.semaine}}</h2>
+      <div class="row2 wide wk">
+        <div class="{{recents.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{recents.r.exp}}" aria-controls="{{recents.r.id}}" onClick="{{recents.r.basculer}}"><span>{{recents.r.titre}}<small>{{recents.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{recents.r.id}}">
+            <div class="ch-h"><h3 class="k">{{t.accueil.derniers}}</h3><div class="seg-ctl" role="group" aria-label="{{t.accueil.derniers}}"><sc-for list="{{recents.onglets}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
+            <table class="docs"><caption class="sr">{{t.accueil.derniers}}</caption><tbody>
+              <sc-for list="{{recents.rows}}" as="r"><tr onClick="{{r.ouvrir}}"><td class="nw">{{r.date}}<sc-if value="{{r.dw}}"><small class="dw">{{r.dw}}</small></sc-if></td><td><span class="dk">{{r.dk}}</span></td><td class="lieu">{{{r.lieu}}}<span class="rf">{{r.ref}}</span></td><td><a class="ob" href="{{r.href}}">{{r.objet}}</a></td></tr></sc-for>
+            </tbody></table>
+            <sc-if value="{{recents.vide}}"><p class="note">{{t.accueil.derniers_vide}}</p></sc-if>
+            <div class="rowa"><a class="go" href="{{recents.tout}}">{{t.accueil.derniers_tous}}</a></div>
+          </div>
+        </div>
+        <div class="card tool"><span class="tag">{{t.accueil.drones_tag}}</span><h3>{{t.accueil.avant_vol}}</h3>
+          <sc-if value="{{vol.nonLu}}"><p><span class="state">{{t.liste.non_lu}}</span></p><p class="note">{{t.accueil.avant_vol_non_lu}}</p></sc-if>
+          <sc-if value="{{vol.lu}}">
+            <p>{{{vol.phrase}}}</p>
+            <div class="sbar" style="height: 26px"><sc-for list="{{vol.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}"><b>{{x.l}}</b></span></sc-for></div>
+            <div class="sleg"><sc-for list="{{vol.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i><span class="lt">{{x.leg}}</span></span></sc-for></div>
+            <sc-if value="{{vol.ailleurs}}"><p class="note">{{t.accueil.avant_vol_ailleurs}}</p></sc-if>
+            <p class="note">{{t.accueil.avant_vol_note}}</p>
+          </sc-if>
+          <a class="go" href="/registre/arretes?disp=dr">{{t.accueil.vols_venir}}</a></div>
+      </div>
+    </section>
+
+    <section class="sec"><h2><span class="num" aria-hidden="true">€</span>{{t.accueil.france}}</h2>
+      <div class="row2 wide">
+        <div class="card">
+          <div class="ch-h"><h3 class="k">{{carte.titre}}</h3><div class="seg-ctl" role="group" aria-label="{{t.accueil.carte_montrer}}"><sc-for list="{{carte.onglets}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
+          <sc-if value="{{carte.attente}}"><p class="note" role="status">{{carte.attente}}</p></sc-if>
+          <sc-if value="{{carte.pret}}">
+            <div class="mapwrap">
+              <div class="zw">
+                <svg class="fr" viewBox="{{carte.vb}}" width="{{carte.w}}" height="{{carte.h}}" role="group" aria-label="{{carte.titre}}">
+                  <sc-for list="{{carte.deps}}" as="d"><path class="{{d.cls}}" d="{{d.d}}" tabindex="0" role="link" aria-label="{{d.bh}}" data-bh="{{d.bh}}" data-bl="{{d.bl}}" data-bc="{{d.bc}}" data-go="{{d.go}}"></path></sc-for>
+                  <sc-for list="{{carte.etiquettes}}" as="x"><text class="ml" x="{{x.x}}" y="{{x.y}}" text-anchor="middle">{{x.l}}</text></sc-for>
+                </svg>
+                <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+              </div>
+              <div class="mleg"><sc-for list="{{carte.leg}}" as="l"><span><i class="{{l.cls}}" aria-hidden="true"></i>{{l.l}}</span></sc-for><span class="hint">{{carte.survol}}</span><span class="hint">{{{carte.outremer}}}</span><span class="hint">{{carte.attribution}}</span></div>
+            </div>
+          </sc-if>
+        </div>
+        <div class="{{gros.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{gros.r.exp}}" aria-controls="{{gros.r.id}}" onClick="{{gros.r.basculer}}"><span>{{gros.r.titre}}<small>{{gros.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{gros.r.id}}">
+            <h3 class="k">{{t.accueil.gros}}</h3>
+            <ol class="top big"><sc-for list="{{gros.rows}}" as="g"><li><a class="gct" href="{{g.href}}" aria-label="{{g.aide}}"><span class="yr">{{g.an}}</span><b>{{g.m}}</b></a><div>{{{g.qui}}}<span>{{{g.ligne}}}</span></div></li></sc-for></ol>
+            <p class="note">{{t.accueil.gros_note}}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec"><h2><span class="num" aria-hidden="true">?</span>{{t.accueil.comment}}</h2>
+      <div class="how3">
+        <sc-for list="{{etapes}}" as="e"><div class="card"><b class="h">{{e.h}}</b><p>{{e.p}}</p></div></sc-for>
+      </div>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <ul class="cov"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b> · {{s.d}}</li></sc-for></ul>
+          <p class="note">{{t.accueil.donnees_perso}} <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a> · <a class="go" href="/registre/couverture">{{t.accueil.donnees}}</a> · <a class="go" href="{{codeHref}}">{{t.accueil.code}}</a> · <span>{{maj}}</span></p>
+        </div>
+      </div>
+    </section>
+  </main></div>
 </div>

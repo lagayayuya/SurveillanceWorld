@@ -389,7 +389,8 @@ try {
     const back = page.locator("#registre .mback");
     const first = (await back.textContent())?.trim();
     // a section of the commune (its tabs), then another fiche (its département, in the head)
-    const tab = page.locator("#registre .band nav a[href*='#']").nth(2);
+    // theme A's table of contents (board Lyon-A-theme-actuel), its third section
+    const tab = page.locator("#registre .toc a[href^='#']").nth(2);
     const section = new URL(await tab.evaluate((a) => a.href)).hash;
     await tab.click();
     await page.waitForTimeout(800);
@@ -507,7 +508,8 @@ try {
       await page.waitForTimeout(1500);
       await drawn(page);
     };
-    // every list: its title, its rail row and its breadcrumb's last step say one name
+    // every list: its title, its level's tab (« Afficher », theme A) and its breadcrumb's last step
+    // say one name
     const lists = [];
     for (const path of [
       "/registre/communes",
@@ -522,17 +524,22 @@ try {
       await go(path);
       const got = await page.evaluate(() => ({
         title: document.querySelector("#registre .v-liste h1")?.textContent.trim(),
-        rail: document.querySelector("#registre .v-liste .ri.on")?.textContent.trim(),
+        rail: document
+          .querySelector('#registre .v-liste .lvl [aria-current="page"]')
+          ?.textContent.trim(),
         here: document.querySelector("#registre .mtop .crumbs .here")?.textContent.trim(),
       }));
       lists.push({ path, ...got });
     }
+    // the companies have no levels (board Liste-Entreprises-A)
+    const un = (x) =>
+      x.title &&
+      x.here === x.title &&
+      (x.path.endsWith("entreprises") ? !x.rail : x.rail === x.title);
     check(
-      "tree: each list's title is its rail row's name and its breadcrumb's step (« Titulaires », « Transports »)",
-      lists.every((x) => x.title && x.rail?.startsWith(x.title) && x.here === x.title),
-      JSON.stringify(
-        lists.filter((x) => !(x.title && x.rail?.startsWith(x.title) && x.here === x.title)),
-      ),
+      "tree: each list's title is its level's tab and its breadcrumb's step (« Entreprises », « Transports »)",
+      lists.every(un),
+      JSON.stringify(lists.filter((x) => !un(x))),
     );
     // a fiche: Registre › its list (reopening on its row) › the fiche; under a commune, the commune
     const want = [
@@ -590,14 +597,14 @@ try {
       sous.length === 4 && sous[1] === "Communes" && sous[2] === nomCommune,
       JSON.stringify({ nomCommune, sous }),
     );
-    // Drones et algorithmes is a door, not a section; the summary and a département open the
-    // decrees on their drones
+    // theme A (lot 2): « Drones » a section of the fiche, « Vue 3D ↗ » its door to the live map;
+    // the summary and a département open the decrees on their drones
     await go("/registre/commune/69290");
     const band = await page.evaluate(() => ({
-      secs: [...document.querySelectorAll("#registre .band nav a")].map((a) =>
+      secs: [...document.querySelectorAll("#registre .toc a[href^='#']")].map((a) =>
         a.textContent.trim(),
       ),
-      door: document.querySelector('#registre .band a.bporte[href$="/carte"]')?.textContent.trim(),
+      door: document.querySelector('#registre .toc a.t3d[href*="/carte"]')?.textContent.trim(),
     }));
     await go("/registre/");
     const sommaire = await page.evaluate(
@@ -605,12 +612,16 @@ try {
     );
     await go("/registre/departement/69");
     const dep = await page.evaluate(
-      () => document.querySelector("#registre .band a.bporte")?.getAttribute("href") ?? null,
+      // theme A (lot 3): the département's drone decrees, a link of its section 4
+      () =>
+        document
+          .querySelector('#registre a[href="/registre/arretes?dep=69&disp=dr"]')
+          ?.getAttribute("href") ?? null,
     );
     check(
-      "tree: « Drones et algorithmes » a door of the band, not a section; the summary's and the Rhône's open the drone decrees",
-      !band.secs.some((x) => /drones/i.test(x)) &&
-        /drones/i.test(band.door ?? "") &&
+      "tree: the commune's table of contents and its « Vue 3D ↗ » door to the live map; the summary's and the Rhône's open the drone decrees",
+      band.secs.length > 2 &&
+        /3D/.test(band.door ?? "") &&
         sommaire &&
         dep === "/registre/arretes?dep=69&disp=dr",
       JSON.stringify({ band, sommaire, dep }),
@@ -619,7 +630,7 @@ try {
     await go("/registre/communes?ligne=69290");
     await page.waitForTimeout(800);
     const row = await page.evaluate(() => {
-      const tr = document.querySelector("#registre .v-liste tr.on");
+      const tr = document.querySelector("#registre .v-liste tr.me");
       const r = tr?.getBoundingClientRect();
       return {
         name: tr?.textContent.replace(/\s+/g, " ").trim().slice(0, 30),
@@ -635,9 +646,10 @@ try {
     await context.close();
   }
 
-  // --- the lists (v2.3 point 5): one « Départements » menu, one « Classer par », the panel ---
+  // --- the lists (theme A, board Liste-Communes-A): « Département ▾ », « Classer par », the order's
+  // column marked; every size (the board's default, 20 000 to 100 000, lifted) ---
   {
-    const { context, page } = await visit("/registre/communes");
+    const { context, page } = await visit("/registre/communes?taille=toutes");
     await drawn(page);
     const buttons = await page.locator("#registre .v-liste .tools .key").count();
     await page.click("#registre .v-liste .dancre.dep > button");
@@ -650,7 +662,7 @@ try {
     const menu = await page.evaluate(() => ({
       url: location.search,
       open: !!document.querySelector("#registre .v-liste .dmenu"),
-      chips: [...document.querySelectorAll("#registre .v-liste .dchip")].map((x) =>
+      chips: [...document.querySelectorAll("#registre .v-liste .achips.large .chip")].map((x) =>
         x.textContent.trim(),
       ),
       focus: document.activeElement?.closest(".dancre")?.className,
@@ -659,34 +671,38 @@ try {
       "lists: one « Départements » button, its menu (every département with rows), chosen ones as chips, Escape back to the button",
       buttons === 0 &&
         options > 90 &&
-        menu.url === "?dep=69" &&
+        /[?&]dep=69(&|$)/.test(menu.url) &&
         !menu.open &&
         menu.chips.length === 1 &&
         /Rhône/.test(menu.chips[0]) &&
         /dep/.test(menu.focus ?? ""),
       JSON.stringify({ buttons, options, menu }),
     );
-    // the pointer away first: the menu closed over the rows, it may be on one already
-    await page.mouse.move(5, 5);
-    await page.hover("#registre .v-liste tbody tr >> nth=1", { force: true });
-    await page.waitForTimeout(300);
-    const panel = await page.evaluate(() => ({
-      tiles: document.querySelectorAll("#registre .v-liste .panel .ptile").length,
-      ouvrir: document.querySelector("#registre .v-liste .panel .pouvrir")?.getAttribute("href"),
-      keys: !!document.querySelector("#registre .v-liste .panel .pclavier"),
+    // the order's column marked in its head and its cells; « Classer par » says it pressed
+    const ordre = await page.evaluate(() => ({
+      head: document.querySelector("#registre .v-liste th.srt")?.textContent.trim(),
+      cells: document.querySelectorAll("#registre .v-liste tbody td.srt").length,
+      rows: document.querySelectorAll("#registre .v-liste tbody tr").length,
+      pressed: document
+        .querySelector('#registre .v-liste .ctl2 .seg-ctl [aria-pressed="true"]')
+        ?.textContent.trim(),
     }));
     check(
-      "lists: the hovered row's panel, its five figures, « Ouvrir la fiche », the keys' line",
-      panel.tiles === 5 && /^\/registre\/commune\//.test(panel.ouvrir ?? "") && panel.keys,
-      JSON.stringify(panel),
+      "lists: by cameras for 1 000 inhabitants, its column marked in every row, the button pressed",
+      /1.000/.test(ordre.head ?? "") &&
+        ordre.cells === ordre.rows &&
+        ordre.rows > 0 &&
+        /1.000/.test(ordre.pressed ?? ""),
+      JSON.stringify(ordre),
     );
     await context.close();
   }
 
   // --- the band follows the right section (v2.2 point 4): clicked, marked at once and after its
-  // scroll; scrolled, the one whose title has passed under the stuck band ---
+  // scroll; scrolled, the one whose title has passed under the stuck band (a v2 fiche: an
+  // intercommunality's, the département's being theme A since lot 3) ---
   {
-    const { context, page } = await visit(`/registre/commune/${INSEE}`);
+    const { context, page } = await visit("/registre/departement/69?ic=200046977");
     await drawn(page);
     await page.waitForTimeout(800);
     const secs = await page.evaluate(() =>
@@ -742,8 +758,8 @@ try {
     await context.close();
   }
 
-  // --- accessibility (v2.3 point 9): no aria-selected outside a listbox, a tab list or a grid; the
-  // focus leaving a list's table takes its row out of the panel; a key's focus visible ---
+  // --- accessibility (v2.3 point 9): no aria-selected outside a listbox, a tab list or a grid; a
+  // key's focus visible ---
   {
     const { context, page } = await visit(`/registre/commune/${INSEE}`);
     await drawn(page);
@@ -758,27 +774,10 @@ try {
     await page.goto(`${APP}/registre/communes`);
     await drawn(page);
     const surListe = await orphelins();
-    // the keyboard into the table's second row, then out of it: the panel shows that row, then
-    // its rest again (v2.4: the list's first row, no longer an empty panel)
-    const titre = () =>
-      page.evaluate(
-        () => document.querySelector("#registre .v-liste .panel strong")?.textContent.trim() ?? "",
-      );
-    const noms = await page.evaluate(() =>
-      [...document.querySelectorAll("#registre .v-liste tbody tr")]
-        .slice(0, 2)
-        .map((r) => r.querySelector("a")?.textContent.trim() ?? ""),
-    );
-    await page.locator("#registre .v-liste tbody tr").nth(1).locator("a").first().focus();
-    await page.waitForTimeout(300);
-    const dedans = (await titre()) === noms[1] ? 1 : 0;
-    await page.locator("#registre .v-liste .pied button").first().focus();
-    await page.waitForTimeout(300);
-    const dehors = (await titre()) === noms[0] ? 0 : 1;
     // a key focused by the keyboard shows it (a ring of 2 px or more, solid or dashed: WebKit's Tab
     // lands on another control than Chromium's, each with its own ring)
     await page.keyboard.press("Shift+Tab");
-    await page.locator("#registre .v-liste .dbtn").first().focus();
+    await page.locator("#registre .v-liste .ctl2 .seg-ctl button").first().focus();
     await page.keyboard.press("Tab");
     await page.keyboard.press("Shift+Tab");
     const outline = await page.evaluate(() => {
@@ -787,13 +786,9 @@ try {
       return st ? `${st.outlineStyle} ${st.outlineWidth}` : "";
     });
     check(
-      "accessibility: no aria-selected out of a listbox, tabs or grid; Tab out of a list puts its panel back to its rest; a focused key shows it",
-      surFiche === 0 &&
-        surListe === 0 &&
-        dedans > 0 &&
-        dehors === 0 &&
-        /^(solid|dashed) [2-9]px/.test(outline),
-      JSON.stringify({ surFiche, surListe, dedans, dehors, noms, outline }),
+      "accessibility: no aria-selected out of a listbox, tabs or grid; a focused key shows it",
+      surFiche === 0 && surListe === 0 && /^(solid|dashed) [2-9]px/.test(outline),
+      JSON.stringify({ surFiche, surListe, outline }),
     );
     await context.close();
   }
@@ -975,8 +970,10 @@ try {
           document.querySelector("#registre #vue").append(a);
         }, insee);
         await page.click("#smoke-aller");
-        await page.waitForSelector('#registre a.bporte[href$="/carte"]', { timeout: 20000 });
-        await page.click('#registre a.bporte[href$="/carte"]');
+        await page.waitForSelector('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]', {
+          timeout: 20000,
+        });
+        await page.click('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]');
         await framed(insee, "site");
       }
       await context.close();
@@ -1011,7 +1008,7 @@ try {
     await page.waitForTimeout(1500);
     const moves = [];
     for (const go of [
-      () => page.locator('#registre a.bporte[href$="/carte"]').first().tap(),
+      () => page.locator('#registre :is(a.bporte, .toc a.t3d)[href*="/carte"]').first().tap(),
       () => page.goBack(),
     ]) {
       await page.evaluate(() => {

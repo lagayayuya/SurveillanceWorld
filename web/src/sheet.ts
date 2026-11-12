@@ -80,6 +80,9 @@ export type SheetOptions = {
   /** The camera's history (history.ts historySlot, lot U): last in the body, filled once
    * the API has answered. */
   history?: HTMLElement;
+  /** « Combien en manque-t-il ? » (board 12, gap.ts): a slot the page fills once it knows the
+   * camera's commune (main.ts cameraGap); after the participation's buttons. */
+  gap?: HTMLElement;
 };
 
 function el(tag: string, attrs: Record<string, string> = {}, text?: string): HTMLElement {
@@ -493,6 +496,7 @@ export function renderSheet(frame: HTMLElement, p: CameraProps, opts: SheetOptio
     parts: {
       ...{ picto, grab, close, back, actions: opts.actions, slots: opts.slots, share },
       history: opts.history,
+      gap: opts.gap,
     },
   });
 }

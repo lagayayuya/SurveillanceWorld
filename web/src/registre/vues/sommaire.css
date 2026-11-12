@@ -1,150 +1,333 @@
-/* The register's summary (V2-Sommaire, V2-Tel-Sommaire): the boards' inline styles of the search,
-   its results, the families and « Comment lire le registre », named here once. */
-.rg .v-sommaire .cherche label {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 62px;
-  margin-top: 22px;
-  padding: 0 18px;
-  border: 3px solid var(--line);
-  background: var(--bg-2);
-  box-shadow: 4px 4px 0 #ff48b0;
+/* The register's home (board Accueil-Registre-A and its phone and dark variants): the board's own
+   rules (.home, .bigsearch, .tries, .entries, .wk, .fr, .top.big, .how3), on theme A's components
+   (socle-a.css) and the site's tokens. Its four entries (Ju, 07/11: Signaux and Missions later) sit
+   in one row of four, as the four figures over them. */
+.rg .va.home .hero {
+  padding-top: 40px;
 }
-.rg .v-sommaire .cherche input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--fg);
-  font:
-    500 20px Archivo,
-    sans-serif;
-  outline-offset: 4px;
+.rg .va.home .cut {
+  font-size: 64px;
 }
-.rg .v-sommaire .cherche.tel label {
-  gap: 8px;
-  height: 50px;
-  margin-top: 0;
-  padding: 0 12px;
-  border-width: 2.5px;
-  box-shadow: 3px 3px 0 #ff48b0;
+.rg .va.home .lead {
+  font-size: 22px;
+  max-width: 980px;
 }
-.rg .v-sommaire .cherche.tel input {
-  font-size: 16px;
-}
-.rg .v-sommaire .res {
+.rg .va.home .resultats .res {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: 10px;
+  /* two columns at most on a wide screen, one on a phone (Ju 10/11: four were too narrow, a name
+     cut word by word) */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 16px;
+  padding: 16px 40px 0;
 }
-.rg .v-sommaire .groupe {
-  border: 2px solid var(--line);
-  background: var(--bg-2);
-  box-shadow: 3px 3px 0 var(--reg-shadow-ticket);
-  padding: 10px 12px;
+/* a result: its name on its own line, what it is under it (socle-a's `.top li` is a grid of three
+   columns, the name squeezed beside its line) */
+.rg .va.home .resultats .res .top li {
+  display: block;
+  min-width: 0;
+}
+.rg .va.home .resultats .res .top li > span:first-child {
+  display: block;
+}
+.rg .va.home .resultats > .note {
+  padding: 0 40px;
+}
+.rg .va.home .rf {
+  display: block;
+  margin-top: 3px;
+  font:
+    400 12px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va .entries {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+.rg .va .entry {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  min-width: 0;
+  gap: 6px;
+  min-height: 150px;
+  text-decoration: none;
 }
-.rg .v-sommaire .rrow {
+.rg .va .entry b {
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 70%;
+  text-transform: uppercase;
+}
+.rg .va .entry span {
+  font-size: 15.5px;
+}
+.rg .va .entry .go {
+  margin-top: auto;
+}
+.rg .va .entry.c-pink {
+  background: var(--type-registre);
+}
+.rg .va .entry.c-blue {
+  background: var(--type-document);
+}
+.rg .va .entry.c-lav {
+  background: var(--type-entreprise);
+}
+.rg .va .entry.c-yel {
+  background: var(--type-territoire);
+}
+.rg .va .entry:not(.c-wht) {
+  color: var(--on-accent);
+}
+.rg .va a.entry:hover,
+.rg .va a.entry:focus-visible {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--line);
+}
+.rg .va .rowa {
   display: flex;
-  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 0 10px;
-  min-height: 30px;
+  margin-top: 10px;
 }
-.rg .v-sommaire .rrow a {
-  min-width: 0;
-  flex: 0 1 auto;
+.rg .va .rowa .go {
+  margin-top: 0;
 }
-/* a long name (a document's object) takes the line, its few words go under it, on the right */
-.rg .v-sommaire .rrow .tw {
-  margin-left: auto;
-  font-weight: 400;
-  color: var(--muted);
-  font-size: 13px;
-  text-align: right;
+.rg .va.home .dk {
+  display: inline-block;
+  padding: 2px 7px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  font-family: Archivo, sans-serif;
+  font-size: 12.5px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 85%;
+  text-transform: uppercase;
   white-space: nowrap;
 }
-.rg .v-sommaire .nw {
-  display: inline-flex;
-  align-items: center;
-  white-space: nowrap;
+.rg .va.home .fr {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
 }
-.rg .v-sommaire .tout {
-  align-self: flex-end;
-  font-size: 13px;
-  margin-top: 4px;
+.rg .va .fr path {
+  stroke: var(--line);
+  stroke-width: 0.7;
+  cursor: pointer;
 }
-.rg .v-sommaire .etat {
-  margin: 10px 0 0;
-  font-size: 14px;
-  color: var(--muted);
+.rg .va .fr path:hover,
+.rg .va .fr path.hl,
+.rg .va .fr path:focus-visible {
+  stroke: var(--type-registre);
+  stroke-width: 2.5;
 }
-.rg .v-sommaire .deps-indispo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 8px 0 0;
-}
-.rg .v-sommaire .fams {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
+.rg .va.home .top.big li {
+  grid-template-columns: 1fr 50px 80px;
   align-items: start;
 }
-.rg .v-sommaire .phrase {
-  margin: 0;
-  padding: 16px 0;
-  border-bottom: 1px solid var(--rule);
-  font:
-    500 19px / 2.1 Archivo,
-    sans-serif;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
+/* the contract's link, first in the row (a click on the row follows its first link), drawn in the
+   board's last two columns, the year and the amount */
+.rg .va.home .top.big li .gct {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: subgrid;
+  align-items: start;
+  color: inherit;
+  text-decoration: none;
 }
-/* a sticker is a link to its type's list: it keeps the sticker's ink, not a link's */
-.rg .th.v-sommaire a.stk {
-  color: #111;
+.rg .va.home .top.big li > div {
+  grid-column: 1;
+  grid-row: 1;
 }
-.rg .th.v-sommaire a.stk:hover,
-.rg .th.v-sommaire a.stk:focus-visible {
-  box-shadow: 3px 3px 0 var(--fg);
-}
-.rg .v-sommaire .phrase-tel {
-  margin: 0;
-  line-height: 2.2;
-}
-.rg .v-sommaire .phrase-tel {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 6px;
-}
-.rg .v-sommaire .phrase-tel .stk {
-  font-size: 11.5px;
-}
-.rg .v-sommaire .tfam > div {
+.rg .va.home .top.big li div {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
-.rg .v-sommaire .trow > span[aria-hidden] {
-  margin-left: 0;
+.rg .va.home .top.big li div span {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+.rg .va.home .yr {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  text-align: right;
+}
+.rg .va .how3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.rg .va .how3 .h {
+  display: block;
+  margin-bottom: 4px;
+  font-family: Archivo, sans-serif;
+  font-size: 22px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va .how3 p {
+  margin: 6px 0 0;
+}
+.rg .va.home .tool p {
+  margin: 6px 0;
+}
+.rg .va.home .wk {
+  grid-template-columns: 1.7fr 1fr;
+}
+.rg .va.home .nw {
+  white-space: nowrap;
+}
+/* the word that says which date it is, under the day (Ju 10/11) */
+.rg .va.home .nw .dw {
+  display: block;
+  font:
+    400 12px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+/* a latest document's place on one line (« Bouches-du-Rhône », never cut at its hyphen) and its
+   reference, as a number, never cut (« BOAMP 26-107520 »; recette 18): the objet takes the rest */
+.rg .va.home .wk .docs .lieu a,
+.rg .va.home .wk .docs .rf {
+  white-space: nowrap;
+}
+
 @media (max-width: 959px) {
-  .rg .v-sommaire .res {
+  .rg .va.home .cut {
+    font-size: 34px;
+  }
+  .rg .va.home .lead {
+    font-size: 16.5px;
+  }
+  .rg .va .how3,
+  .rg .va.home .wk {
+    grid-template-columns: 1fr;
+  }
+  .rg .va.home .resultats .res {
     grid-template-columns: minmax(0, 1fr);
-    margin-top: 0;
+    padding: 12px 16px 0;
+  }
+  .rg .va.home .resultats > .note {
+    padding: 0 16px;
+  }
+  /* the entries, compact: the title and the link */
+  .rg .va .entries {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .rg .va .entry {
+    min-height: 0;
+    padding: 10px 11px;
+  }
+  .rg .va .entry span {
+    display: none;
+  }
+  .rg .va .entry b {
+    font-size: 18px;
+  }
+  .rg .va .entry .go {
+    margin-top: 4px;
+    font-size: 12.5px;
+  }
+  .rg .va.home .docs td {
+    font-size: 14px;
   }
 }
-/* a family's rows: each one a row whose target is its list (cadre.css « rows », A2); the link
-   covers it already, the row takes the tint */
-.rg .v-sommaire .fams li.r:hover {
-  background: var(--soft);
+
+/* a recent document's objet, published whole, on two lines at most: the link to the document,
+   which a click anywhere on the row follows (recette 14), in the row's words */
+.rg .va.home .wk .docs .ob {
+  color: inherit;
+  text-decoration: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+/* the map in dark: the board's ramp (Accueil-Registre-A-sombre), the light's order — nothing in
+   the ground, then pale pink for little to deep magenta for much, as the 2026-10-06 rule wants
+   (« the darker, the more filled ») — its labels light on a dark halo (recette 09: the lighter-
+   the-more ramp of socle-a put the white labels on the palest pink) */
+[data-mode="dark"] .rg .va.home .q0 {
+  fill: var(--bg);
+  background: var(--bg);
+}
+[data-mode="dark"] .rg .va.home .q1 {
+  fill: #ffd1e6;
+  background: #ffd1e6;
+}
+[data-mode="dark"] .rg .va.home .q2 {
+  fill: #ff9ccb;
+  background: #ff9ccb;
+}
+[data-mode="dark"] .rg .va.home .q3 {
+  fill: #ff5fae;
+  background: #ff5fae;
+}
+[data-mode="dark"] .rg .va.home .q4 {
+  fill: #c4006c;
+  background: #c4006c;
+}
+[data-mode="dark"] .rg .va.home .fr .ml {
+  fill: var(--fg);
+  stroke: var(--bg);
+}
+
+/* the search's hint, whole on a phone (recette 13, the board's phone draws it on three lines): an
+   input never wraps, so its own placeholder is kept for assistive technology but not drawn, and
+   the same words lie under the field in a box that wraps and gives the field its height; hidden,
+   its height kept, as soon as a word is typed */
+.rg .va .bigsearch .phw {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  align-items: center;
+  font:
+    400 20px Archivo,
+    sans-serif;
+}
+.rg .va .bigsearch .phw > * {
+  grid-area: 1 / 1;
+}
+.rg .va .bigsearch .phw .ph {
+  width: 100%;
+  height: 100%;
+  font: inherit;
+}
+.rg .va .bigsearch .phw .ph::placeholder {
+  color: transparent;
+}
+.rg .va .bigsearch .phx {
+  color: var(--muted);
+  pointer-events: none;
+  line-height: 1.25;
+}
+.rg .va .bigsearch .phx.off {
+  visibility: hidden;
+}
+@media (max-width: 959px) {
+  .rg .va .bigsearch .phw {
+    font-size: 18px;
+  }
 }

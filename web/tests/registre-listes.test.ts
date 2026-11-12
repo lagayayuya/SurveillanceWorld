@@ -24,6 +24,7 @@ import {
   etapeListe,
   etatDe,
   grouper,
+  PAR_TYPE,
   type Listes,
   listeHref,
   nomListe,
@@ -48,9 +49,9 @@ const doc = (x: Partial<Evenement> & { id: string; t: string }): Evenement =>
  * name with its fiche's reference, as the build writes them (a sole trader none). */
 const L = {
   communes: {
-    "69001": { nom: "Alphaville", dep: "69", epci: "200000001", ref: "commune/69001" },
-    "69002": { nom: "Betaville", dep: "69", epci: "200000001", ref: "commune/69002" },
-    "91001": { nom: "Gammaville", dep: "91", epci: "200000002", ref: "commune/91001" },
+    "69001": { nom: "Alphaville", dep: "69", epci: "200000001", ref: "commune/69001", pop: 24000 },
+    "69002": { nom: "Betaville", dep: "69", epci: "200000001", ref: "commune/69002", pop: 3000 },
+    "91001": { nom: "Gammaville", dep: "91", epci: "200000002", ref: "commune/91001", pop: 120000 },
   },
   acheteurs: {
     "216900011": { nom: "Commune d'Alphaville", categorie: "commune", insee_siege: "69001", dep: "69", ref: "acheteur/216900011" },
@@ -88,7 +89,7 @@ const X = {
   maj: "2026-10-23",
   lignes: {
     communes: {
-      "69001": { docs: 4, con: 2, cam: 1, dr: 1, carte: 12 },
+      "69001": { docs: 4, con: 2, cam: 1, dr: 1, carte: 12, amt: 48000 },
       "69002": { docs: 2, con: 1, cam: 0, dr: 1, carte: null },
       "91001": { docs: 2, con: 1, cam: 0, dr: 0, carte: null },
     },
@@ -155,7 +156,8 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.equal(acme.v.n, 2);
   assert.equal(acme.v.amt, 6000);
   assert.equal(acme.v.cl, 2);
-  assert.deepEqual(acme.deps, ["69", "91"]);
+  assert.deepEqual(acme.f.dep, ["69", "91"]);
+  assert.equal(acme.v.nd, 2);
   assert.equal(acme.nom, "Acme Video");
 
   // an uncollected département's decree figures are « non lu » (v2.3), a mark of its own
@@ -163,10 +165,20 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.equal(alpha?.v.docs, 4);
   assert.equal(alpha?.v.dr, 1);
   assert.equal(alpha?.v.carte, 12);
+  // theme A: cameras for 1 000 inhabitants (12 for 24 000: 0,5), the commune's own money and per
+  // inhabitant (48 000 € for 24 000: 2 €), its size
+  assert.equal(alpha?.v.p1000, 0.5);
+  assert.equal(alpha?.v.eph, 2);
+  assert.deepEqual(alpha?.f.taille, ["20k"]);
+  assert.match(richText(alpha?.cells[1]), /^0,5/);
+  // no camera counted, no money of its own: no ratio (« — »), « aucun contrat… »
+  const beta = rangs(C, "communes").find((r) => r.id === "69002");
+  assert.equal(beta?.v.p1000, -1);
+  assert.match(richText(beta?.cells[2]), /aucun contrat de la commune elle-même/);
   const gamma = rangs(C, "communes").find((r) => r.id === "91001");
   assert.equal(gamma?.v.aut, -1);
-  assert.equal(richText(gamma?.cells[2]), "non lu");
-  assert.match(JSON.stringify(gamma?.cells[2]), /"cls":"nonlu"/);
+  assert.equal(richText(gamma?.cells[4]), "pas encore lus");
+  assert.match(JSON.stringify(gamma?.cells[4]), /"cls":"nonlu"/);
 
   // an intercommunality that buys has its name and its buyer's fiche; one that does not, its name
   // (the build's, from France's reference) and no link
@@ -188,9 +200,16 @@ test("each list of names' rows, by the old ranking's rules", () => {
   assert.deepEqual(rangs(C, "contrats"), []);
 });
 
-test("every name is a typed link, the pictogram alone; a name without its fiche is words", () => {
+test("every name is a link: theme A's communes and companies underlined in their type's colour, the others typed", () => {
+  // theme A (boards Liste-Communes-A, Liste-Entreprises-A): the name underlined, a commune in
+  // the territories' yellow (`com`), a company in the companies' lavender
+  for (const r of [...rangs(C, "communes"), ...rangs(C, "entreprises")]) {
+    const a = (r.lien as { a?: { cls: string; href: string } }).a;
+    assert.ok(a?.href, r.id);
+    assert.match(a.cls, /^ent( com)?$/);
+  }
   const docs = DOCS.map((e) => rangDocument(L, C, e));
-  for (const r of [...rangs(C, "communes"), ...rangs(C, "acheteurs"), ...rangs(C, "entreprises"), ...docs]) {
+  for (const r of [...rangs(C, "acheteurs"), ...docs]) {
     const a = (r.lien as { a?: { cls: string; c: string; i: string } }).a;
     assert.ok(a, r.id);
     assert.equal(a.cls, "rl");
@@ -223,22 +242,39 @@ test("a filter's counts leave out its own filter; the sort and the words", () =>
   assert.equal(q.list.length, 1);
   assert.equal(q.comptes.dep?.[""], 1);
   assert.equal(q.comptes.dep?.["91"], undefined);
-  // by amount, the largest first; by name, A first
+  // by amount, the largest first; by contracts, the most first (theme A's orders, no name order)
   const amt = appliquer(def, all, etatDe(def, { tri: "amt" })).list.map((r) => r.id);
   assert.deepEqual(amt, ["100000002", "100000001"]);
-  const nom = appliquer(def, all, etatDe(def, { tri: "nom" })).list.map((r) => r.id);
-  assert.deepEqual(nom, ["100000001", "100000002"]);
+  const n = appliquer(def, all, etatDe(def, { tri: "n" })).list.map((r) => r.id);
+  assert.deepEqual(n, ["100000001", "100000002"]);
 });
 
-test("« Avec arrêtés drones » keeps the communes and the départements that have some (v2.4)", () => {
+test("communes: by cameras per 1 000 inhabitants by default, a size, an intercommunality (theme A)", () => {
   const com = DEFS.communes;
-  const on = etatDe(com, { drones: "1" });
-  assert.deepEqual(on.f, { drones: "1" });
-  assert.equal(adresse(com, on), "/registre/communes?drones=1");
+  // the board's default: « 20 000 à 100 000 » on, lifted by « toutes » in the address
+  const e0 = etatDe(com, {});
+  assert.equal(e0.tri, "p1000");
+  assert.deepEqual(e0.f, { taille: "20k" });
+  assert.equal(adresse(com, e0), "/registre/communes");
+  assert.deepEqual(appliquer(com, rangs(C, "communes"), e0).list.map((r) => r.id), ["69001"]);
+  const toutes = etatDe(com, { taille: "toutes" });
+  assert.deepEqual(toutes.f, {});
+  assert.equal(adresse(com, toutes), "/registre/communes?taille=toutes");
+  assert.equal(appliquer(com, rangs(C, "communes"), toutes).list.length, 3);
+  const on = etatDe(com, { taille: "20k", epci: "200000001" });
+  assert.deepEqual(on.f, { taille: "20k", epci: "200000001" });
+  assert.equal(adresse(com, on), "/registre/communes?epci=200000001");
   const { list, comptes } = appliquer(com, rangs(C, "communes"), on);
-  // Alpha and Beta have drone decrees; Gamma's département is not read (its figure « non lu »)
-  assert.deepEqual(list.map((r) => r.id).sort(), ["69001", "69002"]);
-  assert.equal(comptes.drones?.["1"], 2);
+  assert.deepEqual(list.map((r) => r.id), ["69001"]);
+  // each size counted without the size chosen
+  assert.equal(comptes.taille?.["0"], 1);
+  // an unknown size, a malformed SIREN: dropped
+  assert.deepEqual(etatDe(com, { taille: "grand", epci: "12" }).f, {});
+  // companies by amount by default
+  assert.equal(etatDe(DEFS.entreprises, {}).tri, "amt");
+});
+
+test("« Avec arrêtés drones » keeps the départements that have some (v2.4)", () => {
   // a département has some when one of its communes has some
   const dep = DEFS.departements;
   const d = appliquer(dep, rangs(C, "departements"), etatDe(dep, { drones: "1" }));
@@ -247,7 +283,7 @@ test("« Avec arrêtés drones » keeps the communes and the départements that 
     ["69"],
   );
   // an unknown value is dropped
-  assert.deepEqual(etatDe(com, { drones: "oui" }).f, {});
+  assert.deepEqual(etatDe(dep, { drones: "oui" }).f, {});
 });
 
 test("a list of documents asks the API for its state, its counts the API's facets", () => {
@@ -281,20 +317,21 @@ test("the CSV of a list of documents is every page of its state", async () => {
 test("the state is in the address, and back", () => {
   const def = DEFS.entreprises;
   assert.equal(adresse(def, etatDe(def, {})), "/registre/entreprises");
-  const e = etatDe(def, { tri: "amt", ordre: "asc", dep: "69", q: "acme", inconnu: "x" });
-  assert.equal(adresse(def, e), "/registre/entreprises?tri=amt&ordre=asc&dep=69&q=acme");
+  const e = etatDe(def, { tri: "n", ordre: "asc", dep: "69", q: "acme", inconnu: "x" });
+  assert.equal(adresse(def, e), "/registre/entreprises?tri=n&ordre=asc&dep=69&q=acme");
   // a value the list does not know is dropped; every département of France is one
   assert.deepEqual(etatDe(def, { dep: "zz", tri: "foo", cat: "etat" }).f, {});
   assert.deepEqual(etatDe(def, { dep: "2A" }).f, { dep: "2A" });
   assert.deepEqual(etatDe(def, { dep: "33" }).f, { dep: "33" });
   assert.deepEqual(etatDe(DEFS.acheteurs, { cat: "etat" }).f, { cat: "etat" });
   // the list's own order needs no word in the address
-  assert.equal(adresse(def, etatDe(def, { tri: "y" })), "/registre/entreprises?tri=y");
+  assert.equal(adresse(def, etatDe(def, { tri: "amt" })), "/registre/entreprises");
+  assert.equal(adresse(def, etatDe(def, { tri: "cl" })), "/registre/entreprises?tri=cl");
 });
 
 test("the CSV is the list shown, its heads in the catalogue's words", () => {
   const def = DEFS.entreprises;
-  const { list } = appliquer(def, rangs(C, "entreprises"), etatDe(def, { tri: "nom" }));
+  const { list } = appliquer(def, rangs(C, "entreprises"), etatDe(def, { tri: "amt", ordre: "asc" }));
   const text = csv(def, list);
   const [head, first] = text.replace(/^﻿/, "").split("\r\n");
   assert.equal(head.split(",")[0], '"rang"');
@@ -346,6 +383,21 @@ test("the search: names by type, a commune whose name starts so first, each with
   assert.deepEqual(chercherNoms(C, "a"), []);
 });
 
+test("the search: five results of a type at most, with how many there are (Ju 10/11)", () => {
+  const res = Array.from({ length: 8 }, (_, i) => ({
+    type: "commune" as const,
+    id: String(69001 + i),
+    nom: `Ville ${i}`,
+    detail: "",
+    href: `/registre/commune/${69001 + i}`,
+  }));
+  const [g] = grouper(res, "ville");
+  assert.equal(PAR_TYPE, 5);
+  assert.equal(g.rows.length, 5);
+  assert.equal(g.n, 8);
+  assert.equal(g.tout, "/registre/communes?q=ville");
+});
+
 test("the search: the documents by kind, through the API; none when it does not answer", async () => {
   const asked: string[] = [];
   const groups = await chercherDocuments("alpha", C, 4, repond((u) => {
@@ -384,7 +436,7 @@ test("the summary says what the register covers, family by family, each départe
       { familles: ["arretes"], zone: ["69"] },
     ],
   };
-  assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
+  assert.equal(texte(cv), "Contrats et avis : toute la France. Arrêtés : Rhône.");
   assert.ok(JSON.stringify(couvertureLiee(cv)).includes("/registre/departement/69"));
   // the decrees outside the collected départements' own, and where they come from
   const hors = {
@@ -404,8 +456,8 @@ test("the summary says what the register covers, family by family, each départe
   };
   assert.equal(
     texte(hors),
-    "Contrats et avis : toute la France. Arrêtés : Rhône. S'y ajoutent 18 arrêtés d'autres " +
-      "départements (Bouches-du-Rhône, Isère, Paris) : d'une préfecture de zone, de la préfecture " +
+    "Contrats et avis : toute la France. Arrêtés : Rhône. S'y ajoutent 18 arrêtés d'autres " +
+      "départements (Bouches-du-Rhône, Isère, Paris) : d'une préfecture de zone, de la préfecture " +
       "d'un autre département ou relevés un à un, hors collecte.",
   );
   assert.ok(JSON.stringify(couvertureLiee(hors)).includes("/registre/departement/38"));
@@ -414,7 +466,8 @@ test("the summary says what the register covers, family by family, each départe
 });
 
 test("one name per type, the rail's: the list's title and its breadcrumb's step (v2.3)", () => {
-  assert.equal(nomListe("entreprises"), "Titulaires");
+  // theme A: « Entreprises » (boards Accueil, Liste-Entreprises), not v2.3's « Titulaires »
+  assert.equal(nomListe("entreprises"), "Entreprises");
   assert.equal(nomListe("acheteurs", "transports"), "Transports");
   assert.equal(nomListe("acheteurs", "autres"), "Santé, éducation…");
   assert.equal(nomListe("acheteurs"), "Acheteurs");
@@ -443,4 +496,85 @@ test("a busy search (503) is asked once again after its Retry-After (v2.3)", asy
   const got = await demander(new URLSearchParams("t=con"), doFetch);
   assert.equal(n, 2);
   assert.equal(got.total, 0);
+});
+
+test("a list of départements holds the real ones only (recette 04)", async () => {
+  const { vraiDepartement } = await import("../src/registre/vues/listes-outils.ts");
+  for (const d of ["01", "13", "2A", "2B", "69", "75", "95", "971", "976", "978", "987", "988"])
+    assert.ok(vraiDepartement(d), d);
+  for (const d of ["1", "6", "9", "20", "20A", "20B", "96", "97", "98", "99", "979", "990", ""])
+    assert.ok(!vraiDepartement(d), d);
+});
+
+test("a list's rows chosen for Comparer: four at most, the address Comparer reads (recette 08)", async () => {
+  const { basculer, comparable, comparerHref } = await import(
+    "../src/registre/vues/listes-outils.ts"
+  );
+  let ids: string[] = [];
+  for (const id of ["a", "b", "c", "d", "e"]) ids = basculer(ids, id);
+  assert.deepEqual(ids, ["a", "b", "c", "d"]);
+  assert.deepEqual(basculer(ids, "b"), ["a", "c", "d"]);
+  assert.equal(comparerHref("communes", ["69123", "69029"]), "/registre/comparer?communes=69123,69029");
+  assert.equal(comparerHref("entreprises", ["794108878"]), "/registre/comparer?entreprises=794108878");
+  assert.ok(comparable("communes") && comparable("entreprises") && !comparable("departements"));
+});
+
+test("an intercommunality's row leads to its département's page: its buyer's, else most communes' (recette 19)", async () => {
+  const { depEpci } = await import("../src/registre/vues/listes-outils.ts");
+  assert.equal(depEpci("13", ["84", "84"]), "13");
+  assert.equal(depEpci(null, ["84", "13", "13"]), "13");
+  assert.equal(depEpci(undefined, ["69", "01"]), "69");
+  assert.equal(depEpci(null, []), "");
+});
+
+test("a filter of one value is hidden, a column empty on every row too (Ju 10/11)", async () => {
+  const { filtreUtile, colonnesVides, celluleVide } = await import(
+    "../src/registre/vues/listes-outils.ts"
+  );
+  // « Vidéoprotection · 5 349 » beside « Tous · 5 349 »: nothing to choose
+  assert.equal(filtreUtile({ "": 5349, vp: 5349 }, ["vp", "dr"], false), false);
+  assert.equal(filtreUtile({ "": 9, vp: 5, dr: 4 }, ["vp", "dr"], false), true);
+  // chosen, it stays (to be taken off)
+  assert.equal(filtreUtile({ "": 5, vp: 5 }, ["vp", "dr"], true), true);
+  // the lists' « — » in its shapes: a string, a link-less item, a span
+  assert.ok(celluleVide("—"));
+  assert.ok(celluleVide(["—"]));
+  assert.ok(celluleVide([{ span: "—", cls: "v" }]));
+  assert.ok(celluleVide(""));
+  assert.ok(!celluleVide([{ a: { href: "/registre/commune/69123", text: "Lyon" } }]));
+  const rows = [
+    [["Lyon"], [""], "—"],
+    [["Mions"], ["—"], "2 drones"],
+  ];
+  assert.deepEqual([...colonnesVides(rows)], [1]);
+  assert.deepEqual([...colonnesVides([])], []);
+});
+
+test("each date says which it is; a drone act by its publication (Ju 10/11, 11/11)", async () => {
+  const { dateDite, cleDate, quelleDate } = await import("../src/registre/listes.ts");
+  const drone = doc({ id: "d1", t: "arrete_drone", date: "2026-11-09", publie: "2026-11-08" } as never);
+  assert.equal(dateDite(drone), "publié le 8\u00a0nov.\u00a02026 · vol le 9\u00a0nov.\u00a02026");
+  assert.equal(dateDite(drone, true), "publié le 8\u00a0nov.\u00a02026");
+  // the lists' and the API's order: its publication, not its flight
+  assert.equal(cleDate(drone), "2026-11-08");
+  const sansPub = doc({ id: "d2", t: "arrete_drone", date: "2026-11-18" });
+  assert.equal(quelleDate(sansPub), "vol");
+  assert.equal(cleDate(sansPub), "2026-11-18");
+  assert.equal(dateDite(doc({ id: "c", t: "attribution", date: "2026-11-03" })), "signé le 3\u00a0nov.\u00a02026");
+  assert.equal(dateDite(doc({ id: "a", t: "avis", date: "2026-11-08" })), "publié le 8\u00a0nov.\u00a02026");
+  assert.equal(dateDite(doc({ id: "k", t: "arrete", date: "2026-04-28" })), "daté du 28\u00a0avr.\u00a02026");
+  assert.equal(
+    dateDite(doc({ id: "k2", t: "arrete", date: "2026-04-28", provenance: "collecte" })),
+    "publié le 28\u00a0avr.\u00a02026",
+  );
+  assert.equal(
+    dateDite(doc({ id: "k3", t: "arrete", date: "2026-04-28", provenance: "zone" })),
+    "daté du 28\u00a0avr.\u00a02026",
+  );
+  // a decree whose publication is read: « publié le » that day
+  assert.equal(dateDite(doc({ id: "p", t: "arrete", date: "2026-04-28", publie: "2026-04-30" } as never)), "publié le 30\u00a0avr.\u00a02026");
+  assert.equal(dateDite(doc({ id: "s", t: "subvention_region", date: "2026-09-24" })), "attribuée le 24\u00a0sept.\u00a02026");
+  const an = doc({ id: "e", t: "subvention_etat", date: "2024-01-01", date_annee: true });
+  assert.equal(dateDite(an), "attribuée en 2024");
+  assert.equal(cleDate(an), "2024-00-00");
 });

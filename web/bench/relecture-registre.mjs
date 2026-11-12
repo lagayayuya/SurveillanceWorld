@@ -193,7 +193,14 @@ try {
           m("SIREN without a name", /\b(acheteur|entreprise|intercommunalité,?)\s+SIREN\b/i);
           m("« de » before a vowel", /\b[Dd]e (?=[AEIOUYÀÂÉÈÊËÎÏÔÖÛÜaeiouyàâéèêëîïôöûü])/);
           m("undefined / NaN / null / [object", /\b(undefined|NaN|null)\b|\[object/);
-          if (hors) m("a pilot's territory outside it", /Île-de-France|Bouches-du-Rhône/);
+          // a territory named as itself, a link to its own fiche (a ranking's row), is no sentence
+          // of the pilot's leaking out
+          if (hors) {
+            const c = x.cloneNode(true);
+            for (const a of c.querySelectorAll("a[href^='/registre/departement/']")) a.remove();
+            if (/Île-de-France|Bouches-du-Rhône/.test(c.textContent))
+              m("a pilot's territory outside it", /Île-de-France|Bouches-du-Rhône/);
+          }
           // a sentence: a block of more than five words that starts in lower case; a block that
           // opens on a label or a date (an element of its own: « mars 2024 », a sticker) is read
           // from the words after it

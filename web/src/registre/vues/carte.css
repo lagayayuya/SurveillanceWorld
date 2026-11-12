@@ -37,8 +37,28 @@
   outline-offset: -1.5px;
   box-sizing: border-box;
 }
+/* a volume's height (Ju 11/11, Lyon): a short and a tall block on one ground line */
+.rg .v-carte .leg i.sw-haut {
+  width: 16px;
+  height: 14px;
+  background:
+    linear-gradient(var(--type-document), var(--type-document)) left bottom / 6px 6px no-repeat,
+    linear-gradient(var(--type-document), var(--type-document)) right bottom / 6px 100% no-repeat;
+  border-bottom: 1.5px solid var(--fg);
+  box-sizing: border-box;
+}
 .rg .v-carte .leg .leg-in {
   padding-left: 23px;
+}
+/* a line of the legend on two lines (« Hachures sur toute la commune… »): its words beside the
+   swatch, not under it */
+.rg .v-carte .leg > span:has(> i) {
+  display: flex;
+  align-items: flex-start;
+}
+.rg .v-carte .leg > span > i {
+  flex: none;
+  margin-top: 3px;
 }
 .rg .v-carte .cd-titre {
   margin: 0;
@@ -58,6 +78,21 @@
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
+}
+/* the calendar's span (Ju, 09/11: 12 months, « Toute la période »), the board's .seg-ctl; before
+   it, a period chosen let go */
+.rg .v-carte .frise-h .cal-et {
+  margin-left: auto;
+  align-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.rg .v-carte .frise-h .seg-ctl button {
+  padding: 4px 10px;
+  font-size: 13px;
 }
 .rg .v-carte .frise-g {
   position: relative;
@@ -147,6 +182,9 @@
 .rg .v-carte .fl i.cal1 {
   background: color-mix(in srgb, var(--fg) 28%, transparent);
 }
+.rg .v-carte .fl i.cal2 {
+  background: color-mix(in srgb, var(--fg) 50%, transparent);
+}
 .rg .v-carte .fl i.cal3 {
   background: color-mix(in srgb, var(--fg) 72%, transparent);
 }
@@ -157,18 +195,51 @@
   border-color: var(--type-registre);
   border-width: 2px;
 }
+/* the day's line (Ju, 09/11): two lines high whatever the day, the rest cut « … » and whole in its
+   bubble (carte.ts sumTip, sumBulle); empty, it says what to do */
+.rg .v-carte .cal-sum-w {
+  font: inherit;
+}
+.rg .v-carte .cal-sum-t[data-tip]:is(:hover, :focus-visible)::after {
+  width: min(420px, 100%);
+}
+.rg .v-carte .cal-sum-t:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
 .rg .v-carte .cal-sum {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  height: 36px;
   margin: 8px 0 0;
   font:
-    400 13px / 1.35 "Special Elite",
+    400 13px / 18px "Special Elite",
     monospace;
+}
+.rg .v-carte .cal-sum.vide {
+  color: var(--muted);
 }
 .rg .v-carte .cal-sum b {
   font-family: Archivo, sans-serif;
   font-size: 15px;
+  line-height: 18px;
   font-weight: 900;
   font-stretch: 75%;
   text-transform: uppercase;
+}
+.rg .v-carte .cal-sum:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+/* folded, the band's words on one line */
+.rg .v-carte .frise-bande .tw {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* the phone's calendar: a month a row, scrolling within its box, the latest months on top */
 .rg .v-carte .frise-g.cal-tel {
@@ -188,6 +259,11 @@
   background: var(--accent-fill);
   color: var(--on-accent, #111);
 }
+/* registre.css paints a chosen row's cells (`.r[aria-current] > *`, var(--soft)): over this row's
+   pink they stood as dark boxes, their words unreadable (seen on 10/11, both modes, both widths) */
+.rg .v-carte .r.zrow[aria-current="true"] > * {
+  background: none;
+}
 .rg .v-carte .r.zrow[aria-current="true"] .zst {
   color: inherit;
 }
@@ -198,7 +274,8 @@
   text-align: right;
   font-size: 12px;
 }
-/* the legend's two new states (board B): a cited sector hatched, a zone not read a dotted edge */
+/* the legend's two hatchings (board B): a cited sector, and the whole commune when the exact place
+   is not read yet */
 .rg .v-carte .leg i.lg-sc {
   display: inline-block;
   width: 14px;
@@ -212,13 +289,20 @@
     color-mix(in srgb, var(--drone-trait) 25%, transparent) 2px 6px
   );
 }
+/* the whole commune hatched (Ju, 09/11): the sectors' hatching within the commune's ink line */
 .rg .v-carte .leg i.lg-nl {
   display: inline-block;
+  flex: none;
   width: 14px;
   height: 12px;
   margin-right: 6px;
   vertical-align: -1px;
-  border: 3px dotted var(--drone-trait);
+  border: 2px solid var(--fg);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--drone-trait) 0 2px,
+    color-mix(in srgb, var(--drone-trait) 25%, transparent) 2px 6px
+  );
 }
 .rg .v-carte .cd-lieux,
 .rg .v-carte .cd-cren {
@@ -282,8 +366,28 @@
 .rg .v-carte .zrow .h {
   white-space: nowrap;
 }
+/* the list's heads (the board's « Jour du vol · Horaires · Motif », table.docs th): what each date is
+   (Ju, 10/11: « vol le » or « publié le »); a head, never a row that is touched or hovered */
+.rg .v-carte .zrow.zhead {
+  min-height: 0;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  border-bottom: 0;
+  cursor: default;
+  font-family: Archivo, sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .v-carte .zrow.zhead:hover {
+  background: none;
+}
+.rg .v-carte .zrow.zhead .h {
+  font-weight: 900;
+}
 
-/* « ← Le registre »: the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
+/* « ← Retour » (« ← Le registre » on the board, Ju 09/11): the board's ticket (V2-CarteDrones: #111 ground, #f2efe6 words), in both
    modes; cadre.css's .mback is drawn for the dark head of the frame, its ground left out (B7) */
 .rg .v-carte .maptag .mback {
   background: #111;
@@ -362,6 +466,42 @@
   .rg .v-carte .zrow {
     grid-template-columns: 86px minmax(0, 1fr) auto;
   }
+  /* touched: 44 px */
+  .rg .v-carte .frise-h .seg-ctl button,
+  .rg .v-carte .frise-h .key.s {
+    min-height: 44px;
+  }
+}
+
+/* the map's commands say what they do on hover and on the keyboard's focus (Ju, 09/11), beside
+   them on the map's side, in the « ← Retour » ticket's ink; their name is their aria-label too */
+.rg .v-carte .ctl .sq[data-l] {
+  position: relative;
+}
+.rg .v-carte .ctl .sq[data-l]:focus-visible::after,
+.rg .v-carte .ctl .sq[data-l]:hover::after {
+  content: attr(data-l);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 5px 9px;
+  background: #111;
+  color: #f2efe6;
+  border: 2px solid #f2efe6;
+  font:
+    700 13px / 1.2 Archivo,
+    sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 3;
+}
+@media (hover: none) {
+  .rg .v-carte .ctl .sq[data-l]:not(:focus-visible):hover::after {
+    content: none;
+  }
 }
 
 /* v2.3 (Ju): the legend and the chart folded by default on a wide screen, the map left free; the
@@ -418,4 +558,229 @@
 }
 .rg .v-carte .band nav {
   flex: none;
+}
+
+/* --- lot 5 (board Vue3D-Paris-fiche): the panel's head in theme A and its tabs Fiche, Drones ---- */
+.rg .v-carte .v3p .dp-head {
+  padding: 14px 18px 10px;
+  border-bottom: 3px solid var(--line);
+  background: var(--bg);
+}
+.rg .v-carte .v3p .dp-name {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.rg .v-carte .v3p .name {
+  margin: 0;
+}
+.rg .v-carte .v3p .name .cut {
+  font-size: 36px;
+}
+.rg .v-carte .v3p .tabs {
+  display: flex;
+  gap: 6px;
+}
+.rg .v-carte .v3p .tabs button {
+  min-height: 36px;
+  padding: 6px 12px;
+  background: var(--bg-2);
+  color: var(--fg);
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--line);
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+/* the active tab (Ju, 09/11: it did not show): full ground, its word underlined, pressed in (its
+   shadow gone, moved onto it); the other stands up, on the page's ground */
+.rg .v-carte .v3p .tabs button:not(.on) {
+  background: var(--bg);
+}
+.rg .v-carte .v3p .tabs button.on {
+  background: var(--fg);
+  color: var(--bg);
+  text-decoration: underline;
+  text-decoration-thickness: 3px;
+  text-underline-offset: 4px;
+  box-shadow: none;
+  transform: translate(3px, 3px);
+}
+.rg .v-carte .v3p .tabs button:not(.on):hover {
+  background: var(--warn-bg);
+}
+.rg .v-carte .v3p .dp-lead {
+  margin: 10px 0 0;
+  font-size: 15.5px;
+  line-height: 1.4;
+}
+.rg .v-carte .v3p .dp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 18px 18px;
+}
+.rg .v-carte .v3p .dfigs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.rg .v-carte .v3p .dfigs .fig {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+  box-shadow: 4px 4px 0 var(--line);
+}
+.rg .v-carte .v3p .dfigs .fig.nl {
+  border-style: dashed;
+  box-shadow: none;
+}
+.rg .v-carte .v3p .fv {
+  font-family: Archivo, sans-serif;
+  font-size: 30px;
+  font-weight: 900;
+  font-stretch: 72%;
+  line-height: 1.05;
+}
+.rg .v-carte .v3p .fv small {
+  font-size: 15px;
+  font-weight: 800;
+}
+.rg .v-carte .v3p .fl {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .v-carte .v3p .fl .go {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.rg .v-carte .v3p .dp-h {
+  margin: 4px 0 -4px;
+  font-family: Archivo, sans-serif;
+  font-size: 19px;
+  font-weight: 900;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .v-carte .v3p .card {
+  padding: 12px 14px;
+}
+.rg .v-carte .v3p .card.nl2 {
+  border-style: dashed;
+  box-shadow: none;
+}
+.rg .v-carte .v3p .m0 {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+/* the map's filmed streets, in the map's own pinks (its layer's three classes) */
+.rg .v-carte .v3p .sw.rz1 {
+  background: #ffd1e6;
+}
+.rg .v-carte .v3p .sw.rz2 {
+  background: #ff7fbf;
+}
+.rg .v-carte .v3p .sw.rz3 {
+  background: #e0006f;
+}
+.rg .v-carte .v3p .dp-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.rg .v-carte .v3p .avenir {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rg .v-carte .v3p .avenir li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 6px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .v-carte .v3p .avenir li span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .v-carte .v3p .avenir .go {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  min-height: 36px;
+  background: none;
+  border: 0;
+  color: var(--fg);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
+/* « Publiés avant le vol ? » (the board's .k2 over its .sbar): each label on its own line over its
+   bar, the bars the card's width (Ju, 10/11: « 3 départements lus » no more on three lines in a
+   90 px column, spilling into the bar) */
+.rg .v-carte .v3p .vrow {
+  margin-bottom: 8px;
+}
+.rg .v-carte .v3p .vrow .k2 {
+  display: block;
+  margin: 4px 0;
+  font-family: Archivo, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+@media (max-width: 959px) {
+  .rg .v-carte .v3p .kind {
+    display: none;
+  }
+
+  .rg .v-carte .v3p .dp-head {
+    padding: 6px 16px 10px;
+    background: var(--bg-2);
+    border-bottom-width: 2px;
+  }
+  .rg .v-carte .v3p .name .cut {
+    font-size: 26px;
+    padding: 2px 5px;
+  }
+  .rg .v-carte .v3p .tabs button {
+    min-height: 44px;
+  }
+  .rg .v-carte .v3p .dp-lead {
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .rg .v-carte .v3p .dp-body {
+    padding: 12px 16px;
+  }
+  /* the socle cuts a figure's line on a phone; the panel's figures keep theirs whole (their rank,
+     the door to the other tab) */
+  .rg .v-carte .v3p .dfigs .fig .fl {
+    display: block;
+    /* recette 24: the socle's one-line max-height let the Drones figure's second line spill
+       under the card's edge; the card grows with its line */
+    max-height: none;
+    overflow: visible;
+    -webkit-line-clamp: unset;
+  }
 }

@@ -19,10 +19,12 @@ import {
   zoomIncline,
 } from "../src/registre/drones.ts";
 import { setMessages, t } from "../src/registre/i18n.ts";
+import { etatDrones } from "../src/registre/vues/carte-fiche.ts";
 import {
   appareils,
   type Creneau,
   cles,
+  communeDe,
   DEBUT,
   deAdresse,
   lieux,
@@ -34,12 +36,14 @@ import {
   dateTxt,
   drones,
   genre,
+  helicopteres,
   heuresTxt,
   lundi,
   mois,
   moisAxe,
   type NonDeduit,
   repere,
+  sansFins,
   semaines,
   sitesHours,
   span,
@@ -189,8 +193,8 @@ test("the volumes: a slot once per site, its acts once, its share of a period, n
   assert.equal(volumeHeight(v.s3.heures, maxH, 5000), 20);
   assert.ok(volumeHeight(v.s1.heures, maxH, 5000) > volumeHeight(v.s2.heures, maxH, 5000));
   // short (v2.3: the labels must not cover each other): the hours, or « sans horaires »
-  assert.equal(volLabel(v.s1), "12 h");
-  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h");
+  assert.equal(volLabel(v.s1), "12 h");
+  assert.equal(volLabel({ heures: 6, n: 1 }), "6 h");
   assert.equal(volLabel(v.s3), "sans horaires");
 });
 
@@ -215,12 +219,12 @@ test("the outline from the head of the map file: read as soon as it has come, no
 
 test("the words: dates, hours, the chart's tooltip, the tickets, the list's title", () => {
   assert.equal(dateTxt(at("2026-10-23", 19)), `23${N}oct.${N}2026`);
-  assert.equal(dateTxt(at("2026-10-23", 19), true), `23${N}oct.${N}2026, 19 h 00`);
+  assert.equal(dateTxt(at("2026-10-23", 19), true), `23${N}oct.${N}2026, 19 h 00`);
   assert.equal(dateTxt(Date.UTC(2025, 10, 1)), `1er${N}nov.${N}2025`);
-  assert.equal(heuresTxt(2.5), "2,5 h");
-  assert.equal(heuresTxt(1367), `1${N}367 h`);
-  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");
-  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "0 h", n: 0 }), "Semaine du 20 oct. : 0 h");
+  assert.equal(heuresTxt(2.5), "2,5 h");
+  assert.equal(heuresTxt(1367), `1${N}367 h`);
+  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "6 h", n: 2 }), "Semaine du 20 oct. : 6 h · 2 arrêtés");
+  assert.equal(t("carte.semaine_tip", { de: "20 oct.", h: "0 h", n: 0 }), "Semaine du 20 oct. : 0 h");
   assert.equal(t("carte.t_arretes", { n: 50 }), "arrêtés drones");
   assert.equal(t("carte.t_nd", { n: 1 }), "zone non déduite");
   assert.equal(t("carte.liste_t", { n: 0 }), "Aucun créneau sur la période");
@@ -238,6 +242,61 @@ test("a commune file without `drones` (an older build) has no slot and no act li
   });
   const f = { drones: { creneaux: [slot({ t0: 0, t1: H })], non_deduits: [] } };
   assert.equal(drones({ f } as unknown as Donnees).creneaux.length, 1);
+});
+
+test("an act that ends an authorisation (`fin`) is no flight: out of the view, as out of listes.json's `dr`", () => {
+  // Paris on 9 Nov. 2026: 649 acts listed, 7 of them abrogations or withdrawals, `dr` 642
+  const nd = (acte: string) => ({ acte, kind: "drone", date: "2026-11-01", url: null, page: null, raisons: [] });
+  const f = {
+    drones: {
+      creneaux: [slot({ t0: 0, t1: H, actes: ["a"] }), slot({ t0: 0, t1: H, actes: ["x"] })],
+      non_deduits: [nd("b"), nd("y"), nd("z")],
+    },
+  };
+  const ev = new Map([
+    ["x", { id: "x", fin: "abrogation" }],
+    ["y", { id: "y", fin: "retrait" }],
+    ["z", { id: "z", fin: null }],
+  ]);
+  const x = drones({ f, ev } as unknown as Donnees);
+  assert.deepEqual(
+    x.creneaux.map((c) => c.actes[0]),
+    ["a"],
+  );
+  assert.deepEqual(
+    x.non_deduits.map((a) => a.acte),
+    ["b", "z"],
+  );
+  // a slot of two acts stays while one of them still authorises
+  const y = sansFins({ creneaux: [slot({ t0: 0, t1: H, actes: ["x", "a"] })], non_deduits: [], formes: {} }, (a) => a === "x");
+  assert.equal(y.creneaux.length, 1);
+});
+
+test("a helicopter's act is shown apart, never a drone's (A, cf3c5a7): out of the drones, its count the build's", () => {
+  // Paris on 9 Nov. 2026: 1 act `kind: "helicoptere"`, `stats.communes["75056"].helico` 1
+  const nd = (acte: string, kind: string) => ({ acte, kind, date: "2026-11-01", url: null, page: null, raisons: [] });
+  const f = {
+    commune: { insee: "75056" },
+    stats: { communes: { "75056": { dr: 1, helico: 1 } } },
+    drones: { creneaux: [], non_deduits: [nd("d", "drone"), nd("h", "helicoptere")] },
+  };
+  const ev = new Map([
+    ["d", { id: "d", aeronef: "non_lu" }],
+    ["h", { id: "h", aeronef: "helicoptere" }],
+  ]);
+  const d = { f, ev } as unknown as Donnees;
+  assert.deepEqual(
+    drones(d).non_deduits.map((a) => a.acte),
+    ["d"],
+  );
+  assert.equal(helicopteres(d), 1);
+  assert.equal(
+    t("carte_a.helico", { n: 1 }),
+    "1 arrêté autorise des caméras sur un hélicoptère, compté à part\u00a0: jamais avec les drones.",
+  );
+  // none served (an older build, another commune): no mention
+  assert.equal(helicopteres({ f: { commune: { insee: "75056" } } } as unknown as Donnees), 0);
+  assert.equal(helicopteres({ f: { ...f, commune: { insee: "69123" } } } as unknown as Donnees), 0);
 });
 
 test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () => {
@@ -270,8 +329,8 @@ test("a slot's key, its zones, its places, its devices, its times (A4, A8)", () 
   assert.equal(appareils(mine, 4), 2);
   assert.equal(appareils([z({ cameras: null })], 4), 4);
   assert.equal(appareils([z({ cameras: null })], null), null);
-  assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
-  assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
+  assert.equal(plage(T[1]), `6${N}oct.${N}2026, 09 h 00 → 17 h 00`);
+  assert.equal(plage(T[2]), `6${N}oct.${N}2026, 22 h 00 → 7${N}oct.${N}2026, 02 h 00`);
   assert.equal(plage(slot({ t0: at("2026-10-06", 0), t1: at("2026-10-07", 0) })), `6${N}oct.${N}2026, horaires non précisés`);
 });
 
@@ -332,4 +391,30 @@ test("the tallest volume stands to the same share of the commune on the screen, 
   assert.ok(Math.abs(plafondVolumes(lyon, 50) - 1131) < 5, String(plafondVolumes(lyon, 50)));
   // a small commune keeps a volume that can be seen
   assert.equal(plafondVolumes([4.8, 45.7, 4.801, 45.7005], 50), 60);
+});
+
+test("a click on an arrondissement of the map is its city's: Paris, Lyon, Marseille; any other code its own", () => {
+  assert.equal(communeDe("75114"), "75056");
+  assert.equal(communeDe("75101"), "75056");
+  assert.equal(communeDe("75120"), "75056");
+  assert.equal(communeDe("75121"), "75121");
+  assert.equal(communeDe("69381"), "69123");
+  assert.equal(communeDe("69389"), "69123");
+  assert.equal(communeDe("13216"), "13055");
+  assert.equal(communeDe("13217"), "13217");
+  assert.equal(communeDe("93066"), "93066");
+  assert.equal(communeDe("75056"), "75056");
+});
+
+test("recette 12: a commune without drone acts says « aucun » where read, « non lu » where not", () => {
+  // Rhône read, Oullins without any act: « aucun », never « 0 arrêté »
+  assert.equal(etatDrones(true, 0, 0), "aucun");
+  // Allier: « drone » below its threshold, Vichy without any act: « non lu »
+  assert.equal(etatDrones(false, 0, 0), "non_lu");
+  // acts outside the period: none over it, whatever the reading
+  assert.equal(etatDrones(false, 0, 3), "aucun");
+  assert.equal(etatDrones(true, 0, 3), "aucun");
+  // acts over the period: counted
+  assert.equal(etatDrones(true, 5, 5), "lu");
+  assert.equal(etatDrones(false, 2, 2), "lu");
 });

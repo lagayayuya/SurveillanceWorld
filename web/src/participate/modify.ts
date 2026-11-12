@@ -295,8 +295,15 @@ export class ModifyMode {
     this.enterSheet();
   }
 
+  /** The next add's words on its position step, once (main.ts: an add from an area's sheet
+   * started in its middle says « Placez la caméra sur la carte »); null: the usual ones. */
+  addHint: string | null = null;
+  private hintKey: string | null = null;
+
   /** « Ajouter »: a camera the map does not have, placed first at the map's centre. */
   startAdd(): void {
+    this.hintKey = this.addHint;
+    this.addHint = null;
     const uuid = crypto.randomUUID();
     this.adding = uuid;
     const c = this.map.getCenter();
@@ -1407,7 +1414,7 @@ export class ModifyMode {
     ok.addEventListener("click", () => this.here());
     this.mapPaper(
       t(first ? "modify.add.title" : "modify.field.position"),
-      t("modify.position.hint"),
+      t(first && this.hintKey ? this.hintKey : "modify.position.hint"),
       [cancel, ok],
       { close: first, act: () => (first ? this.exit() : this.enterSheet("position")) },
     );

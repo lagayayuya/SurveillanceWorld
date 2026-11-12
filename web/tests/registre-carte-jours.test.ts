@@ -6,7 +6,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { hachuresSecteur, pave, poseBord } from "../src/registre/drones.ts";
+import { hachuresSecteur, pave } from "../src/registre/drones.ts";
 import { setMessages } from "../src/registre/i18n.ts";
 import {
   autoriteTxt,
@@ -14,14 +14,18 @@ import {
   type Creneau,
   DEBUT_CAL,
   dateActe,
+  debutCal,
   enTete,
   finalitesTxt,
   grilleMois,
   grilleSemaines,
   horaireTxt,
   jourDe,
+  arrondissementsDe,
+  arrondissementTxt,
   jourLong,
   joursComptes,
+  lieuPanneau,
   motsLigne,
   type NonDeduit,
   ndDans,
@@ -31,6 +35,7 @@ import {
   secteurPanneau,
   tickets,
   zonePanneau,
+  zonesHachurees,
 } from "../src/registre/vues/carte-outils.ts";
 
 const catalogue: Record<string, string> = JSON.parse(
@@ -111,7 +116,7 @@ test("the calendar's counts: each act once a day, its read days only, a slot eve
   assert.deepEqual([0, 1, 2, 3, 4, 9].map(niveau), [0, 1, 2, 3, 4, 4]);
 });
 
-test("the day's filter: ?jour=, an act on one of its read days, an undated old act everywhere", () => {
+test("the day's filter: ?jour=, an act on one of its read days, an undated old act everywhere", () => {
   assert.deepEqual(jourDe("2026-11-04"), [d("2026-11-04"), d("2026-11-04") + DAY]);
   assert.equal(jourDe("2026-02-30"), null);
   assert.equal(jourDe("4 nov."), null);
@@ -152,6 +157,23 @@ test("the wide grid: a column per week from 1 January 2024, Monday on top; its y
     { col: 39, l: "oct.", an: false },
     { col: 52, l: "2025", an: true },
   ]);
+  // twelve months by default (Ju, 09/11): from the first of the month eleven months back, every
+  // month marked, the year at January
+  const A = debutCal(d("2026-11-09"), false);
+  assert.equal(A, d("2025-12-01"));
+  assert.equal(debutCal(d("2026-11-09"), true), DEBUT_CAL);
+  assert.equal(debutCal(d("2024-03-15"), false), DEBUT_CAL);
+  const g12 = grilleSemaines(new Map(), A, d("2026-11-16"));
+  assert.equal(g12.cols, 50);
+  assert.deepEqual(g12.cases[0], { t: A, n: 0, col: 0, row: 0 });
+  const m12 = reperesCal(A, d("2026-11-16"), 1);
+  assert.equal(m12.length, 12);
+  assert.deepEqual(m12.slice(0, 3), [
+    { col: 0, l: "déc.", an: false },
+    { col: 4, l: "2026", an: true },
+    { col: 8, l: "févr.", an: false },
+  ]);
+  assert.equal(grilleMois(new Map(), A, d("2026-11-16")).mois.length, 12);
 });
 
 test("the phone's grid: a row per month, the latest on top, a column per day of the month", () => {
@@ -172,11 +194,13 @@ test("the phone's grid: a row per month, the latest on top, a column per day of 
 
 test("the sentence on the chosen day, as the board writes it, and with today's data", () => {
   const p = phraseJour(d("2026-11-04"), [], [complet], "drone");
-  assert.equal(p.date, `Mer.${N}4${N}nov.${N}2026`);
-  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · zone non lue");
+  // a day with acts is a day of flight, said so (Ju, 10/11); a day without any, the calendar's
+  assert.equal(p.date, `Vol le mer.${N}4${N}nov.${N}2026`);
+  assert.equal(phraseJour(d("2026-11-03"), [], [aujourdhui], "drone").date, `Mar.${N}3${N}nov.${N}2026`);
+  assert.equal(p.reste, "1 arrêté · 7 h 30 – 15 h 30 · secteur cité : 14e arrondissement · lieu pas encore lu");
   assert.equal(
     phraseJour(d("2026-11-04"), [], [aujourdhui], "drone").reste,
-    "1 arrêté · horaires non publiés (justesse en cours de mesure) · zone non lue",
+    "1 arrêté · horaires non publiés (justesse en cours de mesure) · lieu pas encore lu",
   );
   assert.equal(phraseJour(d("2026-11-03"), [], [aujourdhui], "drone").reste, "aucun arrêté");
   assert.equal(jourLong(d("2026-11-01")), `Dim.${N}1er${N}nov.${N}2026`);
@@ -184,7 +208,7 @@ test("the sentence on the chosen day, as the board writes it, and with today's d
 
 test("a row's words: hours in each state, service and reason, the zone's state; nothing for a field not published", () => {
   assert.deepEqual(motsLigne(complet), {
-    h: "7 h 30 – 15 h 30",
+    h: "7 h 30 – 15 h 30",
     svc: "Direction de la sécurité de proximité de l'agglomération parisienne · mouvement social lycéen et étudiant",
     zst: "zone non lue (plan annexé) · secteur cité 14e arrondissement",
   });
@@ -204,8 +228,8 @@ test("a row's words: hours in each state, service and reason, the zone's state; 
   // never the raw ref, the title or the recueil's file name
   for (const r of [aujourdhui, complet])
     for (const v of Object.values(motsLigne(r))) assert.ok(!/recueil|préfecture \(|Arrêté 2026/.test(v), v);
-  assert.equal(horaireTxt("20h00-fin"), "20 h 00 – fin");
-  assert.equal(horaireTxt("18h00-03h00"), "18 h 00 – 3 h 00");
+  assert.equal(horaireTxt("20h00-fin"), "20 h 00 – fin");
+  assert.equal(horaireTxt("18h00-03h00"), "18 h 00 – 3 h 00");
   assert.equal(horaireTxt("toute la journée"), "toute la journée");
 });
 
@@ -224,15 +248,21 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   assert.equal(dateActe("2A-2026-02-30-00001"), null);
   assert.equal(
     secteurPanneau(complet),
-    "Secteur cité : 14e arrondissement, « aux abords des lycées et des universités »",
+    "Secteur cité : 14e arrondissement, « aux abords des lycées et des universités »",
   );
   assert.equal(secteurPanneau(aujourdhui), "");
+  // `secteur`, the act's own words (not served in `non_deduits` yet): said when no place is cited,
+  // the whole commune still hatched (no shape)
+  const ditOu = { ...aujourdhui, secteur: "à Paris  le 30 juin 2026 " };
+  assert.equal(secteurPanneau(ditOu), "Secteur cité : « à Paris le 30 juin 2026 »");
+  assert.equal(zonesHachurees([], [ditOu], null, null, "75056", {}).commune, true);
+  assert.equal(secteurPanneau({ ...complet, secteur: "ailleurs" }), secteurPanneau(complet));
   assert.equal(
     zonePanneau(complet),
-    "Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas",
+    "Zone : 3 périmètres sur des plans annexés à l'arrêté, que le registre ne lit pas",
   );
-  assert.equal(zonePanneau(aujourdhui), "Zone : sur un plan annexé à l'arrêté, que le registre ne lit pas");
-  assert.equal(zonePanneau({ ...aujourdhui, zone: "non_lue" }), "Zone : non lue, l'arrêté ne permet pas de la tracer");
+  assert.equal(zonePanneau(aujourdhui), "Zone : sur un plan annexé à l'arrêté, que le registre ne lit pas");
+  assert.equal(zonePanneau({ ...aujourdhui, zone: "non_lue" }), "Zone : non lue, l'arrêté ne permet pas de la tracer");
   assert.equal(camerasTxt(complet), "6, soit 2 par périmètre");
   assert.equal(camerasTxt({ ...complet, n_perimetres: 4 }), "6");
   assert.equal(camerasTxt({ ...complet, cameras: undefined }), "");
@@ -243,26 +273,76 @@ test("the panel's lines: authority, number and date; where; the cameras; the pur
   assert.deepEqual(finalitesTxt(aujourdhui), []);
 });
 
-test("the map's board B pieces: the label on the free part of the edge, a hatching the map shows through", () => {
-  // a rectangle's edge on the screen; the free part leaves out its right side (the panel)
-  const pts: [number, number][] = [
-    [100, 100],
-    [300, 100],
-    [500, 100],
-    [500, 300],
-    [300, 300],
-    [100, 300],
-  ];
-  const cadre = { x0: 50, y0: 50, x1: 350, y1: 350 };
-  const p = poseBord(pts, cadre, null);
-  assert.equal(p?.i, 0); // the leftmost free point
-  assert.ok(p && p.angle > -90 && p.angle <= 90); // read from left to right
-  // kept while it stays free (no jump as the map moves), never where the panel is
-  assert.equal(poseBord(pts, cadre, 5)?.i, 5);
-  assert.equal(poseBord(pts, cadre, 2)?.i, 0);
-  assert.equal(poseBord(pts, { x0: 600, y0: 0, x1: 700, y1: 50 }, null), null);
-  // never over a cited sector's label: the points near its anchor are left out
-  assert.equal(poseBord(pts, cadre, 0, [{ x: 100, y: 120, r: 60 }])?.i, 5);
+test("the hatched zone: an arrondissement alone, the whole commune for any other sector (A, 09/11)", () => {
+  // the levels as A serves them on Paris's rows (081c013, a52f774), SYNTHETIC acts
+  const sec = (acte: string, niveau: string, insee: string[] | null, extra: Partial<NonDeduit> = {}) =>
+    ({ ...aujourdhui, acte, secteur_niveau: niveau, secteur_insee: insee, ...extra }) as NonDeduit;
+  const a19 = sec("a19", "arrondissement", ["75119"], { secteur: "à Paris 19ème" });
+  const a11 = sec("a11", "arrondissement", ["75111", "75119", "93001"]);
+  const parc = sec("parc", "lieu", null, { secteur_lieu: "au  parc des princes " });
+  const commune = sec("com", "commune", ["75056"]);
+  const dep = sec("dep", "departement", ["75056"]);
+  const nl = sec("nl", "non_lu", null);
+  const z = (ND: NonDeduit[], r: [number, number] | null = null, k: "drone" | "vsa" | null = null) =>
+    zonesHachurees([], ND, r, k, "75056", {});
+  // an arrondissement named: it alone, never the commune
+  assert.deepEqual(z([a19]), { arrondissements: ["75119"], commune: false });
+  // several, each once, sorted; a code of another commune (Aubervilliers) left out
+  assert.deepEqual(arrondissementsDe(a11, "75056"), ["75111", "75119"]);
+  assert.deepEqual(z([a19, a11]), { arrondissements: ["75111", "75119"], commune: false });
+  // a place without a shape, the commune, the département, a sector not read: the whole commune
+  for (const a of [parc, commune, dep, nl, aujourdhui])
+    assert.deepEqual(z([a]), { arrondissements: [], commune: true }, a.acte);
+  // both at once: the arrondissement over the hatched commune
+  assert.deepEqual(z([a19, parc]), { arrondissements: ["75119"], commune: true });
+  // the arrondissement level with another city's codes, or with none: the whole commune
+  assert.deepEqual(z([sec("lyon", "arrondissement", ["69381"])]), { arrondissements: [], commune: true });
+  assert.deepEqual(z([sec("vide", "arrondissement", [])]), { arrondissements: [], commune: true });
+  assert.deepEqual(z([sec("ville", "arrondissement", ["75056"])]), { arrondissements: [], commune: true });
+  // Lyon's and Marseille's own arrondissements
+  assert.deepEqual(
+    zonesHachurees([], [sec("l1", "arrondissement", ["69381"])], null, null, "69123", {}).arrondissements,
+    ["69381"],
+  );
+  assert.deepEqual(
+    zonesHachurees([], [sec("m16", "arrondissement", ["13216"])], null, null, "13055", {}).arrondissements,
+    ["13216"],
+  );
+  // a cited place drawn by the file's shapes wins: neither the arrondissement nor the commune
+  assert.deepEqual(
+    zonesHachurees([], [{ ...a19, lieux: complet.lieux }], null, null, "75056", { "75114": {} }),
+    { arrondissements: [], commune: false },
+  );
+  // only the acts shown: the period's, the kind's
+  assert.deepEqual(z([a19, parc], [d("2026-11-05"), d("2026-11-06")]), { arrondissements: [], commune: false });
+  assert.deepEqual(z([a19], [d("2026-11-04"), d("2026-11-05")]), { arrondissements: ["75119"], commune: false });
+  assert.deepEqual(z([a19], null, "vsa"), { arrondissements: [], commune: false });
+  // their words in « Où »
+  assert.equal(arrondissementTxt("75119"), "19e arrondissement");
+  assert.equal(arrondissementTxt("75101"), "1er arrondissement");
+  assert.equal(arrondissementTxt("13216"), "16e arrondissement");
+  assert.equal(lieuPanneau(parc), "Lieu cité\u00a0: «\u00a0au parc des princes\u00a0»");
+  assert.equal(lieuPanneau(a19), "");
+  assert.equal(lieuPanneau({ ...parc, secteur_lieu: null }), "");
+  assert.equal(secteurPanneau(a19), "Secteur cité\u00a0: «\u00a0à Paris 19ème\u00a0»");
+});
+
+test("the map's hatching: a sector's, the whole commune's, the map seen through it", () => {
+  // the whole commune while an act shown has no place read (Ju, 09/11); a cited sector drawn by
+  // the commune file's shapes is hatched alone
+  const formes = { "75114": {} };
+  assert.equal(zonesHachurees([], [aujourdhui], null, null, "75056", formes).commune, true);
+  assert.equal(zonesHachurees([], [complet], null, null, "75056", formes).commune, false);
+  assert.equal(zonesHachurees([], [complet], null, null, "75056", {}).commune, true);
+  // a slot over a site has its place; one without a site has none; another day's act is not shown
+  assert.equal(zonesHachurees([slot({ t0: d("2026-11-04"), t1: d("2026-11-05") })], [], null, null, "75056", {}).commune, false);
+  assert.equal(
+    zonesHachurees([slot({ t0: d("2026-11-04"), t1: d("2026-11-05"), sites: [] })], [], null, null, "75056", {}).commune,
+    true,
+  );
+  assert.equal(zonesHachurees([], [aujourdhui], [d("2026-11-05"), d("2026-11-06")], null, "75056", {}).commune, false);
+  // the kind shown: a drone act is not hatched under « algorithmes »
+  assert.equal(zonesHachurees([], [aujourdhui], null, "vsa", "75056", {}).commune, false);
   const h = hachuresSecteur("#2c6f9e");
   assert.equal(h.width, 14);
   const alpha = [...h.data].filter((_, i) => i % 4 === 3);

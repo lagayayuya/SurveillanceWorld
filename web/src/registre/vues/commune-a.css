@@ -1,0 +1,837 @@
+/* A commune's fiche in theme A (board Lyon-A-theme-actuel, its phone and dark variants): the
+   board's own rules (.meta, .v3, .toc, .dots, .sup, .tl, .hb, .cal, .rank, .chart, the graph),
+   on theme A's components (socle-a.css) and the site's tokens. */
+.rg .va.com .ico-t {
+  display: inline-block;
+  width: 16px;
+  height: 14px;
+  border: 2px solid #111111;
+  border-top: none;
+}
+.rg .va.com .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  margin: 10px 0 0;
+  font-family: "Special Elite", monospace;
+  font-size: 15px;
+}
+.rg .va.com .ans {
+  margin: 0 0 14px;
+  max-width: 880px;
+  font-size: 19px;
+}
+.rg .va.com .dots {
+  display: flex;
+  gap: 4px;
+}
+.rg .va.com .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--bg-2);
+}
+.rg .va.com .dot.me {
+  background: var(--type-registre);
+}
+/* a head figure: its words one link (its section), its rank's dots beside it, each its own link to
+   a fiche (recette 33: Tab reaches them, Enter opens): a link cannot hold another, so the card is a
+   block and its words the link, the card's click following that link (bulle.ts, « Clic : … ») */
+.rg .th.va.com .fig > a.fa {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+.rg .va.com .fig:has(> a.fa:focus-visible) {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--line);
+}
+.rg .va.com .dot[tabindex] {
+  cursor: pointer;
+}
+.rg .va.com .dot:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+/* « Vue 3D »: the live map's door, black with a pink shadow, black in dark too (Ju 09/11: « en
+   sombre, le bloc Vue 3D reste noir, comme dans la maquette en clair »; the dark board inverts it) */
+.rg .va.com .v3 {
+  margin: 22px 40px 0;
+  padding: 18px 28px;
+  background: #111111;
+  color: #ffffff;
+  border: 3px solid var(--line);
+  box-shadow: 8px 8px 0 var(--type-registre);
+}
+.rg .va.com .v3 .tag {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+}
+.rg .va.com .v3-t h2 {
+  margin: 10px 0 6px;
+  font-family: Archivo, sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: 1;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va.com .v3-t p {
+  margin: 0;
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.rg .va.com .v3-l {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.rg .va.com .v3-l li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 2px solid #ffffff;
+}
+.rg .va.com .v3-l b {
+  font-family: Archivo, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  text-transform: uppercase;
+}
+.rg .va.com .v3-l span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.com .v3-cta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 16px;
+}
+.rg .th.va.com .v3 .go {
+  color: #ffffff;
+}
+.rg .va.com .v3 .btn.pri {
+  border-color: #ffffff;
+  box-shadow: 4px 4px 0 #ffffff;
+}
+.rg .va.com .btn.big {
+  padding: 12px 18px;
+  font-size: 16px;
+}
+.rg .va.com .btn.sm {
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+/* the yellow table of contents, stuck at the top of the frame's scroll: one line at every width,
+   scrolled sideways when it does not fit, « Vue 3D ↗ » at its end (Ju 09/11); clear of the Vue 3D
+   block's pink shadow by a gap of its own */
+.rg .va.com .toc {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  gap: 6px;
+  margin-top: 34px;
+  padding: 10px 40px;
+  background: var(--type-territoire);
+  border-top: 2px solid var(--line);
+  border-bottom: 2px solid var(--line);
+}
+.rg .th.va.com .toc a {
+  flex: none;
+  white-space: nowrap;
+  padding: 7px 12px;
+  border: 2px solid #111111;
+  background: #ffffff;
+  color: #111111;
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 75%;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+/* « Vue 3D ↗ » stays in sight at the bar's right end while the sections scroll under it */
+.rg .th.va.com .toc a.t3d {
+  position: sticky;
+  right: 0;
+  /* the bar's yellow on both sides: the sections scrolled under it do not show past it */
+  box-shadow:
+    -8px 0 0 var(--type-territoire),
+    40px 0 0 var(--type-territoire);
+  margin-left: auto;
+  background: #111111;
+  color: #ffffff;
+}
+.rg .va.com .sec {
+  scroll-margin-top: 70px;
+}
+
+/* 1 · cameras */
+.rg .va.com .c-ville {
+  background: var(--type-registre);
+  fill: var(--type-registre);
+}
+.rg .va.com .c-comm {
+  background: var(--type-entreprise);
+  fill: var(--type-entreprise);
+}
+.rg .va.com .c-autres {
+  background: #cfcac0;
+  fill: #cfcac0;
+}
+.rg .va.com .c-osm {
+  background: var(--type-document);
+}
+.rg .va.com .c-transp {
+  background: var(--type-territoire);
+  fill: var(--type-territoire);
+}
+.rg .va.com .c-sub {
+  background: repeating-linear-gradient(45deg, #111111 0 2px, #ffffff 2px 5px);
+}
+.rg .th.va.com a.sbar.osm {
+  text-decoration: none;
+}
+.rg .va.com .card.sys {
+  margin-top: 16px;
+}
+.rg .va.com .top li span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+
+/* 2 · money: the chart */
+.rg .va.com .chart {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rg .va.com .chart .grid {
+  stroke: var(--rule);
+  stroke-dasharray: 2 3;
+}
+.rg .va.com .chart .base {
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.com svg .ax {
+  font:
+    400 12px "Special Elite",
+    monospace;
+  fill: var(--muted);
+  pointer-events: none;
+}
+.rg .va.com svg .val {
+  font-family: Archivo, sans-serif;
+  font-size: 15px;
+  font-weight: 900;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.rg .va.com .chart rect:not(.hit) {
+  stroke: #111111;
+  stroke-width: 1.5;
+}
+.rg .va.com .chart .hit {
+  fill: transparent;
+}
+.rg .va.com .chart .col {
+  cursor: pointer;
+}
+.rg .va.com .chart:has(.col:hover) .col:not(:hover) {
+  opacity: 0.35;
+}
+
+/* 3 · companies */
+.rg .va.com .sup {
+  display: grid;
+  grid-template-columns: 200px 1fr 170px;
+  gap: 4px 14px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va.com .sup-n {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.rg .va.com .sup-bar {
+  height: 10px;
+  background: var(--bg-2);
+  border: 1.5px solid var(--line);
+}
+.rg .va.com .sup-bar span {
+  display: block;
+  height: 100%;
+  background: var(--type-entreprise);
+}
+.rg .va.com .sup-m {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+.rg .va.com .sup-m span,
+.rg .va.com .sup-o {
+  font:
+    400 13px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+.rg .va.com .sup-o {
+  grid-column: 1 / -1;
+}
+.rg .va.com .g2 {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.rg .va.com svg .l {
+  stroke: #8f897e;
+  stroke-width: 1.6;
+}
+.rg .va.com svg .l.more {
+  stroke-dasharray: 2 3;
+}
+.rg .va.com svg .a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.com svg .e2 {
+  fill: var(--type-entreprise);
+  stroke: var(--line);
+  stroke-width: 2;
+}
+.rg .va.com svg .mo {
+  stroke: var(--line);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 2;
+}
+.rg .va.com svg .mo.a {
+  fill: #ffd1e6;
+}
+/* « +87 »: not `.mt`, which v2's cadre.css unsets (`all: unset` drops text-anchor) */
+.rg .va.com svg .gmo {
+  font:
+    800 12.5px Archivo,
+    sans-serif;
+  fill: #111111;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+.rg .va.com svg .c0.a {
+  fill: var(--type-registre);
+  stroke: var(--line);
+  stroke-width: 3;
+}
+.rg .va.com svg .tc {
+  font-family: Archivo, sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  font-stretch: 78%;
+  text-transform: uppercase;
+  fill: var(--fg);
+  pointer-events: none;
+}
+.rg .va.com svg .t0 {
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  font-stretch: 85%;
+  fill: var(--fg);
+  paint-order: stroke;
+  stroke: var(--bg-2);
+  stroke-width: 4px;
+  pointer-events: none;
+}
+
+/* 4 · dossiers */
+.rg .va.com .dos {
+  margin-top: 14px;
+}
+.rg .va.com .dh {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.rg .va.com .dh h3 {
+  min-width: 0;
+  margin: 0;
+  font-family: Archivo, sans-serif;
+  font-size: 20px;
+  font-weight: 900;
+  font-style: normal;
+  line-height: normal;
+  font-stretch: 72%;
+  /* a published object, in ordinary case and on one line like the home's largest contracts (Ju,
+     08/11): the board's short uppercase titles do not fit the real ones */
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .va.com .dos .fh > span {
+  min-width: 0;
+  text-transform: none;
+}
+.rg .va.com .dos .fh .t1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .th.va.com .dh h3 a {
+  text-decoration: none;
+}
+.rg .va.com .amt {
+  font-family: Archivo, sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  font-stretch: 70%;
+}
+.rg .va.com .tl {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 14px;
+}
+.rg .va.com .st {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px;
+  background: var(--bg-2);
+  border: 2px solid var(--line);
+}
+.rg .va.com .sk {
+  align-self: flex-start;
+  padding: 3px 9px;
+  border: 2px solid var(--line);
+  background: var(--type-document);
+  color: var(--on-accent);
+  font-family: Archivo, sans-serif;
+  font-size: 14px;
+  font-weight: 900;
+  font-stretch: 85%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.rg .va.com .st.contrat .sk {
+  background: var(--type-registre);
+}
+.rg .va.com .st.arrete .sk {
+  background: var(--type-territoire);
+}
+.rg .va.com .sd,
+.rg .va.com .ss {
+  font:
+    400 12.5px "Special Elite",
+    monospace;
+  color: var(--muted);
+}
+
+/* 5 · drones: the calendar, the motives */
+.rg .va.com .dr {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 28px;
+  align-items: start;
+}
+.rg .va.com .cal {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+.rg .va.com .cal .c0 {
+  fill: var(--bg-2);
+  stroke: var(--rule);
+}
+.rg .va.com .cal .c1 {
+  fill: #7aa7c7;
+}
+.rg .va.com .cal .c2 {
+  fill: var(--fg);
+}
+.rg .va.com .cal rect {
+  cursor: pointer;
+}
+.rg .va.com .cal .today {
+  stroke: var(--type-registre);
+  stroke-width: 2.5;
+}
+.rg .va.com .sw.c0 {
+  background: var(--bg-2);
+}
+.rg .va.com .sw.c1 {
+  background: #7aa7c7;
+}
+.rg .va.com .sw.c2 {
+  background: var(--fg);
+}
+.rg .va.com .sw.today {
+  border: 2.5px solid var(--type-registre);
+}
+/* « 2 vols autorisés aujourd'hui (arrêtés publiés le 6 et le 9 nov.) » (Ju 10/11) */
+.rg .va.com .auj-n {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+}
+.rg .va.com .today-l {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.com .today-l li {
+  padding: 4px 0;
+}
+.rg .va.com .hb {
+  display: grid;
+  grid-template-columns: 110px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+.rg .va.com .hb span {
+  font:
+    400 13px "Special Elite",
+    monospace;
+}
+.rg .va.com .hb i {
+  display: block;
+  height: 12px;
+  background: var(--type-document);
+  border: 1.5px solid var(--line);
+}
+.rg .va.com .hb.q i {
+  background: repeating-linear-gradient(45deg, #111111 0 1.5px, #ffffff 1.5px 5px);
+}
+.rg .va.com .hb b {
+  text-align: right;
+}
+
+/* 6 · neighbours */
+.rg .va.com .rank {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.rg .va.com .rank li {
+  display: grid;
+  /* its rank first, as the board's counter (recette 17): 28 px for two digits, wider for more */
+  grid-template-columns: 28px 1fr auto;
+  padding: 7px 0;
+  border-bottom: 1.5px dashed var(--rule);
+}
+.rg .va.com .rank.rn3 li {
+  grid-template-columns: 38px 1fr auto;
+}
+.rg .va.com .rank.rn4 li {
+  grid-template-columns: 48px 1fr auto;
+}
+.rg .va.com .rank li.me {
+  background: var(--type-territoire);
+  color: var(--on-accent);
+  font-weight: 800;
+}
+
+/* documents */
+.rg .va.com .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.rg .va.com .filters .sp {
+  flex: 1;
+}
+.rg .va.com .chip.f[aria-pressed="true"] {
+  background: var(--fg);
+  color: var(--bg);
+}
+.rg .va.com .docs td:nth-child(2) a {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rg .va.com .cov .non {
+  background: var(--rule);
+}
+
+@media (max-width: 959px) {
+  .rg .va.com .v3 {
+    margin: 16px 16px 0;
+    padding: 12px;
+  }
+  .rg .va.com .v3-t h2 {
+    font-size: 28px;
+  }
+  .rg .va.com .v3-l {
+    grid-template-columns: 1fr;
+  }
+  .rg .va.com .v3-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .rg .va.com .toc {
+    padding: 8px 16px;
+    margin-top: 28px;
+  }
+  .rg .th.va.com .toc a.t3d {
+    box-shadow:
+      -8px 0 0 var(--type-territoire),
+      16px 0 0 var(--type-territoire);
+  }
+  .rg .th.va.com .toc a {
+    flex: none;
+    padding: 6px 9px;
+    font-size: 13px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .rg .va.com .ans {
+    font-size: 16px;
+  }
+  .rg .va.com .sup {
+    grid-template-columns: 1fr auto;
+  }
+  .rg .va.com .sup-bar {
+    grid-column: 1 / -1;
+  }
+  .rg .va.com .tl {
+    grid-auto-flow: row;
+  }
+  .rg .va.com .dr {
+    grid-template-columns: 1fr;
+  }
+  .rg .va.com .hb {
+    grid-template-columns: 96px 1fr 28px;
+  }
+  .rg .va.com .filters .sp {
+    display: none;
+  }
+  /* a ranked row's link is the row's height */
+  .rg .th.va.com .rank li a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .rg .va.com .rank li {
+    padding: 0;
+    align-items: center;
+  }
+}
+
+/* --- behaviours (board Lyon-A-comportements): what a hover reads, what a click filters --------- */
+/* a legend's series hides on a click (its button pressed when shown) and stands out on a hover */
+.rg .va.com .lgb {
+  min-height: 32px;
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.rg .va.com .lgb[aria-pressed="false"] {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.rg .va.com .card:has(.lgb:hover > .c-ville) .chart rect:is(.c-transp, .c-autres),
+.rg .va.com .card:has(.lgb:hover > .c-transp) .chart rect:is(.c-ville, .c-autres),
+.rg .va.com .card:has(.lgb:hover > .c-autres) .chart rect:is(.c-ville, .c-transp) {
+  opacity: 0.3;
+}
+.rg .va.com .chart .col[tabindex="0"] {
+  cursor: pointer;
+}
+/* a supplier's row hovered: its node in the graph stands out */
+.rg .va.com .row2:has(.sup.i0:hover) .g2 :is(a, g):is(.i1, .i2, .i3, .i4),
+.rg .va.com .row2:has(.sup.i1:hover) .g2 :is(a, g):is(.i0, .i2, .i3, .i4),
+.rg .va.com .row2:has(.sup.i2:hover) .g2 :is(a, g):is(.i0, .i1, .i3, .i4),
+.rg .va.com .row2:has(.sup.i3:hover) .g2 :is(a, g):is(.i0, .i1, .i2, .i4),
+.rg .va.com .row2:has(.sup.i4:hover) .g2 :is(a, g):is(.i0, .i1, .i2, .i3) {
+  opacity: 0.3;
+}
+/* the dossiers of the year chosen in the money's chart */
+.rg .va.com .dos.mark {
+  outline: 4px solid var(--type-registre);
+  outline-offset: 2px;
+}
+/* a motive's bar: a button that filters the calendar */
+.rg .va.com button.hb {
+  width: 100%;
+  min-height: 36px;
+  background: none;
+  border: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.rg .va.com button.hb.on span {
+  text-decoration: underline 2px;
+}
+.rg .va.com .sbar .seg[tabindex] {
+  cursor: pointer;
+}
+.rg .va.com .sbar .seg.on {
+  outline: 3px solid var(--fg);
+  outline-offset: -3px;
+}
+.rg .va.com .filters.actifs {
+  margin: 8px 0 0;
+}
+.rg .va.com .vol-l {
+  margin-top: 10px;
+}
+/* « Tous les documents »: the columns' sort, the row a pointer is on */
+.rg .va.com .docs th .tri {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.rg .va.com .docs th[aria-sort="descending"] .tri::after {
+  content: " ↓";
+}
+.rg .va.com .docs tbody tr:hover {
+  background: var(--warn-bg);
+  cursor: pointer;
+}
+.rg .va.com .filters .dancre .dmenu {
+  left: auto;
+  right: 0;
+  width: 300px;
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+}
+
+/* the graph's lines take no pointer: a tap or a hover reaches the node under them. A node smaller
+   than 44 px takes a tap for its bubble (Lyon-A-comportements, « Au doigt »): the suppliers' list
+   above holds the same links at full size (WCAG 2.5.8, its « equivalent » exception) */
+.rg .va.com .g2 line {
+  pointer-events: none;
+}
+
+@media (max-width: 959px) {
+  .rg .va.com .sbar .seg.pt b {
+    display: none;
+  }
+  /* the money's three views on one row or two full ones, never a hole */
+  .rg .va.com .ch-h .seg-ctl {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .rg .va.com .ch-h .seg-ctl button {
+    flex: 1 1 auto;
+  }
+}
+@media (max-width: 959px) {
+  /* an 18 px bar holds its numbers at 13 px */
+  .rg .va.com .sbar.petite .seg b {
+    font-size: 13px;
+    line-height: 16px;
+  }
+}
+/* « À venir »: the days of the week before the first one, out of the window */
+.rg .va.com .cal rect.passe {
+  opacity: 0.25;
+}
+/* « Comparer … avec… » clear of the ranking or the note above it (Ju 09/11) */
+.rg .va.com .btn.pri.cmp {
+  margin-top: 18px;
+}
+/* the head figures' words in two lines at most, the rest in their bubble (Ju 09/11: the mono text
+   ran over three or four lines at 1024) */
+@media (min-width: 960px) {
+  .rg .va.com .fig .fl,
+  .rg .va.com .fig .rk > span:not(.dots) {
+    /* two lines exactly: the clamp alone let the third line's top show under them */
+    line-height: 1.25;
+    max-height: 2.5em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* a legend's entries, the same box whether read or pressed (Ju 09/11, § 1.6): the swatch and the
+   words in a grid of two columns, the swatch on the words' first baseline, every entry starting at
+   the same left edge when the legend wraps */
+.rg .va.com .sleg {
+  align-items: baseline;
+}
+.rg .va.com .sleg > :has(> .sw) {
+  display: inline-grid;
+  grid-template-columns: 12px auto;
+  column-gap: 6px;
+  /* the grid holds the swatch apart: socle-a.css's hanging indent (padding 18 px, indent −18 px)
+     would pull the words' first line back over it */
+  padding-left: 0;
+  text-indent: 0;
+  align-items: baseline;
+  align-content: center;
+  text-align: left;
+}
+/* beside the money's pressed entries, a read-only entry takes their height: even rows */
+.rg .va.com .sleg:has(> .lgb) > .lg:not(.lgb) {
+  min-height: 32px;
+}
+/* the modal at a 960 to 1279 px window: twelve months of calendar left « Aujourd'hui » a 115 px
+   column, a title on nine lines (Paris at 1024); it goes under the calendar */
+@media (min-width: 960px) and (max-width: 1279px) {
+  .rg .va.com .dr {
+    grid-template-columns: 1fr;
+  }
+}
+/* a figure that is not a number (« pas rattachés »): its line says why in full on a phone too,
+   the one-line clamp would cut « Arrêtés de l'Allier lu… » (Ju 10/11, Vichy) */
+@media (max-width: 959px) {
+  .rg .va.com .fig.nl .fl {
+    max-height: none;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+  }
+}

@@ -1,3 +1,162 @@
+<div class="{{th}} va dep">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-d" aria-hidden="true"></i>{{t.departement_a.kind}}</span>
+      <h1 class="sr">{{nom}}</h1><div class="name" aria-hidden="true"><sc-for list="{{mots}}" as="w"><span class="mot"><sc-for list="{{w}}" as="x"><span class="{{x.cls}}">{{x.ch}}</span></sc-for></span></sc-for></div>
+      <p class="meta"><span class="chip t">{{code}}</span><sc-for list="{{meta}}" as="m"><span>{{m}}</span></sc-for></p>
+      <p class="lead">{{{lead}}}</p>
+    </div>
+    <div class="actions"><button type="button" class="btn" onClick="{{partager}}" aria-haspopup="dialog">{{t.departement_a.partager}}</button><button type="button" class="btn" onClick="{{citer}}" aria-live="polite">{{citerL}}</button></div>
+  </section>
+
+  <div class="figs">
+    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><span class="fl">{{f.l}}</span><sc-if value="{{f.rk}}"><span class="rk"><span><b class="rnk">{{f.rk.r}}<sup>{{f.rk.sup}}</sup></b> {{f.rk.t}}</span></span></sc-if><span class="sr">{{f.tip}}</span></a></sc-for>
+  </div>
+
+  <nav class="toc" aria-label="{{t.departement_a.sommaire}}"><sc-for list="{{toc}}" as="s"><a href="{{s.href}}" onClick="{{s.go}}">{{s.l}}</a></sc-for></nav>
+
+  <div class="body"><main>
+    <sc-if value="{{ou}}">
+    <section class="sec" id="ou"><h2><span class="num" aria-hidden="true">{{ou.n}}</span>{{t.departement_a.s_ou}}</h2>
+      <p class="ans">{{{ou.ans}}}</p>
+      <div class="{{ou.row}}">
+        <sc-if value="{{ou.mapCard}}">
+        <div class="card"><div class="ch-h"><h3 class="k">{{ou.titre}}</h3><div class="seg-ctl" role="group" aria-label="{{t.departement_a.carte_mesure}}"><sc-for list="{{ou.mesures}}" as="o"><button type="button" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for></div></div>
+          <sc-if value="{{ou.carte}}">
+          <div class="mapwrap">
+            <div class="zw">
+              <svg class="dmap" viewBox="{{ou.carte.vb}}" width="{{ou.carte.w}}" height="{{ou.carte.h}}" role="group" aria-label="{{ou.carte.titre}}" data-bg="">
+                <path class="depf" d="{{ou.carte.d}}"></path>
+                <sc-for list="{{ou.carte.pts}}" as="p"><sc-if value="{{p.href}}"><a href="{{p.href}}" class="{{p.cls}}" data-bh="{{p.bh}}" data-bl="{{p.bl}}" data-bc="{{t.departement_a.b.fiche}}"><circle cx="{{p.x}}" cy="{{p.y}}" r="{{p.r}}"></circle></a></sc-if><sc-if value="{{p.sans}}"><g class="{{p.cls}}" tabindex="0" data-bh="{{p.bh}}" data-bl="{{p.bl}}"><circle cx="{{p.x}}" cy="{{p.y}}" r="{{p.r}}"></circle></g></sc-if></sc-for>
+                <sc-for list="{{ou.carte.labels}}" as="l"><text class="ml" x="{{l.x}}" y="{{l.y}}" text-anchor="{{l.a}}">{{l.t}}</text></sc-for>
+              </svg>
+              <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+            </div>
+            <div class="mleg"><sc-for list="{{ou.leg}}" as="l"><span><i class="{{l.sw}}" aria-hidden="true"></i>{{l.l}}</span></sc-for><span class="hint h-large">{{t.departement_a.carte_hint}}</span><span class="hint h-tel">{{t.departement_a.carte_hint_tel}}</span></div>
+          </div>
+          <p class="note">{{ou.carte.note}}</p>
+          </sc-if>
+          <sc-if value="{{ou.attente}}"><p class="note" role="status">{{ou.attente}}</p></sc-if>
+        </div>
+        </sc-if>
+        <sc-if value="{{ou.eqCard}}">
+        <div class="{{ou.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{ou.r.exp}}" aria-controls="{{ou.r.id}}" onClick="{{ou.r.basculer}}"><span>{{ou.r.titre}}<small>{{ou.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{ou.r.id}}">
+            <h3 class="k">{{t.departement_a.equipees}}</h3><p class="note sous">{{ou.equipeesNote}}</p>
+            <ol class="top"><sc-for list="{{ou.equipees}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{x.s}}</span><b>{{x.v}}</b></li></sc-for></ol>
+            <p class="note">{{t.departement_a.equipees_note}}</p>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{paie}}">
+    <section class="sec" id="combien"><h2><span class="num" aria-hidden="true">{{paie.n}}</span>{{t.departement_a.s_paie}}</h2>
+      <p class="ans">{{{paie.ans}}}</p>
+      <div class="card"><h3 class="k">{{t.departement_a.paie_k}}</h3>
+        <div class="sbar" style="height: 26px" data-bg=""><sc-for list="{{paie.parts}}" as="x"><span class="{{x.cls}}" style="{{x.st}}" tabindex="0" data-bh="{{x.l}}" data-bl="{{x.bl}}"><b>{{x.p}}</b></span></sc-for></div>
+        <div class="sleg"><sc-for list="{{paie.parts}}" as="x"><span class="lg"><i class="{{x.sw}}" aria-hidden="true"></i><span class="lt">{{x.l}} · <b>{{x.v}}</b></span></span></sc-for></div>
+      </div>
+      <div class="row2">
+        <div class="{{paie.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{paie.r.exp}}" aria-controls="{{paie.r.id}}" onClick="{{paie.r.basculer}}"><span>{{paie.r.titre}}<small>{{paie.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{paie.r.id}}">
+            <h3 class="k">{{t.departement_a.acheteurs_k}}</h3>
+            <ol class="top"><sc-for list="{{paie.acheteurs}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{x.s}}</span><b>{{x.v}}</b></li></sc-for></ol>
+          </div>
+        </div>
+        <div class="card"><h3 class="k">{{t.departement_a.annees_k}}</h3>
+          <div class="zw">
+            <svg class="chart" viewBox="0 0 {{paie.ch.w}} 250" width="{{paie.ch.w}}" height="250" role="group" aria-label="{{paie.ch.titre}}" data-bg="">
+              <sc-for list="{{paie.ch.grille}}" as="g"><line class="grid" x1="44" x2="{{paie.ch.w}}" y1="{{g.y}}" y2="{{g.y}}"></line><text class="ax" x="38" y="{{g.ty}}" text-anchor="end">{{g.l}}</text></sc-for>
+              <sc-for list="{{paie.ch.cols}}" as="c"><g class="col" tabindex="{{c.tab}}" data-bh="{{c.bh}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}" data-go="{{c.go}}"><rect class="hit" x="{{c.hx}}" y="4" width="{{c.hw}}" height="226"></rect><sc-if value="{{c.h}}"><rect class="c-comm" x="{{c.x}}" y="{{c.y}}" width="{{c.w}}" height="{{c.h}}" rx="2"></rect></sc-if><text class="val" x="{{c.cx}}" y="{{c.vy}}" text-anchor="middle">{{c.v}}</text><text class="ax yr" x="{{c.cx}}" y="228" text-anchor="middle">{{c.an}}</text></g></sc-for>
+              <line class="base" x1="44" x2="{{paie.ch.w}}" y1="210" y2="210"></line>
+            </svg>
+            <button type="button" class="zoom" onClick="{{pleinEcran}}">{{t.socle_a.plein_ecran}}</button>
+          </div>
+          <p class="note">{{paie.ch.note}}</p>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{vend}}">
+    <section class="sec" id="vend"><h2><span class="num" aria-hidden="true">{{vend.n}}</span>{{t.departement_a.s_vend}}</h2>
+      <p class="ans">{{{vend.ans}}}</p>
+      <div class="{{vend.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{vend.r.exp}}" aria-controls="{{vend.r.id}}" onClick="{{vend.r.basculer}}"><span>{{vend.r.titre}}<small>{{vend.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{vend.r.id}}">
+          <div class="cl2v"><sc-for list="{{vend.rows}}" as="x"><div class="sup"><div class="sup-n">{{{x.nom}}}</div><div class="sup-bar"><span style="{{x.st}}"></span></div><div class="sup-m"><b>{{x.m}}</b><span>{{x.c}}</span></div></div></sc-for></div>
+          <p class="note">{{t.departement_a.vend_note}}</p>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{aut}}">
+    <section class="sec" id="autorise"><h2><span class="num" aria-hidden="true">{{aut.n}}</span>{{t.departement_a.s_aut}}</h2>
+      <p class="ans">{{{aut.ans}}}</p>
+      <sc-if value="{{aut.lu}}">
+      <div class="{{aut.row}}">
+        <div class="card"><h3 class="k">{{t.departement_a.aut_annees_k}}</h3>
+          <sc-for list="{{aut.hb}}" as="x"><div class="{{x.cls}}"><span>{{x.l}}</span><i style="{{x.st}}"></i><b>{{x.v}}</b></div></sc-for>
+          <p class="note">{{aut.note}}</p>
+          <sc-if value="{{aut.ouVide}}"><sc-if value="{{aut.drones}}"><a class="go" href="{{aut.drones}}">{{aut.dronesL}}</a></sc-if></sc-if></div>
+        <sc-if value="{{aut.ou.length}}">
+        <div class="{{aut.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{aut.r.exp}}" aria-controls="{{aut.r.id}}" onClick="{{aut.r.basculer}}"><span>{{aut.r.titre}}<small>{{aut.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{aut.r.id}}">
+            <h3 class="k">{{t.departement_a.aut_ou_k}}</h3>
+            <ol class="top"><sc-for list="{{aut.ou}}" as="x"><li><span class="tn">{{{x.nom}}}</span><span>{{x.s}}</span><b>{{x.v}}</b></li></sc-for></ol>
+            <sc-if value="{{aut.drones}}"><a class="go" href="{{aut.drones}}">{{aut.dronesL}}</a></sc-if>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      </sc-if>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{cmp}}">
+    <section class="sec" id="compare"><h2><span class="num" aria-hidden="true">{{cmp.n}}</span>{{t.departement_a.s_cmp}}</h2>
+      <sc-if value="{{cmp.ans}}"><p class="ans">{{{cmp.ans}}}</p></sc-if>
+      <sc-if value="{{cmp.cartes}}">
+      <div class="cmp4"><sc-for list="{{cmp.cartes}}" as="c"><div class="card"><h3 class="k">{{c.titre}}</h3><ol class="rank"><sc-for list="{{c.rows}}" as="r"><li class="{{r.cls}}"><i>{{r.r}}</i><span>{{{r.nom}}}</span><b>{{r.v}}</b></li></sc-for></ol><p class="note">{{c.note}}</p></div></sc-for></div>
+      <p class="note">{{t.departement_a.cmp_note}}</p>
+      </sc-if>
+      <sc-if value="{{cmp.attente}}"><p class="note" role="status">{{cmp.attente}}</p></sc-if>
+    </section>
+    </sc-if>
+
+    <section class="sec" id="communes"><h2><span class="num doc" aria-hidden="true">≡</span>{{t.departement_a.s_communes}}</h2>
+      <div class="{{coms.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{coms.r.exp}}" aria-controls="{{coms.r.id}}" onClick="{{coms.r.basculer}}"><span>{{coms.r.titre}}<small>{{coms.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{coms.r.id}}">
+          <div class="filters" role="group" aria-label="{{t.departement_a.s_communes}}"><sc-for list="{{coms.onglets}}" as="o"><button type="button" class="chip f" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.l}}</button></sc-for><span class="sp"></span><sc-if value="{{coms.menu}}"><div class="{{coms.menu.cls}}"><button type="button" class="{{coms.menu.chip}}" aria-haspopup="listbox" aria-expanded="{{coms.menu.ouvert}}" onClick="{{coms.menu.basculer}}">{{coms.menu.l}} ▾</button><sc-if value="{{coms.menu.menu}}"><ul class="dmenu tmenu" role="listbox" aria-label="{{coms.menu.lab}}" onKeyDown="{{coms.menu.clavier}}"><sc-for list="{{coms.menu.opts}}" as="o"><li class="drow" role="option" aria-selected="{{o.on}}" tabindex="-1" onClick="{{o.choisir}}"><span class="dnom">{{o.l}}</span></li></sc-for></ul></sc-if></div></sc-if><button type="button" class="btn" onClick="{{coms.exporter}}">{{t.departement_a.exporter}}</button></div>
+          <table class="docs coms"><caption class="sr">{{t.departement_a.s_communes}}</caption><thead><tr><sc-for list="{{coms.cols}}" as="c"><th scope="col" class="{{c.cls}}" aria-sort="{{c.sort}}"><button type="button" class="tri" onClick="{{c.pick}}">{{c.l}}</button></th></sc-for></tr></thead><tbody onClick="{{coms.ligne}}">
+            <sc-for list="{{coms.rows}}" as="r"><tr><td data-label="">{{{r.nom}}}</td><td class="n" data-label="{{t.departement_a.col.pop}}">{{r.pop}}</td><td class="n" data-label="{{t.departement_a.col.con}}">{{r.con}}</td><td class="n" data-label="{{t.departement_a.col.montant}}">{{r.montant}}</td><td class="n" data-label="{{t.departement_a.col.cam}}">{{r.cam}}</td><td class="n" data-label="{{t.departement_a.col.dr}}">{{r.dr}}</td><td class="n" data-label="{{t.departement_a.col.carte}}">{{r.carte}}</td></tr></sc-for>
+          </tbody></table>
+          <sc-if value="{{coms.vide}}"><p class="note">{{t.departement_a.communes_vide}}</p></sc-if>
+          <p class="note">{{coms.note}} <sc-if value="{{coms.tout}}"><a class="go" href="{{coms.tout}}">{{coms.toutL}}</a></sc-if></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec src" id="sources"><h2><span class="num doc" aria-hidden="true">i</span>{{t.departement_a.s_sources}}</h2>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <ul class="cov" data-mention="non"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b> · {{s.d}}</li></sc-for></ul>
+          <p class="note">{{srcs.note}} <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
+        </div>
+      </div>
+    </section>
+  </main></div>
+</div>
+<!-- intercommunalite -->
 <div class="{{th}}">
   <dc-include src="tete-fiche"></dc-include>
   <dc-include src="bandeau"></dc-include>

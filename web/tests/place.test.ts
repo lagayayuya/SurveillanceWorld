@@ -3,7 +3,7 @@
 //   node --test --experimental-strip-types tests/
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { communeAt, nearestStreet } from "../src/participate/place.ts";
+import { areaCodeAt, communeAt, nearestStreet } from "../src/participate/place.ts";
 
 const AT: [number, number] = [2.24, 48.9];
 const M = 1 / 111_320; // a metre of latitude
@@ -55,4 +55,20 @@ test("the commune: the polygon holding the camera, not one whose hole holds it",
   };
   assert.equal(communeAt([ring, inner], AT), "Courbevoie");
   assert.equal(communeAt([ring], AT), undefined);
+});
+
+test("the area's code under a point: its polygon's, a hole excluded", () => {
+  const sq = (c: string, x0: number, x1: number, holes: [number, number][][] = []) => ({
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [[[x0, 0], [x1, 0], [x1, 1], [x0, 1], [x0, 0]], ...holes],
+    },
+    properties: { c },
+  });
+  const hole: [number, number][] = [[0.4, 0.4], [0.6, 0.4], [0.6, 0.6], [0.4, 0.6], [0.4, 0.4]];
+  const areas = [sq("69381", 0, 1, [hole]), sq("69382", 1, 2)];
+  assert.equal(areaCodeAt(areas, [0.2, 0.5]), "69381");
+  assert.equal(areaCodeAt(areas, [1.5, 0.5]), "69382");
+  assert.equal(areaCodeAt(areas, [0.5, 0.5]), undefined);
+  assert.equal(areaCodeAt(areas, [3, 0.5]), undefined);
 });

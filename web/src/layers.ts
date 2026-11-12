@@ -41,6 +41,17 @@ export const DETAIL_MIN = DETAIL_FADE[0];
 /** A camera's tap target around its pictogram, in CSS px (`camera-hit`); main.ts keeps a
  * tapped camera's whole target in the part of the map the panels leave free. */
 export const CAMERA_HIT_RADIUS = 20;
+/** Invisible: the commune under a camera (main.ts cameraGap, the camera sheet's « Combien en
+ * manque-t-il ? », board 12), added only while it is read, then removed: drawn at the street
+ * level the admin source would bring its IGN attribution there (the admin tiles stop at z11,
+ * one tile then covers a whole town). */
+export const COMMUNES_PROBE: LayerSpecification = {
+  id: "communes-probe",
+  type: "fill",
+  source: "admin",
+  "source-layer": "communes",
+  paint: { "fill-opacity": 0 },
+};
 export const COUNT_MAX = 15; // communes stay loaded (invisible) up to here to count cameras
 
 // Colours come from the theme's tokens (theme.ts palette(), --map-* in theme/*.css), read
@@ -66,6 +77,14 @@ export function sources(base: string): Record<string, SourceSpecification> {
   });
   return {
     admin: { ...src("admin"), attribution: t("attribution.ign") } as SourceSpecification,
+    // The same archive, read no further than its départements go (tiles.DEPS_MAX + 1): MapLibre
+    // then draws the z8 tiles larger beyond, so an open département keeps its outline over
+    // its communes at any zoom (Ju 2026-11-11). Its layers are hidden but while one is open.
+    "admin-deps": {
+      ...src("admin"),
+      maxzoom: DEPS_TILES_MAX,
+      attribution: t("attribution.ign"),
+    } as SourceSpecification,
     admin7: src("admin7"),
     streets: src("streets"),
     detail: src("detail"),
@@ -382,6 +401,15 @@ function areaLayers(
 ): LayerSpecification[] {
   const deps = layer === "departements";
   const id = deps ? "deps" : "communes";
+  // An open département stays outlined over its communes (board 12, « Le Rhône : contour
+  // bleu »), from its z8 tiles drawn larger (admin-deps), as far as the communes are drawn.
+  const selectedRange = deps
+    ? {
+        source: "admin-deps",
+        maxzoom: CITY_FADE[1],
+        layout: { "line-join": "round", visibility: "none" },
+      }
+    : { layout: { "line-join": "round" } };
   const base = {
     source: "admin",
     "source-layer": layer,
@@ -422,32 +450,36 @@ function areaLayers(
     // blue stands out on the vivid classes (DECISIONS 2026-10-09).
     {
       ...base,
+      ...selectedRange,
       id: `${id}-selected-edge`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
-      layout: { "line-join": "round" },
       paint: {
         "line-color": palette().areaSelectedEdge,
         "line-width": AREA_SELECTED + 2,
-        "line-opacity": areaOpacity(deps, 1),
+        "line-opacity": deps ? 1 : areaOpacity(deps, 1),
       },
     },
     {
       // The area whose sheet is open (filter set by main.ts).
       ...base,
+      ...selectedRange,
       id: `${id}-selected`,
       type: "line",
       filter: ["==", ["get", "c"], ""],
-      layout: { "line-join": "round" },
       paint: {
         "line-color": palette().areaSelected,
         "line-width": AREA_SELECTED,
-        "line-opacity": areaOpacity(deps, 1),
+        "line-opacity": deps ? 1 : areaOpacity(deps, 1),
       },
     },
   ] as LayerSpecification[];
 }
 
+/** The last zoom of admin.pmtiles holding the départements (tiles.DEPS_MAX + 1). */
+export const DEPS_TILES_MAX = 8;
+/** The open département's outline layers (shown by main.ts selectArea while one is open). */
+export const DEP_SELECTED_LAYERS = ["deps-selected-edge", "deps-selected"];
 /** Punk: the areas' border and the open area's outline, in CSS px. */
 const AREA_BORDER = 0.75;
 const AREA_SELECTED = 3;

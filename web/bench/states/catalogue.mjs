@@ -2970,18 +2970,11 @@ export const STATES = [
     },
   },
   {
-    id: "area-tab-cameras",
+    // Board 12: « Qui filme ? » unfolded.
+    id: "area-who",
     async run(k) {
       await k.open("?insee=92026", { sheet: true });
-      await k.tap("#area-tab-cameras");
-      await k.page.waitForTimeout(300);
-    },
-  },
-  {
-    id: "area-tab-who",
-    async run(k) {
-      await k.open("?insee=92026", { sheet: true });
-      await k.tap("#area-tab-who");
+      await k.tap("#sheet .acc");
       await k.page.waitForTimeout(300);
     },
   },

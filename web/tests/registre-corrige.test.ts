@@ -27,8 +27,8 @@ test("each corrected field says when, what it reads now, and the source's value 
   } as Evenement;
   const [m, ent] = corrections(e, noms);
   assert.equal(m.k, "Corrigé le 29 octobre 2026");
-  assert.deepEqual(m.v, ["Montant : ", { strong: `230${N}000 €` }, " · publié par la source : ", { span: `215${N}000 €`, cls: "barre" }]);
-  assert.deepEqual(ent.v, ["Entreprises : ", { strong: "Serfim T.I.C." }, " · publié par la source : ", { span: "—", cls: "barre" }]);
+  assert.deepEqual(m.v, ["Montant : ", { strong: `230${N}000 €` }, " · publié par la source : ", { span: `215${N}000 €`, cls: "barre" }]);
+  assert.deepEqual(ent.v, ["Entreprises : ", { strong: "Serfim T.I.C." }, " · publié par la source : ", { span: "—", cls: "barre" }]);
 });
 
 test("values as the pages write them", () => {

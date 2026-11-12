@@ -55,6 +55,20 @@ export type NonDeduit = {
   motif?: { categorie: string | null; libelle: string | null };
   finalites?: string[];
   lieux?: Lieu[];
+  /** The act's own words for where (A reads them for the Préfecture de police and the petite
+   * couronne, 5d8e95a: « à Paris le 30 juin 2026 à l'occasion de l'événement susvisé »): a text,
+   * no shape. Shown in the panel's « Où » when no place is cited. */
+  secteur?: string;
+  /** The level the build reads the sector at (A, 081c013): « arrondissement », « lieu »,
+   * « commune », « departement » or « non_lu »; one per act, the same for each of its days. */
+  secteur_niveau?: string;
+  /** The codes the sector names: a municipal arrondissement's (751xx, 6938x, 132xx) at the
+   * arrondissement level, else the communes named; null for a place. */
+  secteur_insee?: string[] | null;
+  /** The place the act cites at the « lieu » level, as written (« au parc des princes »). */
+  secteur_lieu?: string | null;
+  /** « drone », « helicoptere » or « non_lu » (A, cf3c5a7): a helicopter's act is never a drone's. */
+  aeronef?: string;
 };
 /** A cited place's shape, approximate: an arrondissement's outline, a widened street, a circle. */
 export type Forme = {
@@ -247,6 +261,74 @@ export function tickets(
   };
 }
 
+/** The arrondissements of `insee` (Paris, Lyon, Marseille) an act's sector names, when the build
+ * reads it at that level (A, 09/11); none otherwise, nor for another city's codes. */
+export function arrondissementsDe(a: NonDeduit, insee: string): string[] {
+  if (a.secteur_niveau !== "arrondissement") return [];
+  const ok = (c: string) => c !== insee && communeDe(c) === insee;
+  return [...new Set((a.secteur_insee ?? []).map(String).filter(ok))];
+}
+/** « 19e arrondissement », « 1er arrondissement » for a municipal arrondissement's code. */
+export function arrondissementTxt(code: string): string {
+  const n = +code.slice(-2);
+  return t("carte_a.arrondissement_n", {
+    n: n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }),
+  });
+}
+
+/** What the map hatches for the acts shown over the period (Ju, 09/11; A's sectors, 081c013):
+ * a cited place drawn by the commune file's shapes (`lieux[].forme`) alone; an arrondissement the
+ * act names (`secteur_niveau` « arrondissement ») alone, from the site's tiles; the whole commune
+ * for every other act (« commune », « departement », « non_lu », a « lieu » without a shape) and
+ * for a slot without a site. */
+export function zonesHachurees(
+  T: Creneau[],
+  ND: NonDeduit[],
+  r: Periode,
+  k: Genre,
+  insee: string,
+  formes: Record<string, unknown>,
+): { arrondissements: string[]; commune: boolean } {
+  const arr = new Set<string>();
+  let commune = T.some((c) => deGenre(k, c.kind) && inPeriod(c, r) && !c.sites.length);
+  for (const a of ND) {
+    if (!deGenre(k, a.kind) || !ndDans(a, r)) continue;
+    if ((a.lieux ?? []).some((l) => l.forme && formes[l.forme])) continue;
+    const xs = arrondissementsDe(a, insee);
+    if (xs.length) for (const x of xs) arr.add(x);
+    else commune = true;
+  }
+  return { arrondissements: [...arr].sort(), commune };
+}
+
+/** What the map hatches, and how strongly (Ju, 10/11: « sans jour choisi, une hachure légère ; le
+ * jour choisi, ou survolé, hachuré en plein »): the day hovered (the calendar's pointer or keys),
+ * full, when anything is hatched on it (a drawn place, an arrondissement, the whole commune); else
+ * the period's, full only when it is one chosen day. A hovered day without any act keeps the
+ * period's light hatching: the map does not blink as the pointer crosses empty days. */
+export function periodeHachuree(
+  T: Creneau[],
+  ND: NonDeduit[],
+  r: Periode,
+  survol: number | null,
+  k: Genre,
+  insee: string,
+  formes: Record<string, unknown>,
+): { r: Periode; plein: boolean } {
+  if (survol != null) {
+    const rj: Periode = [survol, survol + DAY];
+    const z = zonesHachurees(T, ND, rj, k, insee, formes);
+    const dessine = ND.some(
+      (a) =>
+        deGenre(k, a.kind) &&
+        ndDans(a, rj) &&
+        (a.lieux ?? []).some((l) => l.forme && formes[l.forme]),
+    );
+    if (dessine || z.commune || z.arrondissements.length) return { r: rj, plein: true };
+  }
+  return { r, plein: !!r && r[1] - r[0] === DAY };
+}
+
 // --- « Jours de vol autorisés » (lot R4.2, board B) ---------------------------------------------
 
 /** A day's ms (00:00 UTC) from YYYY-MM-DD. */
@@ -276,6 +358,14 @@ export function ndDans(a: NonDeduit, r: Periode): boolean {
 }
 /** The calendar's first day: 1 January 2024, a Monday (the brief: « de 2024 à aujourd'hui »). */
 export const DEBUT_CAL = Date.UTC(2024, 0, 1);
+/** The calendar's first day shown (Ju, 09/11: 12 months by default, « Toute la période » for the
+ * three years): the first of the month eleven months before today's (twelve months, today's the
+ * last), or 1 January 2024. */
+export function debutCal(today: number, tout: boolean): number {
+  if (tout) return DEBUT_CAL;
+  const d = new Date(today);
+  return Math.max(DEBUT_CAL, Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 11, 1));
+}
 
 /** For each day of [A, B[, how many acts of the kind shown authorise a flight on it: the days an
  * act listed without a slot reads (joursDe), every day a slot meets; an act once a day, its hours
@@ -363,9 +453,13 @@ export function grilleMois(
   return { mois, cases };
 }
 /** The wide calendar's marks under its columns: each year at its first week (bold, its number) and
- * each quarter's month (« avr. », « juil. », « oct. »), at the column of the week that holds the
- * month's first day. */
-export function reperesCal(A: number, B: number): { col: number; l: string; an: boolean }[] {
+ * each quarter's month (« avr. », « juil. », « oct. »), or every month (`chaque` 1: twelve months
+ * shown), at the column of the week that holds the month's first day. */
+export function reperesCal(
+  A: number,
+  B: number,
+  chaque: 1 | 3 = 3,
+): { col: number; l: string; an: boolean }[] {
   const a = lundi(A);
   const out: { col: number; l: string; an: boolean }[] = [];
   const d = new Date(A);
@@ -373,7 +467,7 @@ export function reperesCal(A: number, B: number): { col: number; l: string; an: 
     const t0 = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + k, 1);
     if (t0 >= B) break;
     const m = new Date(t0).getUTCMonth();
-    if (m % 3) continue;
+    if (m % chaque) continue;
     const an = m === 0;
     out.push({
       col: Math.floor((lundi(Math.max(t0, A)) - a) / WEEK),
@@ -389,6 +483,17 @@ const WEEKDAY = new Intl.DateTimeFormat("fr-FR", { weekday: "short", timeZone: "
 export function jourLong(ms: number): string {
   const w = WEEKDAY.format(ms);
   return `${w.charAt(0).toUpperCase()}${w.slice(1)}${NBSP}${dateTxt(ms)}`;
+}
+/** Ju, 10/11: a date says which it is. « Vol le mer. 4 nov. 2026 » (a day of flight, a slot's
+ * « 4 nov. 2026 à 07 h 30 → 15 h 30 »), the date's first letter set low after « le ». */
+export function volLe(date: string): string {
+  return t("carte_a.vol_le", { date: `${date.charAt(0).toLowerCase()}${date.slice(1)}` });
+}
+/** An act's day of publication (its recueil's, the build's `publie`: YYYY-MM-DD), null when the
+ * file does not serve it. */
+export function publieDe(e: object | null | undefined): string | null {
+  const p = (e as { publie?: unknown } | null | undefined)?.publie;
+  return typeof p === "string" && jourDe(p) ? p : null;
 }
 /** « 07h30-15h30 » → « 7 h 30 – 15 h 30 », « 20h00-fin » → « 20 h 00 – fin »; anything else as
  * written. */
@@ -489,9 +594,16 @@ export function zonePanneau(a: NonDeduit): string {
  * (« 14e arrondissement, « aux abords des lycées et des universités » »); nothing when none. */
 export function secteurPanneau(a: NonDeduit): string {
   const ls = (a.lieux ?? []).filter((l) => l.texte);
-  if (!ls.length) return "";
+  const dit = (a.secteur ?? "").replace(/\s+/g, " ").trim();
+  if (!ls.length) return dit ? t("carte.secteur_cite", { l: t("carte.cite", { x: dit }) }) : "";
   const mots = ls.map((l) => (l.genre === "autre" ? t("carte.cite", { x: l.texte }) : l.texte));
   return t("carte.secteur_cite", { l: mots.join(", ") });
+}
+/** The place the build reads at the « lieu » level (A, a52f774), as written: « Lieu cité : « au parc
+ * des princes » »; nothing for another level or when none is read. */
+export function lieuPanneau(a: NonDeduit): string {
+  const l = (a.secteur_lieu ?? "").replace(/\s+/g, " ").trim();
+  return a.secteur_niveau === "lieu" && l ? t("carte_a.lieu_cite", { l }) : "";
 }
 /** A slot's hours, « 7 h 00 – 11 h 00 » (its end's hour, whatever its day). */
 function heuresCreneau(c: Creneau): string {
@@ -533,13 +645,15 @@ export function phraseJour(
     ...ns.map((a) => a.acte),
   ]).size;
   return {
-    date: jourLong(d),
+    // a day with acts is a day of flight; a day without any is only the calendar's
+    date: n ? volLe(jourLong(d)) : jourLong(d),
     reste: [
       n ? count(n, "arrete") : t("carte.jour_aucun"),
       heures,
       sec ? t("carte.secteur_cite_jour", { l: sec }) : "",
       tracees ? t("carte.n_zones_tracees", { n: tracees }) : "",
-      nonLues ? t("carte.n_zones_non_lues", { n: nonLues }) : "",
+      // the map hatches the whole commune for them (Ju, 09/11: one word, not « 2 zones non lues »)
+      nonLues ? t("carte_a.lieu_nl") : "",
     ]
       .filter(Boolean)
       .join(" · "),
@@ -584,14 +698,69 @@ export function volLabel(v: { heures: number; n: number }): string {
   return t("carte.vol_label", { h: v.heures ? heuresTxt(v.heures) : t("carte.vol_sans_horaires") });
 }
 
-/** The commune file's slots (an older file has none: no slot). */
+/** The acts that authorise a flight: an act that ends an authorisation (its event's `fin`: an
+ * abrogation, a withdrawal) is a drone document but no flight, and leaves the view, as it leaves
+ * listes.json's `dr` (pipeline regles.is_drone_act): one count of a commune's acts everywhere. A
+ * slot goes when every act of it is such an end. */
+export function sansFins(x: Drones, fin: (acte: string) => boolean): Drones {
+  return {
+    ...x,
+    creneaux: x.creneaux.filter((c) => !c.actes.length || c.actes.some((a) => !fin(a))),
+    non_deduits: x.non_deduits.filter((a) => !fin(a.acte)),
+  };
+}
+
+/** The commune of a code of the site's areas: a municipal arrondissement's (the map's tiles draw
+ * Paris, Lyon and Marseille by arrondissement: 75101–75120, 69381–69389, 13201–13216, INSEE's
+ * codes) is its city's; any other code is its own. */
+export function communeDe(code: string): string {
+  if (/^751(0[1-9]|1\d|20)$/.test(code)) return "75056";
+  if (/^6938[1-9]$/.test(code)) return "69123";
+  if (/^132(0[1-9]|1[0-6])$/.test(code)) return "13055";
+  return code;
+}
+
+type ActeVol = {
+  fin?: string | null;
+  aeronef?: string | null;
+  insee?: string | null;
+  communes?: string[] | null;
+};
+/** An act the view does not count as one of its commune's drone flights: one that ends an
+ * authorisation (`fin`), a helicopter's (`aeronef`, never added to drones: A, 09/11), or one the
+ * file holds in context, placed in other communes (Paris's file holds a Saint-Denis act). The
+ * view's count is then the build's `dr` (641 for Paris), never a count of the file's events. */
+export function horsVols(e: ActeVol | undefined, insee: string): boolean {
+  if (!e) return false;
+  if (e.fin || e.aeronef === "helicoptere") return true;
+  const ici = [e.insee, ...(e.communes ?? [])].filter(Boolean).map((c) => communeDe(String(c)));
+  return ici.length > 0 && !ici.includes(insee);
+}
+
+/** The commune's helicopter acts (A, cf3c5a7: `stats.communes[k].helico`, the build's count): shown
+ * apart, « hélicoptère », never added to the drones (horsVols leaves them out of every count);
+ * 0 for an older file. */
+export function helicopteres(d: Donnees): number {
+  const insee = String((d.f as { commune?: { insee?: string } }).commune?.insee ?? "");
+  const st = (d.f as { stats?: { communes?: Record<string, { helico?: number }> } }).stats;
+  const n = st?.communes?.[insee]?.helico;
+  return typeof n === "number" && n > 0 ? n : 0;
+}
+
+/** The commune file's slots (an older file has none: no slot), without the acts that are not its
+ * drone flights (horsVols). */
 export function drones(d: Donnees): Drones {
   const x = (d.f as { drones?: Partial<Drones> }).drones;
-  return {
-    creneaux: x?.creneaux ?? [],
-    non_deduits: x?.non_deduits ?? [],
-    formes: x?.formes ?? {},
-  };
+  const ev = (d as { ev?: Donnees["ev"] }).ev;
+  const insee = String((d.f as { commune?: { insee?: string } }).commune?.insee ?? "");
+  return sansFins(
+    {
+      creneaux: x?.creneaux ?? [],
+      non_deduits: x?.non_deduits ?? [],
+      formes: x?.formes ?? {},
+    },
+    (acte) => horsVols(ev?.get(acte) as ActeVol | undefined, insee),
+  );
 }
 
 // --- a slot's keys, its zones, its words (v2.1 A4, A8) -----------------------------------------
@@ -655,6 +824,23 @@ export function appareils(zs: ZoneLue[], acte: number | null | undefined): numbe
 }
 /** « 11 nov. 2025, 7 h 00 → 11 h 00 », the end's date too when it is another day; the date
  * alone when the act states no hours. */
+/** A slot as the panel titles it (Ju, 10/11: a date says which it is): « Vol le 4 nov. 2026, 07 h 30
+ * → 15 h 30 » within a day, « Vol du 23 oct. 2026, 19 h 00 au 25 oct. 2026, 07 h 00 » over several;
+ * a slot without hours by its days alone (« Vol du 5 déc. 2025 au 8 déc. 2025 », « Vol le 19 nov.
+ * 2025, horaires non précisés »), its ends taken to the nearest midnight: the build stores some of
+ * them from Paris's midnight (22 h or 23 h UTC, 10/11), the others from 00 h. */
+export function plageVol(c: Creneau): string {
+  const jour = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  if (c.heures == null) {
+    const minuit = (ms: number) => Math.round(ms / DAY) * DAY;
+    const a = minuit(c.t0);
+    const b = Math.max(a + DAY, minuit(c.t1));
+    if (b - a <= DAY) return volLe(t("carte.plage_sans_heures", { date: dateTxt(a) }));
+    return t("carte_a.vol_du_au", { de: dateTxt(a), a: dateTxt(b - DAY) });
+  }
+  if (jour(c.t0) === jour(c.t1 - 1)) return volLe(plage(c));
+  return t("carte_a.vol_du_au", { de: dateTxt(c.t0, true), a: dateTxt(c.t1, true) });
+}
 export function plage(c: Creneau): string {
   if (c.heures == null) return t("carte.plage_sans_heures", { date: dateTxt(c.t0) });
   const a = new Date(c.t0);

@@ -97,6 +97,8 @@ export type Commune = {
   dep_ref?: Ref;
   /** [west, south, east, north] (API Découpage administratif): what the drone view frames */
   bbox?: [number, number, number, number];
+  /** [lon, lat] of its town hall (listes.json, geo.api.gouv.fr `mairie`): « Autour de moi » */
+  ll?: [number, number];
 };
 /** A record's share as the build writes it in its file (lot R3, partage.py): its address
  * (relative), its title, its text (ending with that address), its preview image. */

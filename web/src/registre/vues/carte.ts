@@ -8,19 +8,21 @@
 // an act whose zone was not deduced is only listed, never drawn. The map, the chart and the list
 // follow one state: a period (every date, ?mois=, a month or a week clicked), a chosen slot, a
 // hovered one. On leaving, the map loses all it was given and goes back where it was.
-import type { Map as MlMap } from "maplibre-gl";
+import type { MapMouseEvent, Map as MlMap } from "maplibre-gl";
 import { etatDepartementLie } from "../collecte.ts";
 import { benefLabel, commune, communeHref, type Donnees } from "../commun.ts";
+import { depNom } from "../corpus.ts";
 import type { Handler, Rich } from "../dc.ts";
+import { load } from "../donnees.ts";
 import {
   type BBox,
   bboxOf,
   type Calque,
+  COUCHES,
   type Contour,
   calque,
   entieres,
   lireContour,
-  poseBord,
   rings,
   type Site,
   TEINTES,
@@ -29,24 +31,33 @@ import {
   zoomIncline,
 } from "../drones.ts";
 import { count, fr } from "../format.ts";
-import { carteDuSite, laisser, seFerme } from "../hote.ts";
+import { carteDuSite, laisser, ouvrir, retour, retourPossible, seFerme } from "../hote.ts";
 import { has, t } from "../i18n.ts";
+import type { Listes } from "../listes.ts";
 import type { Miette, VueModule } from "../modale.ts";
 import type { Route } from "../routes.ts";
 import { signaler } from "../signaler.ts";
+import { coupeMots, montantA } from "../socle-a.ts";
 import { couleur, icone, repere as repereType } from "../types.ts";
 import { arriver, type BaseState, large, Vue } from "../vue.ts";
+import { avantVol, ordreDeps, type Publication } from "./accueil-outils.ts";
+import { ditActes, phraseActes } from "./actes-mots.ts";
 import template from "./carte.html?raw";
+import { etatDrones, fichePanneau } from "./carte-fiche.ts";
 import { filCommune } from "./commune-outils.ts";
 import "./carte.css";
 import {
   appareils,
+  arrondissementsDe,
+  arrondissementTxt,
   type Creneau,
   camerasTxt,
   cles,
-  DEBUT_CAL,
+  communeDe,
+  dateActe,
   dateTxt,
   deAdresse,
+  debutCal,
   deGenre,
   drones,
   enTete,
@@ -55,6 +66,7 @@ import {
   genre,
   grilleMois,
   grilleSemaines,
+  helicopteres,
   heuresTxt,
   horairesMots,
   jourDe,
@@ -63,6 +75,7 @@ import {
   jourMs,
   joursComptes,
   joursDe,
+  lieuPanneau,
   lieux,
   lundi,
   mois,
@@ -73,8 +86,10 @@ import {
   niveau,
   overlaps,
   type Periode,
+  periodeHachuree,
   phraseJour,
-  plage,
+  plageVol,
+  publieDe,
   reperesCal,
   secteurPanneau,
   semaineDe,
@@ -84,10 +99,20 @@ import {
   tickets,
   versAdresse,
   volLabel,
+  volLe,
   type ZoneLue,
   zonePanneau,
   zonesDe,
+  zonesHachurees,
 } from "./carte-outils.ts";
+
+/** « lundi 30 novembre »: the lead's next flight day, as the board writes it (no year). */
+const PROCHAIN = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  timeZone: "UTC",
+});
 
 /** The tilt of the map in 3D, degrees: 50 on a wide screen (R1a's tilted map's), 35 on a phone,
  * whose narrow map at 50° showed the volumes more than the streets (v2.4, Ju). */
@@ -140,7 +165,17 @@ type State = BaseState & {
   frise: boolean;
   /** the zones are on the map: a place of the act chosen can be framed (« Voir sur la carte ») */
   calque: boolean;
+  /** the calendar's span: twelve months (false), or from 2024 (« Toute la période », Ju 09/11) */
+  calTout: boolean;
+  /** the panel's tab (lot 5, board Vue3D-Paris-fiche): the commune's figures, or its drones */
+  onglet: "fiche" | "drones";
+  /** listes.json (the ranks) and index.json's France-wide « publiés avant le vol », once asked */
+  X: Listes | null;
+  pubFrance: Publication | null;
 };
+
+const ongletDe = (q: URLSearchParams): "fiche" | "drones" =>
+  q.get("onglet") === "fiche" ? "fiche" : "drones";
 
 const reduced = (): boolean => matchMedia("(prefers-reduced-motion: reduce)").matches;
 /** The ticket « Quitter la vue drones » on the map, once the register is closed over the drone
@@ -219,6 +254,29 @@ function libre(): { top: number; left: number; right: number; bottom: number } {
   pad.top = Math.min(pad.top, H / 3);
   return pad;
 }
+/** An area's box from the site's index of areas (tiles/areas.json, main.ts fitArea's: code →
+ * [name, département, box]), asked once, when an arrondissement is clicked. */
+let aires: Promise<Record<string, [string, string, BBox]>> | null = null;
+async function boiteAire(code: string): Promise<BBox | null> {
+  aires ??= fetch("/tiles/areas.json").then((r) => (r.ok ? r.json() : {}));
+  try {
+    return (await aires)[code]?.[2] ?? null;
+  } catch {
+    aires = null;
+    return null;
+  }
+}
+/** Whether the register holds a commune's file (hote.ts porteLieu's test). */
+async function registreA(insee: string): Promise<boolean> {
+  try {
+    const r = await fetch(`/data/registre/commune/${encodeURIComponent(insee)}.json`, {
+      method: "HEAD",
+    });
+    return r.ok && /json/.test(r.headers.get("content-type") ?? "");
+  } catch {
+    return false;
+  }
+}
 const today = (): number => {
   const d = new Date();
   return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
@@ -285,6 +343,11 @@ class CarteDrones extends Vue<Props, State> {
       leg: false,
       frise: false,
       calque: false,
+      onglet: ongletDe(q),
+      // a period opened by its address before the twelve months: the three years shown
+      calTout: r != null && r[0] < debutCal(today(), false),
+      X: null,
+      pubFrance: null,
     };
   }
   panneau(): boolean {
@@ -300,13 +363,24 @@ class CarteDrones extends Vue<Props, State> {
     return filCommune(this.props.d);
   }
   etape(): string {
-    return t("commune.carte_et_drones");
+    return t("carte_a.etape");
   }
+  /** The commune's slots and acts listed without one, the acts that end an authorisation left out
+   * (carte-outils sansFins): read once per commune file. */
+  private get DR(): ReturnType<typeof drones> {
+    if (this.drD !== this.props.d) {
+      this.drD = this.props.d;
+      this.drX = drones(this.props.d);
+    }
+    return this.drX as ReturnType<typeof drones>;
+  }
+  private drD: Donnees | null = null;
+  private drX: ReturnType<typeof drones> | null = null;
   private get T(): Creneau[] {
-    return drones(this.props.d).creneaux;
+    return this.DR.creneaux;
   }
   private get ND(): NonDeduit[] {
-    return drones(this.props.d).non_deduits;
+    return this.DR.non_deduits;
   }
   private periode(): Periode {
     const S = this.state;
@@ -344,10 +418,57 @@ class CarteDrones extends Vue<Props, State> {
     });
     this.ro.observe(g);
   }
-  /** A click on the map folds the legend back (v2.3). */
-  private readonly onCarte = () => {
-    if (this.state.leg) this.setState({ leg: false });
+  /** Whether a bubble was open as the last finger or button came down (bulle.ts closes it on that
+   * click, before the map hears it). */
+  private bulleAuDoigt = false;
+  private readonly onAppui = () => {
+    const b = document.getElementById("bulle");
+    this.bulleAuDoigt = !!b && !b.hidden;
   };
+  /** A click on the map folds the legend back (v2.3). */
+  private readonly onCarte = (e: MapMouseEvent) => {
+    if (this.state.leg) this.setState({ leg: false });
+    void this.cliquerCarte(e);
+  };
+  /** A click on the map (Ju, 09/11; the site's map opens no sheet beside the panel, main.ts
+   * selectAt): on a zone, the zone's own choice (drones.ts); on an arrondissement of the commune
+   * shown (Paris, Lyon, Marseille), the map framed on it, the panel staying; on another commune
+   * the register holds, its 3D view in the panel, on the same tab; anywhere else, the map centred
+   * on the point in the part of the map the panel and the overlays leave free (libre). */
+  private async cliquerCarte(e: MapMouseEvent): Promise<void> {
+    const map = this.map;
+    if (!map || this.dead) return;
+    // a tap that closed a bubble (bulle.ts, a finger's first tap reads) does only that: the map
+    // stays, no other commune opens under the finger
+    if (this.bulleAuDoigt) return;
+    const { x, y } = e.point;
+    const zones = [COUCHES.vol, COUCHES.vsa].filter((l) => map.getLayer(l));
+    if (zones.length && map.queryRenderedFeatures([x, y], { layers: zones }).length) return;
+    // a hand on the map: the slow turn stops
+    this.arreterTour();
+    const aires = ["communes-count", "communes", "communes-none"].filter((l) => map.getLayer(l));
+    const f = aires.length ? map.queryRenderedFeatures([x, y], { layers: aires })[0] : undefined;
+    const code = String(f?.properties?.c ?? "");
+    const ici = this.props.d.insee;
+    const duration = reduced() ? 0 : MOVE_MS;
+    if (code && communeDe(code) === ici && code !== ici) {
+      const b = await boiteAire(code);
+      if (b && this.map === map && !this.dead) {
+        this.voler(map, b);
+        return;
+      }
+    } else if (code && communeDe(code) !== ici) {
+      const autre = communeDe(code);
+      if (await registreA(autre)) {
+        if (this.map !== map || this.dead) return;
+        const q = this.state.onglet === "fiche" ? "?onglet=fiche" : "";
+        ouvrir(`${communeHref(autre, "carte")}${q}`);
+        return;
+      }
+    }
+    if (this.map !== map || this.dead) return;
+    map.easeTo({ center: e.lngLat, padding: libre(), duration }, NOTRE);
+  }
   /** The map's padding follows the part of the map left free (v2.4 point 2): the panel or the
    * sheet, its band, « ← Le registre », the legend and the chart; measured again once they have
    * stopped changing (a sheet lowered or raised, a window resized, the chart unfolded), and set
@@ -381,8 +502,10 @@ class CarteDrones extends Vue<Props, State> {
     }
   }
   componentDidMount(): void {
+    this.demanderFiche();
     addEventListener("themechange", this.onTheme);
     addEventListener("resize", this.suivreMarge);
+    document.addEventListener("pointerdown", this.onAppui, true);
     this.observerFrise();
     this.observerMarge();
     const map = carteDuSite();
@@ -402,6 +525,24 @@ class CarteDrones extends Vue<Props, State> {
       });
     void this.poser(map);
   }
+  /** The tab « Fiche »'s ranks and the France-wide share, asked once the panel is drawn. */
+  private demanderFiche(): void {
+    if (this.fiche) return;
+    this.fiche = true;
+    load<Listes>("listes.json").then(
+      (X) => {
+        if (!this.dead) this.setState({ X });
+      },
+      () => {},
+    );
+    load<{ drones?: { publication?: Publication } }>("index.json").then(
+      (I) => {
+        if (!this.dead) this.setState({ pubFrance: I.drones?.publication ?? null });
+      },
+      () => {},
+    );
+  }
+  private fiche = false;
   /** The outline (it says which zones are the whole commune), then the layers once the map's style
    * is there, then the flight to the commune if its box did not frame it already. */
   private async poser(map: MlMap): Promise<void> {
@@ -433,8 +574,7 @@ class CarteDrones extends Vue<Props, State> {
           groupe: (n) => t("carte.vol_groupe", { n }),
           boite: d.f.commune.bbox,
           inclinaison: inclinaison(),
-          formes: drones(d).formes,
-          onNonLue: this.basculerSz,
+          formes: this.DR.formes,
           onChoix: (id) => {
             const i = this.slotOf(id);
             if (i >= 0) {
@@ -446,7 +586,6 @@ class CarteDrones extends Vue<Props, State> {
         if (contour) this.layer.contour(contour);
         this.synced = "";
         this.syncMap();
-        this.poserEtiquette(map);
         // an act opened by its address rendered its panel before the zones were there: its
         // places' « Voir sur la carte » now
         this.setState({ calque: true });
@@ -472,111 +611,6 @@ class CarteDrones extends Vue<Props, State> {
     else if (!map.isMoving()) this.demarrerTour();
   }
 
-  // --- the label on the commune's edge (board B) ---------------------------------------------------
-  /** « zone non lue · 3 arrêtés ce jour »: set on the commune's boundary, along it, in the free
-   * part of the map (never a card in its middle); a click keeps the list to the acts without a
-   * drawn zone. Styled here, in the board's .edge (it lives on the map, outside the register). */
-  private etiquette: HTMLButtonElement | null = null;
-  private etiqI: number | null = null;
-  private etiqImage = 0;
-  private readonly basculerSz = () => this.setState({ sz: !this.state.sz, sel: null, vu: null });
-  private poserEtiquette(map: MlMap): void {
-    if (this.etiquette || typeof document !== "object") return;
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "rg-cd-bord";
-    b.setAttribute(
-      "style",
-      "position:absolute;left:0;top:0;z-index:2;display:none;padding:12px 4px;margin:0;border:0;" +
-        "background:none;cursor:pointer;transform-origin:50% 50%",
-    );
-    const s = document.createElement("span");
-    b.append(s);
-    b.addEventListener("click", (e) => {
-      e.stopPropagation();
-      this.basculerSz();
-    });
-    map.getContainer().append(b);
-    this.etiquette = b;
-    map.on("move", this.suivreEtiquette);
-    map.on("resize", this.suivreEtiquette);
-    this.majEtiquette();
-  }
-  private readonly suivreEtiquette = () => {
-    if (this.etiqImage) return;
-    this.etiqImage = requestAnimationFrame(() => {
-      this.etiqImage = 0;
-      this.placerEtiquette();
-    });
-  };
-  /** The words and the look (the theme's paper and the drones' blue, read again on each change). */
-  private majEtiquette(): void {
-    const b = this.etiquette;
-    if (!b) return;
-    const S = this.state;
-    const n = tickets(this.T, this.ND, this.periode(), S.k).nonLues;
-    const jour = this.jourChoisi();
-    const on = n > 0 && S.k !== "vsa";
-    this.layer?.nonLue(on);
-    const tt = this.teintes();
-    const s = b.firstElementChild as HTMLElement;
-    s.textContent = t(jour != null ? "carte.bord_label_jour" : "carte.bord_label", { n });
-    s.setAttribute(
-      "style",
-      `display:block;padding:2px 7px;background:${S.sz ? tt.bleu : tt.fond};` +
-        `color:${S.sz ? tt.fond : tt.bleu};border:2px dotted ${tt.bleu};` +
-        "font:800 11.5px Archivo,sans-serif;font-stretch:78%;text-transform:uppercase;" +
-        "white-space:nowrap;letter-spacing:.01em",
-    );
-    b.setAttribute("aria-pressed", S.sz ? "true" : "false");
-    b.setAttribute("aria-label", `${s.textContent}. ${t("carte.bord_aria")}`);
-    b.dataset.on = on ? "1" : "";
-    this.placerEtiquette();
-  }
-  private placerEtiquette(): void {
-    const b = this.etiquette;
-    const map = this.map;
-    const ring = this.layer?.bordure();
-    if (!b || !map || !ring?.length || !b.dataset.on) {
-      if (b) b.style.display = "none";
-      return;
-    }
-    const W = map.getContainer().clientWidth;
-    const H = map.getContainer().clientHeight;
-    const f = libre();
-    // the label half outside the free part would cover the panel: its half-width kept in
-    b.style.display = "block";
-    const m = Math.min((W - f.left - f.right) / 2 - 1, (b.offsetWidth || 140) / 2 + 8);
-    const pts = ring.map((p) => {
-      const q = map.project(p);
-      return [q.x, q.y] as [number, number];
-    });
-    // the cited sector's label (its words, ~280 px wide) and the edge's half-width kept apart
-    const loin = (this.layer?.ancres() ?? []).map((c) => {
-      const q = map.project(c);
-      return { x: q.x, y: q.y, r: 150 + m };
-    });
-    const pose = poseBord(
-      pts,
-      { x0: f.left + m, y0: f.top + 16, x1: W - f.right - m, y1: H - f.bottom - 16 },
-      this.etiqI,
-      loin,
-    );
-    if (!pose) {
-      b.style.display = "none";
-      return;
-    }
-    this.etiqI = pose.i;
-    b.style.display = "block";
-    b.style.transform = `translate(${pose.x}px, ${pose.y}px) translate(-50%, -50%) rotate(${pose.angle.toFixed(1)}deg)`;
-  }
-  private retirerEtiquette(): void {
-    if (this.etiqImage) cancelAnimationFrame(this.etiqImage);
-    this.map?.off("move", this.suivreEtiquette);
-    this.map?.off("resize", this.suivreEtiquette);
-    this.etiquette?.remove();
-    this.etiquette = null;
-  }
   /** Whether the commune was framed: once, then the view moves the camera only when asked. */
   private cadree = false;
   /** To the commune (its box, else the outline's or the zones'), or to a zone, tilted, in the part
@@ -628,6 +662,7 @@ class CarteDrones extends Vue<Props, State> {
     this.abort.abort();
     removeEventListener("themechange", this.onTheme);
     removeEventListener("resize", this.suivreMarge);
+    document.removeEventListener("pointerdown", this.onAppui, true);
     clearTimeout(this.tMarge);
     // still turning by itself: nobody chose that bearing (v2.4 survey: the site's map was left
     // turned by 38°); turned by a hand, it stays
@@ -640,7 +675,6 @@ class CarteDrones extends Vue<Props, State> {
     map.off("pitchend", this.onPitch);
     map.off("moveend", this.onMove);
     map.off("click", this.onCarte);
-    this.retirerEtiquette();
     // the register closed over this view (✕, Escape): the map stays tilted on the commune with its
     // volumes and the period chosen (v2.2 point 3), a ticket on it to leave them; any other page
     // of the register, the volumes go
@@ -682,6 +716,8 @@ class CarteDrones extends Vue<Props, State> {
       else q.set("mois", a.slice(0, 7));
     }
     if (S.k) q.set("genre", S.k);
+    // the tab: « Fiche » said in the address, « Drones » the default
+    if (S.onglet === "fiche") q.set("onglet", "fiche");
     if (S.sz) q.set("zone", "non-lue");
     if (sel) {
       const x = versAdresse(sel);
@@ -746,9 +782,13 @@ class CarteDrones extends Vue<Props, State> {
     L.survoler(hov >= 0 ? T[hov].sites : []);
     L.choisir(cur >= 0 ? T[cur].sites : []);
     // board B: the cited sectors of the acts shown, all of them over the whole period, a chosen
-    // day's only; their labels for a chosen day or act; the commune's edge and its label
-    const formes = drones(this.props.d).formes;
-    const r = this.periode();
+    // day's only; their labels for a chosen day or act; the whole commune hatched while an act
+    // shown has no place read (Ju, 09/11), an arrondissement it names alone (A, 09/11); light over
+    // the period, full for the day chosen or hovered (Ju, 10/11: carte-outils periodeHachuree)
+    const formes = this.DR.formes;
+    const insee = this.props.d.insee;
+    const survol = S.jv >= 0 ? S.jv : S.jf >= 0 ? S.jf : null;
+    const { r, plein } = periodeHachuree(T, this.ND, this.periode(), survol, S.k, insee, formes);
     const choisi = S.sel && cur < 0 ? S.sel : null;
     const ids: string[] = [];
     const labs: { id: string; mots: string }[] = [];
@@ -762,7 +802,10 @@ class CarteDrones extends Vue<Props, State> {
       }
     }
     L.secteurs(ids, labs);
-    this.majEtiquette();
+    const z = zonesHachurees(T, this.ND, r, S.k, insee, formes);
+    L.arrondissements(z.arrondissements);
+    L.nonLue(z.commune);
+    L.plein(plein);
   }
 
   // --- the page --------------------------------------------------------------------------------
@@ -787,9 +830,18 @@ class CarteDrones extends Vue<Props, State> {
   /** « Voir sur la carte » for a cited sector: its shape framed (drones.formes). */
   private voirForme(id: string): Handler {
     return () => {
-      const f = drones(this.props.d).formes[id];
+      const f = this.DR.formes[id];
       const b = f ? bboxOf(rings(f.geometry as Parameters<typeof rings>[0])) : null;
       if (this.map && b) this.voler(this.map, b);
+    };
+  }
+  /** « Voir sur la carte » for an arrondissement an act names: its box (tiles/areas.json) framed. */
+  private voirAire(code: string): Handler {
+    return () => {
+      const map = this.map;
+      void boiteAire(code).then((b) => {
+        if (b && map && this.map === map && !this.dead) this.voler(map, b);
+      });
     };
   }
   /** « Voir sur la carte »: the zone framed, as the commune is at the opening. */
@@ -876,17 +928,25 @@ class CarteDrones extends Vue<Props, State> {
   }
 
   /** The calendar's geometry, the same for its drawing and its pointer (board B: 2.92 × 7.6 cells
-   * every 3.52 × 8.2 at 528 px; the phone: a row of 31 days per month). */
+   * every 3.52 × 8.2 at 528 px; the phone: a row of 31 days per month). Twelve months by default,
+   * the three years on « Toute la période » (Ju, 09/11): on a wide screen, fewer weeks give wider
+   * columns, and the rows grow with them (14 px at most), the cells near square. */
   private cal(W: number) {
-    const A = DEBUT_CAL;
+    const A = debutCal(today(), this.state.calTout);
     const B = lundi(today()) + 7 * DAY;
     if (large()) {
-      const cols = Math.max(1, Math.round((B - A) / (7 * DAY)));
+      const cols = Math.max(1, Math.round((B - lundi(A)) / (7 * DAY)));
       const step = (W - CAL_X) / (cols - 1 + CAL_W);
-      return { tel: false as const, A, B, cols, step, H: CAL_H };
+      const dy = Math.min(14, Math.max(CAL_DY, step));
+      const ch = (dy * CAL_CH) / CAL_DY;
+      // the marks under the grid, as board B sets them under its own (66.4 for 7 rows of 8.2)
+      const yM = CAL_Y0 + 7 * dy + 2.7;
+      return { tel: false as const, A, B, cols, step, dy, ch, yM, H: yM + (CAL_H - 66.4) };
     }
+    const a = new Date(A);
+    const z = new Date(B - DAY);
     const nMois =
-      (new Date(B - DAY).getUTCFullYear() - 2024) * 12 + new Date(B - DAY).getUTCMonth() + 1;
+      (z.getUTCFullYear() - a.getUTCFullYear()) * 12 + z.getUTCMonth() - a.getUTCMonth() + 1;
     const step = (W - TEL_LW) / 31;
     return { tel: true as const, A, B, cols: 31, step, H: nMois * TEL_RH, nMois };
   }
@@ -902,9 +962,9 @@ class CarteDrones extends Vue<Props, State> {
     let d: number;
     if (!g.tel) {
       const col = Math.floor((x - CAL_X + (g.step * (1 - CAL_W)) / 2) / g.step);
-      const row = Math.floor((y - CAL_Y0 + (CAL_DY - CAL_CH) / 2) / CAL_DY);
+      const row = Math.floor((y - CAL_Y0 + (g.dy - g.ch) / 2) / g.dy);
       if (col < 0 || col >= g.cols || row < 0 || row > 6) return null;
-      d = g.A + col * 7 * DAY + row * DAY;
+      d = lundi(g.A) + col * 7 * DAY + row * DAY;
     } else {
       const row = Math.floor(y / TEL_RH);
       const col = Math.floor((x - TEL_LW) / g.step);
@@ -929,7 +989,7 @@ class CarteDrones extends Vue<Props, State> {
     const nom = d.f.commune.nom;
     const T = this.T;
     const ND = this.ND;
-    const formes = drones(d).formes;
+    const formes = this.DR.formes;
     const r = this.periode();
     const now = today();
     const jour = this.jourChoisi();
@@ -941,6 +1001,8 @@ class CarteDrones extends Vue<Props, State> {
     // the tickets: the period's; a chosen day keeps the whole period's, as board B does (675
     // arrêtés on Wed. 4 Nov.), the day being said by the calendar's sentence and the edge's label
     const tk = tickets(T, ND, jour != null ? null : r, S.k);
+    // what the map hatches (syncMap's): the legend says each
+    const zH = zonesHachurees(T, ND, r, S.k, insee, formes);
 
     // « Jours de vol autorisés » (board B): one cell per day, darker by the acts of the day
     const W = Math.max(200, S.fw);
@@ -971,34 +1033,34 @@ class CarteDrones extends Vue<Props, State> {
       const xOf = (col: number) => CAL_X + col * g.step;
       cases = grid.cases.map((c) => ({
         x: f2(xOf(c.col)),
-        y: f2(CAL_Y0 + c.row * CAL_DY),
+        y: f2(CAL_Y0 + c.row * g.dy),
         w: f2(cw),
-        h: f2(CAL_CH),
+        h: f2(g.ch),
         st: style(c.n, c.t),
       }));
       calTxt.push(
         ...["cal_l", "cal_m", "cal_v", "cal_d"].map((k, i) => ({
           x: "-6",
-          y: f2(CAL_Y0 + i * 2 * CAL_DY + 6.7),
+          y: f2(CAL_Y0 + i * 2 * g.dy + g.ch * 0.88),
           a: "end",
           st: MUTED,
           t: t(`carte.${k}`),
         })),
       );
-      for (const m of reperesCal(g.A, g.B)) {
+      for (const m of reperesCal(g.A, g.B, S.calTout ? 3 : 1)) {
         const x = xOf(m.col) - 0.32;
         calLin.push({
           x1: f2(x),
           x2: f2(x),
-          y1: "66.4",
-          y2: m.an ? "70.4" : "69.4",
+          y1: f2(g.yM),
+          y2: f2(g.yM + (m.an ? 4 : 3)),
           st: m.an
             ? "stroke: var(--line); stroke-width: 1.5"
             : "stroke: var(--muted); stroke-width: 1",
         });
         calTxt.push({
           x: f2(x + 2),
-          y: m.an ? "81.4" : "80.4",
+          y: f2(g.yM + (m.an ? 15 : 14)),
           a: "start",
           st: m.an
             ? "font: 800 11px Archivo, sans-serif; fill: var(--fg)"
@@ -1052,7 +1114,10 @@ class CarteDrones extends Vue<Props, State> {
       this.setState({ jf: Math.max(g.A, Math.min(now, x)) });
     };
     const choisirJour = (x: number) =>
-      this.setPeriode(x === jour ? null : [x, x + DAY], { jf: -1, jv: -1 });
+      this.setPeriode(x === jour ? null : [x, x + DAY], { jf: -1, jv: -1, onglet: "drones" });
+    // « Afficher ce jour » shows the day, on the tab « Drones » (Ju, 09/11, choice 5), never hides it
+    const afficherJour = (x: number) =>
+      this.setPeriode([x, x + DAY], { jf: -1, jv: -1, onglet: "drones" });
 
     // the detail (A8, B3): the slot chosen or the act chosen without a slot, all its act says;
     // by default the panel only says what to hover or choose. A hover fills it not (B3).
@@ -1091,7 +1156,11 @@ class CarteDrones extends Vue<Props, State> {
       const uniques = (xs: (string | null | undefined)[]) =>
         [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))].join(" ; ");
       const haut = zs.find((z) => z.hauteur_lue && z.hauteur);
-      const dateA = e?.date ? dateTxt(jourMs(e.date)) : null;
+      // the act's own date, from its id (« arrêté du 3 novembre »): the event's `date` is a day of
+      // flight for some acts (Ju, 10/11: a date says which it is), its day of publication apart
+      const duA = dateActe(acte);
+      const dateA = duA ? dateTxt(jourMs(duA)) : null;
+      const pubA = publieDe(e);
       const ref = e?.ref ?? null;
       const page = e?.page ?? null;
       const nature = typeof e?.nature_vol === "string" ? e.nature_vol : "";
@@ -1105,8 +1174,9 @@ class CarteDrones extends Vue<Props, State> {
         c: aut.c,
         i: icone("aut"),
         k: t(vsa ? "carte.det_vsa" : "carte.det_drone"),
-        title: plage(c),
-        sub: dateA ? t("carte.det_acte_du", { date: dateA }) : "",
+        title: plageVol(c),
+        // the act's own day « daté du » (Ju 11/11); its publication, when read, its own row
+        sub: dateA ? t("carte_a.det_date_du", { date: dateA }) : "",
         lieuxK: t("carte.lieux_k"),
         lieux: lieux(zs).map((x) => ({
           l: x.l,
@@ -1117,7 +1187,7 @@ class CarteDrones extends Vue<Props, State> {
         creneaux:
           freres.length > 1
             ? freres.map(([x, i]) => ({
-                l: plage(x),
+                l: plageVol(x),
                 cur: i === cur ? "true" : "false",
                 href: `${communeHref(insee, "carte")}${this.requete(this.K[i])}`,
                 pick: this.choix(this.K[i]),
@@ -1154,6 +1224,7 @@ class CarteDrones extends Vue<Props, State> {
           ),
           ...(haut ? ligne("carte.hauteur_k", t("carte.hauteur_m", { n: haut.hauteur ?? 0 })) : []),
           ...ligne("carte.type_acte_k", e?.sous_type),
+          ...ligne("carte_a.publie_k", pubA ? dateTxt(jourMs(pubA)) : null),
           ...ligne("carte.communes_k", autres.join(", ")),
           ...ligne(
             "carte.source",
@@ -1174,11 +1245,15 @@ class CarteDrones extends Vue<Props, State> {
       const hs = a.horaires?.length ? horairesMots(a) : "";
       const secteur = secteurPanneau(a);
       const dessine = (a.lieux ?? []).find((l) => l.forme && formes[l.forme]);
+      // where the build reads it (A, 09/11): the arrondissements named, hatched alone; the place
+      // cited, the whole commune hatched (no shape for a place)
+      const arrs = dessine ? [] : arrondissementsDe(a, insee);
+      const lieu = lieuPanneau(a);
       det = {
         c: aut.c,
         i: icone("aut"),
         k: t(a.kind === "vsa" ? "carte.det_vsa" : "carte.det_drone"),
-        title: [jourA != null ? jourLong(jourA) : t("format.date_non_publiee"), hs]
+        title: [jourA != null ? volLe(jourLong(jourA)) : t("format.date_non_publiee"), hs]
           .filter(Boolean)
           .join(" · "),
         sub: enTete(a),
@@ -1193,13 +1268,16 @@ class CarteDrones extends Vue<Props, State> {
                 },
               ]
             : []),
+          ...arrs.map((c) => ({ l: arrondissementTxt(c), voir: this.voirAire(c), has: S.calque })),
+          ...(lieu ? [{ l: lieu, voir: null, has: false }] : []),
           { l: zonePanneau(a), voir: null, has: false },
         ],
         hasLieux: true,
         creneaux: [],
         hasCreneaux: false,
         rows: [
-          ...ligne("carte.motif_k", motifTxt(a)),
+          // the motive: « non lu » for a drone act whose motive is not served (A: 76 % of them)
+          ...ligne("carte.motif_k", motifTxt(a) || (a.kind === "drone" ? t("liste.non_lu") : "")),
           ...ligne("carte.service", a.service),
           ...ligne("carte.finalites_k", finalitesTxt(a).join(" ; ")),
           ...ligne("carte.cameras_drone_k", camerasTxt(a)),
@@ -1207,6 +1285,10 @@ class CarteDrones extends Vue<Props, State> {
           ...(js.length > 1
             ? ligne("carte.jours_k", js.map((j) => dateTxt(jourMs(j))).join(", "))
             : []),
+          ...(() => {
+            const p = publieDe(e);
+            return ligne("carte_a.publie_k", p ? dateTxt(jourMs(p)) : null);
+          })(),
         ],
         note: "",
         links: [
@@ -1281,7 +1363,15 @@ class CarteDrones extends Vue<Props, State> {
     if (!T.length && !ND.length) {
       const couv = d.f.couverture.departement;
       const nArr = d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
-      if (couv.etat !== "collecte" && !nArr)
+      if (couv.etat === "collecte" && !nArr && !fichePanneau(d, S.X).dronesLus)
+        vide = [
+          t("carte_a.dr_nl_court", { nom }),
+          " ",
+          { a: { href: "/registre/couverture", text: t("carte.vide_couverture") } },
+        ];
+      else if (!nArr && fichePanneau(d, S.X).couv.dr === "non_rattache")
+        vide = `${t("carte_a.dr_nr0", { nom })} ${t("socle_a.partie_non_rattachee")}.`;
+      else if (couv.etat !== "collecte" && !nArr)
         vide = [
           { span: etatDepartementLie(d.f.commune.dep, d.f.stats.dep.nom, couv), cls: "" },
           " ",
@@ -1326,7 +1416,7 @@ class CarteDrones extends Vue<Props, State> {
     const listT = S.sz
       ? t("carte.liste_sz", { arr })
       : jour != null
-        ? `${t("carte.liste_jour", { date: jourLong(jour), arr })}${
+        ? `${t("carte.liste_jour", { date: volLe(jourLong(jour)), arr })}${
             hJour ? t("carte.liste_h_vol", { h: heuresTxt(hJour) }) : ""
           }`
         : !rows.length
@@ -1337,12 +1427,350 @@ class CarteDrones extends Vue<Props, State> {
 
     const isLarge = large();
     const finCal = Math.min(g.B - DAY, now);
-    const sousCal = t("carte.cal_sous", {
-      de: String(new Date(g.A).getUTCFullYear()),
-      a: String(new Date(finCal).getUTCFullYear()),
+    const sousCal = S.calTout
+      ? t("carte.cal_sous", {
+          de: String(new Date(g.A).getUTCFullYear()),
+          a: String(new Date(finCal).getUTCFullYear()),
+        })
+      : t("carte_a.cal_sous_12");
+    // --- lot 5 (board Vue3D-Paris-fiche): the panel's head and its two tabs ----------------------
+    const F = fichePanneau(d, S.X);
+    // a family whose acts are not all attached to a commune: its counts are minimums (« au moins
+    // N », Ju 11/11), with the sentence that says why; none attached, « aucun encore rattaché »
+    const minDr = F.couv.dr === "non_rattache";
+    const minCam = F.couv.cam === "non_rattache";
+    const auMoins = (m: boolean, x: string) => (m ? t("socle_a.au_moins", { n: x }) : x);
+    const depC = String(d.f.commune.dep ?? "");
+    const ditCam = ditActes(F.couv.cam, F.autorisees, depC, { nomDep: d.f.stats.dep?.nom });
+    const ordinal = (n: number) => (n === 1 ? t("commune_a.premier") : t("commune_a.nieme", { n }));
+    const rangL = (x: { r: number; n: number } | null) =>
+      x ? t("carte_a.rang", { r: ordinal(x.r), n: fr(x.n) }) : "";
+    const avec = (...xs: string[]) => xs.filter(Boolean).join(" · ");
+    const estFiche = S.onglet === "fiche";
+    const versOnglet = (o: "fiche" | "drones") => (() => this.setState({ onglet: o })) as Handler;
+    const strateL = t(`commune_a.strate.${F.strate}`);
+    const lead: Rich = estFiche
+      ? [
+          ...(F.cameras != null
+            ? [
+                { strong: t("carte_a.lead_cam", { n: fr(F.cameras) }) },
+                F.rCameras
+                  ? t("carte_a.lead_cam_r", {
+                      r: ordinal(F.rCameras.r),
+                      n: fr(F.rCameras.n),
+                      strate: strateL,
+                    })
+                  : ".",
+              ]
+            : []),
+          ...(F.eur > 0
+            ? [
+                " ",
+                t("carte_a.lead_eur_a"),
+                { strong: montantA(F.eur) },
+                t("carte_a.lead_eur_b", { y: F.depuis }),
+              ]
+            : []),
+        ]
+      : [];
+    const pubC = (d.f as { drones?: { publication?: Publication } }).drones?.publication;
+    const vC = avantVol(pubC);
+    const vF = avantVol(S.pubFrance);
+    // the départements France's share counts (index.json drones.publication.deps), named as the
+    // home names them, the most acts first (recette 11)
+    const depsLus = new Intl.ListFormat("fr", { type: "conjunction" }).format(
+      ordreDeps(vF.deps).map((x) => depNom(x)),
+    );
+    // recette 12: a commune without any act says « aucun » where its decrees are read, « non lu »
+    // where they are not — never « 0 arrêté », « dont 0 avec horaires » or « 0 zone tracée »
+    const actesTous =
+      T.length + ND.length + d.all.filter((e) => /^arrete_(drone|vsa)$/.test(e.t)).length;
+    const eDr = etatDrones(F.dronesLus, tk.actes, actesTous);
+    const sansActe = eDr === "aucun" && actesTous === 0;
+    const joursNl = eDr === "non_lu";
+    const clsV = { avant: "p-ok", jour_meme: "p-mid", apres: "p-late" } as const;
+    const barre = (l: string, v: ReturnType<typeof avantVol>, aucun = false) => ({
+      l,
+      lu: !v.nonLu,
+      nonLu: v.nonLu,
+      st: aucun ? t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun_arrete") : t("liste.non_lu"),
+      parts: v.parts.map((x) => ({
+        cls: `seg ${clsV[x.k]}${x.pct < 10 ? " pt" : ""}`,
+        st: `flex: ${Math.max(1, x.pct)}`,
+        l: x.pct >= 8 ? t("accueil.pct", { n: x.pct }) : "",
+        bh: `${l} · ${t(`accueil.vol_${x.k}`)}`,
+        bl: `${fr(x.n)} · ${x.pct} %`,
+      })),
     });
+    // « À venir »: the next days an act authorises flights, from today, five at most
+    const parisJour = (ms: number) =>
+      new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Paris" }).format(new Date(ms));
+    const venir = new Map<string, Set<string>>();
+    // today in Paris (the acts' days are Paris's)
+    const aujIso = parisJour(Date.now());
+    for (const c of droneT)
+      for (const iso of [parisJour(c.t0)])
+        if (iso >= aujIso) {
+          const as = venir.get(iso) ?? new Set<string>();
+          for (const a of c.actes ?? []) as.add(a);
+          venir.set(iso, as);
+        }
+    for (const a of droneND)
+      for (const iso of joursDe(a))
+        if (iso >= aujIso) venir.set(iso, (venir.get(iso) ?? new Set()).add(a.acte));
+    const avenir = [...venir]
+      .sort((p, q) => p[0].localeCompare(q[0]))
+      .slice(0, 5)
+      .map(([iso, as]) => ({
+        d: jourLong(jourMs(iso)),
+        // « Prochain vol connu : aujourd'hui » on the day itself (Ju, 09/11)
+        lead: iso === aujIso ? t("carte_a.aujourdhui") : PROCHAIN.format(jourMs(iso)),
+        n: t("carte_a.avenir_n", { n: as.size }),
+        pick: (() => afficherJour(jourMs(iso))) as Handler,
+      }));
+    // the days of flight over 12 months: « non lu », « aucun jour de vol », or their count
+    const joursFig = (rg: boolean) =>
+      joursNl
+        ? { v: t("socle_a.actes_non_lus_court"), u: "", l: "" }
+        : F.jours
+          ? {
+              pre: minDr ? t("socle_a.au_moins_pre") : "",
+              v: fr(F.jours),
+              u: t("carte_a.jours_u", { n: F.jours }),
+              l: rg ? avec(t("carte_a.sur_12"), rangL(F.rJours)) : t("carte_a.sur_12"),
+            }
+          : minDr
+            ? { v: t("socle_a.aucun_rattache"), u: "", l: "" }
+            : { v: t("carte_a.aucun"), u: "", l: t("carte_a.sur_12_aucun") };
+    const nlFig = { cls: "fig nl", v: t("socle_a.actes_non_lus_court"), u: "", l: "" };
+    // none attached yet (« aucun encore rattaché »): the dashed, muted figure of a missing number
+    const nlR = minDr ? "fig nl" : "fig";
+    const ficheV = {
+      figs: [
+        {
+          cls: F.cameras == null ? "fig nl" : "fig",
+          k: t("carte_a.f_cameras"),
+          v: F.cameras == null ? t("liste.non_lu") : fr(F.cameras),
+          u: "",
+          l: avec(t("carte_a.sur_carte"), rangL(F.rCameras)),
+          bl: t("commune_a.fig.cameras_tip", { nom }),
+          versDrones: null,
+        },
+        {
+          cls: F.eph == null ? "fig nl" : "fig",
+          k: t("carte_a.f_argent"),
+          v: F.eph == null ? t("commune_a.fig.argent_aucun") : fr(Math.round(F.eph)),
+          u: F.eph == null ? "" : t("commune_a.fig.argent_u"),
+          l: avec(
+            F.eur > 0 ? t("carte_a.eur_n", { m: montantA(F.eur), n: F.contrats }) : "",
+            rangL(F.rEph),
+          ),
+          bl: t("commune_a.fig.argent_tip"),
+          versDrones: null,
+        },
+        {
+          cls: joursNl || (minDr && !F.jours) ? "fig nl" : "fig",
+          k: t("carte_a.f_drones"),
+          ...joursFig(true),
+          // the link to the tab follows the line, or stands alone under « non lu »
+          sep: joursNl ? "" : " · ",
+          bl: t("commune_a.fig.drones_tip", { nom }),
+          versDrones: versOnglet("drones"),
+        },
+        {
+          cls: F.offresPubliees ? "fig" : "fig nl",
+          k: t("carte_a.f_offre"),
+          v: F.offresPubliees ? fr(F.uneOffre) : t("commune_a.fig.non_publiee"),
+          u: F.offresPubliees ? t("carte_a.sur_n", { n: fr(F.offresPubliees) }) : "",
+          l: F.offresPubliees ? t("carte_a.offre_l") : "",
+          bl: t("commune_a.fig.concurrence_tip"),
+          versDrones: null,
+        },
+      ],
+      autCls: F.arretesLus ? "card" : "card nl2",
+      aut: (F.arretesLus
+        ? [
+            t("carte_a.aut_lus_a"),
+            { strong: auMoins(minCam, t("carte_a.aut_lus_n", { n: fr(F.autorisees) })) },
+            t("carte_a.aut_lus_b", { nom }),
+            ...(minCam ? [" ", `${ditCam.phrase}.`] : []),
+          ]
+        : F.couv.cam === "non_lu"
+          ? [{ strong: phraseActes(F.couv.cam, depC, d.f.stats.dep?.nom) }, t("carte_a.aut_nl_c")]
+          : minCam
+            ? [t("commune_a.cam_ans_nr0", { nom }), ". ", `${t("socle_a.partie_non_rattachee")}.`]
+            : [
+                t("carte_a.aut_nl_a", { nom }),
+                { strong: t("carte_a.aut_nl_b") },
+                t("carte_a.aut_nl_c"),
+              ]) as Rich,
+      href: communeHref(insee),
+      comparer: `/registre/comparer?communes=${encodeURIComponent(insee)}`,
+      comparerL: t("carte_a.comparer", { nom }),
+      note: t("carte_a.note", { d: dateTxt(jourMs(d.f.couverture.maj)) }),
+    };
+    const drV = {
+      figs: [
+        {
+          k: t("carte_a.d_arretes"),
+          ...(eDr === "non_lu"
+            ? nlFig
+            : eDr === "aucun"
+              ? {
+                  cls: nlR,
+                  v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
+                  u: "",
+                  l: "",
+                }
+              : {
+                  cls: "fig",
+                  pre: minDr ? t("socle_a.au_moins_pre") : "",
+                  v: fr(tk.actes),
+                  u: "",
+                  l: tk.horairesLus ? t("carte_a.d_horaires", { n: fr(tk.horairesLus) }) : "",
+                }),
+          bl: minDr
+            ? `${t("carte_a.d_arretes_b")}\n${t("socle_a.partie_non_rattachee")}.`
+            : t("carte_a.d_arretes_b"),
+        },
+        {
+          cls: joursNl || (minDr && !F.jours) ? "fig nl" : "fig",
+          k: t("carte_a.f_drones"),
+          ...joursFig(false),
+          bl: t("commune_a.fig.drones_tip", { nom }),
+        },
+        {
+          k: t("carte_a.d_avant"),
+          ...(sansActe
+            ? {
+                cls: nlR,
+                v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucun"),
+                u: "",
+                l: t("carte_a.d_avant_aucun"),
+              }
+            : {
+                cls: vC.nonLu ? "fig nl" : "fig",
+                v: vC.nonLu ? t("liste.non_lu") : `${vC.parts[0].pct}`,
+                u: vC.nonLu ? "" : "%",
+                l: "",
+              }),
+          ...(vF.nonLu
+            ? {}
+            : {
+                l: avec(
+                  sansActe ? t("carte_a.d_avant_aucun") : "",
+                  t("carte_a.d_france", { n: vF.deps.length, p: vF.parts[0].pct }),
+                ),
+              }),
+          bl: vF.nonLu
+            ? t("carte_a.d_avant_b")
+            : `${t("carte_a.d_avant_b")}\n${t("carte_a.d_france_b", { deps: depsLus })}`,
+        },
+        {
+          k: t("carte_a.d_zones"),
+          ...(eDr === "non_lu"
+            ? nlFig
+            : eDr === "aucun"
+              ? {
+                  cls: nlR,
+                  v: t(minDr ? "socle_a.aucun_rattache" : "carte_a.aucune"),
+                  u: "",
+                  l: "",
+                }
+              : {
+                  cls: "fig",
+                  v: fr(tk.tracees),
+                  u: "",
+                  l: tk.tracees ? "" : t("carte_a.d_zones_0"),
+                }),
+          bl: t("carte_a.d_zones_b"),
+        },
+      ],
+      // a helicopter's acts, apart (A, 09/11): never in the figures above, which count drones
+      helico: helicopteres(d) ? t("carte_a.helico", { n: helicopteres(d) }) : "",
+      avenir: avenir.length ? avenir : null,
+      // the départements counted named over their bar (Ju, 10/11), « France » when none is served
+      vol: [
+        barre(nom, vC, sansActe),
+        barre(vF.deps.length ? depsLus : t("carte_a.france", { n: 0 }), vF),
+      ],
+      volNote: sansActe
+        ? t(minDr ? "carte_a.vol_note_nr0" : "carte_a.vol_note_aucun", { nom, f: fr(vF.total) })
+        : vC.nonLu
+          ? t("carte_a.vol_note_nl")
+          : t("carte_a.vol_note", { nom, n: fr(vC.total), f: fr(vF.total), deps: depsLus }),
+    };
+
     return {
       ...this.base("carte"),
+      // « ← Retour » (Ju, 09/11): the page before, as the frame's own back button goes (hote.ts
+      // retour); a page opened cold has none, and the link goes to the commune's fiche
+      retourHref: communeHref(insee),
+      retourClic: ((e) => {
+        if (!retourPossible()) return;
+        e.preventDefault();
+        retour();
+      }) as Handler,
+      nom,
+      letters: coupeMots(nom),
+      lead: estFiche
+        ? lead
+        : eDr === "non_lu"
+          ? ([
+              t("carte_a.lead_dr_nl_a", { nom }),
+              { strong: t("carte_a.aut_nl_b") },
+              // collected but below the threshold of accuracy (`sous_le_seuil`), or not collected
+              t(
+                d.f.couverture.departement.etat === "collecte"
+                  ? "carte_a.lead_dr_nl_c_seuil"
+                  : "carte_a.lead_dr_nl_c",
+              ),
+            ] as Rich)
+          : eDr === "aucun"
+            ? ([
+                t(minDr ? "carte_a.dr_nr0" : "carte_a.lead_dr_aucun", { nom }),
+                ...(minDr ? [" ", `${t("socle_a.partie_non_rattachee")}.`] : []),
+                ...(avenir[0]
+                  ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
+                  : []),
+              ] as Rich)
+            : ([
+                {
+                  // the sentence's first words: « Au moins 644 arrêtés »
+                  strong: minDr
+                    ? t("socle_a.au_moins_debut", {
+                        n: t("carte_a.lead_dr_n", { n: fr(tk.actes) }),
+                      })
+                    : t("carte_a.lead_dr_n", { n: fr(tk.actes) }),
+                },
+                t("carte_a.lead_dr_b", { n: tk.actes, nom }),
+                ...(minDr ? [" ", `${t("socle_a.partie_non_rattachee")}.`] : []),
+                ...(avenir[0]
+                  ? [" ", t("carte_a.lead_dr_prochain"), " ", { strong: avenir[0].lead }, "."]
+                  : []),
+              ] as Rich),
+      onglets: (["fiche", "drones"] as const).map((o) => ({
+        id: `v3p-t-${o}`,
+        panel: o === "fiche" ? "v3p-fiche" : "v3p-drones",
+        l: t(`carte.onglet_${o}`),
+        cls: S.onglet === o ? "on" : "",
+        on: S.onglet === o ? "true" : "false",
+        tab: S.onglet === o ? "0" : "-1",
+        pick: versOnglet(o),
+      })),
+      // the tabs' keys (the ARIA tabs pattern): the arrows move to the other tab and focus it
+      ongletsClavier: ((ev) => {
+        const k = ev.nativeEvent as KeyboardEvent;
+        if (k.key !== "ArrowLeft" && k.key !== "ArrowRight") return;
+        k.preventDefault();
+        const o = estFiche ? "drones" : "fiche";
+        this.setState({ onglet: o });
+        requestAnimationFrame(() => document.getElementById(`v3p-t-${o}`)?.focus());
+      }) as Handler,
+      estFiche,
+      estDrones: !estFiche,
+      fiche: ficheV,
+      dr: drV,
       band: {
         r: repereType("commune"),
         nom,
@@ -1353,6 +1781,10 @@ class CarteDrones extends Vue<Props, State> {
       },
       hasVsa: T.some((c) => c.kind === "vsa" && c.sites.length) && S.k !== "drone",
       hasDrone: S.k !== "vsa",
+      // the legend says the hatchings the map shows: a cited sector's, the whole commune's
+      hasSecteurs: Object.keys(formes).length > 0,
+      hachureCommune: zH.commune,
+      hachureArr: zH.arrondissements.length > 0,
       hasEnt: S.ent.length > 0 && S.k !== "vsa",
       hasFrise: droneT.length + droneND.length > 0,
       is3d: S.is3d ? "true" : "false",
@@ -1372,10 +1804,20 @@ class CarteDrones extends Vue<Props, State> {
       nTR: fr(tk.tracees),
       lTR: t("carte.t_tracees", { n: tk.tracees }),
       nNL: fr(tk.nonLues),
-      lNL: t("carte.t_non_lues", { n: tk.nonLues }),
+      lNL: t("carte_a.t_lieu_nl", { n: tk.nonLues }),
       calSous: sousCal,
-      allOn: r || S.sz ? "false" : "true",
+      // the period chosen (a day, a month, a week by its address) let go: every date again
+      hasPeriode: !!r || S.sz,
       allYear: (() => this.setPeriode(null, { sz: false })) as Handler,
+      // the calendar's span: twelve months, or the three years (Ju, 09/11)
+      cal12: S.calTout ? "false" : "true",
+      calTout: S.calTout ? "true" : "false",
+      pick12: (() => {
+        if (S.calTout) this.setState({ calTout: false, jf: -1, jv: -1 });
+      }) as Handler,
+      pickTout: (() => {
+        if (!S.calTout) this.setState({ calTout: true, jf: -1, jv: -1 });
+      }) as Handler,
       // v2.3 (Ju): the legend a ticket beside the commands, the calendar a thin band, both folded
       // by default on a wide screen (DECISIONS 2026-10-31); folded, the chosen day stays in the band
       legOuverte: !isLarge || S.leg,
@@ -1406,7 +1848,14 @@ class CarteDrones extends Vue<Props, State> {
       calAlt: t("carte.cal_alt", { nom, de: dateTxt(g.A), a: dateTxt(finCal) }),
       calAide: t(g.tel ? "carte.cal_aide_tel" : "carte.cal_aide"),
       calLive: S.jf >= 0 && phrase ? `${phrase.date} · ${phrase.reste}` : "",
-      hasSum: !!phrase,
+      // the day's line keeps its two lines, filled or not (Ju, 09/11: nothing moves on hover)
+      // its whole sentence in a bubble: the frame's (bulle.ts) on a phone, where the calendar is in
+      // the sheet; on a wide screen the calendar stands over the map, out of the panel that clips
+      // the frame's bubble, and the theme's own (socle-a [data-tip]) shows it above the line
+      sumTip: !!phrase && isLarge,
+      sumBulle: !!phrase && !isLarge,
+      sumTout: phrase ? `${phrase.date} · ${phrase.reste}` : "",
+      noSum: !phrase,
       sum: phrase ?? { date: "", reste: "" },
       calClick: ((e) => {
         const x = this.jourSous(e);
@@ -1445,6 +1894,7 @@ class CarteDrones extends Vue<Props, State> {
       hasSz: S.sz,
       szTous: (() => this.setState({ sz: false, sel: null, vu: null })) as Handler,
       rows: rows.map((x) => x.row),
+      hasRows: rows.length > 0,
       vide,
     };
   }

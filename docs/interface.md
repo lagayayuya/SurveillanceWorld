@@ -256,6 +256,15 @@ classique's own layout of them, its ruler and its chips as buttons, removed on 2
   turns: « toutes (motorisée) » (2026-09-30). Validated contributions are months, « sur
   place » only when it was (2026-09-30, 2026-10-01); height and tilt are classes, never
   metres typed nor degrees (2026-10-04).
+- « Combien en manque-t-il ? » (board 12, 2026-11-10), after « Modifier / Toujours là ? »: the
+  block of the commune the camera stands in (`cameragap.ts`, the commune read under the camera
+  from an invisible layer of the admin tiles, `communes-probe`), shared with the commune and
+  département sheets (`gap.ts`): the cameras on the map against those the prefecture
+  authorised, « non lu » while the register serves no `cam_aut`, « + Ajouter une caméra », the
+  commune's page in the register. The commune and département sheets (`areapunk.ts`) are board
+  12's too: one column, three figures, the 100 m street drawn, « Voir ces rues sur la carte »,
+  « Qui filme ? » folded, the doors; a département's « Où sont-elles ? »; the map's legend of the
+  chosen area over the map on a wide screen (`arealegend.ts`). Deviations: §3 « Map sheets v3 ».
 - The CNIL box of a private camera filming the street (« Caméra privée tournée vers la voie
   publique : potentiellement non conforme », the complaint link), for a build made with
   `VITE_CNIL_SIGNAL=true` (the private preview's, `deploy/deploy.sh`; 2026-09-27), is
@@ -1084,6 +1093,272 @@ DECISIONS 2026-10-28.
   (…) : d'une préfecture de zone, de la préfecture d'un autre département ou relevés un à un,
   hors collecte. » (couverture.json `resume[].arretes_hors_collecte`).
 
+
+### 1.13 The register's redesign v3, lot 1 (2026-11-08): theme A, the home, the lists
+
+The boards of the design canvas « Registre » (theme A, validated by Ju on 2026-11-07) replace
+v2's on the views they draw, one lot at a time; lot 1 is the shared kit, the home and the lists.
+The other views keep v2's kit until their lot.
+
+- **The kit.** `src/registre/socle-a.css` holds the boards' classes as they are (`.hero`, `.fig`,
+  `.card`, `.seg-ctl`, `.btn`, `.chip`, `.kind`, the name cut out `.cut c0`–`c3`, `.docs`,
+  `.tip`, `.sbar`), under `.rg .va`; a view in theme A has `va` on its root. Their colours are
+  the site's tokens (`theme/punk/tokens.css`), so the dark mode is the tokens' and a vivid
+  background keeps black text (`--on-accent`). `socle-a.ts` gives the cut-out letters
+  (`coupe`), a folded card's state (`repli`), « ⤢ Plein écran » (`pleinEcran`: the visual copied
+  into a dialog over the screen, ✕ or Escape back to its button), the boards' amounts
+  (`montantA`: « 80,0 M€ », « 1,8 Md€ ») and the nearest commune of a point (`plusProche`).
+- **The phone layer** (under 960 px, the same markup): the head's figures lighter (the figure and
+  one line), a card marked `.repli` folds behind a 52 px `button[aria-expanded]` (its title and
+  « N lignes »), a thin visual has « ⤢ Plein écran », a table becomes cards (each cell half the
+  width, its column's name copied from `data-label`), the bubbles do not exist.
+- **The home** (`/registre/`, `vues/sommaire.*`): the sticker « Registre public » and the name cut
+  out, the lead, the big search (results grouped by type as before, Enter or « Chercher » runs it
+  at once), « Essayer » (Lyon, Electriox City, drones à Paris, Rhône: a fiche when the build holds
+  it, else the words searched), « ◎ Autour de moi » (the device's position, never sent: the
+  nearest commune by the communes' points in `listes.json`, its fiche opened); the four figures
+  (documents, public money `totaux.montant`, authorisations, cameras on the map `totaux.carte`,
+  « sur la carte, toute la France »), each a link and a bubble; « Par où commencer », four
+  entries; « Cette semaine »: the six latest documents of `index.json` `recents` by tab (Tous,
+  Contrats, Arrêtés, Drones), « Publiés avant le vol ? » « non lu »; « La France en un coup
+  d'œil »: the départements drawn from `geo/departements.json` (IGN Admin Express COG Carto, its
+  attribution under the legend) in five classes of the measure chosen (Argent, Caméras, Arrêtés,
+  Drones: `listes.json` `lignes.departements`), the five largest named, a bubble on hover and a
+  click to the fiche, on a phone a touch shows the figures under the map and a second its fiche;
+  the six largest contracts (`gros`), every buyer and company a link; « Comment ça marche » and the
+  sources (folded on a phone). The map's data are asked once the page is drawn.
+- **The lists** (`vues/liste.*`, rows and rules `listes.ts`): « Liste » and the name cut out, the
+  count in a sentence, the big search (the list's words; « Autour de moi » for the communes),
+  « Exporter (CSV) », « Copier le lien de cette liste »; « Afficher » (the family's levels as
+  tabs: communes, intercommunalités, départements; Tous and the buyers' four categories; the
+  five kinds of document; none for the companies); a card with « Classer par » (segments),
+  « Taille » (communes) and the menus (« Département ▾ », « Intercommunalité ▾ », « Métier ▾ »,
+  « Depuis ▾ »: every value with its count, several at once, a search in the long ones), the
+  table (the order's column marked in its head and its cells; a row clicked follows its link;
+  ↑ ↓ from row to row), 20 rows then « Voir 100 de plus » and « Voir les N » at the end.
+  Communes: habitants, cameras for 1 000 inhabitants, the commune's own money and per
+  inhabitant, contracts of all buyers, camera and drone decrees (« non lu » where the decrees are
+  not read); by cameras for 1 000 inhabitants within « 20 000 à 100 000 » by default
+  (`?taille=toutes` lifts it). Companies: amount, contracts, clients, départements (the first
+  two named), since; by amount. On a phone: the levels full width, « Classer par ▾ » (the orders
+  in a sheet) and « Filtres · N » (the Filters panel: the sizes as radios, the place, « Voir les N
+  communes »), the active filters as chips, a row its rank, its name and the order's column.
+
+
+### 1.14 The register's redesign v3, lot 2 (2026-11-08): a commune's fiche
+
+`/registre/commune/<insee>` is board Lyon-A-theme-actuel (`vues/commune.*`, its computations
+`vues/commune-a.ts`, its rules `vues/commune-a.css`; root `v-commune-a`, so v2's `.v-commune`
+rules, still read by the documents and authorisations pages, do not reach it).
+
+- **The head.** « Commune » and the name cut out; the département's and the intercommunality's
+  chips (links); its inhabitants, its INSEE code, its prefecture's last recueil read; a sentence
+  of its figures (money since its first contract, per inhabitant and its rank, cameras on the
+  map, days of flight); « Partager » (the existing share), « Citer » (the fiche's citation
+  copied).
+- **The four figures**: cameras on the map (`carte.n`), money per inhabitant (its own counted
+  contracts over its population), days of flight over twelve months (`listes.json` `jv`, the
+  calendar's own count until it is in), competition (its contracts on one offer among those
+  that publish their offers; « non publiée » when none does). Each its rank among the communes
+  of its size (200 000 and more, 100 000 to 200 000, 20 000 to 100 000, 5 000 to 20 000, fewer),
+  dots when they are 15 or fewer.
+- **« Vue 3D »**: the door to the live map on the commune, its drone view (`/registre/commune/
+  <insee>/carte`, `?jour=` today's flights when there are some); lot 5 adds its tabs.
+- **The table of contents**, yellow, stuck at the top of the frame's scroll: the numbered
+  sections present, « Documents », « Sources », « Vue 3D ↗ ».
+- **The sections**, each left out when empty, numbered in turn: 1 · the cameras the camera
+  decrees authorise (the latest of each dossier) by kind of beneficiary (mairie, shops and
+  banks, others), those on the map, the largest systems (named only when published, never the
+  mairie); 2 · the counted contracts on its territory by year, stacked by buyer (the city, the
+  transports, the others), all buyers, the city alone or per inhabitant, a bubble per year;
+  3 · the suppliers of its own contracts (amount, contracts, years, their other buyers from
+  `listes.json`) and their graph (squares by amount, « +N » their other buyers); 4 · its own
+  affairs with more than one document, the largest three, their steps; 5 · the calendar of
+  days of flight (twelve months, a click opens the drone view on that day), today's acts, the
+  days by motive (« non lu » until the motive is served), « Publiés quand ? » (`drones.
+  publication`, « non lu » when nothing is counted: Lyon); 6 · its rank in its
+  intercommunality and in its size, by cameras for 1 000 inhabitants, money per inhabitant or
+  days of flight. Then « Tous les documents » (its contracts, the notices, the decrees, the
+  grants, ten of each, the full list on its documents page) and « D'où viennent ces chiffres ».
+- **On a phone**: the figures lighter, the suppliers, the dossiers, the documents and the
+  sources folded, the chart, the graph and the calendar with « ⤢ Plein écran », the table of
+  contents a strip scrolled sideways.
+- **Behaviours** (board Lyon-A-comportements; `registre/bulle.ts`, one bubble for the frame,
+  beside the view, kept inside the screen): a shape carries its bubble in `data-bh` (heading),
+  `data-bl` (lines, a swatch as `§class§`), `data-bc` (« Clic : … ») and `data-go`; its group
+  (`data-bg`) pales the others while one is read. Hover reads; a keyboard focus reads (Tab),
+  Enter clicks, Escape closes the bubble and only it; on a phone the first tap reads, « Ouvrir »
+  in the bubble (or a second tap) clicks. Wired: the head figures (definition, « Clic : section
+  N » by the number the section has) and their rank dots (each city, its value, its fiche); a
+  part of the cameras' bar (number, share; click: those decrees in « Tous les documents ») and
+  the map's bar (the live map on the commune); a year's column (total, each buyer's amount and
+  contracts, the others pale; click: that year's contracts there, its dossiers outlined); the
+  legend (hover: its series stands out; click: hidden or shown); a supplier's row (its node
+  stands out); a node (amount with the commune, its other buyers, the rest pales); a calendar
+  day (weekday and date, its acts; click: the drone view that day); a motive's bar (its days;
+  click: the calendar on that motive, a chip lifts it); a part of « Publiés quand ? » (number,
+  share; click: those acts, the latest published first); a neighbour (value, rank, fiche); the
+  documents' Date and Montant headers (sort), a row (its document).
+
+### 1.15 The register's redesign v3, lot 3 (2026-11-08): a département's fiche
+
+`/registre/departement/<code>` is board Departement-Rhone-A (`vues/departement.*`, its computations
+`vues/departement-a.ts`, its rules `vues/departement-a.css` under `.rg .va.dep`). The head: the name
+cut out word by word, its code, its communes with documents, its prefecture's last recueil read, a
+sentence of its figures; « Partager », « Citer ». Four figures (public money, cameras on the map,
+camera decrees, drone decrees), each ranked among the départements and collectivities of
+`couverture.json` (the decrees among the 100 read). Sections, each left out when empty: 1 · its
+communes with a document as points at their town hall on the IGN outline (Lambert-93), by cameras
+for 1 000 inhabitants, € per inhabitant, camera or drone decrees, a métropole's members ringed, the
+best equipped; 2 · who pays (by class of buyer), the largest buyers, the contracts by year (a column
+opens that year's contracts list); 3 · the companies; 4 · the decrees by year and the communes with
+the most, or why they are not read; 5 · the four rankings. Then « Toutes les communes » (métropole
+or not, the intercommunality's menu, sort, twelve rows, CSV) and the sources. Behaviours on
+`bulle.ts`: the figures, a commune's point, a part of who pays, a year's column. An
+intercommunality's fiche (`?ic=`) stays v2's, in the same module, until it has a board.
+
+### 1.16 The register's redesign v3, lot 3 (2026-11-08): a company's fiche
+
+`/registre/entreprise/<siren>` is board Entreprise-Electriox-A (`vues/entreprise.*`,
+`vues/entreprise-a.ts`, `vues/entreprise-a.css` under `.va.ent`). The head: the name cut out word by
+word, its NAF activity (a link to that code's companies), its SIREN (never a sole trader's), its
+SIRENE record (build of 09/11; a legal person's only): INSEE's category as the board's chip, its
+words in a bubble, « siège à <commune> » linked to the commune's fiche when one exists (the file's
+lexicon, else listes.json once read) with its département, « créée en <year> », the headcount band
+and its year; the contracts' collection day, a sentence; « Partager », « Citer », « Exporter » (its documents as CSV),
+« Comparer avec… ». Four figures: public money (its largest client's share), clients by
+département, running contracts, offers received. Sections: 1 · its clients by amount, coloured by
+a rule (its largest client, that client's département, elsewhere); 2 · its contracts by year
+(amounts or counts; a column: that year in « Tous les documents »); 3 · « Ses contrats, par nature »:
+the counted contracts by the build's `natures` (installation = fourniture_installation or
+travaux_genie_civil, maintenance, lecture de plaques, autre = the rest; a contract can count in
+several cases, a case with none is not drawn; a case filters « Tous les documents », a chip lifts
+it, a case of one contract opens it), and « Le même métier, dans les mêmes départements », the
+build's `pairs` (5 shown, the number the nature × département couples they share); 4 · joint contracts, offers,
+the graph centred on it (a node opens `/registre/graphe/<buyer>`), the companies that worked for its
+clients; 5 · the frieze of its contracts, the running ones outlined. Then « Tous les documents »
+(Année ▾, Acheteur ▾, sort, CSV) and the sources. A duration over 240 months is not drawn.
+
+### 1.17 The register's redesign v3, lot 3 (2026-11-08): a document's record
+
+`/registre/<contrat|avis|subvention|arrete>/<affaire>` is board Contrat-Lyon-2026-A (`vues/contrat.*`,
+`vues/contrat-a.ts`, `vues/contrat-a.css` under `.va.ctr`). The head: the type's sticker, the object
+whole (smaller beyond 70 and 110 characters), the buyer's and holders' chips (a communal buyer
+« Ville de <commune> »), « accord-cadre · signé le … », the DECP reference, a sentence (« a confié à »);
+« Partager », « Citer », « Voir les documents d'origine ». Four figures: ceiling or amount (mixed,
+rise « à vérifier », the amount at signature), duration and planned end (eForms `duree_mois`),
+competition (offers from the DECP, else the award notice, else « non lu »; the procedure), the
+modifications. Sections: 1 · who buys what (the natures the build reads and the CPV codes, the
+contract's first, labels « libellé non lu »; the objet and dispositif only without a code;
+« Commandes » and « Conditions » « non lu » per case); 2 · the parcours (documents at equal
+intervals, the real gap written, the planned end computed, today's point; the call for tenders'
+bubble its lots, renewals and price weight (`poids_prix`), « Date limite des offres : non lue »;
+the award notice's the price weight); 3 · before and after (the previous lots from
+`parcours.precedent.lots`). Then « Les documents » (a row opens its source) and the sources. A call
+for tenders, a grant or a decree take the same grammar; a call for tenders' record adds Nature,
+Codes CPV and Lots rows.
+
+### 1.18 The register's redesign v3, lot 4 (2026-11-08): the centred graph, Comparer, Chemin entre deux
+
+- **The centred graph** (`/registre/graphe/<siren>`, boards Graphe-plein, Graphe-grammaire;
+  `vues/graphe*`): a company or a buyer in the middle (`?role=` for a SIREN that is both), its
+  partners around it (size: the edge's amount, never a sum of edges), at the edge their other
+  partners, between two those they share; at most 12 / 40 / 8 drawn, the rest as « +N ». Hover or
+  focus keeps a node's lines; a click, Enter or a second tap opens its detail in the side card
+  (« Recentrer » to `/registre/graphe/<it>`, its fiche); double click recentres; « Vue tableau »
+  (`?vue=tableau`) gives the same links as rows; « Exporter » the neighbourhood's edges. Phone: a
+  window panned and pinched over the drawing, « Plein écran ». Without a centre: a chooser. The
+  neighbourhood is computed in the browser from `graphe/aretes.json`.
+- **Comparer** (`/registre/comparer?communes=…` or `?entreprises=…`, up to four; `vues/comparer*`):
+  chips with ✕, « + Ajouter » (a search in the lists' names, never a sole trader), a sentence of
+  the figures, « Partager », « Exporter (CSV) », « Chemin entre les deux » for two companies; a row
+  per figure, every figure `listes.json`'s, the highest in yellow on the figures as written (ties
+  included); each value a bubble and its fiche at its section; the address follows the columns.
+- **Chemin entre deux** (`/registre/chemin?de=&a=`, a SIREN or an INSEE code; `vues/chemin*`): two
+  fields searching the graph's names, ⇄, « Trouver »; the shortest paths (breadth first from both
+  ends, at most 6 steps, all counted, the 5 largest drawn), each a chain of linked nodes and amounts,
+  its sentence, « Voir dans le graphe → »; states for no path, beyond 6 steps, the graph not served.
+
+### 1.19 The register's redesign v3, lot 5 (2026-11-08): the live map's panel, « Fiche » and « Drones »
+
+`/registre/commune/<insee>/carte` keeps the live map and its drone layers (`vues/carte.*`,
+`drones.ts`); its panel opens in theme A (board Vue3D-Paris-fiche): « Commune · vue 3D », the
+name cut out, two tabs (the ARIA tabs pattern: the arrows move between them).
+
+- **« Fiche »** (`?onglet=fiche`): a sentence of its figures; four figures with their rank
+  (`vues/carte-fiche.ts`, on `commune-a.ts`'s rules, so the panel and the fiche agree: cameras on
+  the map, money per inhabitant, days of flight with a door to the other tab, contracts on one
+  offer); « Sur la carte, ici » (the map's pink streets, three classes); « Caméras autorisées »
+  (what the read decrees authorise, or that they are not read); « La fiche complète ↗ »,
+  « Comparer … avec… »; the collection's date.
+- **« Drones »** (the default, so that every door keeps its address): four figures (acts and those
+  with hours, days of flight, the share published before the flight against France's, drawn
+  zones); « À venir » (the next five days an act flies, each « Afficher ce jour »); « Publiés avant
+  le vol ? » for the commune and for France (`drones.publication`, « non lu » when nothing is
+  counted); then the period's calendar, the chosen slot's detail (its motive « non lu » when not
+  served) and the slots, as before.
+- **On a phone** the panel is the sheet; the sticker is dropped, the figures keep their whole line.
+
+### 1.20 The register after Ju's test of 2026-11-09 (lots 1 to 5)
+
+Verified in the modal at its real widths (908, 1164 and 1324 px of frame for 1024, 1280 and
+1440 px windows; 390 on a phone), dark first. **One bubble** (`bulle.ts`, used by every view, the
+home's map and figures included): it stands whole inside the frame's visible scroll, or the 3D
+panel, under the stuck contents bar: above its element, else below, else beside it; a swatch takes
+its series' colour from the view; an element whose bubble promises « Clic : … » is clicked whole.
+**One row hover**: a listed, ranked or table row that holds a link is lit `--warn-bg`, takes the
+pointer and is clicked whole; the page's own row stays `--type-territoire`, without its dashed rule.
+Figures never break (no-break spaces in thousands; `t()` puts a no-break space before « : ; ? ! »
+and inside guillemets). Nothing changes height on hover (the 3D view's day line keeps two lines, its
+sentence in a bubble). The lists keep the name column at 11 em and drop secondary columns in a
+narrow frame (container queries); a control's segments each draw their frame, so a wrapped control
+leaves no empty box; a legend's entry wraps under its own text; a cut-out name wraps only after a
+hyphen or a space (`coupeMots`). **One figure per measure**, the build's: a commune's drone acts are
+`dr` (Paris 641) on the list, the fiche, Comparer, « Publiés quand ? » and the 3D view, which leaves
+out acts placed in other communes, helicopters' and ends of authorisations; a département shows
+`dr_commune` (acts flying in its communes) with `dr_autorite` (signed by its authorities, the
+police prefecture for Paris) on its line; helicopters are a mention apart. A family whose
+`couverture_actes` is `non_lu` says « non lu », never 0. The home's « Le graphe » opens the graph;
+only the 104 official départements are listed; Comparer holds four communes at 1024 px. The 3D
+view: « ← Retour », the whole commune hatched where the act's place is not read and the cited
+arrondissement alone where it is, a click on the map centres it in the free part or opens another
+commune's view, the opening tab follows the door, twelve months by default.
+
+### 1.21 The register after Ju's look at the production of 2026-11-10
+
+The 3D view hatches every commune with drone acts, from the site's admin tiles when the commune has
+no outline of its own (134 of 142): light over the period, full on the day chosen or hovered; every
+date it shows says whether it is a day of flight or of publication; « Publiés avant le vol ? » sets
+each label over its bar, the second naming the départements it counts. The home's search shows each
+result's name on its own line, two columns at most on a wide screen and one on a phone, five per
+type then « Voir les N ». A list of documents filters by one « Année ▾ » menu beside
+« Département ▾ », every control of a row the same height; a filter with a single value and a column
+empty on every row shown are hidden; the decrees' list says « Arrêtés lus dans N départements » with
+a fold that lists them. Every date a list or a fiche shows says which it is (« publié le », « vol
+le », « signé le », « arrêté du »…), and a drone act is ordered by its publication everywhere; the
+commune's « Aujourd'hui » says the days the day's acts were published. Every chart's value axis
+takes its unit from its maximum and round steps (socle-a.ts `axeA`). A graph node opens a card with
+« Ouvrir la fiche → » and « Centrer ici » (Enter does it, Escape closes it); on a phone the graph
+stands whole in the width. The contract's parcours places « Aujourd'hui » among its steps. Where a
+département is collected but its acts are placed in no commune, pages say « Arrêtés de … lus, pas
+encore rattachés aux communes », never « non lu ». Comparer recalls what its yellow means.
+
+### 1.22 The register with Ju's answers of 2026-11-11
+
+A commune's camera and drone acts read as the build serves `couverture_actes`: `lu` the number
+alone (0 means 0); `non_rattache` « au moins N » (« aucun encore rattaché » for 0) with « Une partie
+des arrêtés du département n'est pas encore rattachée à une commune »; `non_lu` « Arrêtés de
+<département> pas encore lus » (the département a link), « pas encore lus » in a narrow cell. This
+replaces § 1.21's « Arrêtés de … lus, pas encore rattachés aux communes ». A minimum sorts at its
+known number, has no rank, and a Comparer row holding one has no yellow (its note says so); in the
+3D view « aucun encore rattaché » takes the muted, dashed look of a missing figure. Dates say which
+they are: « signé le » (a contract), « publié le » (a notice, a drone act's recueil, a decree read
+in a recueil), « daté du » (a decree's own day, the pilot's), « attribuée le » / « attribuée en
+<année> » (a subsidy), « vol le » (a day of flight). A graph node's card holds only « Ouvrir la
+fiche → » and « Centrer ici », with its ✕ (the only visible way to close it on a phone); its detail
+stays in the side panel. The 3D legend says a volume's height is its hours of flight authorised
+over the period shown; the département's map says what its grey points are in the acts' modes.
+
 ## 2. State catalogue
 
 One table per screen; in each, the improvised states (Mockup cell holding **IMPROVISED**)
@@ -1480,19 +1755,22 @@ while the sheet is open. The seed's adds carry no answer: on their captures ever
 
 | State | Description | Code | Mockup | Test data | Capture | Reachable |
 |---|---|---|---|---|---|---|
-| `area-tab-cameras` | Punk: the « 94 caméras » ticket chosen: « La liste des caméras », « direction non relevée pour 10 % » (under the label when the line is full), the cameras by type with the map's 16a sticker (redrawn on a change of mode), a dotted leader to each count — Dôme 6, Fixe 85, Type inconnu 3 —, a type without camera left out; « Types non comptés dans ces données. » on tiles built before 90e5a9a | areapunk.ts:229 cameras, 215 countRow, 373 punkAreaSheet; area.ts:58 (the sticker, icons.ts cameraCanvas) | 24a (its tab, panel and list by type); no « Ouvrir la liste complète → » (§3) | `?insee=92026`, « 94 caméras » | `area-tab-cameras` (punk) | yes |
-| `area-half-scrolled` | Punk, phone: the commune sheet half open, its paper scrolled 120 px: the title alone stays, folded to one bar (lot U2), the tabs and the panel went under it (2026-10-09, « Punk sheets on a phone… ») | areapunk.ts:373 punkAreaSheet; chips.ts:197 pinHead | IMPROVISED (24a draws no phone) | `?insee=92026`, the paper scrolled 120 px | `area-half-scrolled` (phone) (punk) | yes |
-| `area-how` | « Calcul ? » open under the links: « À portée », et les mètres qui « peuvent être filmés »… (a maximum), the street length, the rounding (the fraction never above Y, the percentage when it falls more than 2 points below), the cameras by type, « Qui filme ? » counts cameras and ends with the classes, the quantiles, the area's reliability, « Standard / Prudent… », the source | area.ts renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a: the « Calcul ? » link only) | `?insee=92026`, full, « Calcul ? » | `area-how` | yes |
-| `area-departement` | « Hauts-de-Seine », « Département (92) »; punk: 24a's sheet, its ramp the départements' (`meta.departements`) | area.ts:43 areaLine; areapunk.ts:107 mapClass | IMPROVISED (24a draws a commune only) | `?insee=92` | `area-departement` | yes |
-| `area-no-camera` | No camera, no street within reach: « Aucune rue à portée », « 0 caméra », « 0 exploitant nommé », the street empty (0 m, 100 m hors de portée), « Sur la carte : hachurée, aucune caméra recensée. » | area.ts renderAreaSheet; areapunk.ts:82 streetShare, 285 place | IMPROVISED | `?insee=92035` (La Garenne-Colombes) | `area-no-camera` | yes |
-| `area-no-camera-filmed` | No camera, yet streets within reach of the next commune's: « 57 % / des rues à portée » (Y = 58,0 %: « 5 sur 10 » would fall 8 points below), 58 m « peuvent être filmés », « Aucune caméra recensée ici : ces rues sont à portée de caméras voisines. », no cursor on the ramp (the map hatches it) | area.ts renderAreaSheet; areapunk.ts:82 streetShare, 149 streets | IMPROVISED | `?insee=92050` (Nanterre) | `area-no-camera-filmed` | yes |
-| `area-arrondissement` | « Arrondissement · Paris (75) » (punk: the same line under the cut-out name, ranked among the communes) | area.ts:43 areaLine | IMPROVISED | — | — | no: no municipal arrondissement in `tests/fixtures/ci-admin` (IDF `?insee=75104`) |
-| `area-no-operator-info` | Cameras without a precise operator: among « Exploitant non renseigné » (or « Autres exploitants ou non renseigné ») of « Qui filme ? » | areapunk.ts:254 who | IMPROVISED | — | — | no: no CI camera's operator value says nothing (n_no_operator_info 0) |
-| `area-reliability-low` | « Fiabilité moyenne » or « faible » with its reason (punk: in « Calcul ? ») | area.ts renderAreaSheet; areapunk.ts:327 how | IMPROVISED (24a drops the reliability) | — | — | no: Courbevoie and Hauts-de-Seine are « bonne » on CI |
-| `area-commune` | 24a: the name in cut-out letters, its line, three tickets that are tabs — « 5 sur 10 / rues à portée » (Y = 51,4 %, rounded down), « 94 / caméras », the first operator's name (clamped to two lines) / « a le plus de caméras » — the « Rues » panel: « Sur 100 m de rue », « Toutes / Publiques », the 100 m street (51,5 m in light blue on the ink), « 51,5 m peuvent être filmés · 10,1 km » and « 48,5 m hors de portée · 9,4 km »; the map's ramp with « Courbevoie » over it and a ▾ on its class (the name never runs out of the ramp), « Sa couleur : la classe la plus filmée (plus de 51,4 % des rues à portée) »; Partager, Calcul ? | area.ts renderAreaSheet; areapunk.ts:373 punkAreaSheet, 149 streets, 285 place | 24a (dark, desktop); punk: Y only (§3) | `?insee=92026` (Courbevoie) | `area-commune` | yes |
-| `area-commune-public` | The map's « Publiques seules »: the sheet opens on « Publiques »: « 47 % / des rues à portée » (Y = 47,4 %: « 4 sur 10 » would fall 7 points below), 47,5 m, the ramp on the public set's breaks | area.ts renderAreaSheet; main.ts:681; areapunk.ts:149 streets | 24a (« Toutes / Publiques ») | `?insee=92026`, Filtres, « Caméras publiques seules » | `area-commune-public` | yes |
-| `area-sheet-public` | Punk: « Publiques » pressed in the sheet itself (the map's « Qui filme » unchanged): the street, its rows, the first ticket and the ramp recounted for the public cameras, the keyboard focus kept on « Publiques » | areapunk.ts:373 punkAreaSheet setPub | 24a (« Toutes / Publiques » in the « Rues » panel) | `?insee=92026`, « Publiques » | `area-sheet-public` (punk) | yes |
-| `area-tab-who` | Punk: the first operator's ticket chosen: « Qui filme ? », each named operator with its count and a pink bar of its share of the cameras, then under a dashed rule « Exploitant non renseigné » (fewer than five names: every camera left has none) or « Autres exploitants ou non renseigné » (five names) in grey; then « Par catégorie d'exploitant » and every camera by class with a dotted leader — Publiques 43, Privées, extérieur 46, Privées, intérieur 2, Exploitant inconnu 3 (« Aucun exploitant renseigné. » above them when no name) | areapunk.ts:254 who | 24a (« Qui filme ? »); the classes IMPROVISED (§3) | `?insee=92026`, the operator's ticket | `area-tab-who` (punk) | yes |
+| `area-half-scrolled` | Phone: the commune sheet half open, its paper scrolled 120 px: the title alone stays, folded to one bar (lot U2), the figures and the rest went under it (2026-10-09, « Punk sheets on a phone… ») | areapunk.ts punkAreaSheet; chips.ts pinHead | Carte3-Commune-tel (board 12) | `?insee=92026`, the paper scrolled 120 px | `area-half-scrolled` (phone) (punk) | yes |
+| `area-how` | « Calcul ? » open under « Partager »: « À portée », a maximum, the street length, the rounding (the fraction never above Y, the percentage when it falls more than 2 points below), « Qui filme ? » counts cameras and ends with the classes, the fixed classes, the area's reliability, « Standard / Prudent… », the source | areapunk.ts how | board 12 (the « Calcul ? » link); its text IMPROVISED | `?insee=92026`, full, « Calcul ? » | `area-how` | yes |
+| `area-departement` | Board 12: « Hauts-de-Seine », « Département (92) · N hab. · N communes dans le registre »; three figures (cameras on the map · per 1 000 hab., camera acts read since the collection's year or « non lu », drone acts flying in its communes or « signés par ses autorités »); « Où sont-elles ? »: its six communes with the most cameras (a bar, the count, per 1 000), « X en porte N % », each name a link that opens its sheet and centres the map, « Les N communes, dans le registre → »; the « manque » block; the two doors; the map framed at the communes' level, the département outlined over them, the legend « Couleur d'une commune … Le Rhône : contour bleu »; the block « Dans le Rhône ». Without the register's file (CI): the figures from the tiles, « non lu » for the acts, no list, no doors | areapunk.ts departementBody; placedata.ts tops; arealegend.ts | Carte3-Departement (board 12) | `?insee=92`; real data `?insee=69` | `area-departement` | yes |
+| `area-no-camera` | No camera, no street within reach: « 0 caméra sur la carte », « Aucune / rue à portée », the street empty (0 m, 100 m loin de toute caméra), « Sur la carte 0 » in the block, the legend « … : aucune caméra relevée » | areapunk.ts streetShare, communeBody; arealegend.ts chosenLine | IMPROVISED (board 12 draws Vaulx-en-Velin) | `?insee=92035` (La Garenne-Colombes) | `area-no-camera` | yes |
+| `area-no-camera-filmed` | No camera, yet streets within reach of the next commune's: « 57 % / rues à portée, au plus » (Y = 58,0 %), 58 m à portée, « Aucune caméra recensée ici : ces rues sont à portée de caméras voisines. », the legend hatched | areapunk.ts streetShare, streets | IMPROVISED | `?insee=92050` (Nanterre) | `area-no-camera-filmed` | yes |
+| `area-arrondissement` | « Arrondissement · Rhône (69) » under the cut-out name: its own cameras, streets and operators (the tiles'), per 1 000 hab. « non lu » (no population served for an arrondissement); its commune's « manque » block (« À Lyon », the register's count, publiques / autres « non lu ») and doors | area.ts areaLine; areapunk.ts communeBody; arrondissements.ts | IMPROVISED (board 12 draws a commune) | — | — | no: no municipal arrondissement in `tests/fixtures/ci-admin` (France `?insee=69381`) |
+| `area-no-operator-info` | Cameras without a precise operator: among « Exploitant non renseigné » (or « Autres exploitants ou non renseigné ») of « Qui filme ? » unfolded | areapunk.ts whoBody | IMPROVISED | — | — | no: no CI camera's operator value says nothing (n_no_operator_info 0) |
+| `area-reliability-low` | « Fiabilité moyenne » or « faible » with its reason, in « Calcul ? » | areapunk.ts how | IMPROVISED (board 12 drops the reliability) | — | — | no: Courbevoie and Hauts-de-Seine are « bonne » on CI |
+| `area-commune` | Board 12: the name in cut-out letters, « Commune · Hauts-de-Seine (92) » (with its intercommunality and population when the register lists them); three figures — « 94 / caméras sur la carte », « 1,4 / pour 1 000 hab. · 5e sur 51 de la Métropole » (« non lu » without a population), « 5 sur 10 / rues à portée, au plus »; « À portée d'une caméra »: « Toutes / Publiques », « Sur 100 m de rue, en moyenne : », the street drawn (the metres within reach in pink under two cameras), its two rows with kilometres, what « à portée » means, « Voir ces rues sur la carte → »; the « manque » block (`gap-*`); « Qui filme ? » folded with its first operator; the doors « Drones : N arrêtés … en 3D » and « Dans le registre · N € de contrats · N arrêtés de caméras »; Partager, Calcul ?; the map's legend over the map (wide screens) | areapunk.ts punkAreaSheet, communeBody, streets, streetSvg; gap.ts; arealegend.ts | Carte3-Commune (board 12) | `?insee=92026` (Courbevoie); real data `?insee=69256` | `area-commune` | yes |
+| `area-commune-public` | The map's « Publiques seules »: the sheet opens on « Publiques »: the third figure and the street recounted for the public cameras | area.ts renderAreaSheet; areapunk.ts streets | board 12 (« Toutes / Publiques ») | `?insee=92026`, Filtres, « Caméras publiques seules » | `area-commune-public` | yes |
+| `area-sheet-public` | « Publiques » pressed in the sheet itself (the map's « Qui filme » unchanged): the third figure, the street and its rows recounted for the public cameras, the keyboard focus kept on « Publiques » | areapunk.ts communeBody setPub | board 12 (« Toutes / Publiques ») | `?insee=92026`, « Publiques » | `area-sheet-public` (punk) | yes |
+| `area-who` | « Qui filme ? » unfolded (button[aria-expanded] true, « − »): each named operator with its count and a pink bar of its share, « Exploitant non renseigné » or « Autres exploitants ou non renseigné » in grey, then « Par catégorie d'exploitant » and every camera by class | areapunk.ts fold, whoBody | Carte3-Commune (board 12, its fold) | `?insee=92026`, « Qui filme ? » | `area-who` (punk) | yes |
+| `gap-non-lu` | « Combien en manque-t-il ? » while the register serves no `cam_aut` (every place today): « Sur la carte » its bar and count, « Autorisées » a dashed « non lu » bar and « — », « Les caméras autorisées ne sont pas encore lues ici : l'écart n'est pas calculé. », « Sur la carte » publiques / autres (or « non lu » for an arrondissement's commune), « Autorisées » mairie, commerces et banques, autres all « non lu », the indoor sentence with « non lu », « + Ajouter une caméra » when the map's add is offered, « X dans le registre : N arrêtés de caméras → » | gap.ts gapBlock; gapcalc.ts ecart | board 12 (its « non lu » marks) | `?insee=69256`; CI: `?insee=92026` | `area-commune` | yes |
+| `gap-plus` | « + 4 243 / caméras autorisées de plus que de caméras relevées » (every category and file read, the acts all tied), « au moins + N » when a category, a file or a tie is missing; « N caméras relevées de plus que d'autorisées » only when the acts are the whole; « non rattaché » (the bar, a 0 row) where the acts are not tied to their commune and give nothing here; otherwise « … l'écart n'est pas calculé » | gap.ts; gapcalc.ts ecart (tests/carte-fiches.test.ts) | Carte3-Camera, Carte3-Commune (board 12) | France `?insee=69123` (Lyon) | — | yes, with the register's `cam_aut` (ae7c813) |
+| `camera-gap` | The camera sheet: after « Modifier / Toujours là ? », the block of the commune the camera stands in (« À Lyon » for a camera in a Lyon arrondissement), its « + Ajouter une caméra » the map's add | cameragap.ts; main.ts cameraGap (layers.ts communes-probe); chips.ts punkSheet | Carte3-Camera (board 12) | `?cam=n12657479839#17.5/45.7649/4.8337` (France) | — | yes |
+| `area-parent` | Lyon, Paris or Marseille opened from a département's « Où sont-elles ? »: the commune drawn from the register alone (the tiles split it into arrondissements) — its count, per 1 000 hab. and rank, « N arrondissements », « Rues à portée : calculées par arrondissement » with a link to each one's sheet, its block and doors, no « Qui filme ? »; the map framed on its arrondissements | main.ts openAreaByCode; areapunk.ts communeBody (parent) | IMPROVISED (board 12 lists Lyon, draws no sheet of it) | `?insee=69`, « Lyon » | — | yes |
 
 ### Participation: « Toujours là ? »
 
@@ -2042,6 +2320,80 @@ Rhône's real DECP rows (`tests/fixtures/registre/national/`).
 | `reg-entry-page` | A record's address served with its entry page: its share tags (Open Graph, Twitter, canonical, noindex) and, without JavaScript, its name, line, three figures, text and neighbours' links; the app draws the page otherwise | lacarte_registre/partage.py, pages.py; deploy/preview.caddy | V2-Partage's text (the share's) | `/registre/entreprise/431903954`, JavaScript off | — | tests only |
 | `reg-preview-image` | The record's preview image, 1200 × 630: the dark map, the logo, « Le registre », the type's label, the name in two lines at most, its line, three figures | lacarte_registre/apercu.py | V2-Partage (capture 06) | `/data/registre/apercu/entreprise/431903954.png` | the build's own | yes, against capture 06 (an entreprise, a long buyer's name) |
 
+
+### The register v3, lot 1 (2026-11-08)
+
+| State | What shows |
+|---|---|
+| Home, a figure the build does not serve (`totaux.montant`, `totaux.carte` absent) | « non lu » in the figure's place |
+| Home, « Publiés avant le vol ? » | its card, « non lu » dashed, the sentence saying the publication date is not read, « Les vols à venir → » |
+| Home, the map's data not yet arrived / failed | « La carte se charge… » / « La carte n'a pas pu être chargée. » in the card, the tabs kept |
+| Home, a département hovered (wide) / touched (phone) | its bubble at its middle (name and code, money and contracts, cameras on the map, decrees read or not) / the same line under the map with « Sa fiche → », a second touch opens it |
+| Home, a tab of « Cette semaine » with none among the latest | « Aucun document de ce type parmi les derniers publiés. » |
+| Home, « Autour de moi »: asked / refused / failed | the sentence saying the position stays on the device / « La position n'a pas été donnée… » / « …n'a pas pu être lue… », the search kept |
+| Home, a folded card (phone) | its title, « N lignes », the arrow in a square; open, the square in ink and the body under it |
+| « ⤢ Plein écran » open | the map over the whole screen in a dialog, ✕ focused, Escape or ✕ back to the button |
+| A list of communes opened bare | « 20 000 à 100 000 » pressed, its count in the note; « toutes » in the address when lifted |
+| A list's menu open | its values with their counts and boxes, the search on top (not « Depuis »), « Tout effacer » and « Voir les N … »; Escape back to its button |
+| A list with filters chosen | the menus' choices as chips under the controls (wide); every filter as chips under « Classer par ▾ » and « Filtres · N » (phone) |
+| The Filters panel (phone) | the shade, the sheet from the bottom: « Filtres », « Effacer », the sizes as radios with counts, « Où » (Département, Intercommunalité, each its menu in the sheet), « Voir les N communes »; Escape closes it |
+| A list with every row shown | no button; the note says the count |
+| A list reopened from a fiche (`?ligne=`) whose row a default filter leaves out | the default lifted, the row marked and in view |
+
+
+### The register v3, lots 3 and 4 (2026-11-08): département, company, record, graph, Comparer, Chemin
+
+| Mockup | Site | Reason |
+|---|---|---|
+| Departement-Rhone-A: the region's chip, the population, « 141 des 266 communes » | « 141 communes avec documents » | region, population and number of communes not served |
+| Departement-Rhone-A: a choropleth of the communes, the métropole's dotted outline | a point per commune at its town hall on the IGN outline, the métropole's members ringed | the communes' outlines are not served |
+| Departement-Rhone-A: a year's click « ces contrats dans Toutes les communes » | the contracts list of that département and year | contracts by commune and year not served |
+| Departement-Rhone-A: missions, the graph's line, « Signaler » | absent | missions later; the file has no document to report on |
+| Departement-Rhone-A: an intercommunality | its fiche (`?ic=`) stays v2 | no board |
+| Entreprise-Electriox-A: « PME », siège, création, effectif | « à venir » | SIRENE fields not served |
+| Entreprise-Electriox-A: « Ses contrats, par nature » | « non lu » | the nature is computed by the build, not served |
+| Entreprise-Electriox-A: « Le même métier » by nature | by NAF code in its départements | the nature is not served; NAF is |
+| Entreprise-Electriox-A: every client, contract, document | 12 clients then the graph, 18 rows of frieze, 15 documents then « Voir les N » | real companies reach 251 buyers and 393 contracts |
+| Entreprise-Electriox-A: the legend hides a series on a click | hover only | its names are links to their fiches |
+| Contrat-Lyon-2026-A: signals, « lien à vérifier » | absent | not served |
+| Contrat-Lyon-2026-A: the short title, the estimate, the deadline, CPV labels, « code principal », Commandes and Conditions as text | the whole object; codes with « libellé non lu »; Commandes and Conditions « non lu »; the procedure and « dans les totaux » kept; no « Offres » step | CPV labels, date_limite, clause_sociale, variantes, fonds_ue, forme not served (A, 08/11) |
+| Contrat-Lyon-2026-A: « Concurrence : à lire » | the offers from the DECP or the award notice | eForms offers served since 2026-11-08 |
+| Graphe-plein: a shared node's size the sum of its edges | its largest edge | edges must not be summed (a joint contract carries its whole amount on each) |
+| Graphe-plein: every node drawn | at most 12 / 40 / 8, the rest « +N »; the table and the CSV whole | real neighbourhoods reach 250 clients |
+| Graphe-plein: no selection card in V2 | the v1 board's side card | the behaviour is written, not drawn |
+| Graphe-plein: the nodes' names as plain words | the node a control (`data-mention="non"`), its detail holding the fiche's link | a click selects, it does not leave |
+| Comparer: the boards' figures (Bron 5,0 M€, 117 €/hab) | the build's (7,9 M€, 184 €) | one source per figure |
+| Comparer: « la Métropole » | « son intercommunalité » | not every commune is in a métropole |
+| Chemin-entre-deux: 2 paths on an extract | 3 paths on the national graph, 5 at most drawn by amount | the national graph |
+| Chemin-entre-deux: a hand-written sentence | a generic one (one intermediary named, several counted) | the paths take any shape |
+| All lot 3 and 4 views: notes in Special Elite | Archivo where cadre.css v2.3's `p.note` holds | the frame's rule for every fiche |
+
+### The register v3, lot 5 (2026-11-08): the live map's panel
+
+| Mockup | Site | Reason |
+|---|---|---|
+| Vue3D-Paris-fiche: « À vérifier sur ce territoire », signals | absent | signals later (Ju 2026-11-07) |
+| Vue3D-Paris-fiche: « Caméras autorisées » with the dossiers waiting (« 218 dossiers attendent ») | the read decrees' cameras, or « pas encore lus » without a count | the dossiers waiting are not served |
+| Vue3D-Paris-drones: « Jour affiché » with its secteur, service, finalités, cameras | the existing slot detail (motive, service, purposes, cameras when read) | the secteur, now read for the police prefecture's acts, is not among the drone layer's fields (`non_deduits`), which the interface does not build |
+| Vue3D-Paris-drones: « Les derniers arrêtés » as a table (day, hours, motive) | the existing list of slots under the calendar | the list already carries the day, the hours and the service; the motive « non lu » stays in the detail |
+| Vue3D-Paris-fiche: the tab « Fiche » first | « Drones » by default, « Fiche » by `?onglet=fiche` | the commune's door and the bench's drone checks keep `/carte` |
+| Vue3D-Paris: « Suivre (RSS) » | absent | no feed |
+| Vue3D-Paris-fiche: a panel about a third of the screen, its breadcrumb on one line | the live map's panel, its width (about half at 960 px), the breadcrumb wrapping « Vue 3D » | the map's panel keeps its width and sizes shared with the map's other states (2026-10-30) |
+| Vue3D-Paris: the map opened at street level on the cited sector | the live map's own opening on the commune (its outline, the zone not read) | the map's opening view is the map's, not the panel's; the board's view is an example |
+
+### The register v3, lot 2 (2026-11-08): a commune's fiche
+
+| State | What shows |
+|---|---|
+| A section with nothing (no contract on the territory, no supplier, no affair with two documents, no day of flight) | left out, the others numbered in turn, the table of contents without it |
+| The ranks and the neighbours not yet in (`listes.json`) | the figures without their rank; « Les communes voisines se chargent… » in section 6 |
+| A département whose recueils are not read | the cameras' figure from the map only, « non lu » for the authorised cameras and in the sources |
+| No contract of the commune itself | « aucun contrat » in the money figure, « aucun contrat de la commune elle-même », the chart of the other buyers |
+| A year of the chart hovered (wide) | the others pale, its bubble: the total and each buyer |
+| A day of the calendar hovered / clicked | its bubble (the number of acts) / the drone view on that day |
+| No motive served / nothing counted for « Publiés quand ? » | « non lu » and the sentence why |
+| A folded card (phone) | its title, « N lignes », the arrow; open, its body |
+
 ## 3. Deviations from the mockup (« Écarts à la maquette »)
 
 The punk interface ports the mockup (`Carte punk.dc.html`, export of 2026-10-06, the product
@@ -2156,6 +2508,11 @@ Board: 24a (wide screen, dark only), its rendered DOM and computed styles (expor
 2026-10-06), the analysis of the mockup v2 (§8, §9). The paper (no tape), the cut-out title
 and the links are the camera sheet's (table above); what follows is the commune sheet's own.
 
+Since 2026-11-10 the commune and département sheets follow board 12 (next table): the tabs,
+the cameras by type, the ramp with its cursor and the colour line of this table are gone; the
+rows on Y's rounding, the 100 m street's metres, the reliability in « Calcul ? », the name's
+letters and the paper still hold.
+
 | Mockup | Code | Reason |
 |---|---|---|
 | The 100 m street with X and Y: « 0,6 m à coup sûr, direction connue · 0,8 km » in pink, « 24,4 m peut-être, direction inconnue · 32 km » in light blue, « 75 m hors de portée · 99 km » | Y only, worded as what may be: « 51,5 m peuvent être filmés · 10,1 km » in light blue, « 48,5 m hors de portée · 9,4 km », without « au plus » / « au moins » (« Calcul ? » says it is a maximum); X nowhere | DECISIONS 2026-10-08 « Punk commune and département sheets: the 100 m street… »; DECISIONS 2026-10-06 « Punk commune and département sheets show only Y… »; the analysis §8–§9.2 (X's « à coup sûr, direction connue » and « faute de direction relevée » are false: Y counts every camera in every direction) |
@@ -2179,6 +2536,33 @@ and the links are the camera sheet's (table above); what follows is the commune 
 | No département, no phone | IMPROVISED: the département takes the same sheet, « Département (92) », ranked among départements; the phone 4b's bottom sheet: the title, its line and the tickets at the peek, the panel, the ramp and the links below; half open or full, everything but the title and its line scrolls under them (DECISIONS 2026-10-09, « Punk sheets on a phone… ») | the camera sheet's vocabulary (DECISIONS 2026-10-07 « The punk camera sheet after 17a and 4b… ») |
 | The paper 400 px wide, 16 px from the top | the same from 960 px wide (the floating buttons, the zoom and the attribution ride beside it); narrower, 80 px from the top as the camera sheet | the camera sheet's rule (table above: the zoom buttons over the paper below 960 px) |
 | The name's letters wrap between words (« LA / COURNEUVE ») | also after a hyphen (« HAUTS- / DE- / SEINE ») | real data: « Hauts-de-Seine », one word of 14 letters, ran under the × at 400 px |
+
+### Map sheets v3: camera, commune, département (board 12, 2026-11-10)
+
+Board: « 12 · Fiches de la carte (v3) », its mockups Carte3-Camera, Carte3-Commune,
+Carte3-Departement (wide screen and phone, dark; built on the production of 2026-10-31, only the
+sheets' content changing), ported as rendered (theme/punk/area.css, areapunk.ts, gap.ts,
+arealegend.ts). Its figures are examples (05/11 extracts); the code reads the tiles and the
+register's département file (placedata.ts).
+
+| Mockup | Code | Reason |
+|---|---|---|
+| « Autorisées » 6 356 (Lyon: mairie 404, commerces et banques 3 739, autres 2 213) and « + 4 243 »; Vaulx-en-Velin 609 and « au moins + 379 » | the register's `cam_aut` (from ae7c813): « + N » when every category and file is read and the acts tied, « au moins + N » otherwise (`dossiers_non_lus` > 0, acts `non_rattache`); a category not read « non lu »; a fourth row « bénéficiaire non lu » for `non_classees`, counted in the total; where nothing is served the dashed « non lu » bar, and « non rattaché » (never 0) where the acts are not tied to their commune | real data: the reading rises night after night (2026-11-11: 76 % of the totals, 57 % of the holders, 19 % of the street); the brief's rule « non lu, et jamais 0 »; Ju, 2026-11-11 (« au moins » or « non rattaché », never 0) |
+| Vaulx-en-Velin « Sur la carte » publiques / autres « non lu » | the tiles' counts (`n_pub`, `n` − `n_pub`): 75 / 155 | real data the tiles serve |
+| A camera in Lyon: « À Lyon », publiques 982 / autres 1 131 | « À Lyon » with the register's map count (2 113), publiques / autres « non lu » | the tiles count by municipal arrondissement; Lyon's split needs its 1.3 MB file |
+| The département's « à Lyon : + 4 243 … Le total du département n'est pas encore calculé. », « Lyon seule », « Vaulx-en-Velin (commerces) » under « Autorisées » | the block of the département alone, its categories « non lu » | example content, not a rule; a département's block counts the département |
+| « 5e sur 51 de la Métropole » | the same for a métropole; « … de l'intercommunalité » otherwise, cut at its syllables in the figure's box; « non lu » without a population (an arrondissement) | real data: most intercommunalities are not métropoles |
+| « Drones : 2 arrêtés · de déc. 2025 à juil. 2026 · les zones et les jours, en 3D » | « Drones : N arrêtés · les zones et les jours de vol, en 3D », no dates; « Drones : non lu » when the acts are not read | the dates are in the commune's own file only |
+| « Dans le registre · 1,4 M€ de contrats (Serfim T.I.C.) · 29 arrêtés de caméras » | without the company's name; « les contrats et les arrêtés de la commune » when its acts are not read | the company is in the commune's own file only |
+| The département's « 127 arrêtés de drones »; its drone door to the 3D | `dr_commune` (the acts that fly in its communes), or `dr_autorite` « signés par ses autorités » when it is 0; the door opens the département's page | donnees-pour-l-interface 09/11 (the two counts); the register has no 3D view of a département |
+| « 141 communes dans le registre » | the communes of the file with a document | the same count, read |
+| « + Ajouter une caméra » about 37 px high; « Qui filme ? » 40 px; « Où sont-elles ? »'s names 17 px | 44 px; the names 44 px under a finger | RGAA 13.x / the repository's 44 px rule for what is touched |
+| « Voir ces rues sur la carte → » a link | a button that reads as the board's link: the commune framed at a zoom where its streets within reach are drawn (z ≥ 11.75), the sheet kept (a phone lowers it to its peek) | it acts, it does not go anywhere (RGAA 7.1, a button's role); the board does not say what « allume la couche » does: the streets layer is the map's from z11.5 |
+| « + Ajouter une caméra » always drawn | drawn when the map's « ＋ Ajouter » is offered (session known, contributions open); from a commune's or a département's sheet the map goes to the street level where the person is when they shared a position less than 10 minutes old inside it, otherwise in the middle of the area with « Placez la caméra sur la carte » on the add's position step | the add's own rule (participate/index.ts); Ju, 2026-11-11 |
+| The 100 m street's two cameras at 9 m and 61 m | the same while the share fits; moved in towards the ends when it is longer (each stretch half of it) | real data: a share above 80 % does not fit the board's places |
+| No legend on the phone mockups | hidden under 700 px | as the board |
+| Lyon's sheet (the list's first commune) not drawn | the commune drawn from the register alone (state `area-parent`): « 9 / arrondissements, rues à portée calculées pour chacun », « Rues à portée : calculées par arrondissement » with each arrondissement a link to its sheet | the tiles split Lyon, Paris and Marseille into arrondissements; Ju, 2026-11-11 (no « non lu » for their streets) |
+| The département's sheet over the map at the communes' level, « Couleur d'une commune », « Le Rhône : contour bleu » | a click on a département frames it whole in the free map (at most z10.5): over its communes when it fits at their zoom (Rhône, Territoire de Belfort on a wide screen), else lower, over the départements' colours, the legend then « Couleur d'un département » (Gironde; most départements on a phone); its outline from `admin-deps`, the same tiles read up to z8 and drawn larger beyond, shown only while a département is open | Ju, 2026-11-11: never crop a département; the départements are in the tiles up to z8 only |
 
 ### Participation (lot 3.4)
 
@@ -2569,3 +2953,47 @@ rows above hold for the content of the fiches.
 | V2-CarteDrones: the map tilted at the mockup's angle on every screen | 50° on a wide screen, 35° on a phone | Ju's capture telephone-inclinaison (v2.4 point 3): at 50° the narrow map showed the volumes more than the streets |
 | V2-CarteDrones: a still map | a slow turn at the opening (one turn in 90 s), stopped for good by a hand, none under reduced motion | Ju's instruction (v2.4 point 3) |
 | V2-CarteDrones: the volumes' heights as drawn (the highest about half the commune) | the tallest at 12 % of the commune's height on the screen, under the site's names | Ju's capture telephone-inclinaison (v2.4 point 3): stacked volumes hid the names |
+
+### The register v3, lot 1 (2026-11-08)
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Every board: the page alone, the black top bar full width | inside the frame over the map (56 px margins), the frame's own top bar | DECISIONS 2026-10-30 (the register over the map), kept 2026-11-08 |
+| Every board: theme A's colours (bg #efebe2, paper #fffdf8, pink #ff4fa3, blue #7cc0ea, lavender #b9a7f2, green #7fd1a3) | the site's tokens (#f2efe6, #ffffff, #ff48b0, #7fd4ff, #c9b8ff, #9be7c4) | Ju 2026-11-07: the site's tokens, shared with the map; the buttons' black shadow kept as the board's, to judge on the captures |
+| Every dark board: the top bar cream, the map's pinks as in light, the ground #121110 | the frame's bar black, the map's dark ramp (`--map-area-*`), the ground #1c1a1f | the tokens' dark mode (same decision) |
+| Accueil: six entries in three columns (Signaux, Missions de relevé) | four entries in one row of four | Ju 2026-11-07: Signaux and Missions in later sessions |
+| Accueil: « Le graphe » a link | its entry dashed, « Bientôt », no link | the graph is lot 4; no link to a page that does not exist |
+| Accueil: « Publiés avant le vol ? » 63 / 25 / 12 % | « non lu » | not served (besoins-donnees: the drone decrees' publication date) |
+| Accueil, lists: « Suivre (RSS) » | absent (lists: « Copier le lien de cette liste ») | the register has no feed |
+| Accueil: « 66 368 caméras… dans les communes du registre » | 76 987, « sur la carte, toute la France » | Ju 2026-11-08: the build's total, every commune of France |
+| Accueil: the map's classes for « Argent » only; five names chosen | the board's five classes for « Argent », classes of the same spirit for Caméras, Arrêtés, Drones; the five largest of the measure named | the board draws one measure |
+| Accueil: the map's outlines (an undocumented drawing) | IGN Admin Express COG Carto, its attribution under the legend | Ju 2026-11-07: a source of known licence, served by the build |
+| Accueil: the latest documents' and the largest contracts' lines written by hand (« CCAS de Nice », « autorisation de drones, préfecture de Paris ») | the build's names and objects (« Centre Communal d'Action Sociale », the published object clamped to two lines) | data: no short name or object served |
+| Accueil: « Essayer » chips | a chip opens its fiche when the build holds it, else searches its words | every mention that has its fiche is a link (the owner's rule); the fixture has no Paris |
+| Lists: a checkbox per row and the « Comparer » bar | absent | « Comparer » is lot 4 |
+| Liste-Entreprises: a « Graphe » link per row; « Client : commune, transports, État ▾ » | absent | the graph is lot 4; the clients' categories are not served |
+| Liste-Communes: the département and the intercommunality under the name as words | links to their fiches, in the line's colour | every mention that has its fiche is a link (the owner's rule) |
+| Lists: twelve rows, then « Voir les 414 » | twenty rows, then by a hundred, « Voir les N » at the end | thousands of rows at once do not draw on a phone |
+| Liste-Communes: no « Avec arrêtés drones » | absent from the communes, kept on the départements | the board's controls; the « Drones » order covers it |
+| Lists not drawn by a board (intercommunalités, départements, acheteurs, documents) | the boards' skeleton, their own columns, their names typed links with their pictogram | no board yet; kept v2's columns |
+| Liste-Communes-A-tel: the table's heads gone | the heads kept for screen readers, out of sight | accessibility (a table read with its heads) |
+
+### The register v3, lot 2 (2026-11-08): a commune's fiche
+
+| Mockup | Code | Reason |
+|---|---|---|
+| Lyon-A: « Suivre (RSS) », « Exporter », « Comparer avec… » | « Partager » and « Citer » | no feed; the export is the documents page's; « Comparer » is lot 4 |
+| Lyon-A: the Vue 3D block's tilted drawing of the arrondissements | no picture | the board's drawing is an example; the commune's map file is 3 MB, no light outline is served |
+| Lyon-A: « Les missions » in the Vue 3D block, the « Missions de relevé » card | absent | missions later (Ju 2026-11-07) |
+| Lyon-A: « À vérifier sur ce territoire » | absent | signals later (Ju 2026-11-07) |
+| Lyon-A: the largest systems beside the missions | full width | the missions' card is gone |
+| Lyon-A: figures from the extracts (2 114 cameras, 52 days) | the build's (2 113, 65 days `jv`) | one source per figure (Ju 2026-11-07) |
+| Lyon-A: three series « Ville / Transports / Métropole, État, Département » | the city, the transports, the other buyers by their served category | the board's third figure differs from the build (A's reading) |
+| Lyon-A: the suppliers' roles (« installe et entretient ») | absent | not served |
+| Lyon-A: a dossier's « lien à vérifier » decree and « Sur la carte » step | absent | not served (besoins-donnees) |
+| Lyon-A: the intercommunality's map | its communes ranked, around the commune | the communes' outlines are not served (besoins-donnees) |
+| Lyon-A: « Année ▾ », « Entreprise ▾ », « Montant ▾ », « Exporter CSV » over the documents | the same (the amount in three bands: under 100 000 €, to 1 M€, over), Entreprise and Montant on the contracts, the notices and the grants only, a shape's filter as a chip « … ✕ »; ten rows, « Tous les documents » after them when there are more | a decree has no company nor amount; the full list stays one page away |
+| Lyon-A: a dossier's title in capitals (« Vidéoprotection 2021-2025 ») | the published object in ordinary case, on one line | the real objects are long sentences in capitals (Ju 2026-11-08: like the home's largest contracts) |
+| Lyon-A: « 3e sur 3 » style ranks everywhere | no rank under five communes ranked | a rank among three says nothing (Ju 2026-11-08) |
+| Lyon-A: five motives (manifestation, événement, frontière, circulation, autre) | the served ones: manifestation, événement (sport, concerts, commemorations), stupéfiants on its own row, the rest « Motif non lu » | frontière and circulation are L. 242-5 purposes not read yet; stupéfiants is served and in no board class (A, 20cf0e6) |
+| Lyon-A-comportements: a step's bubble quoting its document, « lien suggéré »'s reason | none | no quote nor suggested link is served |

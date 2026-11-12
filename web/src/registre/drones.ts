@@ -53,8 +53,8 @@ export const SRC = `${P}-zones`;
 const SRC_COM = `${P}-commune`;
 /** The chosen zones' labels: one per place on the screen (v2.3) */
 const SRC_LAB = `${P}-labels`;
-/** Lot R4.2 (board B): the cited sectors' shapes, their labels, and the commune's edge dotted when
- * acts without a drawn zone are shown. */
+/** Lot R4.2 (board B): the cited sectors' shapes, their labels; and the whole commune hatched when
+ * acts whose exact place is not read yet are shown (Ju, 09/11: the dotted edge and its label went). */
 const SRC_SEC = `${P}-secteurs`;
 const SRC_SEC_LAB = `${P}-secteurs-lab`;
 const SRC_NL = `${P}-non-lue`;
@@ -75,7 +75,10 @@ export const COUCHES = {
   lab: `${P}-lab`,
   secteur: `${P}-secteur`,
   secteurBord: `${P}-secteur-bord`,
+  arrondissement: `${P}-arrondissement`,
+  arrondissementBord: `${P}-arrondissement-bord`,
   nonLue: `${P}-non-lue`,
+  nonLueAdmin: `${P}-non-lue-admin`,
   secteurLab: `${P}-secteur-lab`,
 } as const;
 /** The site's layers of the cameras (layers.ts: their fields, the filmed streets, the pictograms):
@@ -240,36 +243,6 @@ export function pave(couleur: string, n = 4): { width: number; height: number; d
   for (let i = 0; i < n * n; i++) data.set([r, g, b, 255], i * 4);
   return { width: n, height: n, data };
 }
-/** Where the label « zone non lue · … » stands on the commune's edge (board B: on the boundary,
- * along it, never in the middle of the map): of the outline's points on the screen (`pts`, px),
- * those inside the free part of the map, the one kept last time while it still is (the label does
- * not jump as the map moves), else the leftmost (the board's: on the western edge); its angle the
- * edge's there, turned to read from left to right. Null when no point of the edge is free. */
-export function poseBord(
-  pts: [number, number][],
-  cadre: { x0: number; y0: number; x1: number; y1: number },
-  avant: number | null,
-  eviter: { x: number; y: number; r: number }[] = [],
-): { i: number; x: number; y: number; angle: number } | null {
-  // never over a cited sector's label (`eviter`: its anchor on the screen and a radius)
-  const loin = (p: [number, number]) =>
-    eviter.every((e) => Math.hypot(p[0] - e.x, p[1] - e.y) > e.r);
-  const dedans = (p: [number, number]) =>
-    p[0] >= cadre.x0 && p[0] <= cadre.x1 && p[1] >= cadre.y0 && p[1] <= cadre.y1 && loin(p);
-  let i = avant != null && pts[avant] && dedans(pts[avant]) ? avant : -1;
-  if (i < 0)
-    for (let k = 0; k < pts.length; k++)
-      if (dedans(pts[k]) && (i < 0 || pts[k][0] < pts[i][0])) i = k;
-  if (i < 0) return null;
-  const n = pts.length;
-  const k = Math.max(1, Math.min(3, Math.floor(n / 4)));
-  const a = pts[(i - k + n) % n];
-  const b = pts[(i + k) % n];
-  let angle = (Math.atan2(b[1] - a[1], b[0] - a[0]) * 180) / Math.PI;
-  if (angle > 90) angle -= 180;
-  if (angle <= -90) angle += 180;
-  return { i, x: pts[i][0], y: pts[i][1], angle };
-}
 /** A volume's height (m): proportional to its hours, the highest at `plafondM` (plafondVolumes),
  * 20 m for none (R1a's tilted map's, DECISIONS 2026-10-29). */
 export const volumeHeight = (heures: number, maxH: number, plafondM: number): number =>
@@ -355,6 +328,7 @@ export type CarteMin = Pick<
   | "getLayer"
   | "removeLayer"
   | "setPaintProperty"
+  | "setFilter"
   | "setFeatureState"
   | "addImage"
   | "hasImage"
@@ -390,12 +364,15 @@ export type Calque = {
   boite(id: string): BBox | null;
   /** The cited sectors shown (ids of `formes`, hatched), and the labels of some of them. */
   secteurs(ids: string[], labels?: { id: string; mots: string }[]): void;
-  /** The commune's edge dotted (acts without a drawn zone are shown), or not. */
+  /** The whole commune hatched (acts whose exact place is not read yet are shown), or not: from
+   * its outline, else (a commune without a map file of its own, 134 of the 142 with drone acts on
+   * 10/11) from the site's commune shape (admin tiles). */
   nonLue(on: boolean): void;
-  /** The commune's outline (its file's), for the label set on it. */
-  bordure(): LonLat[] | null;
-  /** Where the cited sectors' labels stand (lon, lat), for the edge's label to keep off. */
-  ancres(): LonLat[];
+  /** Ju, 10/11: the hatchings light over the period, full for a day chosen or hovered. */
+  plein(on: boolean): void;
+  /** The municipal arrondissements an act shown names (A's sectors, 09/11), hatched alone as a
+   * cited sector is: their shapes are the site's own (admin tiles, layer `communes`, code `c`). */
+  arrondissements(codes: string[]): void;
   /** Removes every source, layer and listener it added. */
   retirer(): void;
 };
@@ -417,8 +394,6 @@ export type CalqueOptions = {
   inclinaison?: number;
   /** The cited sectors' shapes (the commune file's drones.formes). */
   formes?: Record<string, { geometry: unknown }>;
-  /** The dotted edge clicked. */
-  onNonLue?: () => void;
 };
 
 /** A feature state read in a paint expression (false when unset). */
@@ -666,16 +641,17 @@ function couches(insee: string, t: Teintes, admin: boolean): LayerSpecification[
 }
 
 /** Board B's two other ways of saying where (lot R4.2), in the drones' blue, under the cameras: a
- * cited sector hatched over a very light fill, its outline; the commune's edge dotted (the board:
- * 7 px, round dots, at 80 %) when acts without a drawn zone are shown. */
-function couchesSous(t: Teintes): LayerSpecification[] {
+ * cited sector hatched over a very light fill, its outline; the whole commune hatched the same way
+ * when acts whose exact place is not read yet are shown (Ju, 09/11: « hachure toute la commune »;
+ * the board's dotted edge read as a line of its own), within the commune's ink line. */
+function couchesSous(t: Teintes, admin: boolean): LayerSpecification[] {
   const bleu = bleuDe(t);
   return [
     {
       id: COUCHES.secteur,
       type: "fill",
       source: SRC_SEC,
-      paint: { "fill-pattern": HACHURE_SEC },
+      paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
     },
     {
       id: COUCHES.secteurBord,
@@ -686,18 +662,60 @@ function couchesSous(t: Teintes): LayerSpecification[] {
     },
     {
       id: COUCHES.nonLue,
-      type: "line",
+      type: "fill",
       source: SRC_NL,
-      layout: { "line-join": "round", "line-cap": "round" },
-      paint: {
-        "line-color": bleu,
-        "line-width": 7,
-        "line-opacity": 0.8,
-        "line-dasharray": [0.1, 1.6],
-      },
+      paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
     },
+    // an arrondissement the act names: a cited sector's look, its shape the site's tiles'; the
+    // whole commune from the same tiles when it has no outline of its own
+    ...(admin
+      ? ([
+          {
+            id: COUCHES.nonLueAdmin,
+            type: "fill",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
+          },
+          {
+            id: COUCHES.arrondissement,
+            type: "fill",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            paint: { "fill-pattern": HACHURE_SEC, "fill-opacity": HACHURE_LEGERE },
+          },
+          {
+            id: COUCHES.arrondissementBord,
+            type: "line",
+            source: "admin",
+            "source-layer": "communes",
+            filter: arrondissementsFiltre([]),
+            layout: { "line-join": "round" },
+            paint: { "line-color": bleu, "line-width": 2.5 },
+          },
+        ] as LayerSpecification[])
+      : []),
   ];
 }
+/** The hatchings' opacity over the period (Ju, 10/11: « une hachure légère »), and for a day
+ * chosen or hovered (« hachuré en plein »). */
+export const HACHURE_LEGERE = 0.4;
+export const HACHURE_PLEINE = 1;
+/** The hatched fills whose opacity says light or full. */
+const HACHEES = [
+  COUCHES.secteur,
+  COUCHES.nonLue,
+  COUCHES.nonLueAdmin,
+  COUCHES.arrondissement,
+] as const;
+/** The site's areas whose code is one of `codes` (none for none). */
+export const arrondissementsFiltre = (codes: string[]): ExpressionSpecification => [
+  "in",
+  ["get", "c"],
+  ["literal", codes],
+];
 /** The cited sectors' labels (board B's « secteur cité · 14e »: white words on the blue), over all. */
 function couchesLab(t: Teintes): LayerSpecification[] {
   return [
@@ -834,6 +852,8 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
   let secIds: string[] = [];
   let secLabs: { id: string; mots: string }[] = [];
   let nonLueOn = false;
+  let pleinOn = false;
+  let arrCodes: string[] = [];
   const formeDe = (id: string) => o.formes?.[id]?.geometry as Area | undefined;
   const secteursData = (): GeoJSON.FeatureCollection =>
     fc(
@@ -857,8 +877,40 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
           : [];
       }) as Feature[],
     );
-  const nonLueData = (): GeoJSON.FeatureCollection => (nonLueOn ? communeData() : fc([]));
-  const encreData = (): GeoJSON.FeatureCollection => (nonLueOn ? fc([]) : communeData());
+  /** the commune's area, from its outline, hatched */
+  const nonLueData = (): GeoJSON.FeatureCollection =>
+    fc(
+      nonLueOn && outline
+        ? [
+            {
+              type: "Feature",
+              geometry: {
+                type: "Polygon",
+                coordinates: [[...outline.contour, outline.contour[0]]],
+              },
+              properties: {},
+            },
+          ]
+        : [],
+    );
+
+  /** No outline: the site's commune shape hatched instead (its tiles' code), else nothing there. */
+  const nonLueAdmin = () => {
+    if (map.getLayer(COUCHES.nonLueAdmin))
+      map.setFilter(
+        COUCHES.nonLueAdmin,
+        arrondissementsFiltre(nonLueOn && !outline ? [insee] : []),
+      );
+  };
+  const intensite = () => {
+    for (const id of HACHEES)
+      if (map.getLayer(id))
+        (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(
+          id,
+          "fill-opacity",
+          pleinOn ? HACHURE_PLEINE : HACHURE_LEGERE,
+        );
+  };
 
   map.addSource(SRC, { type: "geojson", data: zonesData(), promoteId: "id" });
   map.addSource(SRC_COM, { type: "geojson", data: communeData() });
@@ -886,7 +938,7 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     map.getStyle?.()?.layers?.find((l) => !l.id.startsWith(P) && re.test(l.id))?.id ?? noms;
   const sousChamps = premiere(CAMERAS);
   const sousRues = premiere(RUES);
-  for (const l of couchesSous(tint))
+  for (const l of couchesSous(tint, !!map.getSource("admin")))
     if (!map.getLayer(l.id)) map.addLayer(l, l.type === "fill" ? sousChamps : sousRues);
   for (const l of couchesLab(tint)) if (!map.getLayer(l.id)) map.addLayer(l);
 
@@ -927,36 +979,11 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
     }
     o.onSurvol?.(id);
   };
-  /** The dotted edge within a few pixels of the pointer (it is thin: 7 px). */
-  const surBord = (e: MapMouseEvent): boolean => {
-    if (!nonLueOn || !map.getLayer(COUCHES.nonLue)) return false;
-    const { x, y } = e.point;
-    return (
-      map.queryRenderedFeatures(
-        [
-          [x - 6, y - 6],
-          [x + 6, y + 6],
-        ],
-        { layers: [COUCHES.nonLue] },
-      ).length > 0
-    );
-  };
-  let bordSous = false;
-  const move = (e: MapMouseEvent) => {
-    const id = sous(e);
-    pointer(id);
-    const b = !id && surBord(e);
-    if (b !== bordSous) {
-      bordSous = b;
-      if (b) canvas.style.setProperty("cursor", "pointer");
-      else if (!curseur) canvas.style.removeProperty("cursor");
-    }
-  };
+  const move = (e: MapMouseEvent) => pointer(sous(e));
   const out = () => pointer(null);
   const click = (e: MapMouseEvent) => {
     const id = sous(e);
     if (id) o.onChoix?.(id);
-    else if (surBord(e)) o.onNonLue?.();
   };
   // the labels follow the camera (their place on the screen, their lift), once a frame at most
   let image = 0;
@@ -1012,24 +1039,28 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       set(SRC_SEC, secteursData());
       set(SRC_SEC_LAB, secLabsData());
     },
-    ancres() {
-      return secLabs.flatMap((l) => {
-        const c = centroid(rings(formeDe(l.id)));
-        return c ? [c as LonLat] : [];
-      });
-    },
     nonLue(on) {
       if (on === nonLueOn) return;
       nonLueOn = on;
       set(SRC_NL, nonLueData());
-      // board B: the dotted edge in place of the commune's ink line, not under it
-      set(SRC_COM, encreData());
+      nonLueAdmin();
     },
-    bordure: () => outline?.contour ?? null,
+    plein(on) {
+      if (on === pleinOn) return;
+      pleinOn = on;
+      intensite();
+    },
+    arrondissements(codes) {
+      if (codes.length === arrCodes.length && codes.every((c, i) => c === arrCodes[i])) return;
+      arrCodes = [...codes];
+      for (const id of [COUCHES.arrondissement, COUCHES.arrondissementBord])
+        if (map.getLayer(id)) map.setFilter(id, arrondissementsFiltre(arrCodes));
+    },
     contour(c) {
       outline = c;
-      set(SRC_COM, encreData());
+      set(SRC_COM, communeData());
       set(SRC_NL, nonLueData());
+      nonLueAdmin();
       if (map.getLayer(COUCHES.communeAdmin)) map.removeLayer(COUCHES.communeAdmin);
       set(SRC, zonesData());
     },
@@ -1043,11 +1074,13 @@ export function calque(map: CarteMin, o: CalqueOptions): Calque {
       map.addImage(HACHURE_SEC, hachuresSecteur(bleuDe(t)), { pixelRatio: 2 });
       if (map.hasImage(PAVE_SEC)) map.removeImage(PAVE_SEC);
       map.addImage(PAVE_SEC, pave(bleuDe(t), 8), PAVE_ETIRE);
-      for (const l of [...couches(insee, t, true), ...couchesSous(t), ...couchesLab(t)]) {
+      for (const l of [...couches(insee, t, true), ...couchesSous(t, true), ...couchesLab(t)]) {
         if (!map.getLayer(l.id) || !("paint" in l) || !l.paint) continue;
         for (const [k, v] of Object.entries(l.paint))
           (map.setPaintProperty as (l: string, k: string, v: unknown) => void)(l.id, k, v);
       }
+      // the light or full hatching the view asked for, not the layers' default
+      intensite();
     },
     cadre: box,
     plusHaut: () => Math.max(0, ...hauteurs.values()),

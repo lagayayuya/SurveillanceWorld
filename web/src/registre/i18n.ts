@@ -20,6 +20,12 @@ export function t(key: string, params: Record<string, string | number> = {}): st
     console.warn(`missing message registre.${key}`);
     return `registre.${key}`;
   }
-  // a plural's number in the kit's full no-break space, as fr() writes it (format.ts)
-  return elider(render(template, params).replace(/\u202f/g, "\u00a0"));
+  // a plural's number in the kit's full no-break space, as fr() writes it (format.ts); French
+  // punctuation never opens a line: a no-break space before « : ; ? ! » » and after « « »
+  return elider(
+    render(template, params)
+      .replace(/\u202f/g, "\u00a0")
+      .replace(/ ([:;?!»])/g, "\u00a0$1")
+      .replace(/« /g, "«\u00a0"),
+  );
 }

@@ -69,6 +69,12 @@ export type Route =
   | { view: "acheteur"; siren: string }
   | { view: "departement"; dep: string }
   | { view: "glossaire" }
+  /** lot 4: the graph centred on a company or a buyer (Graphe-plein), its table view */
+  | { view: "graphe"; centre: string; q: Record<string, string> }
+  /** lot 4: up to four communes or companies side by side (?communes= or ?entreprises=) */
+  | { view: "comparer"; q: Record<string, string> }
+  /** lot 4: the shortest paths of contracts between two (?de=, ?a=: a SIREN or an INSEE code) */
+  | { view: "chemin"; q: Record<string, string> }
   | { view: "introuvable" };
 
 const INSEE = /^(\d[\dAB]\d{3})$/;
@@ -90,6 +96,9 @@ export function route(pathname: string, search = ""): Route {
   if (estListe(a) && !b) return { view: "liste", liste: a, q };
   if (a === "couverture" && !b) return { view: "couverture" };
   if (a === "glossaire" && !b) return { view: "glossaire" };
+  if (a === "graphe" && !c && (!b || SIREN.test(b))) return { view: "graphe", centre: b ?? "", q };
+  if (a === "comparer" && !b) return { view: "comparer", q };
+  if (a === "chemin" && !b) return { view: "chemin", q };
   if (estDocument(a) && b && !c) return { view: "contrat", id: b, type: a };
   if (a === "entreprise" && b && SIREN.test(b) && !c) return { view: "entreprise", siren: b };
   if (a === "acheteur" && b && SIREN.test(b) && !c) return { view: "acheteur", siren: b };

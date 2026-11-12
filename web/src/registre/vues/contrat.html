@@ -1,93 +1,103 @@
-<div class="{{th}}">
-  <!-- socle's tete-fiche; a document's name is its objet, two lines at most (v2.2 point 5), not cut-out letters -->
-  <div class="{{tete.cls}}" style="padding-bottom: 18px">
-    <span class="{{tete.stk}}" style="{{tete.r.c}}; align-self: flex-start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{tete.r.i}}"></path></svg>{{tete.r.l}}</span>
-    <h1 class="docnom" data-mention="non">{{nomDoc}}</h1>
-    <p class="idline tw">{{{tete.ligne}}}</p>
-  </div>
-  <dc-include src="bandeau"></dc-include>
-
-  <div class="{{lay.inner}}" style="padding-top: 0">
-    <div class="grid2">
-      <div style="min-width: 0">
-
-        <section id="essentiel" class="sec" style="padding-top: 26px">
-          <h2 class="h2"><span class="num">{{secs.essentiel.n}}</span>{{secs.essentiel.l}}</h2>
-          <p class="lead" style="margin: 0">{{{lead}}}</p>
-          <div class="{{lay.tickets}}" style="margin-top: 4px">
-            <sc-for list="{{kpis}}" as="k"><div class="ticket"><div class="v">{{k.v}}<sc-if value="{{k.m}}"><sup role="img" aria-label="{{k.m}}" title="{{k.m}}" class="rep">?</sup></sc-if></div><div class="l">{{k.l}}</div></div></sc-for>
-          </div>
-          <sc-if value="{{argent}}"><p class="money" style="margin: 0">{{t.argent.enveloppe}}</p></sc-if>
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 10px">
-            <h3 class="h3">{{ditTitre}}</h3>
-            <button class="ibtn" type="button" onClick="{{tgl.max}}" aria-expanded="{{open.max}}" aria-label="{{t.contrat.comment_lire}}"><span aria-hidden="true">i</span></button>
-          </div>
-          <sc-if value="{{show.max}}"><p class="note tw">{{maxNote}}</p></sc-if>
-          <dl class="f">
-            <sc-for list="{{dl}}" as="x"><dt>{{x.k}}</dt><dd>{{{x.v}}}<sc-if value="{{x.m}}"><sup role="img" aria-label="{{x.m}}" title="{{x.m}}" class="rep">?</sup></sc-if><sc-if value="{{x.note}}"> <span style="color: var(--muted)">{{x.note}}</span></sc-if></dd></sc-for>
-          </dl>
-        </section>
-
-        <sc-if value="{{secs.temps}}">
-        <section id="temps" class="sec">
-          <h2 class="h2"><span class="num">{{secs.temps.n}}</span>{{secs.temps.l}}</h2>
-          <div style="display: flex; align-items: center; justify-content: space-between">
-            <h3 class="h3">{{parTitre}}</h3>
-            <button class="ibtn" type="button" onClick="{{tgl.par}}" aria-expanded="{{open.par}}" aria-label="{{t.contrat.comment_ces_documents_sont_relies}}"><span aria-hidden="true">i</span></button>
-          </div>
-          <sc-if value="{{show.par}}"><p class="note tw">{{t.contrat.l_appel_d_offres_le}}</p></sc-if>
-          <div class="{{lay.steps}}" onPointerLeave="{{quitter}}">
-            <sc-for list="{{steps}}" as="s">
-              <button type="button" class="{{s.cls}}" aria-pressed="{{s.on}}" onMouseEnter="{{s.hover}}" onFocus="{{s.hover}}" onClick="{{s.pick}}">
-                <sc-if value="{{s.doc}}"><span class="stk sm" style="{{s.r.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.r.i}}"></path></svg>{{s.type}}</span></sc-if>
-                <sc-if value="{{s.ghost}}"><span class="b fin">{{s.type}}</span></sc-if>
-                <span class="tw" style="font-size: 14px; color: var(--muted)">{{s.date}}<sc-if value="{{s.dm}}"><sup role="img" aria-label="{{s.dm}}" title="{{s.dm}}" class="rep">?</sup></sc-if></span>
-                <strong style="line-height: 1.25">{{s.what}}<sc-if value="{{s.lm}}"><sup role="img" aria-label="{{s.lm}}" title="{{s.lm}}" class="rep">?</sup></sc-if></strong>
-              </button>
-              <sc-if value="{{s.next}}"><span class="arrow" aria-hidden="true">→</span></sc-if>
-            </sc-for>
-          </div>
-          <sc-if value="{{liens}}">
-          <div class="voisins">
-            <sc-if value="{{prec}}"><span>{{{prec.lien}}}<sc-if value="{{prec.m}}"><sup role="img" aria-label="{{prec.m}}" title="{{prec.m}}" class="rep">?</sup></sc-if></span></sc-if>
-            <sc-if value="{{suiv}}"><span class="suiv">{{{suiv.lien}}}<sc-if value="{{suiv.m}}"><sup role="img" aria-label="{{suiv.m}}" title="{{suiv.m}}" class="rep">?</sup></sc-if></span></sc-if>
-          </div>
-          </sc-if>
-        </section>
-        </sc-if>
-
-        <sc-if value="{{secs.avecqui}}">
-        <section id="avecqui" class="sec">
-          <h2 class="h2"><span class="num">{{secs.avecqui.n}}</span>{{secs.avecqui.l}}</h2>
-          <dl class="f">
-            <sc-for list="{{qui}}" as="x"><dt>{{x.k}}</dt><dd>{{{x.v}}}<sc-if value="{{x.m}}"><sup role="img" aria-label="{{x.m}}" title="{{x.m}}" class="rep">?</sup></sc-if><sc-if value="{{x.note}}"> <span style="color: var(--muted)">{{x.note}}</span></sc-if></dd></sc-for>
-          </dl>
-        </section>
-        </sc-if>
-
-        <sc-if value="{{secs.documents}}">
-        <section id="documents" class="sec">
-          <h2 class="h2"><span class="num">{{secs.documents.n}}</span>{{secs.documents.l}}</h2>
-          <p class="sober" style="margin: 0; color: var(--muted)">{{t.contrat.docs_aide}}</p>
-          <div style="border-top: 2px solid var(--line)" onPointerLeave="{{quitter}}"><sc-for list="{{docs}}" as="d"><div class="{{d.cls}}" aria-current="{{d.sel}}" style="{{d.c}}" onMouseEnter="{{d.hover}}" onFocus="{{d.hover}}" onClick="{{d.pick}}"><span class="mini" style="{{d.c}}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{d.i}}"></path></svg></span><span class="tw" style="font-size: 13.5px">{{d.date}}<sc-if value="{{d.dm}}"><sup role="img" aria-label="{{d.dm}}" title="{{d.dm}}" class="rep">?</sup></sc-if></span><span style="min-width: 0">{{{d.what}}}<sc-if value="{{d.lm}}"><sup role="img" aria-label="{{d.lm}}" title="{{d.lm}}" class="rep">?</sup></sc-if></span><span class="dref" data-mention="non"><sc-if value="{{d.fiche}}">{{{d.fiche}}}</sc-if><sc-if value="{{d.url}}"><a href="{{d.url}}" class="tw">{{d.ref}} ↗</a></sc-if><sc-if value="{{d.texte}}"><span class="tw">{{d.ref}}</span></sc-if></span></div></sc-for></div>
-        </section>
-        </sc-if>
-
-        <section id="sources" class="sec">
-          <h2 class="h2"><span class="num">{{secs.sources.n}}</span>{{secs.sources.l}}</h2>
-          <div style="border-top: 2px solid var(--line)">
-            <sc-for list="{{sources}}" as="s"><div class="src" data-mention="non"><b>{{{s.l}}}</b><span>{{{s.ed}}}</span><span class="tw">{{s.date}}</span></div></sc-for>
-          </div>
-          <sc-if value="{{arretes}}"><p class="sober" style="margin: 0; color: var(--muted)">{{t.arretes.lus_par_programme}}</p></sc-if>
-          <p class="sober" style="margin: 0"><a href="/registre/couverture">{{t.sources.couverture}}</a></p>
-          <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center">
-            <span class="sober">{{t.contrat.une_erreur}}</span>
-            <button class="more" type="button" onClick="{{sig.ouvrir}}">{{sig.l}}</button>
-            <button class="more" type="button" onClick="{{copier}}">{{copierL}}</button>
-          </div>
-        </section>
-      </div>
-      <dc-include src="panneau"></dc-include>
+<div class="{{th}} va ctr">
+  <section class="hero">
+    <div class="hero-l">
+      <span class="kind"><i class="ico-c" aria-hidden="true"></i>{{kind}}</span>
+      <h1 class="sr" data-mention="non">{{nom}}</h1><p class="{{ncls}}" aria-hidden="true">{{nom}}</p>
+      <p class="meta"><sc-for list="{{chips}}" as="c"><sc-if value="{{c.href}}"><a class="{{c.cls}}" href="{{c.href}}" data-bl="{{c.bl}}" data-bc="{{c.bc}}"><span aria-hidden="true">{{c.p}}</span> {{c.l}}</a></sc-if><sc-if value="{{c.sans}}"><span class="{{c.cls}}" data-mention="non"><span aria-hidden="true">{{c.p}}</span> {{c.l}}</span></sc-if></sc-for><sc-for list="{{meta}}" as="m"><span data-mention="non">{{m}}</span></sc-for></p>
+      <p class="lead">{{{lead}}}</p>
     </div>
+    <div class="{{acts}}"><button type="button" class="btn" onClick="{{partager}}" aria-haspopup="dialog">{{t.contrat_a.partager}}</button><button type="button" class="btn" onClick="{{citer}}" aria-live="polite">{{citerL}}</button><a class="btn pri" href="#documents" onClick="{{allerDocs}}">{{t.contrat_a.voir_docs}}</a><button type="button" class="btn more" aria-label="{{t.contrat_a.plus}}" aria-expanded="{{plusExp}}" onClick="{{basculerPlus}}">⋯</button></div>
+  </section>
+
+  <div class="figs">
+    <sc-for list="{{figs}}" as="f"><a class="{{f.cls}}" href="{{f.href}}" onClick="{{f.go}}" data-bh="{{f.k}}" data-bl="{{f.tip}}" data-bc="{{f.bc}}"><span class="fk">{{f.k}}</span><b class="fv">{{f.v}}<sc-if value="{{f.u}}">&nbsp;<small>{{f.u}}</small></sc-if></b><sc-if value="{{f.l}}"><span class="fl">{{f.l}}</span></sc-if><span class="rk"><sc-if value="{{f.r}}"><span>{{f.r}}</span></sc-if></span><span class="sr">{{f.tip}}</span></a></sc-for>
   </div>
+
+  <nav class="toc" aria-label="{{t.contrat_a.sommaire}}"><sc-for list="{{toc}}" as="s"><a href="{{s.href}}" onClick="{{s.go}}">{{s.l}}</a></sc-for></nav>
+
+  <div class="body"><main>
+    <section class="sec" id="combien"><h2><span class="num" aria-hidden="true">{{s1.n}}</span>{{s1.titre}}</h2>
+      <sc-if value="{{s1.ans}}"><p class="ans">{{{s1.ans}}}</p></sc-if>
+      <sc-if value="{{s1.con}}">
+      <div class="row2">
+        <div class="{{s1.parties.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s1.parties.r.exp}}" aria-controls="{{s1.parties.r.id}}" onClick="{{s1.parties.r.basculer}}"><span>{{s1.parties.r.titre}}</span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s1.parties.r.id}}"><h3 class="k">{{t.contrat_a.parties}}</h3>
+            <div class="pair">
+              <div class="party"><svg width="44" height="44" aria-hidden="true"><circle cx="22" cy="22" r="19" class="a"></circle></svg><div><span class="pk">{{t.contrat_a.acheteur}}</span><span class="pn">{{{s1.parties.ach}}}</span><sc-if value="{{s1.parties.achPs}}"><span class="ps">{{s1.parties.achPs}}</span></sc-if></div></div>
+              <div class="arrow">{{s1.parties.fleche}}</div>
+              <div class="party"><svg width="44" height="44" aria-hidden="true"><rect x="4" y="4" width="36" height="36" rx="2" class="e2"></rect></svg><div><span class="pk">{{s1.parties.titK}}</span><span class="pn">{{{s1.parties.tit}}}</span><sc-if value="{{s1.parties.titPs}}"><span class="ps">{{s1.parties.titPs}}</span></sc-if></div></div>
+            </div>
+            <sc-if value="{{s1.parties.note}}"><p class="note">{{{s1.parties.note}}}</p></sc-if>
+          </div>
+        </div>
+        <div class="{{s1.quoi.r.cls}}">
+          <button type="button" class="fh" aria-expanded="{{s1.quoi.r.exp}}" aria-controls="{{s1.quoi.r.id}}" onClick="{{s1.quoi.r.basculer}}"><span>{{s1.quoi.r.titre}}</span><i aria-hidden="true">▾</i></button>
+          <div class="fb" id="{{s1.quoi.r.id}}"><h3 class="k">{{t.contrat_a.quoi}}</h3>
+            <ul class="what"><sc-for list="{{s1.quoi.rows}}" as="x"><li><b>{{{x.b}}}</b><span>{{x.s}}</span></li></sc-for></ul>
+            <p class="note">{{s1.quoi.note}}</p>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+      <div class="{{s1.how.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{s1.how.r.exp}}" aria-controls="{{s1.how.r.id}}" onClick="{{s1.how.r.basculer}}"><span>{{s1.how.r.titre}}</span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{s1.how.r.id}}"><h3 class="k">{{s1.how.titre}}</h3>
+          <dl class="kv"><sc-for list="{{s1.how.kv}}" as="x"><div><dt>{{x.k}}</dt><dd>{{{x.v}}}</dd></div></sc-for></dl>
+        </div>
+      </div>
+    </section>
+
+    <sc-if value="{{s2}}">
+    <section class="sec" id="parcours"><h2><span class="num" aria-hidden="true">{{s2.n}}</span>{{s2.titre}}</h2>
+      <p class="ans">{{{s2.ans}}}</p>
+      <div class="{{s2.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{s2.r.exp}}" aria-controls="{{s2.r.id}}" onClick="{{s2.r.basculer}}"><span>{{s2.r.titre}}<small>{{s2.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{s2.r.id}}">
+          <ol class="{{s2.ncls}}" data-bg="">
+            <sc-for list="{{s2.steps}}" as="s"><li class="{{s.cls}}"><sc-if value="{{s.url}}"><a class="sp-a" href="{{s.url}}" data-bh="{{s.bh}}" data-bl="{{s.bl}}" data-bc="{{s.bc}}"><sc-if value="{{s.gap}}"><span class="gap">{{s.gap}}</span></sc-if><i class="dot" aria-hidden="true"></i><span class="sk2">{{s.k}}</span><span class="sd">{{s.d}}</span><b>{{s.b}}</b><span class="ss">{{s.s}}</span></a></sc-if><sc-if value="{{s.sans}}"><div class="sp-a" tabindex="0" data-bh="{{s.bh}}" data-bl="{{s.bl}}"><sc-if value="{{s.gap}}"><span class="gap">{{s.gap}}</span></sc-if><i class="dot" aria-hidden="true"></i><span class="sk2">{{s.k}}</span><span class="sd">{{s.d}}</span><b>{{s.b}}</b><span class="ss" data-mention="non">{{s.s}}</span></div></sc-if></li></sc-for>
+          </ol>
+          <sc-if value="{{s2.prog}}"><div class="exec"><span class="pk">{{s2.prog.pk}}</span><div class="pbar"><i style="{{s2.prog.st}}"></i><b style="{{s2.prog.bst}}">{{s2.prog.l}}</b></div></div></sc-if>
+          <p class="note"><span class="n-l">{{s2.note}}</span><span class="n-t">{{s2.noteTel}}</span></p>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+
+    <sc-if value="{{s3}}">
+    <section class="sec" id="suite"><h2><span class="num" aria-hidden="true">{{s3.n}}</span>{{t.contrat_a.s_suite}}</h2>
+      <p class="ans">{{{s3.ans}}}</p>
+      <div class="chain">
+        <sc-if value="{{s3.avant}}"><div class="card lk"><span class="pk">{{s3.avant.pk}}</span><b>{{s3.avant.b}}</b><span class="ls">{{{s3.avant.s}}}</span><a class="go" href="{{s3.avant.href}}">{{s3.avant.lien}}</a></div>
+        <div class="ch-ar" aria-hidden="true">→</div></sc-if>
+        <div class="card lk me"><span class="pk">{{s3.me.pk}}</span><b>{{s3.me.b}}</b><span class="ls" data-mention="non">{{s3.me.s}}</span></div>
+        <div class="ch-ar" aria-hidden="true">→</div>
+        <div class="{{s3.apres.cls}}"><span class="pk">{{s3.apres.pk}}</span><b>{{s3.apres.b}}</b><span class="ls">{{s3.apres.s}}</span><sc-if value="{{s3.apres.href}}"><a class="go" href="{{s3.apres.href}}">{{s3.apres.lien}}</a></sc-if></div>
+      </div>
+    </section>
+    </sc-if>
+
+    <section class="sec" id="documents"><h2><span class="num doc" aria-hidden="true">≡</span>{{t.contrat_a.s_documents}}</h2>
+      <div class="{{docs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{docs.r.exp}}" aria-controls="{{docs.r.id}}" onClick="{{docs.r.basculer}}"><span>{{docs.r.titre}}<small>{{docs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{docs.r.id}}">
+          <table class="docs"><caption class="sr">{{t.contrat_a.s_documents}}</caption><thead><tr><th scope="col">{{t.contrat_a.col_date}}</th><th scope="col">{{t.contrat_a.col_type}}</th><th scope="col">{{t.contrat_a.col_doc}}</th><th scope="col">{{t.contrat_a.col_dit}}</th><th scope="col">{{t.contrat_a.col_source}}</th></tr></thead><tbody onClick="{{docs.ligne}}">
+            <sc-for list="{{docs.rows}}" as="r"><tr><td data-label="{{t.contrat_a.col_date}}">{{r.d}}</td><td data-label="{{t.contrat_a.col_type}}"><span class="dk">{{r.k}}</span></td><td data-label="{{t.contrat_a.col_doc}}" data-mention="non"><b>{{r.ref}}</b></td><td data-label="{{t.contrat_a.col_dit}}">{{r.dit}}</td><td data-label="{{t.contrat_a.col_source}}" data-mention="non">{{{r.src}}}</td></tr></sc-for>
+          </tbody></table>
+          <sc-if value="{{docs.plus}}"><button type="button" class="btn tous" onClick="{{docs.voirTous}}">{{docs.plus}}</button></sc-if>
+          <p class="note">{{t.contrat_a.docs_note}}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="sec" id="sources"><h2><span class="num doc" aria-hidden="true">i</span>{{t.contrat_a.s_sources}}</h2>
+      <div class="{{srcs.r.cls}}">
+        <button type="button" class="fh" aria-expanded="{{srcs.r.exp}}" aria-controls="{{srcs.r.id}}" onClick="{{srcs.r.basculer}}"><span>{{srcs.r.titre}}<small>{{srcs.r.lignes}}</small></span><i aria-hidden="true">▾</i></button>
+        <div class="fb" id="{{srcs.r.id}}">
+          <sc-if value="{{srcs.lu}}"><ul class="cov" data-mention="non"><sc-for list="{{srcs.rows}}" as="s"><li><i class="{{s.cls}}" aria-hidden="true"></i><b>{{s.l}}</b><sc-if value="{{s.d}}"> · {{s.d}}</sc-if></li></sc-for></ul></sc-if>
+          <p class="note">{{t.contrat_a.src_note}} <a class="go" href="{{srcs.signaler}}">{{t.commune_a.signaler}}</a> · <a class="go" href="/registre/glossaire">{{t.accueil.methode}}</a></p>
+        </div>
+      </div>
+    </section>
+  </main></div>
 </div>

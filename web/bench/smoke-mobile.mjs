@@ -111,14 +111,10 @@ const smallTargets = (page) =>
   }, MIN_TARGET);
 
 /** The open area sheet holds in its width (DECISIONS 2026-10-09, « Punk sheets on a
- * phone… »): nothing scrolls sideways, the title ends left of ↑ and ×, and the map's cursor
- * stays over its ramp even with a name longer than it (its text lengthened here). Run in
- * the page; smoke.mjs has its twin. */
+ * phone… »): nothing scrolls sideways and the title ends left of ↑ and ×. Run in the page;
+ * smoke.mjs has its twin. */
 const AREA_FIT = () => {
   const box = (e) => e.getBoundingClientRect();
-  const cursor = document.querySelector("#sheet .area-cursor");
-  const ramp = document.querySelector("#sheet .area-ramp");
-  if (cursor) cursor.textContent = "Paris 12e Arrondissement, un nom plus long que la rampe";
   const words = [...document.querySelectorAll("#sheet .cut-word")].map((w) => box(w).right);
   const buttons = [...document.querySelectorAll("#sheet .sheet-head :is(.sheet-grab, .close)")]
     .map(box)
@@ -134,10 +130,6 @@ const AREA_FIT = () => {
     sideways,
     title: Math.round(Math.max(...words)),
     buttons: Math.round(Math.min(...buttons)),
-    // A hatched area has no cursor.
-    cursor:
-      !cursor ||
-      (box(cursor).left >= box(ramp).left - 1 && box(cursor).right <= box(ramp).right + 1),
   };
 };
 
@@ -149,7 +141,10 @@ const PINNED = async () => {
   const sheet = document.getElementById("sheet");
   const paper = sheet.querySelector(".sheet-paper");
   const head = sheet.querySelector(".sheet-head");
-  const next = sheet.querySelector(".sheet-top > :not(.sheet-head, .sheet-head-room)");
+  // The camera sheet's tickets; the area sheet's first figures (board 12: no tabs).
+  const next =
+    sheet.querySelector(".sheet-top > :not(.sheet-head, .sheet-head-room)") ??
+    sheet.querySelector(".sheet-body > *");
   const at = () => ({
     head: head.getBoundingClientRect().top,
     next: next.getBoundingClientRect().top,
@@ -1644,51 +1639,55 @@ try {
     );
     {
       // The sheet holds in the phone's width (2026-10-09, « Punk sheets on a phone… »).
-      await page.waitForSelector("#sheet .area-place-text", { timeout: 10000 }).catch(() => null);
+      await page.waitForSelector("#sheet .gap", { timeout: 10000 }).catch(() => null);
       const fit = await page.evaluate(AREA_FIT);
       check(
-        "punk commune sheet: no sideways scroll, title left of ↑ and ×, the cursor over its ramp",
-        fit.sideways.length === 0 && fit.title <= fit.buttons && fit.cursor,
+        "commune sheet: no sideways scroll, title left of ↑ and ×",
+        fit.sideways.length === 0 && fit.title <= fit.buttons,
         JSON.stringify(fit),
       );
       const pinned = await page.evaluate(PINNED);
       check(
-        "punk commune sheet at half: only its title stays, the tabs and the rest scroll under it",
+        "commune sheet at half: only its title stays, the rest scrolls under it",
         pinned.ok,
         JSON.stringify(pinned),
       );
-      // Mockup 24a: Y only, « rues à portée » (« des rues à portée » after a percentage,
-      // never « au plus », the colour line in words: 2026-10-09, « Punk sheets on a
-      // phone… »); its tickets are tabs a finger switches, and « Toutes /
-      // Publiques » recounts the street (the sheet stays open, its size kept).
+      // Board 12 (v3): one column, Y as a maximum (« 1 sur 5 », « rues à portée, au plus »);
+      // « Qui filme ? » a fold a finger opens, « Toutes / Publiques » recounts the street (the
+      // sheet stays open, its size kept); no map legend on a phone.
       const before = await page.evaluate(() => document.getElementById("sheet").offsetHeight);
-      await page.locator("#area-tab-who").tap();
+      await page.locator("#sheet .acc").tap();
       await page.waitForTimeout(300);
-      await page.locator("#area-tab-streets").tap();
+      const opened = await page.evaluate(
+        () => document.querySelector("#sheet .acc")?.getAttribute("aria-expanded") ?? "",
+      );
+      await page.locator("#sheet .acc").tap();
       await page.waitForTimeout(300);
       await page.locator('.area-toggle[data-set="public"]').tap();
       await page.waitForTimeout(300);
       const tabbed = await page.evaluate(() => ({
         open: !document.getElementById("sheet").hidden,
         height: document.getElementById("sheet").offsetHeight,
-        selected: document.querySelector("#sheet [role=tab][aria-selected=true]")?.id ?? "",
-        streets: document.querySelector("#area-tab-streets")?.getAttribute("aria-label") ?? "",
+        folded: document.querySelector("#sheet .acc")?.getAttribute("aria-expanded") ?? "",
+        streets: document.querySelector("#sheet .kf3 > div:nth-child(3) b")?.textContent ?? "",
         pressed: document.querySelector(".area-toggle[aria-pressed=true]")?.dataset.set ?? "",
         text: document.getElementById("sheet").innerText,
-        place: document.querySelector("#sheet .area-place-text")?.textContent ?? "",
+        legend: (() => {
+          const l = document.querySelector(".mlegend");
+          return l ? getComputedStyle(l).display : "none";
+        })(),
       }));
       check(
-        "punk commune sheet: tabs and « Publiques » by touch, Y « à portée » only",
+        "commune sheet: « Qui filme ? » and « Publiques » by touch, Y a maximum, no legend",
         tabbed.open &&
           tabbed.height === before &&
-          tabbed.selected === "area-tab-streets" &&
+          opened === "true" &&
+          tabbed.folded === "false" &&
           tabbed.pressed === "public" &&
-          /^(1 sur [\d\s]+|\d+ sur 10) rues à portée$|^\d+\s% des rues à portée$|^Aucune rue à portée$/.test(
-            tabbed.streets,
-          ) &&
-          !/Entre [\d,]+ %|à coup sûr|au moins|au\splus/.test(tabbed.text) &&
-          /^Sa couleur : .+ des rues à portée\)$|^Sur la carte : hachurée/.test(tabbed.place),
-        JSON.stringify({ ...tabbed, text: undefined, before }),
+          /^(1 sur [\d\s]+|\d+ sur 10|\d+\s%|Aucune)$/i.test(tabbed.streets) &&
+          !/Entre [\d,]+ %|à coup sûr/.test(tabbed.text) &&
+          tabbed.legend === "none",
+        JSON.stringify({ ...tabbed, text: undefined, before, opened }),
       );
     }
     // A département (z6): its sheet, and it is framed above the sheet too.
