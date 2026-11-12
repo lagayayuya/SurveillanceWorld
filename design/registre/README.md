@@ -18,4 +18,4 @@ ni vérifié par `make check`. Il sera retiré une fois toutes les vues portées
 Les chiffres des maquettes viennent de données publiques réelles (données essentielles de la commande
 publique, BOAMP, recueils des actes de la préfecture du Rhône, SIRENE : Licence Ouverte 2.0 ;
 caméras : © contributeurs OpenStreetMap, ODbL). Les règles du site l'emportent sur les maquettes quand
-elles diffèrent : voir `DECISIONS.md` (lignes du 28/10/2026) et `docs/interface.md` § 3.
+elles diffèrent : voir `DECISIONS.md` (lignes du 28/10/2026) et `docs/interface/register.md` (écarts).

@@ -1,6 +1,6 @@
 // The participation data the captures are made on, written through the API as the accounts
 // would (ana, bob, cara contribute; rev reviews; tess is a test account), then settled as a
-// deploy of the CI build would. Every id is fixed, so that docs/interface.md can name them.
+// deploy of the CI build would. Every id is fixed, so that docs/interface/states.md can name them.
 //   empty  no contribution at all;
 //   full   the proposals, opinions, answers and decisions below, then the fixture's history
 //          (tests/fixtures/contrib-ci.jsonl) posted with its own uuids where they are uuids,

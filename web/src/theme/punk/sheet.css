@@ -3,7 +3,7 @@
    shadow, the title in cut-out letters, the operator, the dates, the distance
    tickets, the rows, the gridded « Supposé · à compléter » box,
    « Compléter » / « Toujours là ? », the links. Sizes, fonts, tilts and colours are 17a's
-   (its rendered DOM, export of 2026-10-06) unless docs/interface.md §3 « Camera sheet
+   (its rendered DOM, export of 2026-10-06) unless docs/interface/sheets.md « Camera sheet
    (lot 3.2) » says why not. Every rule here is the camera's sheet's (`.sheet-frame`, its
    `.sheet-paper`): the commune sheet keeps its own. Tilts that never move are named in web/tests/theme.test.ts
    (FIXED_DECOR); those of what moves are under the motion query. */

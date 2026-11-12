@@ -400,7 +400,7 @@
 }
 /* Each cut-out its tilt and drop, its face and its flat colours, as 1a's letters(). The
    faces 1a takes outside the shipped ones (Bricolage Grotesque, Archivo's widths over
-   100 %) take the nearest shipped: Archivo at 100 % (docs/interface.md, « Écarts »). */
+   100 %) take the nearest shipped: Archivo at 100 % (docs/interface/welcome.md, « Écarts »). */
 .loading-tilt:nth-child(10n + 1) {
   transform: rotate(-4deg);
 }

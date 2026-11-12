@@ -1,5 +1,5 @@
 // The account's screen on an entry-level phone (lot U: « Mes caméras »' little map was
-// decided on these numbers, docs/interface.md): Chromium, profiles.mjs `lowend` (CPU ×6,
+// decided on these numbers, docs/interface/accounts.md): Chromium, profiles.mjs `lowend` (CPU ×6,
 // DevTools' « Slow 4G »), 390×845 CSS px at scale 2, the account routes answered by the page
 // (profile-mock.mjs, « Mes caméras »' fuller COLLECTION), on the CI extract. The map opened
 // on the cluster and at rest, then `--runs` times: the account square clicked → the screen

@@ -1468,7 +1468,7 @@
    sheet or a panel: beside a live map (« Drones et algorithmes », registre-panneau) the commands are
    the view's own, in the map's part of the screen (vues/carte.html .ctl), as the V2 boards draw it.
    The map's credit stays, the map being seen around the register (ODbL: DECISIONS 2026-09-28,
-   2026-10-08; docs/interface.md, « the ODbL attribution is always readable »). */
+   2026-10-08; docs/interface/map.md, « the ODbL attribution is always readable »). */
 body.registre-ouvert > :not(#map, #registre, .dialogue, #legal, #welcome),
 body.registre-ouvert > :not(#map, #registre, .dialogue, #legal, #welcome) *,
 body.registre-ouvert #map :is(.maplibregl-ctrl:not(.maplibregl-ctrl-attrib), .maplibregl-popup),

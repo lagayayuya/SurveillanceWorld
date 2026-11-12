@@ -1,4 +1,4 @@
-// How each state of docs/interface.md is produced on the CI extract. `id` is the
+// How each state of docs/interface/states.md is produced on the CI extract. `id` is the
 // catalogue's (same order, by screen); `run(k, fx)` leaves the page in that state (k:
 // states/kit.mjs; fx: tests/apiserver.py's fixtures, a camera near a facade and the
 // "Compléter" cameras); `seed`: the participation data it needs (states/seed.mjs, `empty`
@@ -1174,7 +1174,7 @@ async function osmSignup(k, pseudonym, post) {
   await k.page.waitForTimeout(600);
 }
 
-// --- the states, by screen, as in docs/interface.md ----------------------------------
+// --- the states, by screen, as in docs/interface/states.md ----------------------------------
 
 export const STATES = [
   // Map

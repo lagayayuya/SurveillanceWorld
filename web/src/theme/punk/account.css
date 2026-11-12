@@ -4,7 +4,7 @@
    lit sans compte. », « Me contacter » and « Me connecter », the line on OpenStreetMap)
    and « Entrer », the login form (identifiant, mot de passe, its error, « Entrer », the
    forgotten password's mail and OpenStreetMap's link, « ← Retour »). Sizes, fonts and
-   colours are 25a's rendered DOM (dark, wide screen) unless docs/interface.md §3 « Account
+   colours are 25a's rendered DOM (dark, wide screen) unless docs/interface/accounts.md « Account
    (lot comptes) » says why not; light mode, which 25a does not draw, takes the same
    tokens. « Compte » with OpenStreetMap's sign-in on is 28a's (`[data-osm]`, below), its
    three frames: light, « retour d'OSM en échec », dark. Tilts sit under the motion query. */
@@ -157,7 +157,7 @@
   cursor: pointer;
 }
 
-/* Sign-in with OpenStreetMap on (OSM lot 1; docs/interface.md §3 « Account »): the key in
+/* Sign-in with OpenStreetMap on (OSM lot 1; docs/interface/accounts.md « Account »): the key in
    the stamp's place and room (the stamp row's padding), the line on what is kept under it;
    the key's long word may take two lines. */
 :root[data-ui="punk"] #sheet .account-osm-row {
@@ -391,7 +391,7 @@
     padding-bottom: 14px;
   }
   /* 16 px where 25a writes 15: under 16, an iPhone zooms the whole page on the field
-     (docs/interface.md §3). */
+     (docs/interface/accounts.md). */
   :root[data-ui="punk"] #sheet .account-input {
     font-size: 16px;
   }

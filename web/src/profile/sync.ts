@@ -2,7 +2,7 @@
 // owner's decision of 16/10), replacing OSM
 // lot 2's « À publier » list. No board draws it: built from 26a's vocabulary as ported (the
 // opt-in's box, the scale's dashed rows, the foot's links, 25a's field and key, lot 1's OSM
-// rows and password form; docs/interface.md §3). Shown when GET /api/config offers the
+// rows and password form; docs/interface/accounts.md). Shown when GET /api/config offers the
 // synchronisation (`sync`) and GET /api/osm/sync says `offered`; nothing of it otherwise.
 // Two exclusive choices, a real radio group: « Rester sur Surveillance World » (the default)
 // and « Publier aussi sur OpenStreetMap en mon nom », with what the second means (what

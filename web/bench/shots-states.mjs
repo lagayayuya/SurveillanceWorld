@@ -1,4 +1,4 @@
-// Captures of every interface state docs/interface.md lists as reachable on the CI extract,
+// Captures of every interface state docs/interface/states.md lists as reachable on the CI extract,
 // each in light and dark ("clair", "sombre"), on a
 // phone (WebKit, iPhone 14) and a wide screen (Chromium, 1440 × 900):
 // <state>-<clair|sombre>-<phone|desktop>.png, and an index.md (state, captures, drawn in the
@@ -14,7 +14,7 @@
 // and `npm run build` serving it. The participation states are made on a throwaway database
 // (tests/apiserver.py, through states/apiserver.py), filled through the API as accounts would
 // (states/seed.mjs) and settled as a deploy does; the states list is states/catalogue.mjs,
-// their description, code, mockup screen and data docs/interface.md.
+// their description, code, mockup screen and data docs/interface/states.md.
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { constants } from "node:os";
@@ -106,12 +106,12 @@ if (refused) {
 const only = (arg("--only", "") || "").split(",").filter(Boolean);
 const CNIL = args.includes("--cnil");
 
-/** What docs/interface.md says of each state: its screen (the section), whether the
+/** What docs/interface/states.md says of each state: its screen (the section), whether the
  * mockup draws it, whether it is reachable, on which screens and in which interface it is
  * captured. Rows of the catalogue start with `| `id` |`. */
 const duplicates = [];
 function catalogue() {
-  const doc = readFileSync(join(ROOT, "docs/interface.md"), "utf8");
+  const doc = readFileSync(join(ROOT, "docs/interface/states.md"), "utf8");
   const rows = new Map();
   let screen = "";
   for (const line of doc.split("\n")) {
@@ -143,10 +143,10 @@ function catalogue() {
 
 const doc = catalogue();
 
-/** The "Counts" table of docs/interface.md against its rows: one line per screen, then the
+/** The "Counts" table of docs/interface/states.md against its rows: one line per screen, then the
  * total; returns the disagreements. */
 function countsDisagree() {
-  const text = readFileSync(join(ROOT, "docs/interface.md"), "utf8");
+  const text = readFileSync(join(ROOT, "docs/interface/states.md"), "utf8");
   const section = /### Counts\n([\s\S]*?)\n### /.exec(text)?.[1] ?? "";
   const stated = new Map();
   for (const line of section.split("\n")) {
@@ -187,28 +187,30 @@ function countsDisagree() {
 // and the counts those of the rows. A disagreement fails the run (exit 1), --list included.
 const disagreements = countsDisagree();
 const registered = new Map();
-for (const id of duplicates) disagreements.push(`${id}: two rows in docs/interface.md`);
+for (const id of duplicates) disagreements.push(`${id}: two rows in docs/interface/states.md`);
 for (const s of STATES) {
   if (registered.has(s.id)) disagreements.push(`${s.id}: twice in states/catalogue.mjs`);
   registered.set(s.id, s);
   const row = doc.get(s.id);
-  if (!row) disagreements.push(`${s.id}: in states/catalogue.mjs, not in docs/interface.md`);
+  if (!row) disagreements.push(`${s.id}: in states/catalogue.mjs, not in docs/interface/states.md`);
   else if (!row.captured)
-    disagreements.push(`${s.id}: in states/catalogue.mjs, not a captured row of docs/interface.md`);
+    disagreements.push(
+      `${s.id}: in states/catalogue.mjs, not a captured row of docs/interface/states.md`,
+    );
   else {
     if (String(s.devices ?? ["phone", "desktop"]) !== String(row.devices))
       disagreements.push(
-        `${s.id}: captured on ${s.devices ?? "phone,desktop"}, docs/interface.md says ${row.devices}`,
+        `${s.id}: captured on ${s.devices ?? "phone,desktop"}, docs/interface/states.md says ${row.devices}`,
       );
     if (Boolean(s.cnil) !== row.cnil)
       disagreements.push(
-        `${s.id}: ${s.cnil ? "" : "not "}--cnil only, docs/interface.md says the reverse`,
+        `${s.id}: ${s.cnil ? "" : "not "}--cnil only, docs/interface/states.md says the reverse`,
       );
   }
 }
 for (const [id, row] of doc)
   if (row.captured && !registered.has(id))
-    disagreements.push(`${id}: captured in docs/interface.md, not in states/catalogue.mjs`);
+    disagreements.push(`${id}: captured in docs/interface/states.md, not in states/catalogue.mjs`);
 for (const e of disagreements) console.log(`FAIL ${e}`);
 if (disagreements.length) process.exit(1);
 
@@ -457,7 +459,7 @@ const lines = [
   "",
   `${CNIL ? "Build de la préversion (--cnil : encart CNIL affiché), " : ""}` +
     `${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC, ` +
-    `${minutes} min. Catalogue : docs/interface.md (états, code, maquette, données de test). ` +
+    `${minutes} min. Catalogue : docs/interface/states.md (états, code, maquette, données de test). ` +
     "Fichiers : `<état>-<clair|sombre>-<phone|desktop>.png` ; un état propre à un seul " +
     "type d'écran (survol à la souris, feuille d'un téléphone…) n'a que ses deux captures.",
   "",

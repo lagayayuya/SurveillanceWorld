@@ -8,7 +8,7 @@
    only), on the punk tokens in light and dark: the boards' cream surfaces on the dark paper
    are the ink tile (--ink-tile-bg: cream in dark, ink in light) for the small ones (a
    chosen ticket or sort, a heading, a tag) and a slip of white paper in light for the large
-   ones (« Vous », the scale), unless docs/interface.md §3 « Profile and leaderboard (lot
+   ones (« Vous », the scale), unless docs/interface/accounts.md « Profile and leaderboard (lot
    comptes) » says why not. Fixed tilts are set by the code (inline), as the camera sheet's
    tickets: what moves here is under the motion query. Each sort of points has its colour
    (26a): add pink, info sky, correction yellow, verification cream. */
@@ -994,7 +994,7 @@
   font: 400 13px / 1.3 var(--font-text);
 }
 /* The OSM synchronisation (16/10): « Publier sur OpenStreetMap » (src/profile/sync.ts). No
-   board draws it: 26a's vocabulary as ported (docs/interface.md §3): its heading as the
+   board draws it: 26a's vocabulary as ported (docs/interface/accounts.md): its heading as the
    scale's, under the foot's dashed rule; the two choices the opt-in's box (a real radio
    over the whole row, unseen); the states 26a's yellow tag (`warn`) or a plain line; the
    text in the scale's small type, the list of what leaves with the tags in the typewriter's

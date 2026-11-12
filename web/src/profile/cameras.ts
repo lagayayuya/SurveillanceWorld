@@ -138,7 +138,7 @@ const MAP_H = 150;
 
 /** Where her cameras stand: a static drawing on the paper's grid, one dot each, the
  * communes' names where their cameras are (no tiles, no second map: measured on an
- * entry-level phone, lot U, docs/interface.md). Decorative: the list says it all. */
+ * entry-level phone, lot U, docs/interface/accounts.md). Decorative: the list says it all. */
 function miniMap(cams: Owned[]): HTMLElement | null {
   const placed = cams.filter((o): o is Owned & { at: [number, number] } => o.at !== null);
   const frame = frameOf(
