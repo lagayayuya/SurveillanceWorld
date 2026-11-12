@@ -29,7 +29,8 @@ votre appareil et votre navigateur, et l'adresse de la page si elle montre le pr
 ## Proposer du code
 
 - Lisez [`CLAUDE.md`](CLAUDE.md) (les règles de travail du projet) et
-  [`DECISIONS.md`](DECISIONS.md) (pourquoi les choses sont ainsi).
+  [`DECISIONS.md`](DECISIONS.md) (les décisions en vigueur et leurs raisons ; leur historique est
+  dans [`docs/archive/decisions-journal-2026.md`](docs/archive/decisions-journal-2026.md)).
 - `make install`, puis `make check` doit passer avant chaque commit.
 - Des commits petits, un par changement, avec un message en anglais qui dit ce qui change et
   pourquoi. Le code, les commentaires et les identifiants sont en anglais ; l'interface est en
